@@ -15,7 +15,7 @@
     "clean": "gatsby clean"
   },
   "dependencies": {
-    "firebase": "^12.6.0",
+    "firebase": "^9.23.0",
     "framer-motion": "^12.23.25",
     "gatsby": "^5.13.0",
     "gatsby-plugin-postcss": "^6.13.0",
