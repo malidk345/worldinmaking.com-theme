@@ -1,0 +1,29 @@
+{
+  "name": "worldinmaking",
+  "version": "1.0.0",
+  "description": "World in Making - A PostHog inspired website",
+  "author": "World in Making",
+  "license": "MIT",
+  "scripts": {
+    "develop": "gatsby develop -H 0.0.0.0 -p 8001",
+    "start": "npm run develop",
+    "build": "gatsby build",
+    "serve": "gatsby serve",
+    "clean": "gatsby clean"
+  },
+  "dependencies": {
+    "firebase": "^12.6.0",
+    "framer-motion": "^12.23.25",
+    "gatsby": "^5.13.0",
+    "gatsby-plugin-postcss": "^6.13.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/container-queries": "^0.1.1",
+    "@tailwindcss/typography": "^0.5.10",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.4.0"
+  }
+}

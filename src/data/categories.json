@@ -1,0 +1,62 @@
+[
+  {
+    "slug": "articles",
+    "name": "articles"
+  },
+  {
+    "slug": "books",
+    "name": "books"
+  },
+  {
+    "slug": "featured",
+    "name": "featured"
+  },
+  {
+    "slug": "food",
+    "name": "Food"
+  },
+  {
+    "slug": "gardening",
+    "name": "Gardening"
+  },
+  {
+    "slug": "guest-writing",
+    "name": "guest writing"
+  },
+  {
+    "slug": "health",
+    "name": "Health"
+  },
+  {
+    "slug": "must-read",
+    "name": "must read"
+  },
+  {
+    "slug": "nature",
+    "name": "Nature"
+  },
+  {
+    "slug": "sports",
+    "name": "Sports"
+  },
+  {
+    "slug": "stories",
+    "name": "stories"
+  },
+  {
+    "slug": "technology",
+    "name": "Technology"
+  },
+  {
+    "slug": "tests",
+    "name": "tests"
+  },
+  {
+    "slug": "travel",
+    "name": "Travel"
+  },
+  {
+    "slug": "travel-2",
+    "name": "Travel"
+  }
+]

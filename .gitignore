@@ -1,0 +1,25 @@
+node_modules
+
+# Build output
+/public/
+
+# Gatsby cache
+/.cache/
+
+# Environment files
+.env
+.env.*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editors
+.vscode/
+.idea/
