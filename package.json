@@ -4,6 +4,9 @@
   "description": "World in Making - A PostHog inspired website",
   "author": "World in Making",
   "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "develop": "gatsby develop -H 0.0.0.0 -p 8001",
     "start": "npm run develop",
