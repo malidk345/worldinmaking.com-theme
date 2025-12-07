@@ -1828,7 +1828,7 @@ html {
 .floating-nav {
   --nav-bg: color-mix(in hsl, canvasText 8%, canvas);
   --nav-color: color-mix(in hsl, canvasText 92%, canvas);
-  
+
   position: fixed;
   bottom: 2.5rem;
   left: 50%;
@@ -1842,6 +1842,10 @@ html {
   z-index: 9998;
   transition: opacity 0.35s ease;
   color: var(--nav-color);
+  /* Ensure proper centering */
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 body:has(.popover-open) .floating-nav {
@@ -2162,6 +2166,10 @@ body:has(.popover-open) .floating-nav {
     width: auto;
     display: flex;
     justify-content: center;
+    align-items: center;
+    /* Force hardware acceleration for better rendering */
+    will-change: transform;
+    backface-visibility: hidden;
   }
 
   .floating-nav ul {
@@ -2170,6 +2178,9 @@ body:has(.popover-open) .floating-nav {
     align-items: center;
     justify-content: center;
     flex-wrap: nowrap;
+    width: 100%;
+    /* Ensure equal spacing */
+    justify-content: space-around;
   }
 
   .floating-nav li {
@@ -2179,6 +2190,8 @@ body:has(.popover-open) .floating-nav {
     display: flex;
     align-items: center;
     justify-content: center;
+    /* Perfect centering */
+    position: relative;
   }
 
   .floating-nav :where(a, button) {
@@ -2187,12 +2200,20 @@ body:has(.popover-open) .floating-nav {
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
+    /* Ensure icon is perfectly centered */
+    line-height: 1;
   }
 
   .floating-nav svg {
     width: 22px;
     height: 22px;
     flex-shrink: 0;
+    /* Perfect centering */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
   }
 
   .popover-menu {
@@ -2225,10 +2246,17 @@ body:has(.popover-open) .floating-nav {
   .floating-nav {
     bottom: max(1rem, env(safe-area-inset-bottom, 1rem));
     padding: 6px;
+    /* Ensure perfect centering on small screens */
+    left: 50%;
+    transform: translateX(-50%);
+    width: fit-content;
+    max-width: calc(100vw - 1rem);
   }
 
   .floating-nav ul {
     gap: 4px;
+    justify-content: space-evenly;
+    min-width: 180px; /* Ensure minimum width for proper spacing */
   }
 
   .floating-nav li {
@@ -2239,6 +2267,11 @@ body:has(.popover-open) .floating-nav {
   .floating-nav svg {
     width: 18px;
     height: 18px;
+    /* Absolute positioning for pixel-perfect centering */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
   }
 
   .popover-menu {
