@@ -51,7 +51,7 @@ export default function PostCard({ post, onClick, isActive }) {
           <div className="post-card-author">
             <span className="post-card-author-avatar">
               {author.avatar ? (
-                <img src={author.avatar} alt={author.name} loading="lazy" decoding="async" />
+                <img src={author.avatar} alt={author.name} />
               ) : (
                 (author.name?.[0] || 'A').toUpperCase()
               )}
@@ -64,7 +64,7 @@ export default function PostCard({ post, onClick, isActive }) {
       {/* Featured Image if available */}
       {post.featuredImage && (
         <div className="post-card-image">
-          <img src={post.featuredImage} alt={title} loading="lazy" decoding="async" />
+          <img src={post.featuredImage} alt={title} />
         </div>
       )}
     </motion.article>

@@ -729,7 +729,7 @@ function PostHogWindow({
                 top: isMobile ? 40 : (effectiveMaximized ? 0 : pos.y),
                 left: isMobile ? 0 : (effectiveMaximized ? 0 : pos.x),
                 width: isMobile ? '100vw' : (effectiveMaximized ? '100vw' : size.width),
-                height: isMobile ? 'calc(100dvh - 40px)' : (effectiveMaximized ? '100vh' : size.height),
+                height: isMobile ? 'calc(100vh - 40px)' : (effectiveMaximized ? '100vh' : size.height),
                 zIndex: zIndex || 100,
             }}
             onClick={() => onFocus?.()}
