@@ -5,8 +5,8 @@ import PostHogWindow from '../components/PostHogWindow'
 import { posts } from '../data/postsUtils'
 
 export default function IndexPage() {
-  const ITEMS_PER_PAGE = 5
-  const [currentPage, setCurrentPage] = useState(1)
+  const INITIAL_ITEMS = 10
+  const [showAll, setShowAll] = useState(false)
   const [localOpenWindows, setLocalOpenWindows] = useState([])
   const [topZIndex, setTopZIndex] = useState(100)
   const [focusedId, setFocusedId] = useState(null)
@@ -287,7 +287,7 @@ export default function IndexPage() {
           {/* Single Continuous Morphing Disclosure List */}
           <div className="flex flex-col items-center justify-center gap-8">
             <MorphingDisclosure className="w-full max-w-2xl">
-              {posts.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map((post) => (
+              {posts.slice(0, showAll ? posts.length : INITIAL_ITEMS).map((post) => (
                 <PostCard
                   key={post.id}
                   post={post}
@@ -296,27 +296,17 @@ export default function IndexPage() {
               ))}
             </MorphingDisclosure>
 
-            {/* Pagination Controls */}
-            {posts.length > ITEMS_PER_PAGE && (
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className="px-4 py-2 text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all touch-manipulation"
-                >
-                  Previous
-                </button>
-                <span className="text-sm font-medium opacity-60">
-                  Page {currentPage} / {Math.ceil(posts.length / ITEMS_PER_PAGE)}
-                </span>
-                <button
-                  onClick={() => setCurrentPage(p => Math.min(Math.ceil(posts.length / ITEMS_PER_PAGE), p + 1))}
-                  disabled={currentPage === Math.ceil(posts.length / ITEMS_PER_PAGE)}
-                  className="px-4 py-2 text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all touch-manipulation"
-                >
-                  Next
-                </button>
-              </div>
+            {/* Load More Button */}
+            {!showAll && posts.length > INITIAL_ITEMS && (
+              <button
+                onClick={() => setShowAll(true)}
+                className="px-6 py-3 bg-[var(--brand-red)] text-white rounded-lg text-[14px] font-medium hover:opacity-90 transition-opacity lowercase flex items-center justify-center gap-2"
+              >
+                load more posts
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
+                  <path d="M7 13l3 3 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
             )}
           </div>
         </div>
@@ -364,12 +354,3 @@ export const Head = () => (
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
   </>
 )
-
-// Helper function to chunk array into groups
-function chunkArray(array, chunkSize) {
-  const chunks = []
-  for (let i = 0; i < array.length; i += chunkSize) {
-    chunks.push(array.slice(i, i + chunkSize))
-  }
-  return chunks
-}
