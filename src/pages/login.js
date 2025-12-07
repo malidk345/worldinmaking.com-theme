@@ -296,17 +296,6 @@ const LoginPage = () => {
                             </button>
                         </div>
                     </div>
-
-                    {/* Demo Credentials */}
-                    <div className="mt-6 p-4 bg-[rgb(var(--accent))] rounded-lg border border-[rgb(var(--border))]">
-                        <p className="text-[12px] text-[rgb(var(--text-muted))] text-center lowercase mb-2">
-                            demo credentials
-                        </p>
-                        <div className="text-[12px] text-[rgb(var(--text-primary))] text-center lowercase space-y-1">
-                            <p>email: demo@example.com</p>
-                            <p>password: demo123</p>
-                        </div>
-                    </div>
                 </motion.div>
             </div>
         </Layout>

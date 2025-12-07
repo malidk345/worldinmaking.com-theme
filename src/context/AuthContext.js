@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import CryptoJS from 'crypto-js'
 
 const AuthContext = createContext({
     user: null,
@@ -33,15 +34,25 @@ export const AuthProvider = ({ children }) => {
         setIsLoading(false)
     }, [])
 
+    // Hash password for storage
+    const hashPassword = (password) => {
+        return CryptoJS.SHA256(password).toString()
+    }
+
+    // Verify password against hash
+    const verifyPassword = (password, hash) => {
+        return hashPassword(password) === hash
+    }
+
     const login = (email, password) => {
         // Simple mock login - in production, this would hit an API
         return new Promise((resolve, reject) => {
             setTimeout(() => {
                 // Check stored users
                 const users = JSON.parse(localStorage.getItem('users') || '[]')
-                const foundUser = users.find(u => u.email === email && u.password === password)
+                const foundUser = users.find(u => u.email === email)
                 
-                if (foundUser) {
+                if (foundUser && verifyPassword(password, foundUser.password)) {
                     const userData = {
                         id: foundUser.id,
                         email: foundUser.email,
@@ -75,7 +86,7 @@ export const AuthProvider = ({ children }) => {
                     id: Date.now().toString(),
                     name,
                     email,
-                    password, // In production, hash this!
+                    password: hashPassword(password), // Hash the password
                     avatar: null,
                     createdAt: new Date().toISOString(),
                 }
