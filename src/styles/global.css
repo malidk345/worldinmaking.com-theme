@@ -2212,7 +2212,6 @@ html {
     height: 24px !important;
     flex-shrink: 0 !important;
   }
-}
 
   .popover-menu {
     bottom: max(1.5rem, env(safe-area-inset-bottom, 1.5rem));
