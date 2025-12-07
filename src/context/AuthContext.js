@@ -2,7 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react'
 
 const AuthContext = createContext({
     user: null,
-    isLoggedIn: false,
+    isAuthenticated: false,
+    isLoading: true,
     login: () => {},
     logout: () => {},
     register: () => {},
@@ -13,6 +14,7 @@ export const useAuth = () => useContext(AuthContext)
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null)
     const [isLoggedIn, setIsLoggedIn] = useState(false)
+    const [isLoading, setIsLoading] = useState(true)
 
     // Check for saved user on mount
     useEffect(() => {
@@ -28,6 +30,7 @@ export const AuthProvider = ({ children }) => {
                 }
             }
         }
+        setIsLoading(false)
     }, [])
 
     const login = (email, password) => {
@@ -102,7 +105,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     return (
-        <AuthContext.Provider value={{ user, isLoggedIn, login, logout, register }}>
+        <AuthContext.Provider value={{ user, isAuthenticated: isLoggedIn, isLoading, login, logout, register }}>
             {children}
         </AuthContext.Provider>
     )
