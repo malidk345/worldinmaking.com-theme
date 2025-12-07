@@ -45,13 +45,13 @@ export default function PostCard({ post, onClick, isActive }) {
       {/* Content - Always visible */}
       <div className="post-card-body">
         <p className="post-card-excerpt">{excerpt}</p>
-        
+
         {/* Author */}
         {author && (
           <div className="post-card-author">
             <span className="post-card-author-avatar">
               {author.avatar ? (
-                <img src={author.avatar} alt={author.name} />
+                <img src={author.avatar} alt={author.name} loading="lazy" decoding="async" />
               ) : (
                 (author.name?.[0] || 'A').toUpperCase()
               )}
@@ -64,7 +64,7 @@ export default function PostCard({ post, onClick, isActive }) {
       {/* Featured Image if available */}
       {post.featuredImage && (
         <div className="post-card-image">
-          <img src={post.featuredImage} alt={title} />
+          <img src={post.featuredImage} alt={title} loading="lazy" decoding="async" />
         </div>
       )}
     </motion.article>
@@ -131,7 +131,7 @@ function getCategoryIcon(category) {
       </svg>
     ),
   }
-  
+
   // Default icon - document/article icon instead of globe
   return icons[category] || (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">

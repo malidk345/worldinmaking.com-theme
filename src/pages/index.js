@@ -5,6 +5,8 @@ import PostHogWindow from '../components/PostHogWindow'
 import { posts } from '../data/postsUtils'
 
 export default function IndexPage() {
+  const ITEMS_PER_PAGE = 5
+  const [currentPage, setCurrentPage] = useState(1)
   const [localOpenWindows, setLocalOpenWindows] = useState([])
   const [topZIndex, setTopZIndex] = useState(100)
   const [focusedId, setFocusedId] = useState(null)
@@ -46,7 +48,7 @@ export default function IndexPage() {
 
   // Load saved windows from localStorage on mount - ONCE
   const [hasLoadedSavedWindows, setHasLoadedSavedWindows] = useState(false)
-  
+
   useEffect(() => {
     if (typeof window !== 'undefined' && isMounted && !hasLoadedSavedWindows) {
       setHasLoadedSavedWindows(true)
@@ -54,8 +56,7 @@ export default function IndexPage() {
       if (saved && localOpenWindows.length === 0) {
         try {
           const savedWindows = JSON.parse(saved)
-          console.log('Loading saved windows:', savedWindows)
-          
+
           // Restore windows from saved data
           const windowsToOpen = savedWindows
             .map(sw => {
@@ -72,7 +73,7 @@ export default function IndexPage() {
             const winH = Math.min(650, windowHeight - 80)
             const centerX = Math.max(20, (windowWidth - winW) / 2)
             const centerY = Math.max(60, (windowHeight - winH) / 2)
-            
+
             // Create all windows at once
             const newWindows = windowsToOpen.map((w, idx) => ({
               post: w.post,
@@ -80,7 +81,7 @@ export default function IndexPage() {
               position: { x: centerX + idx * 25, y: centerY + idx * 25 },
               isNew: false
             }))
-            
+
             setLocalOpenWindows(newWindows)
             setTopZIndex(100 + newWindows.length)
             if (newWindows.length > 0) {
@@ -100,22 +101,19 @@ export default function IndexPage() {
       id: w.post.id,
       title: w.post.title
     }))
-    
-    console.log('🟡 index.js sync - localOpenWindows count:', localOpenWindows.length, 'windowsForHeader:', windowsForHeader)
-    
+
     setOpenWindows(windowsForHeader)
     setActiveWindowId(focusedId)
-    
+
     // SAVE TO LOCALSTORAGE - every time windows change
     if (typeof window !== 'undefined' && localOpenWindows.length > 0) {
       localStorage.setItem('openWindows', JSON.stringify(windowsForHeader))
-      console.log('💾 Saved windows to localStorage:', windowsForHeader)
     }
-    
+
     // Also dispatch event for Layout to catch (backup sync method)
     if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('windowsUpdated', { 
-        detail: { windows: windowsForHeader, activeId: focusedId } 
+      window.dispatchEvent(new CustomEvent('windowsUpdated', {
+        detail: { windows: windowsForHeader, activeId: focusedId }
       }))
     }
   }, [localOpenWindows, focusedId, setOpenWindows, setActiveWindowId])
@@ -174,8 +172,6 @@ export default function IndexPage() {
       const { post } = e.detail
       if (!post) return
 
-      console.log('📂 Opening new post:', post.title)
-
       // Calculate centered position
       const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 1200
       const windowHeight = typeof window !== 'undefined' ? window.innerHeight : 800
@@ -188,15 +184,14 @@ export default function IndexPage() {
         // Check if already open
         const existingWindow = prev.find(w => w.post.id === post.id)
         if (existingWindow) {
-          console.log('⚠️ Post already open, bringing to front')
           // Return with updated zIndex for existing window
-          return prev.map(w => 
-            w.post.id === post.id 
+          return prev.map(w =>
+            w.post.id === post.id
               ? { ...w, zIndex: Math.max(...prev.map(x => x.zIndex)) + 1 }
               : w
           )
         }
-        
+
         const offset = prev.length * 25
         const maxZ = prev.length > 0 ? Math.max(...prev.map(x => x.zIndex)) : 100
         const newWindow = {
@@ -205,10 +200,9 @@ export default function IndexPage() {
           position: { x: centerX + offset, y: centerY + offset },
           isNew: true
         }
-        console.log('✅ Adding new window. Total will be:', prev.length + 1)
         return [...prev, newWindow]
       })
-      
+
       setTopZIndex(prev => prev + 1)
       setFocusedId(post.id)
       addToHistory({ postId: post.id, postTitle: post.title })
@@ -235,14 +229,10 @@ export default function IndexPage() {
   }, [localOpenWindows.length, setCurrentReading])
 
   const handlePostClick = (post) => {
-    console.log('🖱️ Post clicked:', post.title)
-    
     setLocalOpenWindows(prev => {
       // Check if window already open
       const existingWindow = prev.find(w => w.post.id === post.id)
       if (existingWindow) {
-        console.log('⚠️ Window already open, bringing to front')
-        // Can't call bringToFront here, but we'll handle focus separately
         return prev
       }
 
@@ -268,11 +258,10 @@ export default function IndexPage() {
         },
         isNew: true
       }
-      
-      console.log('✅ Opening new window. Total will be:', prev.length + 1)
+
       return [...prev, newWindow]
     })
-    
+
     // Always update these regardless
     setTopZIndex(prev => prev + 1)
     setFocusedId(post.id)
@@ -296,9 +285,9 @@ export default function IndexPage() {
       <section className="min-h-screen py-6 sm:py-10 md:py-14 lg:py-20">
         <div className="max-w-screen-3xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
           {/* Single Continuous Morphing Disclosure List */}
-          <div className="flex justify-center">
+          <div className="flex flex-col items-center justify-center gap-8">
             <MorphingDisclosure className="w-full max-w-2xl">
-              {posts.map((post) => (
+              {posts.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map((post) => (
                 <PostCard
                   key={post.id}
                   post={post}
@@ -306,6 +295,29 @@ export default function IndexPage() {
                 />
               ))}
             </MorphingDisclosure>
+
+            {/* Pagination Controls */}
+            {posts.length > ITEMS_PER_PAGE && (
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all touch-manipulation"
+                >
+                  Previous
+                </button>
+                <span className="text-sm font-medium opacity-60">
+                  Page {currentPage} / {Math.ceil(posts.length / ITEMS_PER_PAGE)}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(Math.ceil(posts.length / ITEMS_PER_PAGE), p + 1))}
+                  disabled={currentPage === Math.ceil(posts.length / ITEMS_PER_PAGE)}
+                  className="px-4 py-2 text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all touch-manipulation"
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -349,6 +361,7 @@ export const Head = () => (
   <>
     <title>World in Making - Blog</title>
     <meta name="description" content="Insights, tutorials, and updates from our team." />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
   </>
 )
 
