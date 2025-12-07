@@ -27,6 +27,7 @@
     "@tailwindcss/container-queries": "^0.1.1",
     "@tailwindcss/typography": "^0.5.10",
     "autoprefixer": "^10.4.16",
+    "gatsby-plugin-netlify": "^5.1.1",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.4.0"
   }
