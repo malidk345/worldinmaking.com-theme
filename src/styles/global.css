@@ -279,6 +279,7 @@ body {
     color: rgb(var(--text-primary));
     margin: 0;
     padding: 0;
+    padding-bottom: 80px; /* Space for bottom sticky nav */
     overflow-x: hidden;
     word-wrap: break-word;
     -webkit-font-smoothing: antialiased;
@@ -1854,72 +1855,75 @@ html {
 /* Floating Navigation Bar               */
 /* ===================================== */
 
-.floating-nav {
+.bottom-sticky-nav {
   --nav-bg: hsl(var(--bg-hsl) / 0.08);
   --nav-bg-fallback: rgba(0, 0, 0, 0.08);
   --nav-color: hsl(var(--text-hsl) / 0.92);
   --nav-color-fallback: rgba(255, 255, 255, 0.92);
 
   position: fixed;
-  bottom: 2.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 6px;
-  border-radius: 100px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 8px 16px;
   background: linear-gradient(var(--nav-bg, var(--nav-bg-fallback)), var(--nav-bg, var(--nav-bg-fallback))) padding-box,
     var(--glass-border) border-box;
   border: 1px solid transparent;
-  box-shadow: 0 4px 12px 0 hsl(0 0% 0% / 0.12);
+  border-bottom: none;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -2px 12px 0 hsl(0 0% 0% / 0.08);
   z-index: 9998;
-  transition: opacity 0.35s ease;
   color: var(--nav-color, var(--nav-color-fallback));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
-.floating-nav.popover-open-nav {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.floating-nav ul {
+.bottom-sticky-nav ul {
   display: flex;
-  gap: 4px;
+  justify-content: space-around;
+  align-items: center;
+  gap: 8px;
   padding: 0;
   margin: 0;
   list-style: none;
+  max-width: 400px;
+  margin: 0 auto;
 }
 
-.floating-nav li {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
+.bottom-sticky-nav li {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.floating-nav :where(a, button) {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
+.bottom-sticky-nav :where(a, button) {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   text-decoration: none;
   border: 0;
   cursor: pointer;
   font-weight: 500;
-  color: var(--nav-color);
+  color: var(--nav-color, var(--nav-color-fallback));
   background: transparent;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
+  position: relative;
 }
 
-.floating-nav :where(a, button):hover,
-.floating-nav :where(a, button):focus-visible,
-.floating-nav button.active {
-  background: hsl(var(--accent-hsl) / 0.2);
-  background: rgba(255, 255, 255, 0.2);
+.bottom-sticky-nav :where(a, button):hover,
+.bottom-sticky-nav :where(a, button):focus-visible,
+.bottom-sticky-nav button.active {
+  background: hsl(var(--accent-hsl) / 0.15);
+  background: rgba(255, 255, 255, 0.15);
+  transform: scale(1.05);
   outline: none;
 }
 
-.floating-nav :where(a, button):focus-visible {
+.bottom-sticky-nav :where(a, button):focus-visible {
   box-shadow: 0 0 0 2px hsl(var(--accent-hsl) / 0.5);
 }
 
@@ -1927,9 +1931,15 @@ html {
   box-shadow: 0 0 0 2px hsl(var(--accent-hsl) / 0.5);
 }
 
-.floating-nav svg {
+.bottom-sticky-nav svg {
   width: 20px;
   height: 20px;
+  transition: transform 0.2s ease;
+}
+
+.bottom-sticky-nav :where(a, button):hover svg,
+.bottom-sticky-nav button.active svg {
+  transform: scale(1.1);
 }
 
 /* ===================================== */
@@ -2183,29 +2193,32 @@ html {
   border-width: 0;
 }
 
-/* Mobile adjustments for floating nav */
+/* Mobile adjustments for bottom sticky nav */
 @media (max-width: 639px) {
-  .floating-nav {
-    bottom: 1rem;
-    padding: 4px;
+  body {
+    padding-bottom: 100px; /* More space for mobile nav */
   }
-  
-  .floating-nav ul {
-    gap: 2px;
+
+  .bottom-sticky-nav {
+    padding: 12px 16px;
   }
-  
-  .floating-nav li {
-    width: 44px;
-    height: 44px;
+
+  .bottom-sticky-nav ul {
+    gap: 4px;
   }
-  
-  .floating-nav svg {
-    width: 24px;
-    height: 24px;
+
+  .bottom-sticky-nav :where(a, button) {
+    width: 48px;
+    height: 48px;
   }
-  
+
+  .bottom-sticky-nav svg {
+    width: 22px;
+    height: 22px;
+  }
+
   .popover-menu {
-    bottom: 1.5rem;
+    bottom: 4rem;
     --menu-width: 100%;
     --menu-height: 70vh;
   }

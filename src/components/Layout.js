@@ -28,8 +28,8 @@ export const ReadingContext = createContext({
 
 export const useReading = () => useContext(ReadingContext)
 
-// Floating Nav Bar Component
-const FloatingNavBar = ({ onMenuClick, menuOpen, onSearchClick, onCreateClick }) => {
+// Bottom Sticky Nav Bar Component
+const BottomStickyNav = ({ onMenuClick, menuOpen, onSearchClick, onCreateClick }) => {
   const { user, isAuthenticated, logout } = useAuth()
   const [showUserMenu, setShowUserMenu] = useState(false)
 
@@ -59,7 +59,7 @@ const FloatingNavBar = ({ onMenuClick, menuOpen, onSearchClick, onCreateClick })
   }
 
   return (
-    <nav className="floating-nav">
+    <nav className="bottom-sticky-nav">
       <ul>
         <li>
           <a href="/" title="home">
@@ -750,8 +750,8 @@ export default function Layout({ children, posts = [] }) {
           {/* Window Manager */}
           <WindowManager />
 
-          {/* Floating Nav Bar */}
-          <FloatingNavBar
+          {/* Bottom Sticky Nav Bar */}
+          <BottomStickyNav
             onMenuClick={() => setMenuOpen(!menuOpen)}
             menuOpen={menuOpen}
             onSearchClick={() => setSearchOpen(true)}
