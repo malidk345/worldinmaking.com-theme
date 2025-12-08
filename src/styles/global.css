@@ -1855,25 +1855,27 @@ html {
 /* ===================================== */
 
 .floating-nav {
-  --nav-bg: color-mix(in hsl, canvasText 8%, canvas);
-  --nav-color: color-mix(in hsl, canvasText 92%, canvas);
-  
+  --nav-bg: hsl(var(--bg-hsl) / 0.08);
+  --nav-bg-fallback: rgba(0, 0, 0, 0.08);
+  --nav-color: hsl(var(--text-hsl) / 0.92);
+  --nav-color-fallback: rgba(255, 255, 255, 0.92);
+
   position: fixed;
   bottom: 2.5rem;
   left: 50%;
   transform: translateX(-50%);
   padding: 6px;
   border-radius: 100px;
-  background: linear-gradient(var(--nav-bg), var(--nav-bg)) padding-box,
+  background: linear-gradient(var(--nav-bg, var(--nav-bg-fallback)), var(--nav-bg, var(--nav-bg-fallback))) padding-box,
     var(--glass-border) border-box;
   border: 1px solid transparent;
   box-shadow: 0 4px 12px 0 hsl(0 0% 0% / 0.12);
   z-index: 9998;
   transition: opacity 0.35s ease;
-  color: var(--nav-color);
+  color: var(--nav-color, var(--nav-color-fallback));
 }
 
-body:has(.popover-open) .floating-nav {
+.floating-nav.popover-open-nav {
   opacity: 0;
   pointer-events: none;
 }
@@ -1912,8 +1914,17 @@ body:has(.popover-open) .floating-nav {
 .floating-nav :where(a, button):hover,
 .floating-nav :where(a, button):focus-visible,
 .floating-nav button.active {
-  background: color-mix(in hsl, canvasText, canvas 75%);
+  background: hsl(var(--accent-hsl) / 0.2);
+  background: rgba(255, 255, 255, 0.2);
   outline: none;
+}
+
+.floating-nav :where(a, button):focus-visible {
+  box-shadow: 0 0 0 2px hsl(var(--accent-hsl) / 0.5);
+}
+
+.floating-nav :where(a, button):focus-visible {
+  box-shadow: 0 0 0 2px hsl(var(--accent-hsl) / 0.5);
 }
 
 .floating-nav svg {
@@ -2184,13 +2195,13 @@ body:has(.popover-open) .floating-nav {
   }
   
   .floating-nav li {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
   }
   
   .floating-nav svg {
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
   }
   
   .popover-menu {
