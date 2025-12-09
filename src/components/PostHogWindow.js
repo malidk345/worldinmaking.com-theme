@@ -44,11 +44,11 @@ const OSButton = ({
     const baseClasses = 'relative items-center rounded border text-primary transition-colors disabled:text-muted disabled:cursor-not-allowed'
 
     const sizeClasses = {
-        xs: 'px-1 py-0.5 text-xs gap-0.5 rounded',
-        sm: 'px-1 py-0.5 text-[13px] gap-1 rounded',
-        md: 'px-1.5 py-1 gap-1 rounded text-sm',
-        lg: 'px-2 py-1.5 text-[15px] gap-1 rounded-[6px]',
-        xl: 'px-2.5 py-2 text-base gap-1.5 rounded-[6px]',
+        xs: 'px-0.5 py-0.5 text-xs gap-0.5 rounded',
+        sm: 'px-0.5 py-0.5 text-[13px] gap-0.5 rounded',
+        md: 'px-1 py-0.5 gap-0.5 rounded text-sm',
+        lg: 'px-1.5 py-1 text-[15px] gap-1 rounded-[6px]',
+        xl: 'px-2 py-1.5 text-base gap-1 rounded-[6px]',
     }
 
     const iconSizeClasses = {
@@ -61,10 +61,10 @@ const OSButton = ({
 
     const variantClasses = {
         default: `bg-transparent border-transparent ${active
-                ? 'font-bold bg-accent/50 hover:border-border'
-                : hover === 'border'
-                    ? 'hover:border-border border-transparent'
-                    : 'hover:bg-accent border-transparent'
+            ? 'font-bold bg-accent/50 hover:border-border'
+            : hover === 'border'
+                ? 'hover:border-border border-transparent'
+                : 'hover:bg-accent border-transparent'
             } ${hover === 'border'
                 ? 'active:bg-accent/50'
                 : 'active:bg-accent'
@@ -611,7 +611,7 @@ function PostHogWindow({
                 top: isMobile ? 40 : (effectiveMaximized ? 0 : pos.y),
                 left: isMobile ? 0 : (effectiveMaximized ? 0 : pos.x),
                 width: isMobile ? '100vw' : (effectiveMaximized ? '100vw' : size.width),
-                height: isMobile ? 'calc(100vh - 40px)' : (effectiveMaximized ? '100vh' : size.height),
+                height: isMobile ? 'calc(100vh - 40px)' : (effectiveMaximized ? '100vh' : size.height), // Only 40px header - floating nav overlays
                 zIndex: zIndex || 100,
             }}
             onClick={() => onFocus?.()}
@@ -621,7 +621,7 @@ function PostHogWindow({
             {/* ════════════════════════════════════════════════════════════════════════════ */}
             <div
                 data-scheme="tertiary"
-                className="flex-shrink-0 w-full flex md:grid grid-cols-[minmax(100px,auto)_1fr_minmax(100px,auto)] gap-0.5 sm:gap-1 items-center py-0.5 pl-1 sm:pl-1.5 pr-0.5 bg-primary/50 backdrop-blur-3xl border-b border-primary"
+                className="flex-shrink-0 w-full flex md:grid grid-cols-[minmax(80px,auto)_1fr_minmax(80px,auto)] gap-0 items-center py-0 pl-0.5 pr-0 sm:py-0.5 sm:pl-1.5 sm:pr-0.5 sm:gap-1 bg-primary/50 backdrop-blur-3xl border-b border-primary"
                 style={{ cursor: effectiveMaximized ? 'default' : 'move' }}
                 onMouseDown={!isMobile ? handleDragStart : undefined}
                 onDoubleClick={!isMobile ? toggleMaximize : undefined}
@@ -629,9 +629,9 @@ function PostHogWindow({
                 {/* Left section - File menu */}
                 <div className="flex items-center gap-px">
                     {/* File Menu Button */}
-                    <button className="group flex items-center gap-0.5 px-1 sm:px-1.5 py-1 rounded text-primary hover:bg-accent transition-colors">
-                        <Icons.Document className="size-4 sm:size-5" />
-                        <Icons.ChevronDown className="size-3.5 sm:size-4 -mx-0.5 text-muted group-hover:text-primary" />
+                    <button className="group flex items-center gap-0 px-0.5 py-0.5 sm:px-1.5 sm:py-1 sm:gap-0.5 rounded text-primary hover:bg-accent transition-colors">
+                        <Icons.Document className="size-3.5 sm:size-5" />
+                        <Icons.ChevronDown className="size-3 sm:size-4 -mx-0.5 text-muted group-hover:text-primary" />
                     </button>
                 </div>
 
@@ -643,9 +643,9 @@ function PostHogWindow({
                                 contentRef.current.scrollTo({ top: 0, behavior: 'smooth' })
                             }
                         }}
-                        className="flex items-center gap-0.5 sm:gap-1 text-xs sm:text-sm font-semibold text-primary hover:text-primary select-none max-w-full"
+                        className="flex items-center gap-0 sm:gap-1 text-[11px] sm:text-sm font-semibold text-primary hover:text-primary select-none max-w-full"
                     >
-                        <span className="truncate max-w-[150px] xs:max-w-[200px] sm:max-w-[300px] md:max-w-none">{post.title}</span>
+                        <span className="truncate max-w-[140px] xs:max-w-[180px] sm:max-w-[300px] md:max-w-none">{post.title}</span>
                     </button>
                 </div>
 
@@ -679,7 +679,7 @@ function PostHogWindow({
             {/* ════════════════════════════════════════════════════════════════════════════ */}
             {/* HEADER BAR - PostHog exact HeaderBar pattern with nav toggles - Responsive    */}
             {/* ════════════════════════════════════════════════════════════════════════════ */}
-            <div data-scheme="secondary" className="bg-primary flex w-full gap-px p-1.5 sm:p-2 flex-shrink-0 items-center">
+            <div data-scheme="secondary" className="bg-primary flex w-full gap-0 p-1 sm:p-2 sm:gap-px flex-shrink-0 items-center">
                 {/* Left section - Sidebar toggle and navigation */}
                 <div className={`flex-shrink-0 flex items-center gap-px transition-all min-w-0 ${isNavVisible && !isMobile ? 'md:min-w-[250px]' : 'w-auto'}`}>
                     {/* Home button */}
@@ -890,7 +890,7 @@ function PostHogWindow({
                                             className="size-8 sm:size-9 rounded-full object-cover"
                                         />
                                     ) : (
-                                        <div className="size-8 sm:size-9 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center text-white font-bold text-sm sm:text-base uppercase">
+                                        <div className="size-8 sm:size-9 rounded-full bg-black flex items-center justify-center text-white font-bold text-sm sm:text-base uppercase shadow-md">
                                             {(typeof post.author === 'string' ? post.author : post.author?.name)?.[0]?.toUpperCase() || 'A'}
                                         </div>
                                     )}
@@ -944,6 +944,191 @@ function PostHogWindow({
                                         </span>
                                     ))}
                                 </div>
+                            </div>
+
+                            {/* ═══════════════════════════════════════════════════════════ */}
+                            {/* INLINE COMMENTS SECTION - Inside article content            */}
+                            {/* ═══════════════════════════════════════════════════════════ */}
+                            <div className="mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-primary mx-auto max-w-2xl transition-all">
+                                {/* Comments Header */}
+                                <div className="flex items-center gap-2 mb-4">
+                                    <Icons.Comment className="size-4 text-muted" />
+                                    <span className="text-[13px] font-semibold text-primary lowercase">
+                                        {comments.reduce((acc, c) => acc + 1 + (c.replies?.length || 0), 0)} comments
+                                    </span>
+                                </div>
+
+                                {/* Comment Input */}
+                                <div className="mb-6">
+                                    <div className="flex gap-3">
+                                        <div className="flex-shrink-0 size-8 rounded-full bg-[rgb(var(--text-primary))] flex items-center justify-center">
+                                            {userName ? (
+                                                <span className="text-[12px] font-semibold text-[rgb(var(--bg))]">
+                                                    {userName[0].toUpperCase()}
+                                                </span>
+                                            ) : (
+                                                <Icons.User className="size-4 text-[rgb(var(--bg))]" />
+                                            )}
+                                        </div>
+                                        <div className="flex-grow">
+                                            <textarea
+                                                value={newComment}
+                                                onChange={(e) => setNewComment(e.target.value)}
+                                                placeholder={userName ? `comment as ${userName}...` : "write a comment..."}
+                                                className="w-full px-3 py-2 text-[13px] bg-accent border border-primary rounded-lg text-primary placeholder-muted resize-none focus:outline-none focus:ring-1 focus:ring-border"
+                                                rows={2}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                                        e.preventDefault()
+                                                        handleAddComment()
+                                                    }
+                                                }}
+                                            />
+                                            <div className="flex justify-end mt-2">
+                                                <button
+                                                    onClick={handleAddComment}
+                                                    disabled={!newComment.trim()}
+                                                    className="px-3 py-1.5 text-[12px] font-semibold rounded-md bg-[rgb(var(--text-primary))] text-[rgb(var(--bg))] hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-1.5"
+                                                >
+                                                    <Icons.Send className="size-3" />
+                                                    send
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Comments List */}
+                                <div className="space-y-4">
+                                    {comments.length === 0 ? (
+                                        <div className="text-center py-6 text-muted text-[13px]">
+                                            no comments yet. be the first to comment!
+                                        </div>
+                                    ) : (
+                                        comments.map(comment => (
+                                            <div key={comment.id} className="group">
+                                                <div className="flex gap-3">
+                                                    <div className="flex-shrink-0 size-8 rounded-full bg-[rgb(var(--text-muted))] flex items-center justify-center text-[rgb(var(--bg))] text-[11px] font-semibold">
+                                                        {comment.author[0].toUpperCase()}
+                                                    </div>
+                                                    <div className="flex-grow min-w-0">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <span className="text-[13px] font-semibold text-primary">{comment.author}</span>
+                                                            <span className="text-[11px] text-muted">{formatTimeAgo(comment.timestamp)}</span>
+                                                        </div>
+                                                        <p className="text-[13px] text-secondary leading-relaxed mb-2">{comment.text}</p>
+                                                        <div className="flex items-center gap-3">
+                                                            <button
+                                                                onClick={() => handleLike(comment.id)}
+                                                                className="flex items-center gap-1 text-[11px] text-muted hover:text-primary transition-colors"
+                                                            >
+                                                                <Icons.Heart className={`size-3 ${comment.likes > 0 ? 'text-red-500' : ''}`} />
+                                                                {comment.likes > 0 && comment.likes}
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                                                                className="text-[11px] text-muted hover:text-primary transition-colors"
+                                                            >
+                                                                reply
+                                                            </button>
+                                                        </div>
+
+                                                        {/* Reply Input */}
+                                                        {replyingTo === comment.id && (
+                                                            <div className="mt-3 flex gap-2">
+                                                                <input
+                                                                    type="text"
+                                                                    value={replyText}
+                                                                    onChange={(e) => setReplyText(e.target.value)}
+                                                                    placeholder="write a reply..."
+                                                                    className="flex-grow px-3 py-1.5 text-[12px] bg-accent border border-primary rounded-lg text-primary placeholder-muted focus:outline-none"
+                                                                    onKeyDown={(e) => {
+                                                                        if (e.key === 'Enter') {
+                                                                            handleAddReply(comment.id)
+                                                                        } else if (e.key === 'Escape') {
+                                                                            setReplyingTo(null)
+                                                                            setReplyText('')
+                                                                        }
+                                                                    }}
+                                                                />
+                                                                <button
+                                                                    onClick={() => handleAddReply(comment.id)}
+                                                                    disabled={!replyText.trim()}
+                                                                    className="px-2 py-1 text-[11px] font-medium rounded bg-[rgb(var(--text-primary))] text-[rgb(var(--bg))] disabled:opacity-40"
+                                                                >
+                                                                    reply
+                                                                </button>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Replies */}
+                                                        {comment.replies?.length > 0 && (
+                                                            <div className="mt-3 ml-4 border-l-2 border-primary pl-4 space-y-3">
+                                                                {comment.replies.map(reply => (
+                                                                    <div key={reply.id} className="flex gap-2">
+                                                                        <div className="flex-shrink-0 size-6 rounded-full bg-[rgb(var(--text-muted))] flex items-center justify-center text-[rgb(var(--bg))] text-[9px] font-semibold">
+                                                                            {reply.author[0].toUpperCase()}
+                                                                        </div>
+                                                                        <div>
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className="text-[12px] font-semibold text-primary">{reply.author}</span>
+                                                                                <span className="text-[10px] text-muted">{formatTimeAgo(reply.timestamp)}</span>
+                                                                            </div>
+                                                                            <p className="text-[12px] text-secondary">{reply.text}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+
+                                {/* Name Prompt Modal */}
+                                {showNamePrompt && (
+                                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                                        <div className="bg-bg border border-primary rounded-xl p-4 w-[300px] shadow-xl">
+                                            <h3 className="text-[14px] font-semibold text-primary mb-3">enter your name</h3>
+                                            <input
+                                                type="text"
+                                                placeholder="your name..."
+                                                className="w-full px-3 py-2 text-[13px] bg-accent border border-primary rounded-lg text-primary placeholder-muted focus:outline-none focus:ring-1 focus:ring-border mb-3"
+                                                autoFocus
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        handleNameSubmit(e.target.value)
+                                                    } else if (e.key === 'Escape') {
+                                                        setShowNamePrompt(false)
+                                                        setPendingComment(null)
+                                                    }
+                                                }}
+                                            />
+                                            <div className="flex justify-end gap-2">
+                                                <button
+                                                    onClick={() => {
+                                                        setShowNamePrompt(false)
+                                                        setPendingComment(null)
+                                                    }}
+                                                    className="px-3 py-1.5 text-[12px] font-medium rounded-md text-muted hover:bg-accent transition-colors"
+                                                >
+                                                    cancel
+                                                </button>
+                                                <button
+                                                    onClick={(e) => {
+                                                        const input = e.target.closest('.bg-bg').querySelector('input')
+                                                        handleNameSubmit(input.value)
+                                                    }}
+                                                    className="px-3 py-1.5 text-[12px] font-semibold rounded-md bg-[rgb(var(--text-primary))] text-[rgb(var(--bg))] hover:opacity-90 transition-all"
+                                                >
+                                                    submit
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </article>
@@ -1009,272 +1194,7 @@ function PostHogWindow({
                 </AnimatePresence>
             </div>
 
-            {/* ════════════════════════════════════════════════════════════════════════════ */}
-            {/* COMMENT PANEL - Slides up from bottom                                        */}
-            {/* ════════════════════════════════════════════════════════════════════════════ */}
-            <AnimatePresence>
-                {isCommentPanelOpen && (
-                    <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: isMobile ? '70vh' : '50vh', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                        className="flex-shrink-0 border-t border-primary bg-bg overflow-hidden"
-                    >
-                        <div className="h-full flex flex-col">
-                            {/* Name Prompt Modal */}
-                            {showNamePrompt && (
-                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
-                                    <div className="bg-bg border border-primary rounded-xl p-4 w-[300px] shadow-xl">
-                                        <h3 className="text-[14px] font-semibold text-primary mb-3">enter your name</h3>
-                                        <input
-                                            type="text"
-                                            placeholder="your name..."
-                                            className="w-full px-3 py-2 text-[13px] bg-accent border border-primary rounded-lg text-primary placeholder-muted focus:outline-none focus:ring-1 focus:ring-border mb-3"
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') {
-                                                    handleNameSubmit(e.target.value)
-                                                } else if (e.key === 'Escape') {
-                                                    setShowNamePrompt(false)
-                                                    setPendingComment(null)
-                                                }
-                                            }}
-                                        />
-                                        <div className="flex justify-end gap-2">
-                                            <button
-                                                onClick={() => {
-                                                    setShowNamePrompt(false)
-                                                    setPendingComment(null)
-                                                }}
-                                                className="px-3 py-1.5 text-[12px] font-medium rounded-md text-muted hover:bg-accent transition-colors"
-                                            >
-                                                cancel
-                                            </button>
-                                            <button
-                                                onClick={(e) => {
-                                                    const input = e.target.closest('.bg-bg').querySelector('input')
-                                                    handleNameSubmit(input.value)
-                                                }}
-                                                className="px-3 py-1.5 text-[12px] font-semibold rounded-md bg-[rgb(var(--text-primary))] text-[rgb(var(--bg))] hover:opacity-90 transition-all"
-                                            >
-                                                submit
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Comment Panel Header */}
-                            <div className="flex items-center justify-between px-4 py-3 border-b border-primary">
-                                <div className="flex items-center gap-2">
-                                    <Icons.Comment className="size-4 text-muted" />
-                                    <span className="text-[13px] font-semibold text-primary lowercase">
-                                        {totalComments} {totalComments === 1 ? 'comment' : 'comments'} · add comment
-                                    </span>
-                                    {userName && (
-                                        <span className="text-[11px] text-muted ml-2 lowercase">
-                                            commenting as <span className="font-medium text-secondary">{userName}</span>
-                                        </span>
-                                    )}
-                                </div>
-                                <button
-                                    onClick={() => setIsCommentPanelOpen(false)}
-                                    className="p-1.5 rounded-md hover:bg-accent transition-colors"
-                                >
-                                    <Icons.X className="size-4 text-muted" />
-                                </button>
-                            </div>
-
-                            {/* Comment Input */}
-                            <div className="px-4 py-3 border-b border-primary">
-                                <div className="flex gap-3">
-                                    <div className="flex-shrink-0 size-8 rounded-full bg-[rgb(var(--text-primary))] flex items-center justify-center">
-                                        {userName ? (
-                                            <span className="text-[12px] font-semibold text-[rgb(var(--bg))]">
-                                                {userName[0].toUpperCase()}
-                                            </span>
-                                        ) : (
-                                            <Icons.User className="size-4 text-[rgb(var(--bg))]" />
-                                        )}
-                                    </div>
-                                    <div className="flex-grow">
-                                        <textarea
-                                            value={newComment}
-                                            onChange={(e) => setNewComment(e.target.value)}
-                                            placeholder={userName ? `comment as ${userName}...` : "write a comment..."}
-                                            className="w-full px-3 py-2 text-[13px] bg-accent border border-primary rounded-lg text-primary placeholder-muted resize-none focus:outline-none focus:ring-1 focus:ring-border"
-                                            rows={2}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter' && !e.shiftKey) {
-                                                    e.preventDefault()
-                                                    handleAddComment()
-                                                }
-                                            }}
-                                        />
-                                        <div className="flex justify-end mt-2">
-                                            <button
-                                                onClick={handleAddComment}
-                                                disabled={!newComment.trim()}
-                                                className="px-3 py-1.5 text-[12px] font-semibold rounded-md bg-[rgb(var(--text-primary))] text-[rgb(var(--bg))] hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-1.5"
-                                            >
-                                                <Icons.Send className="size-3" />
-                                                send
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Comments List */}
-                            <ScrollArea className="flex-grow px-4 py-3">
-                                <div className="space-y-4">
-                                    {comments.length === 0 ? (
-                                        <div className="text-center py-8 text-muted text-[13px]">
-                                            no comments yet. be the first to comment!
-                                        </div>
-                                    ) : (
-                                        comments.map(comment => (
-                                            <div key={comment.id} className="group">
-                                                {/* Main Comment */}
-                                                <div className="flex gap-3">
-                                                    <div className="flex-shrink-0 size-8 rounded-full bg-[rgb(var(--text-muted))] flex items-center justify-center text-[rgb(var(--bg))] text-[11px] font-semibold">
-                                                        {comment.author[0].toUpperCase()}
-                                                    </div>
-                                                    <div className="flex-grow min-w-0">
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <span className="text-[13px] font-semibold text-primary">{comment.author}</span>
-                                                            <span className="text-[11px] text-muted">{formatTimeAgo(comment.timestamp)}</span>
-                                                            {comment.author === userName && (
-                                                                <button
-                                                                    onClick={() => handleDeleteComment(comment.id)}
-                                                                    className="text-[10px] text-muted hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                                                                >
-                                                                    delete
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                        <p className="text-[13px] text-secondary leading-relaxed">{comment.content}</p>
-                                                        <div className="flex items-center gap-3 mt-2">
-                                                            <button
-                                                                onClick={() => handleLike(comment.id)}
-                                                                className={`flex items-center gap-1 text-[11px] transition-colors ${comment.liked ? 'text-[rgb(var(--text-primary))]' : 'text-muted hover:text-secondary'}`}
-                                                            >
-                                                                {comment.liked ? <Icons.HeartFilled className="size-3" /> : <Icons.Heart className="size-3" />}
-                                                                {comment.likes > 0 && comment.likes}
-                                                            </button>
-                                                            <button
-                                                                onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-                                                                className="flex items-center gap-1 text-[11px] text-muted hover:text-secondary transition-colors"
-                                                            >
-                                                                <Icons.Reply className="size-3" />
-                                                                reply
-                                                            </button>
-                                                        </div>
-
-                                                        {/* Reply Input */}
-                                                        {replyingTo === comment.id && (
-                                                            <div className="mt-3 flex gap-2">
-                                                                <input
-                                                                    type="text"
-                                                                    value={replyText}
-                                                                    onChange={(e) => setReplyText(e.target.value)}
-                                                                    placeholder="write a reply..."
-                                                                    className="flex-grow px-3 py-1.5 text-[12px] bg-accent border border-primary rounded-md text-primary placeholder-muted focus:outline-none focus:ring-1 focus:ring-border"
-                                                                    onKeyDown={(e) => {
-                                                                        if (e.key === 'Enter') {
-                                                                            handleAddReply(comment.id)
-                                                                        }
-                                                                    }}
-                                                                />
-                                                                <button
-                                                                    onClick={() => handleAddReply(comment.id)}
-                                                                    disabled={!replyText.trim()}
-                                                                    className="px-2 py-1.5 text-[11px] font-semibold rounded-md bg-[rgb(var(--text-primary))] text-[rgb(var(--bg))] hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                                                                >
-                                                                    reply
-                                                                </button>
-                                                            </div>
-                                                        )}
-
-                                                        {/* Replies */}
-                                                        {comment.replies?.length > 0 && (
-                                                            <div className="mt-3 pl-4 border-l-2 border-primary space-y-3">
-                                                                {comment.replies.map(reply => (
-                                                                    <div key={reply.id} className="flex gap-2 group/reply">
-                                                                        <div className="flex-shrink-0 size-6 rounded-full bg-[rgb(var(--border))] flex items-center justify-center text-[rgb(var(--text-primary))] text-[10px] font-semibold">
-                                                                            {reply.author[0].toUpperCase()}
-                                                                        </div>
-                                                                        <div className="flex-grow min-w-0">
-                                                                            <div className="flex items-center gap-2 mb-0.5">
-                                                                                <span className="text-[12px] font-semibold text-primary">{reply.author}</span>
-                                                                                <span className="text-[10px] text-muted">{formatTimeAgo(reply.timestamp)}</span>
-                                                                                {reply.author === userName && (
-                                                                                    <button
-                                                                                        onClick={() => handleDeleteComment(reply.id, true, comment.id)}
-                                                                                        className="text-[10px] text-muted hover:text-red-500 transition-colors opacity-0 group-hover/reply:opacity-100"
-                                                                                    >
-                                                                                        delete
-                                                                                    </button>
-                                                                                )}
-                                                                            </div>
-                                                                            <p className="text-[12px] text-secondary leading-relaxed">{reply.content}</p>
-                                                                            <button
-                                                                                onClick={() => handleLike(reply.id, true, comment.id)}
-                                                                                className={`flex items-center gap-1 mt-1 text-[10px] transition-colors ${reply.liked ? 'text-[rgb(var(--text-primary))]' : 'text-muted hover:text-secondary'}`}
-                                                                            >
-                                                                                {reply.liked ? <Icons.HeartFilled className="size-2.5" /> : <Icons.Heart className="size-2.5" />}
-                                                                                {reply.likes > 0 && reply.likes}
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
-                            </ScrollArea>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* ════════════════════════════════════════════════════════════════════════════ */}
-            {/* FOOTER BAR - PostHog style with comment button                               */}
-            {/* ════════════════════════════════════════════════════════════════════════════ */}
-            <div
-                data-scheme="secondary"
-                className={`flex items-center gap-px p-2 flex-shrink-0 bg-primary border-t border-primary rounded-b ${isMobile ? 'pb-safe' : ''}`}
-            >
-                {!isMobile && (
-                    <motion.div
-                        className="flex-shrink-0"
-                        animate={{ minWidth: isNavVisible ? 250 : 0 }}
-                        transition={{ duration: 0.2 }}
-                    />
-                )}
-
-                <div className="flex-grow flex justify-end items-center">
-                    <button
-                        onClick={() => setIsCommentPanelOpen(!isCommentPanelOpen)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded-md transition-colors lowercase ${isCommentPanelOpen ? 'bg-accent text-primary' : 'text-primary hover:bg-accent'}`}
-                    >
-                        <Icons.Comment className="size-4" />
-                        <span>{totalComments} {totalComments === 1 ? 'comment' : 'comments'} · add comment</span>
-                    </button>
-                </div>
-
-                {!isMobile && (
-                    <motion.div
-                        className="flex-shrink-0"
-                        animate={{ minWidth: isTocVisible && parsedSections.length ? 250 : 'auto' }}
-                        transition={{ duration: 0.2 }}
-                    />
-                )}
-            </div>
+            {/* Comments are now inline in article - removed old panel */}
 
             {/* ════════════════════════════════════════════════════════════════════════════ */}
             {/* RESIZE HANDLES - Hidden on mobile                                            */}
