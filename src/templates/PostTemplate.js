@@ -23,7 +23,7 @@ export default function PostTemplate({ pageContext }) {
                     <header className="mb-8">
                         <h1 className="text-4xl font-bold mb-4">{post.title}</h1>
                         <div className="text-gray-400 mb-4">
-                            <span>By {post.author}</span>
+                            <span>By {typeof post.author === 'string' ? post.author : post.author?.name || 'Anonymous'}</span>
                             <span className="mx-2">•</span>
                             <span>{new Date(post.postDate).toLocaleDateString()}</span>
                         </div>
