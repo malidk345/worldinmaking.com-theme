@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { Link, navigate } from 'gatsby'
 import Layout from '../components/Layout'
 import PostCard, { MorphingDisclosure } from '../components/PostCard'
 import PostHogWindow from '../components/PostHogWindow'
@@ -58,7 +59,7 @@ export default function CategoryTemplate({ pageContext }) {
     }
 
     const handlePostClick = (post) => {
-        openWindow(post)
+        navigate(`/post/${post.slug}`)
     }
 
     const handleReadingChange = (readingInfo) => {
