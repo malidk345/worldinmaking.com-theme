@@ -26,11 +26,11 @@ const SearchModal = ({ isOpen, onClose, posts = [], onSelectPost }) => {
             const content = (post.content || '').toLowerCase()
             const category = (post.category || post.categories?.[0]?.name || '').toLowerCase()
             const author = (typeof post.author === 'string' ? post.author : post.author?.name || '').toLowerCase()
-            
+
             return title.includes(searchTerm) ||
-                   content.includes(searchTerm) ||
-                   category.includes(searchTerm) ||
-                   author.includes(searchTerm)
+                content.includes(searchTerm) ||
+                category.includes(searchTerm) ||
+                author.includes(searchTerm)
         })
 
         setResults(filtered.slice(0, 10)) // Limit to 10 results
@@ -70,8 +70,8 @@ const SearchModal = ({ isOpen, onClose, posts = [], onSelectPost }) => {
     const highlightMatch = (text, query) => {
         if (!query.trim() || !text) return text
         const parts = text.split(new RegExp(`(${query})`, 'gi'))
-        return parts.map((part, i) => 
-            part.toLowerCase() === query.toLowerCase() 
+        return parts.map((part, i) =>
+            part.toLowerCase() === query.toLowerCase()
                 ? <mark key={i} className="bg-yellow-200 dark:bg-yellow-800 text-inherit rounded px-0.5">{part}</mark>
                 : part
         )
@@ -89,7 +89,7 @@ const SearchModal = ({ isOpen, onClose, posts = [], onSelectPost }) => {
                         className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999]"
                         onClick={onClose}
                     />
-                    
+
                     {/* Modal */}
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95, y: -20 }}
@@ -101,7 +101,7 @@ const SearchModal = ({ isOpen, onClose, posts = [], onSelectPost }) => {
                         {/* Search Input */}
                         <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 border-b border-[rgb(var(--border))]">
                             <svg className="w-4 h-4 sm:w-5 sm:h-5 text-[rgb(var(--text-muted))] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
                             </svg>
                             <input
                                 ref={inputRef}
@@ -114,13 +114,13 @@ const SearchModal = ({ isOpen, onClose, posts = [], onSelectPost }) => {
                             <kbd className="hidden sm:inline-flex px-2 py-1 text-[11px] font-medium text-[rgb(var(--text-muted))] bg-[rgb(var(--accent))] rounded border border-[rgb(var(--border))]">
                                 esc
                             </kbd>
-                            <button 
+                            <button
                                 onClick={onClose}
                                 className="sm:hidden p-1.5 rounded-md hover:bg-[rgb(var(--accent))] text-[rgb(var(--text-muted))]"
                                 aria-label="Close search"
                             >
                                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M18 6L6 18M6 6l12 12"/>
+                                    <path d="M18 6L6 18M6 6l12 12" />
                                 </svg>
                             </button>
                         </div>
@@ -149,12 +149,12 @@ const SearchModal = ({ isOpen, onClose, posts = [], onSelectPost }) => {
                                                         <img src={post.featuredImage || post.image} alt="" className="w-full h-full object-cover" />
                                                     ) : (
                                                         <svg className="w-4 h-4 sm:w-5 sm:h-5 text-[rgb(var(--text-muted))]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                                            <polyline points="14 2 14 8 20 8"/>
+                                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                                            <polyline points="14 2 14 8 20 8" />
                                                         </svg>
                                                     )}
                                                 </div>
-                                                
+
                                                 {/* Content */}
                                                 <div className="flex-grow min-w-0">
                                                     <h4 className="text-[13px] sm:text-[14px] font-medium text-[rgb(var(--text-primary))] truncate lowercase">
@@ -167,7 +167,7 @@ const SearchModal = ({ isOpen, onClose, posts = [], onSelectPost }) => {
 
                                                 {/* Arrow */}
                                                 <svg className="flex-shrink-0 w-3.5 h-3.5 sm:w-4 sm:h-4 text-[rgb(var(--text-muted))] hidden xs:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                    <polyline points="9 18 15 12 9 6"/>
+                                                    <polyline points="9 18 15 12 9 6" />
                                                 </svg>
                                             </button>
                                         </li>

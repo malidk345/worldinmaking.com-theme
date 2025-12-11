@@ -5,12 +5,18 @@ import PostHogWindow from '../components/PostHogWindow'
 import { posts } from '../data/postsUtils'
 import { useWindows } from '../components/Layout'
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// INDEX PAGE - Main homepage with post listing and window management
-// Now uses WindowContext for all state management (no DOM events)
-// ═══════════════════════════════════════════════════════════════════════════════
+export default function CategoryTemplate({ pageContext }) {
+    const { category } = pageContext
 
-function IndexContent() {
+    // Filter posts for this category
+    // postsUtils.js normalizes categories to lowercase? No, it takes raw name.
+    // But Layout.js filtering used lowercase.
+    // Let's ensure we match correctly.
+    const categoryPosts = posts.filter(post => {
+        const postCat = post.category?.toLowerCase() || ''
+        return postCat === category
+    })
+
     const {
         openWindows,
         focusedId,
@@ -26,14 +32,13 @@ function IndexContent() {
 
     // Responsive pagination state
     const [isDesktop, setIsDesktop] = useState(false)
-    const [visibleCount, setVisibleCount] = useState(10) // Start with 10 for mobile
+    const [visibleCount, setVisibleCount] = useState(10)
 
     // Check screen size
     useEffect(() => {
         const checkScreenSize = () => {
             const desktop = window.innerWidth >= 768
             setIsDesktop(desktop)
-            // Reset visible count based on screen size
             if (desktop) {
                 setVisibleCount(prev => prev < 15 ? 15 : prev)
             }
@@ -44,38 +49,47 @@ function IndexContent() {
         return () => window.removeEventListener('resize', checkScreenSize)
     }, [])
 
-    // Calculate increment based on screen size
     const increment = isDesktop ? 15 : 10
-    const initialCount = isDesktop ? 15 : 10
+    const visiblePosts = categoryPosts.slice(0, visibleCount)
+    const hasMore = visibleCount < categoryPosts.length
 
-    // Visible posts
-    const visiblePosts = posts.slice(0, visibleCount)
-    const hasMore = visibleCount < posts.length
-
-    // Load more handler
     const handleLoadMore = () => {
-        setVisibleCount(prev => Math.min(prev + increment, posts.length))
+        setVisibleCount(prev => Math.min(prev + increment, categoryPosts.length))
     }
 
-    // Handle post card click
     const handlePostClick = (post) => {
         openWindow(post)
     }
 
-    // Handle reading change from window
     const handleReadingChange = (readingInfo) => {
         if (readingInfo.postId === focusedId) {
             updateReading(readingInfo)
         }
     }
 
+    // Capitalize category for display
+    const displayCategory = category.charAt(0).toUpperCase() + category.slice(1)
+
     return (
-        <>
-            {/* Posts Section - Morphing Disclosure Style */}
+        <Layout posts={posts}>
             <section className="min-h-screen py-6 sm:py-10 md:py-14 lg:py-20">
                 <div className="max-w-screen-3xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
-                    {/* Desktop: 3 columns grid */}
-                    {isDesktop ? (
+
+                    {/* Category Header */}
+                    <div className="mb-8 md:mb-12 text-center">
+                        <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-4 lowercase text-[#1e3a8a]">
+                            {displayCategory}
+                        </h1>
+                        <p className="text-gray-500 lowercase">
+                            {categoryPosts.length} posts
+                        </p>
+                    </div>
+
+                    {categoryPosts.length === 0 ? (
+                        <div className="text-center py-20 text-gray-500">
+                            no posts found in this category.
+                        </div>
+                    ) : isDesktop ? (
                         <div className="grid grid-cols-3 gap-4 lg:gap-6">
                             {visiblePosts.map((post) => (
                                 <PostCard
@@ -86,7 +100,6 @@ function IndexContent() {
                             ))}
                         </div>
                     ) : (
-                        /* Mobile: Single Continuous Morphing Disclosure List */
                         <div className="flex justify-center">
                             <MorphingDisclosure className="w-full max-w-2xl">
                                 {visiblePosts.map((post) => (
@@ -100,7 +113,6 @@ function IndexContent() {
                         </div>
                     )}
 
-                    {/* Load More Button */}
                     {hasMore && (
                         <div className="flex justify-center mt-8">
                             <button
@@ -114,7 +126,6 @@ function IndexContent() {
                 </div>
             </section>
 
-            {/* Windows */}
             {isMounted && openWindows.length > 0 && (
                 <>
                     {openWindows.map((w) => (
@@ -131,28 +142,12 @@ function IndexContent() {
                             allPosts={posts}
                             onSearchClick={openSearch}
                             onPostClick={(newPost) => {
-                                // Switch post in same window
                                 switchPostInWindow(w.post.id, newPost)
                             }}
                         />
                     ))}
                 </>
             )}
-        </>
-    )
-}
-
-export default function IndexPage() {
-    return (
-        <Layout posts={posts}>
-            <IndexContent />
         </Layout>
     )
 }
-
-export const Head = () => (
-    <>
-        <title>World in Making - Blog</title>
-        <meta name="description" content="Insights, tutorials, and updates from our team." />
-    </>
-)

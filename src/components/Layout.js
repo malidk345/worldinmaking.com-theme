@@ -10,7 +10,8 @@ import {
   IconChat, IconInbox, IconSettings, IconNews, IconTheme, IconGlobe,
   IconEmail, IconBookmark, IconClock, IconHome,
   IconSearch, IconPlus, IconUser, IconHamburger, IconDocument, IconBusiness,
-  IconTutorial, IconDesign, IconLifestyle
+  IconTutorial, IconDesign, IconLifestyle,
+  IconDashboard, IconUsers, IconChart
 } from './Icons'
 import { posts } from '../data/postsUtils'
 
@@ -19,85 +20,25 @@ import { posts } from '../data/postsUtils'
 // Now uses WindowContext for state management instead of DOM events
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// Bottom Sticky Nav Bar Component (hidden on mobile when blob is active)
-const BottomStickyNav = ({ onMenuClick, menuOpen, onSearchClick, onCreateClick }) => {
-  const { user, isAuthenticated, logout } = useAuth()
-  const [showUserMenu, setShowUserMenu] = useState(false)
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedTheme = localStorage.getItem('theme') || 'system'
-      applyTheme(savedTheme)
-    }
-  }, [])
 
-  const applyTheme = (newTheme) => {
-    if (typeof window === 'undefined') return
-    const root = document.documentElement
-
-    if (newTheme === 'system') {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      root.classList.toggle('dark', prefersDark)
-      root.classList.toggle('light', !prefersDark)
-    } else if (newTheme === 'dark') {
-      root.classList.add('dark')
-      root.classList.remove('light')
-    } else {
-      root.classList.add('light')
-      root.classList.remove('dark')
-    }
-  }
-
-  return (
-    <nav className="bottom-sticky-nav">
-      <ul>
-        <li>
-          <a href="/" title="home">
-            <IconHome className="w-[18px] h-[18px]" />
-          </a>
-        </li>
-        <li>
-          <button onClick={onSearchClick} title="search (⌘K)">
-            <IconSearch className="w-[18px] h-[18px]" />
-            <span className="sr-only">search</span>
-          </button>
-        </li>
-        <li>
-          <button onClick={onCreateClick} title="create new">
-            <IconPlus className="w-[18px] h-[18px]" />
-            <span className="sr-only">create new</span>
-          </button>
-        </li>
-        <li>
-          <button
-            onClick={onMenuClick}
-            className={menuOpen ? 'active' : ''}
-            title="menu"
-          >
-            <IconHamburger className="w-[18px] h-[18px]" />
-            <span className="sr-only">open menu</span>
-          </button>
-        </li>
-      </ul>
-    </nav>
-  )
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// FLOATING BLOB NAV - Goo Effect Morphing Navigation
+// FLOATING NAV - Jhey-style Popover Navigation
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const FloatingBlobNav = ({ onSearchClick, onCreateClick }) => {
+const FloatingBlobNav = ({ onSearchClick, onCreateClick, onDashboardClick }) => {
   const [isOpen, setIsOpen] = useState(false)
   const { openWindows, focusedId, bringToFront, closeWindow } = useWindows()
   const menuRef = useRef(null)
+  const navRef = useRef(null)
 
   // Close on click outside
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target) && isOpen) {
-        setIsOpen(false)
-      }
+      if (!isOpen) return
+      // Don't close if clicking the nav bar or menu
+      if (navRef.current?.contains(e.target)) return
+      if (menuRef.current?.contains(e.target)) return
+      setIsOpen(false)
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -128,155 +69,6 @@ const FloatingBlobNav = ({ onSearchClick, onCreateClick }) => {
       localStorage.setItem('theme', 'dark')
     }
   }
-
-  return (
-    <>
-      {/* SVG Filter for Goo Effect */}
-      <svg className="sr-only" aria-hidden="true">
-        <defs>
-          <filter id="goo-filter">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur" />
-            <feColorMatrix
-              in="blur"
-              type="matrix"
-              values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -8"
-              result="goo"
-            />
-            <feComposite in="SourceGraphic" in2="goo" operator="atop" />
-          </filter>
-        </defs>
-      </svg>
-
-      {/* Floating Trigger Button */}
-      <button
-        className={`floating-blob-trigger ${isOpen ? 'open' : ''}`}
-        onClick={() => setIsOpen(!isOpen)}
-        aria-expanded={isOpen}
-        aria-label={isOpen ? 'Close menu' : 'Open menu'}
-      >
-        <IconPlus className="w-6 h-6" />
-      </button>
-
-      {/* Expanding Blob Menu */}
-      <div
-        ref={menuRef}
-        className={`floating-blob-menu ${isOpen ? 'open' : ''}`}
-      >
-        {/* Goo filtered background */}
-        <div className="blob-filtered">
-          <div className="blob-shape" />
-        </div>
-
-        {/* Actual content */}
-        <div className="blob-content">
-          {/* Nav Icons Row */}
-          <div className="blob-nav-icons">
-            <a href="/" title="Home">
-              <IconHome className="w-5 h-5" />
-            </a>
-            <button onClick={() => { onSearchClick(); setIsOpen(false); }} title="Search">
-              <IconSearch className="w-5 h-5" />
-            </button>
-            <button onClick={() => { onCreateClick(); setIsOpen(false); }} title="Create">
-              <IconPlus className="w-5 h-5" />
-            </button>
-            <button onClick={toggleTheme} title="Toggle theme">
-              <IconTheme className="w-5 h-5" />
-            </button>
-            <a href="/settings" title="Settings">
-              <IconSettings className="w-5 h-5" />
-            </a>
-          </div>
-
-          {/* Categories Section */}
-          <div className="blob-windows-section">
-            <div className="blob-section-title">Categories</div>
-            <a href="/category/articles" className="blob-window-item">
-              <IconBook className="w-3.5 h-3.5" />
-              <span>Articles</span>
-            </a>
-            <a href="/category/stories" className="blob-window-item">
-              <IconLifestyle className="w-3.5 h-3.5" />
-              <span>Stories</span>
-            </a>
-          </div>
-
-          {/* Quick Links */}
-          <div className="blob-links">
-            <a href="/" className="blob-link">
-              <IconHome className="w-3.5 h-3.5" />
-              <span>Home</span>
-            </a>
-            <a href="/about" className="blob-link">
-              <IconBook className="w-3.5 h-3.5" />
-              <span>About</span>
-            </a>
-            <a href="/contact" className="blob-link">
-              <IconEmail className="w-3.5 h-3.5" />
-              <span>Contact</span>
-            </a>
-          </div>
-        </div>
-      </div>
-    </>
-  )
-}
-
-// Popover Menu Component
-const PopoverMenu = ({ isOpen, onClose }) => {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [filteredPosts, setFilteredPosts] = useState([])
-  const menuRef = useRef(null)
-  const searchInputRef = useRef(null)
-
-  useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose()
-      }
-    }
-    document.addEventListener('keydown', handleEscape)
-    return () => document.removeEventListener('keydown', handleEscape)
-  }, [isOpen, onClose])
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target) && isOpen) {
-        const navBar = document.querySelector('.floating-nav')
-        if (navBar && !navBar.contains(e.target)) {
-          onClose()
-        }
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [isOpen, onClose])
-
-  useEffect(() => {
-    if (isOpen && searchInputRef.current) {
-      setTimeout(() => searchInputRef.current?.focus(), 200)
-    }
-  }, [isOpen])
-
-  useEffect(() => {
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
-      const results = posts.filter(post =>
-        post.title.toLowerCase().includes(query) ||
-        post.category?.toLowerCase().includes(query) ||
-        post.excerpt?.toLowerCase().includes(query)
-      ).slice(0, 8)
-      setFilteredPosts(results)
-    } else {
-      setFilteredPosts([])
-    }
-  }, [searchQuery])
-
-  const linkItems = [
-    { href: '/', icon: IconHome, label: 'home' },
-    { href: '/about', icon: IconGlobe, label: 'about' },
-    { href: '/contact', icon: IconEmail, label: 'contact' },
-  ]
 
   const categoryIcons = {
     'articles': IconDocument,
@@ -310,89 +102,138 @@ const PopoverMenu = ({ isOpen, onClose }) => {
     }))
 
   return (
-    <div
-      ref={menuRef}
-      className={`popover-menu ${isOpen ? 'popover-open' : ''}`}
-    >
-      <div className="popover-content">
-        <div className="popover-content-inner">
-          <div className="popover-heading">
-            <a href="/" className="popover-pill" style={{ color: '#1e3a5f', borderColor: '#1e3a5f' }}>worldinmaking</a>
-            <input
-              ref={searchInputRef}
-              type="search"
-              placeholder="search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+    <>
+      {/* Bottom Nav Bar - Pill style */}
+      <nav
+        ref={navRef}
+        className={`floating-nav ${isOpen ? 'nav-hidden' : ''}`}
+      >
+        <ul>
+          <li>
+            <a href="/" title="Home">
+              <IconHome className="w-6 h-6" />
+            </a>
+          </li>
+          <li>
+            <a href="/login" title="Login">
+              <IconUser className="w-6 h-6" />
+            </a>
+          </li>
+          <li>
+            <button onClick={() => setIsOpen(true)} title="Menu">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+              </svg>
+            </button>
+          </li>
+        </ul>
+      </nav>
 
-          <hr className="popover-divider" />
-
-          {filteredPosts.length > 0 && (
-            <div className="popover-links popover-search-results">
-              <nav>
-                <h3>search results</h3>
-                <ul>
-                  {filteredPosts.map((post) => {
-                    const PostIcon = categoryIcons[post.category?.toLowerCase()] || IconDocument
-                    return (
-                      <li key={post.id}>
-                        <a href={`/?post=${post.id}`} onClick={onClose}>
-                          <PostIcon className="w-4 h-4" />
-                          <span>{post.title.toLowerCase()}</span>
-                        </a>
-                      </li>
-                    )
-                  })}
-                </ul>
-              </nav>
+      {/* Popover Menu */}
+      <div
+        ref={menuRef}
+        className={`popover-menu ${isOpen ? 'popover-open' : ''}`}
+      >
+        <div className="popover-content">
+          <div className="popover-content-inner">
+            {/* Header with search */}
+            <div className="popover-heading">
+              <a href="/" className="popover-pill" style={{ color: '#1e3a8a', borderColor: '#1e3a8a' }}>worldinmaking</a>
+              <input
+                type="search"
+                placeholder="search..."
+                className="popover-search"
+                onClick={() => { onSearchClick(); setIsOpen(false); }}
+                readOnly
+              />
             </div>
-          )}
 
-          {filteredPosts.length === 0 && (
+            <hr className="popover-divider" />
+
+            {/* Links */}
             <div className="popover-links">
               <nav>
-                <h3>links</h3>
-                <ul>
-                  {linkItems.map((item) => (
-                    <li key={item.href}>
-                      <a href={item.href}>
-                        <item.icon className="w-4 h-4" />
-                        <span>{item.label}</span>
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-
-                <h3>categories</h3>
+                <h3>navigate</h3>
                 <ul>
                   {categories.map((cat) => (
                     <li key={cat.slug}>
-                      <a href={`/?category=${cat.slug}`} onClick={onClose}>
+                      <a href={`/category/${cat.slug}`}>
                         <cat.icon className="w-4 h-4" />
                         <span>{cat.label}</span>
                       </a>
                     </li>
                   ))}
                 </ul>
+
+                <h3>actions</h3>
+                <ul>
+                  <li>
+                    <button onClick={() => { onSearchClick(); setIsOpen(false); }}>
+                      <IconSearch className="w-4 h-4" />
+                      <span>search</span>
+                    </button>
+                  </li>
+                  <li>
+                    <button onClick={() => { onCreateClick(); setIsOpen(false); }}>
+                      <IconPlus className="w-4 h-4" />
+                      <span>create post</span>
+                    </button>
+                  </li>
+                  <li>
+                    <button onClick={() => { onDashboardClick(); setIsOpen(false); }}>
+                      <IconDashboard className="w-4 h-4" />
+                      <span>dashboard</span>
+                    </button>
+                  </li>
+                  <li>
+                    <button onClick={toggleTheme}>
+                      <IconTheme className="w-4 h-4" />
+                      <span>toggle theme</span>
+                    </button>
+                  </li>
+                </ul>
               </nav>
             </div>
-          )}
+          </div>
+
+          {/* Bottom icons when closed - mirrors nav */}
+          <ul className="popover-nav-mirror" aria-hidden="true">
+            {[0, 1, 2].map(i => (
+              <li key={i} style={{ '--i': i }}>
+                {i === 0 && <IconHome className="w-6 h-6" />}
+                {i === 1 && <IconUser className="w-6 h-6" />}
+                {i === 2 && (
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                  </svg>
+                )}
+              </li>
+            ))}
+          </ul>
         </div>
 
-        <ul className="popover-mirror-icons" aria-hidden="true">
-          <li style={{ '--i': 0 }}><IconChat className="w-6 h-6" /></li>
-          <li style={{ '--i': 1 }}><IconInbox className="w-6 h-6" /></li>
-          <li style={{ '--i': 2 }}><IconSettings className="w-6 h-6" /></li>
-          <li style={{ '--i': 3 }}><IconNews className="w-6 h-6" /></li>
-          <li style={{ '--i': 4 }}><IconTheme className="w-6 h-6" theme="system" /></li>
-          <li style={{ '--i': 5 }}><IconMenu className="w-6 h-6" /></li>
-        </ul>
+        {/* Close button inside popover */}
+        <button
+          className="popover-close"
+          onClick={() => setIsOpen(false)}
+        >
+          close
+        </button>
       </div>
-    </div>
+
+      {/* Backdrop */}
+      {isOpen && (
+        <div
+          className="popover-backdrop"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+    </>
   )
 }
+
+
+
 
 // Dark Mode Toggle Button
 const DarkModeToggle = () => {
@@ -435,12 +276,11 @@ const DarkModeToggle = () => {
         relative flex items-center justify-center w-8 h-8 rounded-lg
         transition-all duration-300 ease-out
         ${isDark
-          ? 'bg-blue-900/30 hover:bg-blue-800/40 text-blue-300'
-          : 'bg-blue-100/80 hover:bg-blue-200 text-blue-700'
+          ? 'hover:bg-white/10 text-white'
+          : 'hover:bg-black/10 text-black'
         }
       `}
       title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-      style={{ color: isDark ? '#93c5fd' : '#1e40af' }}
     >
       <svg
         className={`absolute w-4 h-4 transition-all duration-300 ${isDark ? 'opacity-0 rotate-90 scale-0' : 'opacity-100 rotate-0 scale-100'}`}
@@ -529,15 +369,15 @@ const BreadcrumbNav = () => {
           flex items-center gap-1 px-2 py-1.5 rounded-md text-[12px] font-medium
           transition-all duration-200
           ${showDropdown
-            ? 'bg-[#1e3a8a] text-white shadow-md'
-            : 'text-[#1e3a8a] dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40'
+            ? 'bg-black text-white shadow-md'
+            : 'text-black hover:bg-black/10'
           }
         `}
         title="Windows & History"
       >
         <IconWindow className="w-4 h-4" />
         {windowCount > 0 && (
-          <span className="flex items-center justify-center min-w-[16px] h-[16px] rounded-full text-[9px] font-bold bg-[#1e3a8a] text-white">
+          <span className="flex items-center justify-center min-w-[16px] h-[16px] rounded-full text-[9px] font-bold bg-black text-white">
             {windowCount}
           </span>
         )}
@@ -551,8 +391,6 @@ const BreadcrumbNav = () => {
           <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
         </svg>
       </button>
-
-      <DarkModeToggle />
 
       <div className={`
         fixed left-4 right-4 top-12 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2
@@ -660,7 +498,7 @@ const BreadcrumbNav = () => {
 // Inner Layout Component that uses WindowContext
 function LayoutInner({ children, posts: propPosts = [] }) {
   const { openSearch, isSearchOpen, closeSearch, openWindow } = useWindows()
-  const [menuOpen, setMenuOpen] = useState(false)
+
   const [createPostOpen, setCreatePostOpen] = useState(false)
   const [localPosts, setLocalPosts] = useState([])
 
@@ -685,11 +523,36 @@ function LayoutInner({ children, posts: propPosts = [] }) {
     openWindow(newPost)
   }
 
+  const handleOpenDashboard = () => {
+    // Create a special dashboard window
+    openWindow({
+      id: 'dashboard',
+      title: 'System Dashboard',
+      type: 'dashboard',
+      category: 'System',
+      data: {
+        posts: [...localPosts, ...propPosts],
+        onCreatePost: () => setCreatePostOpen(true),
+        onDeletePost: (id) => {
+          setLocalPosts(prev => prev.filter(p => p.id !== id))
+          // Note: Cannot delete prop posts in this demo
+        }
+      }
+    })
+  }
+
   const allPosts = [...localPosts, ...propPosts]
 
   return (
     <div className="min-h-screen lowercase bg-[rgb(var(--bg))] text-[rgb(var(--text-primary))] transition-colors duration-300" data-scheme="primary">
-      <header id="site-header" className="site-header sticky top-0 z-[9999] h-10 bg-[rgb(var(--bg))]/95 backdrop-blur-sm border-b border-[rgb(var(--border))]/50">
+      <header
+        id="site-header"
+        className="sticky top-0 z-[9999] h-10 border-b"
+        style={{
+          background: 'color-mix(in hsl, canvasText 8%, canvas)',
+          borderColor: 'color-mix(in hsl, canvasText 15%, canvas)'
+        }}
+      >
         <div className="flex items-center justify-between max-w-screen-3xl mx-auto px-3 sm:px-4 h-full relative">
           <a
             href="/"
@@ -699,7 +562,21 @@ function LayoutInner({ children, posts: propPosts = [] }) {
             worldinmaking
           </a>
 
-          <BreadcrumbNav />
+          <div className="flex items-center gap-1.5">
+            <BreadcrumbNav />
+
+            {/* Search Button - Black icon */}
+            <button
+              onClick={openSearch}
+              className="flex items-center justify-center w-8 h-8 rounded-md text-black hover:bg-black/10 transition-all duration-200"
+              title="Search (Ctrl+K)"
+            >
+              <IconSearch className="w-4 h-4" />
+            </button>
+
+            {/* Dark Mode Toggle */}
+            <DarkModeToggle />
+          </div>
         </div>
       </header>
 
@@ -707,23 +584,16 @@ function LayoutInner({ children, posts: propPosts = [] }) {
 
       <WindowManager />
 
-      <BottomStickyNav
-        onMenuClick={() => setMenuOpen(!menuOpen)}
-        menuOpen={menuOpen}
-        onSearchClick={openSearch}
-        onCreateClick={() => setCreatePostOpen(true)}
-      />
+
 
       {/* Floating Blob Nav - Main navigation */}
       <FloatingBlobNav
         onSearchClick={openSearch}
         onCreateClick={() => setCreatePostOpen(true)}
+        onDashboardClick={handleOpenDashboard}
       />
 
-      <PopoverMenu
-        isOpen={menuOpen}
-        onClose={() => setMenuOpen(false)}
-      />
+
 
       <footer className="bg-[#151515] text-white mt-20">
         <div className="max-w-screen-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16">

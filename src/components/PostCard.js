@@ -29,10 +29,20 @@ export default function PostCard({ post, onClick, isActive }) {
         </span>
         <div className="post-card-title-wrap">
           <h3 className="post-card-title">{title}</h3>
-          <div className="post-card-meta">
-            {category && <span className="post-card-category">{category}</span>}
-            {date && <span className="post-card-date">{date}</span>}
-          </div>
+          {/* Author - Now under title */}
+          {author && (
+            <div className="post-card-author" style={{ marginTop: '0.5rem', paddingTop: 0, borderTop: 'none' }}>
+              <span className="post-card-author-avatar">
+                {author.avatar ? (
+                  <img src={author.avatar} alt={author.name} />
+                ) : (
+                  (author.name?.[0] || 'A').toUpperCase()
+                )}
+              </span>
+              <span className="post-card-author-name">{author.name}</span>
+              {date && <span className="post-card-date" style={{ marginLeft: '0.5rem' }}>· {date}</span>}
+            </div>
+          )}
         </div>
         {/* Open indicator */}
         <div className="post-card-open-indicator">
@@ -45,20 +55,6 @@ export default function PostCard({ post, onClick, isActive }) {
       {/* Content - Always visible */}
       <div className="post-card-body">
         <p className="post-card-excerpt">{excerpt}</p>
-
-        {/* Author */}
-        {author && (
-          <div className="post-card-author">
-            <span className="post-card-author-avatar">
-              {author.avatar ? (
-                <img src={author.avatar} alt={author.name} />
-              ) : (
-                (author.name?.[0] || 'A').toUpperCase()
-              )}
-            </span>
-            <span className="post-card-author-name">{author.name}</span>
-          </div>
-        )}
       </div>
 
       {/* Featured Image if available */}
