@@ -20,6 +20,7 @@ export default function Window({
   const [isMaximized, setIsMaximized] = useState(false)
   const [previousState, setPreviousState] = useState({ position, size })
   const [isClosing, setIsClosing] = useState(false)
+  const [viewportHeight, setViewportHeight] = useState(window.innerHeight)
   
   const windowRef = useRef(null)
   const dragOffset = useRef({ x: 0, y: 0 })
@@ -36,10 +37,22 @@ export default function Window({
     onFocus?.()
   }
 
+  // Touch support for mobile
+  const handleTouchStart = (e) => {
+    if (e.target.closest('.window-controls') || e.target.closest('.resize-handle')) return
+    const touch = e.touches[0]
+    setIsDragging(true)
+    dragOffset.current = {
+      x: touch.clientX - position.x,
+      y: touch.clientY - position.y
+    }
+    onFocus?.()
+  }
+
   const handleMouseMove = useCallback((e) => {
     if (isDragging && !isMaximized) {
       const newX = Math.max(0, Math.min(window.innerWidth - size.width, e.clientX - dragOffset.current.x))
-      const newY = Math.max(0, Math.min(window.innerHeight - size.height, e.clientY - dragOffset.current.y))
+      const newY = Math.max(0, Math.min(viewportHeight - size.height, e.clientY - dragOffset.current.y))
       setPosition({ x: newX, y: newY })
     }
     
@@ -76,7 +89,17 @@ export default function Window({
       setSize({ width: newWidth, height: newHeight })
       setPosition({ x: newX, y: newY })
     }
-  }, [isDragging, isResizing, resizeDirection, isMaximized, size.width, size.height, minSize])
+  }, [isDragging, isResizing, resizeDirection, isMaximized, size.width, size.height, minSize, viewportHeight])
+
+  // Touch move support
+  const handleTouchMove = useCallback((e) => {
+    if (isDragging && !isMaximized) {
+      const touch = e.touches[0]
+      const newX = Math.max(0, Math.min(window.innerWidth - size.width, touch.clientX - dragOffset.current.x))
+      const newY = Math.max(0, Math.min(viewportHeight - size.height, touch.clientY - dragOffset.current.y))
+      setPosition({ x: newX, y: newY })
+    }
+  }, [isDragging, isMaximized, size.width, size.height, viewportHeight])
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false)
@@ -85,15 +108,18 @@ export default function Window({
   }, [])
 
   useEffect(() => {
-    if (isDragging || isResizing) {
-      document.addEventListener('mousemove', handleMouseMove)
-      document.addEventListener('mouseup', handleMouseUp)
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove)
-        document.removeEventListener('mouseup', handleMouseUp)
-      }
+    const updateViewportHeight = () => {
+      setViewportHeight(window.innerHeight)
     }
-  }, [isDragging, isResizing, handleMouseMove, handleMouseUp])
+
+    window.addEventListener('resize', updateViewportHeight)
+    window.addEventListener('orientationchange', updateViewportHeight)
+
+    return () => {
+      window.removeEventListener('resize', updateViewportHeight)
+      window.removeEventListener('orientationchange', updateViewportHeight)
+    }
+  }, [])
 
   // Resize handlers
   const startResize = (direction) => (e) => {
@@ -120,7 +146,7 @@ export default function Window({
     } else {
       setPreviousState({ position, size })
       setPosition({ x: 0, y: 0 })
-      setSize({ width: window.innerWidth, height: window.innerHeight - 60 })
+      setSize({ width: window.innerWidth, height: viewportHeight - 60 })
       setIsMaximized(true)
     }
   }
@@ -158,6 +184,7 @@ export default function Window({
         <div 
           className="window-titlebar"
           onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
           onDoubleClick={handleMaximize}
         >
           {/* Traffic Light Buttons (macOS style) */}

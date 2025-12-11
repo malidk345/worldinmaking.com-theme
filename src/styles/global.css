@@ -1192,6 +1192,10 @@ a {
   box-shadow:
     0 25px 50px -12px rgba(0, 0, 0, 0.25),
     0 0 0 1px rgba(0, 0, 0, 0.1);
+  /* Cross-browser support */
+  -webkit-border-radius: 8px;
+  -moz-border-radius: 8px;
+  -ms-border-radius: 8px;
 }
 
 .window-chrome {
@@ -1216,6 +1220,10 @@ a {
   border-bottom: 1px solid rgb(var(--input-border));
   cursor: move;
   user-select: none;
+  /* Cross-browser support */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 .window-titlebar:active {
@@ -1238,6 +1246,11 @@ a {
   align-items: center;
   justify-content: center;
   transition: all 0.15s;
+  /* Better touch targets on mobile */
+  min-width: 44px;
+  min-height: 44px;
+  /* Prevent double-tap zoom on mobile */
+  touch-action: manipulation;
 }
 
 .window-btn svg {
@@ -1287,6 +1300,10 @@ a {
   flex: 1;
   overflow-y: auto;
   background: #ffffff;
+  /* Mobile touch scrolling */
+  -webkit-overflow-scrolling: touch;
+  /* Better scrolling on mobile */
+  overscroll-behavior-y: contain;
 }
 
 .post-window-content {
