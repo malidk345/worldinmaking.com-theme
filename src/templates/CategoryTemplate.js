@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Link, navigate } from 'gatsby'
+import { navigate } from 'gatsby'
 import Layout from '../components/Layout'
 import PostCard, { MorphingDisclosure } from '../components/PostCard'
 import PostHogWindow from '../components/PostHogWindow'
@@ -22,12 +22,10 @@ export default function CategoryTemplate({ pageContext }) {
         openWindows,
         focusedId,
         isMounted,
-        openWindow,
         closeWindow,
         bringToFront,
         switchPostInWindow,
         updateReading,
-        addToHistory,
         openSearch
     } = useWindows()
 
