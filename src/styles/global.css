@@ -3160,7 +3160,7 @@ html {
 
 .popover-nav-mirror li {
   --speed: calc(var(--nav-speed) * 0.7);
-  --delay: calc(sin(calc(var(--i, 0) / 6) * 45deg) * var(--speed));
+  --delay: calc(calc(var(--i, 0) / 6) * var(--speed));
   width: 32px;
   aspect-ratio: 1;
   border-radius: 50%;
