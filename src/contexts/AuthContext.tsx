@@ -79,18 +79,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const signInWithEmail = async (email: string) => {
-        // Magic Link Sign In
-        const { error } = await supabase.auth.signInWithOtp({
-            email,
-            options: {
-                // Redirect user back to site
-                emailRedirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
-                data: {
-                    username: email.split('@')[0], // Default username
-                }
-            },
-        });
-        return { error };
+        // Magic Link Sign In with better error handling
+        try {
+            const { error } = await supabase.auth.signInWithOtp({
+                email,
+                options: {
+                    // Redirect user back to site
+                    emailRedirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
+                    data: {
+                        username: email.split('@')[0], // Default username
+                    }
+                },
+            });
+
+            if (error) {
+                console.error('[Supabase] signInWithOtp error:', error);
+                return { error };
+            }
+
+            return { error: null };
+        } catch (e: any) {
+            console.error('[Supabase] signInWithOtp exception:', e);
+            return { error: { message: e?.message || 'Unknown error', status: e?.status } };
+        }
     };
 
     const signOut = async () => {
