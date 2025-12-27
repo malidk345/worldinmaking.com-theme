@@ -15,6 +15,11 @@ Cloudflare Pages — Hızlı Kurulum
   - `NEXT_PUBLIC_SUPABASE_URL` ve `NEXT_PUBLIC_SUPABASE_ANON_KEY` (Supabase istemcisi için)
 
 - Notlar:
-  - Build komutu adapter olan `next-on-pages`'i `--outdir out` ile çağırır. Workflow zaten bunu kullanıyor.
+  - `wrangler pages publish` artık deprecated; Pages deploy için `wrangler pages deploy` kullanın. Workflow dosyasında bu güncellendi.
+  - Eğer Pages dashboard içindeki "Deploy command" kullanıyorsanız, `--project-name` argümanını doğrudan string olarak koyabilir veya Pages environment variables içine `CF_PROJECT_NAME` ekleyin. Örnek (güvenli):
+
+    npm ci && npm run build && npx @cloudflare/next-on-pages@latest --outdir out && npx wrangler pages deploy out --project-name "your-project-name" --branch "main"
+
   - Pages projesinde Node sürümünü 20.x yapın ve Output directory olarak `out` seçin.
-  - Eğer deploy hala başarısızsa, Actions log'larını kontrol edin ve hatayı bana gönderin.
+  - Eğer deploy hata veriyorsa, log'lardaki "Must specify a project name" hatası için `--project-name` argümanının boş olmadığını doğrulayın (env var setli değilse doğrudan proje adını yazın).
+

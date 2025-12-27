@@ -30,4 +30,4 @@ jobs:
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           command: >-
-            pages publish ./out --project-name ${{ secrets.CF_PROJECT_NAME }} --branch ${{ github.ref_name }}
+            pages deploy ./out --project-name ${{ secrets.CF_PROJECT_NAME }} --branch ${{ github.ref_name }}
