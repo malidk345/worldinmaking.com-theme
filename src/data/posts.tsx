@@ -1,17 +1,9 @@
-'use client';
-
-import React from 'react';
+// Data helpers for posts (keep as plain data, no client-only React elements)
 import { BlogPost, Post, Comment } from '../types';
 import { posts, formatDate, getExcerptFromContent } from './index';
 
-// Parse HTML content and convert to React elements
-function parseHtmlContent(html: string): React.ReactNode {
-    // Create a wrapper component that renders HTML safely
-    return React.createElement('div', {
-        dangerouslySetInnerHTML: { __html: html },
-        className: 'post-content'
-    });
-}
+// Note: content is stored as raw HTML string. Rendering components
+// should use `dangerouslySetInnerHTML={{ __html: content }}` where needed.
 
 // Extract headings from HTML content
 function extractHeadings(html: string): string[] {
@@ -45,7 +37,7 @@ export function convertPostToBlogPost(post: Post): BlogPost {
         date: formatDate(post.date || new Date().toISOString()),
         category: categories[0] || 'uncategorized',
         excerpt: post.excerpt || getExcerptFromContent(content, 250),
-        content: parseHtmlContent(content),
+        content: content,
         headings: extractHeadings(content),
         author: post.author || 'anonymous',
         authorAvatar: generateAuthorAvatar(post.author || 'anonymous'),
