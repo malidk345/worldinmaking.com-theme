@@ -25,8 +25,16 @@ if (supabaseUrl && supabaseKey) {
             console.error('[Supabase] Invalid URL format. Expected supabase.co domain.');
         }
 
-        client = createClient(trimmedUrl, trimmedKey);
-        console.log('[Supabase] Client initialized successfully');
+        client = createClient(trimmedUrl, trimmedKey, {
+            auth: {
+                detectSessionInUrl: true,
+                flowType: 'pkce',
+                autoRefreshToken: true,
+                persistSession: true,
+                storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+            }
+        });
+        console.log('[Supabase] Client initialized successfully with auth options');
     } catch (e) {
         console.error('[Supabase] Init failed:', e);
         // Fallback dummy - will cause auth to fail but won't crash

@@ -25,7 +25,7 @@ const LoginContent: React.FC<LoginContentProps> = ({ onClose }) => {
         setLoading(false);
 
         if (error) {
-            addToast(error.message.toLowerCase(), 'error');
+            addToast(error.message?.toLowerCase() || 'login failed', 'error');
         } else {
             setSent(true);
             addToast('magic link sent. check your inbox.', 'success');

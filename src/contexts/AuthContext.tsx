@@ -29,16 +29,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     useEffect(() => {
         // Check active session
         const getSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            setUser(session?.user ?? null);
-            if (session?.user) fetchProfile(session.user.id);
+            console.log('[Auth] Checking for existing session...');
+
+            // First, check if there's a hash in the URL (magic link callback)
+            if (typeof window !== 'undefined' && window.location.hash) {
+                console.log('[Auth] Found hash in URL, attempting to exchange for session');
+            }
+
+            const { data: { session }, error } = await supabase.auth.getSession();
+
+            if (error) {
+                console.error('[Auth] Error getting session:', error);
+            }
+
+            if (session) {
+                console.log('[Auth] Session found for user:', session.user.email);
+                setUser(session.user);
+                fetchProfile(session.user.id);
+            } else {
+                console.log('[Auth] No active session');
+                setUser(null);
+            }
             setLoading(false);
         };
 
         getSession();
 
-        // Listen for changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        // Listen for auth state changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            console.log('[Auth] Auth state changed:', event, session?.user?.email || 'no user');
+
             setUser(session?.user ?? null);
             if (session?.user) {
                 fetchProfile(session.user.id);
@@ -46,6 +66,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setProfile(null);
             }
             setLoading(false);
+
+            // Clean up URL hash after successful login
+            if (event === 'SIGNED_IN' && typeof window !== 'undefined' && window.location.hash) {
+                console.log('[Auth] Cleaning up URL hash after sign in');
+                window.history.replaceState(null, '', window.location.pathname + window.location.search);
+            }
         });
 
         return () => subscription.unsubscribe();
