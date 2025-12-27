@@ -25,9 +25,5 @@ jobs:
       - name: Prepare for Cloudflare Pages (next-on-pages)
         run: npx @cloudflare/next-on-pages@latest --outdir out
 
-      - name: Publish to Cloudflare Pages (wrangler)
-        uses: cloudflare/wrangler-action@2.0.0
-        with:
-          apiToken: ${{ secrets.CF_API_TOKEN }}
-          command: >-
-            pages deploy ./out --project-name ${{ secrets.CF_PROJECT_NAME }} --branch ${{ github.ref_name }}
+      # Publishing is handled by Cloudflare Pages directly (connected repo).
+      # Removed the `wrangler` publish step to avoid requiring CF_API_TOKEN/CF_PROJECT_NAME.
