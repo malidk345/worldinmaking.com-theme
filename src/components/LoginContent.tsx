@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { UserIcon } from './Icons';
+import { UserIcon, GridIcon } from './Icons';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useWindow } from '../contexts/WindowContext';
 
 interface LoginContentProps {
     onClose: () => void;
@@ -11,7 +12,8 @@ interface LoginContentProps {
 
 const LoginContent: React.FC<LoginContentProps> = ({ onClose }) => {
     const { addToast } = useToast();
-    const { signInWithEmail, user, signOut } = useAuth();
+    const { signInWithEmail, user, profile, signOut } = useAuth();
+    const { openWindow } = useWindow();
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
     const [sent, setSent] = useState(false);
@@ -35,17 +37,37 @@ const LoginContent: React.FC<LoginContentProps> = ({ onClose }) => {
     if (user) {
         return (
             <div className="p-8 max-w-sm mx-auto flex flex-col justify-center items-center h-full text-center">
-                <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center mb-4 text-green-600 dark:text-green-400">
+                <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center mb-6 text-green-600 dark:text-green-400">
                     <UserIcon />
                 </div>
-                <h2 className="text-xl font-black lowercase mb-2">welcome back</h2>
-                <p className="text-sm text-zinc-500 lowercase mb-6">{user.email}</p>
-                <button
-                    onClick={() => { signOut(); onClose(); }}
-                    className="px-6 py-2 border border-black/10 dark:border-white/10 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 lowercase text-sm font-bold"
-                >
-                    sign out
-                </button>
+
+                {profile?.role === 'admin' && (
+                    <button
+                        onClick={() => { openWindow('admin'); onClose(); }}
+                        className="mb-6 flex items-center gap-2 px-6 py-3 bg-black dark:bg-white text-white dark:text-black rounded-xl font-bold lowercase hover:scale-105 transition-transform shadow-lg shadow-black/10"
+                    >
+                        <GridIcon />
+                        <span>open dashboard</span>
+                    </button>
+                )}
+
+                <h2 className="text-xl font-black lowercase mb-1">welcome back</h2>
+                <p className="text-sm text-zinc-500 lowercase mb-8 font-medium">{profile?.username || user.email}</p>
+
+                <div className="flex flex-col gap-3 w-full">
+                    <button
+                        onClick={() => { openWindow('settings'); onClose(); }}
+                        className="w-full px-4 py-2 text-zinc-600 hover:text-black dark:text-zinc-400 dark:hover:text-white border border-transparent hover:border-black/5 dark:hover:border-white/10 rounded-lg lowercase text-sm font-medium transition-all"
+                    >
+                        edit profile
+                    </button>
+                    <button
+                        onClick={() => { signOut(); onClose(); }}
+                        className="w-full px-4 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg lowercase text-sm font-bold transition-all"
+                    >
+                        sign out
+                    </button>
+                </div>
             </div>
         );
     }
