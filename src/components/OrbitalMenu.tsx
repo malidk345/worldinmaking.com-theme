@@ -106,7 +106,7 @@ export const OrbitalMenu: React.FC<OrbitalMenuProps> = ({ openWindow }) => {
                     <button
                         key={item.id}
                         onClick={() => openWindow(item.id)}
-                        className={`absolute group flex items-center justify-center pointer-events-auto transition-transform duration-100 ease-linear`}
+                        className={`absolute group flex items-center justify-center pointer-events-auto`}
                         style={{
                             transform: `translate(${x}px, ${y}px)`,
                             zIndex: 10

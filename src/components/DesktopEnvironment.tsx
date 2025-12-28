@@ -124,6 +124,15 @@ const EmptyDesktop = ({ openWindow }: { openWindow: (type: 'home' | 'post' | 'se
                 {/* The Orbital Navigation */}
                 <OrbitalMenu openWindow={openWindow} />
 
+                {/* Footer Copyright */}
+                <div className="absolute bottom-12 left-0 w-full flex justify-center pointer-events-none">
+                    <div className="px-4 py-1.5 rounded-full border border-black/10 dark:border-white/10">
+                        <p className="text-[10px] sm:text-xs text-zinc-500 dark:text-zinc-500 font-sans font-normal lowercase">
+                            ® all rights reserved 2024. designed by wim
+                        </p>
+                    </div>
+                </div>
+
             </div>
         </div>
     );
