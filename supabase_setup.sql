@@ -1,8 +1,10 @@
 -- ================================================================
--- WORLDINMAKING - MASTER SETUP SCRIPT (TÜM AYARLAR)
+-- WORLDINMAKING - MASTER SETUP SCRIPT
 -- ================================================================
--- Bu script, projedeki bütün SQL dosyalarını (schema, features, forms, admin) tek bir yerde toplar.
--- Veritabanını sıfırlama (Reset) işleminden sonra TEK BAŞINA çalıştırılması yeterlidir.
+-- Bu dosya tüm proje veritabanını tek seferde kurmak için hazırlanmıştır.
+-- Kullanımı: 
+-- 1. Supabase Dashboard -> Database -> Reset Database (Tüm verileri siler)
+-- 2. SQL Editor -> Bu dosyanın tamamını yapıştır ve RUN'a bas. 
 
 -- ================================================================
 -- 1. PROFİL VE KULLANICI SİSTEMİ
