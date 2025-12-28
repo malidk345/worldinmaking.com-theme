@@ -47,11 +47,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const getSession = async () => {
             logger.log('[Auth] Checking for existing session...');
 
-            // First, check if there's a hash in the URL (magic link callback)
-            if (typeof window !== 'undefined' && window.location.hash) {
-                logger.log('[Auth] Found hash in URL, attempting to exchange for session');
+            // MANUAL HASH HANDLING FOR MAGIC LINKS
+            if (typeof window !== 'undefined' && window.location.hash && window.location.hash.includes('access_token')) {
+                logger.log('[Auth] Found hash with access_token, manually setting session');
+                try {
+                    // Remove # from start
+                    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+                    const access_token = hashParams.get('access_token');
+                    const refresh_token = hashParams.get('refresh_token');
+
+                    if (access_token && refresh_token) {
+                        const { data, error } = await supabase.auth.setSession({
+                            access_token,
+                            refresh_token,
+                        });
+
+                        if (error) {
+                            logger.error('[Auth] Manual setSession failed:', error);
+                        } else if (data.session) {
+                            logger.log('[Auth] Manual setSession success for:', data.session.user.email);
+                            setUser(data.session.user);
+                            fetchProfile(data.session.user.id);
+
+                            // Cleanup URL
+                            window.history.replaceState(null, '', window.location.pathname + window.location.search);
+                            setLoading(false);
+                            return; // Stop here, we are done
+                        }
+                    }
+                } catch (e) {
+                    logger.error('[Auth] Exception during manual hash parsing:', e);
+                }
             }
 
+            // Fallback to standard getSession
             const { data: { session }, error } = await supabase.auth.getSession();
 
             if (error) {
