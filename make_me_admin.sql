@@ -9,7 +9,7 @@ where id in (
 );
 
 -- İşlem başarılı mı kontrol et:
-select email, raw_user_meta_data->>'username' as name, role 
+select email, raw_user_meta_data->>'username' as name, public.profiles.role 
 from auth.users 
 join public.profiles on auth.users.id = public.profiles.id
 where email = 'dursunkayamustafa@gmail.com';
