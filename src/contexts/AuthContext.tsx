@@ -174,8 +174,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const { error } = await supabase.auth.signInWithOtp({
                 email,
                 options: {
-                    // Redirect user back to site
-                    emailRedirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
+                    // Let Supabase handle redirect based on Site URL setting
+                    // emailRedirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
                     data: {
                         username: email.split('@')[0], // Default username
                     }
