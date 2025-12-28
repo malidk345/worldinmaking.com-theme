@@ -14,7 +14,6 @@ interface AuthorProfileProps {
 const AuthorProfileContent: React.FC<AuthorProfileProps> = ({ authorName, openWindow }) => {
     const { posts } = usePosts();
     const [avatarUrl, setAvatarUrl] = useState<string>('');
-    const [loading, setLoading] = useState(true);
 
     // Filter posts by this author (Safe check)
     const authorPosts = posts.filter(post =>
@@ -36,7 +35,6 @@ const AuthorProfileContent: React.FC<AuthorProfileProps> = ({ authorName, openWi
                 // Fallback to avatar from their first post if DB profile not found
                 setAvatarUrl(authorPosts[0].authorAvatar || '');
             }
-            setLoading(false);
         };
         fetchProfile();
     }, [authorName, authorPosts]);

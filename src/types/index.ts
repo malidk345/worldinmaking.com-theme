@@ -48,9 +48,11 @@ export interface Tag {
   name: string;
 }
 
+export type WindowType = 'home' | 'post' | 'services' | 'about' | 'contact' | 'wim' | 'login' | 'privacy' | 'terms' | 'cookies' | 'admin' | 'settings' | 'author';
+
 export interface WindowInstance {
   id: string;
-  type: 'home' | 'post' | 'services' | 'about' | 'contact' | 'wim' | 'login' | 'privacy' | 'terms' | 'cookies' | 'admin' | 'settings' | 'author';
+  type: WindowType;
   title?: string;
   data?: any;
   zIndex: number;

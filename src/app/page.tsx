@@ -6,19 +6,22 @@ import { ToastProvider } from '../contexts/ToastContext';
 import { AuthProvider } from '../contexts/AuthContext';
 import { WindowProvider } from '../contexts/WindowContext';
 import DesktopEnvironment from '../components/DesktopEnvironment';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 export default function Home() {
   return (
-    <ThemeProvider>
-      <ToastProvider>
-        <AuthProvider>
-          <Suspense fallback={null}>
-            <WindowProvider>
-              <DesktopEnvironment />
-            </WindowProvider>
-          </Suspense>
-        </AuthProvider>
-      </ToastProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <Suspense fallback={null}>
+              <WindowProvider>
+                <DesktopEnvironment />
+              </WindowProvider>
+            </Suspense>
+          </AuthProvider>
+        </ToastProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }

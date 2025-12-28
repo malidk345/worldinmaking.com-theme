@@ -1,8 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { User } from '@supabase/supabase-js';
+import logger from '../utils/logger';
 
 interface Profile {
     username: string;
@@ -10,11 +11,16 @@ interface Profile {
     role?: string;
 }
 
+interface AuthError {
+    message: string;
+    status?: number;
+}
+
 interface AuthContextType {
     user: User | null;
     profile: Profile | null;
     loading: boolean;
-    signInWithEmail: (email: string) => Promise<{ error: any }>;
+    signInWithEmail: (email: string) => Promise<{ error: AuthError | null }>;
     signOut: () => Promise<void>;
     updateProfile: (username: string, avatar_url: string) => Promise<boolean>;
 }
@@ -26,28 +32,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [profile, setProfile] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
 
+    // Define fetchProfile first with useCallback
+    const fetchProfile = useCallback(async (userId: string) => {
+        const { data } = await supabase
+            .from('profiles')
+            .select('username, avatar_url, role')
+            .eq('id', userId)
+            .single();
+        if (data) setProfile(data);
+    }, []);
+
     useEffect(() => {
         // Check active session
         const getSession = async () => {
-            console.log('[Auth] Checking for existing session...');
+            logger.log('[Auth] Checking for existing session...');
 
             // First, check if there's a hash in the URL (magic link callback)
             if (typeof window !== 'undefined' && window.location.hash) {
-                console.log('[Auth] Found hash in URL, attempting to exchange for session');
+                logger.log('[Auth] Found hash in URL, attempting to exchange for session');
             }
 
             const { data: { session }, error } = await supabase.auth.getSession();
 
             if (error) {
-                console.error('[Auth] Error getting session:', error);
+                logger.error('[Auth] Error getting session:', error);
             }
 
             if (session) {
-                console.log('[Auth] Session found for user:', session.user.email);
+                logger.log('[Auth] Session found for user:', session.user.email);
                 setUser(session.user);
                 fetchProfile(session.user.id);
             } else {
-                console.log('[Auth] No active session');
+                logger.log('[Auth] No active session');
                 setUser(null);
             }
             setLoading(false);
@@ -57,7 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Listen for auth state changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            console.log('[Auth] Auth state changed:', event, session?.user?.email || 'no user');
+            logger.log('[Auth] Auth state changed:', event, session?.user?.email || 'no user');
 
             setUser(session?.user ?? null);
             if (session?.user) {
@@ -69,22 +85,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             // Clean up URL hash after successful login
             if (event === 'SIGNED_IN' && typeof window !== 'undefined' && window.location.hash) {
-                console.log('[Auth] Cleaning up URL hash after sign in');
+                logger.log('[Auth] Cleaning up URL hash after sign in');
                 window.history.replaceState(null, '', window.location.pathname + window.location.search);
             }
         });
 
         return () => subscription.unsubscribe();
-    }, []);
-
-    const fetchProfile = async (userId: string) => {
-        const { data } = await supabase
-            .from('profiles')
-            .select('username, avatar_url, role')
-            .eq('id', userId)
-            .single();
-        if (data) setProfile(data);
-    };
+    }, [fetchProfile]);
 
     const updateProfile = async (username: string, avatar_url: string) => {
         if (!user) return false;
@@ -95,7 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .eq('id', user.id);
 
         if (error) {
-            console.error('Error updating profile:', error);
+            logger.error('[Auth] Error updating profile:', error);
             return false;
         }
 
@@ -119,14 +126,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             });
 
             if (error) {
-                console.error('[Supabase] signInWithOtp error:', error);
+                logger.error('[Auth] signInWithOtp error:', error);
                 return { error };
             }
 
             return { error: null };
-        } catch (e: any) {
-            console.error('[Supabase] signInWithOtp exception:', e);
-            return { error: { message: e?.message || 'Unknown error', status: e?.status } };
+        } catch (e: unknown) {
+            const err = e as Error;
+            logger.error('[Auth] signInWithOtp exception:', err);
+            return { error: { message: err?.message || 'Unknown error' } };
         }
     };
 

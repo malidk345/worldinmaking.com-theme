@@ -146,7 +146,8 @@ export const WindowProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 openWindow(appParam as any);
             }
         }
-    }, [isLoaded]); // Run once after hydration
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isLoaded]); // Run once after hydration - deps intentionally minimal to avoid infinite loops
 
     // 2. State Change: State -> URL
     useEffect(() => {
@@ -179,7 +180,8 @@ export const WindowProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 router.push(pathname, { scroll: false });
             }
         }
-    }, [windows, isLoaded, pathname, router]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [windows, isLoaded, pathname, router]); // searchParams excluded to prevent infinite loops
 
 
     const bringToFront = useCallback((id: string) => {

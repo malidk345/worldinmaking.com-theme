@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../contexts/ToastContext';
-import Image from 'next/image';
 
 interface AdminComment {
     id: number;
@@ -42,16 +41,10 @@ const AdminContent = () => {
         if (profile?.username) setAuthorAlias(profile.username);
     }, [profile]);
 
-    // Fetch comments when tab changes
-    useEffect(() => {
-        if (tab === 'comments') {
-            fetchComments();
-        }
-    }, [tab]);
-
-    const fetchComments = async () => {
+    // Fetch comments function
+    const fetchComments = useCallback(async () => {
         setCommentsLoading(true);
-        const { data, error } = await supabase
+        const { data } = await supabase
             .from('comments')
             .select(`
                 *,
@@ -64,7 +57,14 @@ const AdminContent = () => {
             setComments(data);
         }
         setCommentsLoading(false);
-    };
+    }, []);
+
+    // Fetch comments when tab changes
+    useEffect(() => {
+        if (tab === 'comments') {
+            fetchComments();
+        }
+    }, [tab, fetchComments]);
 
     const handleDeleteComment = async (id: number) => {
         if (!confirm('Are you sure you want to delete this comment?')) return;

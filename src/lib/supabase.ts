@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import logger from '../utils/logger';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -7,10 +8,10 @@ let client: SupabaseClient;
 
 // Debug: Log environment variable status (not the actual values for security)
 if (typeof window !== 'undefined') {
-    console.log('[Supabase] URL defined:', !!supabaseUrl);
-    console.log('[Supabase] Key defined:', !!supabaseKey);
+    logger.log('[Supabase] URL defined:', !!supabaseUrl);
+    logger.log('[Supabase] Key defined:', !!supabaseKey);
     if (supabaseUrl) {
-        console.log('[Supabase] URL starts with:', supabaseUrl.substring(0, 30) + '...');
+        logger.log('[Supabase] URL starts with:', supabaseUrl.substring(0, 30) + '...');
     }
 }
 
@@ -22,7 +23,7 @@ if (supabaseUrl && supabaseKey) {
 
         // Validate URL format
         if (!trimmedUrl.includes('supabase.co')) {
-            console.error('[Supabase] Invalid URL format. Expected supabase.co domain.');
+            logger.error('[Supabase] Invalid URL format. Expected supabase.co domain.');
         }
 
         client = createClient(trimmedUrl, trimmedKey, {
@@ -34,16 +35,16 @@ if (supabaseUrl && supabaseKey) {
                 storage: typeof window !== 'undefined' ? window.localStorage : undefined,
             }
         });
-        console.log('[Supabase] Client initialized successfully with auth options');
+        logger.log('[Supabase] Client initialized successfully with auth options');
     } catch (e) {
-        console.error('[Supabase] Init failed:', e);
+        logger.error('[Supabase] Init failed:', e);
         // Fallback dummy - will cause auth to fail but won't crash
         client = createClient('https://example.supabase.co', 'public-anon-key');
     }
 } else {
-    console.error('[Supabase] Environment variables missing!');
-    console.error('[Supabase] Make sure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set');
-    console.error('[Supabase] In Cloudflare: Settings → Environment Variables');
+    logger.error('[Supabase] Environment variables missing!');
+    logger.error('[Supabase] Make sure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set');
+    logger.error('[Supabase] In Cloudflare: Settings → Environment Variables');
     // Fallback dummy
     client = createClient('https://example.supabase.co', 'public-anon-key');
 }

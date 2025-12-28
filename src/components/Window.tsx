@@ -124,10 +124,13 @@ const Window: React.FC<WindowProps> = ({
         return () => clearTimeout(timer);
     }, [initialX]);
 
-    // --- SCROLL SPY LOGIC ---
+    // --- SCROLL SPY LOGIC (Optimized with RAF) ---
     useEffect(() => {
         const container = contentRef.current;
         if (!container) return;
+
+        let rafId: number | null = null;
+        let isScrolling = false;
 
         const handleScroll = () => {
             // Find all headers inside the content area
@@ -149,20 +152,22 @@ const Window: React.FC<WindowProps> = ({
             if (currentSectionId !== activeSection) {
                 setActiveSection(currentSectionId);
             }
+            isScrolling = false;
         };
 
-        // Throttled scroll listener
-        let timeoutId: ReturnType<typeof setTimeout> | null = null;
-        const throttledScroll = () => {
-            if (timeoutId) return;
-            timeoutId = setTimeout(() => {
-                handleScroll();
-                timeoutId = null;
-            }, 100);
+        // Use requestAnimationFrame for better performance
+        const onScroll = () => {
+            if (!isScrolling) {
+                isScrolling = true;
+                rafId = requestAnimationFrame(handleScroll);
+            }
         };
 
-        container.addEventListener('scroll', throttledScroll);
-        return () => container.removeEventListener('scroll', throttledScroll);
+        container.addEventListener('scroll', onScroll, { passive: true });
+        return () => {
+            container.removeEventListener('scroll', onScroll);
+            if (rafId) cancelAnimationFrame(rafId);
+        };
     }, [activeSection]);
 
 
@@ -358,7 +363,7 @@ const Window: React.FC<WindowProps> = ({
     };
 
     // Removed shadow-2xl class below
-    let containerClasses = `
+    const containerClasses = `
     fixed flex flex-col rounded-xl overflow-hidden border-[1.5px] border-black/20 dark:border-white/30 backface-hidden
     ${isOpening ? 'animate-window-open' : ''}
     ${isClosing ? 'opacity-0 scale-95 transition-all duration-300' : ''}

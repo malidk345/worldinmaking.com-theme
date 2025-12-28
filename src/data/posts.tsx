@@ -1,5 +1,5 @@
 // Data helpers for posts (keep as plain data, no client-only React elements)
-import { BlogPost, Post, Comment } from '../types';
+import { BlogPost, Post } from '../types';
 import { posts, formatDate, getExcerptFromContent } from './index';
 
 // Note: content is stored as raw HTML string. Rendering components
@@ -22,7 +22,7 @@ function countWords(html: string): number {
 }
 
 // Generate a gravatar-style avatar URL based on author name
-function generateAuthorAvatar(author: string): string {
+function generateAuthorAvatar(_author: string): string {
     // Return empty string to force initials fallback
     return '';
 }

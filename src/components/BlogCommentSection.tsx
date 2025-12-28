@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import Image from 'next/image';
 import { UserAvatar } from './UserAvatar';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -30,7 +29,7 @@ interface ThreadedComment extends DbComment {
 
 const BlogCommentSection: React.FC<BlogCommentSectionProps> = ({ postId }) => {
     const { addToast } = useToast();
-    const { user, profile } = useAuth();
+    const { user } = useAuth();
     const { openWindow } = useWindow();
 
     const [comments, setComments] = useState<ThreadedComment[]>([]);

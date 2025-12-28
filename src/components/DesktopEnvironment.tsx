@@ -10,8 +10,7 @@ import AdminContent from './AdminContent';
 import SettingsContent from './SettingsContent';
 import AuthorProfileContent from './AuthorProfileContent';
 import { UserAvatar } from './UserAvatar';
-import { useAuth } from '../contexts/AuthContext';
-import { ContentsIcon, ReaderIcon, GridIcon, ListIcon, HomeIcon, PenIcon, ShieldCheckIcon, CogIcon } from './Icons';
+import { ContentsIcon, ReaderIcon, GridIcon, ListIcon } from './Icons';
 import ReactionControl from './ReactionControl';
 import BlogCommentSection from './BlogCommentSection';
 import LoginContent from './LoginContent';
@@ -102,131 +101,29 @@ const GetBlogTOCSidebar = ({ headings = [], activeSection }: { headings?: string
     </div>
 );
 
-// New Component: Empty Desktop State
+// Import new components for animated desktop
+import { HolographicGlobe } from './HolographicGlobe';
+import { OrbitalMenu } from './OrbitalMenu';
+import { AmbientBackground } from './AmbientBackground';
+
+// New Component: Empty Desktop State with Holographic Globe Animation
 const EmptyDesktop = ({ openWindow }: { openWindow: (type: 'home' | 'post' | 'services' | 'about' | 'contact' | 'wim' | 'login' | 'privacy' | 'terms' | 'cookies' | 'admin' | 'settings' | 'author', data?: any) => void }) => {
-    const popularPosts = BLOG_POSTS.slice(0, 3);
-    const { profile } = useAuth();
-
     return (
-        <div className="absolute inset-0 flex flex-col items-center justify-center animate-fade-up z-0 pointer-events-none">
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-0">
+            {/* Ambient Background Effects */}
+            <AmbientBackground />
 
-            {/* Popular Widget (Clean, Glassy) */}
-            <div className="mb-12 w-80 pointer-events-auto bg-white/40 dark:bg-black/40 backdrop-blur-xl border border-white/40 dark:border-white/10 shadow-xl rounded-2xl overflow-hidden ring-1 ring-black/5 dark:ring-white/5 transition-transform hover:scale-[1.02] duration-500">
-                <div className="px-5 py-3 border-b border-black/5 dark:border-white/5 bg-white/20 dark:bg-white/5 flex items-center justify-between">
-                    <h5 className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">popular articles</h5>
-                </div>
-                <div className="p-2">
-                    {popularPosts.map((post) => (
-                        <button
-                            key={post.id}
-                            onClick={() => openWindow('post', post)}
-                            className="w-full text-left group p-3 rounded-xl hover:bg-white/50 dark:hover:bg-white/10 transition-all flex flex-col gap-1"
-                        >
-                            <div className="text-sm font-semibold text-zinc-800 dark:text-zinc-100 group-hover:text-black dark:group-hover:text-white transition-colors truncate lowercase leading-tight">
-                                {post.title}
-                            </div>
-                            <div className="flex items-center justify-between text-[10px] text-zinc-400 lowercase w-full">
-                                <span>{post.date}</span>
-                                <span className="opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0 text-zinc-500 font-medium">read</span>
-                            </div>
-                        </button>
-                    ))}
-                </div>
-            </div>
+            {/* Main Content Area */}
+            <div className="relative z-10 w-full h-full flex items-center justify-center">
 
-            {/* Action Area */}
-            <div className="flex items-start gap-8 pointer-events-auto">
-                {/* Home Icon */}
-                <div className="flex flex-col items-center gap-3 group cursor-pointer" onClick={() => openWindow('home')}>
-                    <div className="w-16 h-16 rounded-[20px] bg-white/60 dark:bg-white/5 backdrop-blur-md shadow-xl shadow-black/5 ring-1 ring-white/50 dark:ring-white/10 flex items-center justify-center transition-all group-hover:scale-110 group-hover:-translate-y-1 group-active:scale-95 duration-300">
-                        <div className="text-blue-500 dark:text-blue-400 drop-shadow-sm scale-[1.8]">
-                            <HomeIcon />
-                        </div>
-                    </div>
-                    <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500 lowercase group-hover:text-black dark:group-hover:text-white transition-colors tracking-wide">
-                        home
-                    </span>
+                {/* The Central Globe Canvas */}
+                <div className="relative z-0">
+                    <HolographicGlobe />
                 </div>
 
-                {/* Write For Wim Icon */}
-                <div className="flex flex-col items-center gap-3 group cursor-pointer" onClick={() => openWindow('wim')}>
-                    <div className="w-16 h-16 rounded-[20px] bg-white/60 dark:bg-white/5 backdrop-blur-md shadow-xl shadow-black/5 ring-1 ring-white/50 dark:ring-white/10 flex items-center justify-center transition-all group-hover:scale-110 group-hover:-translate-y-1 group-active:scale-95 duration-300">
-                        <div className="text-purple-500 dark:text-purple-400 drop-shadow-sm scale-[1.8]">
-                            <PenIcon />
-                        </div>
-                    </div>
-                    <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500 lowercase group-hover:text-black dark:group-hover:text-white transition-colors tracking-wide">
-                        write
-                    </span>
-                </div>
+                {/* The Orbital Navigation */}
+                <OrbitalMenu openWindow={openWindow} />
 
-                {/* Admin Icon (Only for Admins) */}
-                {profile?.role === 'admin' && (
-                    <div className="flex flex-col items-center gap-3 group cursor-pointer" onClick={() => openWindow('admin')}>
-                        <div className="w-16 h-16 rounded-[20px] bg-red-500/80 backdrop-blur-md shadow-xl shadow-red-500/20 ring-1 ring-red-400/50 flex items-center justify-center transition-all group-hover:scale-110 group-hover:-translate-y-1 group-active:scale-95 duration-300">
-                            <div className="text-white drop-shadow-sm scale-[1.8]">
-                                <ShieldCheckIcon />
-                            </div>
-                        </div>
-                        <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500 lowercase group-hover:text-black dark:group-hover:text-white transition-colors tracking-wide">
-                            admin
-                        </span>
-                    </div>
-                )}
-
-                {/* Legal Menu List */}
-                <div className="w-40 bg-white/40 dark:bg-black/40 backdrop-blur-md border border-white/40 dark:border-white/10 shadow-xl rounded-2xl p-2 ring-1 ring-black/5 dark:ring-white/5 flex flex-col gap-0.5">
-                    <div className="px-3 py-1.5 text-[10px] font-bold text-zinc-400 dark:text-zinc-500 lowercase tracking-wider border-b border-black/5 dark:border-white/5 mb-1 flex items-center gap-1.5">
-                        <ShieldCheckIcon />
-                        <span>legal</span>
-                    </div>
-                    <button
-                        onClick={() => openWindow('privacy')}
-                        className="px-3 py-2 text-left text-xs font-medium text-zinc-600 dark:text-zinc-300 hover:bg-white/50 dark:hover:bg-white/10 rounded-lg transition-colors lowercase"
-                    >
-                        privacy policy
-                    </button>
-                    <button
-                        onClick={() => openWindow('terms')}
-                        className="px-3 py-2 text-left text-xs font-medium text-zinc-600 dark:text-zinc-300 hover:bg-white/50 dark:hover:bg-white/10 rounded-lg transition-colors lowercase"
-                    >
-                        terms of service
-                    </button>
-                    <button
-                        onClick={() => openWindow('cookies')}
-                        className="px-3 py-2 text-left text-xs font-medium text-zinc-600 dark:text-zinc-300 hover:bg-white/50 dark:hover:bg-white/10 rounded-lg transition-colors lowercase"
-                    >
-                        cookie policy
-                    </button>
-                </div>
-
-                {/* System Menu */}
-                <div className="w-40 bg-white/40 dark:bg-black/40 backdrop-blur-md border border-white/40 dark:border-white/10 shadow-xl rounded-2xl p-2 ring-1 ring-black/5 dark:ring-white/5 flex flex-col gap-0.5 h-fit">
-                    <div className="px-3 py-1.5 text-[10px] font-bold text-zinc-400 dark:text-zinc-500 lowercase tracking-wider border-b border-black/5 dark:border-white/5 mb-1 flex items-center gap-1.5">
-                        <CogIcon />
-                        <span>system</span>
-                    </div>
-                    {!profile ? (
-                        <button
-                            onClick={() => openWindow('login')}
-                            className="px-3 py-2 text-left text-xs font-medium text-zinc-600 dark:text-zinc-300 hover:bg-white/50 dark:hover:bg-white/10 rounded-lg transition-colors lowercase"
-                        >
-                            member login
-                        </button>
-                    ) : (
-                        <>
-                            <button
-                                onClick={() => openWindow('settings')}
-                                className="px-3 py-2 text-left text-xs font-medium text-zinc-600 dark:text-zinc-300 hover:bg-white/50 dark:hover:bg-white/10 rounded-lg transition-colors lowercase"
-                            >
-                                settings
-                            </button>
-                            <div className="px-3 py-2 text-xs text-zinc-400 lowercase border-t border-black/5 dark:border-white/5 mt-1 pt-2">
-                                logged in as <br /> <span className="text-black dark:text-white font-bold">{profile.username || 'user'}</span>
-                            </div>
-                        </>
-                    )}
-                </div>
             </div>
         </div>
     );
@@ -410,7 +307,10 @@ const DesktopEnvironment: React.FC = () => {
                                                                     </button>
                                                                 </div>
 
-                                                                <div className="flex items-center gap-3 text-[10px] font-medium text-zinc-500 dark:text-zinc-400 tracking-wide">
+                                                                <div
+                                                                    className="flex items-center gap-3 text-[10px] font-medium text-zinc-500 dark:text-zinc-400 tracking-wide whitespace-nowrap overflow-x-auto"
+                                                                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                                                                >
                                                                     <span>{post.date}</span>
                                                                     <span className="text-zinc-300 dark:text-zinc-600">/</span>
                                                                     <span>{post.wordCount} words</span>
@@ -823,7 +723,10 @@ const DesktopEnvironment: React.FC = () => {
                                                 </h1>
 
                                                 {/* Divided Meta Container */}
-                                                <div className="flex flex-wrap items-center mx-3 border border-black/10 dark:border-white/10 rounded-lg overflow-hidden divide-x divide-black/10 dark:divide-white/10 bg-zinc-50/50 dark:bg-white/5 text-xs">
+                                                <div
+                                                    className="flex flex-nowrap items-center mx-3 border border-black/10 dark:border-white/10 rounded-lg overflow-x-auto divide-x divide-black/10 dark:divide-white/10 bg-zinc-50/50 dark:bg-white/5 text-xs whitespace-nowrap"
+                                                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                                                >
                                                     {/* Author */}
                                                     <div className="flex items-center gap-2 px-3 py-2 bg-black/5 dark:bg-white/10">
                                                         <UserAvatar

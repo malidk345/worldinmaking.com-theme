@@ -1,5 +1,5 @@
 {
-  "name": "nextjs-output",
+  "name": "worldinmaking",
   "version": "0.1.0",
   "private": true,
   "engines": {
@@ -29,4 +29,3 @@
     "typescript": "^5"
   }
 }
-
