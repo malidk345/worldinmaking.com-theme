@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../contexts/ToastContext';
-import { Icons } from './Icons'; // Assuming Icons are exported from here or used directly
 
 interface AdminComment {
     id: number;
@@ -217,8 +216,8 @@ const AdminContent = () => {
                 <button
                     onClick={() => { setEditingId(null); setTab('create'); }}
                     className={`text-left px-3 py-2.5 rounded-lg text-sm font-bold lowercase transition-all flex items-center justify-between group ${tab === 'create'
-                            ? 'bg-black text-white dark:bg-white dark:text-black shadow-md'
-                            : 'text-zinc-600 hover:bg-black/5 dark:text-zinc-300 dark:hover:bg-white/5'
+                        ? 'bg-black text-white dark:bg-white dark:text-black shadow-md'
+                        : 'text-zinc-600 hover:bg-black/5 dark:text-zinc-300 dark:hover:bg-white/5'
                         }`}
                 >
                     <span>{editingId ? 'edit post' : 'write new'}</span>
@@ -228,8 +227,8 @@ const AdminContent = () => {
                 <button
                     onClick={() => setTab('posts')}
                     className={`text-left px-3 py-2.5 rounded-lg text-sm font-bold lowercase transition-all flex items-center justify-between group ${tab === 'posts'
-                            ? 'bg-black text-white dark:bg-white dark:text-black shadow-md'
-                            : 'text-zinc-600 hover:bg-black/5 dark:text-zinc-300 dark:hover:bg-white/5'
+                        ? 'bg-black text-white dark:bg-white dark:text-black shadow-md'
+                        : 'text-zinc-600 hover:bg-black/5 dark:text-zinc-300 dark:hover:bg-white/5'
                         }`}
                 >
                     <span>manage posts</span>
@@ -239,8 +238,8 @@ const AdminContent = () => {
                 <button
                     onClick={() => setTab('comments')}
                     className={`text-left px-3 py-2.5 rounded-lg text-sm font-bold lowercase transition-all flex items-center justify-between group ${tab === 'comments'
-                            ? 'bg-black text-white dark:bg-white dark:text-black shadow-md'
-                            : 'text-zinc-600 hover:bg-black/5 dark:text-zinc-300 dark:hover:bg-white/5'
+                        ? 'bg-black text-white dark:bg-white dark:text-black shadow-md'
+                        : 'text-zinc-600 hover:bg-black/5 dark:text-zinc-300 dark:hover:bg-white/5'
                         }`}
                 >
                     <span>comments</span>
