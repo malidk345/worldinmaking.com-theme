@@ -45,10 +45,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     useEffect(() => {
         // Check active session
         const getSession = async () => {
+            if (typeof window === 'undefined') return;
+
             logger.log('[Auth] Checking for existing session...');
 
-            // MANUAL HASH HANDLING FOR MAGIC LINKS
-            if (typeof window !== 'undefined' && window.location.hash && window.location.hash.includes('access_token')) {
+            // 1. Handle PKCE Code (Query Parameter)
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+
+            if (code) {
+                logger.log('[Auth] Found PKCE code, exchanging for session...');
+                try {
+                    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+                    if (error) {
+                        logger.error('[Auth] Code exchange error:', error);
+                    } else if (data.session) {
+                        logger.log('[Auth] PKCE exchange success:', data.session.user.email);
+                        setUser(data.session.user);
+                        fetchProfile(data.session.user.id);
+
+                        // Clean URL (remove code)
+                        const newUrl = window.location.pathname;
+                        window.history.replaceState(null, '', newUrl);
+                        setLoading(false);
+                        return;
+                    }
+                } catch (e) {
+                    logger.error('[Auth] PKCE exchange exception:', e);
+                }
+            }
+
+            // 2. Handle Implicit Flow (Hash)
+            if (window.location.hash && window.location.hash.includes('access_token')) {
                 logger.log('[Auth] Found hash with access_token, manually setting session');
                 try {
                     // Remove # from start

@@ -28,8 +28,8 @@ if (supabaseUrl && supabaseKey) {
 
         client = createClient(trimmedUrl, trimmedKey, {
             auth: {
-                detectSessionInUrl: true,
-                flowType: 'implicit',
+                detectSessionInUrl: false, // We will handle this manually in AuthContext to avoid race conditions
+                flowType: 'pkce',
                 autoRefreshToken: true,
                 persistSession: true,
                 storage: typeof window !== 'undefined' ? window.localStorage : undefined,
