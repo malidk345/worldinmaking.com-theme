@@ -29,7 +29,7 @@ if (supabaseUrl && supabaseKey) {
         client = createClient(trimmedUrl, trimmedKey, {
             auth: {
                 detectSessionInUrl: true,
-                flowType: 'pkce',
+                flowType: 'implicit',
                 autoRefreshToken: true,
                 persistSession: true,
                 storage: typeof window !== 'undefined' ? window.localStorage : undefined,
