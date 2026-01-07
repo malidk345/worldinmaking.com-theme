@@ -10,13 +10,16 @@ import { getPostById, usePosts } from '../hooks/usePosts';
 import { SidebarPanel, TableOfContents } from '../components/Icons';
 import VoteControl from '../components/VoteControl';
 import CommentSection from '../components/CommentSection';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeSlug from 'rehype-slug';
 
 function BlogPostContent() {
     const searchParams = useSearchParams();
     const slug = searchParams.get('id');
     const [post, setPost] = useState(null);
     const [loading, setLoading] = useState(true);
-    const { posts } = usePosts(); // Fetch all posts for suggestions
+    const { posts } = usePosts();
 
     useEffect(() => {
         if (slug) {
@@ -30,21 +33,18 @@ function BlogPostContent() {
 
     const { updateTabTitle } = useTabs();
 
-    // State for sidebar and TOC panels
     const [showSidebar, setShowSidebar] = useState(false);
     const [showTOC, setShowTOC] = useState(false);
 
-    // Get suggested posts (other posts excluding current)
     const suggestedPosts = posts.filter(p => p.id !== slug);
 
-    // Extract headings from content for TOC
+    // Manual extraction for Sidebar (ReactMarkdown renders visual, this parses needed data)
     const headings = post?.content?.split('\n').filter(l => l.startsWith('## ')).map(line => {
         const text = line.replace('## ', '');
         const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
         return { text, id };
     }) || [];
 
-    // Update tab title when post loads
     useEffect(() => {
         if (post) {
             updateTabTitle(post.title);
@@ -83,14 +83,12 @@ function BlogPostContent() {
         <div className="flex-1 flex flex-col h-full overflow-hidden">
             <DashboardHeader />
 
-            {/* Blog Post Toolbar */}
             <div className="scene-sticky-bar @2xl/main-content:sticky z-20 bg-primary @2xl/main-content:top-[calc(var(--scene-layout-header-height)+var(--scene-title-section-height,64px))] space-y-2 py-2 px-3 rounded-t-xl mt-3">
                 <div className="flex gap-2 justify-between">
                     <div className="flex-1 flex gap-2 items-end flex-wrap border border-transparent">
                         <div className="w-full">
                             <div className="LemonButton LemonButton--secondary LemonButton--status-default LemonButton--small LemonButton--has-icon LemonButton--has-side-icon w-full">
                                 <span className="LemonButton__chrome justify-between px-3">
-                                    {/* Sidebar Toggle Button */}
                                     <button
                                         onClick={() => setShowSidebar(!showSidebar)}
                                         className={`flex items-center gap-2 p-1 rounded transition-colors ${showSidebar ? 'bg-accent text-primary' : 'hover:bg-accent/50'}`}
@@ -99,7 +97,6 @@ function BlogPostContent() {
                                         <SidebarPanel />
                                         <span className="text-xs font-medium hidden sm:inline">suggested</span>
                                     </button>
-                                    {/* TOC Toggle Button */}
                                     <button
                                         onClick={() => setShowTOC(!showTOC)}
                                         className={`flex items-center gap-2 p-1 rounded transition-colors ${showTOC ? 'bg-accent text-primary' : 'hover:bg-accent/50'}`}
@@ -115,10 +112,8 @@ function BlogPostContent() {
                 </div>
             </div>
 
-            {/* Main Content Area */}
             <div className="flex-1 flex overflow-hidden relative">
 
-                {/* Backdrop Overlay */}
                 {(showSidebar || showTOC) && (
                     <div
                         className="fixed inset-0 z-30"
@@ -126,18 +121,16 @@ function BlogPostContent() {
                     />
                 )}
 
-                {/* Main Content */}
                 <main className="flex-1 overflow-y-auto bg-bg-3000 custom-scrollbar" style={{ paddingBottom: 'calc(120px + env(safe-area-inset-bottom, 0px))' }}>
                     <article className="max-w-[1400px] mx-auto">
 
-                        {/* Article Header */}
                         <div className="px-6 pt-8 md:pt-12">
                             <div className="max-w-[900px] mx-auto">
                                 <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-primary leading-[1.1] tracking-tight mb-8">
                                     {post.title}
                                 </h1>
 
-                                <div className="relative aspect-[2/1] rounded-lg overflow-hidden border mb-6" style={{ borderColor: 'var(--border-primary)' }}>
+                                <div className="relative aspect-2/1 rounded-lg overflow-hidden border mb-6" style={{ borderColor: 'var(--border-primary)' }}>
                                     <Image
                                         src={post.image}
                                         alt={post.title}
@@ -180,10 +173,8 @@ function BlogPostContent() {
                             </div>
                         </div>
 
-                        {/* Article Content Grid */}
                         <div className="px-1">
                             <div className="w-full flex flex-col lg:flex-row gap-4 relative">
-                                {/* Sidebar: Table of Contents */}
                                 <aside className="hidden lg:block w-[200px] shrink-0">
                                     <div className="sticky top-24">
                                         <h4 className="text-[11px] font-bold text-secondary uppercase tracking-[0.2em] opacity-40 mb-8">In this article</h4>
@@ -201,44 +192,49 @@ function BlogPostContent() {
                                     </div>
                                 </aside>
 
-                                {/* Content Body */}
                                 <div className="flex-1 w-full article-content">
-                                    <div className="bg-white rounded-lg p-4 mx-1 border border-(--border-primary)">
-                                        <p className="text-base text-gray-900 leading-relaxed mb-3">
+                                    <div className="bg-white rounded-lg p-6 mx-1 border border-(--border-primary)">
+                                        <p className="text-lg text-gray-700 leading-relaxed mb-6 font-medium">
                                             {post.description}
                                         </p>
-                                        <hr className="my-6" />
-                                        <div className="text-gray-900 leading-relaxed">
-                                            {post.content.split('\n').map((line, i) => {
-                                                if (line.startsWith('## ')) {
-                                                    const text = line.replace('## ', '');
-                                                    const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
-                                                    return <h2 key={i} id={id} className="text-[1.75rem] font-bold text-primary mt-4 mb-2 tracking-[-0.015em] scroll-mt-24">{text}</h2>;
-                                                }
-                                                if (line.startsWith('### ')) {
-                                                    return <h3 key={i} className="text-xl font-bold text-primary mt-4 mb-1 tracking-[-0.015em]">{line.replace('### ', '')}</h3>;
-                                                }
-                                                if (line.startsWith('> ')) {
-                                                    return <blockquote key={i} className="px-6 py-4 rounded bg-(--posthog-3000-50) border border-primary mb-4 text-[15px] leading-relaxed">{line.replace('> ', '')}</blockquote>;
-                                                }
-                                                if (line.startsWith('- ')) {
-                                                    const content = line.replace('- ', '');
-                                                    const isBold = content.startsWith('**');
-                                                    return (
-                                                        <li key={i} className="text-base leading-relaxed mb-0.5 ml-6 list-disc text-gray-900">
-                                                            {isBold ? (
-                                                                <strong className="text-gray-900 font-semibold">{content.replace(/\*\*/g, '')}</strong>
-                                                            ) : content}
-                                                        </li>
-                                                    );
-                                                }
-                                                if (line.trim() === '') return null;
-                                                return <p key={i} className="text-base text-gray-900 leading-relaxed mb-3">{line}</p>;
-                                            })}
-                                        </div>
+                                        <hr className="my-8 border-gray-100" />
+
+                                        <ReactMarkdown
+                                            remarkPlugins={[remarkGfm]}
+                                            rehypePlugins={[rehypeSlug]}
+                                            className="prose prose-lg max-w-none text-gray-900 leading-relaxed"
+                                            components={{
+                                                h1: ({ node, ...props }) => <h1 className="text-3xl font-bold mt-8 mb-4 text-primary" {...props} />,
+                                                h2: ({ node, ...props }) => <h2 className="text-[1.75rem] font-bold text-primary mt-10 mb-4 tracking-[-0.015em] scroll-mt-24" {...props} />,
+                                                h3: ({ node, ...props }) => <h3 className="text-xl font-bold text-primary mt-8 mb-3 tracking-[-0.015em]" {...props} />,
+                                                p: ({ node, ...props }) => <p className="mb-5 text-[17px] leading-7 text-gray-800" {...props} />,
+                                                ul: ({ node, ...props }) => <ul className="list-disc ml-6 mb-6 space-y-2 text-gray-800" {...props} />,
+                                                ol: ({ node, ...props }) => <ol className="list-decimal ml-6 mb-6 space-y-2 text-gray-800" {...props} />,
+                                                li: ({ node, ...props }) => <li className="pl-1" {...props} />,
+                                                blockquote: ({ node, ...props }) => <blockquote className="px-6 py-4 rounded-lg bg-gray-50 border-l-4 border-primary mb-8 text-lg font-medium text-gray-700 italic" {...props} />,
+                                                a: ({ node, ...props }) => <a className="text-blue-600 hover:text-blue-800 hover:underline font-medium transition-colors" {...props} />,
+                                                code: ({ node, inline, className, children, ...props }) => {
+                                                    const match = /language-(\w+)/.exec(className || '')
+                                                    return !inline ? (
+                                                        <pre className="not-prose bg-[#1f2937] text-gray-100 p-4 rounded-lg overflow-x-auto mb-6 text-sm font-mono leading-normal shadow-sm">
+                                                            <code className={className} {...props}>
+                                                                {children}
+                                                            </code>
+                                                        </pre>
+                                                    ) : (
+                                                        <code className="bg-gray-100 text-pink-600 px-1.5 py-0.5 rounded text-[0.9em] font-mono font-medium" {...props}>
+                                                            {children}
+                                                        </code>
+                                                    )
+                                                },
+                                                img: ({ node, ...props }) => <img className="rounded-xl my-8 w-full h-auto border border-gray-100 shadow-sm" {...props} />,
+                                                hr: ({ node, ...props }) => <hr className="my-10 border-gray-100" {...props} />,
+                                            }}
+                                        >
+                                            {post.content}
+                                        </ReactMarkdown>
                                     </div>
 
-                                    {/* Footer */}
                                     <div className="space-y-2 mt-2">
                                         <VoteControl postId={post.id} />
                                         <button className="LemonButton LemonButton--secondary LemonButton--status-default LemonButton--small w-full">
@@ -265,7 +261,6 @@ function BlogPostContent() {
                             transition={{ duration: 0.2, ease: "easeOut" }}
                             className="fixed right-4 top-[calc(var(--scene-layout-header-height)+60px)] bottom-4 w-[240px] z-40 bg-white/90 backdrop-blur-xl rounded-xl shadow-2xl overflow-hidden flex flex-col border border-black/5"
                         >
-                            {/* TOC Content (Simplified) */}
                             <div className="flex-1 overflow-y-auto p-1.5 scrollbar-hide">
                                 <nav className="flex flex-col gap-0.5">
                                     {headings.map((heading, i) => (
