@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardHeader from '../components/DashboardHeader';
-import { posts } from '../data/posts';
+import { usePosts } from '../hooks/usePosts';
 
 // Icons
 const SearchIcon = () => (
@@ -14,14 +14,17 @@ const SearchIcon = () => (
 );
 
 export default function ExplorePage() {
+    const { posts, loading } = usePosts();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
-    const [filteredPosts, setFilteredPosts] = useState(posts);
+    const [filteredPosts, setFilteredPosts] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
 
     const categories = ['all', ...new Set(posts.map(p => p.category))];
 
     useEffect(() => {
+        if (loading) return;
+
         // If query is empty and category is all, show all posts immediately (no loading)
         if (!searchQuery && selectedCategory === 'all') {
             setFilteredPosts(posts);
@@ -43,7 +46,7 @@ export default function ExplorePage() {
         }, 300); // 300ms debounce
 
         return () => clearTimeout(timer);
-    }, [searchQuery, selectedCategory]);
+    }, [searchQuery, selectedCategory, posts, loading]);
 
     return (
         <div className="flex-1 flex flex-col bg-bg-3000 h-full overflow-hidden">
@@ -91,8 +94,8 @@ export default function ExplorePage() {
                                         key={category}
                                         onClick={() => setSelectedCategory(category)}
                                         className={`px-4 py-2 rounded-xl text-[13px] font-medium transition-all whitespace-nowrap border ${selectedCategory === category
-                                                ? 'bg-black text-white border-black shadow-md'
-                                                : 'bg-white text-secondary border-black/5 hover:bg-black/5 hover:text-primary'
+                                            ? 'bg-black text-white border-black shadow-md'
+                                            : 'bg-white text-secondary border-black/5 hover:bg-black/5 hover:text-primary'
                                             }`}
                                     >
                                         {category}
