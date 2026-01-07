@@ -11,7 +11,7 @@ import { SidebarPanel, TableOfContents } from '../../components/Icons';
 import VoteControl from '../../components/VoteControl';
 import CommentSection from '../../components/CommentSection';
 
-export const runtime = 'edge';
+
 
 export default function BlogPost() {
     const params = useParams();
