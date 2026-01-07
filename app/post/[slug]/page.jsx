@@ -18,6 +18,7 @@ export default function BlogPost() {
     const { posts } = usePosts(); // Fetch all posts for suggestions
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         if (params.slug) {
             setLoading(true);
             getPostById(params.slug).then(data => {

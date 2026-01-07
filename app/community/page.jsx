@@ -146,7 +146,7 @@ export default function CommunityPage() {
                                 <div className="space-y-4">
                                     {posts.length === 0 && (
                                         <div className="text-center py-20 text-secondary">
-                                            <p className="lowercase">it's quiet here...</p>
+                                            <p className="lowercase">it&apos;s quiet here...</p>
                                             <p className="text-xs mt-2 font-medium">be the first to share a thought.</p>
                                         </div>
                                     )}
