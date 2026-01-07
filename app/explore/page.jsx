@@ -189,7 +189,7 @@ export default function ExplorePage() {
                                     </div>
                                     <h3 className="text-lg font-bold text-primary mb-2">no results found</h3>
                                     <p className="text-secondary text-sm max-w-xs">
-                                        we couldn't find anything matching "{searchQuery}". try different keywords or browse categories.
+                                        we couldn&apos;t find anything matching &quot;{searchQuery}&quot;. try different keywords or browse categories.
                                     </p>
                                     <button
                                         onClick={() => { setSearchQuery(''); setSelectedCategory('all'); }}

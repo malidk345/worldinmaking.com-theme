@@ -1,5 +1,6 @@
 // Dummy data removal or minimization to reduce bundle size
 // const dummyLongString = "";
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
 // Helper to process content: Extract headings AND inject IDs for TOC

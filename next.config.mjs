@@ -4,7 +4,6 @@ const nextConfig = {
   images: {
     unoptimized: true
   },
-  // Ensure trailing slashes for static export routing compatibility
   trailingSlash: true,
 };
 
