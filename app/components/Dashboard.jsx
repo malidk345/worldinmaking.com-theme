@@ -1,5 +1,8 @@
 "use client";
 import React, { useState } from 'react';
+
+// Force dynamic rendering just in case (though it's client component)
+export const dynamic = 'force-dynamic';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
