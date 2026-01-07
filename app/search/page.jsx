@@ -136,7 +136,7 @@ export default function SearchPage() {
                                             transition={{ delay: index * 0.03 }}
                                         >
                                             <Link
-                                                href={`/post/${post.id}`}
+                                                href={`/post?id=${post.id}`}
                                                 className="group flex items-center gap-4 p-4 hover:bg-black/5 transition-colors"
                                             >
                                                 <div className="text-secondary group-hover:text-primary transition-colors bg-black/5 p-2 rounded-lg">

@@ -4,7 +4,7 @@ import Image from 'next/image';
 
 export default function InsightCard({ id, title, type, ribbonColor, description, date, author, image, children }) {
     return (
-        <Link href={`/post/${id}`} className="relative h-full flex flex-col">
+        <Link href={`/post?id=${id}`} className="relative h-full flex flex-col">
             {/* PostHog-inspired color ribbon - now spans full card height */}
             {ribbonColor && (
                 <div className={`CardMeta__ribbon CardMeta__ribbon--${ribbonColor}`} />
