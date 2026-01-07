@@ -11,7 +11,7 @@ const ibmPlexSans = IBM_Plex_Sans({
   display: "swap",
 });
 
-// export const runtime = 'edge';
+export const runtime = 'edge';
 
 export const metadata = {
   title: "PostHog Dashboard",
