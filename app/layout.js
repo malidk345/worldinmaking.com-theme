@@ -11,17 +11,92 @@ const ibmPlexSans = IBM_Plex_Sans({
   display: "swap",
 });
 
-
+// Site configuration
+const siteConfig = {
+  name: "World in Making",
+  description: "Discover insights, tutorials, and stories about technology, design, and life. A modern blog platform built with Next.js.",
+  url: "https://worldinmaking.com",
+  author: "World in Making Team",
+  twitterHandle: "@worldinmaking",
+};
 
 export const metadata = {
-  title: "PostHog Dashboard",
-  description: "Clone of PostHog Dashboard",
+  metadataBase: new URL(siteConfig.url),
+  title: {
+    default: siteConfig.name,
+    template: `%s | ${siteConfig.name}`,
+  },
+  description: siteConfig.description,
+  keywords: ["blog", "technology", "design", "tutorials", "insights", "web development", "programming"],
+  authors: [{ name: siteConfig.author }],
+  creator: siteConfig.author,
+  publisher: siteConfig.name,
+
+  // Open Graph
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: siteConfig.url,
+    siteName: siteConfig.name,
+    title: siteConfig.name,
+    description: siteConfig.description,
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: siteConfig.name,
+      },
+    ],
+  },
+
+  // Twitter
+  twitter: {
+    card: "summary_large_image",
+    title: siteConfig.name,
+    description: siteConfig.description,
+    creator: siteConfig.twitterHandle,
+    images: ["/og-image.png"],
+  },
+
+  // Robots
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+
+  // Icons
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
+
+  // Manifest
+  manifest: "/manifest.json",
+
+  // Verification (add your codes here)
+  verification: {
+    // google: "your-google-verification-code",
+    // yandex: "your-yandex-verification-code",
+  },
 };
 
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
-  viewportFit: 'cover', // Important for iOS safe-area
+  viewportFit: 'cover',
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#1f1f1f" },
+  ],
 };
 
 import { SidebarProvider } from "./context/SidebarContext";
@@ -30,8 +105,27 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { ToastProvider } from "./contexts/ToastContext";
 
 export default function RootLayout({ children }) {
+  // JSON-LD structured data for organization
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: siteConfig.name,
+    url: siteConfig.url,
+    logo: `${siteConfig.url}/logo.png`,
+    sameAs: [
+      "https://twitter.com/worldinmaking",
+      "https://instagram.com/worldinmaking",
+    ],
+  };
+
   return (
     <html lang="en" className={ibmPlexSans.variable}>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body className="bg-bg-3000 font-sans text-primary scrollbar-hide lowercase">
         <div className="flex h-[100dvh] w-full overflow-hidden relative">
           <AuthProvider>
@@ -48,7 +142,6 @@ export default function RootLayout({ children }) {
               </SidebarProvider>
             </ToastProvider>
           </AuthProvider>
-
 
           {/* Global safe zone - prevents browser chrome from cutting off content */}
           <div className="safe-zone-border" aria-hidden="true" />
