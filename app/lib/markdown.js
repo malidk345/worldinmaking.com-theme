@@ -2,7 +2,7 @@
 export function stripMarkdown(markdown) {
     if (!markdown) return '';
 
-    return markdown
+    let text = markdown
         // Remove headers
         .replace(/^#+\s+/gm, '')
         // Remove bold/italic
@@ -22,11 +22,23 @@ export function stripMarkdown(markdown) {
         .replace(/^\d+\.\s+/gm, '')
         // Remove horizontal rules
         .replace(/^---$/gm, '')
-        // Remove HTML tags
+        // Remove HTML tags (basic regex)
         .replace(/<[^>]*>/g, '')
         // Remove extra newlines
         .replace(/\n\s*\n/g, '\n')
         .trim();
+
+    // If client-side, use DOMParser to strip remaining HTML and decode entities
+    if (typeof window !== 'undefined') {
+        try {
+            const doc = new DOMParser().parseFromString(text, 'text/html');
+            text = doc.body.textContent || text;
+        } catch (e) {
+            // Fallback if DOMParser fails
+        }
+    }
+
+    return text;
 }
 
 // Convert markdown to plain text with limit
