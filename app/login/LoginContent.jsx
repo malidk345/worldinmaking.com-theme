@@ -2,8 +2,10 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import DashboardHeader from '../components/DashboardHeader';
+import PageWindow from '../components/PageWindow';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -27,11 +29,16 @@ const MailIcon = () => (
 );
 
 export default function LoginPage() {
+    const router = useRouter();
     const { addToast } = useToast();
     const { signInWithEmail, user, profile, signOut, loading: authLoading } = useAuth();
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
     const [sent, setSent] = useState(false);
+
+    const handleClose = () => {
+        router.push('/');
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -59,9 +66,11 @@ export default function LoginPage() {
         return (
             <div className="flex-1 flex flex-col h-full overflow-hidden">
                 <DashboardHeader />
-                <main className="flex-1 flex items-center justify-center bg-bg-3000">
-                    <div className="animate-pulse text-gray-400">Loading...</div>
-                </main>
+                <PageWindow id="login-window" title="login" onClose={handleClose}>
+                    <main className="flex-1 flex items-center justify-center bg-bg-3000 h-full">
+                        <div className="animate-pulse text-gray-400">Loading...</div>
+                    </main>
+                </PageWindow>
             </div>
         );
     }
@@ -71,45 +80,47 @@ export default function LoginPage() {
         return (
             <div className="flex-1 flex flex-col h-full overflow-hidden">
                 <DashboardHeader />
-                <main className="flex-1 flex items-center justify-center bg-bg-3000 p-8">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="max-w-sm w-full bg-white rounded-xl p-8 shadow-lg border border-black/5 text-center"
-                    >
-                        <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-6 text-green-600 mx-auto">
-                            <UserIcon />
-                        </div>
+                <PageWindow id="login-window" title="profile" onClose={handleClose}>
+                    <main className="flex-1 flex items-center justify-center bg-bg-3000 p-8 h-full">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="max-w-sm w-full bg-white rounded-xl p-8 shadow-lg border border-black/5 text-center"
+                        >
+                            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-6 text-green-600 mx-auto">
+                                <UserIcon />
+                            </div>
 
-                        <h2 className="text-xl font-black mb-1">welcome back</h2>
-                        <p className="text-sm text-gray-500 mb-8 font-medium">{profile?.username || user.email}</p>
+                            <h2 className="text-xl font-black mb-1">welcome back</h2>
+                            <p className="text-sm text-gray-500 mb-8 font-medium">{profile?.username || user.email}</p>
 
-                        {profile?.role === 'admin' && (
-                            <Link
-                                href="/admin"
-                                className="mb-6 flex items-center justify-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-xl font-bold hover:opacity-90 active:scale-95 transition-all w-full"
-                            >
-                                <GridIcon />
-                                <span>open dashboard</span>
-                            </Link>
-                        )}
+                            {profile?.role === 'admin' && (
+                                <Link
+                                    href="/admin"
+                                    className="mb-6 flex items-center justify-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-xl font-bold hover:opacity-90 active:scale-95 transition-all w-full"
+                                >
+                                    <GridIcon />
+                                    <span>open dashboard</span>
+                                </Link>
+                            )}
 
-                        <div className="flex flex-col gap-3 w-full mt-4">
-                            <Link
-                                href="/settings"
-                                className="w-full px-4 py-2 text-gray-600 hover:text-gray-900 border-[1.5px] border-transparent hover:border-gray-200 rounded-md text-sm font-medium transition-all text-center"
-                            >
-                                edit profile
-                            </Link>
-                            <button
-                                onClick={handleSignOut}
-                                className="w-full px-4 py-2 text-red-500 hover:bg-red-50 rounded-xl text-sm font-bold transition-all active:scale-95"
-                            >
-                                sign out
-                            </button>
-                        </div>
-                    </motion.div>
-                </main>
+                            <div className="flex flex-col gap-3 w-full mt-4">
+                                <Link
+                                    href="/settings"
+                                    className="w-full px-4 py-2 text-gray-600 hover:text-gray-900 border-[1.5px] border-transparent hover:border-gray-200 rounded-md text-sm font-medium transition-all text-center"
+                                >
+                                    edit profile
+                                </Link>
+                                <button
+                                    onClick={handleSignOut}
+                                    className="w-full px-4 py-2 text-red-500 hover:bg-red-50 rounded-xl text-sm font-bold transition-all active:scale-95"
+                                >
+                                    sign out
+                                </button>
+                            </div>
+                        </motion.div>
+                    </main>
+                </PageWindow>
             </div>
         );
     }
@@ -119,27 +130,29 @@ export default function LoginPage() {
         return (
             <div className="flex-1 flex flex-col h-full overflow-hidden">
                 <DashboardHeader />
-                <main className="flex-1 flex items-center justify-center bg-bg-3000 p-8">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="max-w-sm w-full bg-white rounded-xl p-8 shadow-lg border border-black/5 text-center"
-                    >
-                        <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-4 text-blue-600 animate-pulse mx-auto">
-                            <MailIcon />
-                        </div>
-                        <h2 className="text-xl font-black mb-2">check your inbox</h2>
-                        <p className="text-sm text-gray-500 mb-6">
-                            we sent a magic link to <span className="font-bold text-gray-900">{email}</span>. click it to sign in.
-                        </p>
-                        <button
-                            onClick={() => setSent(false)}
-                            className="text-xs text-gray-400 hover:text-gray-900 underline"
+                <PageWindow id="login-window" title="check inbox" onClose={handleClose}>
+                    <main className="flex-1 flex items-center justify-center bg-bg-3000 p-8 h-full">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="max-w-sm w-full bg-white rounded-xl p-8 shadow-lg border border-black/5 text-center"
                         >
-                            try different email
-                        </button>
-                    </motion.div>
-                </main>
+                            <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-4 text-blue-600 animate-pulse mx-auto">
+                                <MailIcon />
+                            </div>
+                            <h2 className="text-xl font-black mb-2">check your inbox</h2>
+                            <p className="text-sm text-gray-500 mb-6">
+                                we sent a magic link to <span className="font-bold text-gray-900">{email}</span>. click it to sign in.
+                            </p>
+                            <button
+                                onClick={() => setSent(false)}
+                                className="text-xs text-gray-400 hover:text-gray-900 underline"
+                            >
+                                try different email
+                            </button>
+                        </motion.div>
+                    </main>
+                </PageWindow>
             </div>
         );
     }
@@ -148,47 +161,49 @@ export default function LoginPage() {
     return (
         <div className="flex-1 flex flex-col h-full overflow-hidden">
             <DashboardHeader />
-            <main className="flex-1 flex items-center justify-center bg-bg-3000 p-8">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="max-w-sm w-full bg-white rounded-xl p-8 shadow-lg border border-black/5"
-                >
-                    {/* Header */}
-                    <div className="text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-md bg-gray-100 mb-4 text-gray-900">
-                            <UserIcon />
+            <PageWindow id="login-window" title="login" onClose={handleClose}>
+                <main className="flex-1 flex items-center justify-center bg-bg-3000 p-8 h-full">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="max-w-sm w-full bg-white rounded-xl p-8 shadow-lg border border-black/5"
+                    >
+                        {/* Header */}
+                        <div className="text-center mb-8">
+                            <div className="inline-flex items-center justify-center w-12 h-12 rounded-md bg-gray-100 mb-4 text-gray-900">
+                                <UserIcon />
+                            </div>
+                            <h2 className="text-xl font-black">member access</h2>
+                            <p className="text-sm text-gray-500 mt-2">
+                                enter your email to receive a magic login link. no password required.
+                            </p>
                         </div>
-                        <h2 className="text-xl font-black">member access</h2>
-                        <p className="text-sm text-gray-500 mt-2">
-                            enter your email to receive a magic login link. no password required.
+
+                        {/* Form */}
+                        <form className="space-y-3" onSubmit={handleSubmit}>
+                            <input
+                                type="email"
+                                required
+                                placeholder="email address"
+                                value={email}
+                                onChange={e => setEmail(e.target.value)}
+                                className="w-full px-4 py-3 bg-gray-50 border-[1.5px] border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors text-gray-900 placeholder:text-gray-400"
+                            />
+
+                            <button
+                                disabled={loading}
+                                className="w-full py-3 bg-gray-900 text-white font-bold rounded-lg hover:opacity-90 text-sm mt-2 disabled:opacity-50 transition-all shadow-[0_4px_0_0_#171717] hover:shadow-[0_6px_0_0_#171717] active:shadow-[0_2px_0_0_#171717] hover:-translate-y-0.5 active:translate-y-0.5"
+                            >
+                                {loading ? 'sending link...' : 'send magic link'}
+                            </button>
+                        </form>
+
+                        <p className="text-xs text-gray-400 text-center mt-6">
+                            by signing in, you agree to our terms and privacy policy.
                         </p>
-                    </div>
-
-                    {/* Form */}
-                    <form className="space-y-3" onSubmit={handleSubmit}>
-                        <input
-                            type="email"
-                            required
-                            placeholder="email address"
-                            value={email}
-                            onChange={e => setEmail(e.target.value)}
-                            className="w-full px-4 py-3 bg-gray-50 border-[1.5px] border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors text-gray-900 placeholder:text-gray-400"
-                        />
-
-                        <button
-                            disabled={loading}
-                            className="w-full py-3 bg-gray-900 text-white font-bold rounded-lg hover:opacity-90 text-sm mt-2 disabled:opacity-50 transition-all shadow-[0_4px_0_0_#171717] hover:shadow-[0_6px_0_0_#171717] active:shadow-[0_2px_0_0_#171717] hover:-translate-y-0.5 active:translate-y-0.5"
-                        >
-                            {loading ? 'sending link...' : 'send magic link'}
-                        </button>
-                    </form>
-
-                    <p className="text-xs text-gray-400 text-center mt-6">
-                        by signing in, you agree to our terms and privacy policy.
-                    </p>
-                </motion.div>
-            </main>
+                    </motion.div>
+                </main>
+            </PageWindow>
         </div>
     );
 }

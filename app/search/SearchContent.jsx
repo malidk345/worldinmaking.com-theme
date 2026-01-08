@@ -1,8 +1,10 @@
 "use client";
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardHeader from '../components/DashboardHeader';
+import PageWindow from '../components/PageWindow';
 import { usePosts } from '../hooks/usePosts';
 import { stripMarkdown } from '../lib/markdown';
 
@@ -107,6 +109,7 @@ const saveRecentSearch = (query) => {
 };
 
 export default function SearchPage() {
+    const router = useRouter();
     const { posts, loading } = usePosts();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
@@ -187,198 +190,203 @@ export default function SearchPage() {
         setRecentSearches(updated);
     };
 
+    const handleClose = () => {
+        router.push('/');
+    };
+
     return (
         <div className="flex-1 flex flex-col bg-bg-3000 h-full overflow-hidden">
             <DashboardHeader />
+            <PageWindow id="search-window" title="search" onClose={handleClose}>
+                <main className="flex-1 overflow-y-auto custom-scrollbar p-6 h-full">
+                    <div className="max-w-4xl mx-auto w-full">
 
-            <main className="flex-1 overflow-y-auto custom-scrollbar p-6">
-                <div className="max-w-4xl mx-auto w-full">
-
-                    {/* Header Section */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="mb-8 text-center"
-                    >
-                        <h1 className="text-3xl font-extrabold text-primary mb-2 tracking-tight">search</h1>
-                        <p className="text-secondary text-sm">find articles, tutorials, and community questions</p>
-                    </motion.div>
-
-                    {/* Search & Filter Bar */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                        className="sticky top-0 z-20 mb-8"
-                    >
-                        <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-black/5 dark:border-white/10 rounded-2xl shadow-lg p-3 flex flex-col md:flex-row gap-3">
-                            {/* Search Input */}
-                            <div className="relative flex-1 group">
-                                <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                                    <SearchIcon />
-                                </div>
-                                <input
-                                    type="text"
-                                    placeholder="Search for anything..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    onFocus={() => setShowRecent(true)}
-                                    onBlur={() => setTimeout(() => setShowRecent(false), 200)}
-                                    className="w-full bg-white/50 dark:bg-gray-800/50 border border-black/5 dark:border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-primary placeholder:text-secondary focus:outline-none focus:bg-white dark:focus:bg-gray-800 focus:ring-2 focus:ring-black/5 dark:focus:ring-white/10 transition-all"
-                                />
-
-                                {/* Recent Searches Dropdown */}
-                                <AnimatePresence>
-                                    {showRecent && recentSearches.length > 0 && !searchQuery && (
-                                        <motion.div
-                                            initial={{ opacity: 0, y: -10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: -10 }}
-                                            className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-900 border border-black/10 dark:border-white/10 rounded-xl shadow-xl overflow-hidden z-30"
-                                        >
-                                            <div className="flex items-center justify-between px-4 py-2 border-b border-black/5 dark:border-white/5">
-                                                <span className="text-xs font-bold text-secondary">recent searches</span>
-                                                <button
-                                                    onClick={clearRecentSearches}
-                                                    className="text-xs text-red-500 hover:text-red-600"
-                                                >
-                                                    clear all
-                                                </button>
-                                            </div>
-                                            {recentSearches.map((query, i) => (
-                                                <button
-                                                    key={i}
-                                                    onClick={() => handleRecentClick(query)}
-                                                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-left group"
-                                                >
-                                                    <ClockIcon />
-                                                    <span className="flex-1 text-sm text-primary">{query}</span>
-                                                    <button
-                                                        onClick={(e) => removeRecentSearch(query, e)}
-                                                        className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600"
-                                                    >
-                                                        <CloseIcon />
-                                                    </button>
-                                                </button>
-                                            ))}
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-                            </div>
-
-                            {/* Category Filter */}
-                            <div className="flex gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
-                                {categories.map(category => (
-                                    <button
-                                        key={category}
-                                        onClick={() => setSelectedCategory(category)}
-                                        className={`px-4 py-2 rounded-xl text-[13px] font-medium transition-all whitespace-nowrap border ${selectedCategory === category
-                                            ? 'bg-black dark:bg-white text-white dark:text-black border-black dark:border-white shadow-md'
-                                            : 'bg-white dark:bg-gray-800 text-secondary border-black/5 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 hover:text-primary'
-                                            }`}
-                                    >
-                                        {category}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    </motion.div>
-
-                    {/* Results Count */}
-                    {searchQuery && !isSearching && (
+                        {/* Header Section */}
                         <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="mb-4 px-1"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="mb-8 text-center"
                         >
-                            <span className="text-sm text-secondary">
-                                found <span className="font-bold text-primary">{filteredPosts.length}</span> results for "{searchQuery}"
-                            </span>
+                            <h1 className="text-3xl font-extrabold text-primary mb-2 tracking-tight">search</h1>
+                            <p className="text-secondary text-sm">find articles, tutorials, and community questions</p>
                         </motion.div>
-                    )}
 
-                    {/* Results List */}
-                    <div className="min-h-[400px]">
-                        <AnimatePresence mode="wait">
-                            {isSearching ? (
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    className="flex items-center justify-center h-64"
-                                >
-                                    <div className="w-8 h-8 border-2 border-black/10 dark:border-white/10 border-t-black dark:border-t-white rounded-full animate-spin" />
-                                </motion.div>
-                            ) : filteredPosts.length > 0 ? (
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    className="bg-white dark:bg-gray-900 border border-black/5 dark:border-white/10 rounded-xl shadow-sm overflow-hidden flex flex-col divide-y divide-black/5 dark:divide-white/5"
-                                >
-                                    {filteredPosts.map((post, index) => (
-                                        <motion.div
-                                            key={post.id}
-                                            initial={{ opacity: 0, x: -10 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            transition={{ delay: index * 0.03 }}
-                                        >
-                                            <Link
-                                                href={`/post?id=${post.id}`}
-                                                className="group flex items-center gap-4 p-4 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                                            >
-                                                <div className="text-secondary group-hover:text-primary transition-colors bg-black/5 dark:bg-white/5 p-2 rounded-lg">
-                                                    <DocIcon />
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <h3 className="text-sm font-bold text-primary group-hover:text-blue-600 transition-colors truncate">
-                                                        <HighlightText text={post.title} query={searchQuery} />
-                                                    </h3>
-                                                    <p className="text-[11px] text-secondary truncate">
-                                                        <HighlightText text={stripMarkdown(post.description || '')} query={searchQuery} />
-                                                    </p>
-                                                    <div className="flex items-center gap-2 mt-1">
-                                                        <span className="text-[10px] px-2 py-0.5 bg-black/5 dark:bg-white/10 rounded-full text-secondary">
-                                                            {post.category}
-                                                        </span>
-                                                        <span className="text-[10px] text-tertiary">
-                                                            by {post.author}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-3 shrink-0">
-                                                    <svg className="w-4 h-4 text-tertiary group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                                    </svg>
-                                                </div>
-                                            </Link>
-                                        </motion.div>
-                                    ))}
-                                </motion.div>
-                            ) : (
-                                <motion.div
-                                    initial={{ opacity: 0, scale: 0.95 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    className="flex flex-col items-center justify-center py-20 text-center"
-                                >
-                                    <div className="w-16 h-16 bg-black/5 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                        {/* Search & Filter Bar */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1 }}
+                            className="sticky top-0 z-20 mb-8"
+                        >
+                            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-black/5 dark:border-white/10 rounded-2xl shadow-lg p-3 flex flex-col md:flex-row gap-3">
+                                {/* Search Input */}
+                                <div className="relative flex-1 group">
+                                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
                                         <SearchIcon />
                                     </div>
-                                    <h3 className="text-lg font-bold text-primary mb-2">no results found</h3>
-                                    <p className="text-secondary text-sm max-w-xs">
-                                        we couldn&apos;t find anything matching &quot;{searchQuery}&quot;. try different keywords or browse categories.
-                                    </p>
-                                    <button
-                                        onClick={() => { setSearchQuery(''); setSelectedCategory('all'); }}
-                                        className="mt-6 px-6 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg text-xs font-bold hover:bg-black/80 dark:hover:bg-white/80 transition-colors"
+                                    <input
+                                        type="text"
+                                        placeholder="Search for anything..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        onFocus={() => setShowRecent(true)}
+                                        onBlur={() => setTimeout(() => setShowRecent(false), 200)}
+                                        className="w-full bg-white/50 dark:bg-gray-800/50 border border-black/5 dark:border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-primary placeholder:text-secondary focus:outline-none focus:bg-white dark:focus:bg-gray-800 focus:ring-2 focus:ring-black/5 dark:focus:ring-white/10 transition-all"
+                                    />
+
+                                    {/* Recent Searches Dropdown */}
+                                    <AnimatePresence>
+                                        {showRecent && recentSearches.length > 0 && !searchQuery && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: -10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -10 }}
+                                                className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-900 border border-black/10 dark:border-white/10 rounded-xl shadow-xl overflow-hidden z-30"
+                                            >
+                                                <div className="flex items-center justify-between px-4 py-2 border-b border-black/5 dark:border-white/5">
+                                                    <span className="text-xs font-bold text-secondary">recent searches</span>
+                                                    <button
+                                                        onClick={clearRecentSearches}
+                                                        className="text-xs text-red-500 hover:text-red-600"
+                                                    >
+                                                        clear all
+                                                    </button>
+                                                </div>
+                                                {recentSearches.map((query, i) => (
+                                                    <button
+                                                        key={i}
+                                                        onClick={() => handleRecentClick(query)}
+                                                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-left group"
+                                                    >
+                                                        <ClockIcon />
+                                                        <span className="flex-1 text-sm text-primary">{query}</span>
+                                                        <button
+                                                            onClick={(e) => removeRecentSearch(query, e)}
+                                                            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600"
+                                                        >
+                                                            <CloseIcon />
+                                                        </button>
+                                                    </button>
+                                                ))}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+
+                                {/* Category Filter */}
+                                <div className="flex gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
+                                    {categories.map(category => (
+                                        <button
+                                            key={category}
+                                            onClick={() => setSelectedCategory(category)}
+                                            className={`px-4 py-2 rounded-xl text-[13px] font-medium transition-all whitespace-nowrap border ${selectedCategory === category
+                                                ? 'bg-black dark:bg-white text-white dark:text-black border-black dark:border-white shadow-md'
+                                                : 'bg-white dark:bg-gray-800 text-secondary border-black/5 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 hover:text-primary'
+                                                }`}
+                                        >
+                                            {category}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </motion.div>
+
+                        {/* Results Count */}
+                        {searchQuery && !isSearching && (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="mb-4 px-1"
+                            >
+                                <span className="text-sm text-secondary">
+                                    found <span className="font-bold text-primary">{filteredPosts.length}</span> results for "{searchQuery}"
+                                </span>
+                            </motion.div>
+                        )}
+
+                        {/* Results List */}
+                        <div className="min-h-[400px]">
+                            <AnimatePresence mode="wait">
+                                {isSearching ? (
+                                    <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        className="flex items-center justify-center h-64"
                                     >
-                                        clear filters
-                                    </button>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                                        <div className="w-8 h-8 border-2 border-black/10 dark:border-white/10 border-t-black dark:border-t-white rounded-full animate-spin" />
+                                    </motion.div>
+                                ) : filteredPosts.length > 0 ? (
+                                    <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        className="bg-white dark:bg-gray-900 border border-black/5 dark:border-white/10 rounded-xl shadow-sm overflow-hidden flex flex-col divide-y divide-black/5 dark:divide-white/5"
+                                    >
+                                        {filteredPosts.map((post, index) => (
+                                            <motion.div
+                                                key={post.id}
+                                                initial={{ opacity: 0, x: -10 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                transition={{ delay: index * 0.03 }}
+                                            >
+                                                <Link
+                                                    href={`/post?id=${post.id}`}
+                                                    className="group flex items-center gap-4 p-4 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                                                >
+                                                    <div className="text-secondary group-hover:text-primary transition-colors bg-black/5 dark:bg-white/5 p-2 rounded-lg">
+                                                        <DocIcon />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <h3 className="text-sm font-bold text-primary group-hover:text-blue-600 transition-colors truncate">
+                                                            <HighlightText text={post.title} query={searchQuery} />
+                                                        </h3>
+                                                        <p className="text-[11px] text-secondary truncate">
+                                                            <HighlightText text={stripMarkdown(post.description || '')} query={searchQuery} />
+                                                        </p>
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <span className="text-[10px] px-2 py-0.5 bg-black/5 dark:bg-white/10 rounded-full text-secondary">
+                                                                {post.category}
+                                                            </span>
+                                                            <span className="text-[10px] text-tertiary">
+                                                                by {post.author}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-3 shrink-0">
+                                                        <svg className="w-4 h-4 text-tertiary group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                        </svg>
+                                                    </div>
+                                                </Link>
+                                            </motion.div>
+                                        ))}
+                                    </motion.div>
+                                ) : (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        className="flex flex-col items-center justify-center py-20 text-center"
+                                    >
+                                        <div className="w-16 h-16 bg-black/5 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                                            <SearchIcon />
+                                        </div>
+                                        <h3 className="text-lg font-bold text-primary mb-2">no results found</h3>
+                                        <p className="text-secondary text-sm max-w-xs">
+                                            we couldn&apos;t find anything matching &quot;{searchQuery}&quot;. try different keywords or browse categories.
+                                        </p>
+                                        <button
+                                            onClick={() => { setSearchQuery(''); setSelectedCategory('all'); }}
+                                            className="mt-6 px-6 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg text-xs font-bold hover:bg-black/80 dark:hover:bg-white/80 transition-colors"
+                                        >
+                                            clear filters
+                                        </button>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
                     </div>
-                </div>
-            </main>
+                </main>
+            </PageWindow>
         </div>
     );
 }

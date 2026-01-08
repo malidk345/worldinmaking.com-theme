@@ -77,7 +77,7 @@ export default function HomeWindow({ onClose }) {
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: -10 }}
                             transition={{ duration: 0.2, ease: "easeOut" }}
-                            className="absolute left-4 top-4 w-[200px] z-[60] bg-white/90 backdrop-blur-xl rounded-xl shadow-2xl overflow-hidden flex flex-col border border-black/5"
+                            className="absolute left-4 top-4 w-[200px] z-60 bg-white/90 backdrop-blur-xl rounded-xl shadow-2xl overflow-hidden flex flex-col border border-black/5"
                         >
                             <div className="px-3 py-2 border-b border-black/5 flex items-center justify-between bg-white/50">
                                 <span className="text-[11px] font-bold text-primary uppercase tracking-wider">categories</span>
@@ -119,7 +119,7 @@ export default function HomeWindow({ onClose }) {
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: -10 }}
                             transition={{ duration: 0.2, ease: "easeOut" }}
-                            className="absolute left-4 top-4 w-[250px] z-[60] bg-white/90 backdrop-blur-xl rounded-xl shadow-2xl overflow-hidden flex flex-col border border-black/5"
+                            className="absolute left-4 top-4 w-[250px] z-60 bg-white/90 backdrop-blur-xl rounded-xl shadow-2xl overflow-hidden flex flex-col border border-black/5"
                         >
                             <div className="px-3 py-2 border-b border-black/5 flex items-center justify-between bg-white/50">
                                 <span className="text-[11px] font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
