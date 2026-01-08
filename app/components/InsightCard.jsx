@@ -41,7 +41,7 @@ export default function InsightCard({ id, title, type, ribbonColor, description,
                                 {title}
                             </h4>
                             <div className="LemonMarkdown CardMeta__description mt-1">
-                                <p className="line-clamp-5" style={{ fontSize: '14px', lineHeight: '21px', color: 'rgb(101, 103, 94)' }}>
+                                <p className="line-clamp-5" style={{ fontSize: '14px', lineHeight: '21px', color: 'rgb(0, 0, 0)' }}>
                                     {description || "Retention is the lifeblood of any SaaS application. Explore key metrics driving user engagement and optimize your product to keep users coming back. We cover cohort analysis, churn prediction, and actionable strategies to improve customer lifetime value and reduce churn rates effectively."}
                                 </p>
                             </div>

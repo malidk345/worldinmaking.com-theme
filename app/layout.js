@@ -6,7 +6,7 @@ import { IBM_Plex_Sans } from "next/font/google";
 // PostHog uses IBM Plex Sans for body text
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800"],
   variable: "--font-ibm-plex-sans",
   display: "swap",
 });
@@ -128,7 +128,7 @@ export default function RootLayout({ children }) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className="bg-bg-3000 font-sans text-primary scrollbar-hide lowercase">
+      <body className={`${ibmPlexSans.className} bg-bg-3000 text-primary scrollbar-hide lowercase`}>
         <div className="flex h-[100dvh] w-full overflow-hidden relative">
           <AuthProvider>
             <ThemeProvider>
