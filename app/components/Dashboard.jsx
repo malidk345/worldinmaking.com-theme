@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import DashboardHeader from './DashboardHeader';
 import DashboardGrid from './DashboardGrid';
 import { usePosts } from '../hooks/usePosts';
+import { SkeletonDashboardGrid } from './Skeleton';
 
 export default function Dashboard() {
     // Fetch posts from Supabase
@@ -191,7 +192,9 @@ export default function Dashboard() {
                         </div>
                     )}
 
-                    {viewMode === 'grid' ? (
+                    {loading ? (
+                        <SkeletonDashboardGrid count={6} />
+                    ) : viewMode === 'grid' ? (
                         <DashboardGrid posts={filteredPosts} />
                     ) : (
                         /* List View */
