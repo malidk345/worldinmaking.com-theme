@@ -10,6 +10,7 @@ import { getPostById, usePosts } from '../hooks/usePosts';
 import { SidebarPanel, TableOfContents } from '../components/Icons';
 import VoteControl from '../components/VoteControl';
 import CommentSection from '../components/CommentSection';
+import { InlineShareButtons } from '../components/ShareButtons';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSlug from 'rehype-slug';
@@ -165,6 +166,12 @@ function BlogPostContent() {
                                     <div className="px-3 py-2 text-secondary">
                                         5 min read
                                     </div>
+                                </div>
+
+                                {/* Share Buttons */}
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs text-secondary font-medium">share this article:</span>
+                                    <InlineShareButtons title={post.title} />
                                 </div>
                             </div>
                         </div>
