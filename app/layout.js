@@ -104,6 +104,7 @@ import { TabProvider } from "./context/TabContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { WindowProvider } from "./contexts/WindowContext";
 
 export default function RootLayout({ children }) {
   // JSON-LD structured data for organization
@@ -134,12 +135,14 @@ export default function RootLayout({ children }) {
               <ToastProvider>
                 <SidebarProvider>
                   <TabProvider>
-                    <Sidebar />
-                    <div className="scene flex flex-col flex-1 min-w-0">
-                      <div className="SceneLayout flex-1 flex flex-col min-h-0 relative">
-                        {children}
+                    <WindowProvider>
+                      <Sidebar />
+                      <div className="scene flex flex-col flex-1 min-w-0">
+                        <div className="SceneLayout flex-1 flex flex-col min-h-0 relative">
+                          {children}
+                        </div>
                       </div>
-                    </div>
+                    </WindowProvider>
                   </TabProvider>
                 </SidebarProvider>
               </ToastProvider>

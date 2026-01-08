@@ -1,0 +1,40 @@
+'use client';
+
+import React from 'react';
+import { SidebarPanel, TableOfContents } from './Icons';
+
+/**
+ * BlogWindowToolbar
+ * Toolbar for the Blog/Post window
+ * Icons are displayed on the left side as required
+ */
+export default function BlogWindowToolbar({
+    showSidebar,
+    setShowSidebar,
+    showTOC,
+    setShowTOC
+}) {
+    return (
+        <div className="flex items-center gap-1">
+            {/* Suggested Posts Toggle */}
+            <button
+                onClick={() => setShowSidebar?.(!showSidebar)}
+                className={`flex items-center gap-1.5 p-1.5 rounded transition-colors ${showSidebar ? 'bg-black/10 text-primary' : 'hover:bg-black/5 text-secondary hover:text-primary'}`}
+                title="Suggested Posts"
+            >
+                <SidebarPanel className="size-3.5" />
+                <span className="text-xs font-medium hidden sm:inline">suggested</span>
+            </button>
+
+            {/* Table of Contents Toggle */}
+            <button
+                onClick={() => setShowTOC?.(!showTOC)}
+                className={`flex items-center gap-1.5 p-1.5 rounded transition-colors ${showTOC ? 'bg-black/10 text-primary' : 'hover:bg-black/5 text-secondary hover:text-primary'}`}
+                title="Table of Contents"
+            >
+                <span className="text-xs font-medium hidden sm:inline">contents</span>
+                <TableOfContents className="size-3.5" />
+            </button>
+        </div>
+    );
+}

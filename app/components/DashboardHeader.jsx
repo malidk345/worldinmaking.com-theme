@@ -30,13 +30,24 @@ export default function DashboardHeader({
     viewMode,
     setViewMode
 }) {
-    const { toggleMobileSidebar } = useSidebar();
+    const { toggleMobileSidebar, openSidebar, isSidebarOpen } = useSidebar();
     const { tabs, closeTab, setActiveTab, history, reopenTab } = useTabs();
     const router = useRouter();
     const pathname = usePathname();
     const [isTabManagerOpen, setIsTabManagerOpen] = React.useState(false);
 
     const isHomePage = pathname === '/';
+
+    // Handle sidebar toggle - works for both mobile and desktop
+    const handleSidebarToggle = () => {
+        // On mobile, use the mobile toggle
+        if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+            toggleMobileSidebar();
+        } else {
+            // On desktop, open the overlay sidebar
+            openSidebar();
+        }
+    };
 
     const handleTabClick = (tab) => {
         setActiveTab(tab.id);
@@ -63,9 +74,11 @@ export default function DashboardHeader({
             >
                 <div className="border-b border-primary h-px w-full absolute -bottom-px right-0 left-0 lg:left-0"></div>
                 <div className="flex flex-row gap-1 max-w-full items-end pl-2 lg:pl-0">
+                    {/* Menu/Sidebar Toggle Button - Always visible */}
                     <button
-                        className="lg:hidden p-1 mr-1 text-black hover:text-primary self-end flex items-center justify-center h-[28px]"
-                        onClick={toggleMobileSidebar}
+                        className="p-1 mr-1 text-black hover:text-primary self-end flex items-center justify-center h-[28px] hover:bg-black/5 rounded transition-colors"
+                        onClick={handleSidebarToggle}
+                        title="Open sidebar"
                     >
                         <MenuIcon />
                     </button>
