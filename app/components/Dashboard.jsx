@@ -7,7 +7,7 @@ import DashboardHeader from './DashboardHeader';
 import DashboardGrid from './DashboardGrid';
 import { usePosts } from '../hooks/usePosts';
 import { SkeletonDashboardGrid } from './Skeleton';
-import { stripMarkdown } from '../lib/markdown';
+import { getExcerpt } from '../lib/markdown';
 
 export default function Dashboard() {
     // Fetch posts from Supabase
@@ -208,7 +208,7 @@ export default function Dashboard() {
                                             {post.title}
                                         </h3>
                                         <p className="text-[13px] text-secondary line-clamp-1 mt-0.5">
-                                            {stripMarkdown(post.description)}
+                                            {getExcerpt(post.content || post.description, 115)}
                                         </p>
                                     </div>
 

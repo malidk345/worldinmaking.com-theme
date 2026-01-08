@@ -1,6 +1,7 @@
+
 "use client";
 import React, { useState } from 'react';
-import { stripMarkdown } from '../lib/markdown';
+import { getExcerpt } from '../lib/markdown';
 import InsightCard from './InsightCard';
 
 export default function DashboardGrid({ posts, loading }) {
@@ -33,7 +34,7 @@ export default function DashboardGrid({ posts, loading }) {
                         <InsightCard
                             id={item.id}
                             title={item.title}
-                            description={stripMarkdown(item.description)}
+                            description={getExcerpt(item.content || item.description, 115)}
                             type={item.category}
                             ribbonColor={item.ribbon}
                             date={item.date}
