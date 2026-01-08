@@ -131,7 +131,7 @@ const Sidebar = () => {
                                             title={item.label}
                                             onClick={toggleTheme}
                                         >
-                                            <span className="flex text-tertiary group-hover:text-primary w-5 h-5 items-center justify-center">
+                                            <span className="flex text-black w-5 h-5 items-center justify-center">
                                                 {isDark ? <Icons.LightMode /> : <Icons.DarkMode />}
                                             </span>
                                             <span className="truncate flex-1">{isDark ? 'Light Mode' : 'Dark Mode'}</span>
@@ -150,7 +150,7 @@ const Sidebar = () => {
                                         title={item.label}
                                         onClick={handleLinkClick}
                                     >
-                                        <span className="flex text-tertiary group-hover:text-primary w-5 h-5 items-center justify-center">
+                                        <span className="flex text-black w-5 h-5 items-center justify-center">
                                             {Icons[item.icon] && React.createElement(Icons[item.icon])}
                                         </span>
                                         <span className="truncate flex-1">{item.label}</span>
@@ -181,7 +181,7 @@ const Sidebar = () => {
                                     title={item.label}
                                     onClick={handleLinkClick}
                                 >
-                                    <span className="flex text-tertiary group-hover:text-primary w-5 h-5 items-center justify-center">
+                                    <span className="flex text-black w-5 h-5 items-center justify-center">
                                         {Icons[item.icon] && React.createElement(Icons[item.icon])}
                                     </span>
                                     <span className="truncate flex-1">{item.label}</span>
@@ -203,7 +203,7 @@ const Sidebar = () => {
                         title="Login"
                         onClick={handleLinkClick}
                     >
-                        <span className="flex text-tertiary group-hover:text-primary w-5 h-5 items-center justify-center">
+                        <span className="flex text-black w-5 h-5 items-center justify-center">
                             <Icons.User />
                         </span>
                         <span>Login</span>

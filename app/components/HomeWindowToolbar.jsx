@@ -21,7 +21,7 @@ export default function HomeWindowToolbar({
             {/* Categories Button */}
             <button
                 onClick={() => { setShowCategories?.(!showCategories); setShowFilter?.(false); }}
-                className={`flex items-center gap-1.5 p-1.5 rounded transition-colors ${showCategories ? 'bg-black/10 text-primary' : 'hover:bg-black/5 text-secondary hover:text-primary'}`}
+                className={`flex items-center gap-1.5 p-1.5 rounded transition-colors text-black ${showCategories ? 'bg-black/10' : 'hover:bg-black/5'}`}
                 title="Categories"
             >
                 <Layout className="size-3.5" />
@@ -31,7 +31,7 @@ export default function HomeWindowToolbar({
             {/* Filter Button */}
             <button
                 onClick={() => { setShowFilter?.(!showFilter); setShowCategories?.(false); }}
-                className={`flex items-center gap-1.5 p-1.5 rounded transition-colors ${showFilter ? 'bg-black/10 text-primary' : 'hover:bg-black/5 text-secondary hover:text-primary'}`}
+                className={`flex items-center gap-1.5 p-1.5 rounded transition-colors text-black ${showFilter ? 'bg-black/10' : 'hover:bg-black/5'}`}
                 title="Filter"
             >
                 <Filter className="size-3.5" />
@@ -44,7 +44,7 @@ export default function HomeWindowToolbar({
             {/* Grid View Button */}
             <button
                 onClick={() => setViewMode?.('grid')}
-                className={`flex items-center gap-1.5 p-1.5 rounded transition-colors ${viewMode === 'grid' ? 'bg-black/10 text-primary' : 'hover:bg-black/5 text-secondary hover:text-primary'}`}
+                className={`flex items-center gap-1.5 p-1.5 rounded transition-colors text-black ${viewMode === 'grid' ? 'bg-black/10' : 'hover:bg-black/5'}`}
                 title="Grid View"
             >
                 <Grid className="size-3.5" />
@@ -53,7 +53,7 @@ export default function HomeWindowToolbar({
             {/* List View Button */}
             <button
                 onClick={() => setViewMode?.('list')}
-                className={`flex items-center gap-1.5 p-1.5 rounded transition-colors ${viewMode === 'list' ? 'bg-black/10 text-primary' : 'hover:bg-black/5 text-secondary hover:text-primary'}`}
+                className={`flex items-center gap-1.5 p-1.5 rounded transition-colors text-black ${viewMode === 'list' ? 'bg-black/10' : 'hover:bg-black/5'}`}
                 title="List View"
             >
                 <List className="size-3.5" />

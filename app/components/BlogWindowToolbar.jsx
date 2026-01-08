@@ -19,7 +19,7 @@ export default function BlogWindowToolbar({
             {/* Suggested Posts Toggle */}
             <button
                 onClick={() => setShowSidebar?.(!showSidebar)}
-                className={`flex items-center gap-1.5 p-1.5 rounded transition-colors ${showSidebar ? 'bg-black/10 text-primary' : 'hover:bg-black/5 text-secondary hover:text-primary'}`}
+                className={`flex items-center gap-1.5 p-1.5 rounded transition-colors text-black ${showSidebar ? 'bg-black/10' : 'hover:bg-black/5'}`}
                 title="Suggested Posts"
             >
                 <SidebarPanel className="size-3.5" />
@@ -29,7 +29,7 @@ export default function BlogWindowToolbar({
             {/* Table of Contents Toggle */}
             <button
                 onClick={() => setShowTOC?.(!showTOC)}
-                className={`flex items-center gap-1.5 p-1.5 rounded transition-colors ${showTOC ? 'bg-black/10 text-primary' : 'hover:bg-black/5 text-secondary hover:text-primary'}`}
+                className={`flex items-center gap-1.5 p-1.5 rounded transition-colors text-black ${showTOC ? 'bg-black/10' : 'hover:bg-black/5'}`}
                 title="Table of Contents"
             >
                 <span className="text-xs font-medium hidden sm:inline">contents</span>

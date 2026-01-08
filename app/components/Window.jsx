@@ -313,7 +313,7 @@ const Window = ({
         >
             {/* Window Toolbar/Title Bar */}
             <div
-                className="flex items-center justify-between h-[25px] px-2 bg-(--posthog-3000-100) border-b border-(--border-primary) cursor-default select-none shrink-0"
+                className="flex items-center justify-between h-[30px] px-2 bg-(--posthog-3000-100) border-b border-(--border-primary) cursor-default select-none shrink-0"
                 onMouseDown={!isMaximized ? handleMouseDownHeader : undefined}
                 onTouchStart={!isMaximized ? handleTouchStartHeader : undefined}
             >
@@ -326,21 +326,21 @@ const Window = ({
                 <div className="flex items-center gap-0.5 shrink-0">
                     <button
                         onClick={handleMinimize}
-                        className="p-1.5 rounded hover:bg-black/5 transition-colors text-secondary hover:text-primary"
+                        className="p-1.5 rounded hover:bg-black/5 transition-colors text-black"
                         title="Minimize"
                     >
                         <MinimizeIcon />
                     </button>
                     <button
                         onClick={handleMaximize}
-                        className="p-1.5 rounded hover:bg-black/5 transition-colors text-secondary hover:text-primary"
+                        className="p-1.5 rounded hover:bg-black/5 transition-colors text-black"
                         title={isMaximized ? "Restore" : "Maximize"}
                     >
                         {isMaximized ? <RestoreIcon /> : <MaximizeIcon />}
                     </button>
                     <button
                         onClick={handleClose}
-                        className="p-1.5 rounded hover:bg-red-500/10 transition-colors text-secondary hover:text-red-500"
+                        className="p-1.5 rounded hover:bg-red-500/10 transition-colors text-black hover:text-red-500"
                         title="Close"
                     >
                         <CloseWindowIcon />
