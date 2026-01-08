@@ -13,6 +13,7 @@ import CommentSection from '../components/CommentSection';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSlug from 'rehype-slug';
+import rehypeRaw from 'rehype-raw';
 
 function BlogPostContent() {
     const searchParams = useSearchParams();
@@ -197,7 +198,7 @@ function BlogPostContent() {
 
                                         <ReactMarkdown
                                             remarkPlugins={[remarkGfm]}
-                                            rehypePlugins={[rehypeSlug]}
+                                            rehypePlugins={[rehypeSlug, rehypeRaw]}
                                             className="prose prose-lg max-w-none text-gray-900 leading-relaxed"
                                             components={{
                                                 h1: ({ node, ...props }) => <h1 className="text-3xl font-bold mt-8 mb-4 text-primary" {...props} />,
