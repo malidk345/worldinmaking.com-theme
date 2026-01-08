@@ -198,6 +198,83 @@
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
 
+  /* PostHog Body Typography - Exact match to posthog.com */
+  body {
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 400;
+    letter-spacing: normal;
+    color: rgb(0, 0, 0);
+  }
+
+  /* PostHog Paragraph Typography */
+  p {
+    font-size: 14px;
+    line-height: 21px;
+    font-weight: 400;
+    letter-spacing: normal;
+    color: rgb(101, 103, 94);
+  }
+
+  /* PostHog Heading Typography */
+  h1 {
+    font-size: 30px;
+    line-height: 36px;
+    font-weight: 800;
+    letter-spacing: -0.75px;
+    color: rgb(0, 0, 0);
+  }
+
+  h2 {
+    font-size: 21.43px;
+    line-height: 30px;
+    font-weight: 700;
+    letter-spacing: -0.54px;
+    color: rgb(0, 0, 0);
+  }
+
+  h3 {
+    font-size: 15px;
+    line-height: 28px;
+    font-weight: 700;
+    letter-spacing: normal;
+    color: rgb(0, 0, 0);
+  }
+
+  h4,
+  h5,
+  h6 {
+    font-weight: 600;
+    letter-spacing: normal;
+    color: rgb(0, 0, 0);
+  }
+
+  /* Dark mode typography adjustments */
+  .dark body,
+  [data-theme="dark"] body {
+    color: rgb(255, 255, 255);
+  }
+
+  .dark p,
+  [data-theme="dark"] p {
+    color: rgb(180, 180, 170);
+  }
+
+  .dark h1,
+  .dark h2,
+  .dark h3,
+  .dark h4,
+  .dark h5,
+  .dark h6,
+  [data-theme="dark"] h1,
+  [data-theme="dark"] h2,
+  [data-theme="dark"] h3,
+  [data-theme="dark"] h4,
+  [data-theme="dark"] h5,
+  [data-theme="dark"] h6 {
+    color: rgb(255, 255, 255);
+  }
+
   /* Mobile-friendly scrollable containers */
   .mobile-safe-bottom {
     padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
