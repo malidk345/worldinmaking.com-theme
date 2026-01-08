@@ -6,7 +6,7 @@ import { IBM_Plex_Sans } from "next/font/google";
 // PostHog uses IBM Plex Sans for body text
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-ibm-plex-sans",
   display: "swap",
 });
