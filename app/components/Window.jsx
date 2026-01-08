@@ -313,7 +313,7 @@ const Window = ({
         >
             {/* Window Toolbar/Title Bar */}
             <div
-                className="flex items-center justify-between h-[36px] px-2 bg-(--posthog-3000-100) border-b border-(--border-primary) cursor-default select-none shrink-0"
+                className="flex items-center justify-between h-[25px] px-2 bg-(--posthog-3000-100) border-b border-(--border-primary) cursor-default select-none shrink-0"
                 onMouseDown={!isMaximized ? handleMouseDownHeader : undefined}
                 onTouchStart={!isMaximized ? handleTouchStartHeader : undefined}
             >

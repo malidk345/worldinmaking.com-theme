@@ -220,120 +220,112 @@ export default function BlogWindow({ onClose }) {
                     )}
                 </AnimatePresence>
 
-                {/* Main Content */}
-                <main className="flex-1 overflow-y-auto bg-bg-3000 custom-scrollbar" style={{ paddingBottom: 'calc(120px + env(safe-area-inset-bottom, 0px))' }}>
-                    <article className="max-w-[1400px] mx-auto">
-                        <div className="px-6 pt-8 md:pt-12">
-                            <div className="max-w-[900px] mx-auto">
-                                <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-primary leading-[1.1] tracking-tight mb-8">
-                                    {post.title}
-                                </h1>
+                {/* Main Content - 10px margin from window edges */}
+                <main className="flex-1 overflow-y-auto bg-bg-3000 custom-scrollbar" style={{ padding: '10px', paddingBottom: 'calc(120px + env(safe-area-inset-bottom, 0px))' }}>
+                    <article>
+                        {/* Title */}
+                        <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-primary leading-[1.1] tracking-tight mb-6">
+                            {post.title}
+                        </h1>
 
-                                <div className="relative aspect-2/1 rounded-lg overflow-hidden border mb-6" style={{ borderColor: 'var(--border-primary)' }}>
+                        {/* Hero Image */}
+                        <div className="relative aspect-2/1 rounded-lg overflow-hidden border mb-6" style={{ borderColor: 'var(--border-primary)' }}>
+                            <Image
+                                src={post.image}
+                                alt={post.title}
+                                fill
+                                className="object-cover"
+                                priority
+                                unoptimized
+                            />
+                        </div>
+
+                        {/* Meta Info */}
+                        <div
+                            className="flex flex-nowrap items-center border border-(--border-primary) rounded-lg overflow-x-auto divide-x divide-(--border-primary) bg-(--posthog-3000-50) text-xs whitespace-nowrap mb-6"
+                            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                        >
+                            <div className="flex items-center gap-2 px-3 py-2 bg-(--posthog-3000-100)">
+                                <div className="w-4 h-4 rounded-full overflow-hidden relative shrink-0">
                                     <Image
-                                        src={post.image}
-                                        alt={post.title}
-                                        fill
+                                        src={post.authorAvatar}
+                                        alt={post.authorName}
+                                        width={16}
+                                        height={16}
                                         className="object-cover"
-                                        priority
                                         unoptimized
                                     />
                                 </div>
-
-                                <div
-                                    className="flex flex-nowrap items-center border border-(--border-primary) rounded-lg overflow-x-auto divide-x divide-(--border-primary) bg-(--posthog-3000-50) text-xs whitespace-nowrap mb-8"
-                                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                                >
-                                    <div className="flex items-center gap-2 px-3 py-2 bg-(--posthog-3000-100)">
-                                        <div className="w-4 h-4 rounded-full overflow-hidden relative shrink-0">
-                                            <Image
-                                                src={post.authorAvatar}
-                                                alt={post.authorName}
-                                                width={16}
-                                                height={16}
-                                                className="object-cover"
-                                                unoptimized
-                                            />
-                                        </div>
-                                        <span className="font-bold text-primary">
-                                            {post.authorName}
-                                        </span>
-                                    </div>
-                                    <div className="px-3 py-2 text-secondary">
-                                        {post.date}
-                                    </div>
-                                    <div className="px-3 py-2 text-secondary capitalize">
-                                        {post.category}
-                                    </div>
-                                </div>
+                                <span className="font-bold text-primary">
+                                    {post.authorName}
+                                </span>
+                            </div>
+                            <div className="px-3 py-2 text-secondary">
+                                {post.date}
+                            </div>
+                            <div className="px-3 py-2 text-secondary capitalize">
+                                {post.category}
                             </div>
                         </div>
 
-                        {/* Content Card */}
-                        <div className="px-6 pb-8">
-                            <div className="max-w-[900px] mx-auto bg-white rounded-lg border p-6 md:p-8" style={{ borderColor: 'var(--border-primary)' }}>
-                                {/* Description */}
-                                <p className="text-secondary mb-6" style={{ fontSize: '13px', lineHeight: '1.4' }}>
-                                    {post.description}
-                                </p>
+                        {/* Description */}
+                        <p className="text-secondary mb-6" style={{ fontSize: '13px', lineHeight: '1.4' }}>
+                            {post.description}
+                        </p>
 
-                                {/* Markdown Content */}
-                                <div className="prose prose-sm max-w-none">
-                                    <ReactMarkdown
-                                        remarkPlugins={[remarkGfm]}
-                                        rehypePlugins={[rehypeSlug, rehypeRaw]}
-                                        components={{
-                                            h2: ({ node, ...props }) => <h2 className="text-2xl font-bold text-primary mt-8 mb-4 scroll-mt-24" {...props} />,
-                                            h3: ({ node, ...props }) => <h3 className="text-xl font-bold text-primary mt-6 mb-3 scroll-mt-24" {...props} />,
-                                            h4: ({ node, ...props }) => <h4 className="text-lg font-bold text-primary mt-4 mb-2 scroll-mt-24" {...props} />,
-                                            p: ({ node, ...props }) => <p className="text-secondary mb-4" style={{ fontSize: '13px', lineHeight: '1.4' }} {...props} />,
-                                            a: ({ node, ...props }) => <a className="text-accent hover:underline" {...props} />,
-                                            ul: ({ node, ...props }) => <ul className="list-disc list-inside text-secondary mb-4 space-y-1" style={{ fontSize: '13px', lineHeight: '1.4' }} {...props} />,
-                                            ol: ({ node, ...props }) => <ol className="list-decimal list-inside text-secondary mb-4 space-y-1" style={{ fontSize: '13px', lineHeight: '1.4' }} {...props} />,
-                                            li: ({ node, ...props }) => <li className="text-secondary" style={{ fontSize: '13px', lineHeight: '1.4' }} {...props} />,
-                                            blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-accent pl-4 italic text-secondary my-4" {...props} />,
-                                            code: ({ node, inline, ...props }) =>
-                                                inline ? (
-                                                    <code className="bg-black/5 px-1.5 py-0.5 rounded text-sm font-mono" {...props} />
-                                                ) : (
-                                                    <code className="block bg-black/5 p-4 rounded-lg text-sm font-mono overflow-x-auto" {...props} />
-                                                ),
-                                            pre: ({ node, ...props }) => <pre className="bg-black/5 p-4 rounded-lg overflow-x-auto mb-4" {...props} />,
-                                            hr: ({ node, ...props }) => <hr className="border-t border-black/10 my-8" {...props} />,
-                                            img: ({ node, ...props }) => <img className="rounded-lg max-w-full h-auto my-4" {...props} />,
-                                        }}
-                                    >
-                                        {post.content || ''}
-                                    </ReactMarkdown>
+                        {/* Markdown Content - No card wrapper */}
+                        <div className="prose prose-sm max-w-none">
+                            <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                rehypePlugins={[rehypeSlug, rehypeRaw]}
+                                components={{
+                                    h2: ({ node, ...props }) => <h2 className="text-2xl font-bold text-primary mt-8 mb-4 scroll-mt-24" {...props} />,
+                                    h3: ({ node, ...props }) => <h3 className="text-xl font-bold text-primary mt-6 mb-3 scroll-mt-24" {...props} />,
+                                    h4: ({ node, ...props }) => <h4 className="text-lg font-bold text-primary mt-4 mb-2 scroll-mt-24" {...props} />,
+                                    p: ({ node, ...props }) => <p className="text-secondary mb-4" style={{ fontSize: '13px', lineHeight: '1.4' }} {...props} />,
+                                    a: ({ node, ...props }) => <a className="text-accent hover:underline" {...props} />,
+                                    ul: ({ node, ...props }) => <ul className="list-disc list-inside text-secondary mb-4 space-y-1" style={{ fontSize: '13px', lineHeight: '1.4' }} {...props} />,
+                                    ol: ({ node, ...props }) => <ol className="list-decimal list-inside text-secondary mb-4 space-y-1" style={{ fontSize: '13px', lineHeight: '1.4' }} {...props} />,
+                                    li: ({ node, ...props }) => <li className="text-secondary" style={{ fontSize: '13px', lineHeight: '1.4' }} {...props} />,
+                                    blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-accent pl-4 italic text-secondary my-4" {...props} />,
+                                    code: ({ node, inline, ...props }) =>
+                                        inline ? (
+                                            <code className="bg-black/5 px-1.5 py-0.5 rounded text-sm font-mono" {...props} />
+                                        ) : (
+                                            <code className="block bg-black/5 p-4 rounded-lg text-sm font-mono overflow-x-auto" {...props} />
+                                        ),
+                                    pre: ({ node, ...props }) => <pre className="bg-black/5 p-4 rounded-lg overflow-x-auto mb-4" {...props} />,
+                                    hr: ({ node, ...props }) => <hr className="border-t border-black/10 my-8" {...props} />,
+                                    img: ({ node, ...props }) => <img className="rounded-lg max-w-full h-auto my-4" {...props} />,
+                                }}
+                            >
+                                {post.content || ''}
+                            </ReactMarkdown>
+                        </div>
+
+                        {/* Author Section */}
+                        <div className="mt-8 pt-6 border-t border-black/10">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-full overflow-hidden relative">
+                                    <Image
+                                        src={post.authorAvatar}
+                                        alt={post.authorName}
+                                        fill
+                                        className="object-cover"
+                                        unoptimized
+                                    />
                                 </div>
-
-                                {/* Author Section */}
-                                <div className="mt-8 pt-6 border-t border-black/10">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-12 h-12 rounded-full overflow-hidden relative">
-                                            <Image
-                                                src={post.authorAvatar}
-                                                alt={post.authorName}
-                                                fill
-                                                className="object-cover"
-                                                unoptimized
-                                            />
-                                        </div>
-                                        <div>
-                                            <h4 className="font-bold text-primary">{post.authorName}</h4>
-                                            <p className="text-xs text-secondary">Author</p>
-                                        </div>
-                                    </div>
+                                <div>
+                                    <h4 className="font-bold text-primary">{post.authorName}</h4>
+                                    <p className="text-xs text-secondary">Author</p>
                                 </div>
                             </div>
                         </div>
 
                         {/* Vote and Comments */}
-                        <div className="px-6 pb-8">
-                            <div className="max-w-[900px] mx-auto space-y-6">
-                                <VoteControl postId={post.id} />
-                                <CommentSection postId={post.id} />
-                            </div>
+                        <div className="mt-8 space-y-6">
+                            <VoteControl postId={post.id} />
+                            <CommentSection postId={post.id} />
                         </div>
                     </article>
                 </main>
