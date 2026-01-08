@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from 'react';
-import InsightCard from './InsightCard';
+import { stripMarkdown } from '../lib/markdown';
+
 export default function DashboardGrid({ posts, loading }) {
     const [showAll, setShowAll] = useState(false);
     const INITIAL_COUNT = 10;
@@ -31,7 +32,7 @@ export default function DashboardGrid({ posts, loading }) {
                         <InsightCard
                             id={item.id}
                             title={item.title}
-                            description={item.description}
+                            description={stripMarkdown(item.description)}
                             type={item.category}
                             ribbonColor={item.ribbon}
                             date={item.date}

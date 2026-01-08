@@ -10,6 +10,7 @@ import DashboardHeader from './DashboardHeader';
 import DashboardGrid from './DashboardGrid';
 import { usePosts } from '../hooks/usePosts';
 import { SkeletonDashboardGrid } from './Skeleton';
+import { stripMarkdown } from '../lib/markdown';
 
 export default function Dashboard() {
     // Fetch posts from Supabase
@@ -49,14 +50,19 @@ export default function Dashboard() {
             <div className="Dashboard__content flex-1 w-full min-h-0 relative overflow-y-auto overflow-x-hidden" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
 
                 {/* Backdrop Overlay - Transparent for click outside */}
-                {(showCategories || showFilter) && (
-                    <div
-                        className="fixed inset-0 z-30"
-                        onClick={() => { setShowCategories(false); setShowFilter(false); }}
-                    />
-                )}
+                <AnimatePresence>
+                    {(showCategories || showFilter) && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => { setShowCategories(false); setShowFilter(false); }}
+                            className="fixed inset-0 z-50 bg-black/5"
+                        />
+                    )}
+                </AnimatePresence>
 
-                {/* Categories Panel */}
+                {/* Categories Sidebar/Panel */}
                 <AnimatePresence>
                     {showCategories && (
                         <motion.aside
@@ -64,13 +70,10 @@ export default function Dashboard() {
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: -10 }}
                             transition={{ duration: 0.2, ease: "easeOut" }}
-                            className="fixed left-4 top-[calc(var(--scene-layout-header-height)+60px)] bottom-24 w-[240px] z-[60] bg-white/90 backdrop-blur-xl rounded-xl shadow-2xl overflow-hidden flex flex-col border border-black/5"
+                            className="fixed left-4 top-[calc(var(--scene-layout-header-height)+60px)] w-[200px] z-[60] bg-white/90 backdrop-blur-xl rounded-xl shadow-2xl overflow-hidden flex flex-col border border-black/5"
                         >
                             <div className="px-3 py-2 border-b border-black/5 flex items-center justify-between bg-white/50">
-                                <span className="text-[11px] font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
-                                    <svg className="w-3.5 h-3.5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" /></svg>
-                                    categories
-                                </span>
+                                <span className="text-[11px] font-bold text-primary uppercase tracking-wider">categories</span>
                                 <button
                                     onClick={() => setShowCategories(false)}
                                     className="text-secondary hover:text-primary p-0.5 rounded-md hover:bg-black/5 transition-colors"
@@ -130,43 +133,23 @@ export default function Dashboard() {
                                     <div className="relative">
                                         <select
                                             value={selectedCategory}
-                                            onChange={(e) => setSelectedCategory(e.target.value)}
-                                            className="w-full px-2.5 py-2 text-[12px] border border-black/10 rounded-lg bg-white/50 focus:bg-white text-primary outline-none focus:ring-2 focus:ring-black/5 transition-all appearance-none"
+                                            onChange={(e) => handleCategorySelect(e.target.value)}
+                                            className="w-full appearance-none bg-white border border-black/10 rounded-lg py-2 pl-3 pr-8 text-xs font-medium text-primary focus:outline-none focus:border-black/30 transition-colors"
                                         >
-                                            {categories.map(cat => (
-                                                <option key={cat} value={cat} className="capitalize">{cat}</option>
+                                            {categories.map(c => (
+                                                <option key={c} value={c} className="capitalize">{c}</option>
                                             ))}
                                         </select>
-                                        <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-secondary">
+                                        <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-secondary">
                                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                                         </div>
                                     </div>
                                 </div>
-
-                                {/* Sort Filter */}
-                                <div>
-                                    <label className="text-[10px] font-bold text-secondary uppercase tracking-wider block mb-1.5">sort by</label>
-                                    <div className="relative">
-                                        <select
-                                            className="w-full px-2.5 py-2 text-[12px] border border-black/10 rounded-lg bg-white/50 focus:bg-white text-primary outline-none focus:ring-2 focus:ring-black/5 transition-all appearance-none"
-                                        >
-                                            <option value="date">Date (Newest First)</option>
-                                            <option value="date-asc">Date (Oldest First)</option>
-                                            <option value="title">Title (A-Z)</option>
-                                        </select>
-                                        <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-secondary">
-                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Divider */}
-                                <div className="h-px bg-black/5 w-full"></div>
 
                                 {/* Apply Button */}
                                 <button
                                     onClick={() => setShowFilter(false)}
-                                    className="LemonButton LemonButton--secondary LemonButton--status-default LemonButton--small w-full"
+                                    className="LemonButton LemonButton--secondary LemonButton--status-default LemonButton--small w-full mt-2"
                                 >
                                     <span className="LemonButton__chrome flex items-center justify-center gap-2 py-1 bg-white">
                                         Apply Filters
@@ -202,7 +185,7 @@ export default function Dashboard() {
                             {filteredPosts.map(post => (
                                 <Link
                                     key={post.id}
-                                    href={`/post/${post.id}`}
+                                    href={`/post?id=${post.id}`}
                                     className="group flex items-center gap-4 p-3 bg-white rounded-md hover:shadow-md transition-all"
                                     style={{ border: '1px solid var(--border-primary)' }}
                                 >
@@ -228,13 +211,17 @@ export default function Dashboard() {
                                             {post.title}
                                         </h3>
                                         <p className="text-[13px] text-secondary line-clamp-1 mt-0.5">
-                                            {post.description}
+                                            {stripMarkdown(post.description)}
                                         </p>
                                     </div>
 
                                     {/* Author */}
-                                    <div className="flex items-center gap-2 shrink-0">
-                                        <div className="w-8 h-8 rounded-full overflow-hidden relative" style={{ border: '1px solid var(--border-primary)' }}>
+                                    <div className="flex items-center gap-2 pr-2 shrink-0">
+                                        <div className="text-right hidden sm:block">
+                                            <div className="text-[11px] font-bold text-primary">{post.authorName}</div>
+                                            <div className="text-[10px] text-secondary">Author</div>
+                                        </div>
+                                        <div className="w-8 h-8 rounded-full overflow-hidden relative border border-white shadow-sm">
                                             <Image
                                                 src={post.authorAvatar}
                                                 alt={post.authorName}
@@ -243,7 +230,6 @@ export default function Dashboard() {
                                                 unoptimized
                                             />
                                         </div>
-                                        <span className="text-[12px] font-medium text-secondary hidden sm:block">{post.authorName}</span>
                                     </div>
                                 </Link>
                             ))}

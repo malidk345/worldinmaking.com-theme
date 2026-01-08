@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardHeader from '../components/DashboardHeader';
 import { usePosts } from '../hooks/usePosts';
+import { stripMarkdown } from '../lib/markdown';
 
 // Icons
 const SearchIcon = () => (
@@ -154,7 +155,7 @@ export default function ExplorePage() {
                                                             {post.title}
                                                         </h3>
                                                         <p className="text-secondary text-xs leading-relaxed line-clamp-2 mb-4 flex-1">
-                                                            {post.description}
+                                                            {stripMarkdown(post.description)}
                                                         </p>
 
                                                         <div className="flex items-center justify-between pt-4 border-t border-black/5 mt-auto">

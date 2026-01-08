@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardHeader from '../components/DashboardHeader';
 import { usePosts } from '../hooks/usePosts';
+import { stripMarkdown } from '../lib/markdown';
 
 // Icons
 const SearchIcon = () => (
@@ -34,7 +35,9 @@ const CloseIcon = () => (
 const HighlightText = ({ text, query }) => {
     if (!query || query.length < 2) return <span>{text}</span>;
 
-    const parts = text.split(new RegExp(`(${query})`, 'gi'));
+    // Escape special regex chars
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const parts = text.split(new RegExp(`(${escapedQuery})`, 'gi'));
     return (
         <span>
             {parts.map((part, i) =>
@@ -331,7 +334,7 @@ export default function SearchPage() {
                                                         <HighlightText text={post.title} query={searchQuery} />
                                                     </h3>
                                                     <p className="text-[11px] text-secondary truncate">
-                                                        <HighlightText text={post.description || ''} query={searchQuery} />
+                                                        <HighlightText text={stripMarkdown(post.description || '')} query={searchQuery} />
                                                     </p>
                                                     <div className="flex items-center gap-2 mt-1">
                                                         <span className="text-[10px] px-2 py-0.5 bg-black/5 dark:bg-white/10 rounded-full text-secondary">
