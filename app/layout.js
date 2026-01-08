@@ -103,6 +103,7 @@ import { SidebarProvider } from "./context/SidebarContext";
 import { TabProvider } from "./context/TabContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ToastProvider } from "./contexts/ToastContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 
 export default function RootLayout({ children }) {
   // JSON-LD structured data for organization
@@ -129,18 +130,20 @@ export default function RootLayout({ children }) {
       <body className="bg-bg-3000 font-sans text-primary scrollbar-hide lowercase">
         <div className="flex h-[100dvh] w-full overflow-hidden relative">
           <AuthProvider>
-            <ToastProvider>
-              <SidebarProvider>
-                <TabProvider>
-                  <Sidebar />
-                  <div className="scene flex flex-col flex-1 min-w-0">
-                    <div className="SceneLayout flex-1 flex flex-col min-h-0 relative">
-                      {children}
+            <ThemeProvider>
+              <ToastProvider>
+                <SidebarProvider>
+                  <TabProvider>
+                    <Sidebar />
+                    <div className="scene flex flex-col flex-1 min-w-0">
+                      <div className="SceneLayout flex-1 flex flex-col min-h-0 relative">
+                        {children}
+                      </div>
                     </div>
-                  </div>
-                </TabProvider>
-              </SidebarProvider>
-            </ToastProvider>
+                  </TabProvider>
+                </SidebarProvider>
+              </ToastProvider>
+            </ThemeProvider>
           </AuthProvider>
 
           {/* Global safe zone - prevents browser chrome from cutting off content */}

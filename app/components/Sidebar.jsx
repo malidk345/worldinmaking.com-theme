@@ -35,12 +35,14 @@ const SectionHeader = ({ title }) => (
 );
 
 import { useSidebar } from '../context/SidebarContext';
+import { useTheme } from '../contexts/ThemeContext';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const Sidebar = () => {
     const [isCollapsed, setIsCollapsed] = React.useState(false);
     const { isMobileOpen, closeMobileSidebar } = useSidebar();
+    const { theme, toggleTheme, isDark } = useTheme();
     const pathname = usePathname();
 
     const isLinkActive = (path) => pathname === path;
@@ -100,28 +102,52 @@ const Sidebar = () => {
                     <div className="flex-1 Scrollable--vertical">
                         {/* Top items */}
                         <div className="px-1 flex flex-col gap-px">
-                            {menuItems.top.map((item, i) => (
-                                <Link
-                                    key={`top-${i}`}
-                                    className={`button-primitive button-primitive--variant-default button-primitive--size-base button-primitive--height-base text-sm gap-1.5 rounded button-primitive--full-width justify-start shrink-0 text-left group flex items-center px-2 py-1 hover:bg-fill-button-tertiary-hover ${isLinkActive(item.path) ? 'bg-fill-button-tertiary-active' : ''}`}
-                                    href={item.path}
-                                    title={isCollapsed ? item.label : ''}
-                                    onClick={closeMobileSidebar}
-                                >
-                                    <span className="flex text-tertiary group-hover:text-primary w-5 h-5 items-center justify-center">
-                                        {Icons[item.icon] && React.createElement(Icons[item.icon])}
-                                    </span>
-                                    {!isCollapsed && <span className="truncate flex-1">{item.label}</span>}
-                                    {!isCollapsed && item.beta && (
-                                        <span className="LemonTag LemonTag--size-small LemonTag--warning ml-1">BETA</span>
-                                    )}
-                                    {!isCollapsed && item.hasArrow && (
-                                        <span className="ml-auto">
-                                            <ArrowIcon />
+                            {menuItems.top.map((item, i) => {
+                                // Special handling for Dark Mode toggle
+                                if (item.label === 'Dark Mode') {
+                                    return (
+                                        <button
+                                            key={`top-${i}`}
+                                            className="button-primitive button-primitive--variant-default button-primitive--size-base button-primitive--height-base text-sm gap-1.5 rounded button-primitive--full-width justify-start shrink-0 text-left group flex items-center px-2 py-1 hover:bg-fill-button-tertiary-hover"
+                                            title={isCollapsed ? item.label : ''}
+                                            onClick={toggleTheme}
+                                        >
+                                            <span className="flex text-tertiary group-hover:text-primary w-5 h-5 items-center justify-center">
+                                                {isDark ? <Icons.LightMode /> : <Icons.DarkMode />}
+                                            </span>
+                                            {!isCollapsed && <span className="truncate flex-1">{isDark ? 'Light Mode' : 'Dark Mode'}</span>}
+                                            {!isCollapsed && (
+                                                <span className={`w-8 h-4 rounded-full transition-colors ${isDark ? 'bg-primary-3000' : 'bg-gray-300'} relative`}>
+                                                    <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform ${isDark ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                                                </span>
+                                            )}
+                                        </button>
+                                    );
+                                }
+
+                                return (
+                                    <Link
+                                        key={`top-${i}`}
+                                        className={`button-primitive button-primitive--variant-default button-primitive--size-base button-primitive--height-base text-sm gap-1.5 rounded button-primitive--full-width justify-start shrink-0 text-left group flex items-center px-2 py-1 hover:bg-fill-button-tertiary-hover ${isLinkActive(item.path) ? 'bg-fill-button-tertiary-active' : ''}`}
+                                        href={item.path}
+                                        title={isCollapsed ? item.label : ''}
+                                        onClick={closeMobileSidebar}
+                                    >
+                                        <span className="flex text-tertiary group-hover:text-primary w-5 h-5 items-center justify-center">
+                                            {Icons[item.icon] && React.createElement(Icons[item.icon])}
                                         </span>
-                                    )}
-                                </Link>
-                            ))}
+                                        {!isCollapsed && <span className="truncate flex-1">{item.label}</span>}
+                                        {!isCollapsed && item.beta && (
+                                            <span className="LemonTag LemonTag--size-small LemonTag--warning ml-1">BETA</span>
+                                        )}
+                                        {!isCollapsed && item.hasArrow && (
+                                            <span className="ml-auto">
+                                                <ArrowIcon />
+                                            </span>
+                                        )}
+                                    </Link>
+                                );
+                            })}
                         </div>
 
                         <div className="border-b border-primary h-px my-1 mx-1"></div>

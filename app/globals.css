@@ -138,6 +138,37 @@
     --color-bg-fill-button-tertiary-hover: rgba(0, 0, 0, 0.05);
     --color-bg-fill-button-tertiary-active: rgba(0, 0, 0, 0.1);
   }
+
+  /* ===== Dark Mode Variables ===== */
+  .dark {
+    --posthog-3000-25: hsl(75deg 10% 12%);
+    --posthog-3000-50: hsl(75deg 10% 10%);
+    --posthog-3000-100: hsl(70deg 12% 14%);
+    --posthog-3000-200: hsl(78deg 10% 20%);
+    --posthog-3000-300: hsl(75deg 8% 30%);
+    --posthog-3000-400: hsl(75deg 6% 45%);
+    --posthog-3000-500: hsl(75deg 6% 55%);
+    --posthog-3000-600: hsl(75deg 8% 65%);
+    --posthog-3000-700: hsl(75deg 10% 75%);
+    --posthog-3000-800: hsl(75deg 12% 85%);
+    --posthog-3000-900: hsl(75deg 14% 92%);
+    --posthog-3000-950: hsl(75deg 16% 96%);
+
+    --bg-surface-primary: #1a1a1a;
+    --bg-surface-secondary: #222222;
+    --bg-surface-tertiary: #2a2a2a;
+
+    --border-primary: #3a3a3a;
+
+    --text-primary: #f0f0f0;
+    --text-secondary: rgba(255, 255, 255, 0.7);
+    --text-tertiary: rgba(255, 255, 255, 0.5);
+
+    --color-bg-fill-button-tertiary-hover: rgba(255, 255, 255, 0.08);
+    --color-bg-fill-button-tertiary-active: rgba(255, 255, 255, 0.12);
+
+    --bg-3000: #1a1a1a;
+  }
 }
 
 @layer base {
