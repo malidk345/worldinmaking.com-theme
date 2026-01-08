@@ -38,12 +38,8 @@ function BlogPostContent() {
 
     const suggestedPosts = posts.filter(p => p.id !== slug);
 
-    // Manual extraction for Sidebar (ReactMarkdown renders visual, this parses needed data)
-    const headings = post?.content?.split('\n').filter(l => l.startsWith('## ')).map(line => {
-        const text = line.replace('## ', '');
-        const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
-        return { text, id };
-    }) || [];
+    // Use headings from usePosts hook (extracted from Markdown)
+    const headings = post?.headings || [];
 
     useEffect(() => {
         if (post) {

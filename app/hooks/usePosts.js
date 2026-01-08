@@ -1,30 +1,30 @@
-// Dummy data removal or minimization to reduce bundle size
-// const dummyLongString = "";
+// Supabase posts hook - Clean version for Markdown content
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
-// Helper to process content: Extract headings AND inject IDs for TOC
-const processContent = (html) => {
-    const headings = [];
-    // Regex to find h2 and h3 tags
-    const processedHtml = html ? html.replace(/<(h[2-3])([^>]*)>(.*?)<\/\1>/gi, (match, tag, attrs, text) => {
-        // Clean text for slug (remove inner HTML tags if any)
-        const cleanText = text.replace(/<[^>]*>/g, '').trim();
-        const id = cleanText
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-') // Replace non-alphanumeric with hyphens
-            .replace(/(^-|-$)+/g, '');   // Remove leading/trailing hyphens
-
-        headings.push({ id, text: cleanText, level: parseInt(tag.replace('h', '')) });
-        // Inject ID into the tag
-        return `<${tag} id="${id}"${attrs}>${text}</${tag}>`;
-    }) : '';
-    return { headings, content: processedHtml };
-};
-
 // Helper to convert DB Post format to App format
+// Content is passed through as-is for ReactMarkdown to handle
 const adaptPost = (p) => {
-    const { headings, content } = processContent(p.content || '');
+    // Get raw content - ReactMarkdown will handle the rendering
+    const rawContent = p.content || '';
+
+    // Extract headings from Markdown for TOC (## syntax)
+    const headings = [];
+    const lines = rawContent.split('\n');
+    lines.forEach(line => {
+        const h2Match = line.match(/^## (.+)$/);
+        const h3Match = line.match(/^### (.+)$/);
+
+        if (h2Match) {
+            const text = h2Match[1].trim();
+            const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+            headings.push({ id, text, level: 2 });
+        } else if (h3Match) {
+            const text = h3Match[1].trim();
+            const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+            headings.push({ id, text, level: 3 });
+        }
+    });
 
     return {
         id: p.id,
@@ -34,15 +34,15 @@ const adaptPost = (p) => {
         category: p.category,
         description: p.excerpt || '',
         excerpt: p.excerpt || '',
-        content: content,
+        content: rawContent,  // Pass raw content for ReactMarkdown
         author: p.author || 'Unknown',
-        authorName: p.author || 'Unknown', // Mapped for DashboardGrid
+        authorName: p.author || 'Unknown',
         authorAvatar: p.author_avatar || undefined,
-        wordCount: (content || '').split(' ').length,
+        wordCount: rawContent.split(/\s+/).filter(w => w.length > 0).length,
         headings: headings,
-        comments: [], // Comments are fetched separately usually
-        image: null, // Placeholder if needed
-        ribbon: '#3546AB' // Default color
+        comments: [],
+        image: p.image_url || null,
+        ribbon: '#3546AB'
     };
 };
 
