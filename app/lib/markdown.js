@@ -22,6 +22,8 @@ export function stripMarkdown(markdown) {
         .replace(/^\d+\.\s+/gm, '')
         // Remove horizontal rules
         .replace(/^---$/gm, '')
+        // Remove HTML tags
+        .replace(/<[^>]*>/g, '')
         // Remove extra newlines
         .replace(/\n\s*\n/g, '\n')
         .trim();
