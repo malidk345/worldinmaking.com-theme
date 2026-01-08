@@ -269,25 +269,25 @@ export default function BlogWindow({ onClose }) {
                         </div>
 
                         {/* Description */}
-                        <p className="text-secondary mb-6" style={{ fontSize: '13px', lineHeight: '1.4' }}>
+                        <p className="mb-6" style={{ fontSize: '14px', lineHeight: '21px', color: 'rgb(101, 103, 94)' }}>
                             {post.description}
                         </p>
 
-                        {/* Markdown Content - No card wrapper */}
+                        {/* Markdown Content - PostHog Typography */}
                         <div className="prose prose-sm max-w-none">
                             <ReactMarkdown
                                 remarkPlugins={[remarkGfm]}
                                 rehypePlugins={[rehypeSlug, rehypeRaw]}
                                 components={{
-                                    h2: ({ node, ...props }) => <h2 className="text-2xl font-bold text-primary mt-8 mb-4 scroll-mt-24" {...props} />,
-                                    h3: ({ node, ...props }) => <h3 className="text-xl font-bold text-primary mt-6 mb-3 scroll-mt-24" {...props} />,
-                                    h4: ({ node, ...props }) => <h4 className="text-lg font-bold text-primary mt-4 mb-2 scroll-mt-24" {...props} />,
-                                    p: ({ node, ...props }) => <p className="text-secondary mb-4" style={{ fontSize: '13px', lineHeight: '1.4' }} {...props} />,
+                                    h2: ({ node, ...props }) => <h2 className="mt-8 mb-4 scroll-mt-24" style={{ fontSize: '21.43px', lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.54px', color: 'rgb(0, 0, 0)' }} {...props} />,
+                                    h3: ({ node, ...props }) => <h3 className="mt-6 mb-3 scroll-mt-24" style={{ fontSize: '15px', lineHeight: '28px', fontWeight: 700, color: 'rgb(0, 0, 0)' }} {...props} />,
+                                    h4: ({ node, ...props }) => <h4 className="mt-4 mb-2 scroll-mt-24" style={{ fontWeight: 600, color: 'rgb(0, 0, 0)' }} {...props} />,
+                                    p: ({ node, ...props }) => <p className="mb-4" style={{ fontSize: '14px', lineHeight: '21px', color: 'rgb(101, 103, 94)' }} {...props} />,
                                     a: ({ node, ...props }) => <a className="text-accent hover:underline" {...props} />,
-                                    ul: ({ node, ...props }) => <ul className="list-disc list-inside text-secondary mb-4 space-y-1" style={{ fontSize: '13px', lineHeight: '1.4' }} {...props} />,
-                                    ol: ({ node, ...props }) => <ol className="list-decimal list-inside text-secondary mb-4 space-y-1" style={{ fontSize: '13px', lineHeight: '1.4' }} {...props} />,
-                                    li: ({ node, ...props }) => <li className="text-secondary" style={{ fontSize: '13px', lineHeight: '1.4' }} {...props} />,
-                                    blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-accent pl-4 italic text-secondary my-4" {...props} />,
+                                    ul: ({ node, ...props }) => <ul className="list-disc list-inside mb-4 space-y-1" style={{ fontSize: '14px', lineHeight: '21px', color: 'rgb(101, 103, 94)' }} {...props} />,
+                                    ol: ({ node, ...props }) => <ol className="list-decimal list-inside mb-4 space-y-1" style={{ fontSize: '14px', lineHeight: '21px', color: 'rgb(101, 103, 94)' }} {...props} />,
+                                    li: ({ node, ...props }) => <li style={{ fontSize: '14px', lineHeight: '21px', color: 'rgb(101, 103, 94)' }} {...props} />,
+                                    blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-accent pl-4 italic my-4" style={{ color: 'rgb(101, 103, 94)' }} {...props} />,
                                     code: ({ node, inline, ...props }) =>
                                         inline ? (
                                             <code className="bg-black/5 px-1.5 py-0.5 rounded text-sm font-mono" {...props} />
