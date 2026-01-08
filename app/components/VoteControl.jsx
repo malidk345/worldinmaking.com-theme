@@ -1,8 +1,11 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useToast } from '../contexts/ToastContext';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
-// Icons - worldinmaking.com style
+// Icons
 const ChevronUpIcon = ({ size = 16 }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" style={{ width: size, height: size }}>
         <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" />
@@ -24,27 +27,139 @@ const ShareIcon = () => (
 const MAX_VOTES = 5;
 
 export default function VoteControl({ postId, compact = false }) {
-    const [upvotes, setUpvotes] = useState(12);
-    const [downvotes, setDownvotes] = useState(2);
+    const { addToast } = useToast();
+    const { user } = useAuth();
+
+    const [upvotes, setUpvotes] = useState(0);
+    const [downvotes, setDownvotes] = useState(0);
     const [userUpvotes, setUserUpvotes] = useState(0);
     const [userDownvotes, setUserDownvotes] = useState(0);
+    const [loading, setLoading] = useState(false);
 
-    const handleVote = (type) => {
+    const pid = String(postId);
+
+    // Fetch votes on mount
+    useEffect(() => {
+        const fetchVotes = async () => {
+            // Get total upvotes
+            const { data: upData } = await supabase
+                .from('post_votes')
+                .select('vote_count')
+                .eq('post_id', pid)
+                .eq('vote_type', 'up');
+
+            const totalUp = upData?.reduce((sum, v) => sum + v.vote_count, 0) || 0;
+            setUpvotes(totalUp);
+
+            // Get total downvotes
+            const { data: downData } = await supabase
+                .from('post_votes')
+                .select('vote_count')
+                .eq('post_id', pid)
+                .eq('vote_type', 'down');
+
+            const totalDown = downData?.reduce((sum, v) => sum + v.vote_count, 0) || 0;
+            setDownvotes(totalDown);
+
+            // Get user's votes
+            if (user) {
+                const { data: userUpData } = await supabase
+                    .from('post_votes')
+                    .select('vote_count')
+                    .eq('post_id', pid)
+                    .eq('user_id', user.id)
+                    .eq('vote_type', 'up')
+                    .maybeSingle();
+
+                setUserUpvotes(userUpData?.vote_count || 0);
+
+                const { data: userDownData } = await supabase
+                    .from('post_votes')
+                    .select('vote_count')
+                    .eq('post_id', pid)
+                    .eq('user_id', user.id)
+                    .eq('vote_type', 'down')
+                    .maybeSingle();
+
+                setUserDownvotes(userDownData?.vote_count || 0);
+            }
+        };
+
+        fetchVotes();
+    }, [pid, user]);
+
+    const handleVote = async (type) => {
+        if (!user) {
+            addToast('please login to vote', 'info');
+            return;
+        }
+
+        if (loading) return;
+        setLoading(true);
+
         const currentUserVotes = type === 'up' ? userUpvotes : userDownvotes;
         const setUserVotes = type === 'up' ? setUserUpvotes : setUserDownvotes;
         const setTotalVotes = type === 'up' ? setUpvotes : setDownvotes;
 
+        // Check if already at max
         if (currentUserVotes >= MAX_VOTES) {
+            addToast(`max ${MAX_VOTES} ${type}votes reached`, 'info');
+            setLoading(false);
             return;
         }
 
+        // Optimistic update
         setUserVotes(prev => prev + 1);
         setTotalVotes(prev => prev + 1);
+
+        try {
+            // Check if vote record exists
+            const { data: existing } = await supabase
+                .from('post_votes')
+                .select('id, vote_count')
+                .eq('post_id', pid)
+                .eq('user_id', user.id)
+                .eq('vote_type', type)
+                .maybeSingle();
+
+            if (existing) {
+                // Update existing vote
+                const { error } = await supabase
+                    .from('post_votes')
+                    .update({
+                        vote_count: existing.vote_count + 1,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', existing.id);
+
+                if (error) throw error;
+            } else {
+                // Insert new vote
+                const { error } = await supabase
+                    .from('post_votes')
+                    .insert({
+                        post_id: pid,
+                        user_id: user.id,
+                        vote_type: type,
+                        vote_count: 1
+                    });
+
+                if (error) throw error;
+            }
+        } catch (error) {
+            console.error('Vote error:', error);
+            // Revert on error
+            setUserVotes(prev => prev - 1);
+            setTotalVotes(prev => prev - 1);
+            addToast('failed to vote', 'error');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleShare = () => {
         navigator.clipboard.writeText(window.location.href);
-        alert('link copied to clipboard');
+        addToast('link copied to clipboard', 'success');
     };
 
     const score = upvotes - downvotes;
@@ -55,6 +170,7 @@ export default function VoteControl({ postId, compact = false }) {
             <div className="inline-flex items-center gap-0 rounded-md border-[1.5px] border-gray-200 bg-gray-50 overflow-hidden">
                 <button
                     onClick={() => handleVote('up')}
+                    disabled={loading}
                     className={`p-1.5 transition-all hover:bg-green-500/20 ${userUpvotes > 0 ? 'text-green-500' : 'text-gray-500'}`}
                     title={`upvote (${userUpvotes}/${MAX_VOTES})`}
                 >
@@ -65,6 +181,7 @@ export default function VoteControl({ postId, compact = false }) {
                 </span>
                 <button
                     onClick={() => handleVote('down')}
+                    disabled={loading}
                     className={`p-1.5 transition-all hover:bg-red-500/20 ${userDownvotes > 0 ? 'text-red-500' : 'text-gray-500'}`}
                     title={`downvote (${userDownvotes}/${MAX_VOTES})`}
                 >
@@ -74,13 +191,14 @@ export default function VoteControl({ postId, compact = false }) {
         );
     }
 
-    // Full version (for blog post footer) - worldinmaking.com style
+    // Full version (for blog post footer)
     return (
         <div className="flex items-center justify-between py-3 border-t border-black/5 mt-4 mb-4">
             {/* Vote Controls */}
             <div className="flex items-center gap-2">
                 <button
                     onClick={() => handleVote('up')}
+                    disabled={loading}
                     className="LemonButton LemonButton--secondary LemonButton--status-default LemonButton--small"
                 >
                     <span className={`LemonButton__chrome flex items-center gap-1.5 px-3 py-1.5 border border-black/10 rounded font-bold text-xs hover:border-black/30 bg-white transition-all shadow-sm ${userUpvotes > 0
@@ -94,6 +212,7 @@ export default function VoteControl({ postId, compact = false }) {
 
                 <button
                     onClick={() => handleVote('down')}
+                    disabled={loading}
                     className="LemonButton LemonButton--secondary LemonButton--status-default LemonButton--small"
                 >
                     <span className={`LemonButton__chrome flex items-center gap-1.5 px-3 py-1.5 border border-black/10 rounded font-bold text-xs hover:border-black/30 bg-white transition-all shadow-sm ${userDownvotes > 0

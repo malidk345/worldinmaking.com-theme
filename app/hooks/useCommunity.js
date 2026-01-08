@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../contexts/ToastContext';
@@ -22,7 +24,7 @@ export const useCommunity = () => {
         setLoading(false);
     }, [addToast]);
 
-    // Fetch Posts
+    // Fetch Posts for a Channel
     const fetchPosts = useCallback(async (channelId) => {
         setLoading(true);
         const { data, error } = await supabase
@@ -38,7 +40,7 @@ export const useCommunity = () => {
         if (error) {
             addToast('failed to load discussions', 'error');
         } else if (data) {
-            // Manual mapping for count
+            // Manual mapping
             const mapData = data.map((p) => ({
                 ...p,
                 _count: { replies: p.replies?.[0]?.count || 0 }

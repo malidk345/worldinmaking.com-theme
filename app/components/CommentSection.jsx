@@ -1,48 +1,32 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
+import { useToast } from '../contexts/ToastContext';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
-// Sample comments data
-const sampleComments = [
-    {
-        id: 1,
-        content: "great article! really helped me understand the basics.",
-        created_at: "2024-01-05",
-        profiles: {
-            username: "devuser",
-            avatar_url: "https://i.pravatar.cc/150?u=1"
-        },
-        replies: [
-            {
-                id: 2,
-                content: "agreed, very well explained.",
-                created_at: "2024-01-06",
-                profiles: {
-                    username: "coder42",
-                    avatar_url: "https://i.pravatar.cc/150?u=2"
-                },
-                replies: []
-            }
-        ]
-    }
-];
-
-// Comment Item Component - worldinmaking.com style
+// Comment Item Component
 const CommentItem = ({ comment, onReply, isReplying, replyDraft, setReplyDraft, onSubmitReply, onCancelReply }) => {
     const date = new Date(comment.created_at).toLocaleDateString();
 
     return (
         <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-full overflow-hidden shrink-0">
-                <Image
-                    src={comment.profiles?.avatar_url || "https://i.pravatar.cc/150?u=default"}
-                    alt={comment.profiles?.username || 'user'}
-                    width={32}
-                    height={32}
-                    className="object-cover"
-                    unoptimized
-                />
+            <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 bg-gray-200">
+                {comment.profiles?.avatar_url ? (
+                    <Image
+                        src={comment.profiles.avatar_url}
+                        alt={comment.profiles?.username || 'user'}
+                        width={32}
+                        height={32}
+                        className="object-cover"
+                        unoptimized
+                    />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs font-bold">
+                        {(comment.profiles?.username || 'U')[0].toUpperCase()}
+                    </div>
+                )}
             </div>
             <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
@@ -82,43 +66,120 @@ const CommentItem = ({ comment, onReply, isReplying, replyDraft, setReplyDraft, 
 };
 
 export default function CommentSection({ postId }) {
-    const [comments, setComments] = useState(sampleComments);
+    const { addToast } = useToast();
+    const { user } = useAuth();
+
+    const [comments, setComments] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [draft, setDraft] = useState("");
     const [replyingTo, setReplyingTo] = useState(null);
     const [replyDraft, setReplyDraft] = useState("");
 
-    const handlePost = (parentId = null) => {
+    const fetchComments = useCallback(async () => {
+        const { data, error } = await supabase
+            .from('comments')
+            .select(`
+                id,
+                content,
+                created_at,
+                parent_id,
+                profiles (
+                    username,
+                    avatar_url
+                )
+            `)
+            .eq('post_id', String(postId))
+            .order('created_at', { ascending: true });
+
+        if (error) {
+            console.error('Error fetching comments:', error);
+            return;
+        }
+
+        if (data) {
+            // Transform flat list to tree
+            const commentMap = new Map();
+            const roots = [];
+
+            // Initialize map
+            data.forEach((c) => {
+                const profileData = Array.isArray(c.profiles) ? c.profiles[0] : c.profiles;
+                const comment = {
+                    id: c.id,
+                    content: c.content,
+                    created_at: c.created_at,
+                    parent_id: c.parent_id,
+                    profiles: profileData || null,
+                    replies: []
+                };
+                commentMap.set(c.id, comment);
+            });
+
+            // Build tree
+            data.forEach((c) => {
+                if (c.parent_id) {
+                    const parent = commentMap.get(c.parent_id);
+                    const child = commentMap.get(c.id);
+                    if (parent && child) {
+                        parent.replies.push(child);
+                    }
+                } else {
+                    const root = commentMap.get(c.id);
+                    if (root) {
+                        roots.push(root);
+                    }
+                }
+            });
+
+            setComments(roots);
+        }
+        setLoading(false);
+    }, [postId]);
+
+    useEffect(() => {
+        fetchComments();
+    }, [fetchComments]);
+
+    const handlePost = async (parentId = null) => {
+        if (!user) {
+            addToast('please login to comment', 'info');
+            return;
+        }
+
         const content = parentId ? replyDraft : draft;
         if (!content.trim()) return;
 
-        const newComment = {
-            id: Date.now(),
+        const { error } = await supabase.from('comments').insert({
             content,
-            created_at: new Date().toISOString(),
-            profiles: {
-                username: "you",
-                avatar_url: "https://i.pravatar.cc/150?u=you"
-            },
-            replies: []
-        };
+            post_id: String(postId),
+            user_id: user.id,
+            parent_id: parentId
+        });
 
-        if (parentId) {
-            // Add reply to parent comment
-            setComments(prevComments => {
-                return prevComments.map(c => {
-                    if (c.id === parentId) {
-                        return { ...c, replies: [...c.replies, newComment] };
-                    }
-                    return c;
-                });
-            });
-            setReplyDraft("");
-            setReplyingTo(null);
+        if (error) {
+            addToast(error.message, 'error');
         } else {
-            setComments(prev => [...prev, newComment]);
-            setDraft("");
+            addToast('comment posted', 'success');
+            if (parentId) {
+                setReplyDraft("");
+                setReplyingTo(null);
+            } else {
+                setDraft("");
+            }
+            fetchComments();
         }
     };
+
+    if (loading) {
+        return (
+            <div className="mt-8 border border-black/10 rounded-xl p-5 bg-gray-50/50 shadow-sm">
+                <div className="animate-pulse space-y-4">
+                    <div className="h-4 bg-gray-200 rounded w-24"></div>
+                    <div className="h-20 bg-gray-200 rounded"></div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="mt-8 border border-black/10 rounded-xl p-5 bg-gray-50/50 shadow-sm">
@@ -172,7 +233,7 @@ export default function CommentSection({ postId }) {
                         className="LemonButton LemonButton--secondary LemonButton--status-default LemonButton--small"
                     >
                         <span className="LemonButton__chrome px-4 py-1.5 border border-black/10 rounded font-bold text-xs text-secondary hover:text-primary hover:border-black/30 hover:bg-white bg-white transition-all shadow-sm">
-                            post comment
+                            {user ? 'post comment' : 'login to post'}
                         </span>
                     </button>
                 </div>
