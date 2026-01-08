@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import { stripMarkdown } from '../lib/markdown';
+import InsightCard from './InsightCard';
 
 export default function DashboardGrid({ posts, loading }) {
     const [showAll, setShowAll] = useState(false);

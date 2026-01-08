@@ -1,6 +1,7 @@
 // Supabase posts hook - Clean version for Markdown content
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { stripMarkdown } from '../lib/markdown';
 
 // Helper to convert DB Post format to App format
 // Content is passed through as-is for ReactMarkdown to handle
@@ -32,8 +33,8 @@ const adaptPost = (p) => {
         title: p.title,
         date: new Date(p.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
         category: p.category,
-        description: p.excerpt || '',
-        excerpt: p.excerpt || '',
+        description: stripMarkdown(p.excerpt || ''),
+        excerpt: stripMarkdown(p.excerpt || ''),
         content: rawContent,  // Pass raw content for ReactMarkdown
         author: p.author || 'Unknown',
         authorName: p.author || 'Unknown',
