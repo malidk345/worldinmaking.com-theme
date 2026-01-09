@@ -85,7 +85,7 @@ export default function AdminPage() {
         setExcerpt(post.excerpt || '');
         setCategory(post.category || 'tech');
         setAuthorAlias(post.author);
-        setFeaturedImage(post.image || '');
+        setFeaturedImage(post.image_url || '');
         setTab('create');
     };
 
@@ -121,7 +121,7 @@ export default function AdminPage() {
             excerpt,
             category: category.toLowerCase(),
             author: authorAlias || 'Admin',
-            image: featuredImage,
+            image_url: featuredImage,
             author_avatar: profile?.avatar_url,
             published: true
         };

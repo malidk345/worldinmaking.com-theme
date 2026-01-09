@@ -3,6 +3,7 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import UserAvatar from './UserAvatar';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Window from './Window';
@@ -246,14 +247,12 @@ export default function BlogWindow({ onClose }) {
                             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                         >
                             <div className="flex items-center gap-2 px-3 py-2 bg-(--posthog-3000-100)">
-                                <div className="w-4 h-4 rounded-full overflow-hidden relative shrink-0">
-                                    <Image
+                                <div className="relative">
+                                    <UserAvatar
                                         src={post.authorAvatar}
-                                        alt={post.authorName}
-                                        width={16}
-                                        height={16}
-                                        className="object-cover"
-                                        unoptimized
+                                        name={post.authorName}
+                                        size={16}
+                                        className="border border-black/10"
                                     />
                                 </div>
                                 <span className="font-bold text-primary">
