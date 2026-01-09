@@ -246,16 +246,7 @@ export default function BlogWindow({ onClose }) {
                             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                         >
                             <div className="flex items-center gap-2 px-3 py-2 bg-(--posthog-3000-100)">
-                                <div className="w-4 h-4 rounded-full overflow-hidden relative shrink-0">
-                                    <Image
-                                        src={post.authorAvatar}
-                                        alt={post.authorName}
-                                        width={16}
-                                        height={16}
-                                        className="object-cover"
-                                        unoptimized
-                                    />
-                                </div>
+
                                 <span className="font-bold text-primary">
                                     {post.authorName}
                                 </span>
@@ -306,15 +297,7 @@ export default function BlogWindow({ onClose }) {
                         {/* Author Section */}
                         <div className="mt-8 pt-6 border-t border-black/10">
                             <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-full overflow-hidden relative">
-                                    <Image
-                                        src={post.authorAvatar}
-                                        alt={post.authorName}
-                                        fill
-                                        className="object-cover"
-                                        unoptimized
-                                    />
-                                </div>
+
                                 <div>
                                     <h4 className="font-bold text-primary">{post.authorName}</h4>
                                     <p className="text-xs text-secondary">Author</p>

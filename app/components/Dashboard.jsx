@@ -218,15 +218,7 @@ export default function Dashboard() {
                                             <div className="text-[11px] font-bold text-primary">{post.authorName}</div>
                                             <div className="text-[10px] text-secondary">Author</div>
                                         </div>
-                                        <div className="w-8 h-8 rounded-full overflow-hidden relative border border-white shadow-sm">
-                                            <Image
-                                                src={post.authorAvatar}
-                                                alt={post.authorName}
-                                                fill
-                                                className="object-cover"
-                                                unoptimized
-                                            />
-                                        </div>
+
                                     </div>
                                 </Link>
                             ))}
