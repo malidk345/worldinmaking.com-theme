@@ -1,8 +1,9 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import UserAvatar from './UserAvatar';
 
-export default function InsightCard({ id, title, type, ribbonColor, description, date, author, image, children }) {
+export default function InsightCard({ id, title, type, ribbonColor, description, date, author, authorAvatar, image, children }) {
     return (
         <Link href={`/post?id=${id}`} className="relative h-full flex flex-col">
             {/* PostHog-inspired color ribbon - now spans full card height */}
@@ -23,7 +24,14 @@ export default function InsightCard({ id, title, type, ribbonColor, description,
                                         <path clipRule="evenodd" d="M6.75 3a.75.75 0 0 1 .75.75V5h9V3.75a.75.75 0 0 1 1.5 0V5h1.25A1.75 1.75 0 0 1 21 6.75v12.5A1.75 1.75 0 0 1 19.25 21H4.75A1.75 1.75 0 0 1 3 19.25V6.75A1.75 1.75 0 0 1 4.75 5H6V3.75A.75.75 0 0 1 6.75 3ZM4.5 9.5v9.75c0 .138.112.25.25.25h14.5a.25.25 0 0 0 .25-.25V9.5h-15Z" fillRule="evenodd"></path>
                                     </svg>
                                     <span className="CardMeta__tag-item">{date || '20 Jan 2025'}</span>
-
+                                    <span className="CardMeta__tag-separator">•</span>
+                                    <div className="CardMeta__tag-avatar relative">
+                                        <UserAvatar
+                                            src={authorAvatar}
+                                            name={author}
+                                            size={16}
+                                        />
+                                    </div>
                                     <span className="CardMeta__tag-item">{author || 'Wim Author'}</span>
                                 </div>
                             </div>

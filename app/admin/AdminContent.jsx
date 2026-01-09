@@ -44,8 +44,8 @@ export default function AdminPage() {
     const [content, setContent] = useState('');
     const [excerpt, setExcerpt] = useState('');
     const [category, setCategory] = useState('');
-    const [featuredImage, setFeaturedImage] = useState('');
     const [authorAlias, setAuthorAlias] = useState('');
+    const [featuredImage, setFeaturedImage] = useState('');
 
     // Initialize author alias when profile loads
     useEffect(() => {
@@ -84,8 +84,8 @@ export default function AdminPage() {
         setContent(post.content);
         setExcerpt(post.excerpt || '');
         setCategory(post.category || 'tech');
-        setFeaturedImage(post.image || '');
         setAuthorAlias(post.author);
+        setFeaturedImage(post.image || '');
         setTab('create');
     };
 
@@ -120,8 +120,8 @@ export default function AdminPage() {
             content,
             excerpt,
             category: category.toLowerCase(),
-            image: featuredImage,
             author: authorAlias || 'Admin',
+            image: featuredImage,
             author_avatar: profile?.avatar_url,
             published: true
         };
@@ -282,14 +282,6 @@ export default function AdminPage() {
                                             </datalist>
                                         </div>
                                         <div className="space-y-1">
-                                            <label className="text-xs font-bold text-gray-500">Featured Image URL</label>
-                                            <input
-                                                value={featuredImage} onChange={e => setFeaturedImage(e.target.value)}
-                                                className="w-full p-2.5 bg-white border-[1.5px] border-gray-200 rounded-md outline-none focus:border-gray-400 transition-all font-medium text-xs font-mono text-gray-600"
-                                                placeholder="https://example.com/image.jpg"
-                                            />
-                                        </div>
-                                        <div className="space-y-1">
                                             <label className="text-xs font-bold text-gray-500">Author Name</label>
                                             <input
                                                 value={authorAlias || ''} onChange={e => setAuthorAlias(e.target.value)}
@@ -297,6 +289,15 @@ export default function AdminPage() {
                                                 placeholder="your name"
                                             />
                                         </div>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold text-gray-500">Featured Image URL</label>
+                                        <input
+                                            value={featuredImage} onChange={e => setFeaturedImage(e.target.value)}
+                                            className="w-full p-2.5 bg-white border-[1.5px] border-gray-200 rounded-md outline-none focus:border-gray-400 transition-all font-medium text-sm text-gray-600"
+                                            placeholder="https://example.com/image.jpg"
+                                        />
                                     </div>
 
                                     <div className="space-y-1">

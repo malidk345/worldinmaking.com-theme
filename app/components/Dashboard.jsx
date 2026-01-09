@@ -8,6 +8,7 @@ import DashboardGrid from './DashboardGrid';
 import { usePosts } from '../hooks/usePosts';
 import { SkeletonDashboardGrid } from './Skeleton';
 import { getExcerpt } from '../lib/markdown';
+import UserAvatar from './UserAvatar';
 
 export default function Dashboard() {
     // Fetch posts from Supabase
@@ -218,7 +219,14 @@ export default function Dashboard() {
                                             <div className="text-[11px] font-bold text-primary">{post.authorName}</div>
                                             <div className="text-[10px] text-secondary">Author</div>
                                         </div>
-
+                                        <div className="relative">
+                                            <UserAvatar
+                                                src={post.authorAvatar}
+                                                name={post.authorName}
+                                                size={32}
+                                                className="border border-white shadow-sm"
+                                            />
+                                        </div>
                                     </div>
                                 </Link>
                             ))}

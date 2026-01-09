@@ -39,6 +39,7 @@ export default function DashboardGrid({ posts, loading }) {
                             ribbonColor={item.ribbon}
                             date={item.date}
                             author={item.authorName}
+                            authorAvatar={item.authorAvatar}
                             image={item.image}
                         />
                     </div>
