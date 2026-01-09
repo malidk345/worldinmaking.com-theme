@@ -6,7 +6,7 @@ import DashboardHeader from '../components/DashboardHeader';
 import PageWindow from '../components/PageWindow';
 import { useCommunity } from '../hooks/useCommunity';
 import { useAuth } from '../contexts/AuthContext';
-import { UserAvatar } from '../components/UserAvatar';
+import UserAvatar from '../components/UserAvatar';
 import NewPostToggler from '../components/NewPostToggler';
 
 export default function CommunityPage() {
