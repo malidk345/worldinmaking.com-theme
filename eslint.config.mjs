@@ -13,6 +13,9 @@ const compat = new FlatCompat({
 });
 
 export default [
+    {
+        ignores: ["out/", ".next/", "node_modules/"],
+    },
     js.configs.recommended,
     ...compat.extends("plugin:react/recommended", "plugin:react-hooks/recommended"),
      {
@@ -26,8 +29,8 @@ export default [
             "react/react-in-jsx-scope": "off",
             "react/prop-types": "off",
             "react/no-unescaped-entities": "off",
-            "react-hooks/exhaustive-deps": "off",
-             "no-useless-escape": "off",
+            "no-useless-escape": "off",
+            // "react-hooks/exhaustive-deps": "off", // Re-enabled to ensure hook safety
         },
         settings: {
             react: {

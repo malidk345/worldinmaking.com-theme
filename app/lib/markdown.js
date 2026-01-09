@@ -33,7 +33,7 @@ export function stripMarkdown(markdown) {
         try {
             const doc = new DOMParser().parseFromString(text, 'text/html');
             text = doc.body.textContent || text;
-        } catch (e) {
+        } catch {
             // Fallback if DOMParser fails
         }
     }

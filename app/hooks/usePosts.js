@@ -47,7 +47,7 @@ const adaptPost = (p) => {
     };
 };
 
-export const usePosts = (limit = 20) => {
+export const usePosts = () => {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -58,8 +58,7 @@ export const usePosts = (limit = 20) => {
                     .from('posts')
                     .select('*')
                     .eq('published', true)
-                    .order('created_at', { ascending: false })
-                    .range(0, limit - 1);
+                    .order('created_at', { ascending: false });
 
                 if (error) {
                     console.error('Error fetching posts:', error);

@@ -27,13 +27,7 @@
     "@tailwindcss/postcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
+    "globals": "^17.0.0",
     "tailwindcss": "^4"
-  },
-  "eslintConfig": {
-    "extends": "next/core-web-vitals",
-    "rules": {
-      "react/no-unescaped-entities": "off",
-      "react-hooks/exhaustive-deps": "off"
-    }
   }
 }
