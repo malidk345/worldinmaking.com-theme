@@ -100,10 +100,12 @@ export default function ProfilePage() {
                             <p className="text-sm text-secondary mb-4">Please sign in to view your profile.</p>
                             <button
                                 onClick={() => router.push('/login')}
-                                className="LemonButton LemonButton--primary px-4 py-2 bg-[#254b85] hover:bg-[#335d9d] text-white rounded font-bold text-xs transition-all flex items-center gap-2 mx-auto"
+                                className="LemonButton LemonButton--primary LemonButton--small"
                             >
-                                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" x2="3" y1="12" y2="12" /></svg>
-                                Sign In
+                                <span className="LemonButton__chrome flex items-center gap-2 px-4 py-2 bg-[#254b85] hover:bg-[#335d9d] text-white rounded font-bold text-xs transition-all shadow-sm mx-auto">
+                                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" x2="3" y1="12" y2="12" /></svg>
+                                    Sign In
+                                </span>
                             </button>
                         </div>
                     </div>
@@ -122,11 +124,11 @@ export default function ProfilePage() {
                     <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 md:py-8">
 
                         {/* Profile Header */}
-                        <div className="bg-white border border-border rounded-lg p-4 mb-4 transition-all">
+                        <div className="bg-white border border-black/15 rounded-lg p-4 mb-4 transition-all">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                 <div className="flex items-center gap-3">
                                     <div className="relative group">
-                                        <div className="w-12 h-12 md:w-14 md:h-14 rounded-md border border-border overflow-hidden bg-white shrink-0 flex items-center justify-center text-primary text-xl font-bold select-none">
+                                        <div className="w-12 h-12 md:w-14 md:h-14 rounded-md border border-black/15 overflow-hidden bg-white shrink-0 flex items-center justify-center text-primary text-xl font-bold select-none">
                                             {profile?.avatar_url ? (
                                                 <UserAvatar
                                                     src={profile?.avatar_url}
@@ -140,7 +142,7 @@ export default function ProfilePage() {
                                         </div>
                                         <button
                                             onClick={handleOpenPhotoModal}
-                                            className="absolute -bottom-1 -right-1 p-1 bg-white border border-border rounded hover:bg-black/5 transition-all opacity-0 group-hover:opacity-100 z-10"
+                                            className="absolute -bottom-1 -right-1 p-1 bg-white border border-black/15 rounded hover:bg-black/5 transition-all opacity-0 group-hover:opacity-100 z-10"
                                         >
                                             <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                                                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
@@ -160,10 +162,12 @@ export default function ProfilePage() {
                                 <div className="flex items-center gap-2">
                                     <button
                                         onClick={() => setIsEditing(!isEditing)}
-                                        className="LemonButton LemonButton--secondary flex-1 sm:flex-none px-3 py-1.5 border border-border rounded font-bold text-xs text-secondary hover:text-primary hover:bg-black/5 bg-white transition-all flex items-center gap-2 justify-center"
+                                        className="LemonButton LemonButton--secondary LemonButton--small flex-1 sm:flex-none"
                                     >
-                                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
-                                        {isEditing ? 'Cancel' : 'Edit Profile'}
+                                        <span className="LemonButton__chrome flex items-center gap-2 justify-center px-3 py-1.5 border border-black/20 rounded font-bold text-xs text-secondary hover:text-primary hover:bg-black/5 bg-white transition-all shadow-sm w-full sm:w-auto">
+                                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
+                                            {isEditing ? 'Cancel' : 'Edit Profile'}
+                                        </span>
                                     </button>
                                 </div>
                             </div>
@@ -175,7 +179,7 @@ export default function ProfilePage() {
                                 <button
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
-                                    className={`px-4 md:px-5 py-1.5 md:py-2 text-[11px] font-bold transition-all relative rounded-t-md border-x border-t border-border whitespace-nowrap capitalize ${activeTab === tab
+                                    className={`LemonButton px-4 md:px-5 py-1.5 md:py-2 text-[11px] font-bold transition-all relative rounded-t-md border-x border-t border-black/15 whitespace-nowrap capitalize ${activeTab === tab
                                             ? 'bg-white translate-y-px z-10 text-primary'
                                             : 'bg-transparent hover:bg-white/60 text-secondary border-transparent'
                                         }`}
@@ -186,7 +190,7 @@ export default function ProfilePage() {
                         </div>
 
                         {/* Content Panel */}
-                        <div className="bg-white border border-border rounded-b-lg rounded-tr-lg p-4 md:p-6">
+                        <div className="bg-white border border-black/15 rounded-b-lg rounded-tr-lg p-4 md:p-6">
                             {activeTab === 'bio' ? (
                                 <div>
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
@@ -198,18 +202,22 @@ export default function ProfilePage() {
                                                 <button
                                                     type="button"
                                                     onClick={() => setIsEditing(false)}
-                                                    className="LemonButton LemonButton--secondary px-3 py-1.5 border border-border rounded font-bold text-xs text-secondary hover:text-primary hover:bg-black/5 bg-white transition-all"
+                                                    className="LemonButton LemonButton--secondary LemonButton--small"
                                                 >
-                                                    Cancel
+                                                    <span className="LemonButton__chrome px-3 py-1.5 border border-black/20 rounded font-bold text-xs text-secondary hover:text-primary hover:bg-black/5 bg-white transition-all shadow-sm">
+                                                        Cancel
+                                                    </span>
                                                 </button>
                                                 <button
                                                     type="button"
                                                     onClick={handleSaveBio}
                                                     disabled={isSaving}
-                                                    className="LemonButton LemonButton--primary px-4 py-1.5 bg-[#254b85] hover:bg-[#335d9d] text-white rounded font-bold text-xs transition-all disabled:opacity-50 flex items-center gap-1.5"
+                                                    className="LemonButton LemonButton--primary LemonButton--small"
                                                 >
-                                                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><polyline points="20 6 9 17 4 12" /></svg>
-                                                    {isSaving ? 'Saving...' : 'Save'}
+                                                    <span className="LemonButton__chrome flex items-center gap-1.5 px-4 py-1.5 bg-[#254b85] hover:bg-[#335d9d] text-white rounded font-bold text-xs transition-all disabled:opacity-50 shadow-sm">
+                                                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><polyline points="20 6 9 17 4 12" /></svg>
+                                                        {isSaving ? 'Saving...' : 'Save'}
+                                                    </span>
                                                 </button>
                                             </div>
                                         )}
@@ -237,7 +245,7 @@ export default function ProfilePage() {
                                 </div>
                             ) : (
                                 <div className="flex flex-col items-center justify-center py-12 md:py-16 text-center">
-                                    <div className="w-14 h-14 bg-white border border-border rounded-lg flex items-center justify-center mb-4">
+                                    <div className="w-14 h-14 bg-white border border-black/15 rounded-lg flex items-center justify-center mb-4">
                                         <svg className="w-7 h-7 text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                                             <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
                                         </svg>
@@ -255,7 +263,7 @@ export default function ProfilePage() {
             {/* Photo Modal */}
             {isPhotoModalOpen && (
                 <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="w-full max-w-xs bg-white border border-border rounded-lg p-5 shadow-lg">
+                    <div className="w-full max-w-xs bg-white border border-black/15 rounded-lg p-5 shadow-lg">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2 text-primary font-bold text-xs">
                                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
@@ -281,7 +289,7 @@ export default function ProfilePage() {
                                 autoFocus
                                 type="text"
                                 placeholder="https://..."
-                                className="w-full bg-white border border-border rounded pl-9 pr-3 py-2 text-sm outline-none focus:border-primary transition-colors"
+                                className="w-full bg-white border border-black/20 rounded pl-9 pr-3 py-2 text-sm outline-none focus:border-primary transition-colors"
                                 value={tempPhotoUrl}
                                 onChange={(e) => setTempPhotoUrl(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSavePhoto()}
@@ -291,17 +299,21 @@ export default function ProfilePage() {
                             <button
                                 type="button"
                                 onClick={() => setIsPhotoModalOpen(false)}
-                                className="LemonButton LemonButton--secondary flex-1 py-2 border border-border rounded font-bold text-xs text-secondary hover:text-primary hover:bg-black/5 bg-white transition-all"
+                                className="LemonButton LemonButton--secondary LemonButton--small flex-1"
                             >
-                                Cancel
+                                <span className="LemonButton__chrome py-2 border border-black/20 rounded font-bold text-xs text-secondary hover:text-primary hover:bg-black/5 bg-white transition-all shadow-sm w-full justify-center">
+                                    Cancel
+                                </span>
                             </button>
                             <button
                                 type="button"
                                 onClick={handleSavePhoto}
-                                className="LemonButton LemonButton--primary flex-1 py-2 bg-[#254b85] hover:bg-[#335d9d] text-white rounded font-bold text-xs transition-all flex items-center justify-center gap-1.5"
+                                className="LemonButton LemonButton--primary LemonButton--small flex-1"
                             >
-                                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><polyline points="20 6 9 17 4 12" /></svg>
-                                Save
+                                <span className="LemonButton__chrome flex items-center justify-center gap-1.5 py-2 bg-[#254b85] hover:bg-[#335d9d] text-white rounded font-bold text-xs transition-all shadow-sm w-full">
+                                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><polyline points="20 6 9 17 4 12" /></svg>
+                                    Save
+                                </span>
                             </button>
                         </div>
                     </div>
@@ -312,7 +324,7 @@ export default function ProfilePage() {
                 .prose-content b, .prose-content strong { font-weight: 700; }
                 .prose-content i, .prose-content em { font-style: italic; }
                 .prose-content blockquote {
-                    border-left: 3px solid var(--border);
+                    border-left: 3px solid rgba(0,0,0,0.15);
                     padding-left: 0.75rem;
                     margin: 0.5rem 0;
                     font-style: italic;
