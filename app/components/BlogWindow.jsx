@@ -27,7 +27,7 @@ import rehypeRaw from 'rehype-raw';
 export default function BlogWindow({ onClose, zIndex, onFocus }) {
     const searchParams = useSearchParams();
     const router = useRouter();
-    const { openWindow, bringToFront } = useWindow();
+    const { openWindow } = useWindow();
     const slug = searchParams.get('id');
     const [post, setPost] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -41,16 +41,14 @@ export default function BlogWindow({ onClose, zIndex, onFocus }) {
     // Handler for author click
     const handleAuthorClick = () => {
         if (!post?.authorName) return;
-        const windowId = `author-${post.authorName}`;
         openWindow('author-profile', {
-            id: windowId,
+            id: `author-${post.authorName}`,
             title: `Author: @${post.authorName}`,
             username: post.authorName,
             isMaximized: false,
             initialWidth: 400,
             initialHeight: 550
         });
-        setTimeout(() => bringToFront(windowId), 0);
     };
 
     useEffect(() => {

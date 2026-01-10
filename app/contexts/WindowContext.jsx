@@ -1,25 +1,21 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import logger from '../utils/logger';
 
 /**
  * Window Context for managing floating window instances
- * Adapted from worldinmaking.com window system for posthog-next
+ * Simple rule: Every new/focused window gets the highest z-index
  */
 
 const WindowContext = createContext(undefined);
 
-// Helper to calculate next Z-Index
-const getNextZIndex = (currentWindows) => {
-    if (currentWindows.length === 0) return 10;
-    const maxZ = Math.max(...currentWindows.map(w => w.zIndex));
-    return maxZ + 1;
-};
-
 export const WindowProvider = ({ children }) => {
     const [windows, setWindows] = useState([]);
     const [isLoaded, setIsLoaded] = useState(false);
+
+    // Global z-index counter - always increases, never decreases
+    const zIndexCounter = useRef(100);
 
     // Load state from localStorage on mount
     useEffect(() => {
@@ -28,12 +24,15 @@ export const WindowProvider = ({ children }) => {
 
             if (savedWindows) {
                 const parsedWindows = JSON.parse(savedWindows);
-                // Normalize zIndex values on load to avoid stale high values
-                const normalizedWindows = parsedWindows.map((w, index) => ({
-                    ...w,
-                    zIndex: 10 + index // Reset zIndex to sequential values starting from 10
-                }));
-                setWindows(normalizedWindows);
+                // Assign fresh z-index values on load
+                const loadedWindows = parsedWindows.map((w, index) => {
+                    zIndexCounter.current += 1;
+                    return {
+                        ...w,
+                        zIndex: zIndexCounter.current
+                    };
+                });
+                setWindows(loadedWindows);
             }
         } catch (e) {
             logger.error("[WindowContext] Failed to load window state", e);
@@ -46,12 +45,11 @@ export const WindowProvider = ({ children }) => {
     useEffect(() => {
         if (!isLoaded) return;
 
-        // Don't save zIndex to localStorage - it will be recalculated on load
         const serializableWindows = windows.map(w => ({
             id: w.id,
             type: w.type,
             title: w.title,
-            username: w.username, // For author-profile windows
+            username: w.username,
             isMaximized: w.isMaximized,
             pos: w.pos,
             size: w.size
@@ -60,28 +58,35 @@ export const WindowProvider = ({ children }) => {
         localStorage.setItem('posthog-windows', JSON.stringify(serializableWindows));
     }, [windows, isLoaded]);
 
+    // Bring a window to front - simple: increment counter and assign
     const bringToFront = useCallback((id) => {
-        setWindows(prev => {
-            const targetWindow = prev.find(w => w.id === id);
-            const nextZ = getNextZIndex(prev);
-            if (targetWindow && targetWindow.zIndex === nextZ - 1) return prev;
-            return prev.map(w => w.id === id ? { ...w, zIndex: nextZ } : w);
-        });
+        zIndexCounter.current += 1;
+        const newZ = zIndexCounter.current;
+
+        setWindows(prev => prev.map(w =>
+            w.id === id ? { ...w, zIndex: newZ, isMinimized: false } : w
+        ));
     }, []);
 
+    // Open a window - if exists, bring to front; if new, create with highest z-index
     const openWindow = useCallback((type, options = {}) => {
         const { id, title, initialX, initialY, initialWidth, initialHeight } = options;
         const windowId = id || `window-${type}-${Date.now()}`;
 
+        zIndexCounter.current += 1;
+        const newZ = zIndexCounter.current;
+
         setWindows(prev => {
             const exists = prev.find(w => w.id === windowId);
-            const nextZ = getNextZIndex(prev);
 
             if (exists) {
                 // Bring existing window to front
-                return prev.map(w => w.id === windowId ? { ...w, zIndex: nextZ, isMinimized: false } : w);
+                return prev.map(w => w.id === windowId
+                    ? { ...w, zIndex: newZ, isMinimized: false }
+                    : w
+                );
             } else {
-                // Calculate cascade position
+                // Create new window with highest z-index
                 const lastWin = prev[prev.length - 1];
                 let startX = initialX ?? 50;
                 let startY = initialY ?? 80;
@@ -105,8 +110,8 @@ export const WindowProvider = ({ children }) => {
                     id: windowId,
                     type,
                     title: title || type,
-                    zIndex: nextZ,
-                    isMaximized: options.isMaximized ?? true, // Respect provided value
+                    zIndex: newZ,
+                    isMaximized: options.isMaximized ?? true,
                     isMinimized: false,
                     pos: { x: startX, y: startY },
                     size: { width: initialWidth ?? 700, height: initialHeight ?? 500 }

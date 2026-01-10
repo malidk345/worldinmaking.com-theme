@@ -8,27 +8,19 @@ function BlogPostContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const id = searchParams.get('id');
-    const { windows, openWindow, bringToFront } = useWindow();
+    const { openWindow } = useWindow();
 
     React.useEffect(() => {
         if (id) {
-            const windowId = `blog-window-${id}`;
-            const existingWindow = windows.find(w => w.id === windowId);
-
-            if (existingWindow) {
-                // Window already exists, bring it to front
-                bringToFront(windowId);
-            } else {
-                // Open new window (openWindow already assigns highest zIndex)
-                openWindow('blog', {
-                    id: windowId,
-                    title: 'post',
-                    initialWidth: 900,
-                    initialHeight: 700
-                });
-            }
+            // openWindow handles both new windows and bringing existing ones to front
+            openWindow('blog', {
+                id: `blog-window-${id}`,
+                title: 'post',
+                initialWidth: 900,
+                initialHeight: 700
+            });
         }
-    }, [id]); // Only depend on id to prevent unnecessary re-runs
+    }, [id]);
 
     return (
         <div className="flex-1 flex flex-col h-full overflow-hidden">

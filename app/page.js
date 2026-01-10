@@ -11,18 +11,12 @@ import { useWindow } from './contexts/WindowContext';
  * Main page component that displays the Home window
  */
 export default function HomePage() {
-  const { windows, openWindow, bringToFront } = useWindow();
+  const { openWindow } = useWindow();
 
-  // Open home window on mount if not already open
+  // Open home window on mount
   useEffect(() => {
-    const existingHomeWindow = windows.find(w => w.id === 'home-window');
-    if (existingHomeWindow) {
-      // Home window exists, bring it to front
-      bringToFront('home-window');
-    } else {
-      // Open new home window
-      openWindow('home', { id: 'home-window', title: 'home' });
-    }
+    // openWindow handles both new windows and bringing existing ones to front
+    openWindow('home', { id: 'home-window', title: 'home' });
   }, []);
 
   return (

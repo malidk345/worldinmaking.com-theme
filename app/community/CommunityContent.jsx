@@ -30,7 +30,7 @@ export default function CommunityPage() {
     }
 
     const { user } = useAuth();
-    const { openWindow, bringToFront } = useWindow();
+    const { openWindow } = useWindow();
     const { posts, replies, userLikes, loading, fetchPosts, fetchReplies, createPost, createReply, toggleLike } = useCommunity();
 
     const handleAuthorClick = (e, username) => {
@@ -38,16 +38,14 @@ export default function CommunityPage() {
         e.stopPropagation();
         if (!username) return;
 
-        const windowId = `author-${username}`;
         openWindow('author-profile', {
-            id: windowId,
+            id: `author-${username}`,
             title: `Author: @${username}`,
             username: username,
             isMaximized: false,
             initialWidth: 400,
             initialHeight: 550
         });
-        setTimeout(() => bringToFront(windowId), 0);
     };
 
     const [activePost, setActivePost] = useState(null);
