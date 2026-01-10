@@ -193,15 +193,21 @@ export default function HomeWindow({ onClose }) {
                                     className="group flex items-center gap-4 p-3 bg-white rounded-md hover:shadow-md transition-all"
                                     style={{ border: '1px solid var(--border-primary)' }}
                                 >
-                                    {/* Thumbnail */}
-                                    <div className="w-16 h-16 rounded overflow-hidden shrink-0 relative" style={{ border: '1px solid var(--border-primary)' }}>
-                                        <Image
-                                            src={post.image}
-                                            alt={post.title}
-                                            fill
-                                            className="object-cover"
-                                            unoptimized
-                                        />
+                                    {/* Thumbnail - conditional */}
+                                    <div className="w-16 h-16 rounded overflow-hidden shrink-0 relative bg-gray-100" style={{ border: '1px solid var(--border-primary)' }}>
+                                        {post.image ? (
+                                            <Image
+                                                src={post.image}
+                                                alt={post.title}
+                                                fill
+                                                className="object-cover"
+                                                unoptimized
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-xl font-bold text-gray-300">
+                                                {post.title?.charAt(0)?.toUpperCase() || '?'}
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Content */}

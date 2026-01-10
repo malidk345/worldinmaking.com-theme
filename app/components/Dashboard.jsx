@@ -11,8 +11,7 @@ import { SkeletonDashboardGrid } from './Skeleton';
 import { getExcerpt } from '../lib/markdown';
 import UserAvatar from './UserAvatar';
 
-// Fallback image for posts without images
-const FALLBACK_IMAGE = "https://placehold.co/600x400/EEE/313438";
+
 
 // Animation variants
 const panelAnimation = {
@@ -254,18 +253,24 @@ export default function Dashboard() {
                                     className="group flex items-center gap-4 p-3 bg-white rounded-md hover:shadow-md transition-all"
                                     style={{ border: '1px solid #a8a8a8' }}
                                 >
-                                    {/* Thumbnail */}
+                                    {/* Thumbnail - conditional */}
                                     <div
                                         className="w-16 h-16 rounded overflow-hidden shrink-0 relative bg-gray-100"
                                         style={{ border: '1px solid #a8a8a8' }}
                                     >
-                                        <Image
-                                            src={post.image || FALLBACK_IMAGE}
-                                            alt={post.title}
-                                            fill
-                                            className="object-cover"
-                                            unoptimized
-                                        />
+                                        {post.image ? (
+                                            <Image
+                                                src={post.image}
+                                                alt={post.title}
+                                                fill
+                                                className="object-cover"
+                                                unoptimized
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-xl font-bold text-gray-300">
+                                                {post.title?.charAt(0)?.toUpperCase() || '?'}
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Content */}

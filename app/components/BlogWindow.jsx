@@ -165,8 +165,14 @@ export default function BlogWindow({ onClose }) {
                                             className="flex gap-2 p-2 rounded-lg hover:bg-black/5 transition-colors group"
                                             onClick={() => setShowSidebar(false)}
                                         >
-                                            <div className="w-12 h-12 rounded overflow-hidden shrink-0 relative">
-                                                <Image src={p.image} alt={p.title} fill className="object-cover" unoptimized />
+                                            <div className="w-12 h-12 rounded overflow-hidden shrink-0 relative bg-gray-100">
+                                                {p.image ? (
+                                                    <Image src={p.image} alt={p.title} fill className="object-cover" unoptimized />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-lg font-bold text-gray-300">
+                                                        {p.title?.charAt(0)?.toUpperCase() || '?'}
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <h4 className="text-xs font-bold text-primary line-clamp-2 group-hover:text-accent transition-colors">
@@ -230,17 +236,19 @@ export default function BlogWindow({ onClose }) {
                             {post.title}
                         </h1>
 
-                        {/* Hero Image */}
-                        <div className="relative aspect-2/1 rounded-lg overflow-hidden border mb-6" style={{ borderColor: 'var(--border-primary)' }}>
-                            <Image
-                                src={post.image}
-                                alt={post.title}
-                                fill
-                                className="object-cover"
-                                priority
-                                unoptimized
-                            />
-                        </div>
+                        {/* Hero Image - only show if image exists */}
+                        {post.image && (
+                            <div className="relative aspect-2/1 rounded-lg overflow-hidden border mb-6" style={{ borderColor: 'var(--border-primary)' }}>
+                                <Image
+                                    src={post.image}
+                                    alt={post.title}
+                                    fill
+                                    className="object-cover"
+                                    priority
+                                    unoptimized
+                                />
+                            </div>
+                        )}
 
                         {/* Meta Info */}
                         <div

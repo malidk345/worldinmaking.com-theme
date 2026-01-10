@@ -5,9 +5,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import UserAvatar from './UserAvatar';
 
-// Default fallback image
-const FALLBACK_IMAGE = "https://placehold.co/600x400/EEE/313438";
-
 export default function InsightCard({
     id,
     title,
@@ -25,7 +22,6 @@ export default function InsightCard({
         return null;
     }
 
-    const imageUrl = image || FALLBACK_IMAGE;
     const displayDate = date || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     const displayAuthor = author || 'Unknown';
     const displayType = type || 'General';
@@ -106,23 +102,26 @@ export default function InsightCard({
                 <div className="flex-1" aria-hidden="true" />
             </div>
 
-            {/* Image section */}
-            <div className="InsightCard__viz px-3 pb-3 pt-0 flex-none h-[140px]">
-                <div className="w-full h-full border border-[#a8a8a8] rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center relative group">
-                    {children ? children : (
-                        <Image
-                            src={imageUrl}
-                            alt={title ? `Image for ${title}` : "Post image"}
-                            fill
-                            className="object-cover transition-transform duration-500 group-hover:scale-105"
-                            unoptimized
-                            onError={(e) => {
-                                e.currentTarget.src = FALLBACK_IMAGE;
-                            }}
-                        />
-                    )}
+            {/* Image section - only show if image exists */}
+            {image && (
+                <div className="InsightCard__viz px-3 pb-3 pt-0 flex-none h-[140px]">
+                    <div className="w-full h-full border border-[#a8a8a8] rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center relative group">
+                        {children ? children : (
+                            <Image
+                                src={image}
+                                alt={title ? `Image for ${title}` : "Post image"}
+                                fill
+                                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                unoptimized
+                                onError={(e) => {
+                                    // Hide image on error
+                                    e.currentTarget.style.display = 'none';
+                                }}
+                            />
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
         </Link>
     );
 }
