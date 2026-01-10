@@ -173,7 +173,7 @@ const Sidebar = () => {
                             type="button"
                             aria-label="World in Making home"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-[#ec6d4f]" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-black" aria-hidden="true">
                                 <path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM2.25 12c0-4.97 3.74-9.063 8.63-9.712-.132.846-.132 2.067-.027 2.146.41.311.666 1.03.58 1.458a2.59 2.59 0 0 1-.36.75 3.38 3.38 0 0 0-.25 1.708 7.23 7.23 0 0 0 2.808 4.796c.277.262.336.568.167.729-.65.617-.507 1.25-.098 1.52.417.275.467 1.25.107 1.777a.64.64 0 0 1-.166.155c-1.127.75-3.037.49-3.793.425a8.3 8.3 0 0 1-2.91-1.096A9.708 9.708 0 0 1 2.25 12Zm17.84-4.258a1.59 1.59 0 0 0-.58-.553 1.9 1.9 0 0 0-1.874.14 5.3 5.3 0 0 0-.398.243c-.497.33-.878.567-1.428.694-.52.12-.53.5-.02.593.18.033.344.06.494.086 1.15.2 2.052.88 2.13 1.638.077.74-.53 1.674-1.298 2.046a.376.376 0 0 0-.206.314c-.033.456.28.093.578.852.298.76.107 1.603.018 1.956-.514 2.016-1.503 2.807-2.618 3.366A9.76 9.76 0 0 0 21.75 12a9.72 9.72 0 0 0-1.66-5.258Z" clipRule="evenodd" />
                             </svg>
                         </button>
@@ -186,7 +186,7 @@ const Sidebar = () => {
                         type="button"
                     >
                         <span
-                            className="LemonButton__chrome text-[8.5px] leading-none font-bold text-white whitespace-nowrap flex items-center justify-center"
+                            className="LemonButton__chrome text-[8px] leading-none font-medium text-white whitespace-nowrap flex items-center justify-center"
                             style={{ minHeight: '0', height: '100%', padding: '0 6px' }}
                         >
                             worldinmaking
@@ -245,16 +245,16 @@ const Sidebar = () => {
                 <div className="border-b border-primary h-px" aria-hidden="true" />
                 <div className="p-1 flex flex-col gap-px" style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }}>
                     <Link
-                        className={`button-primitive button-primitive--variant-default button-primitive--size-base button-primitive--height-base text-sm gap-1.5 rounded button-primitive--full-width justify-start shrink-0 text-left flex items-center px-2 py-1 hover:bg-fill-button-tertiary-hover group ${isLinkActive('/login') ? 'bg-fill-button-tertiary-active' : ''}`}
+                        className={`button-primitive button-primitive--variant-default button-primitive--size-base button-primitive--height-base text-sm gap-2.5 rounded button-primitive--full-width justify-start shrink-0 text-left flex items-center px-2 py-2 hover:bg-fill-button-tertiary-hover group ${isLinkActive('/login') ? 'bg-fill-button-tertiary-active' : ''}`}
                         href="/login"
                         title="Login"
                         onClick={handleLinkClick}
                         aria-current={isLinkActive('/login') ? 'page' : undefined}
                     >
-                        <span className="flex text-black w-5 h-5 items-center justify-center">
-                            <Icons.User />
-                        </span>
-                        <span>Login</span>
+                        <div className="flex w-6 h-6 items-center justify-center rounded-full border border-black/10 bg-black/5 text-black overflow-hidden bg-surface-primary">
+                            <Icons.User className="size-3.5" />
+                        </div>
+                        <span className="font-medium">Login</span>
                     </Link>
 
                     <div className="px-2 py-4 mt-auto">
