@@ -142,9 +142,9 @@ export default function BlogWindow({ onClose }) {
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -20 }}
                             transition={{ duration: 0.2 }}
-                            className="absolute left-4 top-4 w-64 max-h-[calc(100%-32px)] z-40 bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col border border-black/5"
+                            className="absolute left-4 top-4 w-64 max-h-[calc(100%-32px)] z-40 bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col border border-black/15"
                         >
-                            <div className="px-3 py-2 border-b border-black/5 flex items-center justify-between bg-white/50">
+                            <div className="px-3 py-2 border-b border-black/15 flex items-center justify-between bg-white/50">
                                 <span className="text-[11px] font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
                                     <SidebarPanel className="size-3.5" />
                                     suggested posts
@@ -190,9 +190,9 @@ export default function BlogWindow({ onClose }) {
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: 20 }}
                             transition={{ duration: 0.2 }}
-                            className="absolute right-4 top-4 w-56 max-h-[calc(100%-32px)] z-40 bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col border border-black/5"
+                            className="absolute right-4 top-4 w-56 max-h-[calc(100%-32px)] z-40 bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col border border-black/15"
                         >
-                            <div className="px-3 py-2 border-b border-black/5 flex items-center justify-between bg-white/50">
+                            <div className="px-3 py-2 border-b border-black/15 flex items-center justify-between bg-white/50">
                                 <span className="text-[11px] font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
                                     <TableOfContents className="size-3.5" />
                                     contents
@@ -253,7 +253,7 @@ export default function BlogWindow({ onClose }) {
                                         src={post.authorAvatar}
                                         name={post.authorName}
                                         size={16}
-                                        className="border border-black/10"
+                                        className="border border-black/20"
                                     />
                                 </div>
                                 <span className="font-bold text-primary">
@@ -295,7 +295,7 @@ export default function BlogWindow({ onClose }) {
                                             <code className="block bg-black/5 p-4 rounded-lg text-sm font-mono overflow-x-auto" {...props} />
                                         ),
                                     pre: ({ node, ...props }) => <pre className="bg-black/5 p-4 rounded-lg overflow-x-auto mb-4" {...props} />,
-                                    hr: ({ node, ...props }) => <hr className="border-t border-black/10 my-8" {...props} />,
+                                    hr: ({ node, ...props }) => <hr className="border-t border-black/20 my-8" {...props} />,
                                     img: ({ node, ...props }) => <img className="rounded-lg max-w-full h-auto my-4" {...props} />,
                                 }}
                             >
@@ -304,7 +304,7 @@ export default function BlogWindow({ onClose }) {
                         </div>
 
                         {/* Author Section */}
-                        <div className="mt-8 pt-6 border-t border-black/10">
+                        <div className="mt-8 pt-6 border-t border-black/20">
                             <div className="flex items-center gap-3">
                                 <div className="relative">
                                     <UserAvatar
@@ -331,3 +331,4 @@ export default function BlogWindow({ onClose }) {
         </Window>
     );
 }
+

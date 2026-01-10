@@ -173,7 +173,7 @@ export default function CommentSection({ postId }) {
 
     if (loading) {
         return (
-            <div className="mt-8 border border-black/10 rounded-xl p-5 bg-gray-50/50 shadow-sm">
+            <div className="mt-8 border border-black/20 rounded-xl p-5 bg-gray-50/50 shadow-sm">
                 <div className="animate-pulse space-y-4">
                     <div className="h-4 bg-gray-200 rounded w-24"></div>
                     <div className="h-20 bg-gray-200 rounded"></div>
@@ -183,7 +183,7 @@ export default function CommentSection({ postId }) {
     }
 
     return (
-        <div className="mt-8 border border-black/10 rounded-xl p-5 bg-gray-50/50 shadow-sm">
+        <div className="mt-8 border border-black/20 rounded-xl p-5 bg-gray-50/50 shadow-sm">
             <h3 className="font-bold text-sm mb-6 text-gray-900">
                 comments
             </h3>
@@ -233,7 +233,7 @@ export default function CommentSection({ postId }) {
                         onClick={() => handlePost(null)}
                         className="LemonButton LemonButton--secondary LemonButton--status-default LemonButton--small"
                     >
-                        <span className="LemonButton__chrome px-4 py-1.5 border border-black/10 rounded font-bold text-xs text-secondary hover:text-primary hover:border-black/30 hover:bg-white bg-white transition-all shadow-sm">
+                        <span className="LemonButton__chrome px-4 py-1.5 border border-black/20 rounded font-bold text-xs text-secondary hover:text-primary hover:border-black/30 hover:bg-white bg-white transition-all shadow-sm">
                             {user ? 'post comment' : 'login to post'}
                         </span>
                     </button>
@@ -242,3 +242,4 @@ export default function CommentSection({ postId }) {
         </div>
     );
 }
+

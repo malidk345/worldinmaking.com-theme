@@ -16,8 +16,8 @@
     --text-tertiary: rgba(0, 0, 0, 0.4);
 
     /* Surface Colors - PostHog 3000 Style */
-    --border-primary: #c9cdc2;
-    --border-secondary: #e5e7eb;
+    --border-primary: #aaaf9d;
+    --border-secondary: #b0b4ba;
     --bg-surface-primary: #ffffff;
     --bg-surface-secondary: #f3f4ef;
     --bg-surface-tertiary: hsl(75deg 14% 95%);

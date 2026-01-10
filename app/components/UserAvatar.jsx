@@ -24,7 +24,7 @@ const UserAvatar = React.memo(({ src, name = 'User', size = 32, className = '' }
 
     return (
         <div
-            className={`relative rounded-full overflow-hidden shrink-0 bg-gray-100 flex items-center justify-center border border-black/5 ${className}`}
+            className={`relative rounded-full overflow-hidden shrink-0 bg-gray-100 flex items-center justify-center border border-black/15 ${className}`}
             style={{ width: size, height: size }}
             role="img"
             aria-label={`${name}'s avatar`}
@@ -58,3 +58,4 @@ const UserAvatar = React.memo(({ src, name = 'User', size = 32, className = '' }
 UserAvatar.displayName = 'UserAvatar';
 
 export default UserAvatar;
+

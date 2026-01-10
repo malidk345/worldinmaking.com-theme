@@ -194,7 +194,7 @@ export default function VoteControl({ postId, compact = false }) {
 
     // Full version (for blog post footer)
     return (
-        <div className="flex items-center justify-between py-3 border-t border-black/5 mt-4 mb-4">
+        <div className="flex items-center justify-between py-3 border-t border-black/15 mt-4 mb-4">
             {/* Vote Controls */}
             <div className="flex items-center gap-2">
                 <button
@@ -202,7 +202,7 @@ export default function VoteControl({ postId, compact = false }) {
                     disabled={loading}
                     className="LemonButton LemonButton--secondary LemonButton--status-default LemonButton--small"
                 >
-                    <span className={`LemonButton__chrome flex items-center gap-1.5 px-3 py-1.5 border border-black/10 rounded font-bold text-xs hover:border-black/30 bg-white transition-all shadow-sm ${userUpvotes > 0
+                    <span className={`LemonButton__chrome flex items-center gap-1.5 px-3 py-1.5 border border-black/20 rounded font-bold text-xs hover:border-black/30 bg-white transition-all shadow-sm ${userUpvotes > 0
                         ? 'text-green-600 border-green-200'
                         : 'text-secondary hover:text-primary'
                         }`}>
@@ -216,7 +216,7 @@ export default function VoteControl({ postId, compact = false }) {
                     disabled={loading}
                     className="LemonButton LemonButton--secondary LemonButton--status-default LemonButton--small"
                 >
-                    <span className={`LemonButton__chrome flex items-center gap-1.5 px-3 py-1.5 border border-black/10 rounded font-bold text-xs hover:border-black/30 bg-white transition-all shadow-sm ${userDownvotes > 0
+                    <span className={`LemonButton__chrome flex items-center gap-1.5 px-3 py-1.5 border border-black/20 rounded font-bold text-xs hover:border-black/30 bg-white transition-all shadow-sm ${userDownvotes > 0
                         ? 'text-red-600 border-red-200'
                         : 'text-secondary hover:text-primary'
                         }`}>
@@ -231,7 +231,7 @@ export default function VoteControl({ postId, compact = false }) {
                 onClick={handleShare}
                 className="LemonButton LemonButton--secondary LemonButton--status-default LemonButton--small"
             >
-                <span className="LemonButton__chrome flex items-center gap-2 px-3 py-1.5 border border-black/10 rounded font-bold text-xs text-secondary hover:text-primary hover:border-black/30 hover:bg-white bg-white transition-all shadow-sm">
+                <span className="LemonButton__chrome flex items-center gap-2 px-3 py-1.5 border border-black/20 rounded font-bold text-xs text-secondary hover:text-primary hover:border-black/30 hover:bg-white bg-white transition-all shadow-sm">
                     <ShareIcon />
                     <span>share</span>
                 </span>
@@ -239,3 +239,4 @@ export default function VoteControl({ postId, compact = false }) {
         </div>
     );
 }
+
