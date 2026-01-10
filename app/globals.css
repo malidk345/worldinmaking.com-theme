@@ -127,10 +127,8 @@
     --bg-surface-tertiary: hsl(36deg 15% 88%);
     /* Overriding with explicit PostHog value */
 
-    --border-primary: #a8a8a8;
-    /* PostHog 3000 Border - Updated to light gray (#a8a8a8) */
-    --bg-3000: var(--posthog-3000-50);
-    /* Base background for the entire scene */
+    --border-primary: #7c7c7c;
+    /* PostHog 3000 Border - Updated to medium gray (#7c7c7c) */
 
     --text-primary: #111;
     --text-secondary: rgba(0, 0, 0, 0.6);
