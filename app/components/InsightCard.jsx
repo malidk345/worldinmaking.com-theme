@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import UserAvatar from './UserAvatar';
+import { useWindow } from '../contexts/WindowContext';
 
 export default function InsightCard({
     id,
@@ -17,6 +18,8 @@ export default function InsightCard({
     image,
     children
 }) {
+    const { openWindow } = useWindow();
+
     // Validate required props
     if (!id) {
         return null;
@@ -25,6 +28,19 @@ export default function InsightCard({
     const displayDate = date || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     const displayAuthor = author || 'Unknown';
     const displayType = type || 'General';
+
+    const handleAuthorClick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openWindow('author-profile', {
+            id: `author-${displayAuthor}`,
+            title: `Author: @${displayAuthor}`,
+            username: displayAuthor,
+            isMaximized: false,
+            initialWidth: 400,
+            initialHeight: 550
+        });
+    };
 
     return (
         <Link
@@ -64,14 +80,22 @@ export default function InsightCard({
                                     </svg>
                                     <span className="CardMeta__tag-item">{displayDate}</span>
                                     <span className="CardMeta__tag-separator" aria-hidden="true">•</span>
-                                    <div className="CardMeta__tag-avatar relative">
+                                    <div
+                                        className="CardMeta__tag-avatar relative cursor-pointer hover:opacity-80 transition-opacity"
+                                        onClick={handleAuthorClick}
+                                    >
                                         <UserAvatar
                                             src={authorAvatar}
                                             name={displayAuthor}
                                             size={16}
                                         />
                                     </div>
-                                    <span className="CardMeta__tag-item">{displayAuthor}</span>
+                                    <span
+                                        className="CardMeta__tag-item cursor-pointer hover:text-[#254b85] transition-colors"
+                                        onClick={handleAuthorClick}
+                                    >
+                                        {displayAuthor}
+                                    </span>
                                 </div>
                             </div>
 

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Layout } from './Icons';
 import Window from './Window';
 import HomeWindowToolbar from './HomeWindowToolbar';
+import { useWindow } from '../contexts/WindowContext';
 import DashboardGrid from './DashboardGrid';
 import { usePosts } from '../hooks/usePosts';
 import { SkeletonDashboardGrid } from './Skeleton';
@@ -19,6 +20,20 @@ import Image from 'next/image';
  */
 export default function HomeWindow({ onClose }) {
     const { posts, loading } = usePosts();
+    const { openWindow } = useWindow();
+
+    const handleAuthorClick = (e, authorName) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openWindow('author-profile', {
+            id: `author-${authorName}`,
+            title: `Author: @${authorName}`,
+            username: authorName,
+            isMaximized: false,
+            initialWidth: 400,
+            initialHeight: 550
+        });
+    };
 
     // State for toolbar functionality
     const [showCategories, setShowCategories] = useState(false);
@@ -232,7 +247,10 @@ export default function HomeWindow({ onClose }) {
                                     </div>
 
                                     {/* Author */}
-                                    <div className="flex items-center gap-2 pr-2 shrink-0">
+                                    <div
+                                        className="flex items-center gap-2 pr-2 shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                                        onClick={(e) => handleAuthorClick(e, post.authorName)}
+                                    >
                                         <div className="text-right hidden sm:block">
                                             <div className="text-[11px] font-bold text-primary">{post.authorName}</div>
                                             <div className="text-[10px] text-secondary">Author</div>

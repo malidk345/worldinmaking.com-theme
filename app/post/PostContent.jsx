@@ -1,20 +1,34 @@
 "use client";
 import React, { Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import DashboardHeader from '../components/DashboardHeader';
-import BlogWindow from '../components/BlogWindow';
-import { useRouter } from 'next/navigation';
+import { useWindow } from '../contexts/WindowContext';
 
 function BlogPostContent() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const id = searchParams.get('id');
+    const { windows, openWindow } = useWindow();
 
-    const handleClose = () => {
-        router.push('/');
-    };
+    React.useEffect(() => {
+        if (id) {
+            const windowId = `blog-window-${id}`;
+            const hasWindow = windows.some(w => w.id === windowId);
+            if (!hasWindow) {
+                openWindow('blog', {
+                    id: windowId,
+                    title: 'post',
+                    initialWidth: 900,
+                    initialHeight: 700
+                });
+            }
+        }
+    }, [id, openWindow, windows]);
 
     return (
         <div className="flex-1 flex flex-col h-full overflow-hidden">
             <DashboardHeader />
-            <BlogWindow onClose={handleClose} />
+            {/* Windows handled by WindowManager */}
         </div>
     );
 }

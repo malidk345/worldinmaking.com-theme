@@ -95,11 +95,12 @@ export const WindowProvider = ({ children }) => {
                 }
 
                 return [...prev, {
+                    ...options,
                     id: windowId,
                     type,
                     title: title || type,
                     zIndex: nextZ,
-                    isMaximized: true, // Start maximized by default
+                    isMaximized: options.isMaximized ?? true, // Respect provided value
                     isMinimized: false,
                     pos: { x: startX, y: startY },
                     size: { width: initialWidth ?? 700, height: initialHeight ?? 500 }

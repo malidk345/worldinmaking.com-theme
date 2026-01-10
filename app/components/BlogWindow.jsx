@@ -9,6 +9,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Window from './Window';
 import BlogWindowToolbar from './BlogWindowToolbar';
 import { useTabs } from '../context/TabContext';
+import { useWindow } from '../contexts/WindowContext';
 import { getPostById, usePosts } from '../hooks/usePosts';
 import { SidebarPanel, TableOfContents, Document } from './Icons';
 import VoteControl from './VoteControl';
@@ -26,6 +27,7 @@ import rehypeRaw from 'rehype-raw';
 export default function BlogWindow({ onClose }) {
     const searchParams = useSearchParams();
     const router = useRouter();
+    const { openWindow } = useWindow();
     const slug = searchParams.get('id');
     const [post, setPost] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -260,7 +262,17 @@ export default function BlogWindow({ onClose }) {
                             className="flex flex-nowrap items-center border border-(--border-primary) rounded-lg overflow-x-auto divide-x divide-(--border-primary) bg-(--posthog-3000-50) text-xs whitespace-nowrap mb-6"
                             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                         >
-                            <div className="flex items-center gap-2 px-3 py-2 bg-(--posthog-3000-100)">
+                            <div
+                                className="flex items-center gap-2 px-3 py-2 bg-(--posthog-3000-100) cursor-pointer hover:bg-(--posthog-3000-200) transition-colors"
+                                onClick={() => openWindow('author-profile', {
+                                    id: `author-${post.authorName}`,
+                                    title: `Author: @${post.authorName}`,
+                                    username: post.authorName,
+                                    isMaximized: false,
+                                    initialWidth: 400,
+                                    initialHeight: 550
+                                })}
+                            >
                                 <div className="relative">
                                     <UserAvatar
                                         src={post.authorAvatar}

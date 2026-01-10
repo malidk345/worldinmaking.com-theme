@@ -21,21 +21,10 @@ export default function HomePage() {
     }
   }, []);
 
-  const homeWindow = windows.find(w => w.id === 'home-window');
-
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       <DashboardHeader />
-
-      {/* Windows Layer */}
-      <AnimatePresence>
-        {homeWindow && (
-          <HomeWindow
-            key={homeWindow.id}
-            onClose={() => closeWindow(homeWindow.id)}
-          />
-        )}
-      </AnimatePresence>
+      {/* Windows Layer is now handled by WindowManager in RootLayout */}
     </div>
   );
 }

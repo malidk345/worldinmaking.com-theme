@@ -8,6 +8,7 @@ import RichTextEditor from '../components/RichTextEditor';
 import { useCommunity } from '../hooks/useCommunity';
 import { useAuth } from '../contexts/AuthContext';
 import UserAvatar from '../components/UserAvatar';
+import { useWindow } from '../contexts/WindowContext';
 
 export default function CommunityPage() {
     const router = useRouter();
@@ -29,7 +30,23 @@ export default function CommunityPage() {
     }
 
     const { user } = useAuth();
+    const { openWindow } = useWindow();
     const { posts, replies, userLikes, loading, fetchPosts, fetchReplies, createPost, createReply, toggleLike } = useCommunity();
+
+    const handleAuthorClick = (e, username) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!username) return;
+
+        openWindow('author-profile', {
+            id: `author-${username}`,
+            title: `Author: @${username}`,
+            username: username,
+            isMaximized: false,
+            initialWidth: 400,
+            initialHeight: 550
+        });
+    };
 
     const [activePost, setActivePost] = useState(null);
     const [replyContent, setReplyContent] = useState('');
@@ -114,7 +131,10 @@ export default function CommunityPage() {
                                     {/* Main Post */}
                                     <div className="p-4 md:p-5 bg-white border border-black/15 rounded-lg">
                                         <div className="flex gap-3 md:gap-4">
-                                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-md border border-black/15 bg-white shrink-0 flex items-center justify-center text-primary text-xs md:text-sm font-bold select-none overflow-hidden pb-px">
+                                            <div
+                                                className="w-8 h-8 md:w-10 md:h-10 rounded-md border border-black/15 bg-white shrink-0 flex items-center justify-center text-primary text-xs md:text-sm font-bold select-none overflow-hidden pb-px cursor-pointer hover:opacity-80 transition-opacity"
+                                                onClick={(e) => handleAuthorClick(e, activePost.profiles?.username)}
+                                            >
                                                 {activePost.profiles?.avatar_url ? (
                                                     <UserAvatar
                                                         src={activePost.profiles?.avatar_url}
@@ -128,7 +148,12 @@ export default function CommunityPage() {
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mb-2">
-                                                    <span className="text-xs md:text-sm font-bold">{activePost.profiles?.username || '?'}</span>
+                                                    <span
+                                                        className="text-xs md:text-sm font-bold cursor-pointer hover:text-[#254b85] transition-colors"
+                                                        onClick={(e) => handleAuthorClick(e, activePost.profiles?.username)}
+                                                    >
+                                                        {activePost.profiles?.username || '?'}
+                                                    </span>
                                                     <span className="text-[10px] md:text-[11px] font-medium text-secondary">@{activePost.profiles?.username || '?'}</span>
                                                     <span className="hidden sm:inline w-0.5 h-0.5 bg-secondary/30 rounded-full"></span>
                                                     <span className="text-[10px] md:text-[11px] font-medium text-secondary">{new Date(activePost.created_at).toLocaleDateString()}</span>
@@ -270,7 +295,10 @@ export default function CommunityPage() {
                                                 onClick={() => toggleReplyPanel(post.id)}
                                             >
                                                 <div className="flex gap-3 md:gap-4">
-                                                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-md border border-black/15 bg-white shrink-0 flex items-center justify-center text-primary text-xs md:text-sm font-bold select-none overflow-hidden pb-px">
+                                                    <div
+                                                        className="w-8 h-8 md:w-10 md:h-10 rounded-md border border-black/15 bg-white shrink-0 flex items-center justify-center text-primary text-xs md:text-sm font-bold select-none overflow-hidden pb-px cursor-pointer hover:opacity-80 transition-opacity"
+                                                        onClick={(e) => handleAuthorClick(e, post.profiles?.username)}
+                                                    >
                                                         {post.profiles?.avatar_url ? (
                                                             <UserAvatar
                                                                 src={post.profiles?.avatar_url}
@@ -285,7 +313,12 @@ export default function CommunityPage() {
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex items-center justify-between mb-2">
                                                             <div className="flex flex-wrap items-center gap-x-1.5 md:gap-x-2 gap-y-0.5">
-                                                                <span className="text-xs md:text-sm font-bold truncate max-w-[100px] sm:max-w-none">{post.profiles?.username || '?'}</span>
+                                                                <span
+                                                                    className="text-xs md:text-sm font-bold truncate max-w-[100px] sm:max-w-none cursor-pointer hover:text-[#254b85] transition-colors"
+                                                                    onClick={(e) => handleAuthorClick(e, post.profiles?.username)}
+                                                                >
+                                                                    {post.profiles?.username || '?'}
+                                                                </span>
                                                                 <span className="text-[9px] md:text-[11px] font-medium text-secondary truncate max-w-[80px] sm:max-w-none">@{post.profiles?.username || '?'}</span>
                                                                 <span className="hidden xs:inline w-0.5 h-0.5 bg-secondary/30 rounded-full"></span>
                                                                 <span className="text-[9px] md:text-[11px] font-medium text-secondary">{timeAgo(post.created_at)}</span>
