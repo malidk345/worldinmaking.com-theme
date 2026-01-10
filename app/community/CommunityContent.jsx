@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardHeader from '../components/DashboardHeader';
 import PageWindow from '../components/PageWindow';
+import RichTextEditor from '../components/RichTextEditor';
 import { useCommunity } from '../hooks/useCommunity';
 import { useAuth } from '../contexts/AuthContext';
 import UserAvatar from '../components/UserAvatar';
@@ -134,9 +135,10 @@ export default function CommunityPage() {
                                                     <span className="text-[10px] md:text-[11px] font-bold text-[#2d2d2d]/30 lowercase">{new Date(activePost.created_at).toLocaleDateString()}</span>
                                                 </div>
                                                 <h2 className="font-[900] text-lg leading-tight text-[#2d2d2d] mb-3 lowercase">{activePost.title}</h2>
-                                                <div className="text-xs md:text-sm leading-relaxed text-[#2d2d2d] lowercase whitespace-pre-wrap">
-                                                    {activePost.content}
-                                                </div>
+                                                <div
+                                                    className="text-xs md:text-sm leading-relaxed text-[#2d2d2d] lowercase prose-compact"
+                                                    dangerouslySetInnerHTML={{ __html: activePost.content }}
+                                                />
                                             </div>
                                         </div>
                                     </div>
@@ -196,7 +198,7 @@ export default function CommunityPage() {
                                     )}
                                 </div>
 
-                                {/* Post Creator Box */}
+                                {/* Post Creator Box with Rich Text Editor */}
                                 {isCreating && (
                                     <div className="mb-8 space-y-3 animate-in zoom-in-95 duration-200">
                                         <div className="bg-white border-[1.5px] border-[#2d2d2d]/10 rounded-xl overflow-hidden shadow-sm">
@@ -208,23 +210,25 @@ export default function CommunityPage() {
                                                     </svg>
                                                 </button>
                                             </div>
-                                            <div className="p-4 md:p-5 bg-[#fffefc] space-y-3">
+                                            <div className="p-4 space-y-3">
                                                 <input
                                                     type="text"
                                                     placeholder="post title..."
                                                     value={newPostTitle}
                                                     onChange={(e) => setNewPostTitle(e.target.value)}
-                                                    className="w-full bg-transparent text-[14px] font-[900] text-[#2d2d2d] outline-none placeholder:text-[#2d2d2d]/30 lowercase"
-                                                />
-                                                <textarea
-                                                    placeholder="what's on your mind..."
-                                                    value={newPostContent}
-                                                    onChange={(e) => setNewPostContent(e.target.value)}
-                                                    rows={4}
-                                                    className="w-full bg-transparent text-[14px] leading-relaxed text-[#2d2d2d] outline-none resize-none placeholder:text-[#2d2d2d]/30 lowercase"
+                                                    className="w-full bg-transparent text-[14px] font-[900] text-[#2d2d2d] outline-none placeholder:text-[#2d2d2d]/30 lowercase border-b-[1.5px] border-[#2d2d2d]/10 pb-3"
                                                 />
                                             </div>
                                         </div>
+
+                                        {/* Rich Text Editor for Post Content */}
+                                        <RichTextEditor
+                                            content={newPostContent}
+                                            onChange={setNewPostContent}
+                                            placeholder="what's on your mind..."
+                                            minHeight="200px"
+                                        />
+
                                         <div className="flex flex-col sm:flex-row justify-end gap-2">
                                             <button
                                                 onClick={() => setIsCreating(false)}
@@ -291,7 +295,7 @@ export default function CommunityPage() {
 
                                                         {post.content && (
                                                             <div
-                                                                className="text-xs md:text-sm leading-relaxed text-[#2d2d2d] lowercase mb-4 line-clamp-2"
+                                                                className="text-xs md:text-sm leading-relaxed text-[#2d2d2d] lowercase mb-4 line-clamp-2 prose-compact"
                                                                 dangerouslySetInnerHTML={{ __html: post.content }}
                                                             />
                                                         )}
@@ -380,15 +384,6 @@ export default function CommunityPage() {
                                         ))}
                                     </div>
                                 )}
-
-                                {/* Mini Status */}
-                                <div className="mt-12 flex items-center justify-between text-[8px] font-black uppercase tracking-[0.1em] text-[#2d2d2d]/30 px-2 pb-12">
-                                    <span className="flex items-center gap-1 lowercase tracking-normal">
-                                        <div className="w-1 h-1 bg-emerald-500 rounded-full"></div>
-                                        system: ok
-                                    </span>
-                                    <span className="lowercase tracking-normal">© 2024 posthog</span>
-                                </div>
                             </div>
                         )}
                     </div>
@@ -398,6 +393,28 @@ export default function CommunityPage() {
             <style jsx>{`
                 .no-scrollbar::-webkit-scrollbar { display: none; }
                 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+                .prose-compact blockquote {
+                    border-left: 3px solid #2d2d2d;
+                    padding-left: 1rem;
+                    margin: 0.5rem 0;
+                    font-style: italic;
+                    opacity: 0.7;
+                }
+                .prose-compact ul {
+                    list-style-type: disc;
+                    padding-left: 1.5rem;
+                    margin: 0.5rem 0;
+                }
+                .prose-compact a {
+                    color: #254b85;
+                    text-decoration: underline;
+                    font-weight: bold;
+                }
+                .prose-compact img {
+                    max-width: 100%;
+                    border-radius: 0.375rem;
+                    margin: 0.5rem 0;
+                }
             `}</style>
         </div>
     );

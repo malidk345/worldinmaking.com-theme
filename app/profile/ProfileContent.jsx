@@ -6,6 +6,7 @@ import DashboardHeader from '../components/DashboardHeader';
 import PageWindow from '../components/PageWindow';
 import { useAuth } from '../contexts/AuthContext';
 import UserAvatar from '../components/UserAvatar';
+import RichTextEditor from '../components/RichTextEditor';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../contexts/ToastContext';
 
@@ -210,21 +211,19 @@ export default function ProfilePage() {
                                     </div>
 
                                     {isEditing ? (
-                                        <div className="bg-white border-[1.5px] border-[#2d2d2d] rounded-lg overflow-hidden min-h-[200px]">
-                                            <div className="px-4 py-2 bg-[#f9fafb] border-b-[1.5px] border-[#2d2d2d]/10 flex items-center gap-2">
-                                                <span className="text-[10px] font-black text-[#2d2d2d]/40 lowercase">editing bio</span>
-                                            </div>
-                                            <textarea
-                                                value={bioContent}
-                                                onChange={(e) => setBioContent(e.target.value)}
-                                                placeholder="write something about yourself here..."
-                                                className="w-full min-h-[160px] p-4 md:p-5 bg-[#fffefc] text-[14px] leading-relaxed text-[#2d2d2d] outline-none resize-none lowercase"
-                                            />
-                                        </div>
+                                        <RichTextEditor
+                                            content={bioContent}
+                                            onChange={setBioContent}
+                                            placeholder="write something about yourself here..."
+                                            minHeight="320px"
+                                        />
                                     ) : (
                                         <div className="min-h-[120px] text-[14px] text-[#2d2d2d] leading-relaxed lowercase">
                                             {bioContent || profile?.bio ? (
-                                                <p className="whitespace-pre-wrap">{bioContent || profile?.bio}</p>
+                                                <div
+                                                    className="prose-compact"
+                                                    dangerouslySetInnerHTML={{ __html: bioContent || profile?.bio }}
+                                                />
                                             ) : (
                                                 <p className="text-[#2d2d2d]/40 italic">no bio yet... click edit to add one.</p>
                                             )}
@@ -242,15 +241,6 @@ export default function ProfilePage() {
                                     <p className="text-[#2d2d2d]/40 text-[11px] font-bold max-w-[200px] lowercase">no items found in your collection.</p>
                                 </div>
                             )}
-                        </div>
-
-                        {/* Mini Status */}
-                        <div className="mt-12 flex items-center justify-between text-[8px] font-black uppercase tracking-[0.1em] text-[#2d2d2d]/30 px-2 pb-12">
-                            <span className="flex items-center gap-1 lowercase tracking-normal">
-                                <div className="w-1 h-1 bg-emerald-500 rounded-full"></div>
-                                system: ok
-                            </span>
-                            <span className="lowercase tracking-normal">© 2024 posthog</span>
                         </div>
 
                     </div>
@@ -313,6 +303,23 @@ export default function ProfilePage() {
             <style jsx>{`
                 .no-scrollbar::-webkit-scrollbar { display: none; }
                 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+                .prose-compact blockquote {
+                    border-left: 3px solid #2d2d2d;
+                    padding-left: 1rem;
+                    margin: 1rem 0;
+                    font-style: italic;
+                    opacity: 0.7;
+                }
+                .prose-compact ul {
+                    list-style-type: disc;
+                    padding-left: 1.5rem;
+                    margin: 1rem 0;
+                }
+                .prose-compact a {
+                    color: #254b85;
+                    text-decoration: underline;
+                    font-weight: bold;
+                }
             `}</style>
         </div>
     );
