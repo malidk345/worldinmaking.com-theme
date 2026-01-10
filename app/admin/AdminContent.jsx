@@ -114,6 +114,8 @@ export default function AdminPage() {
         e.preventDefault();
         setLoading(true);
 
+        // Build post data - only include image fields if they have values
+        // This prevents errors if the Supabase table doesn't have these columns yet
         const postData = {
             title,
             slug: slug || title.toLowerCase().replace(/ /g, '-').replace(/[^\w-]/g, ''),
@@ -121,10 +123,18 @@ export default function AdminPage() {
             excerpt,
             category: category.toLowerCase(),
             author: authorAlias || 'Admin',
-            image_url: featuredImage,
-            author_avatar: profile?.avatar_url,
             published: true
         };
+
+        // Only add image_url if provided (requires column in Supabase 'posts' table)
+        if (featuredImage && featuredImage.trim() !== '') {
+            postData.image_url = featuredImage.trim();
+        }
+
+        // Only add author_avatar if available (requires column in Supabase 'posts' table)
+        if (profile?.avatar_url) {
+            postData.author_avatar = profile.avatar_url;
+        }
 
         let success;
         if (editingId) {
