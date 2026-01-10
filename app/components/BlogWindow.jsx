@@ -128,9 +128,12 @@ export default function BlogWindow({ onClose }) {
             <div className="flex-1 flex overflow-hidden relative h-full">
                 {/* Backdrop for sidebars */}
                 {(showSidebar || showTOC) && (
-                    <div
-                        className="fixed inset-0 z-30"
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
                         onClick={() => { setShowSidebar(false); setShowTOC(false); }}
+                        className="absolute inset-0 z-30 bg-black/20 backdrop-blur-[1px]"
                     />
                 )}
 
@@ -138,13 +141,13 @@ export default function BlogWindow({ onClose }) {
                 <AnimatePresence>
                     {showSidebar && (
                         <motion.aside
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            transition={{ duration: 0.2 }}
-                            className="absolute left-4 top-4 w-64 max-h-[calc(100%-32px)] z-40 bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col border border-black/15"
+                            initial={{ x: '-100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '-100%' }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                            className="absolute left-2 top-2 bottom-2 w-1/2 z-40 bg-white shadow-2xl overflow-hidden flex flex-col border border-black/15 rounded-lg"
                         >
-                            <div className="px-3 py-2 border-b border-black/15 flex items-center justify-between bg-white/50">
+                            <div className="px-3 py-2 border-b border-black/15 flex items-center justify-between bg-[#f9fafb]">
                                 <span className="text-[11px] font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
                                     <SidebarPanel className="size-3.5" />
                                     suggested posts
@@ -153,32 +156,32 @@ export default function BlogWindow({ onClose }) {
                                     onClick={() => setShowSidebar(false)}
                                     className="text-secondary hover:text-primary p-0.5 rounded-md hover:bg-black/5 transition-colors"
                                 >
-                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                                 </button>
                             </div>
-                            <div className="flex-1 overflow-y-auto p-2 scrollbar-hide">
-                                <div className="flex flex-col gap-2">
-                                    {suggestedPosts.slice(0, 5).map(p => (
+                            <div className="flex-1 overflow-y-auto p-2 scrollbar-hide bg-white">
+                                <div className="flex flex-col gap-1.5">
+                                    {suggestedPosts.slice(0, 8).map(p => (
                                         <Link
                                             key={p.id}
                                             href={`/post?id=${p.id}`}
-                                            className="flex gap-2 p-2 rounded-lg hover:bg-black/5 transition-colors group"
+                                            className="flex gap-3 p-2.5 rounded-lg hover:bg-black/5 transition-colors group border border-transparent hover:border-black/5"
                                             onClick={() => setShowSidebar(false)}
                                         >
-                                            <div className="w-12 h-12 rounded overflow-hidden shrink-0 relative bg-gray-100">
+                                            <div className="w-14 h-14 rounded overflow-hidden shrink-0 relative bg-gray-100 border border-black/10">
                                                 {p.image ? (
                                                     <Image src={p.image} alt={p.title} fill className="object-cover" unoptimized />
                                                 ) : (
-                                                    <div className="w-full h-full flex items-center justify-center text-lg font-bold text-gray-300">
+                                                    <div className="w-full h-full flex items-center justify-center text-xl font-bold text-gray-300">
                                                         {p.title?.charAt(0)?.toUpperCase() || '?'}
                                                     </div>
                                                 )}
                                             </div>
-                                            <div className="flex-1 min-w-0">
-                                                <h4 className="text-xs font-bold text-primary line-clamp-2 group-hover:text-accent transition-colors">
+                                            <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                                <h4 className="text-[13px] font-bold text-primary line-clamp-2 group-hover:text-[#254b85] transition-colors leading-tight">
                                                     {p.title}
                                                 </h4>
-                                                <p className="text-[10px] text-secondary mt-0.5">{p.category}</p>
+                                                <p className="text-[10px] text-secondary mt-1 font-semibold uppercase tracking-wider">{p.category}</p>
                                             </div>
                                         </Link>
                                     ))}
@@ -192,13 +195,13 @@ export default function BlogWindow({ onClose }) {
                 <AnimatePresence>
                     {showTOC && headings.length > 0 && (
                         <motion.aside
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 20 }}
-                            transition={{ duration: 0.2 }}
-                            className="absolute right-4 top-4 w-56 max-h-[calc(100%-32px)] z-40 bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col border border-black/15"
+                            initial={{ x: '100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '100%' }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                            className="absolute right-2 top-2 bottom-2 w-1/2 z-40 bg-white shadow-2xl overflow-hidden flex flex-col border border-black/15 rounded-lg"
                         >
-                            <div className="px-3 py-2 border-b border-black/15 flex items-center justify-between bg-white/50">
+                            <div className="px-3 py-2 border-b border-black/15 flex items-center justify-between bg-[#f9fafb]">
                                 <span className="text-[11px] font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
                                     <TableOfContents className="size-3.5" />
                                     contents
@@ -207,16 +210,18 @@ export default function BlogWindow({ onClose }) {
                                     onClick={() => setShowTOC(false)}
                                     className="text-secondary hover:text-primary p-0.5 rounded-md hover:bg-black/5 transition-colors"
                                 >
-                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                                 </button>
                             </div>
-                            <div className="flex-1 overflow-y-auto p-2 scrollbar-hide">
+                            <div className="flex-1 overflow-y-auto p-2 scrollbar-hide bg-white">
                                 <nav className="flex flex-col gap-0.5">
                                     {headings.map((heading, i) => (
                                         <a
                                             key={i}
                                             href={`#${heading.id}`}
-                                            className={`text-xs py-1.5 px-2 rounded-md hover:bg-black/5 transition-colors ${heading.level === 2 ? 'font-semibold text-primary' : 'text-secondary pl-4'}`}
+                                            className={`text-[13px] py-2 px-3 rounded-md transition-all flex items-center ${heading.level === 2
+                                                ? 'font-bold text-primary hover:bg-black/5'
+                                                : 'text-secondary pl-6 hover:text-primary hover:bg-black/5'}`}
                                             onClick={() => setShowTOC(false)}
                                         >
                                             {heading.text}

@@ -64,7 +64,7 @@ export default function HomeWindow({ onClose }) {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => { setShowCategories(false); setShowFilter(false); }}
-                            className="absolute inset-0 z-50 bg-black/5"
+                            className="absolute inset-0 z-50 bg-black/20 backdrop-blur-[1px]"
                         />
                     )}
                 </AnimatePresence>
@@ -73,19 +73,19 @@ export default function HomeWindow({ onClose }) {
                 <AnimatePresence>
                     {showCategories && (
                         <motion.aside
-                            initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                            transition={{ duration: 0.2, ease: "easeOut" }}
-                            className="absolute left-4 top-4 w-[200px] z-60 bg-white/90 backdrop-blur-xl rounded-xl shadow-2xl overflow-hidden flex flex-col border border-black/5"
+                            initial={{ x: '-100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '-100%' }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                            className="absolute left-2 top-2 bottom-2 w-1/2 z-60 bg-white shadow-2xl overflow-hidden flex flex-col border border-black/15 rounded-lg"
                         >
-                            <div className="px-3 py-2 border-b border-black/5 flex items-center justify-between bg-white/50">
+                            <div className="px-3 py-2 border-b border-black/15 flex items-center justify-between bg-[#f9fafb]">
                                 <span className="text-[11px] font-bold text-primary uppercase tracking-wider">categories</span>
                                 <button
                                     onClick={() => setShowCategories(false)}
                                     className="text-secondary hover:text-primary p-0.5 rounded-md hover:bg-black/5 transition-colors"
                                 >
-                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                                 </button>
                             </div>
                             <div className="flex-1 overflow-y-auto p-1.5 scrollbar-hide">
@@ -94,13 +94,13 @@ export default function HomeWindow({ onClose }) {
                                         <button
                                             key={category}
                                             onClick={() => handleCategorySelect(category)}
-                                            className={`text-[12px] text-left transition-all py-1.5 px-2.5 rounded-lg capitalize flex items-center justify-between group ${selectedCategory === category
-                                                ? 'bg-black text-white font-semibold shadow-sm'
+                                            className={`text-[12px] text-left transition-all py-2 px-3 rounded-md capitalize flex items-center justify-between group ${selectedCategory === category
+                                                ? 'bg-[#254b85] text-white font-bold shadow-sm'
                                                 : 'text-secondary hover:text-primary hover:bg-black/5'
                                                 }`}
                                         >
                                             <span className={selectedCategory === category ? 'translate-x-0.5 transition-transform' : 'transition-transform'}>{category}</span>
-                                            <span className={`text-[9px] py-0.5 px-1.5 rounded-full ${selectedCategory === category ? 'bg-white/20 text-white' : 'bg-black/5 text-secondary group-hover:bg-black/10'}`}>
+                                            <span className={`text-[9px] py-0.5 px-1.5 rounded-full ${selectedCategory === category ? 'bg-white/20 text-white font-bold' : 'bg-black/5 text-secondary group-hover:bg-black/10 font-bold'}`}>
                                                 {category === 'all' ? posts.length : posts.filter(p => p.category === category).length}
                                             </span>
                                         </button>
@@ -115,22 +115,22 @@ export default function HomeWindow({ onClose }) {
                 <AnimatePresence>
                     {showFilter && (
                         <motion.aside
-                            initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                            transition={{ duration: 0.2, ease: "easeOut" }}
-                            className="absolute left-4 top-4 w-[250px] z-60 bg-white/90 backdrop-blur-xl rounded-xl shadow-2xl overflow-hidden flex flex-col border border-black/5"
+                            initial={{ x: '-100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '-100%' }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                            className="absolute left-2 top-2 bottom-2 w-1/2 z-60 bg-white shadow-2xl overflow-hidden flex flex-col border border-black/15 rounded-lg"
                         >
-                            <div className="px-3 py-2 border-b border-black/5 flex items-center justify-between bg-white/50">
+                            <div className="px-3 py-2 border-b border-black/15 flex items-center justify-between bg-[#f9fafb]">
                                 <span className="text-[11px] font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
-                                    <svg className="w-3.5 h-3.5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+                                    <svg className="w-3.5 h-3.5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
                                     filter & sort
                                 </span>
                                 <button
                                     onClick={() => setShowFilter(false)}
                                     className="text-secondary hover:text-primary p-0.5 rounded-md hover:bg-black/5 transition-colors"
                                 >
-                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                                 </button>
                             </div>
                             <div className="p-3 flex flex-col gap-3">
@@ -140,7 +140,7 @@ export default function HomeWindow({ onClose }) {
                                         <select
                                             value={selectedCategory}
                                             onChange={(e) => handleCategorySelect(e.target.value)}
-                                            className="w-full appearance-none bg-white border border-black/10 rounded-lg py-2 pl-3 pr-8 text-xs font-medium text-primary focus:outline-none focus:border-black/30 transition-colors"
+                                            className="w-full appearance-none bg-white border border-black/10 rounded-lg py-2 pl-3 pr-8 text-xs font-medium text-primary focus:outline-none focus:border-[#254b85]/30 transition-colors"
                                         >
                                             {categories.map(c => (
                                                 <option key={c} value={c} className="capitalize">{c}</option>
@@ -153,9 +153,9 @@ export default function HomeWindow({ onClose }) {
                                 </div>
                                 <button
                                     onClick={() => setShowFilter(false)}
-                                    className="LemonButton LemonButton--secondary LemonButton--status-default LemonButton--small w-full mt-2"
+                                    className="LemonButton LemonButton--primary LemonButton--small w-full mt-2"
                                 >
-                                    <span className="LemonButton__chrome flex items-center justify-center gap-2 py-1 bg-white">
+                                    <span className="LemonButton__chrome flex items-center justify-center gap-2 py-1">
                                         Apply Filters
                                     </span>
                                 </button>
