@@ -186,7 +186,7 @@ const Sidebar = () => {
                         type="button"
                     >
                         <span
-                            className="LemonButton__chrome text-[8px] leading-none font-medium text-white whitespace-nowrap flex items-center justify-center"
+                            className="LemonButton__chrome text-[7px] leading-none font-normal text-white whitespace-nowrap flex items-center justify-center"
                             style={{ minHeight: '0', height: '100%', padding: '0 6px' }}
                         >
                             worldinmaking
@@ -251,10 +251,10 @@ const Sidebar = () => {
                         onClick={handleLinkClick}
                         aria-current={isLinkActive('/login') ? 'page' : undefined}
                     >
-                        <div className="flex w-6 h-6 items-center justify-center rounded-full border border-black/10 bg-black/5 text-black overflow-hidden bg-surface-primary">
+                        <div className="flex w-6 h-6 items-center justify-center rounded-full bg-black text-white shrink-0 overflow-hidden">
                             <Icons.User className="size-3.5" />
                         </div>
-                        <span className="font-medium">Login</span>
+                        <span className="font-normal">Login</span>
                     </Link>
 
                     <div className="px-2 py-4 mt-auto">
