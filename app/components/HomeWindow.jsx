@@ -18,7 +18,7 @@ import Image from 'next/image';
  * The Home/Dashboard content wrapped in a floating window
  * Features the window controls and toolbar as specified
  */
-export default function HomeWindow({ onClose }) {
+export default function HomeWindow({ onClose, zIndex, onFocus }) {
     const { posts, loading } = usePosts();
     const { openWindow } = useWindow();
 
@@ -59,6 +59,8 @@ export default function HomeWindow({ onClose }) {
             id="home-window"
             title="home"
             onClose={onClose}
+            zIndex={zIndex}
+            onFocus={onFocus}
             toolbar={
                 <HomeWindowToolbar
                     showCategories={showCategories}

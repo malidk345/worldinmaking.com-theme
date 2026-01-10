@@ -24,7 +24,7 @@ import rehypeRaw from 'rehype-raw';
  * Blog post content wrapped in a floating window
  * Toolbar icons on the left, window controls on the right
  */
-export default function BlogWindow({ onClose }) {
+export default function BlogWindow({ onClose, zIndex, onFocus }) {
     const searchParams = useSearchParams();
     const router = useRouter();
     const { openWindow } = useWindow();
@@ -73,6 +73,8 @@ export default function BlogWindow({ onClose }) {
                 id="blog-window"
                 title="loading..."
                 onClose={handleClose}
+                zIndex={zIndex}
+                onFocus={onFocus}
                 toolbar={
                     <BlogWindowToolbar
                         showSidebar={false}
@@ -99,6 +101,8 @@ export default function BlogWindow({ onClose }) {
                 id="blog-window"
                 title="not found"
                 onClose={handleClose}
+                zIndex={zIndex}
+                onFocus={onFocus}
                 toolbar={null}
             >
                 <div className="flex-1 overflow-y-auto bg-primary">
@@ -118,6 +122,8 @@ export default function BlogWindow({ onClose }) {
             id="blog-window"
             title={post.title}
             onClose={handleClose}
+            zIndex={zIndex}
+            onFocus={onFocus}
             toolbar={
                 <BlogWindowToolbar
                     showSidebar={showSidebar}

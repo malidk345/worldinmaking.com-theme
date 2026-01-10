@@ -13,7 +13,7 @@ import AuthorProfileWindow from './AuthorProfileWindow';
  * Responsbile for rendering all active windows from the WindowContext
  */
 export default function WindowManager() {
-    const { windows, closeWindow } = useWindow();
+    const { windows, closeWindow, bringToFront } = useWindow();
     const router = useRouter();
     const pathname = usePathname();
 
@@ -38,28 +38,24 @@ export default function WindowManager() {
                 // Return null if window is minimized (they are usually hidden or moved to taskbar)
                 if (win.isMinimized) return null;
 
+                const commonProps = {
+                    key: win.id,
+                    zIndex: win.zIndex,
+                    onFocus: () => bringToFront(win.id),
+                    onClose: () => handleClose(win.id, win.type)
+                };
+
                 switch (win.type) {
                     case 'home':
-                        return (
-                            <HomeWindow
-                                key={win.id}
-                                onClose={() => handleClose(win.id, win.type)}
-                            />
-                        );
+                        return <HomeWindow {...commonProps} />;
                     case 'blog':
                     case 'post':
-                        return (
-                            <BlogWindow
-                                key={win.id}
-                                onClose={() => handleClose(win.id, win.type)}
-                            />
-                        );
+                        return <BlogWindow {...commonProps} />;
                     case 'author-profile':
                         return (
                             <AuthorProfileWindow
-                                key={win.id}
+                                {...commonProps}
                                 username={win.username}
-                                onClose={() => handleClose(win.id, win.type)}
                             />
                         );
                     default:

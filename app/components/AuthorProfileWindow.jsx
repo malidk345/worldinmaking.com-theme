@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabase';
 import Image from 'next/image';
 import { stripMarkdown } from '../lib/markdown';
 
-export default function AuthorProfileWindow({ username, onClose }) {
+export default function AuthorProfileWindow({ username, onClose, zIndex, onFocus }) {
     const [profile, setProfile] = useState(null);
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -55,6 +55,8 @@ export default function AuthorProfileWindow({ username, onClose }) {
             id={`author-profile-${username}`}
             title={`Author: @${username}`}
             onClose={onClose}
+            zIndex={zIndex}
+            onFocus={onFocus}
             initialWidth={400}
             initialHeight={500}
             isMaximized={false}
