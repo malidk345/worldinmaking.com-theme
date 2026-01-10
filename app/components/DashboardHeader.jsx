@@ -72,7 +72,7 @@ export default function DashboardHeader({
             <div
                 className="h-(--scene-layout-header-height) flex items-end w-full bg-surface-tertiary z-(--z-top-navigation) pr-1.5 relative"
             >
-                <div className="border-b border-primary h-px w-full absolute -bottom-px right-0 left-0 lg:left-0"></div>
+                <div className="border-b border-(--border-primary) h-px w-full absolute -bottom-px right-0 left-0 lg:left-0"></div>
                 <div className="flex flex-row gap-1 max-w-full items-end pl-2 lg:pl-0">
                     {/* Menu/Sidebar Toggle Button - Always visible */}
                     <button
@@ -251,7 +251,7 @@ export default function DashboardHeader({
                                                     <CloseIcon className="text-black size-3 group-hover:text-primary z-10" />
                                                 </button>
                                                 <button
-                                                    className="button-primitive group/button-primitive button-primitive--variant-default button-primitive--size-base button-primitive--height-base text-sm w-full order-first relative pl-2 pr-6 flex flex-row items-center gap-1.5 h-full rounded-lg border tab-active rounded-bl-none rounded-br-none cursor-default text-primary bg-primary border-primary focus:outline-none"
+                                                    className="button-primitive group/button-primitive button-primitive--variant-default button-primitive--size-base button-primitive--height-base text-sm w-full order-first relative pl-2 pr-6 flex flex-row items-center gap-1.5 h-full rounded-lg border tab-active rounded-bl-none rounded-br-none cursor-default text-primary bg-primary border-(--border-primary) focus:outline-none"
                                                     onClick={() => handleTabClick(activeTab)}
                                                 >
                                                     <span className={`flex items-center shrink-0 ${iconColorClass}`}>

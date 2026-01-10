@@ -108,7 +108,7 @@ export default function InsightCard({
 
             {/* Image section */}
             <div className="InsightCard__viz px-3 pb-3 pt-0 flex-none h-[140px]">
-                <div className="w-full h-full border border-primary rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center relative group">
+                <div className="w-full h-full border border-(--border-primary) rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center relative group">
                     {children ? children : (
                         <Image
                             src={imageUrl}

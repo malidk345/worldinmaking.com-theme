@@ -63,6 +63,7 @@
     flex-direction: column;
     min-width: 0;
     max-width: 100%;
+    border: 1px solid var(--border-primary);
     box-shadow: var(--card-shadow);
     transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
 }

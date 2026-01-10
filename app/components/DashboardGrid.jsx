@@ -55,7 +55,7 @@ export default function DashboardGrid({ posts = [], loading = false }) {
         <div className="w-full relative">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {visibleItems.map(item => (
-                    <div key={item.id} className="InsightCard border h-[340px]">
+                    <div key={item.id} className="InsightCard h-[340px]">
                         <InsightCard
                             id={item.id}
                             title={item.title}
