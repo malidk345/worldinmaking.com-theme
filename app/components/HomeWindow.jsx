@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Layout } from './Icons';
 import Window from './Window';
 import HomeWindowToolbar from './HomeWindowToolbar';
 import DashboardGrid from './DashboardGrid';
@@ -10,7 +11,6 @@ import { SkeletonDashboardGrid } from './Skeleton';
 import { stripMarkdown } from '../lib/markdown';
 import Link from 'next/link';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
 
 /**
  * HomeWindow
