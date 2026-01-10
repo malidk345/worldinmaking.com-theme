@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../contexts/ToastContext';
 import logger from '../utils/logger';
@@ -10,8 +10,28 @@ export const useCommunity = () => {
     const [channels, setChannels] = useState([]);
     const [posts, setPosts] = useState([]);
     const [replies, setReplies] = useState([]);
+    const [userLikes, setUserLikes] = useState(new Set());
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+
+    // Fetch user's likes on mount
+    const fetchUserLikes = useCallback(async () => {
+        try {
+            const { data: userData } = await supabase.auth.getUser();
+            if (!userData?.user) return;
+
+            const { data, error: fetchError } = await supabase
+                .from('community_likes')
+                .select('post_id')
+                .eq('user_id', userData.user.id);
+
+            if (!fetchError && data) {
+                setUserLikes(new Set(data.map(like => like.post_id)));
+            }
+        } catch (e) {
+            logger.error('[useCommunity] fetchUserLikes exception:', e);
+        }
+    }, []);
 
     // Fetch Channels
     const fetchChannels = useCallback(async () => {
@@ -51,7 +71,8 @@ export const useCommunity = () => {
                 .select(`
                     *,
                     profiles (username, avatar_url),
-                    replies:community_replies(count)
+                    replies:community_replies(count),
+                    likes:community_likes(count)
                 `)
                 .eq('channel_id', channelId)
                 .order('created_at', { ascending: false });
@@ -61,13 +82,19 @@ export const useCommunity = () => {
                 addToast('failed to load discussions', 'error');
                 setError(fetchError.message);
             } else if (data) {
-                // Manual mapping for reply count
+                // Manual mapping for reply and like count
                 const mapData = data.map((p) => ({
                     ...p,
-                    _count: { replies: p.replies?.[0]?.count || 0 }
+                    _count: {
+                        replies: p.replies?.[0]?.count || 0,
+                        likes: p.likes?.[0]?.count || 0
+                    }
                 }));
                 setPosts(mapData);
             }
+
+            // Also fetch user likes
+            await fetchUserLikes();
         } catch (e) {
             logger.error('[useCommunity] fetchPosts exception:', e);
             addToast('failed to load discussions', 'error');
@@ -75,7 +102,7 @@ export const useCommunity = () => {
         } finally {
             setLoading(false);
         }
-    }, [addToast]);
+    }, [addToast, fetchUserLikes]);
 
     // Fetch Replies
     const fetchReplies = useCallback(async (postId) => {
@@ -104,6 +131,79 @@ export const useCommunity = () => {
             setError(e.message);
         }
     }, [addToast]);
+
+    // Like/Unlike Post
+    const toggleLike = useCallback(async (postId) => {
+        try {
+            const { data: userData } = await supabase.auth.getUser();
+            if (!userData?.user) {
+                addToast('please log in to like', 'error');
+                return false;
+            }
+
+            const userId = userData.user.id;
+            const isLiked = userLikes.has(postId);
+
+            if (isLiked) {
+                // Unlike - delete the like
+                const { error: deleteError } = await supabase
+                    .from('community_likes')
+                    .delete()
+                    .eq('post_id', postId)
+                    .eq('user_id', userId);
+
+                if (deleteError) {
+                    logger.error('[useCommunity] unlike error:', deleteError);
+                    return false;
+                }
+
+                // Update local state
+                setUserLikes(prev => {
+                    const newSet = new Set(prev);
+                    newSet.delete(postId);
+                    return newSet;
+                });
+
+                // Update post like count locally
+                setPosts(prev => prev.map(p =>
+                    p.id === postId
+                        ? { ...p, _count: { ...p._count, likes: Math.max(0, (p._count?.likes || 1) - 1) } }
+                        : p
+                ));
+            } else {
+                // Like - insert new like
+                const { error: insertError } = await supabase
+                    .from('community_likes')
+                    .insert({
+                        post_id: postId,
+                        user_id: userId
+                    });
+
+                if (insertError) {
+                    // Might be duplicate, ignore
+                    if (!insertError.message.includes('duplicate')) {
+                        logger.error('[useCommunity] like error:', insertError);
+                        return false;
+                    }
+                }
+
+                // Update local state
+                setUserLikes(prev => new Set([...prev, postId]));
+
+                // Update post like count locally
+                setPosts(prev => prev.map(p =>
+                    p.id === postId
+                        ? { ...p, _count: { ...p._count, likes: (p._count?.likes || 0) + 1 } }
+                        : p
+                ));
+            }
+
+            return true;
+        } catch (e) {
+            logger.error('[useCommunity] toggleLike exception:', e);
+            return false;
+        }
+    }, [addToast, userLikes]);
 
     // Create Reply
     const createReply = useCallback(async (postId, content) => {
@@ -178,14 +278,16 @@ export const useCommunity = () => {
         channels,
         posts,
         replies,
+        userLikes,
         loading,
         error,
         fetchChannels,
         fetchPosts,
         fetchReplies,
         createPost,
-        createReply
-    }), [channels, posts, replies, loading, error, fetchChannels, fetchPosts, fetchReplies, createPost, createReply]);
+        createReply,
+        toggleLike
+    }), [channels, posts, replies, userLikes, loading, error, fetchChannels, fetchPosts, fetchReplies, createPost, createReply, toggleLike]);
 
     return result;
 };

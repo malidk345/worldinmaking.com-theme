@@ -29,7 +29,7 @@ export default function CommunityPage() {
     }
 
     const { user } = useAuth();
-    const { posts, replies, loading, fetchPosts, fetchReplies, createPost, createReply } = useCommunity();
+    const { posts, replies, userLikes, loading, fetchPosts, fetchReplies, createPost, createReply, toggleLike } = useCommunity();
 
     const [activePost, setActivePost] = useState(null);
     const [replyContent, setReplyContent] = useState('');
@@ -37,7 +37,6 @@ export default function CommunityPage() {
     const [newPostTitle, setNewPostTitle] = useState('');
     const [newPostContent, setNewPostContent] = useState('');
     const [expandedPostId, setExpandedPostId] = useState(null);
-    const [likedPosts, setLikedPosts] = useState(new Set());
 
     useEffect(() => {
         fetchPosts(1);
@@ -75,21 +74,14 @@ export default function CommunityPage() {
         router.push('/');
     };
 
-    const toggleReply = (postId) => {
+    const toggleReplyPanel = (postId) => {
         setExpandedPostId(expandedPostId === postId ? null : postId);
         setReplyContent('');
     };
 
-    const toggleLike = (postId) => {
-        setLikedPosts(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(postId)) {
-                newSet.delete(postId);
-            } else {
-                newSet.add(postId);
-            }
-            return newSet;
-        });
+    const handleLike = async (e, postId) => {
+        e.stopPropagation();
+        await toggleLike(postId);
     };
 
     return (
@@ -103,24 +95,24 @@ export default function CommunityPage() {
                         {activePost ? (
                             <div className="flex flex-col h-full relative">
                                 {/* Header with Back Button */}
-                                <div className="h-14 border-b border-[var(--border-primary)] flex items-center mb-4 gap-3">
+                                <div className="h-14 border-b border-border flex items-center mb-4 gap-3">
                                     <button
                                         onClick={() => setActivePost(null)}
-                                        className="LemonButton LemonButton--tertiary p-2 -ml-2 hover:bg-black/5 rounded-full transition-colors"
+                                        className="p-2 -ml-2 hover:bg-black/5 rounded-full transition-colors"
                                     >
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m15 18-6-6 6-6" /></svg>
                                     </button>
                                     <div className="flex flex-col">
-                                        <span className="font-bold text-sm leading-tight text-primary">thread</span>
+                                        <span className="font-bold text-sm leading-tight text-primary">Thread</span>
                                         <span className="text-[10px] text-secondary font-medium">#{activePost.id} by @{activePost.profiles?.username || '?'}</span>
                                     </div>
                                 </div>
 
                                 <div className="space-y-6">
                                     {/* Main Post */}
-                                    <div className="p-4 md:p-5 bg-white border border-[var(--border-primary)] rounded-lg">
+                                    <div className="p-4 md:p-5 bg-white border border-border rounded-lg">
                                         <div className="flex gap-3 md:gap-4">
-                                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-md border border-[var(--border-primary)] bg-white flex-shrink-0 flex items-center justify-center text-primary text-xs md:text-sm font-bold select-none overflow-hidden">
+                                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-md border border-border bg-white shrink-0 flex items-center justify-center text-primary text-xs md:text-sm font-bold select-none overflow-hidden">
                                                 {activePost.profiles?.avatar_url ? (
                                                     <UserAvatar src={activePost.profiles?.avatar_url} name={activePost.profiles?.username || '?'} size={40} />
                                                 ) : (
@@ -144,12 +136,12 @@ export default function CommunityPage() {
                                     </div>
 
                                     {/* Replies */}
-                                    <div className="pl-4 md:pl-6 space-y-3 border-l-2 border-[var(--border-primary)]/20 ml-4">
-                                        {replies.length === 0 && <div className="text-secondary text-sm font-medium pl-4 py-4 italic">no replies yet... be the first.</div>}
+                                    <div className="pl-4 md:pl-6 space-y-3 border-l-2 border-border/30 ml-4">
+                                        {replies.length === 0 && <div className="text-secondary text-sm font-medium pl-4 py-4 italic">No replies yet... be the first.</div>}
                                         {replies.map(reply => (
-                                            <div key={reply.id} className="bg-white p-4 rounded-lg border border-[var(--border-primary)]">
+                                            <div key={reply.id} className="bg-white p-4 rounded-lg border border-border">
                                                 <div className="flex items-center gap-2 mb-2">
-                                                    <div className="w-6 h-6 rounded-md border border-[var(--border-primary)] overflow-hidden flex items-center justify-center text-primary text-[10px] font-bold">
+                                                    <div className="w-6 h-6 rounded-md border border-border overflow-hidden flex items-center justify-center text-primary text-[10px] font-bold">
                                                         {reply.profiles?.avatar_url ? (
                                                             <UserAvatar src={reply.profiles?.avatar_url} name={reply.profiles?.username || '?'} size={24} />
                                                         ) : (
@@ -165,18 +157,21 @@ export default function CommunityPage() {
                                     </div>
 
                                     {/* Reply Box */}
-                                    <div className="p-4 border-t border-[var(--border-primary)] bg-white rounded-lg mt-6">
+                                    <div className="p-4 border-t border-border bg-white rounded-lg mt-6">
                                         <form onSubmit={(e) => { e.preventDefault(); handleReplySubmit(activePost.id); }} className="flex gap-2">
                                             <input
-                                                className="flex-1 bg-white border border-[var(--border-primary)] rounded-md px-4 py-2 text-sm outline-none focus:border-primary transition-colors text-primary placeholder:text-secondary"
-                                                placeholder="type a reply..."
+                                                className="flex-1 bg-white border border-border rounded px-4 py-2 text-sm outline-none focus:border-primary transition-colors text-primary placeholder:text-secondary"
+                                                placeholder="Type a reply..."
                                                 value={replyContent}
                                                 onChange={e => setReplyContent(e.target.value)}
                                             />
-                                            <button type="submit" disabled={!replyContent.trim()} className="LemonButton LemonButton--primary LemonButton--small">
-                                                <span className="LemonButton__chrome px-4 py-2 bg-[#254b85] hover:bg-[#335d9d] text-white border border-[#254b85] rounded font-bold text-xs transition-all disabled:opacity-50">
-                                                    send
-                                                </span>
+                                            <button
+                                                type="submit"
+                                                disabled={!replyContent.trim()}
+                                                className="LemonButton LemonButton--primary px-4 py-2 bg-[#254b85] hover:bg-[#335d9d] text-white rounded font-bold text-xs transition-all disabled:opacity-50 flex items-center gap-2"
+                                            >
+                                                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" /></svg>
+                                                Send
                                             </button>
                                         </form>
                                     </div>
@@ -190,14 +185,12 @@ export default function CommunityPage() {
                                     {!isCreating && (
                                         <button
                                             onClick={() => setIsCreating(true)}
-                                            className="LemonButton LemonButton--primary LemonButton--small w-full sm:w-auto"
+                                            className="LemonButton LemonButton--primary w-full sm:w-auto px-4 py-2 bg-[#254b85] hover:bg-[#335d9d] text-white rounded font-bold text-xs transition-all flex items-center justify-center gap-2"
                                         >
-                                            <span className="LemonButton__chrome flex items-center justify-center gap-2 px-4 py-2 bg-[#254b85] hover:bg-[#335d9d] text-white border border-[#254b85] rounded font-bold text-xs transition-all">
-                                                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14m-7-7h14" />
-                                                </svg>
-                                                new post
-                                            </span>
+                                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                                                <path d="M12 5v14m-7-7h14" />
+                                            </svg>
+                                            Create Post
                                         </button>
                                     )}
                                 </div>
@@ -208,40 +201,37 @@ export default function CommunityPage() {
                                         {/* Title Input - Simple Container */}
                                         <input
                                             type="text"
-                                            placeholder="post title..."
+                                            placeholder="Post title..."
                                             value={newPostTitle}
                                             onChange={(e) => setNewPostTitle(e.target.value)}
-                                            className="w-full bg-white border border-[var(--border-primary)] rounded-lg px-4 py-3 text-base font-bold text-primary outline-none focus:border-primary transition-colors placeholder:text-secondary placeholder:font-normal"
+                                            className="w-full bg-white border border-border rounded-lg px-4 py-3 text-base font-bold text-primary outline-none focus:border-primary transition-colors placeholder:text-secondary placeholder:font-normal"
                                         />
 
                                         {/* Rich Text Editor for Post Content */}
                                         <RichTextEditor
                                             content={newPostContent}
                                             onChange={setNewPostContent}
-                                            placeholder="what's on your mind..."
+                                            placeholder="What's on your mind..."
                                             minHeight="240px"
                                         />
 
-                                        {/* Action Buttons - LemonButton Style */}
+                                        {/* Action Buttons */}
                                         <div className="flex flex-col sm:flex-row justify-end gap-2">
                                             <button
                                                 type="button"
                                                 onClick={() => { setIsCreating(false); setNewPostTitle(''); setNewPostContent(''); }}
-                                                className="LemonButton LemonButton--secondary LemonButton--small order-2 sm:order-1"
+                                                className="LemonButton LemonButton--secondary order-2 sm:order-1 px-4 py-2 border border-border rounded font-bold text-xs text-secondary hover:text-primary hover:bg-black/5 bg-white transition-all"
                                             >
-                                                <span className="LemonButton__chrome px-4 py-2 border border-[var(--border-primary)] rounded font-bold text-xs text-secondary hover:text-primary hover:bg-black/5 bg-white transition-all w-full sm:w-auto justify-center">
-                                                    discard
-                                                </span>
+                                                Discard
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={handlePostSubmit}
                                                 disabled={!newPostTitle.trim() || !newPostContent.trim()}
-                                                className="LemonButton LemonButton--primary LemonButton--small order-1 sm:order-2"
+                                                className="LemonButton LemonButton--primary order-1 sm:order-2 px-6 py-2 bg-[#254b85] hover:bg-[#335d9d] text-white rounded font-bold text-xs transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                                             >
-                                                <span className="LemonButton__chrome px-6 py-2 bg-[#254b85] hover:bg-[#335d9d] text-white border border-[#254b85] rounded font-bold text-xs transition-all disabled:opacity-50 w-full sm:w-auto justify-center">
-                                                    publish post
-                                                </span>
+                                                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" /></svg>
+                                                Publish Post
                                             </button>
                                         </div>
                                     </div>
@@ -258,18 +248,18 @@ export default function CommunityPage() {
                                     <div className="grid gap-4">
                                         {posts.length === 0 && (
                                             <div className="text-center py-20 text-secondary">
-                                                <p className="font-bold">it&apos;s quiet here...</p>
-                                                <p className="text-xs mt-2 font-medium">be the first to share a thought.</p>
+                                                <p className="font-bold">It&apos;s quiet here...</p>
+                                                <p className="text-xs mt-2 font-medium">Be the first to share a thought.</p>
                                             </div>
                                         )}
                                         {posts.map(post => (
                                             <div
                                                 key={post.id}
-                                                className={`bg-white border border-[var(--border-primary)] rounded-lg p-4 md:p-5 transition-all hover:border-primary/30 hover:shadow-sm cursor-pointer ${expandedPostId === post.id ? 'ring-2 ring-primary/10' : ''}`}
-                                                onClick={() => toggleReply(post.id)}
+                                                className={`bg-white border border-border rounded-lg p-4 md:p-5 transition-all hover:border-primary/30 hover:shadow-sm cursor-pointer ${expandedPostId === post.id ? 'ring-2 ring-primary/10' : ''}`}
+                                                onClick={() => toggleReplyPanel(post.id)}
                                             >
                                                 <div className="flex gap-3 md:gap-4">
-                                                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-md border border-[var(--border-primary)] bg-white flex-shrink-0 flex items-center justify-center text-primary text-xs md:text-sm font-bold select-none overflow-hidden">
+                                                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-md border border-border bg-white shrink-0 flex items-center justify-center text-primary text-xs md:text-sm font-bold select-none overflow-hidden">
                                                         {post.profiles?.avatar_url ? (
                                                             <UserAvatar src={post.profiles?.avatar_url} name={post.profiles?.username || '?'} size={40} />
                                                         ) : (
@@ -284,7 +274,7 @@ export default function CommunityPage() {
                                                                 <span className="hidden sm:inline w-0.5 h-0.5 bg-secondary/30 rounded-full"></span>
                                                                 <span className="text-[10px] md:text-[11px] font-medium text-secondary">{timeAgo(post.created_at)}</span>
                                                             </div>
-                                                            <button onClick={(e) => e.stopPropagation()} className="LemonButton LemonButton--tertiary text-secondary hover:text-primary transition-colors p-1">
+                                                            <button onClick={(e) => e.stopPropagation()} className="text-secondary hover:text-primary transition-colors p-1">
                                                                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                                                                     <circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" />
                                                                 </svg>
@@ -300,39 +290,35 @@ export default function CommunityPage() {
                                                             />
                                                         )}
 
-                                                        <div className="flex items-center gap-4 md:gap-6 pt-3 border-t border-[var(--border-primary)]">
+                                                        <div className="flex items-center gap-4 md:gap-6 pt-3 border-t border-border">
+                                                            {/* Reply Button */}
                                                             <button
-                                                                onClick={(e) => { e.stopPropagation(); toggleReply(post.id); }}
-                                                                className={`LemonButton LemonButton--tertiary flex items-center gap-1.5 text-[11px] font-bold transition-colors ${expandedPostId === post.id ? 'text-primary' : 'text-secondary hover:text-primary'}`}
+                                                                onClick={(e) => { e.stopPropagation(); toggleReplyPanel(post.id); }}
+                                                                className={`flex items-center gap-1.5 text-[11px] font-bold transition-colors ${expandedPostId === post.id ? 'text-[#254b85]' : 'text-secondary hover:text-[#254b85]'}`}
                                                             >
                                                                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                                                                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                                                                 </svg>
-                                                                {post._count?.replies || 0}
+                                                                {post._count?.replies || 0} replies
                                                             </button>
+
+                                                            {/* Like Button */}
                                                             <button
-                                                                onClick={(e) => { e.stopPropagation(); toggleLike(post.id); }}
-                                                                className={`LemonButton LemonButton--tertiary flex items-center gap-1.5 text-[11px] font-bold transition-colors ${likedPosts.has(post.id) ? 'text-rose-500' : 'text-secondary hover:text-rose-500'}`}
+                                                                onClick={(e) => handleLike(e, post.id)}
+                                                                className={`flex items-center gap-1.5 text-[11px] font-bold transition-colors ${userLikes.has(post.id) ? 'text-rose-500' : 'text-secondary hover:text-rose-500'}`}
                                                             >
-                                                                <svg className={`w-4 h-4 ${likedPosts.has(post.id) ? 'fill-rose-500' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                                                                <svg className={`w-4 h-4 ${userLikes.has(post.id) ? 'fill-rose-500' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                                                                     <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
                                                                 </svg>
-                                                                {(post.likes || 0) + (likedPosts.has(post.id) ? 1 : 0)}
+                                                                {post._count?.likes || 0} likes
                                                             </button>
-                                                            <button
-                                                                onClick={(e) => e.stopPropagation()}
-                                                                className="LemonButton LemonButton--tertiary flex items-center gap-1.5 text-[11px] font-bold text-secondary hover:text-primary transition-colors"
-                                                            >
-                                                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                                                                    <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><line x1="8.59" x2="15.42" y1="13.51" y2="17.49" /><line x1="15.41" x2="8.59" y1="6.51" y2="10.49" />
-                                                                </svg>
-                                                                <span className="hidden xs:inline">share</span>
-                                                            </button>
+
+                                                            {/* View Thread Button */}
                                                             <button
                                                                 onClick={(e) => { e.stopPropagation(); setActivePost(post); }}
-                                                                className="LemonButton LemonButton--tertiary flex items-center gap-1.5 text-[11px] font-bold text-secondary hover:text-primary transition-colors ml-auto"
+                                                                className="flex items-center gap-1.5 text-[11px] font-bold text-secondary hover:text-primary transition-colors ml-auto"
                                                             >
-                                                                view thread
+                                                                View thread
                                                                 <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
                                                                     <path d="m9 18 6-6-6-6" />
                                                                 </svg>
@@ -341,7 +327,7 @@ export default function CommunityPage() {
 
                                                         {/* Inline Reply Area */}
                                                         {expandedPostId === post.id && (
-                                                            <div className="mt-4 md:mt-6 pt-4 border-t border-[var(--border-primary)]" onClick={(e) => e.stopPropagation()}>
+                                                            <div className="mt-4 md:mt-6 pt-4 border-t border-border" onClick={(e) => e.stopPropagation()}>
                                                                 <div className="flex gap-2 md:gap-3">
                                                                     <div className="mt-2 text-secondary shrink-0">
                                                                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
@@ -351,31 +337,28 @@ export default function CommunityPage() {
                                                                     <div className="flex-1 min-w-0 space-y-3">
                                                                         <input
                                                                             type="text"
-                                                                            placeholder="write a quick reply..."
+                                                                            placeholder="Write a quick reply..."
                                                                             value={replyContent}
                                                                             onChange={(e) => setReplyContent(e.target.value)}
-                                                                            className="w-full bg-white border border-[var(--border-primary)] rounded-md px-4 py-3 text-sm text-primary outline-none focus:border-primary transition-colors placeholder:text-secondary"
+                                                                            className="w-full bg-white border border-border rounded px-4 py-3 text-sm text-primary outline-none focus:border-primary transition-colors placeholder:text-secondary"
                                                                             onKeyDown={(e) => e.key === 'Enter' && handleReplySubmit(post.id)}
                                                                         />
                                                                         <div className="flex justify-end gap-2">
                                                                             <button
                                                                                 type="button"
                                                                                 onClick={() => setExpandedPostId(null)}
-                                                                                className="LemonButton LemonButton--secondary LemonButton--small"
+                                                                                className="LemonButton LemonButton--secondary px-3 py-1.5 border border-border rounded font-bold text-xs text-secondary hover:text-primary hover:bg-black/5 bg-white transition-all"
                                                                             >
-                                                                                <span className="LemonButton__chrome px-3 py-1.5 border border-[var(--border-primary)] rounded font-bold text-xs text-secondary hover:text-primary hover:bg-black/5 bg-white transition-all">
-                                                                                    cancel
-                                                                                </span>
+                                                                                Cancel
                                                                             </button>
                                                                             <button
                                                                                 type="button"
                                                                                 onClick={() => handleReplySubmit(post.id)}
                                                                                 disabled={!replyContent.trim()}
-                                                                                className="LemonButton LemonButton--primary LemonButton--small"
+                                                                                className="LemonButton LemonButton--primary px-4 py-1.5 bg-[#254b85] hover:bg-[#335d9d] text-white rounded font-bold text-xs transition-all disabled:opacity-50 flex items-center gap-1.5"
                                                                             >
-                                                                                <span className="LemonButton__chrome px-4 py-1.5 bg-[#254b85] hover:bg-[#335d9d] text-white border border-[#254b85] rounded font-bold text-xs transition-all disabled:opacity-50">
-                                                                                    reply
-                                                                                </span>
+                                                                                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" /></svg>
+                                                                                Reply
                                                                             </button>
                                                                         </div>
                                                                     </div>
@@ -398,7 +381,7 @@ export default function CommunityPage() {
                 .prose-content b, .prose-content strong { font-weight: 700; }
                 .prose-content i, .prose-content em { font-style: italic; }
                 .prose-content blockquote {
-                    border-left: 3px solid var(--border-primary);
+                    border-left: 3px solid var(--border);
                     padding-left: 0.75rem;
                     margin: 0.5rem 0;
                     font-style: italic;
