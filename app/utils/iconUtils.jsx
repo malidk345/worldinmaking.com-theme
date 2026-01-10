@@ -21,11 +21,8 @@ const iconMap = {
  * @returns {React.ComponentType} - The icon component
  */
 export const getIconByPath = (path) => {
-    if (path.startsWith('/post')) {
+    if (path.startsWith('/post/')) {
         return DocumentIcon;
-    }
-    if (path.startsWith('/profile')) {
-        return Icons.About;
     }
     return iconMap[path] || Icons.Home; // Default to Home if no match
 };
