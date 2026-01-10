@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { AnimatePresence } from 'framer-motion';
+import { useRouter, usePathname } from 'next/navigation';
 import { useWindow } from '../contexts/WindowContext';
 import HomeWindow from './HomeWindow';
 import BlogWindow from './BlogWindow';
@@ -13,6 +14,23 @@ import AuthorProfileWindow from './AuthorProfileWindow';
  */
 export default function WindowManager() {
     const { windows, closeWindow } = useWindow();
+    const router = useRouter();
+    const pathname = usePathname();
+
+    const handleClose = (id, type) => {
+        closeWindow(id);
+
+        // Navigation logic for specific routes
+        if (type === 'blog' || type === 'post') {
+            if (pathname.startsWith('/post')) {
+                router.push('/');
+            }
+        } else if (type === 'profile') {
+            if (pathname.startsWith('/profile')) {
+                router.push('/');
+            }
+        }
+    };
 
     return (
         <AnimatePresence>
@@ -25,7 +43,7 @@ export default function WindowManager() {
                         return (
                             <HomeWindow
                                 key={win.id}
-                                onClose={() => closeWindow(win.id)}
+                                onClose={() => handleClose(win.id, win.type)}
                             />
                         );
                     case 'blog':
@@ -33,7 +51,7 @@ export default function WindowManager() {
                         return (
                             <BlogWindow
                                 key={win.id}
-                                onClose={() => closeWindow(win.id)}
+                                onClose={() => handleClose(win.id, win.type)}
                             />
                         );
                     case 'author-profile':
@@ -41,7 +59,7 @@ export default function WindowManager() {
                             <AuthorProfileWindow
                                 key={win.id}
                                 username={win.username}
-                                onClose={() => closeWindow(win.id)}
+                                onClose={() => handleClose(win.id, win.type)}
                             />
                         );
                     default:
