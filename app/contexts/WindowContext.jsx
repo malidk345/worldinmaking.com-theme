@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import logger from '../utils/logger';
+import { useTabs } from '../context/TabContext';
 
 /**
  * Window Context for managing floating window instances
@@ -20,6 +21,7 @@ const getNextZIndex = (currentWindows) => {
 export const WindowProvider = ({ children }) => {
     const [windows, setWindows] = useState([]);
     const [isLoaded, setIsLoaded] = useState(false);
+    const { setActiveTab, addTab, closeTab: closeTabContext } = useTabs();
 
     // Load state from localStorage on mount
     useEffect(() => {
@@ -58,10 +60,15 @@ export const WindowProvider = ({ children }) => {
         setWindows(prev => {
             const targetWindow = prev.find(w => w.id === id);
             const nextZ = getNextZIndex(prev);
+
+            // Sync with tabs - map home-window to home
+            const tabId = id === 'home-window' ? 'home' : id;
+            setActiveTab(tabId);
+
             if (targetWindow && targetWindow.zIndex === nextZ - 1) return prev;
-            return prev.map(w => w.id === id ? { ...w, zIndex: nextZ } : w);
+            return prev.map(w => w.id === id ? { ...w, zIndex: nextZ, isMinimized: false } : w);
         });
-    }, []);
+    }, [setActiveTab]);
 
     const openWindow = useCallback((type, options = {}) => {
         const { id, title, initialX, initialY, initialWidth, initialHeight } = options;
@@ -94,7 +101,7 @@ export const WindowProvider = ({ children }) => {
                     }
                 }
 
-                return [...prev, {
+                const newWindow = {
                     ...options,
                     id: windowId,
                     type,
@@ -104,14 +111,32 @@ export const WindowProvider = ({ children }) => {
                     isMinimized: false,
                     pos: { x: startX, y: startY },
                     size: { width: initialWidth ?? 700, height: initialHeight ?? 500 }
-                }];
+                };
+
+                // Sync with tabs
+                let tabPath = options.path || '#';
+                if (type === 'home') tabPath = '/';
+                else if (type === 'blog' || type === 'post') tabPath = `/post?id=${windowId.replace('blog-window-', '')}`;
+                else if (type === 'author-profile') tabPath = `/profile/${options.username || 'user'}`;
+
+                const tabId = windowId === 'home-window' ? 'home' : windowId;
+                addTab({
+                    id: tabId,
+                    title: title || type,
+                    path: tabPath,
+                });
+
+                return [...prev, newWindow];
             }
         });
-    }, []);
+    }, [addTab]);
 
     const closeWindow = useCallback((id) => {
         setWindows(prev => prev.filter(w => w.id !== id));
-    }, []);
+        // Sync with tabs
+        const tabId = id === 'home-window' ? 'home' : id;
+        closeTabContext(tabId);
+    }, [closeTabContext]);
 
     const updateWindow = useCallback((id, updates) => {
         setWindows(prev => prev.map(w => w.id === id ? { ...w, ...updates } : w));
@@ -165,6 +190,25 @@ export const WindowProvider = ({ children }) => {
             return () => window.removeEventListener('keydown', handleKeyDown);
         }
     }, [windows, bringToFront]);
+
+    // Sync window focus with active tab
+    const { tabs } = useTabs();
+    useEffect(() => {
+        const activeTab = tabs.find(t => t.isActive);
+        if (activeTab) {
+            const windowId = activeTab.id === 'home' ? 'home-window' : activeTab.id;
+            const targetWindow = windows.find(w => w.id === windowId);
+
+            // Only bring to front if it's already open but not frontmost (or minimized)
+            if (targetWindow && (targetWindow.isMinimized || targetWindow.zIndex !== getNextZIndex(windows) - 1)) {
+                // We use setWindows directly here to avoid infinite loop with bringToFront potentially calling setActiveTab
+                setWindows(prev => {
+                    const nextZ = getNextZIndex(prev);
+                    return prev.map(w => w.id === windowId ? { ...w, zIndex: nextZ, isMinimized: false } : w);
+                });
+            }
+        }
+    }, [tabs]); // Watch tabs for changes in isActive status
 
     // Don't render children until client-side state is loaded
     if (!isLoaded) {

@@ -97,11 +97,19 @@ export function TabProvider({ children }) {
                     });
                 }
 
-                // Create new tab
+                // Create new tab with predictable IDs
                 const title = getPageTitle(fullPath);
+                let newId = `tab-${Date.now()}`;
+
+                if (pathname === '/') {
+                    newId = 'home';
+                } else if (pathname === '/post') {
+                    const postId = searchParams.get('id');
+                    if (postId) newId = `blog-window-${postId}`;
+                }
 
                 const newTab = {
-                    id: `tab-${Date.now()}`,
+                    id: newId,
                     title: title,
                     path: fullPath,
                     isActive: true

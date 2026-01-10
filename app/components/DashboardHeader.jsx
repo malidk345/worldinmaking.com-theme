@@ -3,6 +3,7 @@ import React from 'react';
 import { getIconByPath } from '../utils/iconUtils';
 import { useSidebar } from '../context/SidebarContext';
 import { useTabs } from '../context/TabContext';
+import { useWindow } from '../contexts/WindowContext';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import * as HeaderIcons from './Icons';
@@ -32,6 +33,7 @@ export default function DashboardHeader({
 }) {
     const { toggleMobileSidebar, openSidebar, isSidebarOpen } = useSidebar();
     const { tabs, closeTab, setActiveTab, history, reopenTab } = useTabs();
+    const { bringToFront, closeWindow } = useWindow();
     const router = useRouter();
     const pathname = usePathname();
     const [isTabManagerOpen, setIsTabManagerOpen] = React.useState(false);
@@ -51,6 +53,8 @@ export default function DashboardHeader({
 
     const handleTabClick = (tab) => {
         setActiveTab(tab.id);
+        const windowId = tab.id === 'home' ? 'home-window' : tab.id;
+        bringToFront(windowId);
         router.push(tab.path);
     };
 
@@ -58,6 +62,8 @@ export default function DashboardHeader({
         e.preventDefault();
         e.stopPropagation();
 
+        const windowId = tabId === 'home' ? 'home-window' : tabId;
+        closeWindow(windowId);
         const navigateTo = closeTab(tabId);
 
         // Always navigate to the returned path
@@ -201,73 +207,70 @@ export default function DashboardHeader({
                         )}
                     </div>
 
-                    {/* Single Active Tab */}
+                    {/* Tab Navigation - Render all tabs */}
                     <div className="scene-tab-row flex min-w-0 items-end">
-                        {(() => {
-                            const activeTab = tabs.find(t => t.isActive);
-                            if (!activeTab) return null;
-
+                        {tabs.map((tab) => {
                             const palette = [
                                 'text-red-500', 'text-green-600', 'text-amber-500',
                                 'text-purple-500', 'text-pink-500', 'text-indigo-500',
                                 'text-cyan-600', 'text-rose-500'
                             ];
 
-                            const getTabColor = (tab) => {
-                                if (tab.path === '/') return 'text-blue-600';
+                            const getTabColor = (t) => {
+                                if (t.path === '/') return 'text-blue-600';
                                 let hash = 0;
-                                for (let i = 0; i < tab.id.length; i++) {
-                                    hash = tab.id.charCodeAt(i) + ((hash << 5) - hash);
+                                for (let i = 0; i < t.id.length; i++) {
+                                    hash = t.id.charCodeAt(i) + ((hash << 5) - hash);
                                 }
                                 return palette[Math.abs(hash) % palette.length];
                             };
 
-                            const iconColorClass = getTabColor(activeTab);
+                            const iconColorClass = getTabColor(tab);
 
                             return (
                                 <div
-                                    key={activeTab.id}
+                                    key={tab.id}
                                     role="button"
                                     tabIndex={0}
                                     aria-disabled="false"
-                                    className="relative shrink-0 outline-none mb-[-1px]"
+                                    className={`relative shrink-0 outline-none -mb-px transition-all duration-200 ${tab.isActive ? 'z-50' : 'z-10 opacity-70 hover:opacity-100'}`}
                                     style={{
-                                        zIndex: 50,
-                                        width: '200px',
+                                        width: tab.isActive ? '200px' : '120px',
+                                        maxWidth: '200px'
                                     }}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter' || e.key === ' ') {
-                                            handleTabClick(activeTab);
+                                            handleTabClick(tab);
                                         }
                                     }}
                                 >
-                                    <span data-state="closed">
-                                        <div className="relative">
-                                            <div className="button-primitive-group button-primitive group/button-primitive button-primitive--variant-default px-0 button-primitive--full-width border-0 rounded-none group/colorful-product-icons colorful-product-icons-true button-primitive--height-base">
-                                                <button
-                                                    className="button-primitive group/button-primitive button-primitive--variant-default button-primitive--size-base button-primitive--height-base text-sm icon-only p-0 justify-center items-center shrink-0 gap-1.5 absolute order-last group z-60 size-6 rounded top-1/2 -translate-y-1/2 right-0.5 hover:bg-surface-primary hover:text-primary"
-                                                    onClick={(e) => handleCloseTab(e, activeTab.id)}
-                                                >
-                                                    <CloseIcon className="text-black size-3 group-hover:text-primary z-10" />
-                                                </button>
-                                                <button
-                                                    className="button-primitive group/button-primitive button-primitive--variant-default button-primitive--size-base button-primitive--height-base text-sm w-full order-first relative pl-2 pr-6 flex flex-row items-center gap-1.5 h-full rounded-lg border border-b-0 tab-active rounded-bl-none rounded-br-none cursor-default text-primary bg-primary border-(--border-primary) focus:outline-none"
-                                                    onClick={() => handleTabClick(activeTab)}
-                                                >
-                                                    <span className={`flex items-center shrink-0 ${iconColorClass}`}>
-                                                        {(() => {
-                                                            const Icon = getIconByPath(activeTab.path);
-                                                            return <Icon className="LemonIcon" width="100%" fill="currentColor" />;
-                                                        })()}
-                                                    </span>
-                                                    <span className="truncate block max-w-[140px] text-left text-sm">{activeTab.title}</span>
-                                                </button>
-                                            </div>
+                                    <div className="relative">
+                                        <div className={`button-primitive-group button-primitive group/button-primitive button-primitive--variant-default px-0 button-primitive--full-width border-0 rounded-none group/colorful-product-icons colorful-product-icons-true button-primitive--height-base ${tab.isActive ? '' : 'bg-transparent'}`}>
+                                            <button
+                                                className={`button-primitive group/button-primitive button-primitive--variant-default button-primitive--size-base button-primitive--height-base text-sm icon-only p-0 justify-center items-center shrink-0 gap-1.5 absolute order-last group z-20 size-5 rounded top-1/2 -translate-y-1/2 right-1 ${tab.isActive ? 'hover:bg-surface-primary hover:text-primary' : 'opacity-0 group-hover/button-primitive:opacity-100 hover:bg-black/5'}`}
+                                                onClick={(e) => handleCloseTab(e, tab.id)}
+                                            >
+                                                <CloseIcon className="text-black size-2.5 group-hover:text-primary z-10" />
+                                            </button>
+                                            <button
+                                                className={`button-primitive group/button-primitive button-primitive--variant-default button-primitive--size-base button-primitive--height-base text-sm w-full order-first relative pl-2 pr-6 flex flex-row items-center gap-1.5 h-full rounded-t-lg border border-b-0 transition-colors ${tab.isActive
+                                                    ? 'tab-active cursor-default text-primary bg-primary border-(--border-primary)'
+                                                    : 'cursor-pointer text-secondary hover:bg-black/5 border-transparent hover:border-(--border-primary)/30'}`}
+                                                onClick={() => handleTabClick(tab)}
+                                            >
+                                                <span className={`flex items-center shrink-0 ${iconColorClass}`}>
+                                                    {(() => {
+                                                        const Icon = getIconByPath(tab.path);
+                                                        return <Icon className="LemonIcon size-3.5" />;
+                                                    })()}
+                                                </span>
+                                                <span className="truncate block max-w-[140px] text-left text-[13px] font-medium">{tab.title}</span>
+                                            </button>
                                         </div>
-                                    </span>
+                                    </div>
                                 </div>
                             );
-                        })()}
+                        })}
                     </div>
 
                     {/* New Tab Button */}
