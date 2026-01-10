@@ -183,9 +183,9 @@ const Sidebar = () => {
                     {/* Center Label - Manual styling to bypass LemonButton global CSS overrides */}
                     <div
                         className="flex items-center justify-center bg-[#254b85] rounded-md shadow-[0_1px_0_rgba(0,0,0,0.2)]"
-                        style={{ height: '20px', minHeight: '20px', borderBottom: '1px solid #1a355e', padding: '0 8px' }}
+                        style={{ height: '20px', minHeight: '20px', borderBottom: '1px solid #1a355e', padding: '0 10px' }}
                     >
-                        <span className="text-[7px] tracking-tight leading-none font-normal text-white whitespace-nowrap">
+                        <span className="text-[9.5px] tracking-tight leading-none font-medium text-white whitespace-nowrap">
                             worldinmaking
                         </span>
                     </div>
