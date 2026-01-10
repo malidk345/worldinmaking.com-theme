@@ -76,14 +76,17 @@ export default function HomeWindow({ onClose }) {
                             initial={{ x: '-100%' }}
                             animate={{ x: 0 }}
                             exit={{ x: '-100%' }}
-                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                            className="absolute left-2 top-2 bottom-2 w-1/2 z-60 bg-white shadow-2xl overflow-hidden flex flex-col border border-black/15 rounded-lg"
+                            transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+                            className="absolute left-2 top-2 bottom-2 w-[80%] z-60 bg-white shadow-2xl overflow-hidden flex flex-col border border-black/15 rounded-lg"
                         >
-                            <div className="px-3 py-2 border-b border-black/15 flex items-center justify-between bg-[#f9fafb]">
-                                <span className="text-[11px] font-bold text-primary uppercase tracking-wider">categories</span>
+                            <div className="px-3 py-2.5 border-b border-black/15 flex items-center justify-between bg-[#f9fafb]">
+                                <span className="text-[11px] font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                                    <Layout className="size-3.5 text-secondary" />
+                                    categories
+                                </span>
                                 <button
                                     onClick={() => setShowCategories(false)}
-                                    className="text-secondary hover:text-primary p-0.5 rounded-md hover:bg-black/5 transition-colors"
+                                    className="text-secondary hover:text-primary p-1 rounded-md hover:bg-black/5 transition-colors"
                                 >
                                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                                 </button>
@@ -94,13 +97,16 @@ export default function HomeWindow({ onClose }) {
                                         <button
                                             key={category}
                                             onClick={() => handleCategorySelect(category)}
-                                            className={`text-[12px] text-left transition-all py-2 px-3 rounded-md capitalize flex items-center justify-between group ${selectedCategory === category
+                                            className={`text-[13px] text-left transition-all py-2.5 px-3 rounded-md capitalize flex items-center justify-between group ${selectedCategory === category
                                                 ? 'bg-[#254b85] text-white font-bold shadow-sm'
                                                 : 'text-secondary hover:text-primary hover:bg-black/5'
                                                 }`}
                                         >
-                                            <span className={selectedCategory === category ? 'translate-x-0.5 transition-transform' : 'transition-transform'}>{category}</span>
-                                            <span className={`text-[9px] py-0.5 px-1.5 rounded-full ${selectedCategory === category ? 'bg-white/20 text-white font-bold' : 'bg-black/5 text-secondary group-hover:bg-black/10 font-bold'}`}>
+                                            <div className="flex items-center gap-2.5">
+                                                <div className={`size-1.5 rounded-full ${selectedCategory === category ? 'bg-white' : 'bg-black/20 group-hover:bg-[#254b85]/40'}`} />
+                                                <span className={selectedCategory === category ? 'translate-x-0.5 transition-transform' : 'transition-transform'}>{category}</span>
+                                            </div>
+                                            <span className={`text-[10px] py-0.5 px-2 rounded-full ${selectedCategory === category ? 'bg-white/20 text-white font-bold' : 'bg-black/5 text-secondary group-hover:bg-black/10 font-bold'}`}>
                                                 {category === 'all' ? posts.length : posts.filter(p => p.category === category).length}
                                             </span>
                                         </button>

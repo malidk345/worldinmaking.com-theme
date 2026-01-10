@@ -184,7 +184,7 @@ const Sidebar = () => {
                         className="LemonButton LemonButton--primary LemonButton--small h-auto"
                         type="button"
                     >
-                        <span className="LemonButton__chrome px-1.5 py-0 text-[10px] leading-tight font-bold text-white whitespace-nowrap min-h-0">
+                        <span className="LemonButton__chrome px-1 py-0 text-[9px] leading-tight font-bold text-white whitespace-nowrap min-h-0">
                             worldinmaking
                         </span>
                     </button>

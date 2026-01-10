@@ -10,7 +10,7 @@ import Window from './Window';
 import BlogWindowToolbar from './BlogWindowToolbar';
 import { useTabs } from '../context/TabContext';
 import { getPostById, usePosts } from '../hooks/usePosts';
-import { SidebarPanel, TableOfContents } from './Icons';
+import { SidebarPanel, TableOfContents, Document } from './Icons';
 import VoteControl from './VoteControl';
 import CommentSection from './CommentSection';
 import ReactMarkdown from 'react-markdown';
@@ -144,44 +144,42 @@ export default function BlogWindow({ onClose }) {
                             initial={{ x: '-100%' }}
                             animate={{ x: 0 }}
                             exit={{ x: '-100%' }}
-                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                            className="absolute left-2 top-2 bottom-2 w-1/2 z-40 bg-white shadow-2xl overflow-hidden flex flex-col border border-black/15 rounded-lg"
+                            transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+                            className="absolute left-2 top-2 bottom-2 w-[80%] z-40 bg-white shadow-2xl overflow-hidden flex flex-col border border-black/15 rounded-lg"
                         >
-                            <div className="px-3 py-2 border-b border-black/15 flex items-center justify-between bg-[#f9fafb]">
-                                <span className="text-[11px] font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
+                            <div className="px-3 py-2.5 border-b border-black/15 flex items-center justify-between bg-[#f9fafb]">
+                                <span className="text-[11px] font-bold text-primary uppercase tracking-wider flex items-center gap-2">
                                     <SidebarPanel className="size-3.5" />
                                     suggested posts
                                 </span>
                                 <button
                                     onClick={() => setShowSidebar(false)}
-                                    className="text-secondary hover:text-primary p-0.5 rounded-md hover:bg-black/5 transition-colors"
+                                    className="text-secondary hover:text-primary p-1 rounded-md hover:bg-black/5 transition-colors"
                                 >
                                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                                 </button>
                             </div>
-                            <div className="flex-1 overflow-y-auto p-2 scrollbar-hide bg-white">
-                                <div className="flex flex-col gap-1.5">
-                                    {suggestedPosts.slice(0, 8).map(p => (
+                            <div className="flex-1 overflow-y-auto scrollbar-hide bg-white py-1">
+                                <div className="flex flex-col">
+                                    {suggestedPosts.slice(0, 10).map((p, idx) => (
                                         <Link
                                             key={p.id}
                                             href={`/post?id=${p.id}`}
-                                            className="flex gap-3 p-2.5 rounded-lg hover:bg-black/5 transition-colors group border border-transparent hover:border-black/5"
+                                            className={`flex gap-3 px-4 py-3 hover:bg-black/5 transition-colors group ${idx !== suggestedPosts.slice(0, 10).length - 1 ? 'border-b border-black/5' : ''}`}
                                             onClick={() => setShowSidebar(false)}
                                         >
-                                            <div className="w-14 h-14 rounded overflow-hidden shrink-0 relative bg-gray-100 border border-black/10">
-                                                {p.image ? (
-                                                    <Image src={p.image} alt={p.title} fill className="object-cover" unoptimized />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center text-xl font-bold text-gray-300">
-                                                        {p.title?.charAt(0)?.toUpperCase() || '?'}
-                                                    </div>
-                                                )}
+                                            <div className="size-8 rounded bg-gray-100 flex items-center justify-center shrink-0 border border-black/10 text-secondary group-hover:text-[#254b85] transition-colors">
+                                                <Document className="size-4" />
                                             </div>
                                             <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                                <h4 className="text-[13px] font-bold text-primary line-clamp-2 group-hover:text-[#254b85] transition-colors leading-tight">
+                                                <h4 className="text-[14px] font-bold text-primary line-clamp-1 group-hover:text-[#254b85] transition-colors leading-tight">
                                                     {p.title}
                                                 </h4>
-                                                <p className="text-[10px] text-secondary mt-1 font-semibold uppercase tracking-wider">{p.category}</p>
+                                                <div className="flex items-center gap-1.5 mt-1">
+                                                    <span className="text-[10px] text-tertiary font-bold uppercase tracking-wider">{p.authorName}</span>
+                                                    <span className="text-[10px] text-tertiary">•</span>
+                                                    <span className="text-[10px] text-tertiary font-semibold">{p.category}</span>
+                                                </div>
                                             </div>
                                         </Link>
                                     ))}
@@ -198,33 +196,34 @@ export default function BlogWindow({ onClose }) {
                             initial={{ x: '100%' }}
                             animate={{ x: 0 }}
                             exit={{ x: '100%' }}
-                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                            className="absolute right-2 top-2 bottom-2 w-1/2 z-40 bg-white shadow-2xl overflow-hidden flex flex-col border border-black/15 rounded-lg"
+                            transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+                            className="absolute right-2 top-2 bottom-2 w-[80%] z-40 bg-white shadow-2xl overflow-hidden flex flex-col border border-black/15 rounded-lg"
                         >
-                            <div className="px-3 py-2 border-b border-black/15 flex items-center justify-between bg-[#f9fafb]">
-                                <span className="text-[11px] font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
+                            <div className="px-3 py-2.5 border-b border-black/15 flex items-center justify-between bg-[#f9fafb]">
+                                <span className="text-[11px] font-bold text-primary uppercase tracking-wider flex items-center gap-2">
                                     <TableOfContents className="size-3.5" />
                                     contents
                                 </span>
                                 <button
                                     onClick={() => setShowTOC(false)}
-                                    className="text-secondary hover:text-primary p-0.5 rounded-md hover:bg-black/5 transition-colors"
+                                    className="text-secondary hover:text-primary p-1 rounded-md hover:bg-black/5 transition-colors"
                                 >
                                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                                 </button>
                             </div>
                             <div className="flex-1 overflow-y-auto p-2 scrollbar-hide bg-white">
-                                <nav className="flex flex-col gap-0.5">
+                                <nav className="flex flex-col">
                                     {headings.map((heading, i) => (
                                         <a
                                             key={i}
                                             href={`#${heading.id}`}
-                                            className={`text-[13px] py-2 px-3 rounded-md transition-all flex items-center ${heading.level === 2
+                                            className={`text-[14px] py-2.5 px-4 transition-all flex items-center group ${heading.level === 2
                                                 ? 'font-bold text-primary hover:bg-black/5'
-                                                : 'text-secondary pl-6 hover:text-primary hover:bg-black/5'}`}
+                                                : 'text-secondary pl-8 text-[13px] hover:text-primary hover:bg-black/5'}`}
                                             onClick={() => setShowTOC(false)}
                                         >
-                                            {heading.text}
+                                            <div className={`size-1.5 rounded-full mr-3 shrink-0 ${heading.level === 2 ? 'bg-[#254b85]' : 'bg-black/10 group-hover:bg-black/20'}`} />
+                                            <span className="line-clamp-1">{heading.text}</span>
                                         </a>
                                     ))}
                                 </nav>
