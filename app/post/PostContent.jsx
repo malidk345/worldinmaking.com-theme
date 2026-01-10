@@ -8,14 +8,18 @@ function BlogPostContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const id = searchParams.get('id');
-    const { windows, openWindow } = useWindow();
+    const { windows, openWindow, bringToFront } = useWindow();
 
     React.useEffect(() => {
         if (id) {
             const windowId = `blog-window-${id}`;
-            const isWindowAlreadyOpen = windows.some(w => w.id === windowId || (w.type === 'blog' && w.id.includes(id)));
+            const existingWindow = windows.find(w => w.id === windowId);
 
-            if (!isWindowAlreadyOpen) {
+            if (existingWindow) {
+                // Window already exists, bring it to front
+                bringToFront(windowId);
+            } else {
+                // Open new window (openWindow already assigns highest zIndex)
                 openWindow('blog', {
                     id: windowId,
                     title: 'post',
@@ -24,7 +28,7 @@ function BlogPostContent() {
                 });
             }
         }
-    }, [id, openWindow]); // Removed 'windows' to prevent re-opening on every close
+    }, [id]); // Only depend on id to prevent unnecessary re-runs
 
     return (
         <div className="flex-1 flex flex-col h-full overflow-hidden">

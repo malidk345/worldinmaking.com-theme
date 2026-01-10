@@ -34,7 +34,8 @@ export default function WindowManager() {
 
     return (
         <AnimatePresence>
-            {windows.map((win) => {
+            {/* Sort windows by zIndex to ensure proper stacking order in DOM */}
+            {[...windows].sort((a, b) => a.zIndex - b.zIndex).map((win) => {
                 // Return null if window is minimized (they are usually hidden or moved to taskbar)
                 if (win.isMinimized) return null;
 

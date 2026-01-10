@@ -10,14 +10,11 @@ import logger from '../utils/logger';
 
 const WindowContext = createContext(undefined);
 
-// Helper to calculate next Z-Index - handles undefined/NaN safely
+// Helper to calculate next Z-Index
 const getNextZIndex = (currentWindows) => {
-    if (currentWindows.length === 0) return 100;
-    const validZIndexes = currentWindows
-        .map(w => typeof w.zIndex === 'number' && !isNaN(w.zIndex) ? w.zIndex : 0)
-        .filter(z => z > 0);
-    if (validZIndexes.length === 0) return 100;
-    return Math.max(...validZIndexes) + 1;
+    if (currentWindows.length === 0) return 10;
+    const maxZ = Math.max(...currentWindows.map(w => w.zIndex));
+    return maxZ + 1;
 };
 
 export const WindowProvider = ({ children }) => {
@@ -31,10 +28,10 @@ export const WindowProvider = ({ children }) => {
 
             if (savedWindows) {
                 const parsedWindows = JSON.parse(savedWindows);
-                // Ensure all windows have valid zIndex values
-                const normalizedWindows = parsedWindows.map((w, idx) => ({
+                // Normalize zIndex values on load to avoid stale high values
+                const normalizedWindows = parsedWindows.map((w, index) => ({
                     ...w,
-                    zIndex: typeof w.zIndex === 'number' && !isNaN(w.zIndex) ? w.zIndex : 100 + idx
+                    zIndex: 10 + index // Reset zIndex to sequential values starting from 10
                 }));
                 setWindows(normalizedWindows);
             }
@@ -49,15 +46,15 @@ export const WindowProvider = ({ children }) => {
     useEffect(() => {
         if (!isLoaded) return;
 
+        // Don't save zIndex to localStorage - it will be recalculated on load
         const serializableWindows = windows.map(w => ({
             id: w.id,
             type: w.type,
             title: w.title,
-            zIndex: w.zIndex,
+            username: w.username, // For author-profile windows
             isMaximized: w.isMaximized,
             pos: w.pos,
-            size: w.size,
-            username: w.username // For author-profile windows
+            size: w.size
         }));
 
         localStorage.setItem('posthog-windows', JSON.stringify(serializableWindows));
