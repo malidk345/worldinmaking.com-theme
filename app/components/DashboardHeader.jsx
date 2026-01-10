@@ -230,9 +230,9 @@ export default function DashboardHeader({
                                     role="button"
                                     tabIndex={0}
                                     aria-disabled="false"
-                                    className="relative shrink-0 outline-none mb-[-1px]"
+                                    className="relative shrink-0 outline-none mb-[-1.5px]"
                                     style={{
-                                        zIndex: 50,
+                                        zIndex: 60,
                                         width: '200px',
                                     }}
                                     onKeyDown={(e) => {
@@ -251,7 +251,7 @@ export default function DashboardHeader({
                                                     <CloseIcon className="text-black size-3 group-hover:text-primary z-10" />
                                                 </button>
                                                 <button
-                                                    className="button-primitive group/button-primitive button-primitive--variant-default button-primitive--size-base button-primitive--height-base text-sm w-full order-first relative pl-2 pr-6 flex flex-row items-center gap-1.5 h-full rounded-lg border border-b-0 tab-active rounded-bl-none rounded-br-none cursor-default text-primary bg-primary border-(--border-primary) focus:outline-none"
+                                                    className="button-primitive group/button-primitive button-primitive--variant-default button-primitive--size-base button-primitive--height-base text-sm w-full order-first relative pl-2 pr-6 flex flex-row items-center gap-1.5 h-full rounded-lg border border-b-0 tab-active rounded-bl-none rounded-br-none cursor-default text-primary bg-(--bg-3000) border-(--border-primary) focus:outline-none"
                                                     onClick={() => handleTabClick(activeTab)}
                                                 >
                                                     <span className={`flex items-center shrink-0 ${iconColorClass}`}>
