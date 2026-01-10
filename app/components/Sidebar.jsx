@@ -181,10 +181,14 @@ const Sidebar = () => {
 
                     {/* Center Label */}
                     <button
-                        className="LemonButton LemonButton--primary LemonButton--small h-auto"
+                        className="LemonButton LemonButton--primary"
+                        style={{ height: '18px', minHeight: '18px' }}
                         type="button"
                     >
-                        <span className="LemonButton__chrome px-1 py-0 text-[9px] leading-tight font-bold text-white whitespace-nowrap min-h-0">
+                        <span
+                            className="LemonButton__chrome text-[9px] leading-none font-bold text-white whitespace-nowrap flex items-center justify-center"
+                            style={{ minHeight: '0', height: '100%', padding: '0 4px' }}
+                        >
                             worldinmaking
                         </span>
                     </button>
