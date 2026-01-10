@@ -180,18 +180,15 @@ const Sidebar = () => {
                     </div>
 
                     {/* Center Label */}
-                    <button
-                        className="LemonButton LemonButton--primary"
-                        style={{ height: '20px', minHeight: '20px' }}
-                        type="button"
+                    {/* Center Label - Manual styling to bypass LemonButton global CSS overrides */}
+                    <div
+                        className="flex items-center justify-center bg-[#254b85] rounded-md shadow-[0_1px_0_rgba(0,0,0,0.2)]"
+                        style={{ height: '20px', minHeight: '20px', borderBottom: '1px solid #1a355e', padding: '0 8px' }}
                     >
-                        <span
-                            className="LemonButton__chrome text-[7px] leading-none font-normal text-white whitespace-nowrap flex items-center justify-center"
-                            style={{ minHeight: '0', height: '100%', padding: '0 6px' }}
-                        >
+                        <span className="text-[7px] tracking-tight leading-none font-normal text-white whitespace-nowrap">
                             worldinmaking
                         </span>
-                    </button>
+                    </div>
 
                     {/* Close Button */}
                     <button
@@ -245,7 +242,7 @@ const Sidebar = () => {
                 <div className="border-b border-primary h-px" aria-hidden="true" />
                 <div className="p-1 flex flex-col gap-px" style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }}>
                     <Link
-                        className={`button-primitive button-primitive--variant-default button-primitive--size-base button-primitive--height-base text-sm gap-2.5 rounded button-primitive--full-width justify-start shrink-0 text-left flex items-center px-2 py-2 hover:bg-fill-button-tertiary-hover group ${isLinkActive('/login') ? 'bg-fill-button-tertiary-active' : ''}`}
+                        className={`text-sm gap-2.5 rounded justify-start shrink-0 text-left flex items-center px-2 py-2 hover:bg-black/5 transition-colors group ${isLinkActive('/login') ? 'bg-black/5' : ''}`}
                         href="/login"
                         title="Login"
                         onClick={handleLinkClick}
@@ -254,7 +251,7 @@ const Sidebar = () => {
                         <div className="flex w-6 h-6 items-center justify-center rounded-full bg-black text-white shrink-0 overflow-hidden">
                             <Icons.User className="size-3.5" />
                         </div>
-                        <span className="font-normal">Login</span>
+                        <span className="font-normal text-black">Login</span>
                     </Link>
 
                     <div className="px-2 py-4 mt-auto">
