@@ -4026,16 +4026,16 @@
   flex-direction: row;
   flex-shrink: 0;
   font-size: var(--lemon-button-font-size);
-  font-weight: 500;
+  font-weight: 600;
   gap: var(--lemon-button-gap);
   height: 100%;
-  justify-content: flex-start;
-  line-height: 1.5rem;
+  justify-content: center;
+  line-height: normal;
   min-height: var(--lemon-button-height);
   padding: var(--lemon-button-padding-vertical) var(--lemon-button-padding-horizontal);
   position: relative;
-  text-align: left;
-  width: 100%
+  text-align: center;
+  width: 100%;
 }
 
 .LemonButton .LemonButton__chrome .LemonButton__content {
@@ -4122,7 +4122,7 @@
 .LemonButton.LemonButton--primary .LemonButton__chrome,
 .LemonButton.LemonButton--secondary .LemonButton__chrome {
   background: transparent;
-  padding: calc(var(--lemon-button-padding-vertical) - var(--lemon-button-chrome-depth)*.5) var(--lemon-button-padding-right, var(--lemon-button-padding-horizontal)) calc(var(--lemon-button-padding-vertical) + var(--lemon-button-chrome-depth)*.5) var(--lemon-button-padding-left, var(--lemon-button-padding-horizontal))
+  padding: var(--lemon-button-padding-vertical) var(--lemon-button-padding-right, var(--lemon-button-padding-horizontal)) calc(var(--lemon-button-padding-vertical) + var(--lemon-button-chrome-depth)*.5) var(--lemon-button-padding-left, var(--lemon-button-padding-horizontal));
 }
 
 .LemonButton.LemonButton--primary .LemonButton__chrome>*,
