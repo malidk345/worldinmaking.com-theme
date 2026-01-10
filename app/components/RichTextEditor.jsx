@@ -22,9 +22,31 @@ const Toolbar = ({ mode, setMode, onAction }) => {
     );
 
     return (
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between border-b border-black/15 bg-[#f9fafb]">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between border-b border-black/15 bg-white">
+            {/* Mode Switcher - Tab Style */}
+            <div className="flex border-b sm:border-b-0 sm:border-r border-black/10 bg-[#f9fafb] px-2 h-9 items-center gap-4 shrink-0">
+                <button
+                    type="button"
+                    onClick={() => setMode('edit')}
+                    className={`h-full flex items-center gap-1.5 text-[11px] font-bold transition-all relative ${mode === 'edit' ? 'text-[#254b85]' : 'text-secondary hover:text-primary'}`}
+                >
+                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
+                    write
+                    {mode === 'edit' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#254b85] rounded-t-full" />}
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setMode('preview')}
+                    className={`h-full flex items-center gap-1.5 text-[11px] font-bold transition-all relative ${mode === 'preview' ? 'text-[#254b85]' : 'text-secondary hover:text-primary'}`}
+                >
+                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>
+                    view
+                    {mode === 'preview' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#254b85] rounded-t-full" />}
+                </button>
+            </div>
+
             {/* Toolbar Actions */}
-            <div className="flex items-center gap-0.5 overflow-x-auto py-1 px-1.5 custom-scrollbar">
+            <div className="flex items-center gap-0.5 overflow-x-auto py-0.5 px-1.5 custom-scrollbar bg-white flex-1 min-h-[36px]">
                 <ToolBtn
                     icon={<svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z" /><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z" /></svg>}
                     action="bold"
@@ -52,33 +74,12 @@ const Toolbar = ({ mode, setMode, onAction }) => {
                     action="formatBlock:blockquote"
                     title="Quote"
                 />
+                <div className="w-px h-3.5 bg-black/10 mx-1" />
                 <ToolBtn
                     icon={<svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>}
                     action="showLinkModal"
                     title="Insert Link"
                 />
-            </div>
-
-            {/* Mode Toggle - Flat Styled */}
-            <div className="flex p-1 bg-black/5 sm:bg-transparent border-t sm:border-t-0 sm:border-l border-black/10">
-                <div className="flex bg-black/5 rounded p-0.5 w-full sm:w-auto">
-                    <button
-                        type="button"
-                        onClick={() => setMode('edit')}
-                        className={`flex-1 sm:flex-none px-3 py-1 rounded text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 ${mode === 'edit' ? 'bg-white text-primary shadow-sm' : 'text-secondary hover:text-primary'}`}
-                    >
-                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
-                        write
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setMode('preview')}
-                        className={`flex-1 sm:flex-none px-3 py-1 rounded text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 ${mode === 'preview' ? 'bg-white text-primary shadow-sm' : 'text-secondary hover:text-primary'}`}
-                    >
-                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>
-                        view
-                    </button>
-                </div>
             </div>
         </div>
     );
