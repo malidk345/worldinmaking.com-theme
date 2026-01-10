@@ -479,17 +479,13 @@
   }
 
   .scene-tab-active-indicator {
-    position: absolute;
-    bottom: -1px;
-    height: 2px;
-    background-color: var(--color-accent-primary, #1d4ed8);
-    z-index: 60;
+    display: none;
+    /* Removed - no line under tabs */
   }
 
   .scene-tab-active-indicator--first {
-    left: 0;
-    right: 0;
-    border-radius: 2px 2px 0 0;
+    display: none;
+    /* Removed - no line under tabs */
   }
 
   /* Ensure the row doesn't have overflow issues with the overlap */

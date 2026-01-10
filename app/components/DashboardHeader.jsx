@@ -251,16 +251,16 @@ export default function DashboardHeader({
                                                     <CloseIcon className="text-black size-3 group-hover:text-primary z-10" />
                                                 </button>
                                                 <button
-                                                    className="button-primitive group/button-primitive button-primitive--variant-default button-primitive--size-base button-primitive--height-base text-sm w-full order-first relative pl-2 pr-5 flex flex-row items-center gap-1.5 h-full rounded-lg border tab-active rounded-bl-none rounded-br-none cursor-default text-primary bg-primary border-primary focus:outline-none"
+                                                    className="button-primitive group/button-primitive button-primitive--variant-default button-primitive--size-base button-primitive--height-base text-sm w-full order-first relative pl-2 pr-6 flex flex-row items-center gap-1.5 h-full rounded-lg border tab-active rounded-bl-none rounded-br-none cursor-default text-primary bg-primary border-primary focus:outline-none"
                                                     onClick={() => handleTabClick(activeTab)}
                                                 >
-                                                    <span className={`flex items-center ${iconColorClass}`}>
+                                                    <span className={`flex items-center shrink-0 ${iconColorClass}`}>
                                                         {(() => {
                                                             const Icon = getIconByPath(activeTab.path);
                                                             return <Icon className="LemonIcon" width="100%" fill="currentColor" />;
                                                         })()}
                                                     </span>
-                                                    <div className="scene-tab-title grow text-left truncate">{activeTab.title}</div>
+                                                    <span className="truncate block max-w-[140px] text-left text-sm">{activeTab.title}</span>
                                                 </button>
                                             </div>
                                         </div>

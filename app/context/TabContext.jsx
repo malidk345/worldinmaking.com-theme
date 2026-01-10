@@ -15,6 +15,42 @@ export function TabProvider({ children }) {
     const tabsRef = useRef(tabs);
     tabsRef.current = tabs;
 
+    // Helper function to generate a readable title from pathname
+    const getPageTitle = (path) => {
+        if (path === '/') return 'home';
+
+        // Known page mappings
+        const pageNames = {
+            '/search': 'search',
+            '/about': 'about',
+            '/contact': 'contact',
+            '/services': 'services',
+            '/community': 'community',
+            '/explore': 'explore',
+            '/login': 'login',
+            '/settings': 'settings',
+            '/admin': 'admin',
+            '/instagram': 'instagram',
+            '/x': 'x',
+            '/write-for-wim': 'write for wim',
+        };
+
+        // Check if it's a known page
+        if (pageNames[path]) {
+            return pageNames[path];
+        }
+
+        // For paths like /post, extract the last segment
+        const segments = path.split('/').filter(Boolean);
+        if (segments.length > 0) {
+            const lastSegment = segments[segments.length - 1];
+            // Replace hyphens with spaces and make it readable
+            return lastSegment.replace(/-/g, ' ');
+        }
+
+        return 'page';
+    };
+
     // Update active tab based on current pathname
     useEffect(() => {
         setTabs(prev => {
@@ -28,8 +64,7 @@ export function TabProvider({ children }) {
                 }));
             } else {
                 // If it's a new page, create a new tab
-                let title = pathname === '/' ? 'home' : pathname.split('/').pop() || 'new tab';
-                title = title.replace(/-/g, ' ');
+                const title = getPageTitle(pathname);
 
                 const newTab = {
                     id: `tab-${Date.now()}`,
