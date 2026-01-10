@@ -1,11 +1,16 @@
+"use client";
+
 // Supabase posts hook - Clean version for Markdown content
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { stripMarkdown } from '../lib/markdown';
+import logger from '../utils/logger';
 
 // Helper to convert DB Post format to App format
 // Content is passed through as-is for ReactMarkdown to handle
 const adaptPost = (p) => {
+    if (!p) return null;
+
     // Get raw content - ReactMarkdown will handle the rendering
     const rawContent = p.content || '';
 
@@ -50,53 +55,85 @@ const adaptPost = (p) => {
 export const usePosts = () => {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    useEffect(() => {
-        const fetchPosts = async () => {
-            try {
-                const { data, error } = await supabase
-                    .from('posts')
-                    .select('*')
-                    .eq('published', true)
-                    .order('created_at', { ascending: false });
+    const fetchPosts = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
 
-                if (error) {
-                    console.error('Error fetching posts:', error);
-                } else if (data) {
-                    setPosts(data.map(adaptPost));
-                }
-            } catch (e) {
-                console.error('Failed to fetch posts:', e);
-            } finally {
-                setLoading(false);
+            const { data, error: fetchError } = await supabase
+                .from('posts')
+                .select('*')
+                .eq('published', true)
+                .order('created_at', { ascending: false });
+
+            if (fetchError) {
+                logger.error('[usePosts] Error fetching posts:', fetchError);
+                setError(fetchError.message);
+            } else if (data) {
+                setPosts(data.map(adaptPost).filter(Boolean));
             }
-        };
-
-        fetchPosts();
+        } catch (e) {
+            logger.error('[usePosts] Failed to fetch posts:', e);
+            setError(e.message || 'An unexpected error occurred');
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
-    return { posts, loading };
+    useEffect(() => {
+        fetchPosts();
+    }, [fetchPosts]);
+
+    // Memoize the return value to prevent unnecessary re-renders
+    const result = useMemo(() => ({
+        posts,
+        loading,
+        error,
+        refetch: fetchPosts
+    }), [posts, loading, error, fetchPosts]);
+
+    return result;
 };
 
 export const getPostBySlug = async (slug) => {
-    const { data, error } = await supabase
-        .from('posts')
-        .select('*')
-        .eq('slug', slug)
-        .eq('published', true)
-        .single();
+    try {
+        const { data, error } = await supabase
+            .from('posts')
+            .select('*')
+            .eq('slug', slug)
+            .eq('published', true)
+            .single();
 
-    if (error || !data) return null;
-    return adaptPost(data);
+        if (error) {
+            logger.error('[getPostBySlug] Error:', error);
+            return null;
+        }
+
+        return adaptPost(data);
+    } catch (e) {
+        logger.error('[getPostBySlug] Exception:', e);
+        return null;
+    }
 };
 
 export const getPostById = async (id) => {
-    const { data, error } = await supabase
-        .from('posts')
-        .select('*')
-        .eq('id', id)
-        .single();
+    try {
+        const { data, error } = await supabase
+            .from('posts')
+            .select('*')
+            .eq('id', id)
+            .single();
 
-    if (error || !data) return null;
-    return adaptPost(data);
+        if (error) {
+            logger.error('[getPostById] Error:', error);
+            return null;
+        }
+
+        return adaptPost(data);
+    } catch (e) {
+        logger.error('[getPostById] Exception:', e);
+        return null;
+    }
 };

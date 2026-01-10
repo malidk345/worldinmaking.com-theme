@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { MinimizeIcon, MaximizeIcon, RestoreIcon, CloseWindowIcon } from './WindowIcons';
 
@@ -17,6 +17,8 @@ import { MinimizeIcon, MaximizeIcon, RestoreIcon, CloseWindowIcon } from './Wind
 const HEADER_HEIGHT = 45; // --scene-layout-header-height
 const MARGIN = 8; // 8px from edges when maximized
 const MOBILE_BREAKPOINT = 768;
+const MIN_WIDTH = 320;
+const MIN_HEIGHT = 200;
 
 const Window = ({
     id,
@@ -42,14 +44,23 @@ const Window = ({
     const [size, setSize] = useState({ width: initialWidth, height: initialHeight });
     const [isMaximized, setIsMaximized] = useState(isMaximizedProp);
     const [isMinimized, setIsMinimized] = useState(isMinimizedProp);
+    const [isMounted, setIsMounted] = useState(false);
 
     // Refs
     const windowRef = useRef(null);
     const posRef = useRef(pos);
     const sizeRef = useRef(size);
+    const dragStartRef = useRef(null);
+    const resizeStartRef = useRef(null);
 
+    // Keep refs in sync
     useEffect(() => { posRef.current = pos; }, [pos]);
     useEffect(() => { sizeRef.current = size; }, [size]);
+
+    // Client-side mount detection
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     // Sync with props
     useEffect(() => { setIsMaximized(isMaximizedProp); }, [isMaximizedProp]);
@@ -57,46 +68,26 @@ const Window = ({
 
     // Auto-maximize on mobile
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
-            if (isMobile && !isMaximized) {
-                setIsMaximized(true);
-                onMaximizeChange?.(true);
-            }
+        if (!isMounted) return;
+
+        const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
+        if (isMobile && !isMaximized) {
+            setIsMaximized(true);
+            onMaximizeChange?.(true);
         }
-    }, []);
+    }, [isMounted, isMaximized, onMaximizeChange]);
 
-    // Drag handling
-    const dragStart = useRef(null);
+    // Drag handlers
+    const handleDragMove = useCallback((clientX, clientY) => {
+        if (!dragStartRef.current || !windowRef.current) return;
 
-    const startDrag = (clientX, clientY) => {
-        if (isMaximized) return;
-        onFocus?.();
+        const dx = clientX - dragStartRef.current.mouseX;
+        const dy = clientY - dragStartRef.current.mouseY;
 
-        dragStart.current = {
-            mouseX: clientX,
-            mouseY: clientY,
-            initialX: posRef.current.x,
-            initialY: posRef.current.y,
-            lastValidX: posRef.current.x,
-            lastValidY: posRef.current.y
-        };
+        let newX = dragStartRef.current.initialX + dx;
+        let newY = dragStartRef.current.initialY + dy;
 
-        document.addEventListener('mousemove', onMouseMoveDrag);
-        document.addEventListener('touchmove', onTouchMoveDrag, { passive: false });
-        document.addEventListener('mouseup', endDrag);
-        document.addEventListener('touchend', endDrag);
-    };
-
-    const moveDrag = (clientX, clientY) => {
-        if (!dragStart.current || !windowRef.current) return;
-
-        const dx = clientX - dragStart.current.mouseX;
-        const dy = clientY - dragStart.current.mouseY;
-
-        let newX = dragStart.current.initialX + dx;
-        let newY = dragStart.current.initialY + dy;
-
+        // Constrain to viewport
         newX = Math.max(MARGIN, newX);
         newY = Math.max(HEADER_HEIGHT + MARGIN, newY);
 
@@ -106,56 +97,92 @@ const Window = ({
         const maxY = window.innerHeight - sizeRef.current.height - MARGIN;
         newY = Math.min(newY, maxY);
 
-        dragStart.current.lastValidX = newX;
-        dragStart.current.lastValidY = newY;
+        dragStartRef.current.lastValidX = newX;
+        dragStartRef.current.lastValidY = newY;
 
-        const effectiveDeltaX = newX - dragStart.current.initialX;
-        const effectiveDeltaY = newY - dragStart.current.initialY;
+        const effectiveDeltaX = newX - dragStartRef.current.initialX;
+        const effectiveDeltaY = newY - dragStartRef.current.initialY;
 
         windowRef.current.style.transform = `translate3d(${effectiveDeltaX}px, ${effectiveDeltaY}px, 0)`;
-    };
+    }, []);
 
-    const onMouseMoveDrag = (e) => moveDrag(e.clientX, e.clientY);
-    const onTouchMoveDrag = (e) => {
-        e.preventDefault();
-        moveDrag(e.touches[0].clientX, e.touches[0].clientY);
-    };
-
-    const endDrag = () => {
-        if (dragStart.current && windowRef.current) {
+    const handleDragEnd = useCallback(() => {
+        if (dragStartRef.current && windowRef.current) {
             const newPos = {
-                x: dragStart.current.lastValidX,
-                y: dragStart.current.lastValidY
+                x: dragStartRef.current.lastValidX,
+                y: dragStartRef.current.lastValidY
             };
             setPos(newPos);
             onPositionChange?.(newPos);
             windowRef.current.style.transform = 'none';
         }
+        dragStartRef.current = null;
+    }, [onPositionChange]);
 
-        dragStart.current = null;
-        document.removeEventListener('mousemove', onMouseMoveDrag);
-        document.removeEventListener('touchmove', onTouchMoveDrag);
-        document.removeEventListener('mouseup', endDrag);
-        document.removeEventListener('touchend', endDrag);
-    };
+    const handleMouseMoveDrag = useCallback((e) => {
+        handleDragMove(e.clientX, e.clientY);
+    }, [handleDragMove]);
 
-    const handleMouseDownHeader = (e) => {
+    const handleTouchMoveDrag = useCallback((e) => {
+        e.preventDefault();
+        handleDragMove(e.touches[0].clientX, e.touches[0].clientY);
+    }, [handleDragMove]);
+
+    // Setup and cleanup drag listeners
+    useEffect(() => {
+        const onMouseUp = () => handleDragEnd();
+        const onTouchEnd = () => handleDragEnd();
+
+        if (dragStartRef.current) {
+            document.addEventListener('mousemove', handleMouseMoveDrag);
+            document.addEventListener('touchmove', handleTouchMoveDrag, { passive: false });
+            document.addEventListener('mouseup', onMouseUp);
+            document.addEventListener('touchend', onTouchEnd);
+        }
+
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMoveDrag);
+            document.removeEventListener('touchmove', handleTouchMoveDrag);
+            document.removeEventListener('mouseup', onMouseUp);
+            document.removeEventListener('touchend', onTouchEnd);
+        };
+    }, [handleMouseMoveDrag, handleTouchMoveDrag, handleDragEnd]);
+
+    const startDrag = useCallback((clientX, clientY) => {
+        if (isMaximized) return;
+        onFocus?.();
+
+        dragStartRef.current = {
+            mouseX: clientX,
+            mouseY: clientY,
+            initialX: posRef.current.x,
+            initialY: posRef.current.y,
+            lastValidX: posRef.current.x,
+            lastValidY: posRef.current.y
+        };
+
+        // Force re-render to attach listeners
+        document.addEventListener('mousemove', handleMouseMoveDrag);
+        document.addEventListener('touchmove', handleTouchMoveDrag, { passive: false });
+        document.addEventListener('mouseup', handleDragEnd);
+        document.addEventListener('touchend', handleDragEnd);
+    }, [isMaximized, onFocus, handleMouseMoveDrag, handleTouchMoveDrag, handleDragEnd]);
+
+    const handleMouseDownHeader = useCallback((e) => {
         if (e.button !== 0) return;
         e.preventDefault();
         startDrag(e.clientX, e.clientY);
-    };
+    }, [startDrag]);
 
-    const handleTouchStartHeader = (e) => {
+    const handleTouchStartHeader = useCallback((e) => {
         startDrag(e.touches[0].clientX, e.touches[0].clientY);
-    };
+    }, [startDrag]);
 
-    // Resize handling
-    const resizeStart = useRef(null);
-
-    const startResize = (clientX, clientY, direction) => {
+    // Resize handlers
+    const startResize = useCallback((clientX, clientY, direction) => {
         if (isMaximized || isMinimized) return;
 
-        resizeStart.current = {
+        resizeStartRef.current = {
             mouseX: clientX,
             mouseY: clientY,
             startW: sizeRef.current.width,
@@ -163,31 +190,32 @@ const Window = ({
             startX: posRef.current.x,
             startY: posRef.current.y,
             lastValidW: sizeRef.current.width,
-            lastValidH: sizeRef.current.height
+            lastValidH: sizeRef.current.height,
+            direction
         };
 
         const moveResize = (moveX, moveY) => {
-            if (!resizeStart.current || !windowRef.current) return;
+            if (!resizeStartRef.current || !windowRef.current) return;
 
-            const dx = moveX - resizeStart.current.mouseX;
-            const dy = moveY - resizeStart.current.mouseY;
+            const dx = moveX - resizeStartRef.current.mouseX;
+            const dy = moveY - resizeStartRef.current.mouseY;
 
-            let newWidth = resizeStart.current.startW;
-            let newHeight = resizeStart.current.startH;
+            let newWidth = resizeStartRef.current.startW;
+            let newHeight = resizeStartRef.current.startH;
 
-            if (direction === 'e' || direction === 'se') {
-                newWidth = Math.max(320, resizeStart.current.startW + dx);
-                const maxWidth = window.innerWidth - resizeStart.current.startX - MARGIN;
+            if (resizeStartRef.current.direction === 'e' || resizeStartRef.current.direction === 'se') {
+                newWidth = Math.max(MIN_WIDTH, resizeStartRef.current.startW + dx);
+                const maxWidth = window.innerWidth - resizeStartRef.current.startX - MARGIN;
                 newWidth = Math.min(newWidth, maxWidth);
             }
-            if (direction === 's' || direction === 'se') {
-                newHeight = Math.max(200, resizeStart.current.startH + dy);
-                const maxHeight = window.innerHeight - resizeStart.current.startY - MARGIN;
+            if (resizeStartRef.current.direction === 's' || resizeStartRef.current.direction === 'se') {
+                newHeight = Math.max(MIN_HEIGHT, resizeStartRef.current.startH + dy);
+                const maxHeight = window.innerHeight - resizeStartRef.current.startY - MARGIN;
                 newHeight = Math.min(newHeight, maxHeight);
             }
 
-            resizeStart.current.lastValidW = newWidth;
-            resizeStart.current.lastValidH = newHeight;
+            resizeStartRef.current.lastValidW = newWidth;
+            resizeStartRef.current.lastValidH = newHeight;
 
             windowRef.current.style.width = `${newWidth}px`;
             windowRef.current.style.height = `${newHeight}px`;
@@ -200,16 +228,16 @@ const Window = ({
         };
 
         const endResize = () => {
-            if (resizeStart.current) {
+            if (resizeStartRef.current) {
                 const newSize = {
-                    width: resizeStart.current.lastValidW,
-                    height: resizeStart.current.lastValidH
+                    width: resizeStartRef.current.lastValidW,
+                    height: resizeStartRef.current.lastValidH
                 };
                 setSize(newSize);
                 onSizeChange?.(newSize);
             }
 
-            resizeStart.current = null;
+            resizeStartRef.current = null;
             document.removeEventListener('mousemove', onMouseMoveResize);
             document.removeEventListener('touchmove', onTouchMoveResize);
             document.removeEventListener('mouseup', endResize);
@@ -220,15 +248,15 @@ const Window = ({
         document.addEventListener('touchmove', onTouchMoveResize, { passive: false });
         document.addEventListener('mouseup', endResize);
         document.addEventListener('touchend', endResize);
-    };
+    }, [isMaximized, isMinimized, onSizeChange]);
 
     // Window control handlers
-    const handleClose = (e) => {
+    const handleClose = useCallback((e) => {
         e?.stopPropagation();
         onClose?.();
-    };
+    }, [onClose]);
 
-    const handleMaximize = (e) => {
+    const handleMaximize = useCallback((e) => {
         e?.stopPropagation();
         const newValue = !isMaximized;
         setIsMaximized(newValue);
@@ -236,60 +264,75 @@ const Window = ({
         onMaximizeChange?.(newValue);
         onMinimizeChange?.(false);
         onFocus?.();
-    };
+    }, [isMaximized, onMaximizeChange, onMinimizeChange, onFocus]);
 
-    const handleMinimize = (e) => {
+    const handleMinimize = useCallback((e) => {
         e?.stopPropagation();
         const newValue = !isMinimized;
         setIsMinimized(newValue);
         onMinimizeChange?.(newValue);
-    };
+    }, [isMinimized, onMinimizeChange]);
 
     // Calculate window style based on state
-    let style = {
-        zIndex,
-        display: 'flex'
-    };
+    const getWindowStyle = useCallback(() => {
+        const baseStyle = {
+            zIndex,
+            display: 'flex'
+        };
 
-    if (isMaximized) {
-        if (isMinimized) {
-            style = {
-                ...style,
-                top: typeof window !== 'undefined' ? window.innerHeight - 50 : 0,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                width: '90%',
-                height: '30px'
+        if (!isMounted) {
+            // Return a safe default for SSR
+            return {
+                ...baseStyle,
+                top: HEADER_HEIGHT + MARGIN,
+                left: MARGIN,
+                width: '100%',
+                height: '100%',
+                opacity: 0
             };
-        } else {
+        }
+
+        if (isMaximized) {
+            if (isMinimized) {
+                return {
+                    ...baseStyle,
+                    top: window.innerHeight - 50,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '90%',
+                    height: '30px'
+                };
+            }
             // Maximized state with 8px padding from edges
-            style = {
-                ...style,
+            return {
+                ...baseStyle,
                 top: HEADER_HEIGHT + MARGIN,
                 left: MARGIN,
                 width: `calc(100vw - ${MARGIN * 2}px)`,
                 height: `calc(100dvh - ${HEADER_HEIGHT + MARGIN * 2}px - env(safe-area-inset-bottom))`
             };
         }
-    } else {
+
         if (isMinimized) {
-            style = {
-                ...style,
+            return {
+                ...baseStyle,
                 top: pos.y,
                 left: pos.x,
                 width: size.width,
                 height: 30
             };
-        } else {
-            style = {
-                ...style,
-                top: pos.y,
-                left: pos.x,
-                width: size.width,
-                height: size.height,
-            };
         }
-    }
+
+        return {
+            ...baseStyle,
+            top: pos.y,
+            left: pos.x,
+            width: size.width,
+            height: size.height
+        };
+    }, [zIndex, isMounted, isMaximized, isMinimized, pos, size]);
+
+    const style = getWindowStyle();
 
     return (
         <motion.div
@@ -328,6 +371,7 @@ const Window = ({
                         onClick={handleMinimize}
                         className="p-1.5 rounded hover:bg-black/5 transition-colors text-black"
                         title="Minimize"
+                        aria-label="Minimize window"
                     >
                         <MinimizeIcon />
                     </button>
@@ -335,6 +379,7 @@ const Window = ({
                         onClick={handleMaximize}
                         className="p-1.5 rounded hover:bg-black/5 transition-colors text-black"
                         title={isMaximized ? "Restore" : "Maximize"}
+                        aria-label={isMaximized ? "Restore window" : "Maximize window"}
                     >
                         {isMaximized ? <RestoreIcon /> : <MaximizeIcon />}
                     </button>
@@ -342,6 +387,7 @@ const Window = ({
                         onClick={handleClose}
                         className="p-1.5 rounded hover:bg-red-500/10 transition-colors text-black hover:text-red-500"
                         title="Close"
+                        aria-label="Close window"
                     >
                         <CloseWindowIcon />
                     </button>
@@ -364,16 +410,19 @@ const Window = ({
                         className="absolute top-0 right-0 w-[12px] h-full cursor-e-resize z-20 touch-none"
                         onMouseDown={(e) => { e.preventDefault(); startResize(e.clientX, e.clientY, 'e'); }}
                         onTouchStart={(e) => { startResize(e.touches[0].clientX, e.touches[0].clientY, 'e'); }}
+                        aria-hidden="true"
                     />
                     <div
                         className="absolute bottom-0 left-0 w-full h-[12px] cursor-s-resize z-20 touch-none"
                         onMouseDown={(e) => { e.preventDefault(); startResize(e.clientX, e.clientY, 's'); }}
                         onTouchStart={(e) => { startResize(e.touches[0].clientX, e.touches[0].clientY, 's'); }}
+                        aria-hidden="true"
                     />
                     <div
                         className="absolute bottom-0 right-0 w-[16px] h-[16px] cursor-se-resize bg-(--posthog-3000-200) hover:bg-blue-500 rounded-tl-md z-30 touch-none"
                         onMouseDown={(e) => { e.preventDefault(); startResize(e.clientX, e.clientY, 'se'); }}
                         onTouchStart={(e) => { startResize(e.touches[0].clientX, e.touches[0].clientY, 'se'); }}
+                        aria-hidden="true"
                     />
                 </>
             )}
