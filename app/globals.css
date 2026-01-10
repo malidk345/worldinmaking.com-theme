@@ -4148,7 +4148,7 @@
   border-radius: var(--lemon-button-radius);
   box-shadow: 0 var(--lemon-button-chrome-depth) 0 -1px var(--lemon-button-frame-bg-color);
   content: "";
-  inset: -1px -1px calc(var(--lemon-button-chrome-depth) * -1);
+  inset: -1px;
   position: absolute;
   transition: opacity .2s ease;
   z-index: -1;

@@ -167,7 +167,7 @@ export default function CommunityPage() {
                                     <div className="p-4 border-t border-black/15 bg-white rounded-lg mt-6">
                                         <form onSubmit={(e) => { e.preventDefault(); handleReplySubmit(activePost.id); }} className="flex gap-2">
                                             <input
-                                                className="flex-1 bg-white border border-black/20 rounded px-4 py-2 text-sm outline-none focus:border-primary transition-colors text-primary placeholder:text-secondary"
+                                                className="flex-1 bg-white border border-black/20 rounded px-4 py-2.5 text-base md:text-sm outline-none focus:border-primary transition-colors text-primary placeholder:text-secondary"
                                                 placeholder="Type a reply..."
                                                 value={replyContent}
                                                 onChange={e => setReplyContent(e.target.value)}
@@ -366,7 +366,7 @@ export default function CommunityPage() {
                                                                             placeholder="Write a quick reply..."
                                                                             value={replyContent}
                                                                             onChange={(e) => setReplyContent(e.target.value)}
-                                                                            className="w-full bg-white border border-black/20 rounded px-4 py-3 text-sm text-primary outline-none focus:border-primary transition-colors placeholder:text-secondary"
+                                                                            className="w-full bg-white border border-black/20 rounded px-4 py-3 text-base md:text-sm text-primary outline-none focus:border-primary transition-colors placeholder:text-secondary"
                                                                             onKeyDown={(e) => e.key === 'Enter' && handleReplySubmit(post.id)}
                                                                         />
                                                                         <div className="flex justify-end gap-2">
