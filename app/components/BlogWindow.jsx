@@ -50,10 +50,9 @@ export default function BlogWindow({ onClose }) {
     const headings = post?.headings || [];
 
     useEffect(() => {
-        if (post) {
-            // Update the tab title with the post title
-            const currentPath = window.location.pathname + window.location.search;
-            updateTabTitle(currentPath, post.title);
+        if (post && post.title) {
+            // Update the active tab's title with the post title
+            updateTabTitle(post.title);
         }
     }, [post, updateTabTitle]);
 

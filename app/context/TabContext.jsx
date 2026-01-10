@@ -1,11 +1,18 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 const TabContext = createContext();
 
 export function TabProvider({ children }) {
     const pathname = usePathname();
+    const searchParams = useSearchParams();
+
+    // Combine pathname with search params to get full path
+    const fullPath = searchParams.toString()
+        ? `${pathname}?${searchParams.toString()}`
+        : pathname;
+
     const [tabs, setTabs] = useState([
         { id: 'home', title: 'home', path: '/', isActive: true }
     ]);
@@ -17,7 +24,10 @@ export function TabProvider({ children }) {
 
     // Helper function to generate a readable title from pathname
     const getPageTitle = (path) => {
-        if (path === '/') return 'home';
+        // Remove query string for title extraction
+        const cleanPath = path.split('?')[0];
+
+        if (cleanPath === '/') return 'home';
 
         // Known page mappings
         const pageNames = {
@@ -33,15 +43,16 @@ export function TabProvider({ children }) {
             '/instagram': 'instagram',
             '/x': 'x',
             '/write-for-wim': 'write for wim',
+            '/post': 'loading...', // Will be updated by BlogWindow
         };
 
         // Check if it's a known page
-        if (pageNames[path]) {
-            return pageNames[path];
+        if (pageNames[cleanPath]) {
+            return pageNames[cleanPath];
         }
 
         // For paths like /post, extract the last segment
-        const segments = path.split('/').filter(Boolean);
+        const segments = cleanPath.split('/').filter(Boolean);
         if (segments.length > 0) {
             const lastSegment = segments[segments.length - 1];
             // Replace hyphens with spaces and make it readable
@@ -51,25 +62,48 @@ export function TabProvider({ children }) {
         return 'page';
     };
 
-    // Update active tab based on current pathname
+    // Update active tab based on current pathname + search params
     useEffect(() => {
         setTabs(prev => {
-            const existingTab = prev.find(tab => tab.path === pathname);
+            // Look for existing tab with same full path
+            const existingTab = prev.find(tab => tab.path === fullPath);
 
             if (existingTab) {
                 // If tab exists, just make it active
                 return prev.map(tab => ({
                     ...tab,
-                    isActive: tab.path === pathname
+                    isActive: tab.path === fullPath
                 }));
             } else {
-                // If it's a new page, create a new tab
-                const title = getPageTitle(pathname);
+                // Check if there's a tab with same pathname (without query)
+                // This handles /post pages where query changes
+                const samePathnameTab = prev.find(tab => {
+                    const tabPathname = tab.path.split('?')[0];
+                    return tabPathname === pathname && pathname === '/post';
+                });
+
+                if (samePathnameTab) {
+                    // Update existing post tab with new query
+                    return prev.map(tab => {
+                        if (tab.id === samePathnameTab.id) {
+                            return {
+                                ...tab,
+                                path: fullPath,
+                                title: 'loading...', // Will be updated by BlogWindow
+                                isActive: true
+                            };
+                        }
+                        return { ...tab, isActive: false };
+                    });
+                }
+
+                // Create new tab
+                const title = getPageTitle(fullPath);
 
                 const newTab = {
                     id: `tab-${Date.now()}`,
                     title: title,
-                    path: pathname,
+                    path: fullPath,
                     isActive: true
                 };
 
@@ -79,7 +113,7 @@ export function TabProvider({ children }) {
                 ];
             }
         });
-    }, [pathname]);
+    }, [fullPath, pathname]);
 
     const addTab = useCallback((tab) => {
         setTabs(prev => {
@@ -98,10 +132,19 @@ export function TabProvider({ children }) {
         });
     }, []);
 
-    const updateTabTitle = useCallback((path, title) => {
-        setTabs(prev => prev.map(tab =>
-            tab.path === path ? { ...tab, title } : tab
-        ));
+    const updateTabTitle = useCallback((pathOrTitle, title) => {
+        // Support both (path, title) and legacy (title) call signatures
+        if (title === undefined) {
+            // Legacy: just title passed, update active tab
+            setTabs(prev => prev.map(tab =>
+                tab.isActive ? { ...tab, title: pathOrTitle } : tab
+            ));
+        } else {
+            // New: (path, title) passed
+            setTabs(prev => prev.map(tab =>
+                tab.path === pathOrTitle ? { ...tab, title } : tab
+            ));
+        }
     }, []);
 
     const closeTab = useCallback((tabId) => {
