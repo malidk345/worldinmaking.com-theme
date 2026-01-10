@@ -13,8 +13,9 @@ function BlogPostContent() {
     React.useEffect(() => {
         if (id) {
             const windowId = `blog-window-${id}`;
-            const hasWindow = windows.some(w => w.id === windowId);
-            if (!hasWindow) {
+            const isWindowAlreadyOpen = windows.some(w => w.id === windowId || (w.type === 'blog' && w.id.includes(id)));
+
+            if (!isWindowAlreadyOpen) {
                 openWindow('blog', {
                     id: windowId,
                     title: 'post',
@@ -23,7 +24,7 @@ function BlogPostContent() {
                 });
             }
         }
-    }, [id, openWindow, windows]);
+    }, [id, openWindow]); // Removed 'windows' to prevent re-opening on every close
 
     return (
         <div className="flex-1 flex flex-col h-full overflow-hidden">

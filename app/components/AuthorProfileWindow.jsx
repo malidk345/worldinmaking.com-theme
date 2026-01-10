@@ -140,7 +140,7 @@ export default function AuthorProfileWindow({ username, onClose }) {
                         <div className="mt-auto p-4 border-t border-black/10 bg-white flex justify-center">
                             <button
                                 onClick={onClose}
-                                className="LemonButton LemonButton--secondary LemonButton--small w-fullmax-w-[120px]"
+                                className="LemonButton LemonButton--secondary LemonButton--small w-full max-w-[120px]"
                             >
                                 <span className="LemonButton__chrome px-6">Close</span>
                             </button>
