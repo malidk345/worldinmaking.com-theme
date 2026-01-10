@@ -181,10 +181,12 @@ const Sidebar = () => {
 
                     {/* Center Label */}
                     <button
-                        className="button-primitive button-primitive--size-xs button-primitive--height-sm text-xs font-medium flex items-center bg-black/5 hover:bg-black/10 border border-transparent rounded px-2 py-0.5 transition-colors"
+                        className="LemonButton LemonButton--primary LemonButton--small h-auto"
                         type="button"
                     >
-                        <span className="truncate text-blue-700">worldinmaking</span>
+                        <span className="LemonButton__chrome px-2 py-0.5 text-[11px] leading-tight font-bold text-white whitespace-nowrap min-h-0">
+                            worldinmaking
+                        </span>
                     </button>
 
                     {/* Close Button */}

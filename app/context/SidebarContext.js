@@ -5,7 +5,7 @@ const SidebarContext = createContext(undefined);
 
 export function SidebarProvider({ children }) {
     const [isMobileOpen, setIsMobileOpen] = useState(false);
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Desktop sidebar state
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Desktop sidebar state
 
     const toggleMobileSidebar = () => setIsMobileOpen(prev => !prev);
     const closeMobileSidebar = () => setIsMobileOpen(false);
