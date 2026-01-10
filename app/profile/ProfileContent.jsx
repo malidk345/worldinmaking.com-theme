@@ -102,7 +102,7 @@ export default function ProfilePage() {
                                 onClick={() => router.push('/login')}
                                 className="LemonButton LemonButton--primary LemonButton--small"
                             >
-                                <span className="LemonButton__chrome flex items-center gap-2 px-4 py-2 bg-[#254b85] hover:bg-[#335d9d] text-white rounded font-bold text-xs transition-all shadow-sm mx-auto">
+                                <span className="LemonButton__chrome gap-2 mx-auto">
                                     <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" x2="3" y1="12" y2="12" /></svg>
                                     Sign In
                                 </span>
@@ -164,7 +164,7 @@ export default function ProfilePage() {
                                         onClick={() => setIsEditing(!isEditing)}
                                         className="LemonButton LemonButton--secondary LemonButton--small flex-1 sm:flex-none"
                                     >
-                                        <span className="LemonButton__chrome flex items-center gap-2 justify-center px-3 py-1.5 border border-black/20 rounded font-bold text-xs text-secondary hover:text-primary hover:bg-black/5 bg-white transition-all shadow-sm w-full sm:w-auto">
+                                        <span className="LemonButton__chrome gap-2 justify-center w-full sm:w-auto">
                                             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
                                             {isEditing ? 'Cancel' : 'Edit Profile'}
                                         </span>
@@ -180,8 +180,8 @@ export default function ProfilePage() {
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
                                     className={`LemonButton px-4 md:px-5 py-1.5 md:py-2 text-[11px] font-bold transition-all relative rounded-t-md border-x border-t border-black/15 whitespace-nowrap capitalize ${activeTab === tab
-                                            ? 'bg-white translate-y-px z-10 text-primary'
-                                            : 'bg-transparent hover:bg-white/60 text-secondary border-transparent'
+                                        ? 'bg-white translate-y-px z-10 text-primary'
+                                        : 'bg-transparent hover:bg-white/60 text-secondary border-transparent'
                                         }`}
                                 >
                                     {tab}
@@ -204,7 +204,7 @@ export default function ProfilePage() {
                                                     onClick={() => setIsEditing(false)}
                                                     className="LemonButton LemonButton--secondary LemonButton--small"
                                                 >
-                                                    <span className="LemonButton__chrome px-3 py-1.5 border border-black/20 rounded font-bold text-xs text-secondary hover:text-primary hover:bg-black/5 bg-white transition-all shadow-sm">
+                                                    <span className="LemonButton__chrome">
                                                         Cancel
                                                     </span>
                                                 </button>
@@ -214,7 +214,7 @@ export default function ProfilePage() {
                                                     disabled={isSaving}
                                                     className="LemonButton LemonButton--primary LemonButton--small"
                                                 >
-                                                    <span className="LemonButton__chrome flex items-center gap-1.5 px-4 py-1.5 bg-[#254b85] hover:bg-[#335d9d] text-white rounded font-bold text-xs transition-all disabled:opacity-50 shadow-sm">
+                                                    <span className="LemonButton__chrome gap-1.5">
                                                         <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><polyline points="20 6 9 17 4 12" /></svg>
                                                         {isSaving ? 'Saving...' : 'Save'}
                                                     </span>
@@ -301,7 +301,7 @@ export default function ProfilePage() {
                                 onClick={() => setIsPhotoModalOpen(false)}
                                 className="LemonButton LemonButton--secondary LemonButton--small flex-1"
                             >
-                                <span className="LemonButton__chrome py-2 border border-black/20 rounded font-bold text-xs text-secondary hover:text-primary hover:bg-black/5 bg-white transition-all shadow-sm w-full justify-center">
+                                <span className="LemonButton__chrome w-full justify-center">
                                     Cancel
                                 </span>
                             </button>
@@ -310,7 +310,7 @@ export default function ProfilePage() {
                                 onClick={handleSavePhoto}
                                 className="LemonButton LemonButton--primary LemonButton--small flex-1"
                             >
-                                <span className="LemonButton__chrome flex items-center justify-center gap-1.5 py-2 bg-[#254b85] hover:bg-[#335d9d] text-white rounded font-bold text-xs transition-all shadow-sm w-full">
+                                <span className="LemonButton__chrome gap-1.5 w-full">
                                     <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><polyline points="20 6 9 17 4 12" /></svg>
                                     Save
                                 </span>

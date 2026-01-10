@@ -78,9 +78,9 @@ const Toolbar = ({ mode, setMode, onAction }) => {
                 <button
                     type="button"
                     onClick={() => setMode('edit')}
-                    className="LemonButton LemonButton--small"
+                    className={`LemonButton LemonButton--small ${mode === 'edit' ? 'LemonButton--primary' : 'LemonButton--tertiary'}`}
                 >
-                    <span className={`LemonButton__chrome flex items-center gap-1.5 px-3 py-1 text-[11px] font-bold transition-all ${mode === 'edit' ? 'bg-[#254b85] text-white' : 'text-secondary hover:text-primary hover:bg-black/5'}`}>
+                    <span className="LemonButton__chrome gap-1.5 px-3">
                         <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
                         write
                     </span>
@@ -88,9 +88,9 @@ const Toolbar = ({ mode, setMode, onAction }) => {
                 <button
                     type="button"
                     onClick={() => setMode('preview')}
-                    className="LemonButton LemonButton--small"
+                    className={`LemonButton LemonButton--small ${mode === 'preview' ? 'LemonButton--primary' : 'LemonButton--tertiary'}`}
                 >
-                    <span className={`LemonButton__chrome flex items-center gap-1.5 px-3 py-1 text-[11px] font-bold transition-all ${mode === 'preview' ? 'bg-[#254b85] text-white' : 'text-secondary hover:text-primary hover:bg-black/5'}`}>
+                    <span className="LemonButton__chrome gap-1.5 px-3">
                         <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>
                         view
                     </span>
@@ -255,7 +255,7 @@ export default function RichTextEditor({ content, onChange, placeholder = "Write
                                 onClick={() => setModal(null)}
                                 className="LemonButton LemonButton--secondary LemonButton--small flex-1"
                             >
-                                <span className="LemonButton__chrome px-3 py-1.5 border border-black/20 rounded font-bold text-xs text-secondary hover:text-primary hover:bg-black/5 bg-white transition-all w-full justify-center">
+                                <span className="LemonButton__chrome w-full justify-center">
                                     Cancel
                                 </span>
                             </button>
@@ -264,7 +264,7 @@ export default function RichTextEditor({ content, onChange, placeholder = "Write
                                 onClick={submitModal}
                                 className="LemonButton LemonButton--primary LemonButton--small flex-1"
                             >
-                                <span className="LemonButton__chrome px-3 py-1.5 bg-[#254b85] hover:bg-[#335d9d] text-white rounded font-bold text-xs transition-all w-full justify-center">
+                                <span className="LemonButton__chrome px-3 py-1.5 w-full justify-center">
                                     Confirm
                                 </span>
                             </button>
