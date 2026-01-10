@@ -1,30 +1,55 @@
-
 "use client";
-import React, { useState } from 'react';
+
+import React, { useState, useCallback, useMemo } from 'react';
 import { getExcerpt } from '../lib/markdown';
 import InsightCard from './InsightCard';
 
-export default function DashboardGrid({ posts, loading }) {
-    const [showAll, setShowAll] = useState(false);
-    const INITIAL_COUNT = 10;
+const INITIAL_COUNT = 10;
+const SKELETON_COUNT = 6;
 
-    // Use passed posts
-    const items = posts || [];
+// Skeleton loader component
+const GridSkeleton = () => (
+    <div className="w-full relative">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: SKELETON_COUNT }, (_, i) => (
+                <div
+                    key={i}
+                    className="h-[340px] bg-black/5 rounded-lg animate-pulse border border-transparent"
+                    aria-hidden="true"
+                />
+            ))}
+        </div>
+    </div>
+);
+
+export default function DashboardGrid({ posts = [], loading = false }) {
+    const [showAll, setShowAll] = useState(false);
+
+    // Memoize visible items calculation
+    const visibleItems = useMemo(() => {
+        return showAll ? posts : posts.slice(0, INITIAL_COUNT);
+    }, [posts, showAll]);
+
+    const hasMore = useMemo(() => {
+        return posts.length > INITIAL_COUNT && !showAll;
+    }, [posts.length, showAll]);
+
+    // Memoize handler
+    const handleShowMore = useCallback(() => {
+        setShowAll(true);
+    }, []);
 
     if (loading) {
+        return <GridSkeleton />;
+    }
+
+    if (posts.length === 0) {
         return (
-            <div className="w-full relative">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {[1, 2, 3, 4, 5, 6].map(i => (
-                        <div key={i} className="h-[340px] bg-black/5 rounded-lg animate-pulse border border-transparent"></div>
-                    ))}
-                </div>
+            <div className="w-full flex items-center justify-center py-12">
+                <p className="text-secondary text-sm">No posts found</p>
             </div>
         );
     }
-
-    const visibleItems = showAll ? items : items.slice(0, INITIAL_COUNT);
-    const hasMore = items.length > INITIAL_COUNT && !showAll;
 
     return (
         <div className="w-full relative">
@@ -49,9 +74,10 @@ export default function DashboardGrid({ posts, loading }) {
             {hasMore && (
                 <div className="flex justify-center mt-6">
                     <button
-                        onClick={() => setShowAll(true)}
+                        onClick={handleShowMore}
                         className="LemonButton LemonButton--secondary LemonButton--status-default LemonButton--small"
                         type="button"
+                        aria-label="Load more posts"
                     >
                         <span className="LemonButton__chrome">
                             more
