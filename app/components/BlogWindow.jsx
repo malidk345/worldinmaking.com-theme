@@ -230,7 +230,8 @@ export default function BlogWindow({ onClose }) {
 
                 {/* Main Content - 10px margin from window edges */}
                 <main className="flex-1 overflow-y-auto bg-bg-3000 custom-scrollbar" style={{ padding: '10px', paddingBottom: 'calc(120px + env(safe-area-inset-bottom, 0px))' }}>
-                    <article>
+                    {/* Centered container for web-friendly reading width */}
+                    <article className="max-w-4xl mx-auto" style={{ margin: '10px auto' }}>
                         {/* Title */}
                         <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-primary leading-[1.1] tracking-tight mb-6">
                             {post.title}
@@ -276,25 +277,25 @@ export default function BlogWindow({ onClose }) {
                             </div>
                         </div>
 
-                        {/* Description */}
-                        <p className="mb-6" style={{ fontSize: '14px', lineHeight: '21px', color: 'rgb(0, 0, 0)' }}>
+                        {/* Description - 10% larger font (14px -> 15.4px) */}
+                        <p className="mb-6" style={{ fontSize: '15.4px', lineHeight: '23.1px', color: 'rgb(0, 0, 0)' }}>
                             {post.description}
                         </p>
 
-                        {/* Markdown Content - PostHog Typography */}
+                        {/* Markdown Content - PostHog Typography with 10% larger fonts */}
                         <div className="prose prose-sm max-w-none">
                             <ReactMarkdown
                                 remarkPlugins={[remarkGfm]}
                                 rehypePlugins={[rehypeSlug, rehypeRaw]}
                                 components={{
-                                    h2: ({ node, ...props }) => <h2 className="mt-8 mb-4 scroll-mt-24" style={{ fontSize: '21.43px', lineHeight: '30px', fontWeight: 700, letterSpacing: '-0.54px', color: 'rgb(0, 0, 0)' }} {...props} />,
-                                    h3: ({ node, ...props }) => <h3 className="mt-6 mb-3 scroll-mt-24" style={{ fontSize: '15px', lineHeight: '28px', fontWeight: 700, color: 'rgb(0, 0, 0)' }} {...props} />,
+                                    h2: ({ node, ...props }) => <h2 className="mt-8 mb-4 scroll-mt-24" style={{ fontSize: '23.6px', lineHeight: '33px', fontWeight: 700, letterSpacing: '-0.54px', color: 'rgb(0, 0, 0)' }} {...props} />,
+                                    h3: ({ node, ...props }) => <h3 className="mt-6 mb-3 scroll-mt-24" style={{ fontSize: '16.5px', lineHeight: '30.8px', fontWeight: 700, color: 'rgb(0, 0, 0)' }} {...props} />,
                                     h4: ({ node, ...props }) => <h4 className="mt-4 mb-2 scroll-mt-24" style={{ fontWeight: 600, color: 'rgb(0, 0, 0)' }} {...props} />,
-                                    p: ({ node, ...props }) => <p className="mb-4" style={{ fontSize: '14px', lineHeight: '21px', color: 'rgb(0, 0, 0)' }} {...props} />,
+                                    p: ({ node, ...props }) => <p className="mb-4" style={{ fontSize: '15.4px', lineHeight: '23.1px', color: 'rgb(0, 0, 0)' }} {...props} />,
                                     a: ({ node, ...props }) => <a className="text-accent hover:underline" {...props} />,
-                                    ul: ({ node, ...props }) => <ul className="list-disc list-inside mb-4 space-y-1" style={{ fontSize: '14px', lineHeight: '21px', color: 'rgb(0, 0, 0)' }} {...props} />,
-                                    ol: ({ node, ...props }) => <ol className="list-decimal list-inside mb-4 space-y-1" style={{ fontSize: '14px', lineHeight: '21px', color: 'rgb(0, 0, 0)' }} {...props} />,
-                                    li: ({ node, ...props }) => <li style={{ fontSize: '14px', lineHeight: '21px', color: 'rgb(0, 0, 0)' }} {...props} />,
+                                    ul: ({ node, ...props }) => <ul className="list-disc list-inside mb-4 space-y-1" style={{ fontSize: '15.4px', lineHeight: '23.1px', color: 'rgb(0, 0, 0)' }} {...props} />,
+                                    ol: ({ node, ...props }) => <ol className="list-decimal list-inside mb-4 space-y-1" style={{ fontSize: '15.4px', lineHeight: '23.1px', color: 'rgb(0, 0, 0)' }} {...props} />,
+                                    li: ({ node, ...props }) => <li style={{ fontSize: '15.4px', lineHeight: '23.1px', color: 'rgb(0, 0, 0)' }} {...props} />,
                                     blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-accent pl-4 italic my-4" style={{ color: 'rgb(0, 0, 0)' }} {...props} />,
                                     code: ({ node, inline, ...props }) =>
                                         inline ? (
