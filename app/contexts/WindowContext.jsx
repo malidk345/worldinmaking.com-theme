@@ -10,11 +10,14 @@ import logger from '../utils/logger';
 
 const WindowContext = createContext(undefined);
 
-// Helper to calculate next Z-Index
+// Helper to calculate next Z-Index - handles undefined/NaN safely
 const getNextZIndex = (currentWindows) => {
-    if (currentWindows.length === 0) return 10;
-    const maxZ = Math.max(...currentWindows.map(w => w.zIndex));
-    return maxZ + 1;
+    if (currentWindows.length === 0) return 100;
+    const validZIndexes = currentWindows
+        .map(w => typeof w.zIndex === 'number' && !isNaN(w.zIndex) ? w.zIndex : 0)
+        .filter(z => z > 0);
+    if (validZIndexes.length === 0) return 100;
+    return Math.max(...validZIndexes) + 1;
 };
 
 export const WindowProvider = ({ children }) => {
@@ -28,7 +31,12 @@ export const WindowProvider = ({ children }) => {
 
             if (savedWindows) {
                 const parsedWindows = JSON.parse(savedWindows);
-                setWindows(parsedWindows);
+                // Ensure all windows have valid zIndex values
+                const normalizedWindows = parsedWindows.map((w, idx) => ({
+                    ...w,
+                    zIndex: typeof w.zIndex === 'number' && !isNaN(w.zIndex) ? w.zIndex : 100 + idx
+                }));
+                setWindows(normalizedWindows);
             }
         } catch (e) {
             logger.error("[WindowContext] Failed to load window state", e);
@@ -48,7 +56,8 @@ export const WindowProvider = ({ children }) => {
             zIndex: w.zIndex,
             isMaximized: w.isMaximized,
             pos: w.pos,
-            size: w.size
+            size: w.size,
+            username: w.username // For author-profile windows
         }));
 
         localStorage.setItem('posthog-windows', JSON.stringify(serializableWindows));
