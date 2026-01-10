@@ -36,7 +36,7 @@
     left: 0;
     top: 0;
     bottom: 0;
-    width: 2.5px;
+    width: 1.5px;
     border-radius: var(--card-radius) 0 0 var(--card-radius);
     background-color: #000000;
 }

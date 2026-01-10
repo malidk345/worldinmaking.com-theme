@@ -95,11 +95,11 @@ export default function InsightCard({
                     </div>
                     {/* Top gap */}
                     <div className="flex-1" aria-hidden="true" />
-                    {/* Divider */}
-                    <div className="CardMeta__divider" aria-hidden="true" />
+                    {/* Divider - only show when image exists */}
+                    {image && <div className="CardMeta__divider" aria-hidden="true" />}
                 </div>
-                {/* Bottom gap */}
-                <div className="flex-1" aria-hidden="true" />
+                {/* Bottom gap - only show when image exists */}
+                {image && <div className="flex-1" aria-hidden="true" />}
             </div>
 
             {/* Image section - only show if image exists */}
