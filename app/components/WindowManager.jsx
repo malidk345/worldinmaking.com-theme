@@ -10,7 +10,8 @@ import AuthorProfileWindow from './AuthorProfileWindow';
 
 /**
  * WindowManager
- * Responsbile for rendering all active windows from the WindowContext
+ * Simple rule: windows are rendered in array order.
+ * Last window in array = on top (higher z-index).
  */
 export default function WindowManager() {
     const { windows, closeWindow, bringToFront } = useWindow();
@@ -20,7 +21,6 @@ export default function WindowManager() {
     const handleClose = (id, type) => {
         closeWindow(id);
 
-        // Navigation logic for specific routes
         if (type === 'blog' || type === 'post') {
             if (pathname.startsWith('/post')) {
                 router.push('/');
@@ -32,16 +32,20 @@ export default function WindowManager() {
         }
     };
 
+    // Base z-index for windows
+    const BASE_Z = 100;
+
     return (
         <AnimatePresence>
-            {/* Sort windows by zIndex to ensure proper stacking order in DOM */}
-            {[...windows].sort((a, b) => a.zIndex - b.zIndex).map((win) => {
-                // Return null if window is minimized (they are usually hidden or moved to taskbar)
+            {windows.map((win, index) => {
                 if (win.isMinimized) return null;
+
+                // z-index based on position in array: later = higher
+                const zIndex = BASE_Z + index;
 
                 const commonProps = {
                     key: win.id,
-                    zIndex: win.zIndex,
+                    zIndex,
                     onFocus: () => bringToFront(win.id),
                     onClose: () => handleClose(win.id, win.type)
                 };

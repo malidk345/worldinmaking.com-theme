@@ -36,9 +36,7 @@ export default function InsightCard({
             id: `author-${displayAuthor}`,
             title: `Author: @${displayAuthor}`,
             username: displayAuthor,
-            isMaximized: false,
-            initialWidth: 400,
-            initialHeight: 550
+            isMaximized: false
         });
     };
 

@@ -29,9 +29,7 @@ export default function HomeWindow({ onClose, zIndex, onFocus }) {
             id: `author-${authorName}`,
             title: `Author: @${authorName}`,
             username: authorName,
-            isMaximized: false,
-            initialWidth: 400,
-            initialHeight: 550
+            isMaximized: false
         });
     };
 

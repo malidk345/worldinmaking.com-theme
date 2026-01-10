@@ -1,23 +1,20 @@
 "use client";
 import React, { Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import DashboardHeader from '../components/DashboardHeader';
 import { useWindow } from '../contexts/WindowContext';
 
 function BlogPostContent() {
-    const router = useRouter();
     const searchParams = useSearchParams();
     const id = searchParams.get('id');
     const { openWindow } = useWindow();
 
     React.useEffect(() => {
         if (id) {
-            // openWindow handles both new windows and bringing existing ones to front
+            // openWindow brings existing window to front, or creates new one at front
             openWindow('blog', {
                 id: `blog-window-${id}`,
-                title: 'post',
-                initialWidth: 900,
-                initialHeight: 700
+                title: 'post'
             });
         }
     }, [id]);

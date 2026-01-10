@@ -42,9 +42,7 @@ export default function CommunityPage() {
             id: `author-${username}`,
             title: `Author: @${username}`,
             username: username,
-            isMaximized: false,
-            initialWidth: 400,
-            initialHeight: 550
+            isMaximized: false
         });
     };
 

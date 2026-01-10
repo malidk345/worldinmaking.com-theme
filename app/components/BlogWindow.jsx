@@ -45,9 +45,7 @@ export default function BlogWindow({ onClose, zIndex, onFocus }) {
             id: `author-${post.authorName}`,
             title: `Author: @${post.authorName}`,
             username: post.authorName,
-            isMaximized: false,
-            initialWidth: 400,
-            initialHeight: 550
+            isMaximized: false
         });
     };
 

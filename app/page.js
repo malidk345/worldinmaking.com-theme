@@ -13,9 +13,8 @@ import { useWindow } from './contexts/WindowContext';
 export default function HomePage() {
   const { openWindow } = useWindow();
 
-  // Open home window on mount
+  // Open home window on mount (openWindow already brings to front if exists)
   useEffect(() => {
-    // openWindow handles both new windows and bringing existing ones to front
     openWindow('home', { id: 'home-window', title: 'home' });
   }, []);
 

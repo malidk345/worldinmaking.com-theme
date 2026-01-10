@@ -1,11 +1,14 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import logger from '../utils/logger';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 /**
- * Window Context for managing floating window instances
- * Simple rule: Every new/focused window gets the highest z-index
+ * Window Context - Simple window management
+ * 
+ * Simple rule: The last window in the array is always on top.
+ * - openWindow: adds new window to end, or moves existing to end
+ * - bringToFront: moves window to end of array
+ * - closeWindow: removes window from array
  */
 
 const WindowContext = createContext(undefined);
@@ -14,183 +17,98 @@ export const WindowProvider = ({ children }) => {
     const [windows, setWindows] = useState([]);
     const [isLoaded, setIsLoaded] = useState(false);
 
-    // Global z-index counter - always increases, never decreases
-    const zIndexCounter = useRef(100);
-
-    // Load state from localStorage on mount
+    // Load from localStorage on mount
     useEffect(() => {
         try {
-            const savedWindows = localStorage.getItem('posthog-windows');
-
-            if (savedWindows) {
-                const parsedWindows = JSON.parse(savedWindows);
-                // Assign fresh z-index values on load
-                const loadedWindows = parsedWindows.map((w, index) => {
-                    zIndexCounter.current += 1;
-                    return {
-                        ...w,
-                        zIndex: zIndexCounter.current
-                    };
-                });
-                setWindows(loadedWindows);
+            const saved = localStorage.getItem('posthog-windows');
+            if (saved) {
+                setWindows(JSON.parse(saved));
             }
         } catch (e) {
-            logger.error("[WindowContext] Failed to load window state", e);
+            console.error("[WindowContext] Failed to load", e);
         } finally {
             setIsLoaded(true);
         }
     }, []);
 
-    // Save state to localStorage whenever it changes
+    // Save to localStorage
     useEffect(() => {
         if (!isLoaded) return;
-
-        const serializableWindows = windows.map(w => ({
+        const toSave = windows.map(w => ({
             id: w.id,
             type: w.type,
             title: w.title,
             username: w.username,
             isMaximized: w.isMaximized,
-            pos: w.pos,
-            size: w.size
+            isMinimized: w.isMinimized
         }));
-
-        localStorage.setItem('posthog-windows', JSON.stringify(serializableWindows));
+        localStorage.setItem('posthog-windows', JSON.stringify(toSave));
     }, [windows, isLoaded]);
 
-    // Bring a window to front - simple: increment counter and assign
+    // Bring window to front = move to end of array
     const bringToFront = useCallback((id) => {
-        zIndexCounter.current += 1;
-        const newZ = zIndexCounter.current;
-
-        setWindows(prev => prev.map(w =>
-            w.id === id ? { ...w, zIndex: newZ, isMinimized: false } : w
-        ));
-    }, []);
-
-    // Open a window - if exists, bring to front; if new, create with highest z-index
-    const openWindow = useCallback((type, options = {}) => {
-        const { id, title, initialX, initialY, initialWidth, initialHeight } = options;
-        const windowId = id || `window-${type}-${Date.now()}`;
-
-        zIndexCounter.current += 1;
-        const newZ = zIndexCounter.current;
-
         setWindows(prev => {
-            const exists = prev.find(w => w.id === windowId);
-
-            if (exists) {
-                // Bring existing window to front
-                return prev.map(w => w.id === windowId
-                    ? { ...w, zIndex: newZ, isMinimized: false }
-                    : w
-                );
-            } else {
-                // Create new window with highest z-index
-                const lastWin = prev[prev.length - 1];
-                let startX = initialX ?? 50;
-                let startY = initialY ?? 80;
-
-                if (lastWin && typeof window !== 'undefined') {
-                    const cascadeOffset = 30;
-                    const resetThresholdX = window.innerWidth * 0.6;
-                    const resetThresholdY = window.innerHeight * 0.6;
-
-                    if (lastWin.pos?.x && lastWin.pos?.y &&
-                        lastWin.pos.x < resetThresholdX &&
-                        lastWin.pos.y < resetThresholdY
-                    ) {
-                        startX = lastWin.pos.x + cascadeOffset;
-                        startY = lastWin.pos.y + cascadeOffset;
-                    }
-                }
-
-                return [...prev, {
-                    ...options,
-                    id: windowId,
-                    type,
-                    title: title || type,
-                    zIndex: newZ,
-                    isMaximized: options.isMaximized ?? true,
-                    isMinimized: false,
-                    pos: { x: startX, y: startY },
-                    size: { width: initialWidth ?? 700, height: initialHeight ?? 500 }
-                }];
-            }
+            const idx = prev.findIndex(w => w.id === id);
+            if (idx === -1 || idx === prev.length - 1) return prev;
+            const win = prev[idx];
+            return [...prev.slice(0, idx), ...prev.slice(idx + 1), win];
         });
     }, []);
 
+    // Open window - if exists move to end, if not create at end
+    const openWindow = useCallback((type, options = {}) => {
+        const windowId = options.id || `window-${type}-${Date.now()}`;
+
+        setWindows(prev => {
+            const existingIdx = prev.findIndex(w => w.id === windowId);
+
+            if (existingIdx !== -1) {
+                // Move existing to end (bring to front)
+                const win = { ...prev[existingIdx], isMinimized: false };
+                return [...prev.slice(0, existingIdx), ...prev.slice(existingIdx + 1), win];
+            }
+
+            // Create new window at end
+            return [...prev, {
+                id: windowId,
+                type,
+                title: options.title || type,
+                username: options.username,
+                isMaximized: options.isMaximized ?? true,
+                isMinimized: false
+            }];
+        });
+    }, []);
+
+    // Close window
     const closeWindow = useCallback((id) => {
         setWindows(prev => prev.filter(w => w.id !== id));
     }, []);
 
-    const updateWindow = useCallback((id, updates) => {
-        setWindows(prev => prev.map(w => w.id === id ? { ...w, ...updates } : w));
-    }, []);
-
-    const toggleMaximize = useCallback((id) => {
-        setWindows(prev => prev.map(w => {
-            if (w.id === id) {
-                return { ...w, isMaximized: !w.isMaximized, isMinimized: false };
-            }
-            return w;
-        }));
-    }, []);
-
+    // Toggle minimize
     const toggleMinimize = useCallback((id) => {
-        setWindows(prev => prev.map(w => {
-            if (w.id === id) {
-                return { ...w, isMinimized: !w.isMinimized };
-            }
-            return w;
-        }));
+        setWindows(prev => prev.map(w =>
+            w.id === id ? { ...w, isMinimized: !w.isMinimized } : w
+        ));
     }, []);
 
-    // Keyboard navigation (Alt + Arrow Keys)
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if (e.altKey && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
-                e.preventDefault();
+    // Toggle maximize
+    const toggleMaximize = useCallback((id) => {
+        setWindows(prev => prev.map(w =>
+            w.id === id ? { ...w, isMaximized: !w.isMaximized, isMinimized: false } : w
+        ));
+    }, []);
 
-                if (windows.length <= 1) return;
-
-                const sortedWindows = [...windows].sort((a, b) => a.zIndex - b.zIndex);
-                const topWindow = sortedWindows[sortedWindows.length - 1];
-                const currentIndex = sortedWindows.findIndex(w => w.id === topWindow.id);
-
-                let nextWindow;
-                if (e.key === 'ArrowLeft') {
-                    nextWindow = currentIndex > 0 ? sortedWindows[currentIndex - 1] : sortedWindows[sortedWindows.length - 1];
-                } else {
-                    nextWindow = currentIndex < sortedWindows.length - 1 ? sortedWindows[currentIndex + 1] : sortedWindows[0];
-                }
-
-                if (nextWindow) {
-                    bringToFront(nextWindow.id);
-                }
-            }
-        };
-
-        if (typeof window !== 'undefined') {
-            window.addEventListener('keydown', handleKeyDown);
-            return () => window.removeEventListener('keydown', handleKeyDown);
-        }
-    }, [windows, bringToFront]);
-
-    // Don't render children until client-side state is loaded
-    if (!isLoaded) {
-        return null;
-    }
+    if (!isLoaded) return null;
 
     return (
         <WindowContext.Provider value={{
             windows,
             openWindow,
             closeWindow,
-            updateWindow,
             bringToFront,
-            toggleMaximize,
-            toggleMinimize
+            toggleMinimize,
+            toggleMaximize
         }}>
             {children}
         </WindowContext.Provider>
@@ -199,7 +117,7 @@ export const WindowProvider = ({ children }) => {
 
 export const useWindow = () => {
     const context = useContext(WindowContext);
-    if (!context) throw new Error('useWindow must be used within a WindowProvider');
+    if (!context) throw new Error('useWindow must be used within WindowProvider');
     return context;
 };
 
