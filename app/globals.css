@@ -127,8 +127,8 @@
     --bg-surface-tertiary: hsl(36deg 15% 88%);
     /* Overriding with explicit PostHog value */
 
-    --border-primary: #aaaf9d;
-    /* PostHog 3000 Border - 20% darker */
+    --border-primary: #111111;
+    /* PostHog 3000 Border - Updated to off-black (#111) */
 
     --text-primary: #111;
     --text-secondary: rgba(0, 0, 0, 0.6);
@@ -158,7 +158,7 @@
     --bg-surface-secondary: #222222;
     --bg-surface-tertiary: #2a2a2a;
 
-    --border-primary: #2a2a2a;
+    --border-primary: #444444;
 
     --text-primary: #f0f0f0;
     --text-secondary: rgba(255, 255, 255, 0.7);

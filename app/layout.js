@@ -52,7 +52,7 @@ export const metadata = {
     description: siteConfig.description,
     images: [
       {
-        url: "/wim-logo-full.png",
+        url: "/og-image.png",
         width: 1200,
         height: 630,
         alt: siteConfig.name,
@@ -66,7 +66,7 @@ export const metadata = {
     title: siteConfig.name,
     description: siteConfig.description,
     creator: siteConfig.twitterHandle,
-    images: ["/wim-logo-full.png"],
+    images: ["/og-image.png"],
   },
 
   // Robots
@@ -84,9 +84,9 @@ export const metadata = {
 
   // Icons
   icons: {
-    icon: "/wim-logo-icon.png",
-    shortcut: "/wim-logo-icon.png",
-    apple: "/wim-logo-icon.png",
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
   },
 
   // Manifest
@@ -116,7 +116,7 @@ export default function RootLayout({ children }) {
     "@type": "Organization",
     name: siteConfig.name,
     url: siteConfig.url,
-    logo: `${siteConfig.url}/wim-logo-full.png`,
+    logo: `${siteConfig.url}/logo.png`,
     sameAs: [
       "https://twitter.com/worldinmaking",
       "https://instagram.com/worldinmaking",

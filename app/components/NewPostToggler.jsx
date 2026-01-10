@@ -63,7 +63,7 @@ export default function NewPostToggler({ onPost }) {
             {/* Popover - Mobile: full width bottom sheet, Desktop: positioned */}
             <div
                 className={`
-                    fixed z-50 bg-white border border-black/20 shadow-2xl
+                    fixed z-50 bg-white border border-primary shadow-2xl
                     transition-all duration-300 ease-out overflow-hidden
                     ${isOpen
                         ? 'opacity-100 translate-y-0 pointer-events-auto'
@@ -137,7 +137,7 @@ export default function NewPostToggler({ onPost }) {
                     className={`LemonButton LemonButton--secondary LemonButton--status-default LemonButton--small transition-transform duration-200 ${isOpen ? 'rotate-45' : ''}`}
                     onClick={toggle}
                 >
-                    <span className="LemonButton__chrome flex items-center justify-center w-12 h-12 bg-white border border-black/20 rounded-xl font-bold text-secondary hover:text-primary hover:border-black/30 hover:bg-white transition-all shadow-xl">
+                    <span className="LemonButton__chrome flex items-center justify-center w-12 h-12 bg-white border border-primary rounded-xl font-bold text-secondary hover:text-primary hover:border-black/30 hover:bg-white transition-all shadow-xl">
                         <PlusIcon />
                     </span>
                 </button>

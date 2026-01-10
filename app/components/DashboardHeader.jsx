@@ -99,9 +99,9 @@ export default function DashboardHeader({
                         {isTabManagerOpen && (
                             <>
                                 <div className="fixed inset-0 z-40" onClick={() => setIsTabManagerOpen(false)} />
-                                <div className="absolute top-full left-0 mt-2 w-72 bg-white border border-stone-300 rounded-xl shadow-2xl z-50 overflow-hidden">
+                                <div className="absolute top-full left-0 mt-2 w-72 bg-white border border-primary rounded-xl shadow-2xl z-50 overflow-hidden">
                                     {/* Header */}
-                                    <div className="flex items-center justify-between px-3 py-2 bg-stone-50 border-b border-stone-300">
+                                    <div className="flex items-center justify-between px-3 py-2 bg-stone-50 border-b border-primary">
                                         <div className="flex items-center gap-2">
                                             <BrowserTabIcon className="size-4 text-stone-500" />
                                             <span className="text-sm font-semibold text-stone-700">Tab Manager</span>
@@ -115,7 +115,7 @@ export default function DashboardHeader({
                                     </div>
 
                                     {/* Active Tabs Section */}
-                                    <div className="px-2 py-1.5 bg-stone-50/50 border-b border-stone-300">
+                                    <div className="px-2 py-1.5 bg-stone-50/50 border-b border-stone-100">
                                         <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">
                                             Active ({tabs.length})
                                         </span>
@@ -162,7 +162,7 @@ export default function DashboardHeader({
                                     {/* History Section */}
                                     {history && history.length > 0 && (
                                         <>
-                                            <div className="px-2 py-1.5 bg-stone-50/50 border-t border-b border-stone-300">
+                                            <div className="px-2 py-1.5 bg-stone-50/50 border-t border-b border-primary/20">
                                                 <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">
                                                     Recently Closed ({history.length})
                                                 </span>
@@ -336,4 +336,3 @@ export default function DashboardHeader({
         </div>
     );
 }
-
