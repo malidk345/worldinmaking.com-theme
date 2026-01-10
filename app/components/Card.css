@@ -55,6 +55,7 @@
 
 /* InsightCard Wrapper - PostHog Inspired */
 .InsightCard {
+    --border-primary: #a8a8a8;
     position: relative;
     z-index: 3;
     background: var(--bg-surface-primary);
@@ -63,7 +64,7 @@
     flex-direction: column;
     min-width: 0;
     max-width: 100%;
-    border: 1px solid var(--border-primary);
+    border: 1px solid #a8a8a8;
     box-shadow: var(--card-shadow);
     transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
 }

@@ -124,16 +124,16 @@ export default function Dashboard() {
                                             onClick={() => handleCategorySelect(category)}
                                             role="menuitem"
                                             className={`text-[12px] text-left transition-all py-1.5 px-2.5 rounded-lg capitalize flex items-center justify-between group ${selectedCategory === category
-                                                    ? 'bg-black text-white font-semibold shadow-sm'
-                                                    : 'text-secondary hover:text-primary hover:bg-black/5'
+                                                ? 'bg-black text-white font-semibold shadow-sm'
+                                                : 'text-secondary hover:text-primary hover:bg-black/5'
                                                 }`}
                                         >
                                             <span className={selectedCategory === category ? 'translate-x-0.5 transition-transform' : 'transition-transform'}>
                                                 {category}
                                             </span>
                                             <span className={`text-[9px] py-0.5 px-1.5 rounded-full ${selectedCategory === category
-                                                    ? 'bg-white/20 text-white'
-                                                    : 'bg-black/5 text-secondary group-hover:bg-black/10'
+                                                ? 'bg-white/20 text-white'
+                                                : 'bg-black/5 text-secondary group-hover:bg-black/10'
                                                 }`}>
                                                 {getCategoryCount(category)}
                                             </span>
@@ -252,12 +252,12 @@ export default function Dashboard() {
                                     key={post.id}
                                     href={`/post?id=${post.id}`}
                                     className="group flex items-center gap-4 p-3 bg-white rounded-md hover:shadow-md transition-all"
-                                    style={{ border: '1px solid var(--border-primary)' }}
+                                    style={{ border: '1px solid #a8a8a8' }}
                                 >
                                     {/* Thumbnail */}
                                     <div
                                         className="w-16 h-16 rounded overflow-hidden shrink-0 relative bg-gray-100"
-                                        style={{ border: '1px solid var(--border-primary)' }}
+                                        style={{ border: '1px solid #a8a8a8' }}
                                     >
                                         <Image
                                             src={post.image || FALLBACK_IMAGE}
