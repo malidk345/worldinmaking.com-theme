@@ -20,19 +20,22 @@ import Image from 'next/image';
  */
 export default function HomeWindow({ onClose, zIndex, onFocus }) {
     const { posts, loading } = usePosts();
-    const { openWindow } = useWindow();
+    const { openWindow, bringToFront } = useWindow();
 
     const handleAuthorClick = (e, authorName) => {
         e.preventDefault();
         e.stopPropagation();
+        const windowId = `author-${authorName}`;
         openWindow('author-profile', {
-            id: `author-${authorName}`,
+            id: windowId,
             title: `Author: @${authorName}`,
             username: authorName,
             isMaximized: false,
             initialWidth: 400,
             initialHeight: 550
         });
+        // Ensure the window is brought to front after opening
+        setTimeout(() => bringToFront(windowId), 0);
     };
 
     // State for toolbar functionality

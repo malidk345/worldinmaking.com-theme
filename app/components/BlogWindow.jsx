@@ -27,7 +27,7 @@ import rehypeRaw from 'rehype-raw';
 export default function BlogWindow({ onClose, zIndex, onFocus }) {
     const searchParams = useSearchParams();
     const router = useRouter();
-    const { openWindow } = useWindow();
+    const { openWindow, bringToFront } = useWindow();
     const slug = searchParams.get('id');
     const [post, setPost] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -37,6 +37,21 @@ export default function BlogWindow({ onClose, zIndex, onFocus }) {
     // Toolbar states
     const [showSidebar, setShowSidebar] = useState(false);
     const [showTOC, setShowTOC] = useState(false);
+
+    // Handler for author click
+    const handleAuthorClick = () => {
+        if (!post?.authorName) return;
+        const windowId = `author-${post.authorName}`;
+        openWindow('author-profile', {
+            id: windowId,
+            title: `Author: @${post.authorName}`,
+            username: post.authorName,
+            isMaximized: false,
+            initialWidth: 400,
+            initialHeight: 550
+        });
+        setTimeout(() => bringToFront(windowId), 0);
+    };
 
     useEffect(() => {
         if (slug) {
@@ -270,14 +285,7 @@ export default function BlogWindow({ onClose, zIndex, onFocus }) {
                         >
                             <div
                                 className="flex items-center gap-2 px-3 py-2 bg-(--posthog-3000-100) cursor-pointer hover:bg-(--posthog-3000-200) transition-colors"
-                                onClick={() => openWindow('author-profile', {
-                                    id: `author-${post.authorName}`,
-                                    title: `Author: @${post.authorName}`,
-                                    username: post.authorName,
-                                    isMaximized: false,
-                                    initialWidth: 400,
-                                    initialHeight: 550
-                                })}
+                                onClick={handleAuthorClick}
                             >
                                 <div className="relative">
                                     <UserAvatar

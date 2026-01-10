@@ -18,7 +18,7 @@ export default function InsightCard({
     image,
     children
 }) {
-    const { openWindow } = useWindow();
+    const { openWindow, bringToFront } = useWindow();
 
     // Validate required props
     if (!id) {
@@ -32,14 +32,16 @@ export default function InsightCard({
     const handleAuthorClick = (e) => {
         e.preventDefault();
         e.stopPropagation();
+        const windowId = `author-${displayAuthor}`;
         openWindow('author-profile', {
-            id: `author-${displayAuthor}`,
+            id: windowId,
             title: `Author: @${displayAuthor}`,
             username: displayAuthor,
             isMaximized: false,
             initialWidth: 400,
             initialHeight: 550
         });
+        setTimeout(() => bringToFront(windowId), 0);
     };
 
     return (
