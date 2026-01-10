@@ -1,38 +1,60 @@
+"use client";
+
 import React from 'react';
 import Image from 'next/image';
 
-const UserAvatar = ({ src, name, size = 32, className = '' }) => {
-    // If src exists, is valid URL, and not a placeholder/fake URL (optional check)
-    // For now, assume if user provides src, it's valid. 
-    // But user asked to remove "fake profile photo urls".
-    // We should check if src is truthy and not a known placeholder if we had any hardcoded ones.
-    // Since we are replacing hardcoded ones with this component, passing valid src or null is caller's responsibility.
+/**
+ * UserAvatar Component
+ * Displays user profile image or initial fallback
+ * 
+ * @param {string} src - Image URL (optional)
+ * @param {string} name - User name for initial fallback
+ * @param {number} size - Avatar size in pixels (default: 32)
+ * @param {string} className - Additional CSS classes
+ */
+const UserAvatar = React.memo(({ src, name = 'User', size = 32, className = '' }) => {
+    // Check for valid image source
+    const hasValidImage = src && typeof src === 'string' && src.length > 0;
 
-    const hasImage = src && src.length > 0;
+    // Get the initial letter
+    const initial = (name || 'U').charAt(0).toUpperCase();
+
+    // Calculate font size based on avatar size
+    const fontSize = Math.round(size * 0.45);
 
     return (
         <div
             className={`relative rounded-full overflow-hidden shrink-0 bg-gray-100 flex items-center justify-center border border-black/5 ${className}`}
             style={{ width: size, height: size }}
+            role="img"
+            aria-label={`${name}'s avatar`}
         >
-            {hasImage ? (
+            {hasValidImage ? (
                 <Image
                     src={src}
-                    alt={name || 'User'}
+                    alt={`${name}'s avatar`}
                     fill
                     className="object-cover"
                     unoptimized
+                    onError={(e) => {
+                        // Hide broken image and show initial instead
+                        e.currentTarget.style.display = 'none';
+                    }}
                 />
-            ) : (
-                <span
-                    className="font-bold text-gray-500 uppercase select-none"
-                    style={{ fontSize: size * 0.45 }}
-                >
-                    {(name || 'U').charAt(0)}
-                </span>
-            )}
+            ) : null}
+
+            {/* Initial fallback - always rendered but hidden when image loads */}
+            <span
+                className={`font-bold text-gray-500 uppercase select-none ${hasValidImage ? 'hidden' : ''}`}
+                style={{ fontSize }}
+                aria-hidden="true"
+            >
+                {initial}
+            </span>
         </div>
     );
-};
+});
+
+UserAvatar.displayName = 'UserAvatar';
 
 export default UserAvatar;

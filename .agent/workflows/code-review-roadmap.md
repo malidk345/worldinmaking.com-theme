@@ -237,8 +237,8 @@ Her dosya için kontrol edilecek maddeler:
 | FAZ 2 | ✅ Tamamlandı | 100% | WindowContext logger entegrasyonu |
 | FAZ 3 | ✅ Tamamlandı | 100% | usePosts, useAdminData, useCommunity - error states, logging, memoization |
 | FAZ 4 | ✅ Tamamlandı | 100% | Window.jsx - useCallback, SSR fix, memory leak prevention, a11y |
-| FAZ 5 | ⏳ Bekliyor | 0% | |
-| FAZ 6 | ⏳ Bekliyor | 0% | |
+| FAZ 5 | ✅ Tamamlandı | 100% | Dashboard, DashboardGrid, InsightCard - memoization, a11y, error handling |
+| FAZ 6 | ✅ Tamamlandı | 100% | Sidebar - MenuItem extraction, React.memo, useCallback, dynamic year |
 | FAZ 7 | ⏳ Bekliyor | 0% | |
 | FAZ 8 | ⏳ Bekliyor | 0% | |
 | FAZ 9 | ⏳ Bekliyor | 0% | |

@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import logger from '../utils/logger';
 
 // Icons
 const ChevronUpIcon = ({ size = 16 }) => (
@@ -147,7 +148,7 @@ export default function VoteControl({ postId, compact = false }) {
                 if (error) throw error;
             }
         } catch (error) {
-            console.error('Vote error:', error);
+            logger.error('[VoteControl] Vote error:', error);
             // Revert on error
             setUserVotes(prev => prev - 1);
             setTotalVotes(prev => prev - 1);

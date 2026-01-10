@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import logger from '../utils/logger';
 
 // Comment Item Component
 const CommentItem = ({ comment, onReply, isReplying, replyDraft, setReplyDraft, onSubmitReply, onCancelReply }) => {
@@ -92,7 +93,7 @@ export default function CommentSection({ postId }) {
             .order('created_at', { ascending: true });
 
         if (error) {
-            console.error('Error fetching comments:', error);
+            logger.error('[CommentSection] Error fetching comments:', error);
             return;
         }
 
