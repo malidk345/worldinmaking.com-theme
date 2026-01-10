@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import logger from '../utils/logger';
 
 /**
  * Window Context for managing floating window instances
@@ -30,7 +31,7 @@ export const WindowProvider = ({ children }) => {
                 setWindows(parsedWindows);
             }
         } catch (e) {
-            console.error("Failed to load window state", e);
+            logger.error("[WindowContext] Failed to load window state", e);
         } finally {
             setIsLoaded(true);
         }

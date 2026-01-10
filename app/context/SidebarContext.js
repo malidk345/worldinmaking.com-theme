@@ -1,17 +1,17 @@
 "use client";
 import React, { createContext, useContext, useState } from 'react';
 
-const SidebarContext = createContext();
+const SidebarContext = createContext(undefined);
 
 export function SidebarProvider({ children }) {
     const [isMobileOpen, setIsMobileOpen] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Desktop sidebar state
 
-    const toggleMobileSidebar = () => setIsMobileOpen(!isMobileOpen);
+    const toggleMobileSidebar = () => setIsMobileOpen(prev => !prev);
     const closeMobileSidebar = () => setIsMobileOpen(false);
 
     // Desktop sidebar controls
-    const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+    const toggleSidebar = () => setIsSidebarOpen(prev => !prev);
     const openSidebar = () => setIsSidebarOpen(true);
     const closeSidebar = () => setIsSidebarOpen(false);
 
@@ -31,6 +31,9 @@ export function SidebarProvider({ children }) {
 }
 
 export function useSidebar() {
-    return useContext(SidebarContext);
+    const context = useContext(SidebarContext);
+    if (context === undefined) {
+        throw new Error('useSidebar must be used within a SidebarProvider');
+    }
+    return context;
 }
-

@@ -4,7 +4,8 @@ import logger from '../utils/logger';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-let client;
+let client = null;
+let isConfigured = false;
 
 // Debug: Log environment variable status (not the actual values for security)
 if (typeof window !== 'undefined') {
@@ -27,15 +28,36 @@ if (supabaseUrl && supabaseKey) {
                 storage: typeof window !== 'undefined' ? window.localStorage : undefined,
             }
         });
+        isConfigured = true;
         logger.log('[Supabase] Client initialized successfully');
     } catch (e) {
         logger.error('[Supabase] Init failed:', e);
-        // Fallback dummy
-        client = createClient('https://example.supabase.co', 'public-anon-key');
+        isConfigured = false;
     }
 } else {
-    logger.error('[Supabase] Environment variables missing!');
-    client = createClient('https://example.supabase.co', 'public-anon-key');
+    logger.warn('[Supabase] Environment variables missing! Database features will be unavailable.');
+    isConfigured = false;
 }
 
-export const supabase = client;
+// Create a mock client that returns empty data for graceful degradation
+const mockClient = {
+    from: () => ({
+        select: () => ({ data: [], error: { message: 'Supabase not configured' } }),
+        insert: () => ({ data: null, error: { message: 'Supabase not configured' } }),
+        update: () => ({ data: null, error: { message: 'Supabase not configured' } }),
+        delete: () => ({ data: null, error: { message: 'Supabase not configured' } }),
+        eq: function () { return this; },
+        single: function () { return this; },
+        order: function () { return this; },
+    }),
+    auth: {
+        getSession: async () => ({ data: { session: null }, error: null }),
+        signInWithOtp: async () => ({ error: { message: 'Supabase not configured' } }),
+        signOut: async () => ({}),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => { } } } }),
+        exchangeCodeForSession: async () => ({ data: null, error: { message: 'Supabase not configured' } }),
+    }
+};
+
+export const supabase = client || mockClient;
+export const isSupabaseConfigured = isConfigured;

@@ -1,7 +1,17 @@
 import "./globals.css";
 import "./components/Card.css";
-import Sidebar from "./components/Sidebar";
 import { IBM_Plex_Sans } from "next/font/google";
+
+// Providers
+import { SidebarProvider } from "./context/SidebarContext";
+import { TabProvider } from "./context/TabContext";
+import { AuthProvider } from "./contexts/AuthContext";
+import { ToastProvider } from "./contexts/ToastContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
+import { WindowProvider } from "./contexts/WindowContext";
+
+// Components
+import Sidebar from "./components/Sidebar";
 
 // PostHog uses IBM Plex Sans for body text
 const ibmPlexSans = IBM_Plex_Sans({
@@ -98,13 +108,6 @@ export const viewport = {
     { media: "(prefers-color-scheme: dark)", color: "#1f1f1f" },
   ],
 };
-
-import { SidebarProvider } from "./context/SidebarContext";
-import { TabProvider } from "./context/TabContext";
-import { AuthProvider } from "./contexts/AuthContext";
-import { ToastProvider } from "./contexts/ToastContext";
-import { ThemeProvider } from "./contexts/ThemeContext";
-import { WindowProvider } from "./contexts/WindowContext";
 
 export default function RootLayout({ children }) {
   // JSON-LD structured data for organization
