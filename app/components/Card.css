@@ -34,10 +34,10 @@
 .CardMeta__ribbon {
     position: absolute;
     left: 0;
-    top: 0;
-    bottom: 0;
+    top: 8px;
+    bottom: 8px;
     width: 1.5px;
-    border-radius: var(--card-radius) 0 0 var(--card-radius);
+    border-radius: 1px;
     background-color: #000000;
 }
 
