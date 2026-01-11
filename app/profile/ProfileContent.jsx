@@ -229,7 +229,7 @@ export default function ProfilePage({ zIndex, onFocus, onClose, isWindowMode = f
 
                                     {isEditing ? (
                                         <RichTextEditor
-                                            content={bioContent}
+                                            value={bioContent}
                                             onChange={setBioContent}
                                             placeholder="Write something about yourself here..."
                                             minHeight="320px"

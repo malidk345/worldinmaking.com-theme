@@ -91,7 +91,7 @@ const Toolbar = ({ mode, setMode, onAction }) => {
 };
 
 // Rich Text Editor Component
-export default function RichTextEditor({ content, onChange, placeholder = "Write something here...", minHeight = "240px" }) {
+export default function RichTextEditor({ value, onChange, placeholder = "Write something here...", minHeight = "240px" }) {
     const [mode, setMode] = useState('edit');
     const [modal, setModal] = useState(null);
     const editorRef = useRef(null);
@@ -99,10 +99,10 @@ export default function RichTextEditor({ content, onChange, placeholder = "Write
 
     // Initialize content
     useEffect(() => {
-        if (editorRef.current && content && editorRef.current.innerHTML !== content) {
-            editorRef.current.innerHTML = content;
+        if (editorRef.current && value && editorRef.current.innerHTML !== value) {
+            editorRef.current.innerHTML = value;
         }
-    }, []);
+    }, [value]);
 
     const saveSelection = useCallback(() => {
         const sel = window.getSelection();
@@ -214,7 +214,7 @@ export default function RichTextEditor({ content, onChange, placeholder = "Write
                     <div
                         className="w-full h-full text-sm leading-relaxed text-primary prose-editor"
                         style={{ minHeight: `calc(${minHeight} - 80px)` }}
-                        dangerouslySetInnerHTML={{ __html: content || `<span class="text-secondary italic">${placeholder}</span>` }}
+                        dangerouslySetInnerHTML={{ __html: value || `<span class="text-secondary italic">${placeholder}</span>` }}
                     />
                 )}
             </div>

@@ -6,6 +6,8 @@ import { usePathname } from 'next/navigation';
 import * as Icons from './SidebarIcons';
 import { useSidebar } from '../context/SidebarContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useWindow } from '../contexts/WindowContext';
 
 // Menu item data structure
 const MENU_ITEMS = {
