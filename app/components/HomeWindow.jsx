@@ -79,7 +79,8 @@ export default function HomeWindow({ onClose, zIndex, onFocus }) {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => { setShowCategories(false); setShowFilter(false); }}
-                            className="absolute inset-0 z-50 bg-black/20 backdrop-blur-[1px]"
+                            className="absolute inset-0 z-50"
+                            style={{ backgroundColor: 'rgba(0,0,0,0)' }}
                         />
                     )}
                 </AnimatePresence>
@@ -92,19 +93,22 @@ export default function HomeWindow({ onClose, zIndex, onFocus }) {
                             animate={{ x: 0 }}
                             exit={{ x: '-100%' }}
                             transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-                            className="absolute left-2 top-2 bottom-2 w-[80%] z-60 shadow-2xl overflow-hidden flex flex-col border border-black/10 rounded-lg"
-                            style={{ backgroundColor: 'rgb(229, 231, 224)' }}
+                            className="absolute left-2 top-2 bottom-2 w-72 z-60 overflow-hidden flex flex-col border border-(--border-primary) rounded-xl"
+                            style={{
+                                backgroundColor: 'rgb(229, 231, 224)',
+                                boxShadow: '0 4px 24px rgba(0, 0, 0, 0.15)'
+                            }}
                         >
-                            <div className="px-3 py-2.5 border-b border-black/10 flex items-center justify-between" style={{ backgroundColor: 'rgba(0,0,0,0.03)' }}>
-                                <span className="text-[11px] font-bold text-primary uppercase tracking-wider flex items-center gap-2">
-                                    <Layout className="size-3.5 text-secondary" />
+                            <div className="px-2.5 py-1.5 border-b border-black/5 flex items-center justify-between" style={{ backgroundColor: 'rgba(0,0,0,0.02)' }}>
+                                <span className="text-[10px] font-bold text-secondary uppercase tracking-widest flex items-center gap-2">
+                                    <Layout className="size-3 text-secondary" />
                                     categories
                                 </span>
                                 <button
                                     onClick={() => setShowCategories(false)}
-                                    className="text-secondary hover:text-primary p-1 rounded-md hover:bg-black/5 transition-colors"
+                                    className="text-tertiary hover:text-primary p-0.5 rounded hover:bg-black/5 transition-colors"
                                 >
-                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                                 </button>
                             </div>
                             <div className="flex-1 overflow-y-auto p-1.5 scrollbar-hide">
@@ -113,16 +117,16 @@ export default function HomeWindow({ onClose, zIndex, onFocus }) {
                                         <button
                                             key={category}
                                             onClick={() => handleCategorySelect(category)}
-                                            className={`text-[13px] text-left transition-all py-2.5 px-3 rounded-md capitalize flex items-center justify-between group ${selectedCategory === category
+                                            className={`text-[12px] text-left transition-all py-2 px-3 rounded-md capitalize flex items-center justify-between group mx-1 mb-0.5 ${selectedCategory === category
                                                 ? 'bg-[#254b85] text-white font-bold shadow-sm'
                                                 : 'text-secondary hover:text-primary hover:bg-black/5'
                                                 }`}
                                         >
-                                            <div className="flex items-center gap-2.5">
-                                                <div className={`size-1.5 rounded-full ${selectedCategory === category ? 'bg-white' : 'bg-black/20 group-hover:bg-[#254b85]/40'}`} />
+                                            <div className="flex items-center gap-2">
+                                                <div className={`size-1 rounded-full ${selectedCategory === category ? 'bg-white' : 'bg-black/20 group-hover:bg-[#254b85]/40'}`} />
                                                 <span className={selectedCategory === category ? 'translate-x-0.5 transition-transform' : 'transition-transform'}>{category}</span>
                                             </div>
-                                            <span className={`text-[10px] py-0.5 px-2 rounded-full ${selectedCategory === category ? 'bg-white/20 text-white font-bold' : 'bg-black/5 text-secondary group-hover:bg-black/10 font-bold'}`}>
+                                            <span className={`text-[9px] py-0.5 px-1.5 rounded-full ${selectedCategory === category ? 'bg-white/20 text-white font-bold' : 'bg-black/5 text-secondary group-hover:bg-black/10 font-bold'}`}>
                                                 {category === 'all' ? posts.length : posts.filter(p => p.category === category).length}
                                             </span>
                                         </button>
@@ -141,19 +145,22 @@ export default function HomeWindow({ onClose, zIndex, onFocus }) {
                             animate={{ x: 0 }}
                             exit={{ x: '-100%' }}
                             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                            className="absolute left-2 top-2 bottom-2 w-1/2 z-60 shadow-2xl overflow-hidden flex flex-col border border-black/10 rounded-lg"
-                            style={{ backgroundColor: 'rgb(229, 231, 224)' }}
+                            className="absolute left-2 top-2 bottom-2 w-72 z-60 overflow-hidden flex flex-col border border-(--border-primary) rounded-xl"
+                            style={{
+                                backgroundColor: 'rgb(229, 231, 224)',
+                                boxShadow: '0 4px 24px rgba(0, 0, 0, 0.15)'
+                            }}
                         >
-                            <div className="px-3 py-2 border-b border-black/10 flex items-center justify-between" style={{ backgroundColor: 'rgba(0,0,0,0.03)' }}>
-                                <span className="text-[11px] font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
-                                    <svg className="w-3.5 h-3.5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+                            <div className="px-2.5 py-1.5 border-b border-black/10 flex items-center justify-between" style={{ backgroundColor: 'rgba(0,0,0,0.02)' }}>
+                                <span className="text-[10px] font-bold text-secondary uppercase tracking-widest flex items-center gap-1.5">
+                                    <svg className="w-3 h-3 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
                                     filter & sort
                                 </span>
                                 <button
                                     onClick={() => setShowFilter(false)}
-                                    className="text-secondary hover:text-primary p-0.5 rounded-md hover:bg-black/5 transition-colors"
+                                    className="text-tertiary hover:text-primary p-0.5 rounded hover:bg-black/5 transition-colors"
                                 >
-                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                                 </button>
                             </div>
                             <div className="p-3 flex flex-col gap-3">

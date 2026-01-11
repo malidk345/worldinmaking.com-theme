@@ -152,7 +152,8 @@ export default function BlogWindow({ onClose, zIndex, onFocus }) {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={() => { setShowSidebar(false); setShowTOC(false); }}
-                        className="absolute inset-0 z-30 bg-black/20 backdrop-blur-[1px]"
+                        className="absolute inset-0 z-30"
+                        style={{ backgroundColor: 'rgba(0,0,0,0)' }}
                     />
                 )}
 
@@ -164,19 +165,22 @@ export default function BlogWindow({ onClose, zIndex, onFocus }) {
                             animate={{ x: 0 }}
                             exit={{ x: '-100%' }}
                             transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-                            className="absolute left-2 top-2 bottom-2 w-[80%] z-40 shadow-2xl overflow-hidden flex flex-col border border-black/10 rounded-lg"
-                            style={{ backgroundColor: 'rgb(229, 231, 224)' }}
+                            className="absolute left-2 top-2 bottom-2 w-72 z-40 overflow-hidden flex flex-col border border-(--border-primary) rounded-xl"
+                            style={{
+                                backgroundColor: 'rgb(229, 231, 224)',
+                                boxShadow: '0 4px 24px rgba(0, 0, 0, 0.15)'
+                            }}
                         >
-                            <div className="px-3 py-2.5 border-b border-black/10 flex items-center justify-between" style={{ backgroundColor: 'rgba(0,0,0,0.03)' }}>
-                                <span className="text-[11px] font-bold text-primary uppercase tracking-wider flex items-center gap-2">
-                                    <SidebarPanel className="size-3.5" />
+                            <div className="px-2.5 py-1.5 border-b border-black/5 flex items-center justify-between" style={{ backgroundColor: 'rgba(0,0,0,0.02)' }}>
+                                <span className="text-[10px] font-bold text-secondary uppercase tracking-widest flex items-center gap-2">
+                                    <SidebarPanel className="size-3" />
                                     suggested posts
                                 </span>
                                 <button
                                     onClick={() => setShowSidebar(false)}
-                                    className="text-secondary hover:text-primary p-1 rounded-md hover:bg-black/5 transition-colors"
+                                    className="text-tertiary hover:text-primary p-0.5 rounded hover:bg-black/5 transition-colors"
                                 >
-                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                                 </button>
                             </div>
                             <div className="flex-1 overflow-y-auto scrollbar-hide py-1">
@@ -185,20 +189,20 @@ export default function BlogWindow({ onClose, zIndex, onFocus }) {
                                         <Link
                                             key={p.id}
                                             href={`/post?id=${p.id}`}
-                                            className={`flex gap-3 px-4 py-3 hover:bg-black/5 transition-colors group ${idx !== suggestedPosts.slice(0, 10).length - 1 ? 'border-b border-black/5' : ''}`}
+                                            className={`flex gap-2.5 px-3 py-2 hover:bg-black/5 transition-colors group ${idx !== suggestedPosts.slice(0, 10).length - 1 ? 'border-b border-black/5' : ''}`}
                                             onClick={() => setShowSidebar(false)}
                                         >
-                                            <div className="size-8 rounded bg-gray-100 flex items-center justify-center shrink-0 border border-black/10 text-secondary group-hover:text-[#254b85] transition-colors">
-                                                <Document className="size-4" />
+                                            <div className="size-7 rounded bg-black/5 flex items-center justify-center shrink-0 border border-black/5 text-secondary group-hover:text-[#254b85] transition-colors">
+                                                <Document className="size-3.5" />
                                             </div>
                                             <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                                <h4 className="text-[14px] font-bold text-primary line-clamp-1 group-hover:text-[#254b85] transition-colors leading-tight">
+                                                <h4 className="text-[13px] font-bold text-primary line-clamp-1 group-hover:text-[#254b85] transition-colors leading-tight">
                                                     {p.title}
                                                 </h4>
-                                                <div className="flex items-center gap-1.5 mt-1">
-                                                    <span className="text-[10px] text-tertiary font-bold uppercase tracking-wider">{p.authorName}</span>
-                                                    <span className="text-[10px] text-tertiary">•</span>
-                                                    <span className="text-[10px] text-tertiary font-semibold">{p.category}</span>
+                                                <div className="flex items-center gap-1.5 mt-0.5">
+                                                    <span className="text-[9px] text-tertiary font-bold uppercase tracking-wider">{p.authorName}</span>
+                                                    <span className="text-[9px] text-tertiary opacity-50">•</span>
+                                                    <span className="text-[9px] text-tertiary font-semibold">{p.category}</span>
                                                 </div>
                                             </div>
                                         </Link>
@@ -217,19 +221,22 @@ export default function BlogWindow({ onClose, zIndex, onFocus }) {
                             animate={{ x: 0 }}
                             exit={{ x: '100%' }}
                             transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-                            className="absolute right-2 top-2 bottom-2 w-[80%] z-40 shadow-2xl overflow-hidden flex flex-col border border-black/10 rounded-lg"
-                            style={{ backgroundColor: 'rgb(229, 231, 224)' }}
+                            className="absolute right-2 top-2 bottom-2 w-72 z-40 overflow-hidden flex flex-col border border-(--border-primary) rounded-xl"
+                            style={{
+                                backgroundColor: 'rgb(229, 231, 224)',
+                                boxShadow: '0 4px 24px rgba(0, 0, 0, 0.15)'
+                            }}
                         >
-                            <div className="px-3 py-2.5 border-b border-black/10 flex items-center justify-between" style={{ backgroundColor: 'rgba(0,0,0,0.03)' }}>
-                                <span className="text-[11px] font-bold text-primary uppercase tracking-wider flex items-center gap-2">
-                                    <TableOfContents className="size-3.5" />
+                            <div className="px-2.5 py-1.5 border-b border-black/5 flex items-center justify-between" style={{ backgroundColor: 'rgba(0,0,0,0.02)' }}>
+                                <span className="text-[10px] font-bold text-secondary uppercase tracking-widest flex items-center gap-2">
+                                    <TableOfContents className="size-3" />
                                     contents
                                 </span>
                                 <button
                                     onClick={() => setShowTOC(false)}
-                                    className="text-secondary hover:text-primary p-1 rounded-md hover:bg-black/5 transition-colors"
+                                    className="text-tertiary hover:text-primary p-0.5 rounded hover:bg-black/5 transition-colors"
                                 >
-                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                                 </button>
                             </div>
                             <div className="flex-1 overflow-y-auto p-2 scrollbar-hide">
@@ -239,12 +246,12 @@ export default function BlogWindow({ onClose, zIndex, onFocus }) {
                                             <a
                                                 key={i}
                                                 href={`#${heading.id}`}
-                                                className={`text-[14px] py-2.5 px-4 transition-all flex items-center group ${heading.level === 2
+                                                className={`text-[13px] py-2 px-3 transition-all flex items-center group rounded-md mx-1 mb-0.5 ${heading.level === 2
                                                     ? 'font-bold text-primary hover:bg-black/5'
-                                                    : 'text-secondary pl-8 text-[13px] hover:text-primary hover:bg-black/5'}`}
+                                                    : 'text-secondary pl-6 text-[12px] hover:text-primary hover:bg-black/5 IndentedText'}`}
                                                 onClick={() => setShowTOC(false)}
                                             >
-                                                <div className={`size-1.5 rounded-full mr-3 shrink-0 ${heading.level === 2 ? 'bg-[#254b85]' : 'bg-black/10 group-hover:bg-black/20'}`} />
+                                                <div className={`size-1 rounded-full mr-2.5 shrink-0 ${heading.level === 2 ? 'bg-[#254b85]' : 'bg-black/10 group-hover:bg-black/20'}`} />
                                                 <span className="line-clamp-1">{heading.text}</span>
                                             </a>
                                         ))

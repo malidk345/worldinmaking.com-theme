@@ -12,7 +12,11 @@ const iconMap = {
     '/write-for-wim': Icons.WriteForWim,
     '/instagram': Icons.Instagram,
     '/x': Icons.X,
-    '/login': Icons.AccessControl
+    '/login': Icons.AccessControl,
+    '/admin': Icons.Allapps,
+    '/profile': Icons.User,
+    '/explore': Icons.Search,
+    '/settings': Icons.AccessControl
 };
 
 /**
@@ -21,10 +25,19 @@ const iconMap = {
  * @returns {React.ComponentType} - The icon component
  */
 export const getIconByPath = (path) => {
-    if (path.startsWith('/post/')) {
+    if (!path) return Icons.Home;
+
+    // Strip query parameters and trailing slashes for matching
+    let cleanPath = path.split('?')[0];
+    if (cleanPath !== '/' && cleanPath.endsWith('/')) {
+        cleanPath = cleanPath.slice(0, -1);
+    }
+
+    if (cleanPath === '/post') {
         return DocumentIcon;
     }
-    return iconMap[path] || Icons.Home; // Default to Home if no match
+
+    return iconMap[cleanPath] || Icons.Home; // Default to Home if no match
 };
 
 export { Icons, DocumentIcon };
