@@ -318,7 +318,7 @@ export default function BlogWindow({ onClose, zIndex, onFocus }) {
                                     h3: ({ node, ...props }) => <h3 className="mt-6 mb-3 scroll-mt-24" style={{ fontSize: '16.5px', lineHeight: '30.8px', fontWeight: 700, color: 'rgb(0, 0, 0)' }} {...props} />,
                                     h4: ({ node, ...props }) => <h4 className="mt-4 mb-2 scroll-mt-24" style={{ fontWeight: 600, color: 'rgb(0, 0, 0)' }} {...props} />,
                                     p: ({ node, ...props }) => <p className="mb-4" style={{ fontSize: '15.4px', lineHeight: '23.1px', color: 'rgb(0, 0, 0)' }} {...props} />,
-                                    a: ({ node, ...props }) => <a className="text-[#254b85] no-underline font-medium border-bottom border-transparent hover:border-[#1a3660] hover:text-[#1a3660] transition-none cursor-pointer" style={{ borderBottom: '1px solid transparent' }} onMouseEnter={e => e.currentTarget.style.borderBottomColor = '#1a3660'} onMouseLeave={e => e.currentTarget.style.borderBottomColor = 'transparent'} {...props} />,
+                                    a: ({ node, ...props }) => <a {...props} />,
                                     ul: ({ node, ...props }) => <ul className="list-disc list-inside mb-4 space-y-1" style={{ fontSize: '15.4px', lineHeight: '23.1px', color: 'rgb(0, 0, 0)' }} {...props} />,
                                     ol: ({ node, ...props }) => <ol className="list-decimal list-inside mb-4 space-y-1" style={{ fontSize: '15.4px', lineHeight: '23.1px', color: 'rgb(0, 0, 0)' }} {...props} />,
                                     li: ({ node, ...props }) => <li style={{ fontSize: '15.4px', lineHeight: '23.1px', color: 'rgb(0, 0, 0)' }} {...props} />,

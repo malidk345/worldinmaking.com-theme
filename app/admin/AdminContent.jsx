@@ -197,49 +197,51 @@ export default function AdminPage() {
         <div className="flex-1 flex flex-col h-full overflow-hidden">
             <DashboardHeader />
             <PageWindow id="admin-window" title="admin dashboard" onClose={handleClose}>
-                <main className="flex-1 flex overflow-hidden bg-bg-3000 h-full">
-                    {/* Sidebar */}
-                    <div className="w-56 bg-white border-r border-black/5 p-4 flex flex-col gap-2 shrink-0">
-                        <div className="mb-4 px-2">
+                <main className="flex-1 flex flex-col md:flex-row overflow-hidden bg-bg-3000 h-full">
+                    {/* Sidebar / Top Nav on Mobile */}
+                    <div className="w-full md:w-56 bg-white border-b md:border-b-0 md:border-r border-black/5 p-3 md:p-4 flex flex-row md:flex-col gap-2 shrink-0 overflow-x-auto md:overflow-y-auto scrollbar-hide">
+                        <div className="hidden md:block mb-4 px-2">
                             <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider">dashboard</h2>
                         </div>
 
-                        <button
-                            onClick={() => { setEditingId(null); setTab('create'); }}
-                            className={`text-left px-3 py-2.5 rounded-md text-sm font-bold transition-all flex items-center justify-between ${tab === 'create'
-                                ? 'bg-gray-900 text-white shadow-md'
-                                : 'text-gray-600 hover:bg-gray-100'
-                                }`}
-                        >
-                            <span>{editingId ? 'edit post' : 'write new'}</span>
-                            {tab === 'create' && <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
-                        </button>
+                        <div className="flex flex-row md:flex-col gap-2 min-w-max md:min-w-0">
+                            <button
+                                onClick={() => { setEditingId(null); setTab('create'); }}
+                                className={`px-3 py-2 md:py-2.5 rounded-md text-[11px] md:text-sm font-bold transition-all flex items-center gap-2 md:justify-between whitespace-nowrap ${tab === 'create'
+                                    ? 'bg-gray-900 text-white shadow-md'
+                                    : 'text-gray-600 hover:bg-gray-100'
+                                    }`}
+                            >
+                                <span>{editingId ? 'edit post' : 'write new'}</span>
+                                {tab === 'create' && <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
+                            </button>
 
-                        <button
-                            onClick={() => setTab('posts')}
-                            className={`text-left px-3 py-2.5 rounded-md text-sm font-bold transition-all flex items-center justify-between ${tab === 'posts'
-                                ? 'bg-gray-900 text-white shadow-md'
-                                : 'text-gray-600 hover:bg-gray-100'
-                                }`}
-                        >
-                            <span>manage posts</span>
-                            {posts.length > 0 && <span className="text-xs opacity-60">{posts.length}</span>}
-                        </button>
+                            <button
+                                onClick={() => setTab('posts')}
+                                className={`px-3 py-2 md:py-2.5 rounded-md text-[11px] md:text-sm font-bold transition-all flex items-center gap-2 md:justify-between whitespace-nowrap ${tab === 'posts'
+                                    ? 'bg-gray-900 text-white shadow-md'
+                                    : 'text-gray-600 hover:bg-gray-100'
+                                    }`}
+                            >
+                                <span>manage posts</span>
+                                {posts.length > 0 && <span className="text-[10px] md:text-xs opacity-60">{posts.length}</span>}
+                            </button>
 
-                        <button
-                            onClick={() => setTab('comments')}
-                            className={`text-left px-3 py-2.5 rounded-md text-sm font-bold transition-all flex items-center justify-between ${tab === 'comments'
-                                ? 'bg-gray-900 text-white shadow-md'
-                                : 'text-gray-600 hover:bg-gray-100'
-                                }`}
-                        >
-                            <span>comments</span>
-                            {comments.length > 0 && <span className="text-xs opacity-60">{comments.length}</span>}
-                        </button>
+                            <button
+                                onClick={() => setTab('comments')}
+                                className={`px-3 py-2 md:py-2.5 rounded-md text-[11px] md:text-sm font-bold transition-all flex items-center gap-2 md:justify-between whitespace-nowrap ${tab === 'comments'
+                                    ? 'bg-gray-900 text-white shadow-md'
+                                    : 'text-gray-600 hover:bg-gray-100'
+                                    }`}
+                            >
+                                <span>comments</span>
+                                {comments.length > 0 && <span className="text-[10px] md:text-xs opacity-60">{comments.length}</span>}
+                            </button>
+                        </div>
                     </div>
 
                     {/* Content Area */}
-                    <div className="flex-1 overflow-y-auto p-8">
+                    <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
                         {/* CREATE / EDIT POST TAB */}
                         {tab === 'create' && (
                             <motion.div
@@ -388,18 +390,18 @@ export default function AdminPage() {
                                                     </div>
                                                 </div>
 
-                                                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <div className="flex items-center gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity ml-auto">
                                                     <button
                                                         onClick={() => handleEditPost(post)}
-                                                        className="p-2 text-gray-500 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
+                                                        className="p-1.5 md:p-2 text-gray-500 hover:text-black hover:bg-gray-100 rounded-lg transition-colors border border-black/5 md:border-0"
                                                     >
-                                                        <span className="text-xs font-bold">edit</span>
+                                                        <span className="text-[10px] md:text-xs font-bold uppercase">edit</span>
                                                     </button>
                                                     <button
                                                         onClick={() => handleDeletePost(post.id)}
-                                                        className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                        className="p-1.5 md:p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-red-100 md:border-0"
                                                     >
-                                                        <span className="text-xs font-bold">del</span>
+                                                        <span className="text-[10px] md:text-xs font-bold uppercase">del</span>
                                                     </button>
                                                 </div>
                                             </div>
@@ -424,20 +426,20 @@ export default function AdminPage() {
                                     <div className="space-y-3">
                                         {comments.length === 0 && <div className="text-center text-gray-400 text-sm py-12">no comments found</div>}
                                         {comments.map(comment => (
-                                            <div key={comment.id} className="p-4 bg-white rounded-md border-[1.5px] border-gray-200 flex gap-4 hover:border-gray-300 transition-all">
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <span className="font-bold text-sm bg-gray-100 px-2 py-0.5 rounded-md">{comment.profiles?.username || 'Anon'}</span>
-                                                        <span className="text-xs text-gray-400">on <span className="text-black font-medium">{comment.posts?.title || 'Unknown Post'}</span></span>
+                                            <div key={comment.id} className="p-3 md:p-4 bg-white rounded-md border-[1.5px] border-gray-200 flex flex-col sm:flex-row gap-3 sm:gap-4 hover:border-gray-300 transition-all">
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                                                        <span className="font-bold text-xs md:sm bg-gray-100 px-2 py-0.5 rounded-md truncate max-w-[100px]">{comment.profiles?.username || 'Anon'}</span>
+                                                        <span className="text-[10px] md:text-xs text-gray-400">on <span className="text-black font-medium line-clamp-1">{comment.posts?.title || 'Unknown Post'}</span></span>
                                                     </div>
-                                                    <p className="text-sm text-gray-600 mt-2 pl-1 border-l-2 border-gray-200">{comment.content}</p>
-                                                    <span className="text-[10px] text-gray-400 mt-2 block">{new Date(comment.created_at).toLocaleString()}</span>
+                                                    <p className="text-xs md:text-sm text-gray-600 mt-2 pl-2 border-l-2 border-gray-200">{comment.content}</p>
+                                                    <span className="text-[9px] md:text-[10px] text-gray-400 mt-2 block">{new Date(comment.created_at).toLocaleString()}</span>
                                                 </div>
                                                 <button
                                                     onClick={() => handleDeleteComment(comment.id)}
-                                                    className="px-3 py-1.5 h-fit bg-red-50 text-red-500 hover:bg-red-100 rounded-lg text-xs font-bold transition-colors"
+                                                    className="w-full sm:w-auto px-3 py-1.5 h-fit bg-red-50 text-red-500 hover:bg-red-100 rounded-lg text-[10px] md:text-xs font-bold transition-colors border border-red-100"
                                                 >
-                                                    delete
+                                                    DELETE
                                                 </button>
                                             </div>
                                         ))}

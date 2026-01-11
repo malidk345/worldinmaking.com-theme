@@ -80,6 +80,11 @@ const Toolbar = ({ mode, setMode, onAction }) => {
                     action="showLinkModal"
                     title="Insert Link"
                 />
+                <ToolBtn
+                    icon={<svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>}
+                    action="showImageModal"
+                    title="Insert Image"
+                />
             </div>
         </div>
     );
@@ -124,7 +129,9 @@ export default function RichTextEditor({ content, onChange, placeholder = "Write
 
         if (type === 'showLinkModal') {
             saveSelection();
-            setModal({ type: 'link', url: '' });
+            const sel = window.getSelection();
+            const selectedText = sel ? sel.toString() : '';
+            setModal({ type: 'link', url: '', label: selectedText });
             return;
         }
         if (type === 'showImageModal') {
@@ -158,7 +165,11 @@ export default function RichTextEditor({ content, onChange, placeholder = "Write
 
         setTimeout(() => {
             if (modal.type === 'link') {
-                document.execCommand('createLink', false, modal.url);
+                if (modal.label && modal.label !== window.getSelection().toString()) {
+                    document.execCommand('insertHTML', false, `<a href="${modal.url}">${modal.label}</a>`);
+                } else {
+                    document.execCommand('createLink', false, modal.url);
+                }
             } else {
                 document.execCommand('insertImage', false, modal.url);
             }
@@ -234,6 +245,16 @@ export default function RichTextEditor({ content, onChange, placeholder = "Write
                             onChange={(e) => setModal({ ...modal, url: e.target.value })}
                             onKeyDown={(e) => e.key === 'Enter' && submitModal()}
                         />
+                        {modal.type === 'link' && (
+                            <input
+                                type="text"
+                                placeholder="Display text (optional)"
+                                className="w-full bg-white border border-black/20 rounded px-3 py-2 text-sm outline-none focus:border-primary transition-colors mb-3"
+                                value={modal.label}
+                                onChange={(e) => setModal({ ...modal, label: e.target.value })}
+                                onKeyDown={(e) => e.key === 'Enter' && submitModal()}
+                            />
+                        )}
                         <div className="flex gap-2">
                             <button
                                 type="button"
@@ -289,13 +310,7 @@ export default function RichTextEditor({ content, onChange, placeholder = "Write
                     margin: 0.75rem 0;
                     overflow-x: auto;
                 }
-                .prose-editor img {
-                    max-width: 100%;
-                    border-radius: 0.375rem;
-                    border: 1px solid rgba(0,0,0,0.15);
-                    margin: 0.75rem 0;
-                }
-                /* PostHog Lemon Style Links - Handled globally in globals.css */
+                /* PostHog Lemon Style Links & Images - Handled globally in globals.css */
                 [contenteditable]:empty:before {
                     content: attr(data-placeholder);
                     color: var(--text-secondary);

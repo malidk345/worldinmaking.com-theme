@@ -4313,28 +4313,63 @@
   color: #0f2140;
 }
 
-/* Global Prose Link Style */
+/* Global Prose Link Style - Compact Chip/Badge */
 .prose-content a,
 .prose-editor a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   color: var(--brand-navy);
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
+  padding: 0px 6px;
+  margin: 0 2px;
+  background: rgba(37, 75, 133, 0.05);
+  border: 1px solid rgba(37, 75, 133, 0.1);
+  border-radius: 4px;
+  transition: all 0.1s ease-in-out;
   cursor: pointer;
-  transition: none;
-  padding: 0;
-  background: none;
-  border-bottom: 1px solid transparent;
+  vertical-align: baseline;
+  line-height: inherit;
+  font-size: 0.95em;
+}
+
+.prose-content a::before,
+.prose-editor a::before {
+  content: "";
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23254b85' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71'/%3E%3Cpath d='M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  opacity: 0.7;
 }
 
 .prose-content a:hover,
 .prose-editor a:hover {
+  background: rgba(37, 75, 133, 0.12);
+  border-color: var(--brand-navy);
   color: #1a3660;
-  border-bottom-color: currentColor;
+  transform: translateY(-0.5px);
 }
 
 .prose-content a:active,
 .prose-editor a:active {
-  color: #0f2140;
+  background: rgba(37, 75, 133, 0.2);
+  transform: translateY(0);
+}
+
+/* Global Prose Image Style */
+.prose-content img,
+.prose-editor img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-primary);
+  margin: 1.5rem auto;
+  display: block;
+  box-shadow: var(--drop-shadow-md);
 }
 
 .Link:disabled {
