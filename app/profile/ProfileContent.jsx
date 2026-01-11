@@ -320,18 +320,6 @@ export default function ProfilePage() {
                 </div>
             )}
 
-            <style jsx>{`
-                .prose-content b, .prose-content strong { font-weight: 700; }
-                .prose-content i, .prose-content em { font-style: italic; }
-                .prose-content blockquote {
-                    border-left: 3px solid rgba(0,0,0,0.15);
-                    padding-left: 0.75rem;
-                    margin: 0.5rem 0;
-                    font-style: italic;
-                }
-                .prose-content ul { list-style-type: disc; padding-left: 1.25rem; }
-                .prose-content ol { list-style-type: decimal; padding-left: 1.25rem; }
-            `}</style>
         </div>
     );
 }

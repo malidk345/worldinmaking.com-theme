@@ -92,9 +92,10 @@ export default function HomeWindow({ onClose, zIndex, onFocus }) {
                             animate={{ x: 0 }}
                             exit={{ x: '-100%' }}
                             transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-                            className="absolute left-2 top-2 bottom-2 w-[80%] z-60 bg-white shadow-2xl overflow-hidden flex flex-col border border-black/15 rounded-lg"
+                            className="absolute left-2 top-2 bottom-2 w-[80%] z-60 shadow-2xl overflow-hidden flex flex-col border border-black/10 rounded-lg"
+                            style={{ backgroundColor: 'rgb(229, 231, 224)' }}
                         >
-                            <div className="px-3 py-2.5 border-b border-black/15 flex items-center justify-between bg-[#f9fafb]">
+                            <div className="px-3 py-2.5 border-b border-black/10 flex items-center justify-between" style={{ backgroundColor: 'rgba(0,0,0,0.03)' }}>
                                 <span className="text-[11px] font-bold text-primary uppercase tracking-wider flex items-center gap-2">
                                     <Layout className="size-3.5 text-secondary" />
                                     categories
@@ -140,9 +141,10 @@ export default function HomeWindow({ onClose, zIndex, onFocus }) {
                             animate={{ x: 0 }}
                             exit={{ x: '-100%' }}
                             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                            className="absolute left-2 top-2 bottom-2 w-1/2 z-60 bg-white shadow-2xl overflow-hidden flex flex-col border border-black/15 rounded-lg"
+                            className="absolute left-2 top-2 bottom-2 w-1/2 z-60 shadow-2xl overflow-hidden flex flex-col border border-black/10 rounded-lg"
+                            style={{ backgroundColor: 'rgb(229, 231, 224)' }}
                         >
-                            <div className="px-3 py-2 border-b border-black/15 flex items-center justify-between bg-[#f9fafb]">
+                            <div className="px-3 py-2 border-b border-black/10 flex items-center justify-between" style={{ backgroundColor: 'rgba(0,0,0,0.03)' }}>
                                 <span className="text-[11px] font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
                                     <svg className="w-3.5 h-3.5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
                                     filter & sort

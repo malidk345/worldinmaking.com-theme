@@ -18,8 +18,8 @@ const adaptPost = (p) => {
     const headings = [];
     const lines = rawContent.split('\n');
     lines.forEach(line => {
-        const h2Match = line.match(/^## (.+)$/);
-        const h3Match = line.match(/^### (.+)$/);
+        const h2Match = line.match(/^##\s?(.+)$/);
+        const h3Match = line.match(/^###\s?(.+)$/);
 
         if (h2Match) {
             const text = h2Match[1].trim();

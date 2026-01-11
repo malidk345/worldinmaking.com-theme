@@ -279,46 +279,6 @@ export default function RichTextEditor({ content, onChange, placeholder = "Write
                 </div>
             )}
 
-            <style jsx>{`
-                .prose-editor b, .prose-editor strong { font-weight: 700; }
-                .prose-editor i, .prose-editor em { font-style: italic; }
-                .prose-editor u { text-decoration: underline; }
-                .prose-editor s, .prose-editor strike { text-decoration: line-through; }
-                .prose-editor blockquote {
-                    border-left: 3px solid rgba(0,0,0,0.15);
-                    padding-left: 1rem;
-                    margin: 0.75rem 0;
-                    font-style: italic;
-                    color: var(--text-secondary);
-                }
-                .prose-editor ul {
-                    list-style-type: disc;
-                    padding-left: 1.5rem;
-                    margin: 0.75rem 0;
-                }
-                .prose-editor ol {
-                    list-style-type: decimal;
-                    padding-left: 1.5rem;
-                    margin: 0.75rem 0;
-                }
-                .prose-editor pre {
-                    background: #f3f4f6;
-                    padding: 0.75rem;
-                    border-radius: 0.375rem;
-                    font-family: ui-monospace, monospace;
-                    font-size: 0.85rem;
-                    margin: 0.75rem 0;
-                    overflow-x: auto;
-                }
-                /* PostHog Lemon Style Links & Images - Handled globally in globals.css */
-                [contenteditable]:empty:before {
-                    content: attr(data-placeholder);
-                    color: var(--text-secondary);
-                    opacity: 0.5;
-                    font-style: italic;
-                    pointer-events: none;
-                }
-            `}</style>
         </div>
     );
 }
