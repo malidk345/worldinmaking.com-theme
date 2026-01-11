@@ -18,7 +18,8 @@ const SearchIcon = () => (
 
 export default function ExplorePage() {
     const router = useRouter();
-    const { posts, loading } = usePosts();
+    // Fetch posts without full content (lite mode) for better performance
+    const { posts, loading } = usePosts({ fetchContent: false });
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [filteredPosts, setFilteredPosts] = useState([]);
