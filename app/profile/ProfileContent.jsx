@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import DashboardHeader from '../components/DashboardHeader';
 import PageWindow from '../components/PageWindow';
 import { useAuth } from '../contexts/AuthContext';
@@ -164,6 +165,17 @@ export default function ProfilePage({ zIndex, onFocus, onClose, isWindowMode = f
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
+                                    {profile?.role === 'admin' && (
+                                        <Link
+                                            href="/admin"
+                                            className="LemonButton LemonButton--primary LemonButton--small flex-1 sm:flex-none"
+                                        >
+                                            <span className="LemonButton__chrome gap-2 justify-center w-full sm:w-auto">
+                                                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>
+                                                Dashboard
+                                            </span>
+                                        </Link>
+                                    )}
                                     <button
                                         onClick={() => setIsEditing(!isEditing)}
                                         className="LemonButton LemonButton--secondary LemonButton--small flex-1 sm:flex-none"
