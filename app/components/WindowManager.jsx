@@ -32,16 +32,18 @@ export default function WindowManager() {
         }
     };
 
-    // Base z-index for windows
-    const BASE_Z = 100;
+    // Window z-index range: 10-80 (stays below sidebar z-[90] and header z-50 overlay)
+    // Header is z-50, Sidebar is z-[90-100], so windows must be 10-89
+    const BASE_Z = 10;
+    const MAX_Z = 80;
 
     return (
         <AnimatePresence>
             {windows.map((win, index) => {
                 if (win.isMinimized) return null;
 
-                // z-index based on position in array: later = higher
-                const zIndex = BASE_Z + index;
+                // z-index: 10 + index, capped at MAX_Z
+                const zIndex = Math.min(BASE_Z + index, MAX_Z);
 
                 const commonProps = {
                     key: win.id,

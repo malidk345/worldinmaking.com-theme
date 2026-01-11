@@ -67,7 +67,7 @@ export default function DashboardHeader({
     };
 
     return (
-        <div className="flex flex-col bg-primary sticky top-0 z-50">
+        <div className="flex flex-col bg-primary sticky top-0 z-[90]">
             {/* Tab Bar - Browser-like tabs */}
             <div
                 className="h-(--scene-layout-header-height) flex items-end w-full bg-surface-tertiary z-(--z-top-navigation) pr-1.5 relative"
