@@ -10,7 +10,7 @@ import RichTextEditor from '../components/RichTextEditor';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../contexts/ToastContext';
 
-export default function ProfilePage() {
+export default function ProfilePage({ zIndex, onFocus, onClose, isWindowMode = false }) {
     const router = useRouter();
     const { profile, user, loading: authLoading } = useAuth();
     const { addToast } = useToast();
@@ -33,7 +33,11 @@ export default function ProfilePage() {
     }, [profile]);
 
     const handleClose = () => {
-        router.push('/');
+        if (onClose) {
+            onClose();
+        } else {
+            router.push('/');
+        }
     };
 
     const handleSaveBio = async () => {
@@ -78,9 +82,9 @@ export default function ProfilePage() {
 
     if (authLoading) {
         return (
-            <div className="flex-1 flex flex-col h-full overflow-hidden">
-                <DashboardHeader />
-                <PageWindow id="profile-window" title="profile" onClose={handleClose}>
+            <div className={`flex-1 flex flex-col h-full overflow-hidden ${isWindowMode ? '' : 'absolute inset-0'}`}>
+                {!isWindowMode && <DashboardHeader />}
+                <PageWindow id="profile-window" title="profile" onClose={handleClose} zIndex={zIndex} onFocus={onFocus}>
                     <div className="flex-1 flex items-center justify-center bg-bg-3000 h-full">
                         <div className="animate-pulse text-secondary text-xs font-bold">Loading...</div>
                     </div>
@@ -91,9 +95,9 @@ export default function ProfilePage() {
 
     if (!user) {
         return (
-            <div className="flex-1 flex flex-col h-full overflow-hidden">
-                <DashboardHeader />
-                <PageWindow id="profile-window" title="profile" onClose={handleClose}>
+            <div className={`flex-1 flex flex-col h-full overflow-hidden ${isWindowMode ? '' : 'absolute inset-0'}`}>
+                {!isWindowMode && <DashboardHeader />}
+                <PageWindow id="profile-window" title="profile" onClose={handleClose} zIndex={zIndex} onFocus={onFocus}>
                     <div className="flex-1 flex items-center justify-center bg-bg-3000 h-full">
                         <div className="text-center p-8">
                             <h2 className="text-xl font-bold text-primary mb-2">Sign in required</h2>
@@ -103,7 +107,7 @@ export default function ProfilePage() {
                                 className="LemonButton LemonButton--primary LemonButton--small"
                             >
                                 <span className="LemonButton__chrome gap-2 mx-auto">
-                                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" x2="3" y1="12" y2="12" /></svg>
+                                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" x2="3" y y1="12" y2="12" /></svg>
                                     Sign In
                                 </span>
                             </button>
@@ -117,9 +121,9 @@ export default function ProfilePage() {
     const joinYear = profile?.created_at ? new Date(profile.created_at).getFullYear() : new Date().getFullYear();
 
     return (
-        <div className="flex-1 flex flex-col h-full overflow-hidden">
-            <DashboardHeader />
-            <PageWindow id="profile-window" title="profile" onClose={handleClose}>
+        <div className={`flex-1 flex flex-col h-full overflow-hidden ${isWindowMode ? '' : 'absolute inset-0'}`}>
+            {!isWindowMode && <DashboardHeader />}
+            <PageWindow id="profile-window" title="profile" onClose={handleClose} zIndex={zIndex} onFocus={onFocus}>
                 <div className="flex-1 overflow-y-auto bg-bg-3000 custom-scrollbar h-full" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
                     <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 md:py-8">
 

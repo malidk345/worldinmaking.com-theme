@@ -8,6 +8,7 @@ import DashboardHeader from '../components/DashboardHeader';
 import PageWindow from '../components/PageWindow';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useWindow } from '../contexts/WindowContext';
 
 // Icons
 const UserIcon = () => (
@@ -31,10 +32,18 @@ const MailIcon = () => (
 export default function LoginPage() {
     const router = useRouter();
     const { addToast } = useToast();
+    const { openWindow } = useWindow();
     const { signInWithEmail, user, profile, signOut, loading: authLoading } = useAuth();
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
     const [sent, setSent] = useState(false);
+
+    // Auto-open profile window on login
+    React.useEffect(() => {
+        if (user) {
+            openWindow('profile', { id: 'profile-window', title: 'profile' });
+        }
+    }, [user, openWindow]);
 
     const handleClose = () => {
         router.push('/');
@@ -106,7 +115,7 @@ export default function LoginPage() {
 
                             <div className="flex flex-col gap-3 w-full mt-4">
                                 <Link
-                                    href="/settings"
+                                    href="/profile"
                                     className="w-full px-4 py-2 text-gray-600 hover:text-gray-900 border-[1.5px] border-transparent hover:border-gray-200 rounded-md text-sm font-medium transition-all text-center"
                                 >
                                     edit profile

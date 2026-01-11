@@ -115,6 +115,8 @@ MenuItem.displayName = 'MenuItem';
 const Sidebar = () => {
     const { isMobileOpen, closeMobileSidebar, isSidebarOpen, closeSidebar } = useSidebar();
     const { toggleTheme, isDark } = useTheme();
+    const { user, profile } = useAuth();
+    const { openWindow } = useWindow();
     const pathname = usePathname();
 
     // Memoize active link check
@@ -129,12 +131,27 @@ const Sidebar = () => {
         closeSidebar();
     }, [closeMobileSidebar, closeSidebar]);
 
-    const handleLinkClick = useCallback(() => {
+    const handleLinkClick = useCallback((e, path) => {
         closeMobileSidebar();
-    }, [closeMobileSidebar]);
+
+        // Special case for profile window
+        if (path === '/profile' && user) {
+            e.preventDefault();
+            openWindow('profile', { id: 'profile-window', title: 'profile' });
+            return;
+        }
+
+        if (path === '/') {
+            e.preventDefault();
+            openWindow('home', { id: 'home-window', title: 'home' });
+            return;
+        }
+    }, [closeMobileSidebar, user, openWindow]);
 
     // Dynamic year
     const currentYear = useMemo(() => new Date().getFullYear(), []);
+
+    const userPath = user ? '/profile' : '/login';
 
     return (
         <>
@@ -172,6 +189,7 @@ const Sidebar = () => {
                             className="p-1 rounded hover:bg-black/5 flex items-center justify-center transition-colors"
                             type="button"
                             aria-label="World in Making home"
+                            onClick={(e) => handleLinkClick(e, '/')}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-black" aria-hidden="true">
                                 <path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM2.25 12c0-4.97 3.74-9.063 8.63-9.712-.132.846-.132 2.067-.027 2.146.41.311.666 1.03.58 1.458a2.59 2.59 0 0 1-.36.75 3.38 3.38 0 0 0-.25 1.708 7.23 7.23 0 0 0 2.808 4.796c.277.262.336.568.167.729-.65.617-.507 1.25-.098 1.52.417.275.467 1.25.107 1.777a.64.64 0 0 1-.166.155c-1.127.75-3.037.49-3.793.425a8.3 8.3 0 0 1-2.91-1.096A9.708 9.708 0 0 1 2.25 12Zm17.84-4.258a1.59 1.59 0 0 0-.58-.553 1.9 1.9 0 0 0-1.874.14 5.3 5.3 0 0 0-.398.243c-.497.33-.878.567-1.428.694-.52.12-.53.5-.02.593.18.033.344.06.494.086 1.15.2 2.052.88 2.13 1.638.077.74-.53 1.674-1.298 2.046a.376.376 0 0 0-.206.314c-.033.456.28.093.578.852.298.76.107 1.603.018 1.956-.514 2.016-1.503 2.807-2.618 3.366A9.76 9.76 0 0 0 21.75 12a9.72 9.72 0 0 0-1.66-5.258Z" clipRule="evenodd" />
@@ -180,7 +198,6 @@ const Sidebar = () => {
                     </div>
 
                     {/* Center Label */}
-                    {/* Center Label - Manual styling to bypass LemonButton global CSS overrides */}
                     <div
                         className="flex items-center justify-center bg-[#254b85] rounded-md shadow-[0_1px_0_rgba(0,0,0,0.2)]"
                         style={{ height: '20px', minHeight: '20px', borderBottom: '1px solid #1a355e', padding: '0 10px' }}
@@ -205,7 +222,7 @@ const Sidebar = () => {
 
                 {/* Scrollable content */}
                 <div className="flex flex-col flex-1 min-h-0">
-                    <div className="flex-1 Scrollable--vertical">
+                    <div className="flex-1 Scrollable--vertical overflow-y-auto">
                         {/* Top items */}
                         <div className="px-1 flex flex-col gap-px" role="menu">
                             {MENU_ITEMS.top.map((item, i) => (
@@ -213,7 +230,7 @@ const Sidebar = () => {
                                     key={`top-${i}`}
                                     item={item}
                                     isActive={isLinkActive(item.path)}
-                                    onClick={handleLinkClick}
+                                    onClick={(e) => handleLinkClick(e, item.path)}
                                     isThemeToggle={item.isThemeToggle}
                                     isDark={isDark}
                                     onThemeToggle={toggleTheme}
@@ -231,7 +248,7 @@ const Sidebar = () => {
                                     key={`links-${i}`}
                                     item={item}
                                     isActive={isLinkActive(item.path)}
-                                    onClick={handleLinkClick}
+                                    onClick={(e) => handleLinkClick(e, item.path)}
                                 />
                             ))}
                         </div>
@@ -240,18 +257,24 @@ const Sidebar = () => {
 
                 {/* Bottom section */}
                 <div className="border-b border-primary h-px" aria-hidden="true" />
-                <div className="p-1 flex flex-col gap-px" style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }}>
+                <div className="p-1 flex flex-col gap-px">
                     <Link
-                        className={`text-sm gap-2.5 rounded justify-start shrink-0 text-left flex items-center px-2 py-2 hover:bg-black/5 transition-colors group ${isLinkActive('/login') ? 'bg-black/5' : ''}`}
-                        href="/login"
-                        title="Login"
-                        onClick={handleLinkClick}
-                        aria-current={isLinkActive('/login') ? 'page' : undefined}
+                        className={`text-sm gap-2.5 rounded justify-start shrink-0 text-left flex items-center px-2 py-2 hover:bg-black/5 transition-colors group ${isLinkActive(userPath) ? 'bg-black/5' : ''}`}
+                        href={userPath}
+                        title={user ? 'Profile' : 'Login'}
+                        onClick={(e) => handleLinkClick(e, userPath)}
+                        aria-current={isLinkActive(userPath) ? 'page' : undefined}
                     >
                         <div className="flex w-6 h-6 items-center justify-center rounded-full bg-black text-white shrink-0 overflow-hidden">
-                            <Icons.User className="size-3.5" />
+                            {user && profile?.avatar_url ? (
+                                <img src={profile.avatar_url} className="w-full h-full object-cover" alt="" />
+                            ) : (
+                                <Icons.User className="size-3.5" />
+                            )}
                         </div>
-                        <span className="font-normal text-black">Login</span>
+                        <span className="font-normal text-black truncate flex-1">
+                            {user ? (profile?.username || 'Profile') : 'Login'}
+                        </span>
                     </Link>
 
                     <div className="px-2 py-4 mt-auto">

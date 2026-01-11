@@ -7,6 +7,7 @@ import { useWindow } from '../contexts/WindowContext';
 import HomeWindow from './HomeWindow';
 import BlogWindow from './BlogWindow';
 import AuthorProfileWindow from './AuthorProfileWindow';
+import ProfileContent from '../profile/ProfileContent';
 
 /**
  * WindowManager
@@ -63,6 +64,13 @@ export default function WindowManager() {
                             <AuthorProfileWindow
                                 {...commonProps}
                                 username={win.username}
+                            />
+                        );
+                    case 'profile':
+                        return (
+                            <ProfileContent
+                                {...commonProps}
+                                isWindowMode={true}
                             />
                         );
                     default:
