@@ -15,19 +15,22 @@ const adaptPost = (p) => {
     const rawContent = p.content || '';
 
     // Extract headings from Markdown for TOC (## syntax)
+    // Only process if content exists and is not empty
     const headings = [];
-    const lines = rawContent.split('\n');
-    lines.forEach(line => {
-        // Match 2 or 3 hashes at the start of a line
-        const match = line.match(/^\s*(#{2,3})\s+(.+)$/);
+    if (rawContent) {
+        const lines = rawContent.split('\n');
+        lines.forEach(line => {
+            // Match 2 or 3 hashes at the start of a line
+            const match = line.match(/^\s*(#{2,3})\s+(.+)$/);
 
-        if (match) {
-            const level = match[1].length;
-            const text = match[2].trim();
-            const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-            headings.push({ id, text, level });
-        }
-    });
+            if (match) {
+                const level = match[1].length;
+                const text = match[2].trim();
+                const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+                headings.push({ id, text, level });
+            }
+        });
+    }
 
     return {
         id: p.id,
@@ -41,7 +44,7 @@ const adaptPost = (p) => {
         author: p.author || 'Unknown',
         authorName: p.author || 'Unknown',
         authorAvatar: p.author_avatar || undefined,
-        wordCount: rawContent.split(/\s+/).filter(w => w.length > 0).length,
+        wordCount: rawContent ? rawContent.split(/\s+/).filter(w => w.length > 0).length : 0,
         headings: headings,
         comments: [],
         image: p.image_url || null,
@@ -49,19 +52,28 @@ const adaptPost = (p) => {
     };
 };
 
-export const usePosts = () => {
+export const usePosts = (options = { fetchContent: true }) => {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    // Destructure primitive to ensure stable dependency
+    const fetchContent = options.fetchContent;
 
     const fetchPosts = useCallback(async () => {
         try {
             setLoading(true);
             setError(null);
 
-            const { data, error: fetchError } = await supabase
-                .from('posts')
-                .select('*')
+            let query = supabase.from('posts');
+
+            if (fetchContent) {
+                query = query.select('*');
+            } else {
+                query = query.select('id, slug, title, created_at, category, excerpt, author, author_avatar, image_url, published');
+            }
+
+            const { data, error: fetchError } = await query
                 .eq('published', true)
                 .order('created_at', { ascending: false });
 
@@ -77,7 +89,7 @@ export const usePosts = () => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [fetchContent]);
 
     useEffect(() => {
         fetchPosts();
