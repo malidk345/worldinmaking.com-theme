@@ -164,7 +164,6 @@ export default function AuthorProfileWindow({ username, onClose, zIndex, onFocus
                 .prose-content b, .prose-content strong { font-weight: 700; }
                 .prose-content i, .prose-content em { font-style: italic; }
                 .prose-content ul { list-style-type: disc; padding-left: 1.25rem; }
-                .prose-content a { color: #254b85; text-decoration: underline; }
             `}</style>
         </Window>
     );

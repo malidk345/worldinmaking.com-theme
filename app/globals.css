@@ -84,6 +84,7 @@
     --brand-orange: hsl(19deg 97% 49%);
     --brand-yellow: hsl(43deg 96% 56%);
     --brand-blue: hsl(228deg 100% 56%);
+    --brand-navy: #254b85;
 
     /* Primary Accent */
     --primary-3000: #f7a503;
@@ -4293,20 +4294,47 @@
 .Link {
   background: none;
   border: none;
-  color: var(--color-accent);
+  color: var(--brand-navy);
   cursor: pointer;
   line-height: inherit;
   padding: 0;
   text-align: left;
-  transition: none
+  transition: none;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
 }
 
 .Link:not(:disabled):hover {
-  color: var(--color-accent-hover)
+  color: #1a3660;
+  border-bottom-color: currentColor;
 }
 
 .Link:not(:disabled):active {
-  color: var(--color-accent-active)
+  color: #0f2140;
+}
+
+/* Global Prose Link Style */
+.prose-content a,
+.prose-editor a {
+  color: var(--brand-navy);
+  text-decoration: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: none;
+  padding: 0;
+  background: none;
+  border-bottom: 1px solid transparent;
+}
+
+.prose-content a:hover,
+.prose-editor a:hover {
+  color: #1a3660;
+  border-bottom-color: currentColor;
+}
+
+.prose-content a:active,
+.prose-editor a:active {
+  color: #0f2140;
 }
 
 .Link:disabled {

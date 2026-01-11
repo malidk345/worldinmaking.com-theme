@@ -295,14 +295,7 @@ export default function RichTextEditor({ content, onChange, placeholder = "Write
                     border: 1px solid rgba(0,0,0,0.15);
                     margin: 0.75rem 0;
                 }
-                .prose-editor a {
-                    color: #254b85;
-                    text-decoration: underline;
-                    font-weight: 500;
-                }
-                .prose-editor a:hover {
-                    color: #335d9d;
-                }
+                /* PostHog Lemon Style Links - Handled globally in globals.css */
                 [contenteditable]:empty:before {
                     content: attr(data-placeholder);
                     color: var(--text-secondary);

@@ -331,7 +331,6 @@ export default function ProfilePage() {
                 }
                 .prose-content ul { list-style-type: disc; padding-left: 1.25rem; }
                 .prose-content ol { list-style-type: decimal; padding-left: 1.25rem; }
-                .prose-content a { color: #254b85; text-decoration: underline; }
             `}</style>
         </div>
     );
