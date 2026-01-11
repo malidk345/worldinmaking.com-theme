@@ -18,17 +18,14 @@ const adaptPost = (p) => {
     const headings = [];
     const lines = rawContent.split('\n');
     lines.forEach(line => {
-        const h2Match = line.match(/^\s*##\s+(.+)$/);
-        const h3Match = line.match(/^\s*###\s+(.+)$/);
+        // Match 2 or 3 hashes at the start of a line
+        const match = line.match(/^\s*(#{2,3})\s+(.+)$/);
 
-        if (h2Match) {
-            const text = h2Match[1].trim();
+        if (match) {
+            const level = match[1].length;
+            const text = match[2].trim();
             const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-            headings.push({ id, text, level: 2 });
-        } else if (h3Match) {
-            const text = h3Match[1].trim();
-            const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-            headings.push({ id, text, level: 3 });
+            headings.push({ id, text, level });
         }
     });
 

@@ -165,7 +165,7 @@ export default function BlogWindow({ onClose, zIndex, onFocus }) {
                             animate={{ x: 0 }}
                             exit={{ x: '-100%' }}
                             transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-                            className="absolute left-2 top-2 bottom-2 w-72 z-40 overflow-hidden flex flex-col border border-(--border-primary) rounded-xl"
+                            className="absolute left-2 top-2 bottom-2 w-[60%] max-w-[320px] z-40 overflow-hidden flex flex-col border border-(--border-primary) rounded-xl"
                             style={{
                                 backgroundColor: 'rgb(229, 231, 224)',
                                 boxShadow: '0 4px 24px rgba(0, 0, 0, 0.15)'
@@ -221,7 +221,7 @@ export default function BlogWindow({ onClose, zIndex, onFocus }) {
                             animate={{ x: 0 }}
                             exit={{ x: '100%' }}
                             transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-                            className="absolute right-2 top-2 bottom-2 w-72 z-40 overflow-hidden flex flex-col border border-(--border-primary) rounded-xl"
+                            className="absolute right-2 top-2 bottom-2 w-[60%] max-w-[320px] z-40 overflow-hidden flex flex-col border border-(--border-primary) rounded-xl"
                             style={{
                                 backgroundColor: 'rgb(229, 231, 224)',
                                 boxShadow: '0 4px 24px rgba(0, 0, 0, 0.15)'
@@ -246,12 +246,12 @@ export default function BlogWindow({ onClose, zIndex, onFocus }) {
                                             <a
                                                 key={i}
                                                 href={`#${heading.id}`}
-                                                className={`text-[13px] py-2 px-3 transition-all flex items-center group rounded-md mx-1 mb-0.5 ${heading.level === 2
-                                                    ? 'font-bold text-primary hover:bg-black/5'
-                                                    : 'text-secondary pl-6 text-[12px] hover:text-primary hover:bg-black/5 IndentedText'}`}
+                                                className={`text-[13px] py-1.5 px-3 transition-all flex items-center group rounded-md mx-1 mb-0.5 ${heading.level === 3
+                                                    ? 'pl-7 text-[12px] text-secondary hover:text-primary hover:bg-black/5'
+                                                    : 'font-bold text-primary hover:bg-black/5'}`}
                                                 onClick={() => setShowTOC(false)}
                                             >
-                                                <div className={`size-1 rounded-full mr-2.5 shrink-0 ${heading.level === 2 ? 'bg-[#254b85]' : 'bg-black/10 group-hover:bg-black/20'}`} />
+                                                <div className={`rounded-full mr-2.5 shrink-0 ${heading.level === 3 ? 'size-1 bg-black/10 group-hover:bg-[#254b85]/40 ml-1' : 'size-1.5 bg-[#254b85]'}`} />
                                                 <span className="line-clamp-1">{heading.text}</span>
                                             </a>
                                         ))
