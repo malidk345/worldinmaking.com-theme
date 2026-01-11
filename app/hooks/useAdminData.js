@@ -9,6 +9,7 @@ export const useAdminData = () => {
     const { addToast } = useToast();
     const [posts, setPosts] = useState([]);
     const [comments, setComments] = useState([]);
+    const [communityPosts, setCommunityPosts] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
@@ -38,24 +39,64 @@ export const useAdminData = () => {
         }
     }, [addToast]);
 
-    const fetchComments = useCallback(async () => {
+    const fetchCommunityPosts = useCallback(async () => {
         try {
             setLoading(true);
             setError(null);
 
             const { data, error: fetchError } = await supabase
+                .from('community_posts')
+                .select(`
+                    *,
+                    profiles:author_id(username, avatar_url)
+                `)
+                .order('created_at', { ascending: false });
+
+            if (fetchError) {
+                logger.error('[useAdminData] fetchCommunityPosts error:', fetchError);
+                addToast('failed to fetch community posts', 'error');
+                setError(fetchError.message);
+            } else if (data) {
+                setCommunityPosts(data);
+            }
+        } catch (e) {
+            logger.error('[useAdminData] fetchCommunityPosts exception:', e);
+            addToast('failed to fetch community posts', 'error');
+            setError(e.message);
+        } finally {
+            setLoading(false);
+        }
+    }, [addToast]);
+
+    const fetchComments = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
+
+            // Fetch comments with basic profiles first to avoid complex join errors
+            const { data, error: fetchError } = await supabase
                 .from('comments')
                 .select(`
                     *,
-                    profiles (username, avatar_url),
-                    posts (title, slug)
+                    profiles:user_id(username, avatar_url),
+                    posts:post_id(title, slug)
                 `)
                 .order('created_at', { ascending: false });
 
             if (fetchError) {
                 logger.error('[useAdminData] fetchComments error:', fetchError);
-                addToast('failed to fetch comments', 'error');
-                setError(fetchError.message);
+                // Fallback attempt without posts relation if that's the issue
+                const { data: fallbackData, error: fallbackError } = await supabase
+                    .from('comments')
+                    .select('*, profiles:user_id(username, avatar_url)')
+                    .order('created_at', { ascending: false });
+
+                if (fallbackError) {
+                    addToast('failed to fetch comments', 'error');
+                    setError(fallbackError.message);
+                } else {
+                    setComments(fallbackData || []);
+                }
             } else if (data) {
                 setComments(data);
             }
@@ -87,6 +128,29 @@ export const useAdminData = () => {
         } catch (e) {
             logger.error('[useAdminData] deletePost exception:', e);
             addToast('failed to delete post', 'error');
+            return false;
+        }
+    }, [addToast]);
+
+    const deleteCommunityPost = useCallback(async (id) => {
+        try {
+            const { error: deleteError } = await supabase
+                .from('community_posts')
+                .delete()
+                .eq('id', id);
+
+            if (deleteError) {
+                logger.error('[useAdminData] deleteCommunityPost error:', deleteError);
+                addToast('failed to delete discussion', 'error');
+                return false;
+            }
+
+            addToast('discussion deleted', 'success');
+            setCommunityPosts(prev => prev.filter(p => p.id !== id));
+            return true;
+        } catch (e) {
+            logger.error('[useAdminData] deleteCommunityPost exception:', e);
+            addToast('failed to delete discussion', 'error');
             return false;
         }
     }, [addToast]);
@@ -169,15 +233,18 @@ export const useAdminData = () => {
     const result = useMemo(() => ({
         posts,
         comments,
+        communityPosts,
         loading,
         error,
         fetchPosts,
         fetchComments,
+        fetchCommunityPosts,
         deletePost,
         deleteComment,
+        deleteCommunityPost,
         createPost,
         updatePost
-    }), [posts, comments, loading, error, fetchPosts, fetchComments, deletePost, deleteComment, createPost, updatePost]);
+    }), [posts, comments, communityPosts, loading, error, fetchPosts, fetchComments, fetchCommunityPosts, deletePost, deleteComment, deleteCommunityPost, createPost, updatePost]);
 
     return result;
 };

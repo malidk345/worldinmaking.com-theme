@@ -7,6 +7,8 @@ import DashboardHeader from '../components/DashboardHeader';
 import PageWindow from '../components/PageWindow';
 import { useAuth } from '../contexts/AuthContext';
 import { useAdminData } from '../hooks/useAdminData';
+import RichTextEditor from '../components/RichTextEditor';
+import UserAvatar from '../components/UserAvatar';
 
 export default function AdminPage() {
     const router = useRouter();
@@ -17,11 +19,14 @@ export default function AdminPage() {
     const {
         posts,
         comments,
+        communityPosts,
         loading: dataLoading,
         fetchPosts,
         fetchComments,
+        fetchCommunityPosts,
         deletePost,
         deleteComment,
+        deleteCommunityPost,
         createPost,
         updatePost
     } = useAdminData();
@@ -58,7 +63,8 @@ export default function AdminPage() {
     useEffect(() => {
         if (tab === 'posts') fetchPosts();
         if (tab === 'comments') fetchComments();
-    }, [tab, fetchPosts, fetchComments]);
+        if (tab === 'community') fetchCommunityPosts();
+    }, [tab, fetchPosts, fetchComments, fetchCommunityPosts]);
 
     // Redirect if not admin
     useEffect(() => {
@@ -108,6 +114,11 @@ export default function AdminPage() {
     const handleDeleteComment = async (id) => {
         if (!confirm('Delete this comment?')) return;
         await deleteComment(id);
+    };
+
+    const handleDeleteCommunityPost = async (id) => {
+        if (!confirm('Delete this community post and all its replies?')) return;
+        await deleteCommunityPost(id);
     };
 
     const handleSavePost = async (e) => {
@@ -237,6 +248,17 @@ export default function AdminPage() {
                                 <span>comments</span>
                                 {comments.length > 0 && <span className="text-[10px] md:text-xs opacity-60">{comments.length}</span>}
                             </button>
+
+                            <button
+                                onClick={() => setTab('community')}
+                                className={`px-3 py-2 md:py-2.5 rounded-md text-[11px] md:text-sm font-bold transition-all flex items-center gap-2 md:justify-between whitespace-nowrap ${tab === 'community'
+                                    ? 'bg-gray-900 text-white shadow-md'
+                                    : 'text-gray-600 hover:bg-gray-100'
+                                    }`}
+                            >
+                                <span>community</span>
+                                {communityPosts.length > 0 && <span className="text-[10px] md:text-xs opacity-60">{communityPosts.length}</span>}
+                            </button>
                         </div>
                     </div>
 
@@ -324,12 +346,12 @@ export default function AdminPage() {
                                     <div className="space-y-1">
                                         <div className="flex justify-between items-end px-1">
                                             <label className="text-xs font-bold text-gray-500">Content</label>
-                                            <span className="text-[10px] text-gray-400">markdown supported</span>
+                                            <span className="text-[10px] text-gray-400">rich formatting enabled</span>
                                         </div>
-                                        <textarea
-                                            value={content} onChange={e => setContent(e.target.value)} rows={15}
-                                            className="w-full p-4 bg-white border border-gray-200 rounded-md outline-none focus:border-gray-400 transition-all font-mono text-sm leading-relaxed"
-                                            placeholder="write your story here..." required
+                                        <RichTextEditor
+                                            value={content}
+                                            onChange={setContent}
+                                            placeholder="write your story here..."
                                         />
                                     </div>
 
@@ -432,7 +454,7 @@ export default function AdminPage() {
                                                         <span className="font-bold text-xs md:sm bg-gray-100 px-2 py-0.5 rounded-md truncate max-w-[100px]">{comment.profiles?.username || 'Anon'}</span>
                                                         <span className="text-[10px] md:text-xs text-gray-400">on <span className="text-black font-medium line-clamp-1">{comment.posts?.title || 'Unknown Post'}</span></span>
                                                     </div>
-                                                    <p className="text-xs md:text-sm text-gray-600 mt-2 pl-2 border-l-2 border-gray-200">{comment.content}</p>
+                                                    <div className="prose-content text-xs md:text-sm text-gray-600 mt-2 pl-2 border-l-2 border-gray-200" dangerouslySetInnerHTML={{ __html: comment.content }} />
                                                     <span className="text-[9px] md:text-[10px] text-gray-400 mt-2 block">{new Date(comment.created_at).toLocaleString()}</span>
                                                 </div>
                                                 <button
@@ -440,6 +462,54 @@ export default function AdminPage() {
                                                     className="w-full sm:w-auto px-3 py-1.5 h-fit bg-red-50 text-red-500 hover:bg-red-100 rounded-lg text-[10px] md:text-xs font-bold transition-colors border border-red-100"
                                                 >
                                                     DELETE
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </motion.div>
+                        )}
+
+                        {/* MANAGE COMMUNITY TAB */}
+                        {tab === 'community' && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="max-w-4xl mx-auto"
+                            >
+                                <h2 className="text-lg font-bold mb-6">community posts ({communityPosts.length})</h2>
+
+                                {dataLoading ? (
+                                    <div className="text-center py-12 text-gray-400 text-xs">loading discussions...</div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {communityPosts.length === 0 && (
+                                            <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                                                <p className="text-gray-400 text-sm">no discussions found.</p>
+                                            </div>
+                                        )}
+                                        {communityPosts.map(post => (
+                                            <div key={post.id} className="p-4 bg-white rounded-md border-[1.5px] border-gray-200 flex flex-col sm:flex-row items-start sm:items-center gap-4 hover:border-gray-300 transition-all">
+                                                <div className="shrink-0">
+                                                    <UserAvatar
+                                                        avatarUrl={post.profiles?.avatar_url}
+                                                        username={post.profiles?.username}
+                                                        size="sm"
+                                                    />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h3 className="font-bold text-sm truncate">{post.title}</h3>
+                                                    <div className="flex items-center gap-2 text-[11px] text-gray-400 mt-0.5">
+                                                        <span className="text-gray-600">@{post.profiles?.username || 'unknown'}</span>
+                                                        <span>•</span>
+                                                        <span>{new Date(post.created_at).toLocaleDateString()}</span>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => handleDeleteCommunityPost(post.id)}
+                                                    className="w-full sm:w-auto px-3 py-1.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-lg text-[10px] md:text-xs font-bold transition-colors border border-red-100"
+                                                >
+                                                    REMOVE
                                                 </button>
                                             </div>
                                         ))}
