@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import UserAvatar from './UserAvatar';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Window from './Window';
 import BlogWindowToolbar from './BlogWindowToolbar';
 import { useTabs } from '../context/TabContext';
@@ -27,7 +27,6 @@ import rehypeRaw from 'rehype-raw';
 export default function BlogWindow(props) {
     const { onClose, zIndex, onFocus, isFocused, isMaximized, isMinimized, ...restProps } = props;
     const searchParams = useSearchParams();
-    const router = useRouter();
     const { openWindow } = useWindow();
     const slug = searchParams.get('id');
     const [post, setPost] = useState(null);

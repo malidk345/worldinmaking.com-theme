@@ -69,17 +69,16 @@ export default function DashboardHeader({
         router.push(tab.path);
     };
 
-    // Unified close handler - syncs tabs AND windows
+    // Unified close handler - syncs tabs (window closes via navigation/sync)
     const handleCloseTab = (e, tabId) => {
         e.preventDefault();
         e.stopPropagation();
 
-        // Close window first (triggers animation)
-        if (closeWindow) closeWindow(tabId);
-
-        // Then close tab and navigate
+        // Close tab and navigate - window will close via WindowSync when route changes
         const navigateTo = closeTab(tabId);
         if (navigateTo) {
+            // Closing window explicitly to ensure animation
+            closeWindow(tabId);
             router.push(navigateTo);
         }
     };

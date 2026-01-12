@@ -128,7 +128,7 @@ export function TabProvider({ children }) {
                 ];
             }
         });
-    }, [fullPath, pathname]);
+    }, [fullPath, pathname, searchParams]);
 
     const addTab = useCallback((tab) => {
         setTabs(prev => {

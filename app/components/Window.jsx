@@ -34,7 +34,6 @@ const layoutSpring = {
 const Window = ({
     id,
     title,
-    icon,
     children,
     toolbar,
     onClose,
@@ -94,7 +93,8 @@ const Window = ({
         else setIsMaximized(isMaximizedProp);
 
         requestAnimationFrame(() => setIsMounted(true));
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Intentionally empty - initialization only runs once on mount
 
     // Interaction Hook
     const {
@@ -160,8 +160,15 @@ const Window = ({
         if (isAnimatingOut) return;
 
         setIsAnimatingOut(true);
-        setTimeout(() => onClose?.(), 150);
-    }, [onClose, isAnimatingOut]);
+        // onClose will be called via onAnimationComplete
+    }, [isAnimatingOut]);
+
+    // Handle animation completion - triggers actual close
+    const handleAnimationComplete = useCallback(() => {
+        if (isAnimatingOut) {
+            onClose?.();
+        }
+    }, [isAnimatingOut, onClose]);
 
     const handleMinimize = useCallback((e) => {
         e?.stopPropagation();
@@ -218,6 +225,7 @@ const Window = ({
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={getAnimationProps()}
             transition={premiumSpring}
+            onAnimationComplete={handleAnimationComplete}
             onMouseDown={onFocus}
             onTouchStart={onFocus}
             layout="position"

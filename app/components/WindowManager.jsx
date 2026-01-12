@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useCallback, useRef, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useRouter, usePathname } from 'next/navigation';
 import { useWindow } from '../contexts/WindowContext';
@@ -148,12 +148,27 @@ export default function WindowManager() {
     const router = useRouter();
     const pathname = usePathname();
 
-    const handleClose = (id, type) => {
+    // Refs to avoid stale closures
+    const tabsRef = useRef(tabs);
+    const pathnameRef = useRef(pathname);
+
+    useEffect(() => {
+        tabsRef.current = tabs;
+    }, [tabs]);
+
+    useEffect(() => {
+        pathnameRef.current = pathname;
+    }, [pathname]);
+
+    const handleClose = useCallback((id, type) => {
         // 1. Close the window
         closeWindow(id);
 
-        // 2. Find and close the matching tab
-        let tab = tabs.find(t => t.id === id);
+        // 2. Find and close the matching tab (use ref for current value)
+        const currentTabs = tabsRef.current;
+        const currentPathname = pathnameRef.current;
+
+        let tab = currentTabs.find(t => t.id === id);
 
         if (!tab) {
             // Try to find tab by path
@@ -162,20 +177,20 @@ export default function WindowManager() {
                 const postId = id.replace('post-window-', '');
                 targetPath = `/post?id=${postId}`;
             }
-            tab = tabs.find(t => t.path === targetPath || t.path.startsWith(`${targetPath}?`));
+            tab = currentTabs.find(t => t.path === targetPath || t.path.startsWith(`${targetPath}?`));
         }
 
         // 3. Close tab and navigate if needed
         if (tab) {
             const navigateTo = closeTab(tab.id);
-            if (navigateTo && navigateTo !== pathname) {
+            if (navigateTo && navigateTo !== currentPathname) {
                 router.push(navigateTo);
             }
-        } else if (pathname !== '/') {
+        } else if (currentPathname !== '/') {
             // Fallback: if no tab found but we're not on home, go home
             router.push('/');
         }
-    };
+    }, [closeWindow, closeTab, router]);
 
     return (
         <AnimatePresence mode="sync">
