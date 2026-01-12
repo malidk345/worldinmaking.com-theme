@@ -20,19 +20,20 @@ const MIN_HEIGHT = 200;
 const DEFAULT_WIDTH = 800;
 const DEFAULT_HEIGHT = 600;
 
-// Smooth spring config - tuned for natural feel
-const springConfig = {
+// Advanced Elastic Spring for "Pop" effect
+const elasticSpring = {
     type: 'spring',
-    stiffness: 300,
-    damping: 28,
+    stiffness: 350,
+    damping: 25,
     mass: 0.8
 };
 
-const fastSpring = {
+// Smooth but quick transition for internal elements
+const smoothSpring = {
     type: 'spring',
     stiffness: 400,
-    damping: 32,
-    mass: 0.6
+    damping: 30,
+    mass: 0.5
 };
 
 const Window = ({
@@ -369,37 +370,52 @@ const Window = ({
         };
     }, [zIndex, isMaximized, isMinimized, isMobile, pos, size]);
 
-    // Animation variants based on platform and state
+    // Advanced Animation Variants
     const getAnimationProps = () => {
         if (isAnimatingOut) {
-            // Exit animation
-            return isMobile
-                ? { opacity: 0, y: 60, scale: 0.98 }
-                : { opacity: 0, scale: 0.95 };
+            // Implosion Exit: Shrink to center with blur
+            return {
+                opacity: 0,
+                scale: 0.3,
+                filter: 'blur(20px)',
+                transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] } // Custom easing for "suck in" effect
+            };
         }
 
         if (!isMounted) {
-            // Initial state before mount
-            return isMobile
-                ? { opacity: 0, y: 40 }
-                : { opacity: 0, scale: 0.95 };
+            // Explosion Entry: Expand from tiny point with blur
+            return {
+                opacity: 0,
+                scale: 0.3,
+                filter: 'blur(10px)'
+            };
         }
 
         if (isMinimized) {
-            // Minimized state
-            return { opacity: 1, y: 0, scale: 1 };
+            // Minimize: Shrink down to tab bar area
+            return {
+                opacity: 1,
+                scale: 1,
+                y: 0,
+                filter: 'blur(0px)'
+            };
         }
 
-        // Normal visible state
-        return { opacity: 1, y: 0, scale: 1 };
+        // Normal Visible: Full scale, clear
+        return {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            filter: 'blur(0px)'
+        };
     };
 
     return (
         <motion.div
             ref={windowRef}
-            initial={isMobile ? { opacity: 0, y: 50 } : { opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.3, filter: 'blur(10px)' }}
             animate={getAnimationProps()}
-            transition={isAnimatingOut ? { duration: 0.15, ease: [0.4, 0, 1, 1] } : springConfig}
+            transition={elasticSpring}
             onMouseDown={onFocus}
             onTouchStart={onFocus}
             className="fixed flex flex-col overflow-hidden outline-none border border-(--border-primary) rounded-lg shadow-lg bg-white will-change-transform"
@@ -414,7 +430,7 @@ const Window = ({
                 onMouseDown={!isMaximized ? handleMouseDownHeader : undefined}
                 onTouchStart={!isMaximized ? handleTouchStartHeader : undefined}
                 layout
-                transition={fastSpring}
+                transition={smoothSpring}
             >
                 {/* Toolbar area */}
                 <div className="flex items-center gap-1 flex-1 min-w-0">{toolbar}</div>
@@ -456,7 +472,7 @@ const Window = ({
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                        transition={fastSpring}
+                        transition={smoothSpring}
                     >
                         <div className="flex-1 overflow-auto scroll-smooth cursor-default relative">
                             {children}
