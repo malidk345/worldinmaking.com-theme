@@ -1,5 +1,6 @@
 "use client";
 import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { getIconByPath } from '../utils/iconUtils';
 import { useSidebar } from '../context/SidebarContext';
 import { useTabs } from '../context/TabContext';
@@ -102,110 +103,158 @@ export default function DashboardHeader({
                             )}
                         </button>
 
-                        {/* Tab Manager Dropdown */}
-                        {isTabManagerOpen && (
-                            <>
-                                <div className="fixed inset-0 z-40" onClick={() => setIsTabManagerOpen(false)} />
-                                <div className="absolute top-full left-0 mt-2 w-72 bg-white border border-primary rounded-xl shadow-2xl z-50 overflow-hidden">
-                                    {/* Header */}
-                                    <div className="flex items-center justify-between px-3 py-2 bg-stone-50 border-b border-primary">
-                                        <div className="flex items-center gap-2">
-                                            <BrowserTabIcon className="size-4 text-stone-500" />
-                                            <span className="text-sm font-semibold text-stone-700">Tab Manager</span>
-                                        </div>
-                                        <button
-                                            onClick={() => setIsTabManagerOpen(false)}
-                                            className="text-stone-400 hover:text-stone-600 p-0.5 rounded hover:bg-stone-200 transition-colors"
-                                        >
-                                            <CloseIcon className="size-4" />
-                                        </button>
-                                    </div>
+                        {/* Tab Manager Sidebar (Drawer) */}
+                        <AnimatePresence>
+                            {isTabManagerOpen && (
+                                <>
+                                    {/* Backdrop */}
+                                    <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        className="fixed inset-0 z-100 bg-black/30 backdrop-blur-[2px]"
+                                        onClick={() => setIsTabManagerOpen(false)}
+                                    />
+                                    {/* Drawer Panel */}
+                                    <motion.div
+                                        initial={{ x: '100%', opacity: 0 }}
+                                        animate={{ x: 0, opacity: 1 }}
+                                        exit={{ x: '100%', opacity: 0 }}
+                                        transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+                                        className="fixed right-0 top-0 bottom-0 z-101 flex flex-col bg-surface-tertiary shadow-[0_4px_24px_rgba(0,0,0,0.15)]"
+                                        style={{
+                                            width: 'var(--project-navbar-width)',
+                                            marginRight: '8px',
+                                            marginTop: '8px',
+                                            marginBottom: '8px',
+                                            height: 'calc(100dvh - 16px)',
+                                            borderRadius: '12px',
+                                            border: '1px solid var(--border-primary)',
+                                            paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))'
+                                        }}
+                                    >
+                                        {/* Header - Matching Sidebar.jsx */}
+                                        <div className="relative flex items-center justify-center px-1 shrink-0" style={{ height: 'var(--scene-layout-header-height)' }}>
+                                            <div className="absolute left-3 flex items-center">
+                                                <div className="p-1 rounded flex items-center justify-center">
+                                                    <BrowserTabIcon className="size-4 text-black" />
+                                                </div>
+                                            </div>
 
-                                    {/* Active Tabs Section */}
-                                    <div className="px-2 py-1.5 bg-stone-50/50 border-b border-stone-100">
-                                        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">
-                                            Active ({tabs.length})
-                                        </span>
-                                    </div>
-                                    <div className="max-h-52 overflow-y-auto py-1">
-                                        {tabs.map(tab => {
-                                            const Icon = getIconByPath(tab.path);
-
-                                            return (
-                                                <button
-                                                    key={tab.id}
-                                                    className={`group w-full flex items-center gap-2 px-2 py-1.5 mx-1 rounded-lg cursor-pointer transition-colors ${tab.isActive
-                                                        ? 'bg-blue-50 border border-blue-100'
-                                                        : 'hover:bg-stone-50'
-                                                        }`}
-                                                    onClick={() => {
-                                                        handleTabClick(tab);
-                                                        setIsTabManagerOpen(false);
-                                                    }}
-                                                >
-                                                    <span className="text-black shrink-0 w-4 h-4 flex items-center justify-center">
-                                                        <Icon className="LemonIcon size-4" />
-                                                    </span>
-                                                    <span className={`text-sm truncate flex-1 text-left ${tab.isActive ? 'text-blue-700 font-medium' : 'text-stone-600'}`}>
-                                                        {tab.title}
-                                                    </span>
-                                                    {tabs.length > 1 && (
-                                                        <span
-                                                            role="button"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleCloseTab(e, tab.id);
-                                                            }}
-                                                            className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-stone-200 text-stone-400 hover:text-stone-600 transition-all ml-auto"
-                                                        >
-                                                            <CloseIcon className="size-3.5" />
-                                                        </span>
-                                                    )}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-
-                                    {/* History Section */}
-                                    {history && history.length > 0 && (
-                                        <>
-                                            <div className="px-2 py-1.5 bg-stone-50/50 border-t border-b border-primary/20">
-                                                <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">
-                                                    Recently Closed ({history.length})
+                                            {/* Center Label Badge */}
+                                            <div
+                                                className="flex items-center justify-center bg-[#254b85] rounded-md shadow-[0_1px_0_rgba(0,0,0,0.2)]"
+                                                style={{ height: '20px', minHeight: '20px', borderBottom: '1px solid #1a355e', padding: '0 10px' }}
+                                            >
+                                                <span className="text-[9.5px] tracking-tight leading-none font-medium text-white whitespace-nowrap">
+                                                    tab manager
                                                 </span>
                                             </div>
-                                            <div className="max-h-40 overflow-y-auto py-1">
-                                                {history.map((tab, i) => {
-                                                    const Icon = getIconByPath(tab.path);
 
-                                                    return (
-                                                        <button
-                                                            key={`${tab.id}-hist-${i}`}
-                                                            className="group w-full flex items-center gap-2 px-2 py-1.5 mx-1 rounded-lg cursor-pointer hover:bg-stone-50 transition-colors"
-                                                            onClick={() => {
-                                                                reopenTab && reopenTab(tab);
-                                                                router.push(tab.path);
-                                                                setIsTabManagerOpen(false);
-                                                            }}
-                                                        >
-                                                            <span className="text-stone-400 shrink-0 w-4 h-4 flex items-center justify-center">
-                                                                <Icon className="LemonIcon size-4" />
-                                                            </span>
-                                                            <span className="text-sm text-stone-500 truncate flex-1 text-left group-hover:text-stone-700">
+                                            <button
+                                                onClick={() => setIsTabManagerOpen(false)}
+                                                className="absolute right-2 text-tertiary hover:text-primary p-1 rounded hover:bg-black/5 transition-colors"
+                                            >
+                                                <HeaderIcons.Close className="size-4" />
+                                            </button>
+                                        </div>
+
+                                        <div className="border-b border-primary h-px mx-1" aria-hidden="true" />
+
+                                        {/* Status Bar */}
+                                        <div className="py-2 px-3 mt-1 flex items-center justify-between">
+                                            <span className="text-[10px] font-semibold text-tertiary uppercase tracking-wider">Active Sessions</span>
+                                            <span className="bg-black/5 px-2 py-0.5 rounded text-[9px] font-bold text-stone-500 border border-black/5">{tabs.length}</span>
+                                        </div>
+
+                                        {/* Scrollable Content Area */}
+                                        <div className="flex-1 overflow-y-auto custom-scrollbar p-1 flex flex-col gap-px">
+                                            {/* Active Tabs Section */}
+                                            {tabs.map((tab) => {
+                                                const Icon = getIconByPath(tab.path);
+                                                return (
+                                                    <button
+                                                        key={tab.id}
+                                                        className={`button-primitive button-primitive--variant-default text-sm gap-2.5 rounded button-primitive--full-width group flex items-center px-2 py-2 transition-colors ${tab.isActive ? 'bg-fill-button-tertiary-active' : 'hover:bg-fill-button-tertiary-hover'}`}
+                                                        onClick={() => {
+                                                            handleTabClick(tab);
+                                                            setIsTabManagerOpen(false);
+                                                        }}
+                                                    >
+                                                        <span className={`flex w-5 h-5 items-center justify-center shrink-0 ${tab.isActive ? 'text-[#254b85]' : 'text-stone-500 group-hover:text-black'}`}>
+                                                            <Icon className="LemonIcon size-4" />
+                                                        </span>
+                                                        <div className="flex-1 min-w-0 text-left">
+                                                            <div className={`truncate leading-none text-[13px] ${tab.isActive ? 'font-bold text-black' : 'font-medium text-stone-600 group-hover:text-black'}`}>
                                                                 {tab.title}
+                                                            </div>
+                                                            <div className="text-[9px] text-stone-400 truncate font-medium mt-0.5">
+                                                                {tab.path === '/' ? 'root instance' : tab.path}
+                                                            </div>
+                                                        </div>
+                                                        {tabs.length > 1 && (
+                                                            <span
+                                                                role="button"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleCloseTab(e, tab.id);
+                                                                }}
+                                                                className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-black/5 text-tertiary hover:text-red-500 transition-all ml-auto"
+                                                            >
+                                                                <HeaderIcons.Close className="size-3.5" />
                                                             </span>
-                                                            <span className="text-[10px] text-stone-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                Reopen
-                                                            </span>
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
-                            </>
-                        )}
+                                                        )}
+                                                    </button>
+                                                );
+                                            })}
+
+                                            {history && history.length > 0 && (
+                                                <>
+                                                    <div className="border-b border-primary h-px my-2 mx-1 opacity-50" aria-hidden="true" />
+                                                    <div className="py-1 px-2 mb-1">
+                                                        <span className="text-[10px] font-semibold text-tertiary uppercase tracking-wider">Recently Closed</span>
+                                                    </div>
+                                                    {history.map((tab, i) => {
+                                                        const Icon = getIconByPath(tab.path);
+                                                        return (
+                                                            <button
+                                                                key={`${tab.id}-hist-${i}`}
+                                                                className="button-primitive button-primitive--variant-default text-sm gap-2.5 rounded button-primitive--full-width group flex items-center px-2 py-1.5 hover:bg-fill-button-tertiary-hover transition-colors"
+                                                                onClick={() => {
+                                                                    reopenTab && reopenTab(tab);
+                                                                    router.push(tab.path);
+                                                                    setIsTabManagerOpen(false);
+                                                                }}
+                                                            >
+                                                                <span className="flex w-5 h-5 items-center justify-center shrink-0 text-stone-300 group-hover:text-stone-500">
+                                                                    <Icon className="LemonIcon size-4" />
+                                                                </span>
+                                                                <span className="truncate flex-1 text-left text-[12px] text-stone-500 group-hover:text-stone-800 font-medium">
+                                                                    {tab.title}
+                                                                </span>
+                                                                <span className="text-[8px] font-bold text-[#254b85] opacity-0 group-hover:opacity-100 transition-opacity px-1.5 py-0.5 rounded border border-[#254b85]/20 bg-white">
+                                                                    RESTORE
+                                                                </span>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </>
+                                            )}
+                                        </div>
+
+                                        {/* Footer - Branding */}
+                                        <div className="px-2 py-4 mt-auto border-t border-primary/30">
+                                            <p className="text-[9px] text-tertiary leading-tight text-center opacity-70">
+                                                persisted session manager.
+                                                <br />
+                                                designed by wim.
+                                            </p>
+                                        </div>
+                                    </motion.div>
+
+                                </>
+                            )}
+                        </AnimatePresence>
                     </div>
 
                     {/* Single Active Tab */}

@@ -27,26 +27,31 @@ export const WindowProvider = ({ children }) => {
         } catch (e) {
             console.error("[WindowContext] Failed to load", e);
         } finally {
-            setIsLoaded(true);
+            setIsLoaded(true)
         }
     }, []);
 
-    // Save to localStorage
+    // Throttled Save to localStorage
     useEffect(() => {
         if (!isLoaded) return;
-        const toSave = windows.map(w => ({
-            id: w.id,
-            type: w.type,
-            title: w.title,
-            username: w.username,
-            isMaximized: w.isMaximized,
-            isMinimized: w.isMinimized,
-            x: w.x,
-            y: w.y,
-            width: w.width,
-            height: w.height
-        }));
-        localStorage.setItem('posthog-windows', JSON.stringify(toSave));
+
+        const saveTimeout = setTimeout(() => {
+            const toSave = windows.map(w => ({
+                id: w.id,
+                type: w.type,
+                title: w.title,
+                username: w.username,
+                isMaximized: w.isMaximized,
+                isMinimized: w.isMinimized,
+                x: w.x,
+                y: w.y,
+                width: w.width,
+                height: w.height
+            }));
+            localStorage.setItem('posthog-windows', JSON.stringify(toSave));
+        }, 2000); // 2 second throttle
+
+        return () => clearTimeout(saveTimeout);
     }, [windows, isLoaded]);
 
     // Bring window to front = move to end of array AND un-minimize
@@ -57,7 +62,7 @@ export const WindowProvider = ({ children }) => {
 
             const win = { ...prev[idx], isMinimized: false };
 
-            // If already at end and not minimized, do nothing (except un-minimize if needed)
+            // Optimization: If already at end and not minimized, do nothing
             if (idx === prev.length - 1 && !prev[idx].isMinimized) return prev;
 
             return [...prev.slice(0, idx), ...prev.slice(idx + 1), win];
