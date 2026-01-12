@@ -54,7 +54,10 @@ export const useWindowInteraction = ({
 
     const handleDragEnd = useCallback(() => {
         if (dragStartRef.current && windowRef.current) {
-            const newPos = { x: dragStartRef.current.lastValidX, y: dragStartRef.current.lastValidY };
+            const newPos = {
+                x: Math.round(dragStartRef.current.lastValidX),
+                y: Math.round(dragStartRef.current.lastValidY)
+            };
             setPos(newPos);
             onPositionChange?.(newPos);
             windowRef.current.style.transform = 'none';
@@ -128,8 +131,14 @@ export const useWindowInteraction = ({
 
     const handleResizeEnd = useCallback(() => {
         if (resizeStartRef.current) {
-            const newSize = { width: resizeStartRef.current.lastValidW, height: resizeStartRef.current.lastValidH };
-            const newPos = { x: resizeStartRef.current.lastValidX, y: resizeStartRef.current.lastValidY };
+            const newSize = {
+                width: Math.round(resizeStartRef.current.lastValidW),
+                height: Math.round(resizeStartRef.current.lastValidH)
+            };
+            const newPos = {
+                x: Math.round(resizeStartRef.current.lastValidX),
+                y: Math.round(resizeStartRef.current.lastValidY)
+            };
 
             setSize(newSize);
             setPos(newPos);

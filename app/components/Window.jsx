@@ -190,36 +190,33 @@ const Window = ({
     }, [zIndex, isMaximized, isMinimized, pos, size]);
 
     const getAnimationProps = () => {
-        if (isAnimatingOut) return { opacity: 0, scale: 0.2, filter: 'blur(15px)', transition: { duration: 0.25 } };
-        if (!isMounted) return { opacity: 0, scale: 0, filter: 'blur(10px)', y: 15 };
+        if (isAnimatingOut) return { opacity: 0, scale: 0.9, transition: { duration: 0.2 } };
+        if (!isMounted) return { opacity: 0, scale: 0.95, y: 10 };
         if (isMinimized) {
             const targetX = 50 - (pos.x + size.width / 2);
             const targetY = 15 - (pos.y + size.height / 2);
-            return { opacity: 0, scale: 0.05, x: targetX, y: targetY, rotate: -10, filter: 'blur(15px)', pointerEvents: 'none' };
+            return { opacity: 0, scale: 0.1, x: targetX, y: targetY, pointerEvents: 'none' };
         }
 
-        // Base animations + Focus state animations
+        // Solid, fully opaque windows - NO transparency, shadows, or filters
         return {
-            opacity: isFocused ? 1 : 0.95,
+            opacity: 1,
             y: 0,
             scale: 1,
-            filter: 'blur(0px)',
-            pointerEvents: 'auto',
-            borderColor: isFocused ? 'rgba(37, 75, 133, 0.3)' : 'var(--border-primary)',
-            boxShadow: isFocused ? '0 10px 40px rgba(0,0,0,0.2)' : '0 4px 20px rgba(0,0,0,0.1)'
+            pointerEvents: 'auto'
         };
     };
 
     return (
         <motion.div
             ref={windowRef}
-            initial={{ opacity: 0, scale: 0, y: 15 }}
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={getAnimationProps()}
             transition={premiumSpring}
             onMouseDown={onFocus}
             onTouchStart={onFocus}
             layout="position"
-            className="fixed flex flex-col overflow-hidden outline-none border rounded-xl bg-white will-change-transform"
+            className={`fixed flex flex-col overflow-hidden outline-none rounded-xl bg-white will-change-transform border ${isFocused ? 'border-brand-navy/30 shadow-lg' : 'border-(--border-primary) shadow-md'}`}
             style={windowStyle}
         >
             {/* Window Header */}
@@ -246,7 +243,7 @@ const Window = ({
             <AnimatePresence>
                 {!isMinimized && (
                     <motion.div
-                        className={`flex-1 flex overflow-hidden bg-white relative transition-all duration-300 ${isFocused ? '' : 'brightness-[0.97]'}`}
+                        className="flex-1 flex overflow-hidden bg-white relative"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
