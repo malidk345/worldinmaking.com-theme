@@ -192,10 +192,8 @@ export default function CommunityPage({ isWindowMode = false }) {
                                         value={replyContent}
                                         onChange={e => setReplyContent(e.target.value)}
                                     />
-                                    <button type="submit" disabled={!replyContent.trim()} className="LemonButton LemonButton--primary LemonButton--small shadow-[0_3px_0_0_#171717] hover:shadow-[0_4px_0_0_#171717] active:shadow-[0_2px_0_0_#171717]">
-                                        <span className="LemonButton__chrome flex items-center gap-2 px-4 py-1.5 font-bold uppercase text-[10px]">
-                                            Send
-                                        </span>
+                                    <button type="submit" disabled={!replyContent.trim()} className="LemonButton LemonButton--primary LemonButton--small">
+                                        <span className="LemonButton__chrome">Send</span>
                                     </button>
                                 </form>
                             </div>
@@ -209,11 +207,9 @@ export default function CommunityPage({ isWindowMode = false }) {
                             {!isCreating && (
                                 <button
                                     onClick={() => setIsCreating(true)}
-                                    className="LemonButton LemonButton--primary LemonButton--small w-full shadow-[0_3px_0_0_#171717] hover:shadow-[0_4px_0_0_#171717] active:shadow-[0_2px_0_0_#171717]"
+                                    className="LemonButton LemonButton--primary LemonButton--small LemonButton--full-width"
                                 >
-                                    <span className="LemonButton__chrome gap-2 px-6 py-2.5 font-bold uppercase text-xs">
-                                        + Create Post
-                                    </span>
+                                    <span className="LemonButton__chrome">+ Create Post</span>
                                 </button>
                             )}
                         </div>
@@ -240,19 +236,17 @@ export default function CommunityPage({ isWindowMode = false }) {
                                     <button
                                         type="button"
                                         onClick={() => { setIsCreating(false); setNewPostTitle(''); setNewPostContent(''); }}
-                                        className="LemonButton LemonButton--secondary LemonButton--small px-4 py-2 text-xs font-bold order-2 sm:order-1"
+                                        className="LemonButton LemonButton--secondary LemonButton--small order-2 sm:order-1"
                                     >
-                                        Discard
+                                        <span className="LemonButton__chrome">Discard</span>
                                     </button>
                                     <button
                                         type="button"
                                         onClick={handlePostSubmit}
                                         disabled={!newPostTitle.trim() || !newPostContent.trim()}
-                                        className="LemonButton LemonButton--primary LemonButton--small order-1 sm:order-2 shadow-[0_3px_0_0_#171717]"
+                                        className="LemonButton LemonButton--primary LemonButton--small order-1 sm:order-2"
                                     >
-                                        <span className="LemonButton__chrome px-6 py-2 font-black text-xs uppercase">
-                                            Publish Post
-                                        </span>
+                                        <span className="LemonButton__chrome">Publish Post</span>
                                     </button>
                                 </div>
                             </div>
@@ -381,19 +375,17 @@ export default function CommunityPage({ isWindowMode = false }) {
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => setExpandedPostId(null)}
-                                                                        className="LemonButton LemonButton--secondary LemonButton--small px-3 py-1 font-bold text-[10px]"
+                                                                        className="LemonButton LemonButton--secondary LemonButton--small"
                                                                     >
-                                                                        Cancel
+                                                                        <span className="LemonButton__chrome">Cancel</span>
                                                                     </button>
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => handleReplySubmit(post.id)}
                                                                         disabled={!replyContent.trim()}
-                                                                        className="LemonButton LemonButton--primary LemonButton--small shadow-[0_3px_0_0_#171717]"
+                                                                        className="LemonButton LemonButton--primary LemonButton--small"
                                                                     >
-                                                                        <span className="LemonButton__chrome gap-1.5 px-4 py-1 font-bold text-[10px] uppercase">
-                                                                            Reply
-                                                                        </span>
+                                                                        <span className="LemonButton__chrome">Reply</span>
                                                                     </button>
                                                                 </div>
                                                             </div>

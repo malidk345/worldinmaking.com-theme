@@ -199,9 +199,9 @@ export default function ProfilePage({ zIndex, onFocus, onClose, isWindowMode = f
                                             type="button"
                                             onClick={handleSaveBio}
                                             disabled={isSaving}
-                                            className="LemonButton LemonButton--primary LemonButton--small shadow-[0_3px_0_0_#171717]"
+                                            className="LemonButton LemonButton--primary LemonButton--small"
                                         >
-                                            <span className="LemonButton__chrome gap-1.5 uppercase font-bold text-[10px]">
+                                            <span className="LemonButton__chrome">
                                                 {isSaving ? 'Saving...' : 'Save'}
                                             </span>
                                         </button>
@@ -306,9 +306,9 @@ export default function ProfilePage({ zIndex, onFocus, onClose, isWindowMode = f
                             <button
                                 type="button"
                                 onClick={handleSavePhoto}
-                                className="LemonButton LemonButton--primary LemonButton--small flex-1 shadow-[0_3px_0_0_#171717]"
+                                className="LemonButton LemonButton--primary LemonButton--small flex-1"
                             >
-                                <span className="LemonButton__chrome gap-1.5 w-full justify-center">
+                                <span className="LemonButton__chrome">
                                     Save
                                 </span>
                             </button>
@@ -331,7 +331,7 @@ export default function ProfilePage({ zIndex, onFocus, onClose, isWindowMode = f
                 <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="w-full max-w-xs bg-white border border-black/15 rounded-lg p-5 shadow-lg">
                         <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-2 text-primary font-bold text-xs font-bold">
+                            <div className="flex items-center gap-2 text-primary font-bold text-xs">
                                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                                     <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                                     <circle cx="12" cy="13" r="4" />
@@ -374,9 +374,9 @@ export default function ProfilePage({ zIndex, onFocus, onClose, isWindowMode = f
                             <button
                                 type="button"
                                 onClick={handleSavePhoto}
-                                className="LemonButton LemonButton--primary LemonButton--small flex-1 shadow-[0_3px_0_0_#171717]"
+                                className="LemonButton LemonButton--primary LemonButton--small flex-1"
                             >
-                                <span className="LemonButton__chrome gap-1.5 w-full justify-center capitalize font-bold text-[10px]">
+                                <span className="LemonButton__chrome">
                                     Save Photo
                                 </span>
                             </button>
