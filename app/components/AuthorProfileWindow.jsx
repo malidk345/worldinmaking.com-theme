@@ -7,7 +7,8 @@ import { supabase } from '../lib/supabase';
 import Image from 'next/image';
 import { stripMarkdown } from '../lib/markdown';
 
-export default function AuthorProfileWindow({ username, onClose, zIndex, onFocus }) {
+export default function AuthorProfileWindow(props) {
+    const { username, onClose, zIndex, onFocus, isFocused, isMaximized, isMinimized, ...restProps } = props;
     const [profile, setProfile] = useState(null);
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -57,9 +58,12 @@ export default function AuthorProfileWindow({ username, onClose, zIndex, onFocus
             onClose={onClose}
             zIndex={zIndex}
             onFocus={onFocus}
+            isFocused={isFocused}
+            isMaximized={isMaximized !== undefined ? isMaximized : false}
+            isMinimized={isMinimized}
             initialWidth={400}
             initialHeight={500}
-            isMaximized={false}
+            {...restProps}
         >
             <div className="flex flex-col h-full bg-bg-3000 overflow-y-auto custom-scrollbar">
                 {loading ? (

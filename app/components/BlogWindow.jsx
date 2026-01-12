@@ -24,7 +24,8 @@ import rehypeRaw from 'rehype-raw';
  * Blog post content wrapped in a floating window
  * Toolbar icons on the left, window controls on the right
  */
-export default function BlogWindow({ onClose, zIndex, onFocus }) {
+export default function BlogWindow(props) {
+    const { onClose, zIndex, onFocus, isFocused, isMaximized, isMinimized, ...restProps } = props;
     const searchParams = useSearchParams();
     const router = useRouter();
     const { openWindow } = useWindow();
@@ -86,6 +87,10 @@ export default function BlogWindow({ onClose, zIndex, onFocus }) {
                 onClose={handleClose}
                 zIndex={zIndex}
                 onFocus={onFocus}
+                isFocused={isFocused}
+                isMaximized={isMaximized}
+                isMinimized={isMinimized}
+                {...restProps}
                 toolbar={
                     <BlogWindowToolbar
                         showSidebar={false}
@@ -114,6 +119,10 @@ export default function BlogWindow({ onClose, zIndex, onFocus }) {
                 onClose={handleClose}
                 zIndex={zIndex}
                 onFocus={onFocus}
+                isFocused={isFocused}
+                isMaximized={isMaximized}
+                isMinimized={isMinimized}
+                {...restProps}
                 toolbar={null}
             >
                 <div className="flex-1 overflow-y-auto bg-primary">
@@ -135,6 +144,10 @@ export default function BlogWindow({ onClose, zIndex, onFocus }) {
             onClose={handleClose}
             zIndex={zIndex}
             onFocus={onFocus}
+            isFocused={isFocused}
+            isMaximized={isMaximized}
+            isMinimized={isMinimized}
+            {...restProps}
             toolbar={
                 <BlogWindowToolbar
                     showSidebar={showSidebar}
