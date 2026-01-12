@@ -221,12 +221,12 @@ const Window = ({
             onMouseDown={onFocus}
             onTouchStart={onFocus}
             layout="position"
-            className={`fixed flex flex-col overflow-hidden outline-none rounded-xl bg-white will-change-transform border ${isFocused ? 'border-brand-navy/30 shadow-lg' : 'border-(--border-primary) shadow-md'}`}
+            className={`fixed flex flex-col overflow-hidden outline-none rounded-xl bg-white will-change-transform border border-(--border-primary) ${isFocused ? 'shadow-lg' : 'shadow-md'}`}
             style={windowStyle}
         >
             {/* Window Header */}
             <motion.div
-                className={`flex items-center justify-between h-[30px] px-2 border-b select-none shrink-0 transition-colors duration-300 ${isFocused ? 'bg-(--posthog-3000-100) border-brand-navy/20' : 'bg-(--posthog-3000-50) border-(--border-primary)'
+                className={`flex items-center justify-between h-[30px] px-2 border-b border-(--border-primary) select-none shrink-0 transition-colors duration-300 ${isFocused ? 'bg-(--posthog-3000-100)' : 'bg-(--posthog-3000-50)'
                     } ${!isMaximized ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
                 onMouseDown={(e) => { e.preventDefault(); startDrag(e.clientX, e.clientY); }}
                 onTouchStart={(e) => startDrag(e.touches[0].clientX, e.touches[0].clientY)}
