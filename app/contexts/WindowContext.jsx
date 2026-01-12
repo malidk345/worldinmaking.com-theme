@@ -49,12 +49,17 @@ export const WindowProvider = ({ children }) => {
         localStorage.setItem('posthog-windows', JSON.stringify(toSave));
     }, [windows, isLoaded]);
 
-    // Bring window to front = move to end of array
+    // Bring window to front = move to end of array AND un-minimize
     const bringToFront = useCallback((id) => {
         setWindows(prev => {
             const idx = prev.findIndex(w => w.id === id);
-            if (idx === -1 || idx === prev.length - 1) return prev;
-            const win = prev[idx];
+            if (idx === -1) return prev;
+
+            const win = { ...prev[idx], isMinimized: false };
+
+            // If already at end and not minimized, do nothing (except un-minimize if needed)
+            if (idx === prev.length - 1 && !prev[idx].isMinimized) return prev;
+
             return [...prev.slice(0, idx), ...prev.slice(idx + 1), win];
         });
     }, []);
