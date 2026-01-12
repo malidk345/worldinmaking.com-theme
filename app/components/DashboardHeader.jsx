@@ -26,6 +26,9 @@ const DashboardTabIcon = ({ className, style }) => {
     return <HomeIcon className={`LemonIcon ${className || ''}`} style={style} />;
 };
 
+// Smooth spring for drawer animation
+const drawerSpring = { type: 'spring', damping: 30, stiffness: 300 };
+
 export default function DashboardHeader({
     showCategories,
     setShowCategories,
@@ -36,7 +39,7 @@ export default function DashboardHeader({
 }) {
     const { toggleMobileSidebar, openSidebar, isSidebarOpen } = useSidebar();
     const { tabs, closeTab, setActiveTab, history, reopenTab } = useTabs();
-    const { closeWindow } = useWindow();
+    const { closeWindow, bringToFront } = useWindow();
     const router = useRouter();
     const pathname = usePathname();
     const [isTabManagerOpen, setIsTabManagerOpen] = React.useState(false);
@@ -54,21 +57,28 @@ export default function DashboardHeader({
         }
     };
 
+    // Unified tab click handler - syncs tabs AND windows
     const handleTabClick = (tab) => {
         setActiveTab(tab.id);
+
+        // Sync with Window system - bring corresponding window to front
+        if (bringToFront) {
+            bringToFront(tab.id);
+        }
+
         router.push(tab.path);
     };
 
+    // Unified close handler - syncs tabs AND windows
     const handleCloseTab = (e, tabId) => {
         e.preventDefault();
         e.stopPropagation();
 
-        // Sync with Window system: Closing a tab should close its window
+        // Close window first (triggers animation)
         if (closeWindow) closeWindow(tabId);
 
+        // Then close tab and navigate
         const navigateTo = closeTab(tabId);
-
-        // Always navigate to the returned path
         if (navigateTo) {
             router.push(navigateTo);
         }
@@ -104,7 +114,7 @@ export default function DashboardHeader({
                         </button>
 
                         {/* Tab Manager Sidebar (Drawer) */}
-                        <AnimatePresence>
+                        <AnimatePresence mode="wait">
                             {isTabManagerOpen && (
                                 <>
                                     {/* Backdrop */}
@@ -112,6 +122,7 @@ export default function DashboardHeader({
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.15 }}
                                         className="fixed inset-0 z-100 bg-black/30 backdrop-blur-[2px]"
                                         onClick={() => setIsTabManagerOpen(false)}
                                     />
@@ -120,7 +131,7 @@ export default function DashboardHeader({
                                         initial={{ x: '100%', opacity: 0 }}
                                         animate={{ x: 0, opacity: 1 }}
                                         exit={{ x: '100%', opacity: 0 }}
-                                        transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+                                        transition={drawerSpring}
                                         className="fixed right-0 top-0 bottom-0 z-101 flex flex-col bg-surface-tertiary shadow-[0_4px_24px_rgba(0,0,0,0.15)]"
                                         style={{
                                             width: 'var(--project-navbar-width)',

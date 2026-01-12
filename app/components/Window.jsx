@@ -15,21 +15,20 @@ const MOBILE_BREAKPOINT = 768;
 const DEFAULT_WIDTH = 800;
 const DEFAULT_HEIGHT = 600;
 
-// Premium Desktop Spring: Snappy, Responsive, and Buttery Smooth
+// Premium Desktop Spring: Buttery Smooth with Quick Response
 const premiumSpring = {
     type: 'spring',
-    stiffness: 300,
-    damping: 32,
-    mass: 1,
-    velocity: 2
+    stiffness: 350,
+    damping: 35,
+    mass: 0.8
 };
 
 // Synced spring for layout transitions (maximize/minimize)
 const layoutSpring = {
     type: 'spring',
-    stiffness: 280,
-    damping: 30,
-    mass: 1
+    stiffness: 400,
+    damping: 40,
+    mass: 0.7
 };
 
 const Window = ({

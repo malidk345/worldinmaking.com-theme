@@ -142,7 +142,7 @@ export default function WindowManager() {
     };
 
     return (
-        <AnimatePresence>
+        <AnimatePresence mode="sync">
             {windows.map((win, index) => {
                 const zIndex = Math.min(BASE_Z + index, MAX_Z);
                 const isFocused = index === windows.length - 1;
@@ -175,3 +175,4 @@ export default function WindowManager() {
         </AnimatePresence>
     );
 }
+
