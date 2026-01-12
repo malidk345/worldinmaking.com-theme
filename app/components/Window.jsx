@@ -20,19 +20,20 @@ const MIN_HEIGHT = 200;
 const DEFAULT_WIDTH = 800;
 const DEFAULT_HEIGHT = 600;
 
-// Slower, very smooth elastic spring for "Big Bang" effect
-const elasticSpring = {
+// Premium Desktop Spring: Snappy, Responsive, and Buttery Smooth
+const premiumSpring = {
     type: 'spring',
-    stiffness: 140, // Slower
-    damping: 18,    // More flow
-    mass: 1         // Solid feel
+    stiffness: 300,
+    damping: 32,
+    mass: 1,
+    velocity: 2
 };
 
-// Use the SAME spring for internal layout to keep them synced
+// Synced spring for layout transitions (maximize/minimize)
 const layoutSpring = {
     type: 'spring',
-    stiffness: 140, // Matched with elasticSpring
-    damping: 18,
+    stiffness: 280,
+    damping: 30,
     mass: 1
 };
 
@@ -373,36 +374,37 @@ const Window = ({
     // Advanced Animation Variants
     const getAnimationProps = () => {
         if (isAnimatingOut) {
-            // Implosion Exit: Shrink to center with blur
+            // Implosion Exit: Rapid shrink to center with blur
             return {
                 opacity: 0,
-                scale: 0.3,
-                filter: 'blur(20px)',
-                transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] } // Custom easing for "suck in" effect
+                scale: 0.2,
+                filter: 'blur(15px)',
+                transition: { duration: 0.25, ease: [0.4, 0, 0.2, 1] }
             };
         }
 
         if (!isMounted) {
-            // Explosion Entry: Expand from ABSOLUTE ZERO point
+            // Big Bang Entry: Explode from absolute zero with momentum
             return {
                 opacity: 0,
-                scale: 0, // Starts from a dot
-                filter: 'blur(10px)'
+                scale: 0,
+                filter: 'blur(10px)',
+                y: 15
             };
         }
 
         if (isMinimized) {
-            // Minimize: Implode and drop down
+            // Minimize: Elegant shrink and fade towards the center-bottom
             return {
                 opacity: 0,
-                scale: 0.5,
-                y: 100, // Move down
-                filter: 'blur(10px)',
+                scale: 0.4,
+                y: 200, // Drop down
+                filter: 'blur(12px)',
                 pointerEvents: 'none'
             };
         }
 
-        // Normal Visible: Full scale, clear
+        // Normal Visible: Perfect scale, sharp focus
         return {
             opacity: 1,
             y: 0,
@@ -415,12 +417,13 @@ const Window = ({
     return (
         <motion.div
             ref={windowRef}
-            initial={{ opacity: 0, scale: 0, filter: 'blur(10px)' }}
+            initial={{ opacity: 0, scale: 0, filter: 'blur(10px)', y: 15 }}
             animate={getAnimationProps()}
-            transition={elasticSpring}
+            transition={premiumSpring}
             onMouseDown={onFocus}
             onTouchStart={onFocus}
-            className="fixed flex flex-col overflow-hidden outline-none border border-(--border-primary) rounded-lg shadow-lg bg-white will-change-transform"
+            layout="position"
+            className="fixed flex flex-col overflow-hidden outline-none border border-(--border-primary) rounded-xl shadow-2xl bg-white will-change-transform"
             style={{ ...windowStyle, transformOrigin: 'center center' }}
             role="dialog"
             aria-labelledby={`window-title-${id}`}
