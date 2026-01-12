@@ -31,7 +31,11 @@ export default function WindowSync() {
             '/login': { type: 'login', title: 'Login' },
             '/admin': { type: 'admin', title: 'Admin' },
             '/about': { type: 'about', title: 'About' },
-            '/contact': { type: 'contact', title: 'Contact' }
+            '/contact': { type: 'contact', title: 'Contact' },
+            '/services': { type: 'services', title: 'Services' },
+            '/write-for-wim': { type: 'write-for-wim', title: 'Write for WIM' },
+            '/instagram': { type: 'instagram', title: 'Instagram' },
+            '/x': { type: 'x', title: 'X' }
         };
 
         const config = pathMap[normalizedPath];

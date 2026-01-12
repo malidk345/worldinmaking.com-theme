@@ -16,6 +16,10 @@ import CommunityContent from '../community/CommunityContent';
 import AdminContent from '../admin/AdminContent';
 import AboutContent from '../about/AboutContent';
 import ContactContent from '../contact/ContactContent';
+import ServicesContent from '../services/ServicesContent';
+import WriteForWimContent from '../write-for-wim/WriteContent';
+import InstagramContent from '../instagram/InstagramContent';
+import XContent from '../x/XContent';
 import Window from './Window';
 
 /**
@@ -86,10 +90,9 @@ export default function WindowManager() {
                         );
                     case 'profile':
                         return (
-                            <ProfileContent
-                                {...commonProps}
-                                isWindowMode={true}
-                            />
+                            <Window {...commonProps} title="Profile" icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>}>
+                                <ProfileContent isWindowMode={true} />
+                            </Window>
                         );
                     case 'explore':
                         return (
@@ -137,6 +140,30 @@ export default function WindowManager() {
                         return (
                             <Window {...commonProps} title="Contact" icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>}>
                                 <ContactContent isWindowMode={true} />
+                            </Window>
+                        );
+                    case 'services':
+                        return (
+                            <Window {...commonProps} title="Services" icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>}>
+                                <ServicesContent isWindowMode={true} />
+                            </Window>
+                        );
+                    case 'write-for-wim':
+                        return (
+                            <Window {...commonProps} title="Write for WIM" icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>}>
+                                <WriteForWimContent isWindowMode={true} />
+                            </Window>
+                        );
+                    case 'instagram':
+                        return (
+                            <Window {...commonProps} title="Instagram" icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}>
+                                <InstagramContent isWindowMode={true} />
+                            </Window>
+                        );
+                    case 'x':
+                        return (
+                            <Window {...commonProps} title="X" icon={<svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>}>
+                                <XContent isWindowMode={true} />
                             </Window>
                         );
                     default:
