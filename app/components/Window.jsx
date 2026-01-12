@@ -94,20 +94,28 @@ const Window = ({
         const windowWidth = Math.min(initialWidth, maxWidth);
         const windowHeight = Math.min(initialHeight, maxHeight);
 
-        // Center the window
-        const centeredX = initialX ?? Math.max(MARGIN, (viewWidth - windowWidth) / 2);
-        const centeredY = initialY ?? Math.max(HEADER_HEIGHT + MARGIN, (viewHeight - windowHeight) / 2);
+        let centeredX, centeredY, startW, startH;
 
-        setPos({ x: centeredX, y: centeredY });
-        setSize({ width: windowWidth, height: windowHeight });
-        preMaximizeState.current = { x: centeredX, y: centeredY, width: windowWidth, height: windowHeight };
-
-        // Mobile: Always start maximized
         if (mobile) {
+            // Mobile: Default to 85% width, 70% height in restored mode
+            startW = viewWidth * 0.85;
+            startH = viewHeight * 0.7;
+            centeredX = (viewWidth - startW) / 2;
+            centeredY = (viewHeight - startH) / 2 + 20;
+            // Always start maximized on mobile initially
             setIsMaximized(true);
         } else {
+            // Desktop
+            startW = windowWidth;
+            startH = windowHeight;
+            centeredX = initialX ?? Math.max(MARGIN, (viewWidth - startW) / 2);
+            centeredY = initialY ?? Math.max(HEADER_HEIGHT + MARGIN, (viewHeight - startH) / 2);
             setIsMaximized(isMaximizedProp);
         }
+
+        setPos({ x: centeredX, y: centeredY });
+        setSize({ width: startW, height: startH });
+        preMaximizeState.current = { x: centeredX, y: centeredY, width: startW, height: startH };
 
         // Small delay for mount animation
         requestAnimationFrame(() => {
@@ -338,16 +346,15 @@ const Window = ({
 
         if (isMobile) {
             // Mobile "Restored" (not maximized) state
-            // Slightly smaller than fullscreen, centered
+            // Use user-defined pos and size (resizable/draggable)
             return {
                 ...baseStyle,
                 position: 'fixed',
-                top: HEADER_HEIGHT + MARGIN + 20, // A bit lower
-                left: MARGIN + 10,
-                right: MARGIN + 10,
-                bottom: MARGIN + 40,
-                width: 'auto',
-                height: 'auto'
+                top: pos.y,
+                left: pos.x,
+                width: size.width,
+                height: size.height,
+                boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
             };
         }
 
@@ -458,9 +465,9 @@ const Window = ({
                 )}
             </AnimatePresence>
 
-            {/* Resize Handles (only on desktop windowed mode) */}
+            {/* Resize Handles (enabled on both desktop and mobile in windowed mode) */}
             <AnimatePresence>
-                {!isMaximized && !isMobile && (
+                {!isMaximized && (
                     <>
                         <motion.div
                             initial={{ opacity: 0 }}
