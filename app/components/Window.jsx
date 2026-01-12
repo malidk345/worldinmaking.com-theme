@@ -296,11 +296,6 @@ const Window = ({
         if (!newValue) onFocus?.();
     }, [isMinimized, onMinimizeChange, onFocus]);
 
-    const handleDoubleClickHeader = useCallback((e) => {
-        e.preventDefault();
-        handleMaximize(e);
-    }, [handleMaximize]);
-
     // Calculate window style based on state
     const windowStyle = useMemo(() => {
         const baseStyle = { zIndex, display: 'flex' };
@@ -318,7 +313,7 @@ const Window = ({
                 left: '50%',
                 transform: 'translateX(-50%)',
                 width: isMobile ? '90%' : '280px',
-                height: '36px',
+                height: '30px',
                 top: 'auto'
             };
         }
@@ -350,7 +345,7 @@ const Window = ({
     const variants = {
         hidden: {
             opacity: 0,
-            scale: isMobile ? 1 : 0.8,
+            scale: isMobile ? 1 : 0.95,
             y: isMobile ? 50 : 0
         },
         visible: {
@@ -359,8 +354,8 @@ const Window = ({
             y: 0,
             transition: {
                 type: 'spring',
-                stiffness: 300,
-                damping: 25,
+                stiffness: 400,
+                damping: 30,
                 mass: 0.8
             }
         },
@@ -375,7 +370,7 @@ const Window = ({
         },
         exit: {
             opacity: 0,
-            scale: isMobile ? 1 : 0.9,
+            scale: isMobile ? 1 : 0.95,
             y: isMobile ? 100 : 0,
             transition: {
                 duration: 0.15,
@@ -395,98 +390,65 @@ const Window = ({
             layoutId={id}
             onMouseDown={onFocus}
             onTouchStart={onFocus}
-            className="fixed flex flex-col overflow-hidden outline-none border border-(--border-primary) rounded-lg shadow-xl bg-white"
-            style={windowStyle}
+            className="fixed flex flex-col overflow-hidden outline-none border border-(--border-primary) rounded-lg shadow-lg bg-white"
+            style={{ ...windowStyle, transformOrigin: 'center center' }}
             role="dialog"
             aria-labelledby={`window-title-${id}`}
             tabIndex={-1}
         >
-            {/* Window Header */}
+            {/* Window Header - Original styling */}
             <div
-                className={`flex items-center justify-between h-[36px] px-3 bg-gradient-to-b from-white to-gray-50 border-b border-(--border-primary) select-none shrink-0 ${!isMaximized && !isMobile ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'
-                    }`}
+                className={`flex items-center justify-between h-[30px] px-2 bg-(--posthog-3000-50) border-b border-(--border-primary) cursor-default select-none shrink-0`}
                 onMouseDown={!isMaximized && !isMobile ? handleMouseDownHeader : undefined}
                 onTouchStart={!isMaximized && !isMobile ? handleTouchStartHeader : undefined}
-                onDoubleClick={!isMobile ? handleDoubleClickHeader : undefined}
             >
-                {/* Title */}
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                    {icon && <div className="text-secondary shrink-0">{icon}</div>}
-                    <span id={`window-title-${id}`} className="text-xs font-semibold text-primary truncate">
-                        {title}
-                    </span>
-                    {toolbar}
-                </div>
+                {/* Toolbar area - same as before */}
+                <div className="flex items-center gap-1 flex-1 min-w-0">{toolbar}</div>
 
-                {/* Window Controls */}
-                <div className="flex items-center gap-1 shrink-0 ml-2">
-                    <button
-                        onClick={handleMinimize}
-                        className="p-1.5 rounded hover:bg-black/5 active:bg-black/10 transition-colors text-secondary hover:text-primary"
-                        title="Minimize"
-                    >
+                {/* Window Controls - Original styling */}
+                <div className="flex items-center gap-0.5 shrink-0">
+                    <button onClick={handleMinimize} className="p-1.5 rounded hover:bg-black/5 transition-colors text-black">
                         <MinimizeIcon />
                     </button>
-                    {!isMobile && (
-                        <button
-                            onClick={handleMaximize}
-                            className="p-1.5 rounded hover:bg-black/5 active:bg-black/10 transition-colors text-secondary hover:text-primary"
-                            title={isMaximized ? "Restore" : "Maximize"}
-                        >
-                            {isMaximized ? <RestoreIcon /> : <MaximizeIcon />}
-                        </button>
-                    )}
-                    <button
-                        onClick={handleClose}
-                        className="p-1.5 rounded hover:bg-red-500/10 active:bg-red-500/20 transition-colors text-secondary hover:text-red-500"
-                        title="Close"
-                    >
+                    <button onClick={handleMaximize} className="p-1.5 rounded hover:bg-black/5 transition-colors text-black">
+                        {isMaximized ? <RestoreIcon /> : <MaximizeIcon />}
+                    </button>
+                    <button onClick={handleClose} className="p-1.5 rounded hover:bg-red-500/10 transition-colors text-black hover:text-red-500">
                         <CloseWindowIcon />
                     </button>
                 </div>
             </div>
 
             {/* Window Content */}
-            <AnimatePresence>
-                {!isMinimized && (
-                    <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.15 }}
-                        className="flex-1 flex overflow-hidden bg-white relative h-full"
-                    >
-                        <div className="flex-1 overflow-auto h-full scroll-smooth cursor-default relative">
-                            {children}
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            {!isMinimized && (
+                <div className="flex-1 flex overflow-hidden bg-white relative h-full">
+                    <div className="flex-1 overflow-auto h-full scroll-smooth cursor-default relative">
+                        {children}
+                    </div>
+                </div>
+            )}
 
-            {/* Resize Handles (only on desktop windowed mode) */}
+            {/* Resize Handles - Original styling (only on desktop windowed mode) */}
             {!isMaximized && !isMinimized && !isMobile && (
                 <>
                     <div
-                        className="absolute top-0 right-0 w-2 h-full cursor-e-resize z-20 touch-none hover:bg-blue-500/20 transition-colors"
+                        className="absolute top-0 right-0 w-[12px] h-full cursor-e-resize z-20 touch-none"
                         onMouseDown={(e) => { e.preventDefault(); startResize(e.clientX, e.clientY, 'e'); }}
                         onTouchStart={(e) => startResize(e.touches[0].clientX, e.touches[0].clientY, 'e')}
+                        aria-hidden="true"
                     />
                     <div
-                        className="absolute bottom-0 left-0 w-full h-2 cursor-s-resize z-20 touch-none hover:bg-blue-500/20 transition-colors"
+                        className="absolute bottom-0 left-0 w-full h-[12px] cursor-s-resize z-20 touch-none"
                         onMouseDown={(e) => { e.preventDefault(); startResize(e.clientX, e.clientY, 's'); }}
                         onTouchStart={(e) => startResize(e.touches[0].clientX, e.touches[0].clientY, 's')}
+                        aria-hidden="true"
                     />
                     <div
-                        className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize z-30 touch-none group"
+                        className="absolute bottom-0 right-0 w-[16px] h-[16px] cursor-se-resize bg-(--posthog-3000-200) hover:bg-blue-500 rounded-tl-md z-30 touch-none"
                         onMouseDown={(e) => { e.preventDefault(); startResize(e.clientX, e.clientY, 'se'); }}
                         onTouchStart={(e) => startResize(e.touches[0].clientX, e.touches[0].clientY, 'se')}
-                    >
-                        <svg className="w-3 h-3 absolute bottom-0.5 right-0.5 text-gray-400 group-hover:text-blue-500 transition-colors" viewBox="0 0 6 6" fill="currentColor">
-                            <circle cx="5" cy="5" r="1" />
-                            <circle cx="5" cy="2" r="1" />
-                            <circle cx="2" cy="5" r="1" />
-                        </svg>
-                    </div>
+                        aria-hidden="true"
+                    />
                 </>
             )}
         </motion.div>
