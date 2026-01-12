@@ -82,10 +82,10 @@ const Window = ({
         const viewWidth = window.innerWidth;
         const viewHeight = window.innerHeight;
 
-        const startW = mobile ? viewWidth * 0.85 : initialWidth;
-        const startH = mobile ? viewHeight * 0.7 : initialHeight;
-        const centeredX = initialX ?? Math.max(MARGIN, (viewWidth - startW) / 2);
-        const centeredY = initialY ?? Math.max(HEADER_HEIGHT + MARGIN, (viewHeight - startH) / 2);
+        const startW = Math.floor(mobile ? viewWidth * 0.85 : initialWidth);
+        const startH = Math.floor(mobile ? viewHeight * 0.7 : initialHeight);
+        const centeredX = Math.floor(initialX ?? Math.max(MARGIN, (viewWidth - startW) / 2));
+        const centeredY = Math.floor(initialY ?? Math.max(HEADER_HEIGHT + MARGIN, (viewHeight - startH) / 2));
 
         setPos({ x: centeredX, y: centeredY });
         setSize({ width: startW, height: startH });
@@ -197,7 +197,17 @@ const Window = ({
             const targetY = 15 - (pos.y + size.height / 2);
             return { opacity: 0, scale: 0.05, x: targetX, y: targetY, rotate: -10, filter: 'blur(15px)', pointerEvents: 'none' };
         }
-        return { opacity: 1, y: 0, scale: 1, filter: 'blur(0px)', pointerEvents: 'auto' };
+
+        // Base animations + Focus state animations
+        return {
+            opacity: isFocused ? 1 : 0.95,
+            y: 0,
+            scale: 1,
+            filter: 'blur(0px)',
+            pointerEvents: 'auto',
+            borderColor: isFocused ? 'rgba(37, 75, 133, 0.3)' : 'var(--border-primary)',
+            boxShadow: isFocused ? '0 10px 40px rgba(0,0,0,0.2)' : '0 4px 20px rgba(0,0,0,0.1)'
+        };
     };
 
     return (
@@ -209,8 +219,7 @@ const Window = ({
             onMouseDown={onFocus}
             onTouchStart={onFocus}
             layout="position"
-            className={`fixed flex flex-col overflow-hidden outline-none border rounded-xl shadow-2xl bg-white will-change-transform transition-all duration-300 ${isFocused ? 'border-brand-navy/30 ring-1 ring-brand-navy/5' : 'border-(--border-primary) grayscale-[0.1] opacity-95'
-                }`}
+            className="fixed flex flex-col overflow-hidden outline-none border rounded-xl bg-white will-change-transform"
             style={windowStyle}
         >
             {/* Window Header */}
@@ -237,7 +246,7 @@ const Window = ({
             <AnimatePresence>
                 {!isMinimized && (
                     <motion.div
-                        className={`flex-1 flex overflow-hidden bg-white relative transition-all duration-300 ${isFocused ? '' : 'blur-[0.5px] brightness-[0.98]'}`}
+                        className={`flex-1 flex overflow-hidden bg-white relative transition-all duration-300 ${isFocused ? '' : 'brightness-[0.97]'}`}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
