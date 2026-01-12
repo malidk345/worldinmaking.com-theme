@@ -54,10 +54,15 @@ export default function WindowSync() {
             type = 'post';
             const postId = searchParams.get('id');
             if (postId) {
+                lastSyncedPath.current = normalizedPath; // Set for post pages too
+
                 const currentWindows = windowsRef.current;
                 const existing = currentWindows.find(w => w.type === 'post' && (w.id === `post-window-${postId}` || w.id === 'blog-window'));
                 if (existing) {
-                    if (existing.isMinimized) bringToFront(existing.id);
+                    const isTop = currentWindows[currentWindows.length - 1]?.id === existing.id;
+                    if (!isTop || existing.isMinimized) {
+                        bringToFront(existing.id);
+                    }
                 } else {
                     openWindow('post', {
                         id: `post-window-${postId}`,
@@ -65,6 +70,7 @@ export default function WindowSync() {
                         isMaximized: true
                     });
                 }
+                return; // Early return for post pages
             }
         }
 
