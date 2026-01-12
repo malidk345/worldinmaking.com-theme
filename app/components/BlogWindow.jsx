@@ -70,21 +70,13 @@ export default function BlogWindow(props) {
         }
     }, [post, updateTabTitle]);
 
-    const handleClose = () => {
-        if (onClose) {
-            onClose();
-        } else {
-            router.push('/');
-        }
-    };
-
     // Loading state
     if (loading) {
         return (
             <Window
                 id="blog-window"
                 title="loading..."
-                onClose={handleClose}
+                onClose={onClose}
                 zIndex={zIndex}
                 onFocus={onFocus}
                 isFocused={isFocused}
@@ -116,7 +108,7 @@ export default function BlogWindow(props) {
             <Window
                 id="blog-window"
                 title="not found"
-                onClose={handleClose}
+                onClose={onClose}
                 zIndex={zIndex}
                 onFocus={onFocus}
                 isFocused={isFocused}
@@ -128,7 +120,7 @@ export default function BlogWindow(props) {
                 <div className="flex-1 overflow-y-auto bg-primary">
                     <div className="max-w-3xl mx-auto px-6 py-12 text-center">
                         <h1 className="text-2xl font-bold text-primary mb-4">Post not found</h1>
-                        <button onClick={handleClose} className="text-secondary hover:text-primary hover:underline">
+                        <button onClick={onClose} className="text-secondary hover:text-primary hover:underline">
                             ← Back to home
                         </button>
                     </div>
@@ -141,7 +133,7 @@ export default function BlogWindow(props) {
         <Window
             id="blog-window"
             title={post.title}
-            onClose={handleClose}
+            onClose={onClose}
             zIndex={zIndex}
             onFocus={onFocus}
             isFocused={isFocused}

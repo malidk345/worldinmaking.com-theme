@@ -149,35 +149,31 @@ export default function WindowManager() {
     const pathname = usePathname();
 
     const handleClose = (id, type) => {
+        // 1. Close the window
         closeWindow(id);
 
+        // 2. Find and close the matching tab
         let tab = tabs.find(t => t.id === id);
+
         if (!tab) {
-            let targetPath = null;
-            if (type === 'home') targetPath = '/';
-            else if (type === 'post') {
+            // Try to find tab by path
+            let targetPath = type === 'home' ? '/' : `/${type}`;
+            if (type === 'post') {
                 const postId = id.replace('post-window-', '');
                 targetPath = `/post?id=${postId}`;
-            } else {
-                targetPath = `/${type}`;
             }
-            if (targetPath) {
-                tab = tabs.find(t => t.path === targetPath || t.path.startsWith(`${targetPath}?`) || t.path.includes(`id=${targetPath.split('=')[1]}`));
-            }
+            tab = tabs.find(t => t.path === targetPath || t.path.startsWith(`${targetPath}?`));
         }
 
+        // 3. Close tab and navigate if needed
         if (tab) {
             const navigateTo = closeTab(tab.id);
             if (navigateTo && navigateTo !== pathname) {
                 router.push(navigateTo);
-                return;
             }
-        }
-
-        if (['blog', 'post', 'profile', 'explore', 'search'].includes(type)) {
-            if (pathname.startsWith(`/${type === 'post' ? 'post' : type}`)) {
-                router.push('/');
-            }
+        } else if (pathname !== '/') {
+            // Fallback: if no tab found but we're not on home, go home
+            router.push('/');
         }
     };
 
