@@ -11,7 +11,12 @@ export default function WindowSync() {
     const lastSyncedPath = useRef(null);
 
     useEffect(() => {
-        if (!pathname || pathname === lastSyncedPath.current) return;
+        if (!pathname) return;
+
+        // Normalize pathname to remove trailing slash (except for root)
+        const normalizedPath = pathname === '/' ? '/' : pathname.replace(/\/$/, '');
+
+        if (normalizedPath === lastSyncedPath.current) return;
 
         let type = null;
         let title = "";
@@ -29,7 +34,7 @@ export default function WindowSync() {
             '/contact': { type: 'contact', title: 'Contact' }
         };
 
-        const config = pathMap[pathname];
+        const config = pathMap[normalizedPath];
 
         if (config) {
             type = config.type;
@@ -40,7 +45,7 @@ export default function WindowSync() {
         }
 
         if (type) {
-            lastSyncedPath.current = pathname;
+            lastSyncedPath.current = normalizedPath;
 
             const existing = windows.find(w => w.type === type);
             if (existing) {

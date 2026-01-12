@@ -39,20 +39,38 @@ if (supabaseUrl && supabaseKey) {
     isConfigured = false;
 }
 
-// Create a mock client that returns empty data for graceful degradation
+// Create a robust mock client that returns empty data for graceful degradation
 const mockClient = {
     from: () => ({
-        select: () => ({ data: [], error: { message: 'Supabase not configured' } }),
-        insert: () => ({ data: null, error: { message: 'Supabase not configured' } }),
-        update: () => ({ data: null, error: { message: 'Supabase not configured' } }),
-        delete: () => ({ data: null, error: { message: 'Supabase not configured' } }),
+        select: (...args) => ({
+            data: [],
+            error: null, // Return null error to prevent unnecessary UI error states
+            order: function () { return this; },
+            eq: function () { return this; },
+            limit: function () { return this; },
+            single: function () { return { data: null, error: null }; },
+            maybeSingle: function () { return { data: null, error: null }; },
+        }),
+        insert: () => ({ data: null, error: null }),
+        update: () => ({ data: null, error: null }),
+        delete: () => ({ data: null, error: null }),
+        upsert: () => ({ data: null, error: null }),
         eq: function () { return this; },
-        single: function () { return this; },
+        single: function () { return { data: null, error: null }; },
         order: function () { return this; },
+        select: function () { return this; },
     }),
+    channel: () => ({
+        on: function () { return this; },
+        subscribe: function () { return this; },
+    }),
+    removeChannel: () => { },
     auth: {
+        getUser: async () => ({ data: { user: null }, error: null }),
         getSession: async () => ({ data: { session: null }, error: null }),
         signInWithOtp: async () => ({ error: { message: 'Supabase not configured' } }),
+        signInWithPassword: async () => ({ error: { message: 'Supabase not configured' } }),
+        signUp: async () => ({ error: { message: 'Supabase not configured' } }),
         signOut: async () => ({}),
         onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => { } } } }),
         exchangeCodeForSession: async () => ({ data: null, error: { message: 'Supabase not configured' } }),

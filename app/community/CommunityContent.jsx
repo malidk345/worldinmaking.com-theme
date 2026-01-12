@@ -230,7 +230,7 @@ export default function CommunityPage({ isWindowMode = false }) {
                                 />
 
                                 <RichTextEditor
-                                    content={newPostContent}
+                                    value={newPostContent}
                                     onChange={setNewPostContent}
                                     placeholder="What's on your mind..."
                                     minHeight="240px"

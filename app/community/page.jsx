@@ -7,4 +7,5 @@ export const metadata = {
     },
 };
 
-export { default } from "./CommunityContent";
+import CommunityContent from "./CommunityContent";
+export default CommunityContent;
