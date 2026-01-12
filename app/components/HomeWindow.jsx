@@ -19,7 +19,7 @@ import Image from 'next/image';
  * Features the window controls and toolbar as specified
  */
 export default function HomeWindow({ onClose, zIndex, onFocus }) {
-    const { posts, loading } = usePosts();
+    const { posts, loading } = usePosts({ fetchContent: false });
     const { openWindow } = useWindow();
 
     const handleAuthorClick = (e, authorName) => {
