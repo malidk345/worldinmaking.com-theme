@@ -20,20 +20,20 @@ const MIN_HEIGHT = 200;
 const DEFAULT_WIDTH = 800;
 const DEFAULT_HEIGHT = 600;
 
-// Slower, more visible elastic spring
+// Slower, very smooth elastic spring for "Big Bang" effect
 const elasticSpring = {
     type: 'spring',
-    stiffness: 180, // Lower stiffness = slower, more visible movement
-    damping: 24,    // Adjusted damping for smooth settling
-    mass: 1.2       // Higher mass = more momentum feel
+    stiffness: 140, // Slower
+    damping: 18,    // More flow
+    mass: 1         // Solid feel
 };
 
-// Smooth transition for layout changes
-const smoothSpring = {
+// Use the SAME spring for internal layout to keep them synced
+const layoutSpring = {
     type: 'spring',
-    stiffness: 250,
-    damping: 25,
-    mass: 0.8
+    stiffness: 140, // Matched with elasticSpring
+    damping: 18,
+    mass: 1
 };
 
 const Window = ({
@@ -383,10 +383,10 @@ const Window = ({
         }
 
         if (!isMounted) {
-            // Explosion Entry: Expand from tiny point with blur
+            // Explosion Entry: Expand from ABSOLUTE ZERO point
             return {
                 opacity: 0,
-                scale: 0.3,
+                scale: 0, // Starts from a dot
                 filter: 'blur(10px)'
             };
         }
@@ -415,7 +415,7 @@ const Window = ({
     return (
         <motion.div
             ref={windowRef}
-            initial={{ opacity: 0, scale: 0.3, filter: 'blur(10px)' }}
+            initial={{ opacity: 0, scale: 0, filter: 'blur(10px)' }}
             animate={getAnimationProps()}
             transition={elasticSpring}
             onMouseDown={onFocus}
@@ -431,8 +431,8 @@ const Window = ({
                 className={`flex items-center justify-between h-[30px] px-2 bg-(--posthog-3000-50) border-b border-(--border-primary) select-none shrink-0 ${!isMaximized ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
                 onMouseDown={!isMaximized ? handleMouseDownHeader : undefined}
                 onTouchStart={!isMaximized ? handleTouchStartHeader : undefined}
-                layout
-                transition={smoothSpring}
+                layout="position" // Only animate position changes, not scale transforms inherently
+                transition={layoutSpring} // SYNCED with container
             >
                 {/* Toolbar area */}
                 <div className="flex items-center gap-1 flex-1 min-w-0">{toolbar}</div>
@@ -474,7 +474,7 @@ const Window = ({
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                        transition={smoothSpring}
+                        transition={layoutSpring}
                     >
                         <div className="flex-1 overflow-auto scroll-smooth cursor-default relative">
                             {children}
