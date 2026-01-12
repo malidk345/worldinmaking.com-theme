@@ -21,21 +21,21 @@ export default function HomeWindowToolbar({
             {/* Categories Button */}
             <button
                 onClick={() => { setShowCategories?.(!showCategories); setShowFilter?.(false); }}
-                className={`flex items-center gap-1.5 p-1.5 rounded transition-colors text-black ${showCategories ? 'bg-black/10' : 'hover:bg-black/5'}`}
+                className={`flex items-center gap-1.5 p-1.5 rounded transition-colors ${showCategories ? 'bg-black/10' : 'hover:bg-black/5'}`}
                 title="Categories"
             >
-                <Layout className="size-3.5" />
-                <span className="text-xs font-medium hidden sm:inline">categories</span>
+                <Layout className="size-3.5 text-black" />
+                <span className="text-xs font-medium text-black hidden sm:inline">categories</span>
             </button>
 
             {/* Filter Button */}
             <button
                 onClick={() => { setShowFilter?.(!showFilter); setShowCategories?.(false); }}
-                className={`flex items-center gap-1.5 p-1.5 rounded transition-colors text-black ${showFilter ? 'bg-black/10' : 'hover:bg-black/5'}`}
+                className={`flex items-center gap-1.5 p-1.5 rounded transition-colors ${showFilter ? 'bg-black/10' : 'hover:bg-black/5'}`}
                 title="Filter"
             >
-                <Filter className="size-3.5" />
-                <span className="text-xs font-medium hidden sm:inline">filter</span>
+                <Filter className="size-3.5 text-black" />
+                <span className="text-xs font-medium text-black hidden sm:inline">filter</span>
             </button>
 
             {/* Separator */}
@@ -44,19 +44,19 @@ export default function HomeWindowToolbar({
             {/* Grid View Button */}
             <button
                 onClick={() => setViewMode?.('grid')}
-                className={`flex items-center gap-1.5 p-1.5 rounded transition-colors text-black ${viewMode === 'grid' ? 'bg-black/10' : 'hover:bg-black/5'}`}
+                className={`flex items-center gap-1.5 p-1.5 rounded transition-colors ${viewMode === 'grid' ? 'bg-black/10' : 'hover:bg-black/5'}`}
                 title="Grid View"
             >
-                <Grid className="size-3.5" />
+                <Grid className="size-3.5 text-black" />
             </button>
 
             {/* List View Button */}
             <button
                 onClick={() => setViewMode?.('list')}
-                className={`flex items-center gap-1.5 p-1.5 rounded transition-colors text-black ${viewMode === 'list' ? 'bg-black/10' : 'hover:bg-black/5'}`}
+                className={`flex items-center gap-1.5 p-1.5 rounded transition-colors ${viewMode === 'list' ? 'bg-black/10' : 'hover:bg-black/5'}`}
                 title="List View"
             >
-                <List className="size-3.5" />
+                <List className="size-3.5 text-black" />
             </button>
         </div>
     );

@@ -153,10 +153,15 @@ const Window = ({
     useEffect(() => { setIsMinimized(isMinimizedProp); }, [isMinimizedProp]);
 
     const handleClose = useCallback((e) => {
+        e?.preventDefault();
         e?.stopPropagation();
+
+        // Guard: prevent multiple close calls
+        if (isAnimatingOut) return;
+
         setIsAnimatingOut(true);
         setTimeout(() => onClose?.(), 150);
-    }, [onClose]);
+    }, [onClose, isAnimatingOut]);
 
     const handleMinimize = useCallback((e) => {
         e?.stopPropagation();
