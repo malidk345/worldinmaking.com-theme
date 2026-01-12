@@ -31,7 +31,7 @@ export default function BlogWindow({ onClose, zIndex, onFocus }) {
     const slug = searchParams.get('id');
     const [post, setPost] = useState(null);
     const [loading, setLoading] = useState(true);
-    const { posts } = usePosts();
+    const { posts } = usePosts({ fetchContent: false });
     const { updateTabTitle } = useTabs();
 
     // Toolbar states
