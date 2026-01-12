@@ -1,17 +1,15 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { MinimizeIcon, MaximizeIcon, RestoreIcon, CloseWindowIcon } from './WindowIcons';
 
 /**
  * Window Component with Desktop-like Animations
  * 
- * - Mobile: Opens maximized
- * - Desktop: Opens centered at medium size
- * - Maximize/Restore works on both
- * - 8px margin from header and edges always respected
- * - Minimize closes window (shows in tab manager)
+ * - Mobile: Opens maximized, minimizes with slide down
+ * - Desktop: Opens centered, minimizes with scale down
+ * - Smooth spring animations throughout
  */
 
 const HEADER_HEIGHT = 45;
@@ -21,6 +19,21 @@ const MIN_WIDTH = 320;
 const MIN_HEIGHT = 200;
 const DEFAULT_WIDTH = 800;
 const DEFAULT_HEIGHT = 600;
+
+// Smooth spring config
+const springConfig = {
+    type: 'spring',
+    stiffness: 500,
+    damping: 35,
+    mass: 0.8
+};
+
+const fastSpring = {
+    type: 'spring',
+    stiffness: 600,
+    damping: 40,
+    mass: 0.5
+};
 
 const Window = ({
     id,
@@ -44,6 +57,7 @@ const Window = ({
 }) => {
     const [isMobile, setIsMobile] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
+    const [isAnimatingOut, setIsAnimatingOut] = useState(false);
 
     // Window states
     const [isMaximized, setIsMaximized] = useState(isMaximizedProp);
@@ -89,14 +103,16 @@ const Window = ({
         preMaximizeState.current = { x: centeredX, y: centeredY, width: windowWidth, height: windowHeight };
 
         // Mobile: Always start maximized
-        // Desktop: Start not maximized (centered window)
         if (mobile) {
             setIsMaximized(true);
         } else {
             setIsMaximized(isMaximizedProp);
         }
 
-        setIsMounted(true);
+        // Small delay for mount animation
+        requestAnimationFrame(() => {
+            setIsMounted(true);
+        });
     }, []);
 
     // Handle window resize
@@ -121,7 +137,6 @@ const Window = ({
         let newX = dragStartRef.current.initialX + dx;
         let newY = dragStartRef.current.initialY + dy;
 
-        // Constrain to viewport
         newX = Math.max(MARGIN, Math.min(newX, window.innerWidth - sizeRef.current.width - MARGIN));
         newY = Math.max(HEADER_HEIGHT + MARGIN, Math.min(newY, window.innerHeight - sizeRef.current.height - MARGIN));
 
@@ -253,27 +268,31 @@ const Window = ({
         document.addEventListener('touchend', endResize);
     }, [isMaximized, isMinimized, onSizeChange]);
 
-    // Window control handlers
+    // Window control handlers with smooth animations
     const handleClose = useCallback((e) => {
         e?.stopPropagation();
-        onClose?.();
+        setIsAnimatingOut(true);
+        // Wait for animation then close
+        setTimeout(() => {
+            onClose?.();
+        }, 150);
     }, [onClose]);
 
     // Minimize = Close window (it stays in tab manager)
     const handleMinimize = useCallback((e) => {
         e?.stopPropagation();
-        // Minimize acts like close - window stays in tab manager
-        onClose?.();
+        setIsAnimatingOut(true);
+        setTimeout(() => {
+            onClose?.();
+        }, 150);
     }, [onClose]);
 
     const handleMaximize = useCallback((e) => {
         e?.stopPropagation();
 
         if (!isMaximized) {
-            // Store current state before maximizing
             preMaximizeState.current = { x: pos.x, y: pos.y, width: size.width, height: size.height };
         } else {
-            // Restore previous state
             setPos({ x: preMaximizeState.current.x, y: preMaximizeState.current.y });
             setSize({ width: preMaximizeState.current.width, height: preMaximizeState.current.height });
         }
@@ -288,33 +307,19 @@ const Window = ({
     const windowStyle = useMemo(() => {
         const baseStyle = { zIndex, display: 'flex' };
 
-        if (!isMounted) {
-            // Initial hidden state - center of screen
-            return {
-                ...baseStyle,
-                opacity: 0,
-                position: 'fixed',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%) scale(0.8)',
-                width: size.width,
-                height: size.height
-            };
-        }
-
         if (isMaximized || isMobile) {
-            // Maximized: Fill viewport with 8px margin
             return {
                 ...baseStyle,
                 position: 'fixed',
                 top: HEADER_HEIGHT + MARGIN,
                 left: MARGIN,
-                width: `calc(100vw - ${MARGIN * 2}px)`,
-                height: `calc(100dvh - ${HEADER_HEIGHT + MARGIN * 2}px - env(safe-area-inset-bottom))`
+                right: MARGIN,
+                bottom: MARGIN,
+                width: 'auto',
+                height: 'auto'
             };
         }
 
-        // Windowed mode - centered
         return {
             ...baseStyle,
             position: 'fixed',
@@ -323,118 +328,146 @@ const Window = ({
             width: size.width,
             height: size.height
         };
-    }, [zIndex, isMounted, isMaximized, isMobile, pos, size]);
+    }, [zIndex, isMaximized, isMobile, pos, size]);
 
-    // Calculate the center point for animation origin
-    const getCenterTransform = () => {
-        if (!isMounted) return 'translate(-50%, -50%) scale(0.8)';
-        return 'none';
+    // Animation variants based on platform
+    const getAnimationProps = () => {
+        if (isAnimatingOut) {
+            // Exit animation
+            if (isMobile) {
+                return {
+                    opacity: 0,
+                    y: 100,
+                    scale: 0.95
+                };
+            }
+            return {
+                opacity: 0,
+                scale: 0.9
+            };
+        }
+
+        if (!isMounted) {
+            // Initial state before mount
+            if (isMobile) {
+                return {
+                    opacity: 0,
+                    y: 50
+                };
+            }
+            return {
+                opacity: 0,
+                scale: 0.9
+            };
+        }
+
+        // Normal visible state
+        return {
+            opacity: 1,
+            y: 0,
+            scale: 1
+        };
     };
 
     return (
         <motion.div
             ref={windowRef}
-            initial={{
-                opacity: 0,
-                scale: 0.8,
-            }}
-            animate={{
-                opacity: 1,
-                scale: 1,
-            }}
-            exit={{
-                opacity: 0,
-                scale: 0.8,
-                transition: { duration: 0.15, ease: 'easeIn' }
-            }}
-            transition={{
-                type: 'spring',
-                stiffness: 400,
-                damping: 30,
-                mass: 0.8
-            }}
-            layout
+            initial={isMobile ? { opacity: 0, y: 50 } : { opacity: 0, scale: 0.9 }}
+            animate={getAnimationProps()}
+            transition={isAnimatingOut ? { duration: 0.15, ease: [0.4, 0, 1, 1] } : springConfig}
             onMouseDown={onFocus}
             onTouchStart={onFocus}
-            className="fixed flex flex-col overflow-hidden outline-none border border-(--border-primary) rounded-lg shadow-lg bg-white"
+            className="fixed flex flex-col overflow-hidden outline-none border border-(--border-primary) rounded-lg shadow-lg bg-white will-change-transform"
             style={{ ...windowStyle, transformOrigin: 'center center' }}
             role="dialog"
             aria-labelledby={`window-title-${id}`}
             tabIndex={-1}
         >
-            {/* Window Header - Original styling preserved */}
-            <div
+            {/* Window Header */}
+            <motion.div
                 className={`flex items-center justify-between h-[30px] px-2 bg-(--posthog-3000-50) border-b border-(--border-primary) select-none shrink-0 ${!isMaximized && !isMobile ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
                 onMouseDown={!isMaximized && !isMobile ? handleMouseDownHeader : undefined}
                 onTouchStart={!isMaximized && !isMobile ? handleTouchStartHeader : undefined}
+                layout
+                transition={fastSpring}
             >
                 {/* Toolbar area */}
                 <div className="flex items-center gap-1 flex-1 min-w-0">{toolbar}</div>
 
-                {/* Window Controls - Original styling */}
+                {/* Window Controls */}
                 <div className="flex items-center gap-0.5 shrink-0">
-                    {/* Minimize = Close to tab manager */}
-                    <button
+                    <motion.button
                         onClick={handleMinimize}
-                        className="p-1.5 rounded hover:bg-black/5 transition-colors text-black"
+                        className="p-1.5 rounded hover:bg-black/5 active:bg-black/10 transition-colors text-black"
                         title="Minimize to tabs"
+                        whileTap={{ scale: 0.9 }}
                     >
                         <MinimizeIcon />
-                    </button>
-                    {/* Maximize/Restore */}
-                    <button
+                    </motion.button>
+                    <motion.button
                         onClick={handleMaximize}
-                        className="p-1.5 rounded hover:bg-black/5 transition-colors text-black"
+                        className="p-1.5 rounded hover:bg-black/5 active:bg-black/10 transition-colors text-black"
                         title={isMaximized ? "Restore" : "Maximize"}
+                        whileTap={{ scale: 0.9 }}
                     >
                         {isMaximized ? <RestoreIcon /> : <MaximizeIcon />}
-                    </button>
-                    {/* Close */}
-                    <button
+                    </motion.button>
+                    <motion.button
                         onClick={handleClose}
-                        className="p-1.5 rounded hover:bg-red-500/10 transition-colors text-black hover:text-red-500"
+                        className="p-1.5 rounded hover:bg-red-500/10 active:bg-red-500/20 transition-colors text-black hover:text-red-500"
                         title="Close"
+                        whileTap={{ scale: 0.9 }}
                     >
                         <CloseWindowIcon />
-                    </button>
+                    </motion.button>
                 </div>
-            </div>
+            </motion.div>
 
             {/* Window Content */}
             <motion.div
-                className="flex-1 flex overflow-hidden bg-white relative h-full"
-                initial={false}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.1 }}
+                className="flex-1 flex overflow-hidden bg-white relative"
+                layout
+                transition={fastSpring}
             >
-                <div className="flex-1 overflow-auto h-full scroll-smooth cursor-default relative">
+                <div className="flex-1 overflow-auto scroll-smooth cursor-default relative">
                     {children}
                 </div>
             </motion.div>
 
             {/* Resize Handles (only on desktop windowed mode) */}
-            {!isMaximized && !isMobile && (
-                <>
-                    <div
-                        className="absolute top-0 right-0 w-[12px] h-full cursor-e-resize z-20 touch-none"
-                        onMouseDown={(e) => { e.preventDefault(); startResize(e.clientX, e.clientY, 'e'); }}
-                        onTouchStart={(e) => startResize(e.touches[0].clientX, e.touches[0].clientY, 'e')}
-                        aria-hidden="true"
-                    />
-                    <div
-                        className="absolute bottom-0 left-0 w-full h-[12px] cursor-s-resize z-20 touch-none"
-                        onMouseDown={(e) => { e.preventDefault(); startResize(e.clientX, e.clientY, 's'); }}
-                        onTouchStart={(e) => startResize(e.touches[0].clientX, e.touches[0].clientY, 's')}
-                        aria-hidden="true"
-                    />
-                    <div
-                        className="absolute bottom-0 right-0 w-[16px] h-[16px] cursor-se-resize bg-(--posthog-3000-200) hover:bg-blue-500 rounded-tl-md z-30 touch-none"
-                        onMouseDown={(e) => { e.preventDefault(); startResize(e.clientX, e.clientY, 'se'); }}
-                        onTouchStart={(e) => startResize(e.touches[0].clientX, e.touches[0].clientY, 'se')}
-                        aria-hidden="true"
-                    />
-                </>
-            )}
+            <AnimatePresence>
+                {!isMaximized && !isMobile && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute top-0 right-0 w-[12px] h-full cursor-e-resize z-20 touch-none"
+                            onMouseDown={(e) => { e.preventDefault(); startResize(e.clientX, e.clientY, 'e'); }}
+                            onTouchStart={(e) => startResize(e.touches[0].clientX, e.touches[0].clientY, 'e')}
+                            aria-hidden="true"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute bottom-0 left-0 w-full h-[12px] cursor-s-resize z-20 touch-none"
+                            onMouseDown={(e) => { e.preventDefault(); startResize(e.clientX, e.clientY, 's'); }}
+                            onTouchStart={(e) => startResize(e.touches[0].clientX, e.touches[0].clientY, 's')}
+                            aria-hidden="true"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.5 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.5 }}
+                            className="absolute bottom-0 right-0 w-[16px] h-[16px] cursor-se-resize bg-(--posthog-3000-200) hover:bg-blue-500 rounded-tl-md z-30 touch-none"
+                            onMouseDown={(e) => { e.preventDefault(); startResize(e.clientX, e.clientY, 'se'); }}
+                            onTouchStart={(e) => startResize(e.touches[0].clientX, e.touches[0].clientY, 'se')}
+                            aria-hidden="true"
+                        />
+                    </>
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 };
