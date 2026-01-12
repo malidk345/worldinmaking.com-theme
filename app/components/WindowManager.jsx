@@ -4,6 +4,7 @@ import React from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useRouter, usePathname } from 'next/navigation';
 import { useWindow } from '../contexts/WindowContext';
+import { useTabs } from '../context/TabContext';
 import HomeWindow from './HomeWindow';
 import BlogWindow from './BlogWindow';
 import ExplorePage from '../explore/ExploreContent';
@@ -29,12 +30,38 @@ import Window from './Window';
  */
 export default function WindowManager() {
     const { windows, closeWindow, bringToFront, updateWindow } = useWindow();
+    const { tabs, closeTab } = useTabs();
     const router = useRouter();
     const pathname = usePathname();
 
     const handleClose = (id, type) => {
         closeWindow(id);
 
+        // Map window type to likely path to find matching tab
+        let targetPath = null;
+        if (type === 'home') targetPath = '/';
+        else if (type === 'post') {
+            // For posts, we might not know exact ID here easily without extracting from window props or id
+            // But usually post windows have id like 'post-window-{id}' or similar. 
+            // Let's rely on type mapping for simple pages first.
+            // If it's a blog post, the window ID is usually `blog-window-${id}` or `post-${id}`
+        } else {
+            targetPath = `/${type}`;
+        }
+
+        // Find tab with matching path
+        if (targetPath) {
+            const tab = tabs.find(t => t.path === targetPath || t.path.startsWith(`${targetPath}?`));
+            if (tab) {
+                const navigateTo = closeTab(tab.id);
+                if (navigateTo && navigateTo !== pathname) {
+                    router.push(navigateTo);
+                    return; // closeTab handles navigation calculation
+                }
+            }
+        }
+
+        // Fallback navigation if tab wasn't found or closeTab didn't return nav
         if (type === 'blog' || type === 'post') {
             if (pathname.startsWith('/post')) {
                 router.push('/');
