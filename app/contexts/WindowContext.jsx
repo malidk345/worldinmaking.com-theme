@@ -40,7 +40,11 @@ export const WindowProvider = ({ children }) => {
             title: w.title,
             username: w.username,
             isMaximized: w.isMaximized,
-            isMinimized: w.isMinimized
+            isMinimized: w.isMinimized,
+            x: w.x,
+            y: w.y,
+            width: w.width,
+            height: w.height
         }));
         localStorage.setItem('posthog-windows', JSON.stringify(toSave));
     }, [windows, isLoaded]);
@@ -75,7 +79,11 @@ export const WindowProvider = ({ children }) => {
                 title: options.title || type,
                 username: options.username,
                 isMaximized: options.isMaximized ?? true,
-                isMinimized: false
+                isMinimized: false,
+                x: options.x ?? 100,
+                y: options.y ?? 100,
+                width: options.width ?? 700,
+                height: options.height ?? 500
             }];
         });
     }, []);
@@ -99,6 +107,13 @@ export const WindowProvider = ({ children }) => {
         ));
     }, []);
 
+    // Update specific window properties (position, size, etc.)
+    const updateWindow = useCallback((id, updates) => {
+        setWindows(prev => prev.map(w =>
+            w.id === id ? { ...w, ...updates } : w
+        ));
+    }, []);
+
     if (!isLoaded) return null;
 
     return (
@@ -108,7 +123,8 @@ export const WindowProvider = ({ children }) => {
             closeWindow,
             bringToFront,
             toggleMinimize,
-            toggleMaximize
+            toggleMaximize,
+            updateWindow
         }}>
             {children}
         </WindowContext.Provider>

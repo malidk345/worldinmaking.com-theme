@@ -17,9 +17,11 @@ const GridDisplayIcon = HeaderIcons.Grid;
 const ListDisplayIcon = HeaderIcons.List;
 const CloseIcon = HeaderIcons.Close;
 
+// Memoize the home icon to avoid re-calculating or creating components during render
+const HomeIcon = getIconByPath('/');
+
 const DashboardTabIcon = ({ className, style }) => {
-    const Icon = getIconByPath('/');
-    return <Icon className={`LemonIcon ${className || ''}`} style={style} />;
+    return <HomeIcon className={`LemonIcon ${className || ''}`} style={style} />;
 };
 
 export default function DashboardHeader({

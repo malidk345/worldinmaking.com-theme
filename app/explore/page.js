@@ -1,10 +1,13 @@
-export const metadata = {
-    title: "Explore",
-    description: "Explore articles by category. Discover content about technology, design, life, and more.",
-    openGraph: {
-        title: "Explore | World in Making",
-        description: "Explore articles by category. Discover content about technology, design, and life.",
-    },
-};
+"use client";
 
-export { default } from "./ExploreContent";
+import React from 'react';
+import DashboardHeader from '../components/DashboardHeader';
+
+export default function ExplorePage() {
+    return (
+        <div className="flex-1 flex flex-col h-full overflow-hidden">
+            <DashboardHeader />
+            {/* Window managed by WindowManager & WindowSync */}
+        </div>
+    );
+}

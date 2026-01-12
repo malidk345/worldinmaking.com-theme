@@ -1,10 +1,13 @@
-export const metadata = {
-    title: "Search",
-    description: "Search through our collection of articles, tutorials, and insights. Find exactly what you're looking for.",
-    openGraph: {
-        title: "Search | World in Making",
-        description: "Search through our collection of articles, tutorials, and insights.",
-    },
-};
+"use client";
 
-export { default } from "./SearchContent";
+import React from 'react';
+import DashboardHeader from '../components/DashboardHeader';
+
+export default function SearchPage() {
+    return (
+        <div className="flex-1 flex flex-col h-full overflow-hidden">
+            <DashboardHeader />
+            {/* Window managed by WindowManager & WindowSync */}
+        </div>
+    );
+}

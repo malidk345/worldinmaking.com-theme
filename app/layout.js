@@ -13,6 +13,8 @@ import { WindowProvider } from "./contexts/WindowContext";
 // Components
 import Sidebar from "./components/Sidebar";
 import WindowManager from "./components/WindowManager";
+import KeyboardShortcuts from "./components/KeyboardShortcuts";
+import WindowSync from "./components/WindowSync";
 
 // PostHog uses IBM Plex Sans for body text
 const ibmPlexSans = IBM_Plex_Sans({
@@ -141,6 +143,8 @@ export default function RootLayout({ children }) {
                 <SidebarProvider>
                   <TabProvider>
                     <WindowProvider>
+                      <KeyboardShortcuts />
+                      <WindowSync />
                       <Sidebar />
                       <div className="scene flex flex-col flex-1 min-w-0">
                         <div className="SceneLayout flex-1 flex flex-col min-h-0 relative">

@@ -1,9 +1,9 @@
 "use client";
 
 // Supabase posts hook - Clean version for Markdown content
-import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { stripMarkdown } from '../lib/markdown';
+import useSWR from 'swr';
 import logger from '../utils/logger';
 
 // Helper to convert DB Post format to App format
@@ -49,49 +49,29 @@ const adaptPost = (p) => {
     };
 };
 
+const postsFetcher = async () => {
+    const { data, error } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('published', true)
+        .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data.map(adaptPost).filter(Boolean);
+};
+
 export const usePosts = () => {
-    const [posts, setPosts] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const { data, error, isLoading, mutate } = useSWR('posts', postsFetcher, {
+        revalidateOnFocus: false,
+        dedupingInterval: 60000, // 1 minute
+    });
 
-    const fetchPosts = useCallback(async () => {
-        try {
-            setLoading(true);
-            setError(null);
-
-            const { data, error: fetchError } = await supabase
-                .from('posts')
-                .select('*')
-                .eq('published', true)
-                .order('created_at', { ascending: false });
-
-            if (fetchError) {
-                logger.error('[usePosts] Error fetching posts:', fetchError);
-                setError(fetchError.message);
-            } else if (data) {
-                setPosts(data.map(adaptPost).filter(Boolean));
-            }
-        } catch (e) {
-            logger.error('[usePosts] Failed to fetch posts:', e);
-            setError(e.message || 'An unexpected error occurred');
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchPosts();
-    }, [fetchPosts]);
-
-    // Memoize the return value to prevent unnecessary re-renders
-    const result = useMemo(() => ({
-        posts,
-        loading,
-        error,
-        refetch: fetchPosts
-    }), [posts, loading, error, fetchPosts]);
-
-    return result;
+    return {
+        posts: data || [],
+        loading: isLoading,
+        error: error?.message || null,
+        refetch: mutate
+    };
 };
 
 export const getPostBySlug = async (slug) => {

@@ -20,7 +20,10 @@ export function TabProvider({ children }) {
 
     // Use ref to always have access to current tabs without stale closures
     const tabsRef = useRef(tabs);
-    tabsRef.current = tabs;
+
+    useEffect(() => {
+        tabsRef.current = tabs;
+    }, [tabs]);
 
     // Helper function to generate a readable title from pathname
     const getPageTitle = (path) => {

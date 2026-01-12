@@ -18,7 +18,7 @@ export default function PageWindow({
     title,
     children,
     onClose,
-    zIndex = 85,  // Default high z-index for page windows
+    zIndex = 15,  // Fits within regular window range
     onFocus
 }) {
     return (
