@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useState } from 'react';
 
 const HEADER_HEIGHT = 45;
 const MARGIN = 8;
@@ -21,6 +21,10 @@ export const useWindowInteraction = ({
     const dragStartRef = useRef(null);
     const resizeStartRef = useRef(null);
 
+    // State-based flags for proper React reactivity
+    const [isDragging, setIsDragging] = useState(false);
+    const [isResizing, setIsResizing] = useState(false);
+
     const startDrag = useCallback((clientX, clientY) => {
         if (isMaximized) return;
         onFocus?.();
@@ -32,6 +36,7 @@ export const useWindowInteraction = ({
             lastValidX: posRef.current.x,
             lastValidY: posRef.current.y
         };
+        setIsDragging(true);
     }, [isMaximized, onFocus, posRef]);
 
     const handleDragMove = useCallback((clientX, clientY) => {
@@ -66,6 +71,7 @@ export const useWindowInteraction = ({
             }
         }
         dragStartRef.current = null;
+        setIsDragging(false);
     }, [onPositionChange, setPos, windowRef, preMaximizeState]);
 
     const startResize = useCallback((clientX, clientY, direction) => {
@@ -85,6 +91,7 @@ export const useWindowInteraction = ({
             lastValidY: posRef.current.y,
             direction
         };
+        setIsResizing(true);
     }, [isMaximized, isMinimized, onFocus, posRef, sizeRef]);
 
     const handleResizeMove = useCallback((moveX, moveY) => {
@@ -154,6 +161,7 @@ export const useWindowInteraction = ({
             }
         }
         resizeStartRef.current = null;
+        setIsResizing(false);
     }, [onPositionChange, onSizeChange, setPos, setSize, windowRef, preMaximizeState]);
 
     return {
@@ -163,7 +171,7 @@ export const useWindowInteraction = ({
         startResize,
         handleResizeMove,
         handleResizeEnd,
-        isDragging: !!dragStartRef.current,
-        isResizing: !!resizeStartRef.current
+        isDragging,
+        isResizing
     };
 };

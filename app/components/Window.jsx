@@ -190,17 +190,18 @@ const Window = ({
     }, [zIndex, isMaximized, isMinimized, pos, size]);
 
     const getAnimationProps = () => {
-        if (isAnimatingOut) return { opacity: 0, scale: 0.9, transition: { duration: 0.2 } };
-        if (!isMounted) return { opacity: 0, scale: 0.95, y: 10 };
+        if (isAnimatingOut) return { opacity: 0, scale: 0.9, x: 0, y: 0, transition: { duration: 0.2, ease: 'easeOut' } };
+        if (!isMounted) return { opacity: 0, scale: 0.95, x: 0, y: 10 };
         if (isMinimized) {
             const targetX = 50 - (pos.x + size.width / 2);
             const targetY = 15 - (pos.y + size.height / 2);
             return { opacity: 0, scale: 0.1, x: targetX, y: targetY, pointerEvents: 'none' };
         }
 
-        // Solid, fully opaque windows - NO transparency, shadows, or filters
+        // Solid, fully opaque windows - reset all transform values
         return {
             opacity: 1,
+            x: 0,
             y: 0,
             scale: 1,
             pointerEvents: 'auto'

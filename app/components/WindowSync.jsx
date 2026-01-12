@@ -10,6 +10,12 @@ export default function WindowSync() {
     const { openWindow, windows, bringToFront } = useWindow();
 
     const lastSyncedPath = useRef(null);
+    const windowsRef = useRef(windows);
+
+    // Keep ref in sync
+    useEffect(() => {
+        windowsRef.current = windows;
+    }, [windows]);
 
     useEffect(() => {
         if (!pathname) return;
@@ -48,7 +54,8 @@ export default function WindowSync() {
             type = 'post';
             const postId = searchParams.get('id');
             if (postId) {
-                const existing = windows.find(w => w.type === 'post' && (w.id === `post-window-${postId}` || w.id === 'blog-window'));
+                const currentWindows = windowsRef.current;
+                const existing = currentWindows.find(w => w.type === 'post' && (w.id === `post-window-${postId}` || w.id === 'blog-window'));
                 if (existing) {
                     if (existing.isMinimized) bringToFront(existing.id);
                 } else {
@@ -64,9 +71,10 @@ export default function WindowSync() {
         if (type) {
             lastSyncedPath.current = normalizedPath;
 
-            const existing = windows.find(w => w.type === type);
+            const currentWindows = windowsRef.current;
+            const existing = currentWindows.find(w => w.type === type);
             if (existing) {
-                const isTop = windows[windows.length - 1]?.id === existing.id;
+                const isTop = currentWindows[currentWindows.length - 1]?.id === existing.id;
                 if (!isTop || existing.isMinimized) {
                     bringToFront(existing.id);
                 }
@@ -78,7 +86,8 @@ export default function WindowSync() {
                 });
             }
         }
-    }, [pathname, searchParams, openWindow, bringToFront, windows]);
+    }, [pathname, searchParams, openWindow, bringToFront]);
 
     return null;
 }
+
