@@ -20,20 +20,20 @@ const MIN_HEIGHT = 200;
 const DEFAULT_WIDTH = 800;
 const DEFAULT_HEIGHT = 600;
 
-// Advanced Elastic Spring for "Pop" effect
+// Slower, more visible elastic spring
 const elasticSpring = {
     type: 'spring',
-    stiffness: 350,
-    damping: 25,
-    mass: 0.8
+    stiffness: 180, // Lower stiffness = slower, more visible movement
+    damping: 24,    // Adjusted damping for smooth settling
+    mass: 1.2       // Higher mass = more momentum feel
 };
 
-// Smooth but quick transition for internal elements
+// Smooth transition for layout changes
 const smoothSpring = {
     type: 'spring',
-    stiffness: 400,
-    damping: 30,
-    mass: 0.5
+    stiffness: 250,
+    damping: 25,
+    mass: 0.8
 };
 
 const Window = ({
@@ -316,19 +316,19 @@ const Window = ({
     const windowStyle = useMemo(() => {
         const baseStyle = { zIndex, display: 'flex' };
 
-        // Minimized state - small bar at bottom
+        // Minimized state - completely hidden (off-screen)
+        // We handle visibility via opacity/scale animation, but layout should be removed
         if (isMinimized) {
             return {
                 ...baseStyle,
+                display: 'none', // Effectively remove from layout after animation (handled by Framer Motion variant if needed, but here we force hidden)
+                // Note: Framer Motion might need the element present to animate out.
+                // We'll trust variants for visual hiding, and this for layout flow if needed.
+                // Actually, to animate out properly, we shouldn't use display: none immediately.
+                // We'll rely on variants scale/opacity 0.
                 position: 'fixed',
-                bottom: MARGIN,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                width: isMobile ? 'calc(100% - 32px)' : '320px',
-                height: '40px',
-                top: 'auto',
-                right: 'auto',
-                borderRadius: '12px'
+                pointerEvents: 'none', // Make unclickable
+                opacity: 0
             };
         }
 
@@ -392,12 +392,13 @@ const Window = ({
         }
 
         if (isMinimized) {
-            // Minimize: Shrink down to tab bar area
+            // Minimize: Implode and drop down
             return {
-                opacity: 1,
-                scale: 1,
-                y: 0,
-                filter: 'blur(0px)'
+                opacity: 0,
+                scale: 0.5,
+                y: 100, // Move down
+                filter: 'blur(10px)',
+                pointerEvents: 'none'
             };
         }
 
@@ -406,7 +407,8 @@ const Window = ({
             opacity: 1,
             y: 0,
             scale: 1,
-            filter: 'blur(0px)'
+            filter: 'blur(0px)',
+            pointerEvents: 'auto'
         };
     };
 
