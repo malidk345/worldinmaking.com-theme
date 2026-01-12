@@ -14,7 +14,7 @@ export function TabProvider({ children }) {
         : pathname;
 
     const [tabs, setTabs] = useState([
-        { id: 'home', title: 'home', path: '/', isActive: true }
+        { id: 'home-window', title: 'home', path: '/', isActive: true }
     ]);
     const [history, setHistory] = useState([]);
 
@@ -105,10 +105,14 @@ export function TabProvider({ children }) {
                 let newId = `tab-${Date.now()}`;
 
                 if (pathname === '/') {
-                    newId = 'home';
+                    newId = 'home-window';
                 } else if (pathname === '/post') {
                     const postId = searchParams.get('id');
-                    if (postId) newId = `blog-window-${postId}`;
+                    if (postId) newId = `post-window-${postId}`;
+                } else {
+                    // Standardize other pages to match Window IDs: {type}-window
+                    const type = pathname.replace(/^\//, '');
+                    if (type) newId = `${type}-window`;
                 }
 
                 const newTab = {
@@ -197,7 +201,7 @@ export function TabProvider({ children }) {
             const currentRemaining = prev.filter(t => t.id !== tabId);
 
             if (currentRemaining.length === 0) {
-                return [{ id: 'search', title: 'search', path: '/search', isActive: true }];
+                return [{ id: 'search-window', title: 'search', path: '/search', isActive: true }];
             }
 
             return currentRemaining.map((tab, idx) => ({

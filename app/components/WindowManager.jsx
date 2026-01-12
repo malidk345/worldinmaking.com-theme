@@ -37,27 +37,32 @@ export default function WindowManager() {
     const handleClose = (id, type) => {
         closeWindow(id);
 
-        // Map window type to likely path to find matching tab
-        let targetPath = null;
-        if (type === 'home') targetPath = '/';
-        else if (type === 'post') {
-            // For posts, we might not know exact ID here easily without extracting from window props or id
-            // But usually post windows have id like 'post-window-{id}' or similar. 
-            // Let's rely on type mapping for simple pages first.
-            // If it's a blog post, the window ID is usually `blog-window-${id}` or `post-${id}`
-        } else {
-            targetPath = `/${type}`;
+        // Standardized IDs match between Windows and Tabs now
+        // Try to find tab by ID first, then fallback to path mapping
+        let tab = tabs.find(t => t.id === id);
+
+        if (!tab) {
+            // Fallback: Map window type to likely path to find matching tab
+            let targetPath = null;
+            if (type === 'home') targetPath = '/';
+            else if (type === 'post') {
+                const postId = id.replace('post-window-', '');
+                targetPath = `/post?id=${postId}`;
+            } else {
+                targetPath = `/${type}`;
+            }
+
+            if (targetPath) {
+                tab = tabs.find(t => t.path === targetPath || t.path.startsWith(`${targetPath}?`) || t.path.includes(`id=${targetPath.split('=')[1]}`));
+            }
         }
 
-        // Find tab with matching path
-        if (targetPath) {
-            const tab = tabs.find(t => t.path === targetPath || t.path.startsWith(`${targetPath}?`));
-            if (tab) {
-                const navigateTo = closeTab(tab.id);
-                if (navigateTo && navigateTo !== pathname) {
-                    router.push(navigateTo);
-                    return; // closeTab handles navigation calculation
-                }
+        // Close the tab if found
+        if (tab) {
+            const navigateTo = closeTab(tab.id);
+            if (navigateTo && navigateTo !== pathname) {
+                router.push(navigateTo);
+                return; // closeTab handles navigation calculation
             }
         }
 

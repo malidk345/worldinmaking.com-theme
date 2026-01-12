@@ -3,6 +3,7 @@ import React from 'react';
 import { getIconByPath } from '../utils/iconUtils';
 import { useSidebar } from '../context/SidebarContext';
 import { useTabs } from '../context/TabContext';
+import { useWindow } from '../contexts/WindowContext';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import * as HeaderIcons from './Icons';
@@ -34,6 +35,7 @@ export default function DashboardHeader({
 }) {
     const { toggleMobileSidebar, openSidebar, isSidebarOpen } = useSidebar();
     const { tabs, closeTab, setActiveTab, history, reopenTab } = useTabs();
+    const { closeWindow } = useWindow();
     const router = useRouter();
     const pathname = usePathname();
     const [isTabManagerOpen, setIsTabManagerOpen] = React.useState(false);
@@ -59,6 +61,9 @@ export default function DashboardHeader({
     const handleCloseTab = (e, tabId) => {
         e.preventDefault();
         e.stopPropagation();
+
+        // Sync with Window system: Closing a tab should close its window
+        if (closeWindow) closeWindow(tabId);
 
         const navigateTo = closeTab(tabId);
 

@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useWindow } from '../contexts/WindowContext';
 
 export default function WindowSync() {
     const pathname = usePathname();
+    const searchParams = useSearchParams();
     const { openWindow, windows, bringToFront } = useWindow();
 
     const lastSyncedPath = useRef(null);
@@ -44,8 +45,20 @@ export default function WindowSync() {
             type = config.type;
             title = config.title;
         } else if (pathname.startsWith('/post')) {
-            // Blog/Post windows are usually handled by explicit clicks, 
-            // but we could sync them here too if needed.
+            type = 'post';
+            const postId = searchParams.get('id');
+            if (postId) {
+                const existing = windows.find(w => w.type === 'post' && (w.id === `post-window-${postId}` || w.id === 'blog-window'));
+                if (existing) {
+                    if (existing.isMinimized) bringToFront(existing.id);
+                } else {
+                    openWindow('post', {
+                        id: `post-window-${postId}`,
+                        title: 'Loading...',
+                        isMaximized: true
+                    });
+                }
+            }
         }
 
         if (type) {
@@ -65,7 +78,7 @@ export default function WindowSync() {
                 });
             }
         }
-    }, [pathname, openWindow, bringToFront, windows]);
+    }, [pathname, searchParams, openWindow, bringToFront, windows]);
 
     return null;
 }
