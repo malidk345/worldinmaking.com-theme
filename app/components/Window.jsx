@@ -20,19 +20,19 @@ const MIN_HEIGHT = 200;
 const DEFAULT_WIDTH = 800;
 const DEFAULT_HEIGHT = 600;
 
-// Smooth spring config
+// Smooth spring config - tuned for natural feel
 const springConfig = {
     type: 'spring',
-    stiffness: 500,
-    damping: 35,
+    stiffness: 300,
+    damping: 28,
     mass: 0.8
 };
 
 const fastSpring = {
     type: 'spring',
-    stiffness: 600,
-    damping: 40,
-    mass: 0.5
+    stiffness: 400,
+    damping: 32,
+    mass: 0.6
 };
 
 const Window = ({
@@ -278,14 +278,14 @@ const Window = ({
         }, 150);
     }, [onClose]);
 
-    // Minimize = Close window (it stays in tab manager)
+    // Minimize - toggle minimized state
     const handleMinimize = useCallback((e) => {
         e?.stopPropagation();
-        setIsAnimatingOut(true);
-        setTimeout(() => {
-            onClose?.();
-        }, 150);
-    }, [onClose]);
+        const newValue = !isMinimized;
+        setIsMinimized(newValue);
+        onMinimizeChange?.(newValue);
+        if (!newValue) onFocus?.();
+    }, [isMinimized, onMinimizeChange, onFocus]);
 
     const handleMaximize = useCallback((e) => {
         e?.stopPropagation();
@@ -306,6 +306,22 @@ const Window = ({
     // Calculate window style based on state
     const windowStyle = useMemo(() => {
         const baseStyle = { zIndex, display: 'flex' };
+
+        // Minimized state - small bar at bottom
+        if (isMinimized) {
+            return {
+                ...baseStyle,
+                position: 'fixed',
+                bottom: MARGIN,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: isMobile ? 'calc(100% - 32px)' : '320px',
+                height: '40px',
+                top: 'auto',
+                right: 'auto',
+                borderRadius: '12px'
+            };
+        }
 
         if (isMaximized || isMobile) {
             return {
@@ -328,45 +344,31 @@ const Window = ({
             width: size.width,
             height: size.height
         };
-    }, [zIndex, isMaximized, isMobile, pos, size]);
+    }, [zIndex, isMaximized, isMinimized, isMobile, pos, size]);
 
-    // Animation variants based on platform
+    // Animation variants based on platform and state
     const getAnimationProps = () => {
         if (isAnimatingOut) {
             // Exit animation
-            if (isMobile) {
-                return {
-                    opacity: 0,
-                    y: 100,
-                    scale: 0.95
-                };
-            }
-            return {
-                opacity: 0,
-                scale: 0.9
-            };
+            return isMobile
+                ? { opacity: 0, y: 60, scale: 0.98 }
+                : { opacity: 0, scale: 0.95 };
         }
 
         if (!isMounted) {
             // Initial state before mount
-            if (isMobile) {
-                return {
-                    opacity: 0,
-                    y: 50
-                };
-            }
-            return {
-                opacity: 0,
-                scale: 0.9
-            };
+            return isMobile
+                ? { opacity: 0, y: 40 }
+                : { opacity: 0, scale: 0.95 };
+        }
+
+        if (isMinimized) {
+            // Minimized state
+            return { opacity: 1, y: 0, scale: 1 };
         }
 
         // Normal visible state
-        return {
-            opacity: 1,
-            y: 0,
-            scale: 1
-        };
+        return { opacity: 1, y: 0, scale: 1 };
     };
 
     return (
@@ -399,7 +401,7 @@ const Window = ({
                     <motion.button
                         onClick={handleMinimize}
                         className="p-1.5 rounded hover:bg-black/5 active:bg-black/10 transition-colors text-black"
-                        title="Minimize to tabs"
+                        title={isMinimized ? "Restore" : "Minimize to tabs"}
                         whileTap={{ scale: 0.9 }}
                     >
                         <MinimizeIcon />
@@ -424,15 +426,21 @@ const Window = ({
             </motion.div>
 
             {/* Window Content */}
-            <motion.div
-                className="flex-1 flex overflow-hidden bg-white relative"
-                layout
-                transition={fastSpring}
-            >
-                <div className="flex-1 overflow-auto scroll-smooth cursor-default relative">
-                    {children}
-                </div>
-            </motion.div>
+            <AnimatePresence>
+                {!isMinimized && (
+                    <motion.div
+                        className="flex-1 flex overflow-hidden bg-white relative"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={fastSpring}
+                    >
+                        <div className="flex-1 overflow-auto scroll-smooth cursor-default relative">
+                            {children}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Resize Handles (only on desktop windowed mode) */}
             <AnimatePresence>
