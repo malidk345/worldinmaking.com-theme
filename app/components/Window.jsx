@@ -1,17 +1,17 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { MinimizeIcon, MaximizeIcon, RestoreIcon, CloseWindowIcon } from './WindowIcons';
 
 /**
- * Window Component - Desktop-like Window Management
+ * Window Component with Desktop-like Animations
  * 
- * Features:
- * - Mobile: Opens maximized, stays maximized
- * - Desktop: Opens centered at specified size, can be resized/moved
- * - Maximize respects 8px margin and header height
- * - Smooth animations for all state changes
+ * - Mobile: Opens maximized
+ * - Desktop: Opens centered at medium size
+ * - Maximize/Restore works on both
+ * - 8px margin from header and edges always respected
+ * - Minimize closes window (shows in tab manager)
  */
 
 const HEADER_HEIGHT = 45;
@@ -19,8 +19,8 @@ const MARGIN = 8;
 const MOBILE_BREAKPOINT = 768;
 const MIN_WIDTH = 320;
 const MIN_HEIGHT = 200;
-const DEFAULT_WIDTH = 700;
-const DEFAULT_HEIGHT = 500;
+const DEFAULT_WIDTH = 800;
+const DEFAULT_HEIGHT = 600;
 
 const Window = ({
     id,
@@ -44,7 +44,6 @@ const Window = ({
 }) => {
     const [isMobile, setIsMobile] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
-    const [isClosing, setIsClosing] = useState(false);
 
     // Window states
     const [isMaximized, setIsMaximized] = useState(isMaximizedProp);
@@ -73,30 +72,28 @@ const Window = ({
         const mobile = window.innerWidth < MOBILE_BREAKPOINT;
         setIsMobile(mobile);
 
-        if (!mobile) {
-            // Desktop: Calculate centered position
-            const viewWidth = window.innerWidth;
-            const viewHeight = window.innerHeight;
-            const maxWidth = viewWidth - MARGIN * 2;
-            const maxHeight = viewHeight - HEADER_HEIGHT - MARGIN * 2;
+        const viewWidth = window.innerWidth;
+        const viewHeight = window.innerHeight;
+        const maxWidth = viewWidth - MARGIN * 2;
+        const maxHeight = viewHeight - HEADER_HEIGHT - MARGIN * 2;
 
-            const windowWidth = Math.min(initialWidth, maxWidth);
-            const windowHeight = Math.min(initialHeight, maxHeight);
+        const windowWidth = Math.min(initialWidth, maxWidth);
+        const windowHeight = Math.min(initialHeight, maxHeight);
 
-            const centeredX = initialX ?? Math.max(MARGIN, (viewWidth - windowWidth) / 2);
-            const centeredY = initialY ?? Math.max(HEADER_HEIGHT + MARGIN, (viewHeight - windowHeight) / 2);
+        // Center the window
+        const centeredX = initialX ?? Math.max(MARGIN, (viewWidth - windowWidth) / 2);
+        const centeredY = initialY ?? Math.max(HEADER_HEIGHT + MARGIN, (viewHeight - windowHeight) / 2);
 
-            setPos({ x: centeredX, y: centeredY });
-            setSize({ width: windowWidth, height: windowHeight });
-            preMaximizeState.current = { x: centeredX, y: centeredY, width: windowWidth, height: windowHeight };
+        setPos({ x: centeredX, y: centeredY });
+        setSize({ width: windowWidth, height: windowHeight });
+        preMaximizeState.current = { x: centeredX, y: centeredY, width: windowWidth, height: windowHeight };
 
-            // Desktop: Start not maximized unless explicitly set
-            if (!isMaximizedProp) {
-                setIsMaximized(false);
-            }
-        } else {
-            // Mobile: Always start maximized
+        // Mobile: Always start maximized
+        // Desktop: Start not maximized (centered window)
+        if (mobile) {
             setIsMaximized(true);
+        } else {
+            setIsMaximized(isMaximizedProp);
         }
 
         setIsMounted(true);
@@ -107,14 +104,10 @@ const Window = ({
         const handleResize = () => {
             const mobile = window.innerWidth < MOBILE_BREAKPOINT;
             setIsMobile(mobile);
-            if (mobile && !isMaximized) {
-                setIsMaximized(true);
-                onMaximizeChange?.(true);
-            }
         };
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
-    }, [isMaximized, onMaximizeChange]);
+    }, []);
 
     // Sync external props
     useEffect(() => { setIsMaximized(isMaximizedProp); }, [isMaximizedProp]);
@@ -175,7 +168,7 @@ const Window = ({
     }, [handleMouseMoveDrag, handleTouchMoveDrag, handleDragEnd, dragStartRef.current]);
 
     const startDrag = useCallback((clientX, clientY) => {
-        if (isMaximized || isMobile) return;
+        if (isMaximized) return;
         onFocus?.();
         dragStartRef.current = {
             mouseX: clientX,
@@ -186,7 +179,7 @@ const Window = ({
             lastValidY: posRef.current.y
         };
         forceUpdate({});
-    }, [isMaximized, isMobile, onFocus]);
+    }, [isMaximized, onFocus]);
 
     const handleMouseDownHeader = useCallback((e) => {
         if (e.button !== 0) return;
@@ -200,7 +193,7 @@ const Window = ({
 
     // Resize handlers
     const startResize = useCallback((clientX, clientY, direction) => {
-        if (isMaximized || isMinimized || isMobile) return;
+        if (isMaximized || isMinimized) return;
         resizeStartRef.current = {
             mouseX: clientX,
             mouseY: clientY,
@@ -258,18 +251,23 @@ const Window = ({
         document.addEventListener('touchmove', onTouchMoveResize, { passive: false });
         document.addEventListener('mouseup', endResize);
         document.addEventListener('touchend', endResize);
-    }, [isMaximized, isMinimized, isMobile, onSizeChange]);
+    }, [isMaximized, isMinimized, onSizeChange]);
 
     // Window control handlers
     const handleClose = useCallback((e) => {
         e?.stopPropagation();
-        setIsClosing(true);
-        setTimeout(() => onClose?.(), 200);
+        onClose?.();
+    }, [onClose]);
+
+    // Minimize = Close window (it stays in tab manager)
+    const handleMinimize = useCallback((e) => {
+        e?.stopPropagation();
+        // Minimize acts like close - window stays in tab manager
+        onClose?.();
     }, [onClose]);
 
     const handleMaximize = useCallback((e) => {
         e?.stopPropagation();
-        if (isMobile) return; // Mobile always stays maximized
 
         if (!isMaximized) {
             // Store current state before maximizing
@@ -282,44 +280,30 @@ const Window = ({
 
         const newValue = !isMaximized;
         setIsMaximized(newValue);
-        setIsMinimized(false);
         onMaximizeChange?.(newValue);
-        onMinimizeChange?.(false);
         onFocus?.();
-    }, [isMaximized, isMobile, pos, size, onMaximizeChange, onMinimizeChange, onFocus]);
-
-    const handleMinimize = useCallback((e) => {
-        e?.stopPropagation();
-        const newValue = !isMinimized;
-        setIsMinimized(newValue);
-        onMinimizeChange?.(newValue);
-        if (!newValue) onFocus?.();
-    }, [isMinimized, onMinimizeChange, onFocus]);
+    }, [isMaximized, pos, size, onMaximizeChange, onFocus]);
 
     // Calculate window style based on state
     const windowStyle = useMemo(() => {
         const baseStyle = { zIndex, display: 'flex' };
 
         if (!isMounted) {
-            return { ...baseStyle, opacity: 0, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
-        }
-
-        if (isMinimized) {
-            // Minimized: Small bar at bottom
+            // Initial hidden state - center of screen
             return {
                 ...baseStyle,
+                opacity: 0,
                 position: 'fixed',
-                bottom: MARGIN,
+                top: '50%',
                 left: '50%',
-                transform: 'translateX(-50%)',
-                width: isMobile ? '90%' : '280px',
-                height: '30px',
-                top: 'auto'
+                transform: 'translate(-50%, -50%) scale(0.8)',
+                width: size.width,
+                height: size.height
             };
         }
 
         if (isMaximized || isMobile) {
-            // Maximized: Fill viewport with margins
+            // Maximized: Fill viewport with 8px margin
             return {
                 ...baseStyle,
                 position: 'fixed',
@@ -330,7 +314,7 @@ const Window = ({
             };
         }
 
-        // Windowed mode
+        // Windowed mode - centered
         return {
             ...baseStyle,
             position: 'fixed',
@@ -339,55 +323,37 @@ const Window = ({
             width: size.width,
             height: size.height
         };
-    }, [zIndex, isMounted, isMaximized, isMinimized, isMobile, pos, size]);
+    }, [zIndex, isMounted, isMaximized, isMobile, pos, size]);
 
-    // Animation variants
-    const variants = {
-        hidden: {
-            opacity: 0,
-            scale: isMobile ? 1 : 0.95,
-            y: isMobile ? 50 : 0
-        },
-        visible: {
-            opacity: 1,
-            scale: 1,
-            y: 0,
-            transition: {
-                type: 'spring',
-                stiffness: 400,
-                damping: 30,
-                mass: 0.8
-            }
-        },
-        minimized: {
-            opacity: 1,
-            scale: 1,
-            transition: {
-                type: 'spring',
-                stiffness: 400,
-                damping: 30
-            }
-        },
-        exit: {
-            opacity: 0,
-            scale: isMobile ? 1 : 0.95,
-            y: isMobile ? 100 : 0,
-            transition: {
-                duration: 0.15,
-                ease: 'easeOut'
-            }
-        }
+    // Calculate the center point for animation origin
+    const getCenterTransform = () => {
+        if (!isMounted) return 'translate(-50%, -50%) scale(0.8)';
+        return 'none';
     };
 
     return (
         <motion.div
             ref={windowRef}
-            initial="hidden"
-            animate={isClosing ? "exit" : (isMinimized ? "minimized" : "visible")}
-            exit="exit"
-            variants={variants}
+            initial={{
+                opacity: 0,
+                scale: 0.8,
+            }}
+            animate={{
+                opacity: 1,
+                scale: 1,
+            }}
+            exit={{
+                opacity: 0,
+                scale: 0.8,
+                transition: { duration: 0.15, ease: 'easeIn' }
+            }}
+            transition={{
+                type: 'spring',
+                stiffness: 400,
+                damping: 30,
+                mass: 0.8
+            }}
             layout
-            layoutId={id}
             onMouseDown={onFocus}
             onTouchStart={onFocus}
             className="fixed flex flex-col overflow-hidden outline-none border border-(--border-primary) rounded-lg shadow-lg bg-white"
@@ -396,40 +362,58 @@ const Window = ({
             aria-labelledby={`window-title-${id}`}
             tabIndex={-1}
         >
-            {/* Window Header - Original styling */}
+            {/* Window Header - Original styling preserved */}
             <div
-                className={`flex items-center justify-between h-[30px] px-2 bg-(--posthog-3000-50) border-b border-(--border-primary) cursor-default select-none shrink-0`}
+                className={`flex items-center justify-between h-[30px] px-2 bg-(--posthog-3000-50) border-b border-(--border-primary) select-none shrink-0 ${!isMaximized && !isMobile ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
                 onMouseDown={!isMaximized && !isMobile ? handleMouseDownHeader : undefined}
                 onTouchStart={!isMaximized && !isMobile ? handleTouchStartHeader : undefined}
             >
-                {/* Toolbar area - same as before */}
+                {/* Toolbar area */}
                 <div className="flex items-center gap-1 flex-1 min-w-0">{toolbar}</div>
 
                 {/* Window Controls - Original styling */}
                 <div className="flex items-center gap-0.5 shrink-0">
-                    <button onClick={handleMinimize} className="p-1.5 rounded hover:bg-black/5 transition-colors text-black">
+                    {/* Minimize = Close to tab manager */}
+                    <button
+                        onClick={handleMinimize}
+                        className="p-1.5 rounded hover:bg-black/5 transition-colors text-black"
+                        title="Minimize to tabs"
+                    >
                         <MinimizeIcon />
                     </button>
-                    <button onClick={handleMaximize} className="p-1.5 rounded hover:bg-black/5 transition-colors text-black">
+                    {/* Maximize/Restore */}
+                    <button
+                        onClick={handleMaximize}
+                        className="p-1.5 rounded hover:bg-black/5 transition-colors text-black"
+                        title={isMaximized ? "Restore" : "Maximize"}
+                    >
                         {isMaximized ? <RestoreIcon /> : <MaximizeIcon />}
                     </button>
-                    <button onClick={handleClose} className="p-1.5 rounded hover:bg-red-500/10 transition-colors text-black hover:text-red-500">
+                    {/* Close */}
+                    <button
+                        onClick={handleClose}
+                        className="p-1.5 rounded hover:bg-red-500/10 transition-colors text-black hover:text-red-500"
+                        title="Close"
+                    >
                         <CloseWindowIcon />
                     </button>
                 </div>
             </div>
 
             {/* Window Content */}
-            {!isMinimized && (
-                <div className="flex-1 flex overflow-hidden bg-white relative h-full">
-                    <div className="flex-1 overflow-auto h-full scroll-smooth cursor-default relative">
-                        {children}
-                    </div>
+            <motion.div
+                className="flex-1 flex overflow-hidden bg-white relative h-full"
+                initial={false}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.1 }}
+            >
+                <div className="flex-1 overflow-auto h-full scroll-smooth cursor-default relative">
+                    {children}
                 </div>
-            )}
+            </motion.div>
 
-            {/* Resize Handles - Original styling (only on desktop windowed mode) */}
-            {!isMaximized && !isMinimized && !isMobile && (
+            {/* Resize Handles (only on desktop windowed mode) */}
+            {!isMaximized && !isMobile && (
                 <>
                     <div
                         className="absolute top-0 right-0 w-[12px] h-full cursor-e-resize z-20 touch-none"
