@@ -323,7 +323,7 @@ const Window = ({
             };
         }
 
-        if (isMaximized || isMobile) {
+        if (isMaximized) {
             return {
                 ...baseStyle,
                 position: 'fixed',
@@ -336,6 +336,22 @@ const Window = ({
             };
         }
 
+        if (isMobile) {
+            // Mobile "Restored" (not maximized) state
+            // Slightly smaller than fullscreen, centered
+            return {
+                ...baseStyle,
+                position: 'fixed',
+                top: HEADER_HEIGHT + MARGIN + 20, // A bit lower
+                left: MARGIN + 10,
+                right: MARGIN + 10,
+                bottom: MARGIN + 40,
+                width: 'auto',
+                height: 'auto'
+            };
+        }
+
+        // Desktop Windowed mode
         return {
             ...baseStyle,
             position: 'fixed',
@@ -387,9 +403,9 @@ const Window = ({
         >
             {/* Window Header */}
             <motion.div
-                className={`flex items-center justify-between h-[30px] px-2 bg-(--posthog-3000-50) border-b border-(--border-primary) select-none shrink-0 ${!isMaximized && !isMobile ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
-                onMouseDown={!isMaximized && !isMobile ? handleMouseDownHeader : undefined}
-                onTouchStart={!isMaximized && !isMobile ? handleTouchStartHeader : undefined}
+                className={`flex items-center justify-between h-[30px] px-2 bg-(--posthog-3000-50) border-b border-(--border-primary) select-none shrink-0 ${!isMaximized ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
+                onMouseDown={!isMaximized ? handleMouseDownHeader : undefined}
+                onTouchStart={!isMaximized ? handleTouchStartHeader : undefined}
                 layout
                 transition={fastSpring}
             >
