@@ -8,36 +8,44 @@ export default function WindowSync() {
     const pathname = usePathname();
     const { openWindow, windows, bringToFront } = useWindow();
 
-    // Use a ref to track the last synced path to avoid redundant calls
     const lastSyncedPath = useRef(null);
 
     useEffect(() => {
         if (!pathname || pathname === lastSyncedPath.current) return;
 
-        // Map path to window type
         let type = null;
         let title = "";
 
-        if (pathname === '/') {
-            type = 'home';
-            title = 'Home';
-        } else if (pathname === '/explore') {
-            type = 'explore';
-            title = 'Explore';
-        } else if (pathname === '/search') {
-            type = 'search';
-            title = 'Search';
+        const pathMap = {
+            '/': { type: 'home', title: 'Home' },
+            '/explore': { type: 'explore', title: 'Explore' },
+            '/search': { type: 'search', title: 'Search' },
+            '/settings': { type: 'settings', title: 'Settings' },
+            '/profile': { type: 'profile', title: 'Profile' },
+            '/community': { type: 'community', title: 'Community' },
+            '/login': { type: 'login', title: 'Login' },
+            '/admin': { type: 'admin', title: 'Admin' },
+            '/about': { type: 'about', title: 'About' },
+            '/contact': { type: 'contact', title: 'Contact' }
+        };
+
+        const config = pathMap[pathname];
+
+        if (config) {
+            type = config.type;
+            title = config.title;
+        } else if (pathname.startsWith('/post')) {
+            // Blog/Post windows are usually handled by explicit clicks, 
+            // but we could sync them here too if needed.
         }
 
         if (type) {
-            // Update last synced path before calling state-changing functions
             lastSyncedPath.current = pathname;
 
             const existing = windows.find(w => w.type === type);
             if (existing) {
-                // If it's already the top window, don't bring to front
                 const isTop = windows[windows.length - 1]?.id === existing.id;
-                if (!isTop) {
+                if (!isTop || existing.isMinimized) {
                     bringToFront(existing.id);
                 }
             } else {
@@ -48,7 +56,7 @@ export default function WindowSync() {
                 });
             }
         }
-    }, [pathname, openWindow, bringToFront, windows]); // windows is needed for find and isTop check
+    }, [pathname, openWindow, bringToFront, windows]);
 
     return null;
 }

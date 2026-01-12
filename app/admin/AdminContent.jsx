@@ -10,39 +10,25 @@ import { useAdminData } from '../hooks/useAdminData';
 import RichTextEditor from '../components/RichTextEditor';
 import UserAvatar from '../components/UserAvatar';
 
-export default function AdminPage() {
+export default function AdminPage({ isWindowMode = false }) {
     const router = useRouter();
     const { profile, user, loading: authLoading } = useAuth();
     const [tab, setTab] = useState('posts');
 
-    // Use Custom Hook for Data
     const {
-        posts,
-        comments,
-        communityPosts,
-        loading: dataLoading,
-        fetchPosts,
-        fetchComments,
-        fetchCommunityPosts,
-        deletePost,
-        deleteComment,
-        deleteCommunityPost,
-        createPost,
-        updatePost
+        posts, comments, communityPosts, loading: dataLoading,
+        fetchPosts, fetchComments, fetchCommunityPosts,
+        deletePost, deleteComment, deleteCommunityPost,
+        createPost, updatePost
     } = useAdminData();
 
-    // Derive unique categories from existing posts
     const uniqueCategories = useMemo(() => {
         const cats = new Set(posts.map(p => p.category).filter(c => !!c));
-        cats.add('tech');
-        cats.add('design');
-        cats.add('life');
+        cats.add('tech'); cats.add('design'); cats.add('life');
         return Array.from(cats).sort();
     }, [posts]);
 
     const [loading, setLoading] = useState(false);
-
-    // Form State
     const [editingId, setEditingId] = useState(null);
     const [title, setTitle] = useState('');
     const [slug, setSlug] = useState('');
@@ -52,58 +38,37 @@ export default function AdminPage() {
     const [authorAlias, setAuthorAlias] = useState('');
     const [featuredImage, setFeaturedImage] = useState('');
 
-    // Initialize author alias when profile loads
     useEffect(() => {
-        if (profile?.username && authorAlias === '') {
-            setAuthorAlias(profile.username);
-        }
+        if (profile?.username && authorAlias === '') setAuthorAlias(profile.username);
     }, [profile, authorAlias]);
 
-    // Tab Effects - Fetch data when tab changes
     useEffect(() => {
         if (tab === 'posts') fetchPosts();
         if (tab === 'comments') fetchComments();
         if (tab === 'community') fetchCommunityPosts();
     }, [tab, fetchPosts, fetchComments, fetchCommunityPosts]);
 
-    // Redirect if not admin
     useEffect(() => {
-        if (!authLoading && (!user || profile?.role !== 'admin')) {
-            router.push('/login');
-        }
+        if (!authLoading && (!user || profile?.role !== 'admin')) router.push('/login');
     }, [authLoading, user, profile, router]);
 
-    // Handlers
     const handleSlugGen = () => {
         if (!slug && title) {
-            const s = title.toLowerCase()
-                .replace(/[^a-z0-9]+/g, '-')
-                .replace(/(^-|-$)+/g, '');
+            const s = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
             setSlug(s);
         }
     };
 
     const handleEditPost = (post) => {
-        setEditingId(post.id);
-        setTitle(post.title);
-        setSlug(post.slug || '');
-        setContent(post.content);
-        setExcerpt(post.excerpt || '');
-        setCategory(post.category || 'tech');
-        setAuthorAlias(post.author);
-        setFeaturedImage(post.image_url || '');
-        setTab('create');
+        setEditingId(post.id); setTitle(post.title); setSlug(post.slug || '');
+        setContent(post.content); setExcerpt(post.excerpt || '');
+        setCategory(post.category || 'tech'); setAuthorAlias(post.author);
+        setFeaturedImage(post.image_url || ''); setTab('create');
     };
 
     const handleCancelEdit = () => {
-        setEditingId(null);
-        setTitle('');
-        setSlug('');
-        setContent('');
-        setExcerpt('');
-        setCategory('');
-        setFeaturedImage('');
-        setTab('posts');
+        setEditingId(null); setTitle(''); setSlug(''); setContent('');
+        setExcerpt(''); setCategory(''); setFeaturedImage(''); setTab('posts');
     };
 
     const handleDeletePost = async (id) => {
@@ -124,401 +89,157 @@ export default function AdminPage() {
     const handleSavePost = async (e) => {
         e.preventDefault();
         setLoading(true);
-
-        // Build post data - only include image fields if they have values
-        // This prevents errors if the Supabase table doesn't have these columns yet
-        const postData = {
-            title,
-            slug: slug || title.toLowerCase().replace(/ /g, '-').replace(/[^\w-]/g, ''),
-            content,
-            excerpt,
-            category: category.toLowerCase(),
-            author: authorAlias || 'Admin',
-            published: true
-        };
-
-        // Only add image_url if provided (requires column in Supabase 'posts' table)
-        if (featuredImage && featuredImage.trim() !== '') {
-            postData.image_url = featuredImage.trim();
-        }
-
-        // Only add author_avatar if available (requires column in Supabase 'posts' table)
-        if (profile?.avatar_url) {
-            postData.author_avatar = profile.avatar_url;
-        }
-
+        const postData = { title, slug: slug || title.toLowerCase().replace(/ /g, '-').replace(/[^\w-]/g, ''), content, excerpt, category: category.toLowerCase(), author: authorAlias || 'Admin', published: true };
+        if (featuredImage && featuredImage.trim() !== '') postData.image_url = featuredImage.trim();
+        if (profile?.avatar_url) postData.author_avatar = profile.avatar_url;
         let success;
-        if (editingId) {
-            const result = await updatePost(editingId, postData);
-            success = !!result;
-        } else {
-            const result = await createPost(postData);
-            success = !!result;
-        }
-
+        if (editingId) { success = !!(await updatePost(editingId, postData)); }
+        else { success = !!(await createPost(postData)); }
         setLoading(false);
-
-        if (success) {
-            if (editingId) {
-                handleCancelEdit();
-            } else {
-                setTitle('');
-                setSlug('');
-                setContent('');
-                setExcerpt('');
-                setFeaturedImage('');
-            }
-        }
+        if (success) { if (editingId) { handleCancelEdit(); } else { setTitle(''); setSlug(''); setContent(''); setExcerpt(''); setFeaturedImage(''); } }
     };
 
-    const handleClose = () => {
-        router.push('/');
-    };
+    const handleClose = () => router.push('/');
+
+    const loadingContent = (
+        <main className="flex-1 flex items-center justify-center bg-bg-3000 h-full">
+            <div className="animate-pulse text-gray-400">Loading...</div>
+        </main>
+    );
 
     if (authLoading) {
+        if (isWindowMode) return loadingContent;
         return (
             <div className="flex-1 flex flex-col h-full overflow-hidden">
                 <DashboardHeader />
                 <PageWindow id="admin-window" title="admin" onClose={handleClose}>
-                    <main className="flex-1 flex items-center justify-center bg-bg-3000 h-full">
-                        <div className="animate-pulse text-gray-400">Loading...</div>
-                    </main>
+                    {loadingContent}
                 </PageWindow>
             </div>
         );
     }
 
+    const deniedContent = (
+        <main className="flex-1 flex items-center justify-center bg-bg-3000 h-full">
+            <div className="text-center p-8 bg-red-50 rounded-2xl border border-red-100">
+                <h2 className="text-xl font-bold text-red-500">access denied</h2>
+                <p className="text-sm text-gray-500 mt-2">administrator privileges required.</p>
+            </div>
+        </main>
+    );
+
     if (!user || profile?.role !== 'admin') {
+        if (isWindowMode) return deniedContent;
         return (
             <div className="flex-1 flex flex-col h-full overflow-hidden">
                 <DashboardHeader />
                 <PageWindow id="admin-window" title="access denied" onClose={handleClose}>
-                    <main className="flex-1 flex items-center justify-center bg-bg-3000 h-full">
-                        <div className="text-center p-8 bg-red-50 rounded-2xl border border-red-100">
-                            <h2 className="text-xl font-bold text-red-500">access denied</h2>
-                            <p className="text-sm text-gray-500 mt-2">administrator privileges required.</p>
-                        </div>
-                    </main>
+                    {deniedContent}
                 </PageWindow>
             </div>
         );
     }
+
+    const mainContent = (
+        <main className="flex-1 flex flex-col md:flex-row overflow-hidden bg-bg-3000 h-full">
+            <div className="w-full md:w-56 bg-white border-b md:border-b-0 md:border-r border-black/5 p-3 md:p-4 flex flex-row md:flex-col gap-2 shrink-0 overflow-x-auto md:overflow-y-auto scrollbar-hide">
+                <div className="hidden md:block mb-4 px-2">
+                    <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider">dashboard</h2>
+                </div>
+                <div className="flex flex-row md:flex-col gap-2 min-w-max md:min-w-0">
+                    <button onClick={() => { setEditingId(null); setTab('create'); }} className={`px-3 py-2 md:py-2.5 rounded-md text-[11px] md:text-sm font-bold transition-all flex items-center gap-2 md:justify-between whitespace-nowrap ${tab === 'create' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'}`}>
+                        <span>{editingId ? 'edit post' : 'write new'}</span>
+                        {tab === 'create' && <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
+                    </button>
+                    <button onClick={() => setTab('posts')} className={`px-3 py-2 md:py-2.5 rounded-md text-[11px] md:text-sm font-bold transition-all flex items-center gap-2 md:justify-between whitespace-nowrap ${tab === 'posts' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'}`}>
+                        <span>manage posts</span>
+                        {posts.length > 0 && <span className="text-[10px] md:text-xs opacity-60">{posts.length}</span>}
+                    </button>
+                    <button onClick={() => setTab('comments')} className={`px-3 py-2 md:py-2.5 rounded-md text-[11px] md:text-sm font-bold transition-all flex items-center gap-2 md:justify-between whitespace-nowrap ${tab === 'comments' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'}`}>
+                        <span>comments</span>
+                        {comments.length > 0 && <span className="text-[10px] md:text-xs opacity-60">{comments.length}</span>}
+                    </button>
+                    <button onClick={() => setTab('community')} className={`px-3 py-2 md:py-2.5 rounded-md text-[11px] md:text-sm font-bold transition-all flex items-center gap-2 md:justify-between whitespace-nowrap ${tab === 'community' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'}`}>
+                        <span>community</span>
+                        {communityPosts.length > 0 && <span className="text-[10px] md:text-xs opacity-60">{communityPosts.length}</span>}
+                    </button>
+                </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
+                {tab === 'create' && (
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl mx-auto">
+                        <div className="flex items-center justify-between mb-6 border-b border-gray-200 pb-4">
+                            <h2 className="text-xl font-bold">{editingId ? 'edit article' : 'create new article'}</h2>
+                            {editingId && <button onClick={handleCancelEdit} className="text-xs text-red-500 hover:underline">cancel edit</button>}
+                        </div>
+                        <form onSubmit={handleSavePost} className="space-y-5">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div className="space-y-1"><label className="text-xs font-bold text-gray-500">Title</label><input value={title} onChange={e => setTitle(e.target.value)} onBlur={handleSlugGen} className="w-full p-2.5 bg-white border-[1.5px] border-gray-200 rounded-md outline-none focus:border-gray-400 transition-all font-medium" placeholder="title..." required /></div>
+                                <div className="space-y-1"><label className="text-xs font-bold text-gray-500">Slug (URL)</label><input value={slug} onChange={e => setSlug(e.target.value)} className="w-full p-2.5 bg-white border-[1.5px] border-gray-200 rounded-md outline-none focus:border-gray-400 transition-all text-gray-500 font-mono text-sm" placeholder="url-slug" required /></div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div className="space-y-1"><label className="text-xs font-bold text-gray-500">Category</label><input value={category} onChange={e => setCategory(e.target.value)} list="category-options" className="w-full p-2.5 bg-white border-[1.5px] border-gray-200 rounded-md outline-none focus:border-gray-400 transition-all font-medium" placeholder="category" /><datalist id="category-options">{uniqueCategories.map(c => <option key={c} value={c} />)}</datalist></div>
+                                <div className="space-y-1"><label className="text-xs font-bold text-gray-500">Author Name</label><input value={authorAlias || ''} onChange={e => setAuthorAlias(e.target.value)} className="w-full p-2.5 bg-white border-[1.5px] border-gray-200 rounded-md outline-none focus:border-gray-400 transition-all font-medium" placeholder="author" /></div>
+                            </div>
+                            <div className="space-y-1"><label className="text-xs font-bold text-gray-500">Image URL</label><input value={featuredImage} onChange={e => setFeaturedImage(e.target.value)} className="w-full p-2.5 bg-white border-[1.5px] border-gray-200 rounded-md outline-none focus:border-gray-400 transition-all font-medium text-sm text-gray-600" placeholder="https://..." /></div>
+                            <div className="space-y-1"><label className="text-xs font-bold text-gray-500">Excerpt</label><textarea value={excerpt} onChange={e => setExcerpt(e.target.value)} rows={2} className="w-full p-3 bg-white border border-gray-200 rounded-md outline-none focus:border-gray-400 transition-all resize-none" placeholder="summary..." required /></div>
+                            <div className="space-y-1"><div className="flex justify-between items-end px-1"><label className="text-xs font-bold text-gray-500">Content</label><span className="text-[10px] text-gray-400">rich enabled</span></div><RichTextEditor value={content} onChange={setContent} placeholder="story..." /></div>
+                            <button disabled={loading} className="w-full py-4 bg-gray-900 text-white font-bold text-sm rounded-md hover:opacity-90 active:scale-95 transition-all shadow-[0_4px_0_0_#171717]"> {loading ? 'saving...' : (editingId ? 'update' : 'publish')} </button>
+                        </form>
+                    </motion.div>
+                )}
+                {tab === 'posts' && (
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto">
+                        <div className="flex items-center justify-between mb-6"><h2 className="text-lg font-bold">all posts ({posts.length})</h2><button onClick={() => { setEditingId(null); setTab('create'); }} className="px-4 py-2 bg-gray-900 text-white text-xs font-bold rounded-lg">+ new post</button></div>
+                        {dataLoading ? <div className="text-center py-12">loading...</div> : (
+                            <div className="space-y-2">{posts.map(post => (
+                                <div key={post.id} className="group flex items-center gap-4 p-4 bg-white border-[1.5px] border-gray-200 rounded-md hover:border-gray-300 transition-all">
+                                    <div className="w-12 h-12 shrink-0 bg-gray-100 rounded-lg flex items-center justify-center text-lg font-bold text-gray-300">{post.title.charAt(0).toUpperCase()}</div>
+                                    <div className="flex-1 min-w-0"><h3 className="font-bold text-sm truncate pr-4">{post.title}</h3><div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5"><span className="px-1.5 py-0.5 bg-gray-100 rounded text-gray-600">{post.category}</span><span>•</span><span>{new Date(post.created_at).toLocaleDateString()}</span><span>•</span><span className={post.published ? 'text-green-500' : 'text-orange-500'}>{post.published ? 'published' : 'draft'}</span></div></div>
+                                    <div className="flex items-center gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity ml-auto"><button onClick={() => handleEditPost(post)} className="p-1.5 md:p-2 text-gray-500 hover:text-black hover:bg-gray-100 rounded-lg">EDIT</button><button onClick={() => handleDeletePost(post.id)} className="p-1.5 md:p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg">DEL</button></div>
+                                </div>
+                            ))}</div>
+                        )}
+                    </motion.div>
+                )}
+                {tab === 'comments' && (
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto">
+                        <h2 className="text-lg font-bold mb-6">comments ({comments.length})</h2>
+                        {dataLoading ? <div className="text-center py-12">loading...</div> : (
+                            <div className="space-y-3">{comments.map(comment => (
+                                <div key={comment.id} className="p-3 md:p-4 bg-white rounded-md border-[1.5px] border-gray-200 flex flex-col sm:flex-row gap-3 hover:border-gray-300 transition-all">
+                                    <div className="flex-1 min-w-0"><div className="flex flex-wrap items-center gap-2 mb-1"><span className="font-bold text-xs bg-gray-100 px-2 py-0.5 rounded-md truncate max-w-[100px]">{comment.profiles?.username || 'Anon'}</span><span className="text-[10px] text-gray-400">on <span className="text-black font-medium">{comment.posts?.title}</span></span></div><div className="prose-content text-xs text-gray-600 mt-2 pl-2 border-l-2 border-gray-200" dangerouslySetInnerHTML={{ __html: comment.content }} /></div>
+                                    <button onClick={() => handleDeleteComment(comment.id)} className="w-full sm:w-auto px-3 py-1.5 bg-red-50 text-red-500 rounded-lg text-xs font-bold">DELETE</button>
+                                </div>
+                            ))}</div>
+                        )}
+                    </motion.div>
+                )}
+                {tab === 'community' && (
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto">
+                        <h2 className="text-lg font-bold mb-6">community posts ({communityPosts.length})</h2>
+                        {dataLoading ? <div className="text-center py-12">loading...</div> : (
+                            <div className="space-y-3">{communityPosts.map(post => (
+                                <div key={post.id} className="p-4 bg-white rounded-md border-[1.5px] border-gray-200 flex flex-col sm:flex-row items-center gap-4 hover:border-gray-300 transition-all">
+                                    <div className="shrink-0"><UserAvatar avatarUrl={post.profiles?.avatar_url} username={post.profiles?.username} size="sm" /></div>
+                                    <div className="flex-1 min-w-0"><h3 className="font-bold text-sm truncate">{post.title}</h3><div className="flex items-center gap-2 text-[11px] text-gray-400 mt-0.5"><span className="text-gray-600">@{post.profiles?.username}</span><span>•</span><span>{new Date(post.created_at).toLocaleDateString()}</span></div></div>
+                                    <button onClick={() => handleDeleteCommunityPost(post.id)} className="w-full sm:w-auto px-3 py-1.5 bg-red-50 text-red-500 rounded-lg text-xs font-bold">REMOVE</button>
+                                </div>
+                            ))}</div>
+                        )}
+                    </motion.div>
+                )}
+            </div>
+        </main>
+    );
+
+    if (isWindowMode) return mainContent;
 
     return (
         <div className="flex-1 flex flex-col h-full overflow-hidden">
             <DashboardHeader />
             <PageWindow id="admin-window" title="admin dashboard" onClose={handleClose}>
-                <main className="flex-1 flex flex-col md:flex-row overflow-hidden bg-bg-3000 h-full">
-                    {/* Sidebar / Top Nav on Mobile */}
-                    <div className="w-full md:w-56 bg-white border-b md:border-b-0 md:border-r border-black/5 p-3 md:p-4 flex flex-row md:flex-col gap-2 shrink-0 overflow-x-auto md:overflow-y-auto scrollbar-hide">
-                        <div className="hidden md:block mb-4 px-2">
-                            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider">dashboard</h2>
-                        </div>
-
-                        <div className="flex flex-row md:flex-col gap-2 min-w-max md:min-w-0">
-                            <button
-                                onClick={() => { setEditingId(null); setTab('create'); }}
-                                className={`px-3 py-2 md:py-2.5 rounded-md text-[11px] md:text-sm font-bold transition-all flex items-center gap-2 md:justify-between whitespace-nowrap ${tab === 'create'
-                                    ? 'bg-gray-900 text-white shadow-md'
-                                    : 'text-gray-600 hover:bg-gray-100'
-                                    }`}
-                            >
-                                <span>{editingId ? 'edit post' : 'write new'}</span>
-                                {tab === 'create' && <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
-                            </button>
-
-                            <button
-                                onClick={() => setTab('posts')}
-                                className={`px-3 py-2 md:py-2.5 rounded-md text-[11px] md:text-sm font-bold transition-all flex items-center gap-2 md:justify-between whitespace-nowrap ${tab === 'posts'
-                                    ? 'bg-gray-900 text-white shadow-md'
-                                    : 'text-gray-600 hover:bg-gray-100'
-                                    }`}
-                            >
-                                <span>manage posts</span>
-                                {posts.length > 0 && <span className="text-[10px] md:text-xs opacity-60">{posts.length}</span>}
-                            </button>
-
-                            <button
-                                onClick={() => setTab('comments')}
-                                className={`px-3 py-2 md:py-2.5 rounded-md text-[11px] md:text-sm font-bold transition-all flex items-center gap-2 md:justify-between whitespace-nowrap ${tab === 'comments'
-                                    ? 'bg-gray-900 text-white shadow-md'
-                                    : 'text-gray-600 hover:bg-gray-100'
-                                    }`}
-                            >
-                                <span>comments</span>
-                                {comments.length > 0 && <span className="text-[10px] md:text-xs opacity-60">{comments.length}</span>}
-                            </button>
-
-                            <button
-                                onClick={() => setTab('community')}
-                                className={`px-3 py-2 md:py-2.5 rounded-md text-[11px] md:text-sm font-bold transition-all flex items-center gap-2 md:justify-between whitespace-nowrap ${tab === 'community'
-                                    ? 'bg-gray-900 text-white shadow-md'
-                                    : 'text-gray-600 hover:bg-gray-100'
-                                    }`}
-                            >
-                                <span>community</span>
-                                {communityPosts.length > 0 && <span className="text-[10px] md:text-xs opacity-60">{communityPosts.length}</span>}
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Content Area */}
-                    <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
-                        {/* CREATE / EDIT POST TAB */}
-                        {tab === 'create' && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="max-w-3xl mx-auto"
-                            >
-                                <div className="flex items-center justify-between mb-6 border-b border-gray-200 pb-4">
-                                    <h2 className="text-xl font-bold">{editingId ? 'edit article' : 'create new article'}</h2>
-                                    {editingId && (
-                                        <button onClick={handleCancelEdit} className="text-xs text-red-500 hover:underline">
-                                            cancel edit
-                                        </button>
-                                    )}
-                                </div>
-
-                                <form onSubmit={handleSavePost} className="space-y-5">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-bold text-gray-500">Title</label>
-                                            <input
-                                                value={title} onChange={e => setTitle(e.target.value)} onBlur={handleSlugGen}
-                                                className="w-full p-2.5 bg-white border-[1.5px] border-gray-200 rounded-md outline-none focus:border-gray-400 transition-all font-medium"
-                                                placeholder="enter compelling title..." required
-                                            />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-bold text-gray-500">Slug (URL)</label>
-                                            <input
-                                                value={slug} onChange={e => setSlug(e.target.value)}
-                                                className="w-full p-2.5 bg-white border-[1.5px] border-gray-200 rounded-md outline-none focus:border-gray-400 transition-all text-gray-500 font-mono text-sm"
-                                                placeholder="url-friendly-slug" required
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-bold text-gray-500">Category</label>
-                                            <input
-                                                value={category} onChange={e => setCategory(e.target.value)}
-                                                list="category-options"
-                                                className="w-full p-2.5 bg-white border-[1.5px] border-gray-200 rounded-md outline-none focus:border-gray-400 transition-all font-medium"
-                                                placeholder="e.g. technology"
-                                            />
-                                            <datalist id="category-options">
-                                                {uniqueCategories.map(c => (
-                                                    <option key={c} value={c} />
-                                                ))}
-                                            </datalist>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-bold text-gray-500">Author Name</label>
-                                            <input
-                                                value={authorAlias || ''} onChange={e => setAuthorAlias(e.target.value)}
-                                                className="w-full p-2.5 bg-white border-[1.5px] border-gray-200 rounded-md outline-none focus:border-gray-400 transition-all font-medium"
-                                                placeholder="your name"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-gray-500">Featured Image URL</label>
-                                        <input
-                                            value={featuredImage} onChange={e => setFeaturedImage(e.target.value)}
-                                            className="w-full p-2.5 bg-white border-[1.5px] border-gray-200 rounded-md outline-none focus:border-gray-400 transition-all font-medium text-sm text-gray-600"
-                                            placeholder="https://example.com/image.jpg"
-                                        />
-                                    </div>
-
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-gray-500">Excerpt</label>
-                                        <textarea
-                                            value={excerpt} onChange={e => setExcerpt(e.target.value)} rows={2}
-                                            className="w-full p-3 bg-white border border-gray-200 rounded-md outline-none focus:border-gray-400 transition-all resize-none"
-                                            placeholder="short summary for post cards..." required
-                                        />
-                                    </div>
-
-                                    <div className="space-y-1">
-                                        <div className="flex justify-between items-end px-1">
-                                            <label className="text-xs font-bold text-gray-500">Content</label>
-                                            <span className="text-[10px] text-gray-400">rich formatting enabled</span>
-                                        </div>
-                                        <RichTextEditor
-                                            value={content}
-                                            onChange={setContent}
-                                            placeholder="write your story here..."
-                                        />
-                                    </div>
-
-                                    <button
-                                        disabled={loading}
-                                        className="w-full py-4 bg-gray-900 text-white font-bold text-sm rounded-md hover:opacity-90 active:scale-95 transition-all disabled:opacity-50"
-                                    >
-                                        {loading ? 'saving...' : (editingId ? 'update article' : 'publish article')}
-                                    </button>
-                                </form>
-                            </motion.div>
-                        )}
-
-                        {/* MANAGE POSTS TAB */}
-                        {tab === 'posts' && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="max-w-4xl mx-auto"
-                            >
-                                <div className="flex items-center justify-between mb-6">
-                                    <h2 className="text-lg font-bold">all posts ({posts.length})</h2>
-                                    <button
-                                        onClick={() => { setEditingId(null); setTab('create'); }}
-                                        className="px-4 py-2 bg-gray-900 text-white text-xs font-bold rounded-lg hover:opacity-80 transition-opacity"
-                                    >
-                                        + new post
-                                    </button>
-                                </div>
-
-                                {dataLoading ? (
-                                    <div className="text-center py-12">
-                                        <div className="w-6 h-6 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin mx-auto mb-3" />
-                                        <p className="text-xs text-gray-400">loading posts...</p>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-2">
-                                        {posts.length === 0 && (
-                                            <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                                                <p className="text-gray-400 text-sm">no posts found yet.</p>
-                                            </div>
-                                        )}
-
-                                        {posts.map(post => (
-                                            <div key={post.id} className="group flex items-center gap-4 p-4 bg-white border-[1.5px] border-gray-200 rounded-md hover:border-gray-300 transition-all">
-                                                <div className="w-12 h-12 shrink-0 bg-gray-100 rounded-lg flex items-center justify-center text-lg font-bold text-gray-300">
-                                                    {post.title.charAt(0).toUpperCase()}
-                                                </div>
-
-                                                <div className="flex-1 min-w-0">
-                                                    <h3 className="font-bold text-sm truncate pr-4">{post.title}</h3>
-                                                    <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
-                                                        <span className="px-1.5 py-0.5 bg-gray-100 rounded text-gray-600">{post.category}</span>
-                                                        <span>•</span>
-                                                        <span>{new Date(post.created_at).toLocaleDateString()}</span>
-                                                        <span>•</span>
-                                                        <span className={post.published ? 'text-green-500' : 'text-orange-500'}>{post.published ? 'published' : 'draft'}</span>
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex items-center gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity ml-auto">
-                                                    <button
-                                                        onClick={() => handleEditPost(post)}
-                                                        className="p-1.5 md:p-2 text-gray-500 hover:text-black hover:bg-gray-100 rounded-lg transition-colors border border-black/5 md:border-0"
-                                                    >
-                                                        <span className="text-[10px] md:text-xs font-bold uppercase">edit</span>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeletePost(post.id)}
-                                                        className="p-1.5 md:p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-red-100 md:border-0"
-                                                    >
-                                                        <span className="text-[10px] md:text-xs font-bold uppercase">del</span>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </motion.div>
-                        )}
-
-                        {/* MANAGE COMMENTS TAB */}
-                        {tab === 'comments' && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="max-w-4xl mx-auto"
-                            >
-                                <h2 className="text-lg font-bold mb-6">comments ({comments.length})</h2>
-
-                                {dataLoading ? (
-                                    <div className="text-center py-12 text-gray-400 text-xs">loading comments...</div>
-                                ) : (
-                                    <div className="space-y-3">
-                                        {comments.length === 0 && <div className="text-center text-gray-400 text-sm py-12">no comments found</div>}
-                                        {comments.map(comment => (
-                                            <div key={comment.id} className="p-3 md:p-4 bg-white rounded-md border-[1.5px] border-gray-200 flex flex-col sm:flex-row gap-3 sm:gap-4 hover:border-gray-300 transition-all">
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                                                        <span className="font-bold text-xs md:sm bg-gray-100 px-2 py-0.5 rounded-md truncate max-w-[100px]">{comment.profiles?.username || 'Anon'}</span>
-                                                        <span className="text-[10px] md:text-xs text-gray-400">on <span className="text-black font-medium line-clamp-1">{comment.posts?.title || 'Unknown Post'}</span></span>
-                                                    </div>
-                                                    <div className="prose-content text-xs md:text-sm text-gray-600 mt-2 pl-2 border-l-2 border-gray-200" dangerouslySetInnerHTML={{ __html: comment.content }} />
-                                                    <span className="text-[9px] md:text-[10px] text-gray-400 mt-2 block">{new Date(comment.created_at).toLocaleString()}</span>
-                                                </div>
-                                                <button
-                                                    onClick={() => handleDeleteComment(comment.id)}
-                                                    className="w-full sm:w-auto px-3 py-1.5 h-fit bg-red-50 text-red-500 hover:bg-red-100 rounded-lg text-[10px] md:text-xs font-bold transition-colors border border-red-100"
-                                                >
-                                                    DELETE
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </motion.div>
-                        )}
-
-                        {/* MANAGE COMMUNITY TAB */}
-                        {tab === 'community' && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="max-w-4xl mx-auto"
-                            >
-                                <h2 className="text-lg font-bold mb-6">community posts ({communityPosts.length})</h2>
-
-                                {dataLoading ? (
-                                    <div className="text-center py-12 text-gray-400 text-xs">loading discussions...</div>
-                                ) : (
-                                    <div className="space-y-3">
-                                        {communityPosts.length === 0 && (
-                                            <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                                                <p className="text-gray-400 text-sm">no discussions found.</p>
-                                            </div>
-                                        )}
-                                        {communityPosts.map(post => (
-                                            <div key={post.id} className="p-4 bg-white rounded-md border-[1.5px] border-gray-200 flex flex-col sm:flex-row items-start sm:items-center gap-4 hover:border-gray-300 transition-all">
-                                                <div className="shrink-0">
-                                                    <UserAvatar
-                                                        avatarUrl={post.profiles?.avatar_url}
-                                                        username={post.profiles?.username}
-                                                        size="sm"
-                                                    />
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <h3 className="font-bold text-sm truncate">{post.title}</h3>
-                                                    <div className="flex items-center gap-2 text-[11px] text-gray-400 mt-0.5">
-                                                        <span className="text-gray-600">@{post.profiles?.username || 'unknown'}</span>
-                                                        <span>•</span>
-                                                        <span>{new Date(post.created_at).toLocaleDateString()}</span>
-                                                    </div>
-                                                </div>
-                                                <button
-                                                    onClick={() => handleDeleteCommunityPost(post.id)}
-                                                    className="w-full sm:w-auto px-3 py-1.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-lg text-[10px] md:text-xs font-bold transition-colors border border-red-100"
-                                                >
-                                                    REMOVE
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </motion.div>
-                        )}
-                    </div>
-                </main>
+                {mainContent}
             </PageWindow>
         </div>
     );
