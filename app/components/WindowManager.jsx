@@ -23,97 +23,27 @@ import InstagramContent from '../instagram/InstagramContent';
 import XContent from '../x/XContent';
 import Window from './Window';
 
-// Wrapper components for pages - memoized for stable identity
-const ProfileWindow = React.memo((props) => (
-    <Window {...props} title="Profile">
-        <ProfileContent isWindowMode={true} />
+// Generic wrapper for standard pages to reduce duplication
+const PageWindow = React.memo(({ title, children, ...props }) => (
+    <Window {...props} title={title}>
+        {children}
     </Window>
 ));
-ProfileWindow.displayName = 'ProfileWindow';
+PageWindow.displayName = 'PageWindow';
 
-const ExploreWindow = React.memo((props) => (
-    <Window {...props} title="Explore">
-        <ExplorePage isWindowMode={true} />
-    </Window>
-));
-ExploreWindow.displayName = 'ExploreWindow';
-
-const SearchWindow = React.memo((props) => (
-    <Window {...props} title="Search">
-        <SearchPage isWindowMode={true} />
-    </Window>
-));
-SearchWindow.displayName = 'SearchWindow';
-
-const SettingsWindow = React.memo((props) => (
-    <Window {...props} title="Settings">
-        <SettingsContent isWindowMode={true} />
-    </Window>
-));
-SettingsWindow.displayName = 'SettingsWindow';
-
-const LoginWindow = React.memo((props) => (
-    <Window {...props} title="Login">
-        <LoginContent isWindowMode={true} />
-    </Window>
-));
-LoginWindow.displayName = 'LoginWindow';
-
-const CommunityWindow = React.memo((props) => (
-    <Window {...props} title="Community">
-        <CommunityContent isWindowMode={true} />
-    </Window>
-));
-CommunityWindow.displayName = 'CommunityWindow';
-
-const AdminWindow = React.memo((props) => (
-    <Window {...props} title="Admin">
-        <AdminContent isWindowMode={true} />
-    </Window>
-));
-AdminWindow.displayName = 'AdminWindow';
-
-const AboutWindow = React.memo((props) => (
-    <Window {...props} title="About">
-        <AboutContent isWindowMode={true} />
-    </Window>
-));
-AboutWindow.displayName = 'AboutWindow';
-
-const ContactWindow = React.memo((props) => (
-    <Window {...props} title="Contact">
-        <ContactContent isWindowMode={true} />
-    </Window>
-));
-ContactWindow.displayName = 'ContactWindow';
-
-const ServicesWindow = React.memo((props) => (
-    <Window {...props} title="Services">
-        <ServicesContent isWindowMode={true} />
-    </Window>
-));
-ServicesWindow.displayName = 'ServicesWindow';
-
-const WriteForWimWindow = React.memo((props) => (
-    <Window {...props} title="Write for WIM">
-        <WriteForWimContent isWindowMode={true} />
-    </Window>
-));
-WriteForWimWindow.displayName = 'WriteForWimWindow';
-
-const InstagramWindow = React.memo((props) => (
-    <Window {...props} title="Instagram">
-        <InstagramContent isWindowMode={true} />
-    </Window>
-));
-InstagramWindow.displayName = 'InstagramWindow';
-
-const XWindow = React.memo((props) => (
-    <Window {...props} title="X">
-        <XContent isWindowMode={true} />
-    </Window>
-));
-XWindow.displayName = 'XWindow';
+const ProfileWindow = (props) => <PageWindow {...props} title="Profile"><ProfileContent isWindowMode={true} /></PageWindow>;
+const ExploreWindow = (props) => <PageWindow {...props} title="Explore"><ExplorePage isWindowMode={true} /></PageWindow>;
+const SearchWindow = (props) => <PageWindow {...props} title="Search"><SearchPage isWindowMode={true} /></PageWindow>;
+const SettingsWindow = (props) => <PageWindow {...props} title="Settings"><SettingsContent isWindowMode={true} /></PageWindow>;
+const LoginWindow = (props) => <PageWindow {...props} title="Login"><LoginContent isWindowMode={true} /></PageWindow>;
+const CommunityWindow = (props) => <PageWindow {...props} title="Community"><CommunityContent isWindowMode={true} /></PageWindow>;
+const AdminWindow = (props) => <PageWindow {...props} title="Admin"><AdminContent isWindowMode={true} /></PageWindow>;
+const AboutWindow = (props) => <PageWindow {...props} title="About"><AboutContent isWindowMode={true} /></PageWindow>;
+const ContactWindow = (props) => <PageWindow {...props} title="Contact"><ContactContent isWindowMode={true} /></PageWindow>;
+const ServicesWindow = (props) => <PageWindow {...props} title="Services"><ServicesContent isWindowMode={true} /></PageWindow>;
+const WriteForWimWindow = (props) => <PageWindow {...props} title="Write for WIM"><WriteForWimContent isWindowMode={true} /></PageWindow>;
+const InstagramWindow = (props) => <PageWindow {...props} title="Instagram"><InstagramContent isWindowMode={true} /></PageWindow>;
+const XWindow = (props) => <PageWindow {...props} title="X"><XContent isWindowMode={true} /></PageWindow>;
 
 /**
  * Window Registry
@@ -164,30 +94,27 @@ export default function WindowManager() {
         // 1. Close the window
         closeWindow(id);
 
-        // 2. Find and close the matching tab (use ref for current value)
+        // 2. Determine and close the matching tab
         const currentTabs = tabsRef.current;
         const currentPathname = pathnameRef.current;
 
-        let tab = currentTabs.find(t => t.id === id);
+        let tabToClose = currentTabs.find(t => t.id === id);
 
-        if (!tab) {
-            // Try to find tab by path
+        if (!tabToClose) {
             let targetPath = type === 'home' ? '/' : `/${type}`;
             if (type === 'post') {
                 const postId = id.replace('post-window-', '');
                 targetPath = `/post?id=${postId}`;
             }
-            tab = currentTabs.find(t => t.path === targetPath || t.path.startsWith(`${targetPath}?`));
+            tabToClose = currentTabs.find(t => t.path === targetPath || t.path.startsWith(`${targetPath}?`));
         }
 
-        // 3. Close tab and navigate if needed
-        if (tab) {
-            const navigateTo = closeTab(tab.id);
+        if (tabToClose) {
+            const navigateTo = closeTab(tabToClose.id);
             if (navigateTo && navigateTo !== currentPathname) {
                 router.push(navigateTo);
             }
         } else if (currentPathname !== '/') {
-            // Fallback: if no tab found but we're not on home, go home
             router.push('/');
         }
     }, [closeWindow, closeTab, router]);

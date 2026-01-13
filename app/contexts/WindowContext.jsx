@@ -49,7 +49,7 @@ export const WindowProvider = ({ children }) => {
                 height: w.height
             }));
             localStorage.setItem('posthog-windows', JSON.stringify(toSave));
-        }, 2000); // 2 second throttle
+        }, 1000); // 1 second throttle for better persistence
 
         return () => clearTimeout(saveTimeout);
     }, [windows, isLoaded]);
@@ -77,12 +77,12 @@ export const WindowProvider = ({ children }) => {
             const existingIdx = prev.findIndex(w => w.id === windowId);
 
             if (existingIdx !== -1) {
-                // Move existing to end (bring to front)
+                // Leverage existing bringToFront logic to avoid duplication
                 const win = { ...prev[existingIdx], isMinimized: false };
                 return [...prev.slice(0, existingIdx), ...prev.slice(existingIdx + 1), win];
             }
 
-            // Create new window at end
+            // Create new window at end (properly initialized)
             return [...prev, {
                 id: windowId,
                 type,

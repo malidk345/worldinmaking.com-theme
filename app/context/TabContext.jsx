@@ -102,17 +102,17 @@ export function TabProvider({ children }) {
 
                 // Create new tab with predictable IDs
                 const title = getPageTitle(fullPath);
-                let newId = `tab-${Date.now()}`;
+                let newId = "";
 
                 if (pathname === '/') {
                     newId = 'home-window';
                 } else if (pathname === '/post') {
                     const postId = searchParams.get('id');
-                    if (postId) newId = `post-window-${postId}`;
+                    newId = postId ? `post-window-${postId}` : 'blog-window';
                 } else {
                     // Standardize other pages to match Window IDs: {type}-window
                     const type = pathname.replace(/^\//, '');
-                    if (type) newId = `${type}-window`;
+                    newId = type ? `${type}-window` : `tab-${Date.now()}`;
                 }
 
                 const newTab = {

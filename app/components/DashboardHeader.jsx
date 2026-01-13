@@ -57,15 +57,8 @@ export default function DashboardHeader({
         }
     };
 
-    // Unified tab click handler - syncs tabs AND windows
+    // Unified tab click handler - relies on declarative sync via WindowSync and TabContext
     const handleTabClick = (tab) => {
-        setActiveTab(tab.id);
-
-        // Sync with Window system - bring corresponding window to front
-        if (bringToFront) {
-            bringToFront(tab.id);
-        }
-
         router.push(tab.path);
     };
 

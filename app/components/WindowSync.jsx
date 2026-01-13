@@ -4,6 +4,23 @@ import { useEffect, useRef } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useWindow } from '../contexts/WindowContext';
 
+const PATH_MAP = {
+    '/': { type: 'home', title: 'Home' },
+    '/explore': { type: 'explore', title: 'Explore' },
+    '/search': { type: 'search', title: 'Search' },
+    '/settings': { type: 'settings', title: 'Settings' },
+    '/profile': { type: 'profile', title: 'Profile' },
+    '/community': { type: 'community', title: 'Community' },
+    '/login': { type: 'login', title: 'Login' },
+    '/admin': { type: 'admin', title: 'Admin' },
+    '/about': { type: 'about', title: 'About' },
+    '/contact': { type: 'contact', title: 'Contact' },
+    '/services': { type: 'services', title: 'Services' },
+    '/write-for-wim': { type: 'write-for-wim', title: 'Write for WIM' },
+    '/instagram': { type: 'instagram', title: 'Instagram' },
+    '/x': { type: 'x', title: 'X' }
+};
+
 export default function WindowSync() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -28,24 +45,7 @@ export default function WindowSync() {
         let type = null;
         let title = "";
 
-        const pathMap = {
-            '/': { type: 'home', title: 'Home' },
-            '/explore': { type: 'explore', title: 'Explore' },
-            '/search': { type: 'search', title: 'Search' },
-            '/settings': { type: 'settings', title: 'Settings' },
-            '/profile': { type: 'profile', title: 'Profile' },
-            '/community': { type: 'community', title: 'Community' },
-            '/login': { type: 'login', title: 'Login' },
-            '/admin': { type: 'admin', title: 'Admin' },
-            '/about': { type: 'about', title: 'About' },
-            '/contact': { type: 'contact', title: 'Contact' },
-            '/services': { type: 'services', title: 'Services' },
-            '/write-for-wim': { type: 'write-for-wim', title: 'Write for WIM' },
-            '/instagram': { type: 'instagram', title: 'Instagram' },
-            '/x': { type: 'x', title: 'X' }
-        };
-
-        const config = pathMap[normalizedPath];
+        const config = PATH_MAP[normalizedPath];
 
         if (config) {
             type = config.type;
