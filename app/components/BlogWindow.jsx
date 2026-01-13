@@ -74,7 +74,7 @@ export default function BlogWindow(props) {
     if (loading) {
         return (
             <Window
-                id="blog-window"
+                id={restProps.id || "blog-window"}
                 title="loading..."
                 onClose={onClose}
                 zIndex={zIndex}
@@ -106,7 +106,7 @@ export default function BlogWindow(props) {
     if (!post) {
         return (
             <Window
-                id="blog-window"
+                id={restProps.id || "blog-window"}
                 title="not found"
                 onClose={onClose}
                 zIndex={zIndex}
@@ -131,7 +131,7 @@ export default function BlogWindow(props) {
 
     return (
         <Window
-            id="blog-window"
+            id={restProps.id || "blog-window"}
             title={post.title}
             onClose={onClose}
             zIndex={zIndex}

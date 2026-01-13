@@ -57,7 +57,7 @@ export default function WindowSync() {
                 lastSyncedPath.current = normalizedPath; // Set for post pages too
 
                 const currentWindows = windowsRef.current;
-                const existing = currentWindows.find(w => w.type === 'post' && (w.id === `post-window-${postId}` || w.id === 'blog-window'));
+                const existing = currentWindows.find(w => w.type === 'post' && w.id === `post-window-${postId}`);
                 if (existing) {
                     const isTop = currentWindows[currentWindows.length - 1]?.id === existing.id;
                     if (!isTop || existing.isMinimized) {
