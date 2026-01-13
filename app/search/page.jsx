@@ -1,7 +1,6 @@
 "use client";
 
 import React from 'react';
-import DashboardHeader from '../components/DashboardHeader';
 
 export default function SearchPage({ isWindowMode = false }) {
     const mainContent = (
@@ -20,10 +19,5 @@ export default function SearchPage({ isWindowMode = false }) {
 
     if (isWindowMode) return mainContent;
 
-    return (
-        <div className="flex-1 flex flex-col h-full overflow-hidden">
-            <DashboardHeader />
-            {mainContent}
-        </div>
-    );
+    return null;
 }

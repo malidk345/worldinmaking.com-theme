@@ -12,6 +12,7 @@ import { WindowProvider } from "./contexts/WindowContext";
 
 // Components
 import Sidebar from "./components/Sidebar";
+import DashboardHeader from "./components/DashboardHeader";
 import WindowManager from "./components/WindowManager";
 import KeyboardShortcuts from "./components/KeyboardShortcuts";
 import WindowSync from "./components/WindowSync";
@@ -148,7 +149,8 @@ export default function RootLayout({ children }) {
                       <KeyboardShortcuts />
                       <WindowSync />
                       <Sidebar />
-                      <div className="scene flex flex-col flex-1 min-w-0">
+                      <div className="scene flex flex-col flex-1 min-w-0 bg-bg-3000">
+                        <DashboardHeader />
                         <div className="SceneLayout flex-1 flex flex-col min-h-0 relative">
                           {children}
                           <WindowManager />

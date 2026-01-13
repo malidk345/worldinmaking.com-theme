@@ -6,7 +6,7 @@ import { useWindow } from '../contexts/WindowContext';
 
 const PATH_MAP = {
     '/': { type: 'home', title: 'Home' },
-    '/explore': { type: 'explore', title: 'Explore' },
+    '/explore': { type: 'search', title: 'Explore' },
     '/search': { type: 'search', title: 'Search' },
     '/settings': { type: 'settings', title: 'Settings' },
     '/profile': { type: 'profile', title: 'Profile' },

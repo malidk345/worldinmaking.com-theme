@@ -19,12 +19,7 @@ function BlogPostContent() {
         }
     }, [id]);
 
-    return (
-        <div className="flex-1 flex flex-col h-full overflow-hidden">
-            <DashboardHeader />
-            {/* Windows handled by WindowManager */}
-        </div>
-    );
+    return null;
 }
 
 export default function PostContent() {

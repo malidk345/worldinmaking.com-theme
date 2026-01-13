@@ -2,8 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import DashboardHeader from '../components/DashboardHeader';
-import PageWindow from '../components/PageWindow';
 import RichTextEditor from '../components/RichTextEditor';
 import { useCommunity } from '../hooks/useCommunity';
 import { useAuth } from '../contexts/AuthContext';
@@ -83,10 +81,6 @@ export default function CommunityPage({ isWindowMode = false }) {
             setReplyContent('');
             setExpandedPostId(null);
         }
-    };
-
-    const handleClose = () => {
-        router.push('/');
     };
 
     const toggleReplyPanel = (postId) => {
@@ -406,12 +400,5 @@ export default function CommunityPage({ isWindowMode = false }) {
 
     if (isWindowMode) return mainContent;
 
-    return (
-        <div className="flex-1 flex flex-col h-full overflow-hidden">
-            <DashboardHeader />
-            <PageWindow id="community-window" title="community" onClose={handleClose}>
-                {mainContent}
-            </PageWindow>
-        </div>
-    );
+    return null;
 }

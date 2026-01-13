@@ -3,8 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import DashboardHeader from '../components/DashboardHeader';
-import PageWindow from '../components/PageWindow';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -16,10 +14,6 @@ export default function SettingsPage({ isWindowMode = false }) {
     const [username, setUsername] = useState('');
     const [avatarUrl, setAvatarUrl] = useState('');
     const [saving, setSaving] = useState(false);
-
-    const handleClose = () => {
-        router.push('/');
-    };
 
     useEffect(() => {
         if (profile) {
@@ -149,27 +143,12 @@ export default function SettingsPage({ isWindowMode = false }) {
     ) : null;
 
     if (authLoading) {
-        if (isWindowMode) return renderLoading();
-        return (
-            <div className="flex-1 flex flex-col h-full overflow-hidden">
-                <DashboardHeader />
-                <PageWindow id="settings-window" title="settings" onClose={handleClose}>
-                    {renderLoading()}
-                </PageWindow>
-            </div>
-        );
+        return isWindowMode ? renderLoading() : null;
     }
 
     if (!user) return null;
 
     if (isWindowMode) return mainContent;
 
-    return (
-        <div className="flex-1 flex flex-col h-full overflow-hidden">
-            <DashboardHeader />
-            <PageWindow id="settings-window" title="settings" onClose={handleClose}>
-                {mainContent}
-            </PageWindow>
-        </div>
-    );
+    return null;
 }

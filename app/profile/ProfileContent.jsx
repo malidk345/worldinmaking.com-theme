@@ -2,8 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import DashboardHeader from '../components/DashboardHeader';
-import PageWindow from '../components/PageWindow';
 import { useAuth } from '../contexts/AuthContext';
 import UserAvatar from '../components/UserAvatar';
 import RichTextEditor from '../components/RichTextEditor';
@@ -31,14 +29,6 @@ export default function ProfilePage({ zIndex, onFocus, onClose, isWindowMode = f
             setBioContent(profile.bio);
         }
     }, [profile]);
-
-    const handleClose = () => {
-        if (onClose) {
-            onClose();
-        } else {
-            router.push('/');
-        }
-    };
 
     const handleSaveBio = async () => {
         if (!user) return;
@@ -96,7 +86,7 @@ export default function ProfilePage({ zIndex, onFocus, onClose, isWindowMode = f
                     className="LemonButton LemonButton--primary LemonButton--small"
                 >
                     <span className="LemonButton__chrome gap-2 mx-auto">
-                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" x2="3" y1="12" y y2="12" /></svg>
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" x2="3" y1="12" y2="12" /></svg>
                         Sign In
                     </span>
                 </button>
@@ -333,71 +323,5 @@ export default function ProfilePage({ zIndex, onFocus, onClose, isWindowMode = f
         </>
     );
 
-    return (
-        <div className="flex-1 flex flex-col h-full overflow-hidden absolute inset-0">
-            <DashboardHeader />
-            <PageWindow id="profile-window" title="profile" onClose={handleClose} zIndex={zIndex} onFocus={onFocus}>
-                {finalContent}
-            </PageWindow>
-
-            {/* Photo Modal */}
-            {isPhotoModalOpen && (
-                <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="w-full max-w-xs bg-white border border-black/15 rounded-lg p-5 shadow-lg">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-2 text-primary font-bold text-xs">
-                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                                    <circle cx="12" cy="13" r="4" />
-                                </svg>
-                                Profile Picture
-                            </div>
-                            <button onClick={() => setIsPhotoModalOpen(false)} className="text-secondary hover:text-primary">
-                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                                    <path d="M18 6 6 18" /><path d="m6 6 12 12" />
-                                </svg>
-                            </button>
-                        </div>
-                        <p className="text-[11px] font-medium text-secondary mb-3">Enter a direct image URL to update your profile photo.</p>
-                        <div className="relative mb-4">
-                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary opacity-40">
-                                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                                </svg>
-                            </div>
-                            <input
-                                autoFocus
-                                type="text"
-                                placeholder="https://..."
-                                className="w-full bg-white border border-black/20 rounded pl-9 pr-3 py-2 text-sm outline-none focus:border-primary transition-colors text-primary"
-                                value={tempPhotoUrl}
-                                onChange={(e) => setTempPhotoUrl(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleSavePhoto()}
-                            />
-                        </div>
-                        <div className="flex gap-2">
-                            <button
-                                type="button"
-                                onClick={() => setIsPhotoModalOpen(false)}
-                                className="LemonButton LemonButton--secondary LemonButton--small flex-1"
-                            >
-                                <span className="LemonButton__chrome w-full justify-center">
-                                    Cancel
-                                </span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleSavePhoto}
-                                className="LemonButton LemonButton--primary LemonButton--small flex-1"
-                            >
-                                <span className="LemonButton__chrome">
-                                    Save Photo
-                                </span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
+    return null;
 }

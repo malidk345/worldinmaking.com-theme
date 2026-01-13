@@ -19,9 +19,6 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden">
-      <DashboardHeader />
-      {/* Windows Layer is now handled by WindowManager in RootLayout */}
-    </div>
+    <div className="flex-1 flex flex-col h-full overflow-hidden" />
   );
 }
