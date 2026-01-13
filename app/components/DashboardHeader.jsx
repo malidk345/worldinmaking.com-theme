@@ -77,12 +77,13 @@ export default function DashboardHeader({
     };
 
     return (
-        <div className="flex flex-col bg-transparent fixed top-2 left-2 right-2 z-[90]">
-            {/* Tab Bar - Floating Browser-like header */}
+        <div className="fixed top-2 left-2 right-2 z-[90] pointer-events-none">
+            {/* Tab Bar - Browser-like tabs - Now Floating */}
             <div
-                className="h-(--scene-layout-header-height) flex items-end w-full bg-surface-tertiary z-(--z-top-navigation) pr-1.5 relative border border-(--border-primary) rounded-xl shadow-md overflow-hidden"
+                className="h-(--scene-layout-header-height) flex items-end w-full bg-surface-tertiary z-(--z-top-navigation) px-1.5 relative border border-(--border-primary) rounded-xl shadow-md pointer-events-auto"
             >
-                <div className="border-b border-(--border-primary) h-px w-full absolute -bottom-px right-0 left-0"></div>
+                {/* Visual anchor line (optional, kept for aesthetic continuity) */}
+                <div className="border-b border-(--border-primary) h-px w-full absolute -bottom-px right-0 left-0 lg:left-0 opacity-0"></div>
                 <div className="flex flex-row gap-1 max-w-full items-end pl-2 lg:pl-0">
                     {/* Menu/Sidebar Toggle Button - Always visible */}
                     <button
@@ -339,14 +340,14 @@ export default function DashboardHeader({
                 </div>
             </div>
 
-            {/* Filter Bar - Only visible on Home page */}
+            {/* Filter Bar - Only visible on Home page - Now Integrated into Floating Header */}
             {isHomePage && setShowCategories && (
-                <div className="scene-sticky-bar @2xl/main-content:sticky z-20 bg-primary @2xl/main-content:top-[calc(var(--scene-layout-header-height)+var(--scene-title-section-height,64px))] space-y-2 py-2 px-3 rounded-t-xl mt-3">
+                <div className="z-20 bg-surface-tertiary border border-(--border-primary) border-t-0 p-1 rounded-b-xl shadow-sm mt-[-4px] pointer-events-auto mx-4">
                     <div className="flex gap-2 justify-between">
-                        <div className="flex-1 flex gap-2 items-end flex-wrap border border-transparent">
+                        <div className="flex-1 flex gap-2 items-end flex-wrap">
                             <div className="w-full">
                                 <div className="LemonButton LemonButton--secondary LemonButton--status-default LemonButton--small LemonButton--has-icon LemonButton--has-side-icon w-full">
-                                    <span className="LemonButton__chrome justify-between px-3">
+                                    <span className="LemonButton__chrome justify-between px-3 h-8">
                                         <span className="flex items-center gap-2">
                                             {/* Categories Button */}
                                             <button
@@ -355,7 +356,7 @@ export default function DashboardHeader({
                                                 title="Categories"
                                             >
                                                 <SidebarToggleIcon />
-                                                <span className="text-xs font-medium hidden sm:inline">categories</span>
+                                                <span className="text-[11px] font-bold hidden sm:inline lowercase">categories</span>
                                             </button>
                                             {/* Filter Button */}
                                             <button
@@ -364,7 +365,7 @@ export default function DashboardHeader({
                                                 title="Filter"
                                             >
                                                 <FilterSettingsIcon />
-                                                <span className="text-xs font-medium hidden sm:inline">filter</span>
+                                                <span className="text-[11px] font-bold hidden sm:inline lowercase">filter</span>
                                             </button>
                                         </span>
                                         <span className="flex items-center gap-1">

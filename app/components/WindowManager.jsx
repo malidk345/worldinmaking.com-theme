@@ -7,6 +7,7 @@ import { useWindow } from '../contexts/WindowContext';
 import { useTabs } from '../context/TabContext';
 import HomeWindow from './HomeWindow';
 import BlogWindow from './BlogWindow';
+import ExplorePage from '../explore/ExploreContent';
 import SearchPage from '../search/SearchContent';
 import AuthorProfileWindow from './AuthorProfileWindow';
 import ProfileContent from '../profile/ProfileContent';
@@ -31,6 +32,7 @@ const PageWindow = React.memo(({ title, children, ...props }) => (
 PageWindow.displayName = 'PageWindow';
 
 const ProfileWindow = (props) => <PageWindow {...props} title="Profile"><ProfileContent isWindowMode={true} /></PageWindow>;
+const ExploreWindow = (props) => <PageWindow {...props} title="Explore"><ExplorePage isWindowMode={true} /></PageWindow>;
 const SearchWindow = (props) => <PageWindow {...props} title="Search"><SearchPage isWindowMode={true} /></PageWindow>;
 const SettingsWindow = (props) => <PageWindow {...props} title="Settings"><SettingsContent isWindowMode={true} /></PageWindow>;
 const LoginWindow = (props) => <PageWindow {...props} title="Login"><LoginContent isWindowMode={true} /></PageWindow>;
@@ -53,7 +55,7 @@ const WINDOW_COMPONENTS = {
     'post': BlogWindow,
     'author-profile': AuthorProfileWindow,
     'profile': ProfileWindow,
-    'explore': SearchWindow,
+    'explore': ExploreWindow,
     'search': SearchWindow,
     'settings': SettingsWindow,
     'login': LoginWindow,

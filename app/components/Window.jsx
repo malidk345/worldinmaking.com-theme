@@ -11,8 +11,9 @@ import { useWindowInteraction } from '../hooks/useWindowInteraction';
 
 const HEADER_HEIGHT = 45;
 const MARGIN = 8;
-const HEADER_TOP = 8; // The gap above the floating header
-const WINDOW_TOP_OFFSET = HEADER_TOP + HEADER_HEIGHT + MARGIN; // Total top gap for windows (8+45+8=61)
+const MOBILE_BREAKPOINT = 768;
+const DEFAULT_WIDTH = 800;
+const DEFAULT_HEIGHT = 600;
 
 // Premium Desktop Spring: Buttery Smooth with Quick Response
 const premiumSpring = {
@@ -78,9 +79,9 @@ const Window = ({
         const viewHeight = window.innerHeight;
 
         const startW = Math.floor(mobile ? viewWidth - (MARGIN * 2) : initialWidth);
-        const startH = Math.floor(mobile ? viewHeight - (WINDOW_TOP_OFFSET + MARGIN) : initialHeight);
+        const startH = Math.floor(mobile ? viewHeight - (HEADER_HEIGHT + MARGIN * 2) : initialHeight);
         const centeredX = Math.floor(initialX ?? Math.max(MARGIN, (viewWidth - startW) / 2));
-        const centeredY = Math.floor(initialY ?? Math.max(WINDOW_TOP_OFFSET, (viewHeight - startH) / 2));
+        const centeredY = Math.floor(initialY ?? Math.max(HEADER_HEIGHT + MARGIN, (viewHeight - startH) / 2));
 
         setPos({ x: centeredX, y: centeredY });
         setSize({ width: startW, height: startH });
@@ -181,9 +182,9 @@ const Window = ({
                 const viewHeight = window.innerHeight;
                 // Target width: 92% of screen to look good, but not wider than initial
                 const targetW = Math.min(initialWidth, viewWidth - (MARGIN * 2));
-                const targetH = Math.min(initialHeight, viewHeight - (WINDOW_TOP_OFFSET + MARGIN));
+                const targetH = Math.min(initialHeight, viewHeight - (HEADER_HEIGHT + MARGIN * 2));
                 const targetX = (viewWidth - targetW) / 2;
-                const targetY = (viewHeight - targetH) / 2 + (WINDOW_TOP_OFFSET / 2);
+                const targetY = (viewHeight - targetH) / 2 + (HEADER_HEIGHT / 2);
 
                 setPos({ x: Math.floor(targetX), y: Math.floor(targetY) });
                 setSize({ width: Math.floor(targetW), height: Math.floor(targetH) });
@@ -201,7 +202,8 @@ const Window = ({
     const windowStyle = useMemo(() => {
         const base = { zIndex, transformOrigin: 'center center' };
         if (isMaximized) {
-            return { ...base, position: 'fixed', top: WINDOW_TOP_OFFSET, left: MARGIN, right: MARGIN, bottom: MARGIN, width: 'auto', height: 'auto' };
+            // Header Top (8) + Header Height (45) + Gap (8) = 61
+            return { ...base, position: 'fixed', top: HEADER_HEIGHT + MARGIN + 8, left: MARGIN, right: MARGIN, bottom: MARGIN, width: 'auto', height: 'auto' };
         }
         return { ...base, position: 'fixed', top: pos.y, left: pos.x, width: size.width, height: size.height };
     }, [zIndex, isMaximized, isMinimized, pos, size]);
