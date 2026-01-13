@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'next/navigation';
 import Window from './Window';
 import BlogWindowToolbar from './BlogWindowToolbar';
+import { Skeleton } from './Skeleton';
 import { useTabs } from '../context/TabContext';
 import { useWindow } from '../contexts/WindowContext';
 import { getPostById, usePosts } from '../hooks/usePosts';
@@ -92,9 +93,9 @@ export default function BlogWindow(props) {
                 }
             >
                 <div className="flex-1 flex items-center justify-center h-full bg-bg-3000">
-                    <div className="animate-pulse flex flex-col items-center">
-                        <div className="h-8 w-64 bg-black/10 rounded mb-4"></div>
-                        <div className="h-4 w-48 bg-black/10 rounded"></div>
+                    <div className="flex flex-col items-center">
+                        <Skeleton className="h-8 w-64 rounded mb-4" />
+                        <Skeleton className="h-4 w-48 rounded" />
                     </div>
                 </div>
             </Window>

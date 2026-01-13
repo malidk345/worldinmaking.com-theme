@@ -4685,16 +4685,27 @@
   }
 }
 
-/* Shimmer animation for skeleton loaders */
+/* Premium Shimmer Animation for Skeleton Loaders */
 @keyframes shimmer {
   0% {
-    transform: translateX(-100%);
+    background-position: -200% 0;
   }
 
   100% {
-    transform: translateX(100%);
+    background-position: 200% 0;
   }
 }
+
+.animate-shimmer {
+  display: inline-block;
+  background: linear-gradient(90deg,
+      rgba(0, 0, 0, 0.05) 25%,
+      rgba(0, 0, 0, 0.1) 50%,
+      rgba(0, 0, 0, 0.05) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite linear;
+}
+
 
 /* Rich Text Editor Mobile Fixes */
 .prose-editor:empty:before {

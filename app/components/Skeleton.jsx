@@ -5,12 +5,8 @@ import React from 'react';
 export const Skeleton = ({ className, style }) => {
     return (
         <div
-            className={`bg-black/5 animate-shimmer ${className || ''}`}
-            style={{
-                backgroundImage: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%)',
-                backgroundSize: '200% 100%',
-                ...style
-            }}
+            className={`animate-shimmer ${className || ''}`}
+            style={style}
         />
     );
 };

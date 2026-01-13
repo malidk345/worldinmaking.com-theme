@@ -3,22 +3,14 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { getExcerpt } from '../lib/markdown';
 import InsightCard from './InsightCard';
+import { SkeletonDashboardGrid } from './Skeleton';
 
 const INITIAL_COUNT = 10;
-const SKELETON_COUNT = 6;
 
-// Skeleton loader component
+// Unified skeleton loader using global Skeleton component
 const GridSkeleton = () => (
     <div className="w-full relative">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: SKELETON_COUNT }, (_, i) => (
-                <div
-                    key={i}
-                    className="h-[340px] bg-black/5 rounded-lg animate-pulse border border-transparent"
-                    aria-hidden="true"
-                />
-            ))}
-        </div>
+        <SkeletonDashboardGrid count={6} />
     </div>
 );
 

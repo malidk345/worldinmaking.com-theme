@@ -6,6 +6,7 @@ import UserAvatar from './UserAvatar';
 import { supabase } from '../lib/supabase';
 import Image from 'next/image';
 import { stripMarkdown } from '../lib/markdown';
+import { Skeleton } from './Skeleton';
 
 export default function AuthorProfileWindow(props) {
     const { username, onClose, zIndex, onFocus, isFocused, isMaximized, isMinimized, ...restProps } = props;
@@ -68,7 +69,7 @@ export default function AuthorProfileWindow(props) {
             <div className="flex flex-col h-full bg-bg-3000 overflow-y-auto custom-scrollbar">
                 {loading ? (
                     <div className="flex-1 flex items-center justify-center py-20">
-                        <div className="animate-pulse text-secondary text-xs font-bold uppercase tracking-widest">Loading Author Details...</div>
+                        <Skeleton className="h-4 w-48 rounded" />
                     </div>
                 ) : profile ? (
                     <>
