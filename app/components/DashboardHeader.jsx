@@ -84,16 +84,16 @@ export default function DashboardHeader({
             >
                 {/* Visual anchor line (optional, kept for aesthetic continuity) */}
                 <div className="border-b border-(--border-primary) h-px w-full absolute -bottom-px right-0 left-0 lg:left-0 opacity-0"></div>
-                <div className="flex flex-row gap-1 max-w-full items-end pl-2 lg:pl-0 h-full">
+                <div className="flex flex-row gap-1 max-w-full items-end pl-1 h-full">
                     {/* Menu/Sidebar Toggle Button - Always visible */}
                     <button
-                        className="p-1 mr-1 text-black hover:text-primary flex items-center justify-center h-[30px] w-[30px] hover:bg-black/5 rounded transition-colors"
+                        className="p-1 mr-0.5 text-black hover:text-primary flex items-center justify-center h-[30px] w-[30px] hover:bg-black/5 rounded transition-colors"
                         onClick={handleSidebarToggle}
                         title="Open sidebar"
                     >
                         <MenuIcon className="size-4" />
                     </button>
-                    <div className="relative mr-2 h-[30px] flex items-center">
+                    <div className="relative mr-1 h-[30px] flex items-center">
                         <button
                             className="p-1 text-black hover:text-primary relative flex items-center justify-center h-[30px] w-[30px] hover:bg-black/5 rounded transition-colors"
                             onClick={() => setIsTabManagerOpen(!isTabManagerOpen)}
@@ -263,19 +263,19 @@ export default function DashboardHeader({
 
                     {/* Tab Container - Chrome-style tab */}
                     <div
-                        className="flex items-center h-[30px] rounded-t-md px-2 mx-1 border border-b-0"
+                        className="flex items-center h-[31px] rounded-t-md px-2 ml-0.5 border-t border-x"
                         style={{
                             backgroundColor: '#f3f4ef',
                             width: '200px',
                             borderColor: 'var(--border-primary)',
-                            marginBottom: '-1px',
+                            marginBottom: '0',
                             position: 'relative',
                             zIndex: 10
                         }}
                     >
-                        {/* Border mask - covers header bottom border ONLY between side borders */}
+                        {/* Flat border mask - precisely covers the header border under the tab */}
                         <div
-                            className="absolute left-px right-px h-[2px]"
+                            className="absolute left-0 right-0 h-[1.5px]"
                             style={{
                                 backgroundColor: '#f3f4ef',
                                 bottom: '-1px'
