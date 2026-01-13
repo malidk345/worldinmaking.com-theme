@@ -4695,3 +4695,29 @@
     transform: translateX(100%);
   }
 }
+
+/* Rich Text Editor Mobile Fixes */
+.prose-editor:empty:before {
+  content: attr(data-placeholder);
+  color: var(--posthog-3000-400);
+  font-style: italic;
+  pointer-events: none;
+  display: block;
+  /* For contenteditable */
+}
+
+/* Prevent screen jumping/growing on mobile focus */
+@media (max-width: 768px) {
+  .prose-editor {
+    /* Stabilize mobile editor fonts */
+    font-size: 16px !important;
+    line-height: 1.5;
+  }
+
+  /* Ensure the cursor doesn't push the viewport */
+  input:focus,
+  textarea:focus,
+  [contenteditable]:focus {
+    outline: none;
+  }
+}

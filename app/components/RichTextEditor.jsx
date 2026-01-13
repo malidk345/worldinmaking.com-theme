@@ -99,7 +99,7 @@ export default function RichTextEditor({ value, onChange, placeholder = "Write s
                         ref={editorRef}
                         contentEditable
                         suppressContentEditableWarning
-                        className="w-full h-full outline-none text-sm leading-relaxed text-primary bg-transparent prose-editor"
+                        className="w-full h-full outline-none text-[16px] md:text-sm leading-relaxed text-primary bg-transparent prose-editor"
                         style={{ minHeight: `calc(${minHeight} - 80px)` }}
                         onInput={handleInput}
                         onBlur={saveSelection}
@@ -110,7 +110,8 @@ export default function RichTextEditor({ value, onChange, placeholder = "Write s
                     <div
                         className="w-full h-full text-sm leading-relaxed text-primary prose-editor"
                         style={{ minHeight: `calc(${minHeight} - 80px)` }}
-                        dangerouslySetInnerHTML={{ __html: value || `<span class="text-secondary italic">${placeholder}</span>` }}
+                        dangerouslySetInnerHTML={{ __html: value }}
+                        data-placeholder={placeholder}
                     />
                 )}
             </div>
