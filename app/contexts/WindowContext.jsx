@@ -103,20 +103,6 @@ export const WindowProvider = ({ children }) => {
         setWindows(prev => prev.filter(w => w.id !== id));
     }, []);
 
-    // Toggle minimize
-    const toggleMinimize = useCallback((id) => {
-        setWindows(prev => prev.map(w =>
-            w.id === id ? { ...w, isMinimized: !w.isMinimized } : w
-        ));
-    }, []);
-
-    // Toggle maximize
-    const toggleMaximize = useCallback((id) => {
-        setWindows(prev => prev.map(w =>
-            w.id === id ? { ...w, isMaximized: !w.isMaximized, isMinimized: false } : w
-        ));
-    }, []);
-
     // Update specific window properties (position, size, etc.)
     const updateWindow = useCallback((id, updates) => {
         setWindows(prev => prev.map(w =>
@@ -132,8 +118,6 @@ export const WindowProvider = ({ children }) => {
             openWindow,
             closeWindow,
             bringToFront,
-            toggleMinimize,
-            toggleMaximize,
             updateWindow
         }}>
             {children}

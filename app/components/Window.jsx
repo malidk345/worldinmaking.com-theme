@@ -51,7 +51,6 @@ const Window = ({
     onPositionChange,
     onSizeChange
 }) => {
-    const [isMobile, setIsMobile] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
     const [isAnimatingOut, setIsAnimatingOut] = useState(false);
 
@@ -75,7 +74,6 @@ const Window = ({
     // Initialize position
     useEffect(() => {
         const mobile = window.innerWidth < MOBILE_BREAKPOINT;
-        setIsMobile(mobile);
 
         const viewWidth = window.innerWidth;
         const viewHeight = window.innerHeight;
@@ -141,13 +139,6 @@ const Window = ({
         };
     }, [isDragging, isResizing, handleDragMove, handleDragEnd, handleResizeMove, handleResizeEnd]);
 
-    // Handle Resize (window)
-    useEffect(() => {
-        const handleWinResize = () => setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
-        window.addEventListener('resize', handleWinResize);
-        return () => window.removeEventListener('resize', handleWinResize);
-    }, []);
-
     // Sync external props
     useEffect(() => { setIsMaximized(isMaximizedProp); }, [isMaximizedProp]);
     useEffect(() => { setIsMinimized(isMinimizedProp); }, [isMinimizedProp]);
@@ -193,7 +184,7 @@ const Window = ({
     }, [isMaximized, pos, size, onMaximizeChange, onFocus]);
 
     const windowStyle = useMemo(() => {
-        const base = { zIndex, display: isMinimized ? 'none' : 'flex', transformOrigin: 'center center' };
+        const base = { zIndex, transformOrigin: 'center center' };
         if (isMaximized) {
             return { ...base, position: 'fixed', top: HEADER_HEIGHT + MARGIN, left: MARGIN, right: MARGIN, bottom: MARGIN, width: 'auto', height: 'auto' };
         }
@@ -245,10 +236,28 @@ const Window = ({
                     {toolbar}
                 </div>
 
-                <div className="flex items-center gap-0.5 shrink-0">
-                    <motion.button onClick={handleMinimize} className="p-1.5 rounded hover:bg-black/5 text-black" whileTap={{ scale: 0.9 }}><MinimizeIcon /></motion.button>
-                    <motion.button onClick={handleMaximize} className="p-1.5 rounded hover:bg-black/5 text-black" whileTap={{ scale: 0.9 }}>{isMaximized ? <RestoreIcon /> : <MaximizeIcon />}</motion.button>
-                    <motion.button onClick={handleClose} className="p-1.5 rounded hover:bg-red-500/10 text-black hover:text-red-500" whileTap={{ scale: 0.9 }}><CloseWindowIcon /></motion.button>
+                <div className="flex items-center gap-0.5 shrink-0 h-full">
+                    <motion.button
+                        onClick={handleMinimize}
+                        className="p-2 md:p-1.5 rounded hover:bg-black/5 text-black h-full flex items-center justify-center min-w-[32px] md:min-w-[26px]"
+                        whileTap={{ scale: 0.9 }}
+                    >
+                        <MinimizeIcon />
+                    </motion.button>
+                    <motion.button
+                        onClick={handleMaximize}
+                        className="p-2 md:p-1.5 rounded hover:bg-black/5 text-black h-full flex items-center justify-center min-w-[32px] md:min-w-[26px]"
+                        whileTap={{ scale: 0.9 }}
+                    >
+                        {isMaximized ? <RestoreIcon /> : <MaximizeIcon />}
+                    </motion.button>
+                    <motion.button
+                        onClick={handleClose}
+                        className="p-2 md:p-1.5 rounded hover:bg-red-500/10 text-black hover:text-red-500 h-full flex items-center justify-center min-w-[32px] md:min-w-[26px]"
+                        whileTap={{ scale: 0.9 }}
+                    >
+                        <CloseWindowIcon />
+                    </motion.button>
                 </div>
             </motion.div>
 
