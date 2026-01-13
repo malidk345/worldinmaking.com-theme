@@ -78,8 +78,8 @@ const Window = ({
         const viewWidth = window.innerWidth;
         const viewHeight = window.innerHeight;
 
-        const startW = Math.floor(mobile ? viewWidth * 0.85 : initialWidth);
-        const startH = Math.floor(mobile ? viewHeight * 0.7 : initialHeight);
+        const startW = Math.floor(mobile ? viewWidth - (MARGIN * 2) : initialWidth);
+        const startH = Math.floor(mobile ? viewHeight - (HEADER_HEIGHT + MARGIN * 2) : initialHeight);
         const centeredX = Math.floor(initialX ?? Math.max(MARGIN, (viewWidth - startW) / 2));
         const centeredY = Math.floor(initialY ?? Math.max(HEADER_HEIGHT + MARGIN, (viewHeight - startH) / 2));
 
