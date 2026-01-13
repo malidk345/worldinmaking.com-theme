@@ -10,7 +10,7 @@ import { useWindowInteraction } from '../hooks/useWindowInteraction';
  */
 
 const HEADER_HEIGHT = 45;
-const MARGIN = 8;
+const MARGIN = 4;
 const MOBILE_BREAKPOINT = 768;
 const DEFAULT_WIDTH = 800;
 const DEFAULT_HEIGHT = 600;
