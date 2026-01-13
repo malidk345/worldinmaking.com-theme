@@ -77,14 +77,14 @@ export default function DashboardHeader({
     };
 
     return (
-        <div className="fixed top-2 left-2 right-2 z-[90] pointer-events-none">
+        <div className="fixed top-2 left-2 right-2 z-90 pointer-events-none">
             {/* Tab Bar - Browser-like tabs - Now Floating */}
             <div
-                className="h-(--scene-layout-header-height) flex items-center w-full bg-surface-tertiary z-(--z-top-navigation) px-1.5 relative border border-(--border-primary) rounded-xl shadow-md pointer-events-auto"
+                className="h-(--scene-layout-header-height) flex items-end w-full bg-surface-tertiary z-(--z-top-navigation) px-1.5 relative border border-(--border-primary) rounded-xl pointer-events-auto"
             >
                 {/* Visual anchor line (optional, kept for aesthetic continuity) */}
                 <div className="border-b border-(--border-primary) h-px w-full absolute -bottom-px right-0 left-0 lg:left-0 opacity-0"></div>
-                <div className="flex flex-row gap-1 max-w-full items-center pl-2 lg:pl-0 h-full">
+                <div className="flex flex-row gap-1 max-w-full items-end pl-2 lg:pl-0 h-full">
                     {/* Menu/Sidebar Toggle Button - Always visible */}
                     <button
                         className="p-1 mr-1 text-black hover:text-primary flex items-center justify-center h-[24px] w-[24px] hover:bg-black/5 rounded transition-colors"
@@ -261,11 +261,26 @@ export default function DashboardHeader({
                         </AnimatePresence>
                     </div>
 
-                    {/* Tab Container - Elegant container for tabs */}
+                    {/* Tab Container - Chrome-style tab */}
                     <div
-                        className="flex items-center h-[30px] rounded-md px-2 mx-1 border"
-                        style={{ backgroundColor: '#f3f4ef', width: '200px', borderColor: '#a8a8a8' }}
+                        className="flex items-center h-[30px] rounded-t-md px-2 mx-1 border border-b-0"
+                        style={{
+                            backgroundColor: '#f3f4ef',
+                            width: '200px',
+                            borderColor: 'var(--border-primary)',
+                            marginBottom: '-1px',
+                            position: 'relative',
+                            zIndex: 10
+                        }}
                     >
+                        {/* Border mask - covers header bottom border under the tab */}
+                        <div
+                            className="absolute -left-px -right-px h-[2px]"
+                            style={{
+                                backgroundColor: '#f3f4ef',
+                                bottom: '-1px'
+                            }}
+                        />
                         {/* Single Active Tab */}
                         <div className="scene-tab-row flex min-w-0 items-center h-full flex-1">
                             {(() => {
