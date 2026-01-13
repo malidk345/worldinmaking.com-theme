@@ -3,8 +3,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import DashboardHeader from '../components/DashboardHeader';
-import PageWindow from '../components/PageWindow';
 import { useAuth } from '../contexts/AuthContext';
 import { useAdminData } from '../hooks/useAdminData';
 import RichTextEditor from '../components/RichTextEditor';
@@ -125,8 +123,6 @@ export default function AdminPage({ isWindowMode = false }) {
         e.preventDefault();
         setLoading(true);
 
-        // Build post data - only include image fields if they have values
-        // This prevents errors if the Supabase table doesn't have these columns yet
         const postData = {
             title,
             slug: slug || title.toLowerCase().replace(/ /g, '-').replace(/[^\w-]/g, ''),
@@ -137,12 +133,10 @@ export default function AdminPage({ isWindowMode = false }) {
             published: true
         };
 
-        // Only add image_url if provided (requires column in Supabase 'posts' table)
         if (featuredImage && featuredImage.trim() !== '') {
             postData.image_url = featuredImage.trim();
         }
 
-        // Only add author_avatar if available (requires column in Supabase 'posts' table)
         if (profile?.avatar_url) {
             postData.author_avatar = profile.avatar_url;
         }
@@ -171,10 +165,6 @@ export default function AdminPage({ isWindowMode = false }) {
         }
     };
 
-    const handleClose = () => {
-        router.push('/');
-    };
-
     const loadingContent = (
         <main className="flex-1 flex items-center justify-center bg-bg-3000 h-full">
             <div className="animate-pulse text-gray-400">Loading...</div>
@@ -182,15 +172,7 @@ export default function AdminPage({ isWindowMode = false }) {
     );
 
     if (authLoading) {
-        if (isWindowMode) return loadingContent;
-        return (
-            <div className="flex-1 flex flex-col h-full overflow-hidden">
-                <DashboardHeader />
-                <PageWindow id="admin-window" title="admin" onClose={handleClose}>
-                    {loadingContent}
-                </PageWindow>
-            </div>
-        );
+        return isWindowMode ? loadingContent : null;
     }
 
     const deniedContent = (
@@ -203,15 +185,7 @@ export default function AdminPage({ isWindowMode = false }) {
     );
 
     if (!user || profile?.role !== 'admin') {
-        if (isWindowMode) return deniedContent;
-        return (
-            <div className="flex-1 flex flex-col h-full overflow-hidden">
-                <DashboardHeader />
-                <PageWindow id="admin-window" title="access denied" onClose={handleClose}>
-                    {deniedContent}
-                </PageWindow>
-            </div>
-        );
+        return isWindowMode ? deniedContent : null;
     }
 
     const mainContent = (
@@ -530,12 +504,5 @@ export default function AdminPage({ isWindowMode = false }) {
 
     if (isWindowMode) return mainContent;
 
-    return (
-        <div className="flex-1 flex flex-col h-full overflow-hidden">
-            <DashboardHeader />
-            <PageWindow id="admin-window" title="admin dashboard" onClose={handleClose}>
-                {mainContent}
-            </PageWindow>
-        </div>
-    );
+    return null;
 }

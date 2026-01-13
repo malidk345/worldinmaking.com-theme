@@ -4,8 +4,6 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import DashboardHeader from '../components/DashboardHeader';
-import PageWindow from '../components/PageWindow';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useWindow } from '../contexts/WindowContext';
@@ -40,14 +38,10 @@ export default function LoginPage({ isWindowMode = false }) {
 
     // Auto-open profile window on login
     React.useEffect(() => {
-        if (user) {
+        if (user && isWindowMode) {
             openWindow('profile', { id: 'profile-window', title: 'profile' });
         }
-    }, [user, openWindow]);
-
-    const handleClose = () => {
-        router.push('/');
-    };
+    }, [user, openWindow, isWindowMode]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -187,28 +181,18 @@ export default function LoginPage({ isWindowMode = false }) {
     );
 
     let mainContent;
-    let windowTitle = "login";
 
     if (authLoading) {
         mainContent = renderLoading();
     } else if (user) {
         mainContent = renderLoggedIn();
-        windowTitle = "profile";
     } else if (sent) {
         mainContent = renderSent();
-        windowTitle = "check inbox";
     } else {
         mainContent = renderForm();
     }
 
     if (isWindowMode) return mainContent;
 
-    return (
-        <div className="flex-1 flex flex-col h-full overflow-hidden">
-            <DashboardHeader />
-            <PageWindow id="login-window" title={windowTitle} onClose={handleClose}>
-                {mainContent}
-            </PageWindow>
-        </div>
-    );
+    return null;
 }

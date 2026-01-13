@@ -1,16 +1,10 @@
 "use client";
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import DashboardHeader from '../components/DashboardHeader';
-import PageWindow from '../components/PageWindow';
 import Button3D from '../components/Button3D';
 
 export default function ContactPage({ isWindowMode = false }) {
     const router = useRouter();
-
-    const handleClose = () => {
-        router.push('/');
-    };
 
     const content = (
         <div className="flex-1 overflow-y-auto bg-bg-3000 custom-scrollbar h-full" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
@@ -37,12 +31,5 @@ export default function ContactPage({ isWindowMode = false }) {
 
     if (isWindowMode) return content;
 
-    return (
-        <div className="flex-1 flex flex-col h-full overflow-hidden">
-            <DashboardHeader />
-            <PageWindow id="contact-window" title="contact" onClose={handleClose}>
-                {content}
-            </PageWindow>
-        </div>
-    );
+    return null;
 }

@@ -1,15 +1,7 @@
 "use client";
-import { useRouter } from 'next/navigation';
-import DashboardHeader from '../components/DashboardHeader';
-import PageWindow from '../components/PageWindow';
+import React from 'react';
 
 export default function GenericPage({ title, description, icon, isWindowMode = false }) {
-    const router = useRouter();
-
-    const handleClose = () => {
-        router.push('/');
-    };
-
     const content = (
         <div className="flex-1 overflow-y-auto bg-primary h-full" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
             <div className="max-w-4xl mx-auto px-6 py-12">
@@ -64,12 +56,5 @@ export default function GenericPage({ title, description, icon, isWindowMode = f
 
     if (isWindowMode) return content;
 
-    return (
-        <div className="flex-1 flex flex-col">
-            <DashboardHeader />
-            <PageWindow id={`${title}-window`} title={title} onClose={handleClose}>
-                {content}
-            </PageWindow>
-        </div>
-    );
+    return null;
 }
