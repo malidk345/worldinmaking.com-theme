@@ -77,21 +77,22 @@ export default function DashboardHeader({
     };
 
     return (
-        <div className="fixed top-2 left-2 right-2 z-[100] pointer-events-none">
-            {/* Tab Bar - Floating Browser-like tabs */}
+        <div className="flex flex-col bg-transparent fixed top-2 left-2 right-2 z-[90]">
+            {/* Tab Bar - Floating Browser-like header */}
             <div
-                className="h-11 flex items-center w-full bg-surface-tertiary border border-(--border-primary) rounded-xl shadow-md pr-1.5 relative pointer-events-auto overflow-hidden"
+                className="h-(--scene-layout-header-height) flex items-end w-full bg-surface-tertiary z-(--z-top-navigation) pr-1.5 relative border border-(--border-primary) rounded-xl shadow-md overflow-hidden"
             >
-                <div className="flex flex-row gap-1 w-full items-center pl-2">
+                <div className="border-b border-(--border-primary) h-px w-full absolute -bottom-px right-0 left-0"></div>
+                <div className="flex flex-row gap-1 max-w-full items-end pl-2 lg:pl-0">
                     {/* Menu/Sidebar Toggle Button - Always visible */}
                     <button
-                        className="p-1 mr-1 text-black hover:text-primary flex items-center justify-center size-8 hover:bg-black/5 rounded-lg transition-colors"
+                        className="p-1 mr-1 text-black hover:text-primary self-end flex items-center justify-center h-[28px] hover:bg-black/5 rounded transition-colors"
                         onClick={handleSidebarToggle}
                         title="Open sidebar"
                     >
                         <MenuIcon />
                     </button>
-                    <div className="relative mr-2 flex items-center h-full">
+                    <div className="relative mr-2 self-end h-[28px] flex items-center">
                         <button
                             className="p-1 text-black hover:text-primary relative"
                             onClick={() => setIsTabManagerOpen(!isTabManagerOpen)}
@@ -288,11 +289,10 @@ export default function DashboardHeader({
                                     role="button"
                                     tabIndex={0}
                                     aria-disabled="false"
-                                    className="relative shrink-0 outline-none"
+                                    className="relative shrink-0 outline-none mb-[-1px]"
                                     style={{
                                         zIndex: 50,
                                         width: '200px',
-                                        height: '32px'
                                     }}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter' || e.key === ' ') {
@@ -304,13 +304,13 @@ export default function DashboardHeader({
                                         <div className="relative">
                                             <div className="button-primitive-group button-primitive group/button-primitive button-primitive--variant-default px-0 button-primitive--full-width border-0 rounded-none group/colorful-product-icons colorful-product-icons-true button-primitive--height-base">
                                                 <button
-                                                    className="button-primitive group/button-primitive button-primitive--variant-default button-primitive--size-base button-primitive--height-base text-sm icon-only p-0 justify-center items-center shrink-0 gap-1.5 absolute order-last group z-60 size-6 rounded-md top-1/2 -translate-y-1/2 right-1 hover:bg-black/10 hover:text-red-500"
+                                                    className="button-primitive group/button-primitive button-primitive--variant-default button-primitive--size-base button-primitive--height-base text-sm icon-only p-0 justify-center items-center shrink-0 gap-1.5 absolute order-last group z-60 size-6 rounded top-1/2 -translate-y-1/2 right-0.5 hover:bg-surface-primary hover:text-primary"
                                                     onClick={(e) => handleCloseTab(e, activeTab.id)}
                                                 >
-                                                    <CloseIcon className="text-black/60 size-3 group-hover:text-red-500 z-10" />
+                                                    <CloseIcon className="text-black size-3 group-hover:text-primary z-10" />
                                                 </button>
                                                 <button
-                                                    className="button-primitive group/button-primitive button-primitive--variant-default button-primitive--size-base button-primitive--height-base text-sm w-full order-first relative pl-2 pr-8 flex flex-row items-center gap-1.5 h-full rounded-lg border tab-active cursor-default text-primary bg-primary border-(--border-primary) shadow-sm focus:outline-none"
+                                                    className="button-primitive group/button-primitive button-primitive--variant-default button-primitive--size-base button-primitive--height-base text-sm w-full order-first relative pl-2 pr-6 flex flex-row items-center gap-1.5 h-full rounded-lg border border-b-0 tab-active rounded-bl-none rounded-br-none cursor-default text-primary bg-primary border-(--border-primary) focus:outline-none"
                                                     onClick={() => handleTabClick(activeTab)}
                                                 >
                                                     <span className={`flex items-center shrink-0 ${iconColorClass}`}>
@@ -331,7 +331,7 @@ export default function DashboardHeader({
 
                     {/* New Tab Button */}
                     <Link
-                        className="p-1 h-8 w-8 flex items-center justify-center text-black hover:bg-black/5 rounded-lg border border-(--border-primary) transition-colors bg-white/50"
+                        className="button-primitive group/button-primitive button-primitive--variant-default button-primitive--size-sm button-primitive--height-sm text-sm icon-only justify-center shrink-0 p-1 flex flex-row items-center gap-1 cursor-pointer rounded-lg border z-20 ml-0.5 h-[28px] w-[28px] mb-0 text-black"
                         href="/search"
                     >
                         <PlusIcon />

@@ -48,8 +48,11 @@ export const useWindowInteraction = ({
         let newX = dragStartRef.current.initialX + dx;
         let newY = dragStartRef.current.initialY + dy;
 
+        const HEADER_TOP = 8;
+        const WINDOW_TOP_OFFSET = HEADER_TOP + HEADER_HEIGHT + MARGIN; // 61px
+
         newX = Math.max(MARGIN, Math.min(newX, window.innerWidth - sizeRef.current.width - MARGIN));
-        newY = Math.max(HEADER_HEIGHT + MARGIN, Math.min(newY, window.innerHeight - MARGIN - sizeRef.current.height));
+        newY = Math.max(WINDOW_TOP_OFFSET, Math.min(newY, window.innerHeight - MARGIN - sizeRef.current.height));
 
         dragStartRef.current.lastValidX = newX;
         dragStartRef.current.lastValidY = newY;
@@ -122,7 +125,9 @@ export const useWindowInteraction = ({
             newH = Math.min(newH, window.innerHeight - startY - MARGIN);
         } else if (direction.includes('n')) {
             const maxDy = startH - MIN_HEIGHT;
-            const effectiveDy = Math.max(-startY + (HEADER_HEIGHT + MARGIN), Math.min(dy, maxDy));
+            const HEADER_TOP = 8;
+            const WINDOW_TOP_OFFSET = HEADER_TOP + HEADER_HEIGHT + MARGIN; // 61px
+            const effectiveDy = Math.max(-startY + WINDOW_TOP_OFFSET, Math.min(dy, maxDy));
             newH = startH - effectiveDy;
             newY = startY + effectiveDy;
         }
