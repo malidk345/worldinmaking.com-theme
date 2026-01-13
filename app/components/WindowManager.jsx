@@ -144,7 +144,15 @@ export default function WindowManager() {
                     onPositionChange: (pos) => updateWindow(win.id, { x: pos.x, y: pos.y }),
                     onSizeChange: (size) => updateWindow(win.id, { width: size.width, height: size.height }),
                     onMaximizeChange: (maximized) => updateWindow(win.id, { isMaximized: maximized }),
-                    onMinimizeChange: (minimized) => updateWindow(win.id, { isMinimized: minimized }),
+                    onMinimizeChange: (minimized) => {
+                        if (minimized) {
+                            // User wants (-) to "close window" but "keep tab".
+                            // So we close the window context but DON'T call handleClose (which closes the tab).
+                            closeWindow(win.id);
+                        } else {
+                            updateWindow(win.id, { isMinimized: false });
+                        }
+                    },
                     username: win.username
                 };
 
