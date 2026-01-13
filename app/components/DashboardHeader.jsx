@@ -263,8 +263,8 @@ export default function DashboardHeader({
 
                     {/* Tab Container - Elegant container for tabs */}
                     <div
-                        className="flex items-center h-[30px] rounded-md px-2 mx-1"
-                        style={{ backgroundColor: '#f3f4ef', width: '200px' }}
+                        className="flex items-center h-[30px] rounded-md px-2 mx-1 border"
+                        style={{ backgroundColor: '#f3f4ef', width: '200px', borderColor: '#a8a8a8' }}
                     >
                         {/* Single Active Tab */}
                         <div className="scene-tab-row flex min-w-0 items-center h-full flex-1">
@@ -314,14 +314,6 @@ export default function DashboardHeader({
                                             </span>
                                             <span className="truncate text-[12px] font-normal text-black flex-1 text-left">{activeTab.title}</span>
                                         </button>
-                                        {tabs.length > 1 && (
-                                            <button
-                                                className="p-0.5 rounded hover:bg-black/10 text-tertiary hover:text-black transition-colors shrink-0"
-                                                onClick={(e) => handleCloseTab(e, activeTab.id)}
-                                            >
-                                                <CloseIcon className="size-3" />
-                                            </button>
-                                        )}
                                     </div>
                                 );
                             })()}
