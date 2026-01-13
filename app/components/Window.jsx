@@ -10,7 +10,7 @@ import { useWindowInteraction } from '../hooks/useWindowInteraction';
  */
 
 const HEADER_HEIGHT = 45;
-const MARGIN = 4;
+const MARGIN = 8;
 const MOBILE_BREAKPOINT = 768;
 const DEFAULT_WIDTH = 800;
 const DEFAULT_HEIGHT = 600;
@@ -236,7 +236,7 @@ const Window = ({
             onMouseDown={onFocus}
             onTouchStart={onFocus}
             layout="position"
-            className={`fixed flex flex-col overflow-hidden outline-none rounded-md bg-white will-change-transform border border-(--border-primary) ${isFocused ? 'shadow-lg' : 'shadow-md'}`}
+            className={`fixed flex flex-col overflow-hidden outline-none rounded-xl bg-white will-change-transform border border-(--border-primary) ${isFocused ? 'shadow-lg' : 'shadow-md'}`}
             style={windowStyle}
         >
             {/* Window Header */}
