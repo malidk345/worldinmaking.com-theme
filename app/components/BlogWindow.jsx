@@ -170,7 +170,7 @@ export default function BlogWindow(props) {
                             animate={{ x: 0 }}
                             exit={{ x: '-100%' }}
                             transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-                            className="absolute left-2 top-2 bottom-2 w-[60%] max-w-[320px] z-40 overflow-hidden flex flex-col border border-(--border-primary) rounded-xl"
+                            className="absolute left-2 top-2 bottom-2 w-[60%] max-w-[320px] z-40 overflow-hidden flex flex-col border border-(--border-primary) rounded-md"
                             style={{
                                 backgroundColor: 'rgb(229, 231, 224)',
                                 boxShadow: '0 4px 24px rgba(0, 0, 0, 0.15)'
@@ -226,7 +226,7 @@ export default function BlogWindow(props) {
                             animate={{ x: 0 }}
                             exit={{ x: '100%' }}
                             transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-                            className="absolute right-2 top-2 bottom-2 w-[60%] max-w-[320px] z-40 overflow-hidden flex flex-col border border-(--border-primary) rounded-xl"
+                            className="absolute right-2 top-2 bottom-2 w-[60%] max-w-[320px] z-40 overflow-hidden flex flex-col border border-(--border-primary) rounded-md"
                             style={{
                                 backgroundColor: 'rgb(229, 231, 224)',
                                 boxShadow: '0 4px 24px rgba(0, 0, 0, 0.15)'
@@ -285,7 +285,7 @@ export default function BlogWindow(props) {
 
                         {/* Hero Image - only show if image exists */}
                         {post.image && (
-                            <div className="relative aspect-2/1 rounded-lg overflow-hidden border mb-6" style={{ borderColor: 'var(--border-primary)' }}>
+                            <div className="relative aspect-2/1 rounded-md overflow-hidden border mb-6" style={{ borderColor: 'var(--border-primary)' }}>
                                 <Image
                                     src={post.image}
                                     alt={post.title}
@@ -299,7 +299,7 @@ export default function BlogWindow(props) {
 
                         {/* Meta Info */}
                         <div
-                            className="flex flex-nowrap items-center border border-(--border-primary) rounded-lg overflow-x-auto divide-x divide-(--border-primary) bg-(--posthog-3000-50) text-xs whitespace-nowrap mb-6"
+                            className="flex flex-nowrap items-center border border-(--border-primary) rounded-md overflow-x-auto divide-x divide-(--border-primary) bg-(--posthog-3000-50) text-xs whitespace-nowrap mb-6"
                             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                         >
                             <div
@@ -352,9 +352,9 @@ export default function BlogWindow(props) {
                                         ) : (
                                             <code className="block bg-black/5 p-4 rounded-lg text-sm font-mono overflow-x-auto" {...props} />
                                         ),
-                                    pre: ({ node, ...props }) => <pre className="bg-black/5 p-4 rounded-lg overflow-x-auto mb-4" {...props} />,
+                                    pre: ({ node, ...props }) => <pre className="bg-black/5 p-4 rounded-md overflow-x-auto mb-4" {...props} />,
                                     hr: ({ node, ...props }) => <hr className="border-t border-black/20 my-8" {...props} />,
-                                    img: ({ node, ...props }) => <img className="rounded-lg max-w-full h-auto my-4" {...props} />,
+                                    img: ({ node, ...props }) => <img className="rounded-md max-w-full h-auto my-4" {...props} />,
                                 }}
                             >
                                 {post.content || ''}

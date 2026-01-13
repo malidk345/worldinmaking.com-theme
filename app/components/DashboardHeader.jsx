@@ -80,7 +80,7 @@ export default function DashboardHeader({
         <div className="fixed top-2 left-2 right-2 z-[90] pointer-events-none">
             {/* Tab Bar - Browser-like tabs - Now Floating */}
             <div
-                className="h-(--scene-layout-header-height) flex items-end w-full bg-surface-tertiary z-(--z-top-navigation) px-1.5 relative border border-(--border-primary) rounded-xl pointer-events-auto"
+                className="h-(--scene-layout-header-height) flex items-end w-full bg-surface-tertiary z-(--z-top-navigation) px-1.5 relative border border-(--border-primary) rounded-md pointer-events-auto"
             >
                 {/* Visual anchor line (optional, kept for aesthetic continuity) */}
                 <div className="border-b border-(--border-primary) h-px w-full absolute -bottom-px right-0 left-0 lg:left-0 opacity-0"></div>

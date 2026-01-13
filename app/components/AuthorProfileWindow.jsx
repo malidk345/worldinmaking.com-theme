@@ -76,7 +76,7 @@ export default function AuthorProfileWindow(props) {
                         {/* Profile Header Block */}
                         <div className="p-6 bg-white border-b border-black/10">
                             <div className="flex items-center gap-5">
-                                <div className="w-20 h-20 rounded-xl border border-black/15 overflow-hidden bg-white shadow-sm flex items-center justify-center shrink-0">
+                                <div className="w-20 h-20 rounded-md border border-black/15 overflow-hidden bg-white shadow-sm flex items-center justify-center shrink-0">
                                     <UserAvatar
                                         src={profile.avatar_url}
                                         name={profile.username}
@@ -96,7 +96,7 @@ export default function AuthorProfileWindow(props) {
                             </div>
 
                             {profile.bio && (
-                                <div className="mt-6 text-sm text-primary leading-relaxed bg-black/5 p-4 rounded-lg italic border-l-4 border-black/20">
+                                <div className="mt-6 text-sm text-primary leading-relaxed bg-black/5 p-4 rounded-md italic border-l-4 border-black/20">
                                     <div
                                         className="prose-content text-[13px]"
                                         dangerouslySetInnerHTML={{ __html: profile.bio }}
@@ -115,7 +115,7 @@ export default function AuthorProfileWindow(props) {
                                         <a
                                             key={post.id}
                                             href={`/post?id=${post.id}`}
-                                            className="group flex items-center gap-3 p-3 bg-white border border-black/5 rounded-lg hover:border-black/20 transition-all shadow-sm hover:shadow-md"
+                                            className="group flex items-center gap-3 p-3 bg-white border border-black/5 rounded-md hover:border-black/20 transition-all shadow-sm hover:shadow-md"
                                         >
                                             <div className="w-12 h-12 rounded bg-black/5 overflow-hidden shrink-0 relative">
                                                 {post.image_url ? (
@@ -136,7 +136,7 @@ export default function AuthorProfileWindow(props) {
                                         </a>
                                     ))
                                 ) : (
-                                    <div className="text-center py-10 bg-white border border-dashed border-black/10 rounded-lg">
+                                    <div className="text-center py-10 bg-white border border-dashed border-black/10 rounded-md">
                                         <p className="text-xs text-secondary font-medium">No public posts yet.</p>
                                     </div>
                                 )}

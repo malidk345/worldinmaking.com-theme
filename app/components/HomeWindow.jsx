@@ -98,7 +98,7 @@ export default function HomeWindow(props) {
                             animate={{ x: 0 }}
                             exit={{ x: '-100%' }}
                             transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-                            className="absolute left-2 top-2 bottom-2 w-[60%] max-w-[320px] z-60 overflow-hidden flex flex-col border border-(--border-primary) rounded-xl"
+                            className="absolute left-2 top-2 bottom-2 w-[60%] max-w-[320px] z-60 overflow-hidden flex flex-col border border-(--border-primary) rounded-md"
                             style={{
                                 backgroundColor: 'rgb(229, 231, 224)',
                                 boxShadow: '0 4px 24px rgba(0, 0, 0, 0.15)'
@@ -150,7 +150,7 @@ export default function HomeWindow(props) {
                             animate={{ x: 0 }}
                             exit={{ x: '-100%' }}
                             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                            className="absolute left-2 top-2 bottom-2 w-[60%] max-w-[320px] z-60 overflow-hidden flex flex-col border border-(--border-primary) rounded-xl"
+                            className="absolute left-2 top-2 bottom-2 w-[60%] max-w-[320px] z-60 overflow-hidden flex flex-col border border-(--border-primary) rounded-md"
                             style={{
                                 backgroundColor: 'rgb(229, 231, 224)',
                                 boxShadow: '0 4px 24px rgba(0, 0, 0, 0.15)'
