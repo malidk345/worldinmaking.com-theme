@@ -80,8 +80,10 @@ export default function DashboardHeader({
         <div className="fixed top-2 left-2 right-2 z-[90] pointer-events-none">
             {/* Tab Bar - Browser-like tabs - Now Floating */}
             <div
-                className="h-(--scene-layout-header-height) flex items-end w-full bg-surface-tertiary z-(--z-top-navigation) px-1.5 relative border border-b-0 border-(--border-primary) rounded-t-xl shadow-md pointer-events-auto"
+                className="h-(--scene-layout-header-height) flex items-end w-full bg-surface-tertiary z-(--z-top-navigation) px-1.5 relative border border-(--border-primary) rounded-xl shadow-md pointer-events-auto"
             >
+                {/* Visual anchor line (optional, kept for aesthetic continuity) */}
+                <div className="border-b border-(--border-primary) h-px w-full absolute -bottom-px right-0 left-0 lg:left-0 opacity-0"></div>
                 <div className="flex flex-row gap-1 max-w-full items-center pl-2 lg:pl-0 h-full">
                     {/* Menu/Sidebar Toggle Button - Always visible */}
                     <button
@@ -259,11 +261,8 @@ export default function DashboardHeader({
                         </AnimatePresence>
                     </div>
 
-                    {/* Left bottom border segment - extends to the tab */}
-                    <div className="flex-1 self-end border-b border-(--border-primary) h-px min-w-[8px]"></div>
-
                     {/* Single Active Tab */}
-                    <div className="scene-tab-row flex min-w-0 items-end shrink-0">
+                    <div className="scene-tab-row flex min-w-0 items-end">
                         {(() => {
                             const activeTab = tabs.find(t => t.isActive);
                             if (!activeTab) return null;
@@ -291,11 +290,10 @@ export default function DashboardHeader({
                                     role="button"
                                     tabIndex={0}
                                     aria-disabled="false"
-                                    className="relative shrink-0 outline-none"
+                                    className="relative shrink-0 outline-none mb-[-1px]"
                                     style={{
                                         zIndex: 50,
                                         width: '200px',
-                                        marginBottom: '-1px',
                                     }}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter' || e.key === ' ') {
@@ -313,7 +311,7 @@ export default function DashboardHeader({
                                                     <CloseIcon className="text-black size-3 group-hover:text-primary z-10" />
                                                 </button>
                                                 <button
-                                                    className="button-primitive group/button-primitive button-primitive--variant-default button-primitive--size-base button-primitive--height-base text-sm w-full order-first relative pl-2 pr-6 flex flex-row items-center gap-1.5 h-full rounded-lg border border-b-0 tab-active rounded-bl-none rounded-br-none cursor-default text-primary bg-primary border-(--border-primary) focus:outline-none"
+                                                    className="button-primitive group/button-primitive button-primitive--variant-default button-primitive--size-base button-primitive--height-base text-sm w-full order-first relative pl-2 pr-6 flex flex-row items-center gap-1.5 h-full rounded-t-lg border border-b-0 border-(--border-primary) cursor-default text-primary bg-surface-tertiary focus:outline-none translate-y-[1px] z-10"
                                                     onClick={() => handleTabClick(activeTab)}
                                                 >
                                                     <span className={`flex items-center shrink-0 ${iconColorClass}`}>
@@ -322,7 +320,7 @@ export default function DashboardHeader({
                                                             return <Icon className="LemonIcon" width="100%" fill="currentColor" />;
                                                         })()}
                                                     </span>
-                                                    <span className="truncate block max-w-[140px] text-left text-sm">{activeTab.title}</span>
+                                                    <span className="truncate block max-w-[140px] text-left text-sm font-medium">{activeTab.title}</span>
                                                 </button>
                                             </div>
                                         </div>
@@ -331,9 +329,6 @@ export default function DashboardHeader({
                             );
                         })()}
                     </div>
-
-                    {/* Right bottom border segment - extends from tab to the end */}
-                    <div className="flex-1 self-end border-b border-(--border-primary) h-px min-w-[8px]"></div>
 
                     {/* New Tab Button */}
                     <div className="flex h-full items-center">
