@@ -77,7 +77,7 @@ export default function DashboardHeader({
     };
 
     return (
-        <div className="fixed top-2 left-2 right-2 z-90 pointer-events-none">
+        <div className="fixed top-2 left-2 right-2 z-[90] pointer-events-none">
             {/* Tab Bar - Browser-like tabs - Now Floating */}
             <div
                 className="h-(--scene-layout-header-height) flex items-end w-full bg-surface-tertiary z-(--z-top-navigation) px-1.5 relative border border-(--border-primary) rounded-xl pointer-events-auto"
@@ -87,15 +87,15 @@ export default function DashboardHeader({
                 <div className="flex flex-row gap-1 max-w-full items-end pl-2 lg:pl-0 h-full">
                     {/* Menu/Sidebar Toggle Button - Always visible */}
                     <button
-                        className="p-1 mr-1 text-black hover:text-primary flex items-center justify-center h-[24px] w-[24px] hover:bg-black/5 rounded transition-colors"
+                        className="p-1 mr-1 text-black hover:text-primary flex items-center justify-center h-[30px] w-[30px] hover:bg-black/5 rounded transition-colors"
                         onClick={handleSidebarToggle}
                         title="Open sidebar"
                     >
                         <MenuIcon className="size-4" />
                     </button>
-                    <div className="relative mr-2 h-[24px] flex items-center">
+                    <div className="relative mr-2 h-[30px] flex items-center">
                         <button
-                            className="p-1 text-black hover:text-primary relative flex items-center justify-center h-[24px] w-[24px]"
+                            className="p-1 text-black hover:text-primary relative flex items-center justify-center h-[30px] w-[30px] hover:bg-black/5 rounded transition-colors"
                             onClick={() => setIsTabManagerOpen(!isTabManagerOpen)}
                         >
                             <BrowserTabIcon className="size-4" />
@@ -273,9 +273,9 @@ export default function DashboardHeader({
                             zIndex: 10
                         }}
                     >
-                        {/* Border mask - covers header bottom border under the tab */}
+                        {/* Border mask - covers header bottom border ONLY between side borders */}
                         <div
-                            className="absolute -left-px -right-px h-[2px]"
+                            className="absolute left-px right-px h-[2px]"
                             style={{
                                 backgroundColor: '#f3f4ef',
                                 bottom: '-1px'
@@ -324,10 +324,10 @@ export default function DashboardHeader({
                                             <span className={`flex items-center shrink-0 ${iconColorClass}`}>
                                                 {(() => {
                                                     const Icon = getIconByPath(activeTab.path);
-                                                    return <Icon className="LemonIcon size-3.5" fill="currentColor" />;
+                                                    return <Icon className="LemonIcon size-[17px]" fill="currentColor" />;
                                                 })()}
                                             </span>
-                                            <span className="truncate text-[12px] font-normal text-black flex-1 text-left">{activeTab.title}</span>
+                                            <span className="truncate text-[13.5px] font-normal text-black flex-1 text-left">{activeTab.title}</span>
                                         </button>
                                     </div>
                                 );
@@ -340,7 +340,7 @@ export default function DashboardHeader({
                             href="/search"
                             title="New Tab"
                         >
-                            <PlusIcon className="size-3.5" />
+                            <PlusIcon className="size-4" />
                         </Link>
                     </div>
                 </div>
