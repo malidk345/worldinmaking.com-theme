@@ -2,7 +2,7 @@
 
 import { useRef, useCallback, useState } from 'react';
 
-const HEADER_HEIGHT = 45;
+const HEADER_HEIGHT = 38;
 const MARGIN = 8;
 const MIN_WIDTH = 320;
 const MIN_HEIGHT = 200;

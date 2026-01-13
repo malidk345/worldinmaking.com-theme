@@ -84,23 +84,23 @@ export default function DashboardHeader({
             >
                 {/* Visual anchor line (optional, kept for aesthetic continuity) */}
                 <div className="border-b border-(--border-primary) h-px w-full absolute -bottom-px right-0 left-0 lg:left-0 opacity-0"></div>
-                <div className="flex flex-row gap-1 max-w-full items-end pl-2 lg:pl-0">
+                <div className="flex flex-row gap-1 max-w-full items-center pl-2 lg:pl-0 h-full">
                     {/* Menu/Sidebar Toggle Button - Always visible */}
                     <button
-                        className="p-1 mr-1 text-black hover:text-primary self-end flex items-center justify-center h-[28px] hover:bg-black/5 rounded transition-colors"
+                        className="p-1 mr-1 text-black hover:text-primary flex items-center justify-center h-[24px] w-[24px] hover:bg-black/5 rounded transition-colors"
                         onClick={handleSidebarToggle}
                         title="Open sidebar"
                     >
-                        <MenuIcon />
+                        <MenuIcon className="size-4" />
                     </button>
-                    <div className="relative mr-2 self-end h-[28px] flex items-center">
+                    <div className="relative mr-2 h-[24px] flex items-center">
                         <button
-                            className="p-1 text-black hover:text-primary relative"
+                            className="p-1 text-black hover:text-primary relative flex items-center justify-center h-[24px] w-[24px]"
                             onClick={() => setIsTabManagerOpen(!isTabManagerOpen)}
                         >
                             <BrowserTabIcon className="size-4" />
                             {tabs.length > 0 && (
-                                <span className="absolute -top-1 -right-1 bg-black text-white text-[9px] font-bold rounded-full min-w-[14px] h-[14px] flex items-center justify-center px-0.5 border border-surface-primary">
+                                <span className="absolute -top-1 -right-1 bg-black text-white text-[8px] font-bold rounded-full min-w-[12px] h-[12px] flex items-center justify-center px-0.5 border border-surface-primary">
                                     {tabs.length}
                                 </span>
                             )}
@@ -331,12 +331,14 @@ export default function DashboardHeader({
                     </div>
 
                     {/* New Tab Button */}
-                    <Link
-                        className="button-primitive group/button-primitive button-primitive--variant-default button-primitive--size-sm button-primitive--height-sm text-sm icon-only justify-center shrink-0 p-1 flex flex-row items-center gap-1 cursor-pointer rounded-lg border z-20 ml-0.5 h-[28px] w-[28px] mb-0 text-black"
-                        href="/search"
-                    >
-                        <PlusIcon />
-                    </Link>
+                    <div className="flex h-full items-center">
+                        <Link
+                            className="button-primitive group/button-primitive button-primitive--variant-default button-primitive--size-sm button-primitive--height-sm text-sm icon-only justify-center shrink-0 p-1 flex flex-row items-center gap-1 cursor-pointer rounded-lg border z-20 ml-0.5 h-[24px] w-[24px] text-black"
+                            href="/search"
+                        >
+                            <PlusIcon className="size-4" />
+                        </Link>
+                    </div>
                 </div>
             </div>
 

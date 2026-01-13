@@ -9,7 +9,7 @@ import { useWindowInteraction } from '../hooks/useWindowInteraction';
  * Window Component with Premium Visuals and Refactored Logic
  */
 
-const HEADER_HEIGHT = 45;
+const HEADER_HEIGHT = 38;
 const MARGIN = 8;
 const MOBILE_BREAKPOINT = 768;
 const DEFAULT_WIDTH = 800;
