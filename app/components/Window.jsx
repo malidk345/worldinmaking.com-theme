@@ -171,17 +171,33 @@ const Window = ({
 
     const handleMaximize = useCallback((e) => {
         e?.stopPropagation();
+        const mobile = window.innerWidth < MOBILE_BREAKPOINT;
+
         if (!isMaximized) {
             preMaximizeState.current = { x: pos.x, y: pos.y, width: size.width, height: size.height };
         } else {
-            setPos({ x: preMaximizeState.current.x, y: preMaximizeState.current.y });
-            setSize({ width: preMaximizeState.current.width, height: preMaximizeState.current.height });
+            if (mobile) {
+                // On mobile, force center the window when restoring
+                const viewWidth = window.innerWidth;
+                const viewHeight = window.innerHeight;
+                // Target width: 92% of screen to look good, but not wider than initial
+                const targetW = Math.min(initialWidth, viewWidth - (MARGIN * 2));
+                const targetH = Math.min(initialHeight, viewHeight - (HEADER_HEIGHT + MARGIN * 2));
+                const targetX = (viewWidth - targetW) / 2;
+                const targetY = (viewHeight - targetH) / 2 + (HEADER_HEIGHT / 2);
+
+                setPos({ x: Math.floor(targetX), y: Math.floor(targetY) });
+                setSize({ width: Math.floor(targetW), height: Math.floor(targetH) });
+            } else {
+                setPos({ x: preMaximizeState.current.x, y: preMaximizeState.current.y });
+                setSize({ width: preMaximizeState.current.width, height: preMaximizeState.current.height });
+            }
         }
         const newValue = !isMaximized;
         setIsMaximized(newValue);
         onMaximizeChange?.(newValue);
         onFocus?.();
-    }, [isMaximized, pos, size, onMaximizeChange, onFocus]);
+    }, [isMaximized, pos, size, onMaximizeChange, onFocus, initialWidth, initialHeight]);
 
     const windowStyle = useMemo(() => {
         const base = { zIndex, transformOrigin: 'center center' };
