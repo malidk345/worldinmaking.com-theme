@@ -236,7 +236,7 @@ const Window = ({
             onMouseDown={onFocus}
             onTouchStart={onFocus}
             layout="position"
-            className={`fixed flex flex-col overflow-hidden outline-none rounded-xl bg-white will-change-transform border border-(--border-primary) ${isFocused ? 'shadow-lg' : 'shadow-md'}`}
+            className={`fixed flex flex-col overflow-hidden outline-none rounded-md bg-white will-change-transform border border-(--border-primary) ${isFocused ? 'shadow-lg' : 'shadow-md'}`}
             style={windowStyle}
         >
             {/* Window Header */}
