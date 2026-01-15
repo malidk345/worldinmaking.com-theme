@@ -16,18 +16,20 @@ const adaptPost = (p) => {
 
     // Extract headings from Markdown for TOC (## syntax)
     const headings = [];
-    const lines = rawContent.split('\n');
-    lines.forEach(line => {
-        // Match 2 or 3 hashes at the start of a line
-        const match = line.match(/^\s*(#{2,3})\s+(.+)$/);
+    if (rawContent) {
+        const lines = rawContent.split('\n');
+        lines.forEach(line => {
+            // Match 2 or 3 hashes at the start of a line
+            const match = line.match(/^\s*(#{2,3})\s+(.+)$/);
 
-        if (match) {
-            const level = match[1].length;
-            const text = match[2].trim();
-            const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-            headings.push({ id, text, level });
-        }
-    });
+            if (match) {
+                const level = match[1].length;
+                const text = match[2].trim();
+                const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+                headings.push({ id, text, level });
+            }
+        });
+    }
 
     return {
         id: p.id,
@@ -41,7 +43,7 @@ const adaptPost = (p) => {
         author: p.author || 'Unknown',
         authorName: p.author || 'Unknown',
         authorAvatar: p.author_avatar || undefined,
-        wordCount: rawContent.split(/\s+/).filter(w => w.length > 0).length,
+        wordCount: rawContent ? rawContent.split(/\s+/).filter(w => w.length > 0).length : 0,
         headings: headings,
         comments: [],
         image: p.image_url || null,
@@ -49,19 +51,28 @@ const adaptPost = (p) => {
     };
 };
 
-const postsFetcher = async () => {
-    const { data, error } = await supabase
+const postsFetcher = async (options = {}) => {
+    const { fetchContent = false } = options;
+
+    let query = supabase
         .from('posts')
-        .select('*')
+        .select(fetchContent ? '*' : 'id, slug, title, created_at, category, excerpt, author, author_avatar, image_url, published')
         .eq('published', true)
         .order('created_at', { ascending: false });
+
+    const { data, error } = await query;
 
     if (error) throw error;
     return data.map(adaptPost).filter(Boolean);
 };
 
-export const usePosts = () => {
-    const { data, error, isLoading, mutate } = useSWR('posts', postsFetcher, {
+export const usePosts = (options = {}) => {
+    // Normalize options to ensure consistent cache keys
+    const fetchContent = options.fetchContent ?? false;
+    const normalizedOptions = { fetchContent };
+
+    // Include options in the key so SWR caches different requests separately
+    const { data, error, isLoading, mutate } = useSWR(['posts', normalizedOptions], () => postsFetcher(normalizedOptions), {
         revalidateOnFocus: false,
         dedupingInterval: 60000, // 1 minute
     });

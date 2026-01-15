@@ -23,7 +23,7 @@ const panelAnimation = {
 
 export default function Dashboard() {
     // Fetch posts from Supabase
-    const { posts, loading, error } = usePosts();
+    const { posts, loading, error } = usePosts({ fetchContent: false });
 
     // State for toolbar functionality
     const [showCategories, setShowCategories] = useState(false);
