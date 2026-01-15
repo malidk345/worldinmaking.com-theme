@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest",
+    "test:ui": "vitest --ui"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.89.0",
@@ -25,15 +27,14 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.1",
+    "@vitejs/plugin-react": "^5.1.2",
+    "@vitest/ui": "^4.0.17",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
-    "tailwindcss": "^4"
-  },
-  "eslintConfig": {
-    "extends": "next/core-web-vitals",
-    "rules": {
-      "react/no-unescaped-entities": "off",
-      "react-hooks/exhaustive-deps": "off"
-    }
+    "jsdom": "^27.4.0",
+    "tailwindcss": "^4",
+    "vitest": "^4.0.17"
   }
 }
