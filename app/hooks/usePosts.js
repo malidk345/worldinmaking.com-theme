@@ -16,18 +16,20 @@ const adaptPost = (p) => {
 
     // Extract headings from Markdown for TOC (## syntax)
     const headings = [];
-    const lines = rawContent.split('\n');
-    lines.forEach(line => {
-        // Match 2 or 3 hashes at the start of a line
-        const match = line.match(/^\s*(#{2,3})\s+(.+)$/);
+    if (rawContent) {
+        const lines = rawContent.split('\n');
+        lines.forEach(line => {
+            // Match 2 or 3 hashes at the start of a line
+            const match = line.match(/^\s*(#{2,3})\s+(.+)$/);
 
-        if (match) {
-            const level = match[1].length;
-            const text = match[2].trim();
-            const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-            headings.push({ id, text, level });
-        }
-    });
+            if (match) {
+                const level = match[1].length;
+                const text = match[2].trim();
+                const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+                headings.push({ id, text, level });
+            }
+        });
+    }
 
     return {
         id: p.id,
@@ -49,10 +51,16 @@ const adaptPost = (p) => {
     };
 };
 
-const postsFetcher = async () => {
+const postsFetcher = async ({ fetchContent }) => {
+    // Select specific columns to reduce payload size when content is not needed
+    // This significantly improves performance for list views
+    const selectQuery = fetchContent
+        ? '*'
+        : 'id, slug, title, created_at, category, excerpt, author, author_avatar, image_url, published';
+
     const { data, error } = await supabase
         .from('posts')
-        .select('*')
+        .select(selectQuery)
         .eq('published', true)
         .order('created_at', { ascending: false });
 
@@ -60,11 +68,15 @@ const postsFetcher = async () => {
     return data.map(adaptPost).filter(Boolean);
 };
 
-export const usePosts = () => {
-    const { data, error, isLoading, mutate } = useSWR('posts', postsFetcher, {
-        revalidateOnFocus: false,
-        dedupingInterval: 60000, // 1 minute
-    });
+export const usePosts = ({ fetchContent = false } = {}) => {
+    const { data, error, isLoading, mutate } = useSWR(
+        ['posts', fetchContent],
+        () => postsFetcher({ fetchContent }),
+        {
+            revalidateOnFocus: false,
+            dedupingInterval: 60000, // 1 minute
+        }
+    );
 
     return {
         posts: data || [],
