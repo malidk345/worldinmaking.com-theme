@@ -12,6 +12,7 @@ const adaptPost = (p) => {
     if (!p) return null;
 
     // Get raw content - ReactMarkdown will handle the rendering
+    // If content is not fetched (undefined), default to empty string
     const rawContent = p.content || '';
 
     // Extract headings from Markdown for TOC (## syntax)
@@ -41,6 +42,7 @@ const adaptPost = (p) => {
         author: p.author || 'Unknown',
         authorName: p.author || 'Unknown',
         authorAvatar: p.author_avatar || undefined,
+        // wordCount will be 0 if content is not fetched. This is acceptable for list views which don't display it.
         wordCount: rawContent.split(/\s+/).filter(w => w.length > 0).length,
         headings: headings,
         comments: [],
@@ -49,10 +51,19 @@ const adaptPost = (p) => {
     };
 };
 
-const postsFetcher = async () => {
-    const { data, error } = await supabase
-        .from('posts')
-        .select('*')
+const postsFetcher = async (key, { fetchContent } = {}) => {
+    let query = supabase.from('posts');
+
+    if (fetchContent) {
+        query = query.select('*');
+    } else {
+        // Fetch only necessary columns for list view to reduce payload size
+        // Note: This omits 'content', so 'wordCount' will be 0 and 'headings' will be empty.
+        // This is an intentional optimization for list views.
+        query = query.select('id, slug, title, created_at, category, excerpt, author, author_avatar, image_url, published');
+    }
+
+    const { data, error } = await query
         .eq('published', true)
         .order('created_at', { ascending: false });
 
@@ -60,11 +71,15 @@ const postsFetcher = async () => {
     return data.map(adaptPost).filter(Boolean);
 };
 
-export const usePosts = () => {
-    const { data, error, isLoading, mutate } = useSWR('posts', postsFetcher, {
-        revalidateOnFocus: false,
-        dedupingInterval: 60000, // 1 minute
-    });
+export const usePosts = ({ fetchContent = false } = {}) => {
+    const { data, error, isLoading, mutate } = useSWR(
+        ['posts', { fetchContent }],
+        ([key, options]) => postsFetcher(key, options),
+        {
+            revalidateOnFocus: false,
+            dedupingInterval: 60000, // 1 minute
+        }
+    );
 
     return {
         posts: data || [],
