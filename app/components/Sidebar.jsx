@@ -274,13 +274,13 @@ const Sidebar = () => {
                         onClick={(e) => handleLinkClick(e, userPath)}
                         aria-current={isLinkActive(userPath) ? 'page' : undefined}
                     >
-                        <span className="flex text-black w-5 h-5 items-center justify-center shrink-0 border-[1.5px] border-black rounded-full p-0.5 overflow-hidden">
+                        <span className={`flex text-black w-5 h-5 items-center justify-center shrink-0 overflow-hidden ${user ? 'border-[1.5px] border-black rounded-full p-0.5' : ''}`}>
                             {user && profile?.avatar_url ? (
                                 <img src={profile.avatar_url} className="w-full h-full object-cover rounded-full" alt="" />
                             ) : user ? (
-                                <Icons.User className="size-full p-[1px]" />
+                                <Icons.User className="size-full p-px" />
                             ) : (
-                                <Icons.Login className="size-full p-[1px]" />
+                                <Icons.Login className="size-full" />
                             )}
                         </span>
                         <span className="truncate flex-1">

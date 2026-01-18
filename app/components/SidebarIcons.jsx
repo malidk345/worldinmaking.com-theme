@@ -87,9 +87,8 @@ export const User = ({ className = "" }) => (
   </svg>
 );
 
-export const Login = ({ className = "" }) => (
-  <svg className={`LemonIcon ${className}`} viewBox="0 0 24 24" width="100%" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-    <path d="M17 17.5c0-1.9-2.2-3.5-5-3.5s-5 1.6-5 3.5" />
-  </svg>
-);
+<svg className={`LemonIcon ${className}`} viewBox="0 0 24 24" width="100%" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+  <path d="M10 17l5-5-5-5" />
+  <path d="M15 12H3" />
+</svg>
