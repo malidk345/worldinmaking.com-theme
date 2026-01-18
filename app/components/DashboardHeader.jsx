@@ -2,12 +2,14 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getIconByPath } from '../utils/iconUtils';
-import { useSidebar } from '../context/SidebarContext';
-import { useTabs } from '../context/TabContext';
+import { useSidebar } from '../contexts/SidebarContext';
+import { useTabs } from '../contexts/TabContext';
 import { useWindow } from '../contexts/WindowContext';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
+import { useAuth } from '../contexts/AuthContext';
 import * as HeaderIcons from './Icons';
+import * as SidebarIcons from './SidebarIcons';
 
 // Header Icons Alias
 const BrowserTabIcon = HeaderIcons.BrowserTab;
@@ -39,7 +41,8 @@ export default function DashboardHeader({
 }) {
     const { toggleMobileSidebar, openSidebar, isSidebarOpen } = useSidebar();
     const { tabs, closeTab, setActiveTab, history, reopenTab } = useTabs();
-    const { closeWindow, bringToFront } = useWindow();
+    const { closeWindow, bringToFront, openWindow } = useWindow();
+    const { user, profile } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
     const [isTabManagerOpen, setIsTabManagerOpen] = React.useState(false);
@@ -77,7 +80,7 @@ export default function DashboardHeader({
     };
 
     return (
-        <div className="fixed top-2 left-2 right-2 z-[90] pointer-events-none">
+        <div className="fixed top-2 left-2 right-2 z-90 pointer-events-none">
             {/* Tab Bar - Browser-like tabs - Now Floating */}
             <div
                 className="h-(--scene-layout-header-height) flex items-end w-full bg-surface-tertiary z-(--z-top-navigation) px-1.5 relative border border-(--border-primary) rounded-md pointer-events-auto"
@@ -90,8 +93,10 @@ export default function DashboardHeader({
                         className="p-1 mr-0.5 text-black hover:text-primary flex items-center justify-center h-[30px] w-[30px] hover:bg-black/5 rounded transition-colors"
                         onClick={handleSidebarToggle}
                         title="Open sidebar"
+                        aria-label="Open navigation sidebar"
+                        aria-expanded={isSidebarOpen}
                     >
-                        <MenuIcon className="size-4" />
+                        <MenuIcon className="size-4" aria-hidden="true" />
                     </button>
                     <div className="relative mr-1 h-[30px] flex items-center">
                         <button
@@ -246,14 +251,7 @@ export default function DashboardHeader({
                                             )}
                                         </div>
 
-                                        {/* Footer - Branding */}
-                                        <div className="px-2 py-4 mt-auto border-t border-primary/30">
-                                            <p className="text-[9px] text-tertiary leading-tight text-center opacity-70">
-                                                persisted session manager.
-                                                <br />
-                                                designed by wim.
-                                            </p>
-                                        </div>
+
                                     </motion.div>
 
                                 </>
@@ -344,6 +342,29 @@ export default function DashboardHeader({
                         </Link>
                     </div>
                 </div>
+
+                {/* Header User/Login Icon - Far Right side of header area */}
+                <Link
+                    className="flex items-center justify-center p-1 rounded hover:bg-black/5 transition-colors ml-auto mr-0.5 text-black h-[30px] w-[30px] mb-0.5 pointer-events-auto"
+                    href={user ? '/profile' : '/login'}
+                    onClick={(e) => {
+                        if (user) {
+                            e.preventDefault();
+                            openWindow('profile', { id: 'profile-window', title: 'profile' });
+                        }
+                    }}
+                    title={user ? 'Profile' : 'Login'}
+                >
+                    <span className="flex items-center justify-center w-5 h-5 overflow-hidden">
+                        {user && profile?.avatar_url ? (
+                            <img src={profile.avatar_url} className="w-full h-full object-cover rounded-full" alt="" />
+                        ) : user ? (
+                            <SidebarIcons.User className="size-5" />
+                        ) : (
+                            <SidebarIcons.Login className="size-5" />
+                        )}
+                    </span>
+                </Link>
             </div>
 
             {/* Filter Bar - Only visible on Home page - Now Integrated into Floating Header */}

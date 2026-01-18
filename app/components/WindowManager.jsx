@@ -4,7 +4,7 @@ import React, { useCallback, useRef, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useRouter, usePathname } from 'next/navigation';
 import { useWindow } from '../contexts/WindowContext';
-import { useTabs } from '../context/TabContext';
+import { useTabs } from '../contexts/TabContext';
 import HomeWindow from './HomeWindow';
 import BlogWindow from './BlogWindow';
 import ExplorePage from '../explore/ExploreContent';
@@ -22,6 +22,7 @@ import WriteForWimContent from '../write-for-wim/WriteContent';
 import InstagramContent from '../instagram/InstagramContent';
 import XContent from '../x/XContent';
 import Window from './Window';
+import ErrorBoundary from './ErrorBoundary';
 
 // Generic wrapper for standard pages to reduce duplication
 const PageWindow = React.memo(({ title, children, ...props }) => (
@@ -145,18 +146,19 @@ export default function WindowManager() {
                     onSizeChange: (size) => updateWindow(win.id, { width: size.width, height: size.height }),
                     onMaximizeChange: (maximized) => updateWindow(win.id, { isMaximized: maximized }),
                     onMinimizeChange: (minimized) => {
-                        if (minimized) {
-                            // User wants (-) to "close window" but "keep tab".
-                            // So we close the window context but DON'T call handleClose (which closes the tab).
-                            closeWindow(win.id);
-                        } else {
-                            updateWindow(win.id, { isMinimized: false });
-                        }
+                        updateWindow(win.id, { isMinimized: minimized });
                     },
                     username: win.username
                 };
 
-                return <WindowComponent {...commonProps} />;
+                return (
+                    <ErrorBoundary
+                        key={`error-${win.id}`}
+                        message={`Window "${win.type}" encountered an error.`}
+                    >
+                        <WindowComponent {...commonProps} />
+                    </ErrorBoundary>
+                );
             })}
         </AnimatePresence>
     );

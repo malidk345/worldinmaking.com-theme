@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 
 const SidebarContext = createContext(undefined);
 
@@ -7,13 +7,13 @@ export function SidebarProvider({ children }) {
     const [isMobileOpen, setIsMobileOpen] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Desktop sidebar state
 
-    const toggleMobileSidebar = () => setIsMobileOpen(prev => !prev);
-    const closeMobileSidebar = () => setIsMobileOpen(false);
+    const toggleMobileSidebar = useCallback(() => setIsMobileOpen(prev => !prev), []);
+    const closeMobileSidebar = useCallback(() => setIsMobileOpen(false), []);
 
     // Desktop sidebar controls
-    const toggleSidebar = () => setIsSidebarOpen(prev => !prev);
-    const openSidebar = () => setIsSidebarOpen(true);
-    const closeSidebar = () => setIsSidebarOpen(false);
+    const toggleSidebar = useCallback(() => setIsSidebarOpen(prev => !prev), []);
+    const openSidebar = useCallback(() => setIsSidebarOpen(true), []);
+    const closeSidebar = useCallback(() => setIsSidebarOpen(false), []);
 
     return (
         <SidebarContext.Provider value={{

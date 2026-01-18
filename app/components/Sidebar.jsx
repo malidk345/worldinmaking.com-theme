@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useCallback, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import * as Icons from './SidebarIcons';
-import { useSidebar } from '../context/SidebarContext';
+import { useSidebar } from '../contexts/SidebarContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useWindow } from '../contexts/WindowContext';
@@ -158,16 +159,22 @@ const Sidebar = () => {
     return (
         <>
             {/* Backdrop overlay */}
-            {isOpen && (
-                <div
-                    className="fixed inset-0 bg-black/30 z-[90] transition-opacity"
-                    onClick={handleClose}
-                    aria-hidden="true"
-                />
-            )}
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.15 }}
+                        className="fixed inset-0 z-110 bg-black/30 backdrop-blur-[2px]"
+                        onClick={handleClose}
+                        aria-hidden="true"
+                    />
+                )}
+            </AnimatePresence>
 
             <nav
-                className={`fixed top-0 left-0 flex flex-col bg-surface-tertiary transition-all duration-300 ease-in-out z-[100] ${isOpen ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0'}`}
+                className={`fixed top-0 left-0 flex flex-col bg-surface-tertiary transition-all duration-300 ease-in-out z-120 ${isOpen ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0'}`}
                 style={{
                     width: 'var(--project-navbar-width)',
                     height: 'calc(100dvh - 16px)',
@@ -261,33 +268,40 @@ const Sidebar = () => {
                 <div className="border-b border-primary h-px" aria-hidden="true" />
                 <div className="p-1 flex flex-col gap-px">
                     <Link
-                        className={`text-sm gap-2.5 rounded justify-start shrink-0 text-left flex items-center px-2 py-2 hover:bg-black/5 transition-colors group ${isLinkActive(userPath) ? 'bg-black/5' : ''}`}
+                        className={`button-primitive button-primitive--variant-default button-primitive--size-base button-primitive--height-base text-sm gap-1.5 rounded button-primitive--full-width justify-start shrink-0 text-left group flex items-center px-2 py-1 hover:bg-fill-button-tertiary-hover ${isLinkActive(userPath) ? 'bg-fill-button-tertiary-active' : ''}`}
                         href={userPath}
                         title={user ? 'Profile' : 'Login'}
                         onClick={(e) => handleLinkClick(e, userPath)}
                         aria-current={isLinkActive(userPath) ? 'page' : undefined}
                     >
-                        <div className="flex w-6 h-6 items-center justify-center rounded-full bg-black text-white shrink-0 overflow-hidden">
+                        <span className="flex text-black w-5 h-5 items-center justify-center shrink-0">
                             {user && profile?.avatar_url ? (
-                                <img src={profile.avatar_url} className="w-full h-full object-cover" alt="" />
+                                <img src={profile.avatar_url} className="w-full h-full object-cover rounded-full" alt="" />
+                            ) : user ? (
+                                <Icons.User className="size-5" />
                             ) : (
-                                <Icons.User className="size-3.5" />
+                                <Icons.Login className="size-5" />
                             )}
-                        </div>
-                        <span className="font-normal text-black truncate flex-1">
+                        </span>
+                        <span className="truncate flex-1">
                             {user ? (profile?.username || 'Profile') : 'Login'}
                         </span>
                     </Link>
 
-                    <div className="px-2 py-4 mt-auto">
-                        <p className="text-[10px] text-tertiary leading-tight text-center">
-                            all rights reserved {currentYear}.
-                            <br />
-                            designed by wim.
-                        </p>
+                    <div className="px-3 py-4 mt-auto">
+                        <div className="flex flex-col items-center gap-2">
+                            <span className="LemonTag LemonTag--size-small opacity-80 uppercase tracking-widest text-[8px] font-bold">
+                                © 2024 WIM
+                            </span>
+                            <p className="text-[9px] text-tertiary leading-tight text-center opacity-60 px-2">
+                                all rights reserved.
+                                <br />
+                                designed by wim.
+                            </p>
+                        </div>
                     </div>
                 </div>
-            </nav>
+            </nav >
         </>
     );
 };

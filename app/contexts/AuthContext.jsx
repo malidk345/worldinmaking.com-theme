@@ -110,11 +110,19 @@ export const AuthProvider = ({ children }) => {
 
     const signInWithEmail = async (email) => {
         try {
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const trimmedEmail = email?.trim();
+
+            if (!trimmedEmail || !emailRegex.test(trimmedEmail)) {
+                return { error: { message: 'please enter a valid email address' } };
+            }
+
             const { error } = await supabase.auth.signInWithOtp({
-                email,
+                email: trimmedEmail,
                 options: {
                     data: {
-                        username: email.split('@')[0], // Default username
+                        username: trimmedEmail.split('@')[0], // Default username
                     }
                 },
             });

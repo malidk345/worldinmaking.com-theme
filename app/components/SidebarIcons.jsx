@@ -82,7 +82,15 @@ export const X = ({ className = "" }) => (
 
 export const User = ({ className = "" }) => (
   <svg className={`LemonIcon ${className}`} viewBox="0 0 24 24" width="100%" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
     <circle cx="12" cy="7" r="4" />
+  </svg>
+);
+
+export const Login = ({ className = "" }) => (
+  <svg className={`LemonIcon ${className}`} viewBox="0 0 24 24" width="100%" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+    <path d="M17 17.5c0-1.9-2.2-3.5-5-3.5s-5 1.6-5 3.5" />
   </svg>
 );

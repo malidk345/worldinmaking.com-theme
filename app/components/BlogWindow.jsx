@@ -9,7 +9,7 @@ import { useSearchParams } from 'next/navigation';
 import Window from './Window';
 import BlogWindowToolbar from './BlogWindowToolbar';
 import { Skeleton } from './Skeleton';
-import { useTabs } from '../context/TabContext';
+import { useTabs } from '../contexts/TabContext';
 import { useWindow } from '../contexts/WindowContext';
 import { getPostById, usePosts } from '../hooks/usePosts';
 import { SidebarPanel, TableOfContents, Document } from './Icons';

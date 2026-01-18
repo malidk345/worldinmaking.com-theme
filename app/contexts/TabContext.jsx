@@ -17,16 +17,39 @@ export function TabProvider({ children }) {
         { id: 'home-window', title: 'home', path: '/', isActive: true }
     ]);
     const [history, setHistory] = useState([]);
+    const [isLoaded, setIsLoaded] = useState(false);
+
+    // Load tabs and history from localStorage on mount
+    useEffect(() => {
+        try {
+            const savedTabs = localStorage.getItem('posthog-tabs');
+            const savedHistory = localStorage.getItem('posthog-history');
+            if (savedTabs) setTabs(JSON.parse(savedTabs));
+            if (savedHistory) setHistory(JSON.parse(savedHistory));
+        } catch (e) {
+            console.error("[TabContext] Failed to load", e);
+        } finally {
+            setIsLoaded(true);
+        }
+    }, []);
+
+    // Save tabs and history to localStorage
+    useEffect(() => {
+        if (!isLoaded) return;
+        localStorage.setItem('posthog-tabs', JSON.stringify(tabs));
+        localStorage.setItem('posthog-history', JSON.stringify(history));
+    }, [tabs, history, isLoaded]);
 
     // Use ref to always have access to current tabs without stale closures
     const tabsRef = useRef(tabs);
 
+    // Sync ref with state via useEffect (React best practice)
     useEffect(() => {
         tabsRef.current = tabs;
     }, [tabs]);
 
     // Helper function to generate a readable title from pathname
-    const getPageTitle = (path) => {
+    const getPageTitle = useCallback((path) => {
         // Remove query string for title extraction
         const cleanPath = path.split('?')[0];
 
@@ -63,7 +86,7 @@ export function TabProvider({ children }) {
         }
 
         return 'page';
-    };
+    }, []);
 
     // Update active tab based on current pathname + search params
     useEffect(() => {
@@ -128,7 +151,7 @@ export function TabProvider({ children }) {
                 ];
             }
         });
-    }, [fullPath, pathname, searchParams]);
+    }, [fullPath, pathname, searchParams, getPageTitle]);
 
     const addTab = useCallback((tab) => {
         setTabs(prev => {
@@ -249,7 +272,7 @@ export function TabProvider({ children }) {
             updateTabTitle,
             reopenTab
         }}>
-            {children}
+            {isLoaded ? children : null}
         </TabContext.Provider>
     );
 }

@@ -2,9 +2,9 @@ import "./globals.css";
 import "./components/Card.css";
 import { IBM_Plex_Sans } from "next/font/google";
 
-// Providers
-import { SidebarProvider } from "./context/SidebarContext";
-import { TabProvider } from "./context/TabContext";
+// Providers - All contexts in single folder
+import { SidebarProvider } from "./contexts/SidebarContext";
+import { TabProvider } from "./contexts/TabContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -139,7 +139,7 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body className={`${ibmPlexSans.className} bg-bg-3000 text-primary scrollbar-hide lowercase`}>
-        <div className="flex h-[100dvh] w-full overflow-hidden relative">
+        <div className="flex h-dvh w-full overflow-hidden relative">
           <AuthProvider>
             <ThemeProvider>
               <ToastProvider>

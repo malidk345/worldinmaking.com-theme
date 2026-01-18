@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { sanitizeString } from '../utils/security';
 import logger from '../utils/logger';
 
 // Comment Item Component
@@ -150,8 +151,15 @@ export default function CommentSection({ postId }) {
         const content = parentId ? replyDraft : draft;
         if (!content.trim()) return;
 
+        // Sanitize user input to prevent XSS
+        const sanitizedContent = sanitizeString(content);
+        if (!sanitizedContent) {
+            addToast('invalid comment content', 'error');
+            return;
+        }
+
         const { error } = await supabase.from('comments').insert({
-            content,
+            content: sanitizedContent,
             post_id: String(postId),
             user_id: user.id,
             parent_id: parentId

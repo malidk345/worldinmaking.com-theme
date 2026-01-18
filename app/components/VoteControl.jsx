@@ -4,28 +4,29 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { MAX_VOTES_PER_USER } from '../lib/constants';
 import logger from '../utils/logger';
 
 // Icons
 const ChevronUpIcon = ({ size = 16 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" style={{ width: size, height: size }}>
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" style={{ width: size, height: size }} aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" />
     </svg>
 );
 
 const ChevronDownIcon = ({ size = 16 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" style={{ width: size, height: size }}>
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" style={{ width: size, height: size }} aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
     </svg>
 );
 
 const ShareIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-4 h-4">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-4 h-4" aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
     </svg>
 );
 
-const MAX_VOTES = 5;
+const MAX_VOTES = MAX_VOTES_PER_USER;
 
 export default function VoteControl({ postId, compact = false }) {
     const { addToast } = useToast();
@@ -168,16 +169,22 @@ export default function VoteControl({ postId, compact = false }) {
     // Compact inline version
     if (compact) {
         return (
-            <div className="inline-flex items-center gap-0 rounded-md border-[1.5px] border-gray-200 bg-gray-50 overflow-hidden">
+            <div className="inline-flex items-center gap-0 rounded-md border-[1.5px] border-gray-200 bg-gray-50 overflow-hidden" role="group" aria-label="Vote controls">
                 <button
                     onClick={() => handleVote('up')}
                     disabled={loading}
                     className={`p-1.5 transition-all hover:bg-green-500/20 ${userUpvotes > 0 ? 'text-green-500' : 'text-gray-500'}`}
                     title={`upvote (${userUpvotes}/${MAX_VOTES})`}
+                    aria-label={`Upvote, ${userUpvotes} of ${MAX_VOTES} votes used`}
+                    aria-pressed={userUpvotes > 0}
                 >
                     <ChevronUpIcon size={14} />
                 </button>
-                <span className={`text-xs font-bold min-w-[24px] text-center ${score > 0 ? 'text-green-600' : score < 0 ? 'text-red-600' : 'text-gray-500'}`}>
+                <span
+                    className={`text-xs font-bold min-w-[24px] text-center ${score > 0 ? 'text-green-600' : score < 0 ? 'text-red-600' : 'text-gray-500'}`}
+                    aria-live="polite"
+                    aria-label={`Current score: ${score}`}
+                >
                     {score}
                 </span>
                 <button
@@ -185,6 +192,8 @@ export default function VoteControl({ postId, compact = false }) {
                     disabled={loading}
                     className={`p-1.5 transition-all hover:bg-red-500/20 ${userDownvotes > 0 ? 'text-red-500' : 'text-gray-500'}`}
                     title={`downvote (${userDownvotes}/${MAX_VOTES})`}
+                    aria-label={`Downvote, ${userDownvotes} of ${MAX_VOTES} votes used`}
+                    aria-pressed={userDownvotes > 0}
                 >
                     <ChevronDownIcon size={14} />
                 </button>

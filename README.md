@@ -1,36 +1,176 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# WorldInMaking.com Theme
 
-## Getting Started
+A modern, PostHog-inspired blog platform built with Next.js 16, React 19, and Supabase.
 
-First, run the development server:
+## 🚀 Features
+
+- **Window-based UI**: Browser-like window management system
+- **Real-time Data**: Supabase integration for posts, comments, and community
+- **Responsive Design**: Works on mobile, tablet, and desktop
+- **Dark Mode**: Full dark mode support
+- **Authentication**: Magic link authentication via Supabase
+- **Community**: Discussion forums with channels and replies
+- **Voting System**: Multi-vote support for posts
+
+## 🛠️ Tech Stack
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Next.js | 16.1.3 | React framework |
+| React | 19.2.3 | UI library |
+| Tailwind CSS | 4 | Styling |
+| Supabase | 2.89.0 | Backend/Database |
+| Framer Motion | 12.24.7 | Animations |
+| SWR | 2.3.8 | Data fetching |
+
+## 📦 Installation
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Clone the repository
+git clone https://github.com/malidk345/worldinmaking.com-theme.git
+
+# Navigate to project directory
+cd worldinmaking.com-theme
+
+# Install dependencies
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## ⚙️ Environment Variables
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+Create a `.env.local` file in the root directory:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-## Learn More
+## 🏃 Running the Project
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+# Development server
+npm run dev
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Production build
+npm run build
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Start production server
+npm start
 
-## Deploy on Vercel
+# Run linting
+npm run lint
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# Run tests
+npm test
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage
+npm run test:coverage
+```
+
+## 📁 Project Structure
+
+```
+app/
+├── components/       # React components
+│   ├── Window.jsx   # Base window component
+│   ├── WindowManager.jsx
+│   ├── DashboardHeader.jsx
+│   └── ...
+├── contexts/        # React Context providers
+│   ├── AuthContext.jsx
+│   ├── WindowContext.jsx
+│   ├── TabContext.jsx
+│   └── ...
+├── hooks/           # Custom React hooks
+│   ├── usePosts.js
+│   ├── useCommunity.js
+│   └── ...
+├── lib/             # Utilities and config
+│   ├── supabase.js
+│   ├── constants.js
+│   └── markdown.js
+├── utils/           # Helper utilities
+│   ├── logger.js
+│   ├── security.js
+│   └── iconUtils.js
+├── __tests__/       # Jest tests
+└── [pages]/         # Next.js pages
+```
+
+## 🧪 Testing
+
+The project uses Jest and React Testing Library for testing.
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Generate coverage report
+npm run test:coverage
+```
+
+### Test Files Location
+
+- `app/__tests__/` - Unit and integration tests
+- `jest.config.mjs` - Jest configuration
+- `jest.setup.js` - Test setup and mocks
+
+## 🔒 Security
+
+The project includes security utilities in `app/utils/security.js`:
+
+- **Input Sanitization**: XSS protection
+- **Email Validation**: RFC-compliant validation
+- **URL Validation**: Protocol checking
+- **Rate Limiting**: Client-side request limiting
+- **File Validation**: Upload size and type checking
+
+## 📝 API / Database
+
+### Supabase Tables
+
+| Table | Purpose |
+|-------|---------|
+| `posts` | Blog posts |
+| `comments` | Post comments |
+| `profiles` | User profiles |
+| `community_posts` | Community discussions |
+| `community_replies` | Discussion replies |
+| `community_channels` | Discussion channels |
+| `community_likes` | Post likes |
+| `post_votes` | Post voting |
+
+## 🎨 Styling
+
+- Uses Tailwind CSS 4 with custom PostHog-inspired design tokens
+- CSS variables defined in `app/globals.css`
+- Dark mode via `.dark` class
+
+## 🚢 Deployment
+
+### Vercel (Recommended)
+
+1. Connect your GitHub repository to Vercel
+2. Add environment variables
+3. Deploy
+
+### Manual
+
+```bash
+npm run build
+npm start
+```
+
+## 📄 License
+
+All rights reserved.
+
+## 👤 Author
+
+WorldInMaking.com

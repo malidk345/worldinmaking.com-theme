@@ -4,32 +4,25 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion';
 import { MinimizeIcon, MaximizeIcon, RestoreIcon, CloseWindowIcon } from './WindowIcons';
 import { useWindowInteraction } from '../hooks/useWindowInteraction';
+import {
+    HEADER_HEIGHT,
+    MARGIN,
+    MOBILE_BREAKPOINT,
+    DEFAULT_WINDOW_WIDTH,
+    DEFAULT_WINDOW_HEIGHT,
+    PREMIUM_SPRING,
+    LAYOUT_SPRING
+} from '../lib/constants';
 
 /**
  * Window Component with Premium Visuals and Refactored Logic
  */
 
-const HEADER_HEIGHT = 38;
-const MARGIN = 8;
-const MOBILE_BREAKPOINT = 768;
-const DEFAULT_WIDTH = 800;
-const DEFAULT_HEIGHT = 600;
-
-// Premium Desktop Spring: Buttery Smooth with Quick Response
-const premiumSpring = {
-    type: 'spring',
-    stiffness: 350,
-    damping: 35,
-    mass: 0.8
-};
-
-// Synced spring for layout transitions (maximize/minimize)
-const layoutSpring = {
-    type: 'spring',
-    stiffness: 400,
-    damping: 40,
-    mass: 0.7
-};
+// Re-export for backward compatibility
+const DEFAULT_WIDTH = DEFAULT_WINDOW_WIDTH;
+const DEFAULT_HEIGHT = DEFAULT_WINDOW_HEIGHT;
+const premiumSpring = PREMIUM_SPRING;
+const layoutSpring = LAYOUT_SPRING;
 
 const Window = ({
     id,
@@ -236,9 +229,15 @@ const Window = ({
             onAnimationComplete={handleAnimationComplete}
             onMouseDown={onFocus}
             onTouchStart={onFocus}
+            onFocusCapture={onFocus}
             layout="position"
             className={`fixed flex flex-col overflow-hidden outline-none rounded-md bg-white will-change-transform border border-(--border-primary) ${isFocused ? 'shadow-lg' : 'shadow-md'}`}
             style={windowStyle}
+            role="dialog"
+            aria-modal="false"
+            aria-label={title || 'Window'}
+            aria-hidden={isMinimized}
+            tabIndex={0}
         >
             {/* Window Header */}
             <motion.div
@@ -258,22 +257,28 @@ const Window = ({
                         onClick={handleMinimize}
                         className="p-2 md:p-1.5 rounded hover:bg-black/5 text-black h-full flex items-center justify-center min-w-[32px] md:min-w-[26px]"
                         whileTap={{ scale: 0.9 }}
+                        aria-label={isMinimized ? 'Restore window' : 'Minimize window'}
+                        title={isMinimized ? 'Restore' : 'Minimize'}
                     >
-                        <MinimizeIcon />
+                        <MinimizeIcon aria-hidden="true" />
                     </motion.button>
                     <motion.button
                         onClick={handleMaximize}
                         className="p-2 md:p-1.5 rounded hover:bg-black/5 text-black h-full flex items-center justify-center min-w-[32px] md:min-w-[26px]"
                         whileTap={{ scale: 0.9 }}
+                        aria-label={isMaximized ? 'Restore window' : 'Maximize window'}
+                        title={isMaximized ? 'Restore' : 'Maximize'}
                     >
-                        {isMaximized ? <RestoreIcon /> : <MaximizeIcon />}
+                        {isMaximized ? <RestoreIcon aria-hidden="true" /> : <MaximizeIcon aria-hidden="true" />}
                     </motion.button>
                     <motion.button
                         onClick={handleClose}
                         className="p-2 md:p-1.5 rounded hover:bg-red-500/10 text-black hover:text-red-500 h-full flex items-center justify-center min-w-[32px] md:min-w-[26px]"
                         whileTap={{ scale: 0.9 }}
+                        aria-label="Close window"
+                        title="Close"
                     >
-                        <CloseWindowIcon />
+                        <CloseWindowIcon aria-hidden="true" />
                     </motion.button>
                 </div>
             </motion.div>

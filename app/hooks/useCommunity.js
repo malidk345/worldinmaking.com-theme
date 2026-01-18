@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../contexts/ToastContext';
 import useSWR, { useSWRConfig } from 'swr';
+import { sanitizeString } from '../utils/security';
 import logger from '../utils/logger';
 
 export const useCommunity = () => {
@@ -136,10 +137,16 @@ export const useCommunity = () => {
         const { data: userData } = await supabase.auth.getUser();
         if (!userData?.user) return addToast('please log in to reply', 'error');
 
+        // Sanitize user input
+        const sanitizedContent = sanitizeString(content);
+        if (!sanitizedContent) {
+            return addToast('invalid reply content', 'error');
+        }
+
         const { error } = await supabase.from('community_replies').insert({
             post_id: postId,
             author_id: userData.user.id,
-            content
+            content: sanitizedContent
         });
 
         if (error) return addToast(error.message, 'error');
@@ -152,11 +159,19 @@ export const useCommunity = () => {
         const { data: userData } = await supabase.auth.getUser();
         if (!userData?.user) return addToast('please log in to post', 'error');
 
+        // Sanitize user inputs
+        const sanitizedTitle = sanitizeString(title);
+        const sanitizedContent = sanitizeString(content);
+
+        if (!sanitizedTitle || !sanitizedContent) {
+            return addToast('invalid post content', 'error');
+        }
+
         const { error } = await supabase.from('community_posts').insert({
             channel_id: channelId,
             author_id: userData.user.id,
-            title,
-            content,
+            title: sanitizedTitle,
+            content: sanitizedContent,
             image_url: imageUrl || null
         });
 
