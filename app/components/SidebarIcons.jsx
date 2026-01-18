@@ -89,7 +89,6 @@ export const User = ({ className = "" }) => (
 
 export const Login = ({ className = "" }) => (
   <svg className={`LemonIcon ${className}`} viewBox="0 0 24 24" width="100%" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" />
     <path d="M12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
     <path d="M17 17.5c0-1.9-2.2-3.5-5-3.5s-5 1.6-5 3.5" />
   </svg>

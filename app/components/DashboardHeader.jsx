@@ -355,13 +355,13 @@ export default function DashboardHeader({
                     }}
                     title={user ? 'Profile' : 'Login'}
                 >
-                    <span className="flex items-center justify-center w-5 h-5 overflow-hidden">
+                    <span className="flex items-center justify-center w-5 h-5 border-[1.5px] border-black rounded-full p-0.5 overflow-hidden">
                         {user && profile?.avatar_url ? (
                             <img src={profile.avatar_url} className="w-full h-full object-cover rounded-full" alt="" />
                         ) : user ? (
-                            <SidebarIcons.User className="size-5" />
+                            <SidebarIcons.User className="size-full p-[1px]" />
                         ) : (
-                            <SidebarIcons.Login className="size-5" />
+                            <SidebarIcons.Login className="size-full p-[1px]" />
                         )}
                     </span>
                 </Link>
