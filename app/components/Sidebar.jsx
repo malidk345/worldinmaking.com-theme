@@ -278,9 +278,9 @@ const Sidebar = () => {
                             {user && profile?.avatar_url ? (
                                 <img src={profile.avatar_url} className="w-full h-full object-cover rounded-full" alt="" />
                             ) : user ? (
-                                <Icons.User className="size-full p-[1px]" />
+                                <Icons.User className="size-full p-px" />
                             ) : (
-                                <Icons.Login className="size-full p-[1px]" />
+                                <Icons.Login className="size-full p-px" />
                             )}
                         </span>
                         <span className="truncate flex-1">

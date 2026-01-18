@@ -245,7 +245,7 @@ export default function SearchPage({ isWindowMode = false }) {
                             <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white border border-black/5 rounded-xl shadow-sm overflow-hidden flex flex-col divide-y divide-black/5">
                                 {filteredPosts.map((post, index) => (
                                     <motion.div key={post.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.03 }}>
-                                        <Link href={`/post?id=${post.id}`} className="group flex items-center gap-4 p-4 hover:bg-black/5 transition-colors">
+                                        <Link href={`/post?s=${post.slug || post.id}`} className="group flex items-center gap-4 p-4 hover:bg-black/5 transition-colors">
                                             <div className="text-secondary group-hover:text-primary transition-colors bg-black/5 p-2 rounded-lg"><DocIcon /></div>
                                             <div className="flex-1 min-w-0">
                                                 <h3 className="text-sm font-bold text-primary group-hover:text-blue-600 transition-colors truncate">

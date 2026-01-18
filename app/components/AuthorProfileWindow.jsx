@@ -114,7 +114,7 @@ export default function AuthorProfileWindow(props) {
                                     posts.map(post => (
                                         <a
                                             key={post.id}
-                                            href={`/post?id=${post.id}`}
+                                            href={`/post?s=${post.slug || post.id}`}
                                             className="group flex items-center gap-3 p-3 bg-white border border-black/5 rounded-md hover:border-black/20 transition-all shadow-sm hover:shadow-md"
                                         >
                                             <div className="w-12 h-12 rounded bg-black/5 overflow-hidden shrink-0 relative">

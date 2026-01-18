@@ -224,7 +224,7 @@ export default function HomeWindow(props) {
                             {filteredPosts.map(post => (
                                 <Link
                                     key={post.id}
-                                    href={`/post?id=${post.id}`}
+                                    href={`/post?s=${post.slug || post.id}`}
                                     className="group flex items-center gap-4 p-3 bg-white rounded-md hover:shadow-md transition-all"
                                     style={{ border: '1px solid var(--border-primary)' }}
                                 >

@@ -29,7 +29,7 @@ export default function BlogWindow(props) {
     const { onClose, zIndex, onFocus, isFocused, isMaximized, isMinimized, ...restProps } = props;
     const searchParams = useSearchParams();
     const { openWindow } = useWindow();
-    const slug = searchParams.get('id');
+    const postIdentifier = searchParams.get('s') || searchParams.get('id');
     const [post, setPost] = useState(null);
     const [loading, setLoading] = useState(true);
     const { posts } = usePosts();
@@ -51,16 +51,22 @@ export default function BlogWindow(props) {
     };
 
     useEffect(() => {
-        if (slug) {
+        if (postIdentifier) {
             setLoading(true);
-            getPostById(slug).then(data => {
+            const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(postIdentifier);
+
+            const fetchPromise = isUuid
+                ? getPostById(postIdentifier)
+                : getPostBySlug(postIdentifier);
+
+            fetchPromise.then(data => {
                 setPost(data);
                 setLoading(false);
             });
         }
-    }, [slug]);
+    }, [postIdentifier]);
 
-    const suggestedPosts = posts.filter(p => p.id !== slug);
+    const suggestedPosts = posts.filter(p => p.id !== (post?.id || postIdentifier) && p.slug !== postIdentifier);
     const headings = post?.headings || [];
 
     useEffect(() => {
@@ -193,7 +199,7 @@ export default function BlogWindow(props) {
                                     {suggestedPosts.slice(0, 10).map((p, idx) => (
                                         <Link
                                             key={p.id}
-                                            href={`/post?id=${p.id}`}
+                                            href={`/post?s=${p.slug || p.id}`}
                                             className={`flex gap-2.5 px-3 py-2 hover:bg-black/5 transition-colors group ${idx !== suggestedPosts.slice(0, 10).length - 1 ? 'border-b border-black/5' : ''}`}
                                             onClick={() => setShowSidebar(false)}
                                         >

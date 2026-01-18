@@ -52,12 +52,16 @@ export default function WindowSync() {
             title = config.title;
         } else if (pathname.startsWith('/post')) {
             type = 'post';
-            const postId = searchParams.get('id');
-            if (postId) {
+            // Support both slug (s) and id query parameters
+            const postIdentifier = searchParams.get('s') || searchParams.get('id');
+
+            if (postIdentifier) {
                 lastSyncedPath.current = normalizedPath; // Set for post pages too
 
                 const currentWindows = windowsRef.current;
-                const existing = currentWindows.find(w => w.type === 'post' && w.id === `post-window-${postId}`);
+                // Use the identifier (slug or id) to track the window uniquely
+                const existing = currentWindows.find(w => w.type === 'post' && w.id === `post-window-${postIdentifier}`);
+
                 if (existing) {
                     const isTop = currentWindows[currentWindows.length - 1]?.id === existing.id;
                     if (!isTop || existing.isMinimized) {
@@ -65,7 +69,7 @@ export default function WindowSync() {
                     }
                 } else {
                     openWindow('post', {
-                        id: `post-window-${postId}`,
+                        id: `post-window-${postIdentifier}`,
                         title: 'Loading...',
                         isMaximized: true
                     });

@@ -359,9 +359,9 @@ export default function DashboardHeader({
                         {user && profile?.avatar_url ? (
                             <img src={profile.avatar_url} className="w-full h-full object-cover rounded-full" alt="" />
                         ) : user ? (
-                            <SidebarIcons.User className="size-full p-[1px]" />
+                            <SidebarIcons.User className="size-full p-px" />
                         ) : (
-                            <SidebarIcons.Login className="size-full p-[1px]" />
+                            <SidebarIcons.Login className="size-full p-px" />
                         )}
                     </span>
                 </Link>
