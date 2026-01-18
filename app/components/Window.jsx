@@ -4,27 +4,23 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion';
 import { MinimizeIcon, MaximizeIcon, RestoreIcon, CloseWindowIcon } from './WindowIcons';
 import { useWindowInteraction } from '../hooks/useWindowInteraction';
+import { useWindow } from '../contexts/WindowContext';
 import {
     HEADER_HEIGHT,
     MARGIN,
     MOBILE_BREAKPOINT,
     DEFAULT_WINDOW_WIDTH,
     DEFAULT_WINDOW_HEIGHT,
-    PREMIUM_SPRING,
-    LAYOUT_SPRING
+    PREMIUM_SPRING
 } from '../lib/constants';
+
 
 /**
  * Window Component with Premium Visuals and Refactored Logic
  */
 
-// Re-export for backward compatibility
-const DEFAULT_WIDTH = DEFAULT_WINDOW_WIDTH;
-const DEFAULT_HEIGHT = DEFAULT_WINDOW_HEIGHT;
-const premiumSpring = PREMIUM_SPRING;
-const layoutSpring = LAYOUT_SPRING;
-
 const Window = ({
+
     id,
     title,
     children,
@@ -32,18 +28,20 @@ const Window = ({
     onClose,
     onFocus,
     zIndex = 10,
-    isFocused = false,
+    isFocused: isFocusedProp = false,
     isMaximized: isMaximizedProp = true,
     isMinimized: isMinimizedProp = false,
     initialX,
     initialY,
-    initialWidth = DEFAULT_WIDTH,
-    initialHeight = DEFAULT_HEIGHT,
+    initialWidth = DEFAULT_WINDOW_WIDTH,
+    initialHeight = DEFAULT_WINDOW_HEIGHT,
     onMaximizeChange,
     onMinimizeChange,
     onPositionChange,
     onSizeChange
 }) => {
+    const { focusedId } = useWindow();
+    const isFocused = focusedId === id || isFocusedProp;
     const [isMounted, setIsMounted] = useState(false);
     const [isAnimatingOut, setIsAnimatingOut] = useState(false);
 
@@ -58,7 +56,7 @@ const Window = ({
     const windowRef = useRef(null);
     const posRef = useRef(pos);
     const sizeRef = useRef(size);
-    const preMaximizeState = useRef({ x: 0, y: 0, width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT });
+    const preMaximizeState = useRef({ x: 0, y: 0, width: DEFAULT_WINDOW_WIDTH, height: DEFAULT_WINDOW_HEIGHT });
 
     // Sync refs
     useEffect(() => { posRef.current = pos; }, [pos]);
@@ -86,6 +84,7 @@ const Window = ({
         requestAnimationFrame(() => setIsMounted(true));
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); // Intentionally empty - initialization only runs once on mount
+
 
     // Interaction Hook
     const {
@@ -202,20 +201,35 @@ const Window = ({
     }, [zIndex, isMaximized, isMinimized, pos, size]);
 
     const getAnimationProps = () => {
-        if (isAnimatingOut) return { opacity: 0, scale: 0.9, x: 0, y: 0, transition: { duration: 0.2, ease: 'easeOut' } };
-        if (!isMounted) return { opacity: 0, scale: 0.95, x: 0, y: 10 };
+        // Exit animation (PostHog Hide)
+        if (isAnimatingOut) return {
+            opacity: 0,
+            scale: 0.95,
+            y: 20,
+            transition: { duration: 0.15, ease: [0.4, 0, 0.2, 1] }
+        };
+
+        // Initial Mount (PostHog Show)
+        if (!isMounted) return {
+            opacity: 0,
+            scale: 0.9,
+            y: 30
+        };
+
+        // Minimized State Logic
         if (isMinimized) {
             const targetX = 50 - (pos.x + size.width / 2);
             const targetY = 15 - (pos.y + size.height / 2);
             return { opacity: 0, scale: 0.1, x: targetX, y: targetY, pointerEvents: 'none' };
         }
 
-        // Solid, fully opaque windows - reset all transform values
+        // Active / Focused Interaction Logic (PostHog-style depth)
         return {
             opacity: 1,
             x: 0,
             y: 0,
-            scale: 1,
+            scale: isFocused ? 1 : 0.99, // Subtle depth change
+            filter: isFocused ? 'brightness(1)' : 'brightness(0.96)', // Logical dimming
             pointerEvents: 'auto'
         };
     };
@@ -223,15 +237,15 @@ const Window = ({
     return (
         <motion.div
             ref={windowRef}
-            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            initial={{ opacity: 0, scale: 0.9, y: 30 }}
             animate={getAnimationProps()}
-            transition={premiumSpring}
+            transition={PREMIUM_SPRING}
             onAnimationComplete={handleAnimationComplete}
             onMouseDown={onFocus}
             onTouchStart={onFocus}
             onFocusCapture={onFocus}
-            layout="position"
-            className={`fixed flex flex-col overflow-hidden outline-none rounded-md bg-white will-change-transform border border-(--border-primary) ${isFocused ? 'shadow-lg' : 'shadow-md'}`}
+            className={`fixed flex flex-col overflow-hidden outline-none rounded-md bg-white border border-border-primary ${isFocused ? 'shadow-2xl' : 'shadow-md'
+                } transition-shadow duration-300`}
             style={windowStyle}
             role="dialog"
             aria-modal="false"
@@ -241,12 +255,11 @@ const Window = ({
         >
             {/* Window Header */}
             <motion.div
-                className={`flex items-center justify-between h-[30px] px-2 border-b border-(--border-primary) select-none shrink-0 transition-colors duration-300 ${isFocused ? 'bg-(--posthog-3000-100)' : 'bg-(--posthog-3000-50)'
+                className={`flex items-center justify-between h-[30px] px-2 border-b border-border-primary select-none shrink-0 transition-colors duration-300 ${isFocused ? 'bg-posthog-3000-100' : 'bg-posthog-3000-50'
                     } ${!isMaximized ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
                 onMouseDown={(e) => { e.preventDefault(); startDrag(e.clientX, e.clientY); }}
                 onTouchStart={(e) => startDrag(e.touches[0].clientX, e.touches[0].clientY)}
-                layout="position"
-                transition={layoutSpring}
+                transition={PREMIUM_SPRING}
             >
                 <div className={`flex items-center gap-1 flex-1 min-w-0 transition-opacity duration-300 ${isFocused ? 'opacity-100' : 'opacity-60'}`}>
                     {toolbar}
@@ -308,7 +321,7 @@ const Window = ({
                         <div className="absolute top-0 left-0 w-[12px] h-[12px] cursor-nw-resize z-30" onMouseDown={(e) => { e.preventDefault(); startResize(e.clientX, e.clientY, 'nw'); }} />
                         <div className="absolute top-0 right-0 w-[12px] h-[12px] cursor-ne-resize z-30" onMouseDown={(e) => { e.preventDefault(); startResize(e.clientX, e.clientY, 'ne'); }} />
                         <div className="absolute bottom-0 left-0 w-[12px] h-[12px] cursor-sw-resize z-30" onMouseDown={(e) => { e.preventDefault(); startResize(e.clientX, e.clientY, 'sw'); }} />
-                        <div className="absolute bottom-0 right-0 w-[16px] h-[16px] cursor-se-resize bg-(--posthog-3000-100) hover:bg-brand-navy/20 rounded-tl-lg transition-colors z-30 flex items-center justify-center shadow-sm" onMouseDown={(e) => { e.preventDefault(); startResize(e.clientX, e.clientY, 'se'); }}>
+                        <div className="absolute bottom-0 right-0 w-[16px] h-[16px] cursor-se-resize bg-posthog-3000-100 hover:bg-brand-navy/20 rounded-tl-lg transition-colors z-30 flex items-center justify-center shadow-sm" onMouseDown={(e) => { e.preventDefault(); startResize(e.clientX, e.clientY, 'se'); }}>
                             <div className="w-1.5 h-1.5 bg-brand-navy/30 rounded-full" />
                         </div>
                     </>

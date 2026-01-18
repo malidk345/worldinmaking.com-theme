@@ -393,7 +393,23 @@
   }
 }
 
+/* PostHog-style: Global resize state management */
+body.is-resizing {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
+body.is-resizing * {
+  pointer-events: none !important;
+}
+
+body.is-resizing .Window,
+body.is-resizing [role="dialog"] {
+  pointer-events: auto !important;
+}
+
 @layer components {
+
 
   /* Force lowercase on all elements */
   * {

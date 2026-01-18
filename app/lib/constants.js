@@ -72,30 +72,31 @@ export const DEFAULT_CACHE_DEDUP_INTERVAL = 60000; // 1 minute
 export const TAB_HISTORY_LIMIT = 10;
 
 // ============================================
-// ANIMATION SPRINGS
+// ANIMATION SPRINGS (PostHog-Style Snappy Physics)
 // ============================================
 
-/** Premium spring animation config */
+/** Premium spring animation config - Snappier Pop-in */
 export const PREMIUM_SPRING = {
     type: 'spring',
-    stiffness: 350,
-    damping: 35,
-    mass: 0.8
+    stiffness: 300,
+    damping: 30,
+    mass: 0.8,
+    restDelta: 0.001
 };
 
-/** Layout transition spring config */
+/** Layout transition spring config - Smooth Movement */
 export const LAYOUT_SPRING = {
     type: 'spring',
-    stiffness: 400,
-    damping: 40,
-    mass: 0.7
+    stiffness: 280,
+    damping: 32,
+    mass: 1
 };
 
 /** Drawer animation spring config */
 export const DRAWER_SPRING = {
     type: 'spring',
-    damping: 30,
-    stiffness: 300
+    damping: 35,
+    stiffness: 350
 };
 
 // ============================================

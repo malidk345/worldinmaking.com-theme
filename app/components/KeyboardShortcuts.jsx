@@ -6,7 +6,7 @@ import { useWindow } from '../contexts/WindowContext';
 
 export default function KeyboardShortcuts() {
     const router = useRouter();
-    const { windows, closeWindow } = useWindow();
+    const { windows, focusedId, closeWindow } = useWindow();
 
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -16,18 +16,20 @@ export default function KeyboardShortcuts() {
                 router.push('/search');
             }
 
-            // Esc to close top-most window
+            // PostHog-style: Esc closes the focused window (not just the last one)
             if (e.key === 'Escape') {
-                if (windows.length > 0) {
-                    const topWindow = windows[windows.length - 1];
-                    closeWindow(topWindow.id);
+                // Prioritize focused window, fall back to last window
+                const windowToClose = focusedId || (windows.length > 0 ? windows[windows.length - 1].id : null);
+                if (windowToClose && windows.length > 1) {
+                    // Don't close if it's the only window
+                    closeWindow(windowToClose);
                 }
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [router, windows, closeWindow]);
+    }, [router, windows, focusedId, closeWindow]);
 
     return null;
 }

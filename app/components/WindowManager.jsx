@@ -74,7 +74,7 @@ const BASE_Z = 10;
 const MAX_Z = 80;
 
 export default function WindowManager() {
-    const { windows, closeWindow, bringToFront, updateWindow } = useWindow();
+    const { windows, focusedId, closeWindow, bringToFront, updateWindow } = useWindow();
     const { tabs, closeTab } = useTabs();
     const router = useRouter();
     const pathname = usePathname();
@@ -123,8 +123,10 @@ export default function WindowManager() {
     return (
         <AnimatePresence mode="sync">
             {windows.map((win, index) => {
-                const zIndex = Math.min(BASE_Z + index, MAX_Z);
-                const isFocused = index === windows.length - 1;
+                // PostHog Stack Logic: Higher index = higher z-index
+                // If focused, we ensure it's at least at a certain priority level
+                const isFocused = win.id === focusedId;
+                const zIndex = isFocused ? MAX_Z : Math.min(BASE_Z + index, MAX_Z - 1);
                 const WindowComponent = WINDOW_COMPONENTS[win.type];
 
                 if (!WindowComponent) return null;
