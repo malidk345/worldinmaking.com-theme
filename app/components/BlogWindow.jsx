@@ -51,19 +51,36 @@ export default function BlogWindow(props) {
     };
 
     useEffect(() => {
-        if (postIdentifier) {
+        const fetchPost = async () => {
+            if (!postIdentifier) return;
+
             setLoading(true);
-            const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(postIdentifier);
+            try {
+                // Determine if the identifier is likely a UUID
+                const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(postIdentifier);
 
-            const fetchPromise = isUuid
-                ? getPostById(postIdentifier)
-                : getPostBySlug(postIdentifier);
+                let data = null;
 
-            fetchPromise.then(data => {
+                // 1. If it looks like a UUID, try fetching by ID first
+                if (isUuid) {
+                    data = await getPostById(postIdentifier);
+                }
+
+                // 2. If no data found yet (or it wasn't a UUID), try fetching by Slug
+                if (!data) {
+                    data = await getPostBySlug(postIdentifier);
+                }
+
                 setPost(data);
+            } catch (error) {
+                console.error("Error loading post:", error);
+                setPost(null);
+            } finally {
                 setLoading(false);
-            });
-        }
+            }
+        };
+
+        fetchPost();
     }, [postIdentifier]);
 
     const suggestedPosts = posts.filter(p => p.id !== (post?.id || postIdentifier) && p.slug !== postIdentifier);
