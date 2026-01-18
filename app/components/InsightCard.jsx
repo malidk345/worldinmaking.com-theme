@@ -8,7 +8,6 @@ import { useWindow } from '../contexts/WindowContext';
 
 export default function InsightCard({
     id,
-    slug,
     title,
     type,
     ribbonColor,
@@ -43,7 +42,7 @@ export default function InsightCard({
 
     return (
         <Link
-            href={`/post?s=${slug || id}`}
+            href={`/post?id=${id}`}
             className="relative h-full flex flex-col"
             aria-label={`Read article: ${title}`}
         >

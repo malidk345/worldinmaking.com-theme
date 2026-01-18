@@ -53,7 +53,6 @@ export default function DashboardGrid({ posts = [], loading = false }) {
                     >
                         <InsightCard
                             id={item.id}
-                            slug={item.slug}
                             title={item.title}
                             description={getExcerpt(item.content || item.description, 115)}
                             type={item.category}

@@ -29,7 +29,7 @@ export default function BlogWindow(props) {
     const { onClose, zIndex, onFocus, isFocused, isMaximized, isMinimized, ...restProps } = props;
     const searchParams = useSearchParams();
     const { openWindow } = useWindow();
-    const postIdentifier = searchParams.get('s') || searchParams.get('id');
+    const slug = searchParams.get('id');
     const [post, setPost] = useState(null);
     const [loading, setLoading] = useState(true);
     const { posts } = usePosts();
@@ -51,39 +51,16 @@ export default function BlogWindow(props) {
     };
 
     useEffect(() => {
-        const fetchPost = async () => {
-            if (!postIdentifier) return;
-
+        if (slug) {
             setLoading(true);
-            try {
-                // Determine if the identifier is likely a UUID
-                const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(postIdentifier);
-
-                let data = null;
-
-                // 1. If it looks like a UUID, try fetching by ID first
-                if (isUuid) {
-                    data = await getPostById(postIdentifier);
-                }
-
-                // 2. If no data found yet (or it wasn't a UUID), try fetching by Slug
-                if (!data) {
-                    data = await getPostBySlug(postIdentifier);
-                }
-
+            getPostById(slug).then(data => {
                 setPost(data);
-            } catch (error) {
-                console.error("Error loading post:", error);
-                setPost(null);
-            } finally {
                 setLoading(false);
-            }
-        };
+            });
+        }
+    }, [slug]);
 
-        fetchPost();
-    }, [postIdentifier]);
-
-    const suggestedPosts = posts.filter(p => p.id !== (post?.id || postIdentifier) && p.slug !== postIdentifier);
+    const suggestedPosts = posts.filter(p => p.id !== slug);
     const headings = post?.headings || [];
 
     useEffect(() => {
@@ -216,7 +193,7 @@ export default function BlogWindow(props) {
                                     {suggestedPosts.slice(0, 10).map((p, idx) => (
                                         <Link
                                             key={p.id}
-                                            href={`/post?s=${p.slug || p.id}`}
+                                            href={`/post?id=${p.id}`}
                                             className={`flex gap-2.5 px-3 py-2 hover:bg-black/5 transition-colors group ${idx !== suggestedPosts.slice(0, 10).length - 1 ? 'border-b border-black/5' : ''}`}
                                             onClick={() => setShowSidebar(false)}
                                         >
@@ -412,4 +389,3 @@ export default function BlogWindow(props) {
         </Window>
     );
 }
-

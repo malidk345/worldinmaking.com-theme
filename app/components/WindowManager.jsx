@@ -104,14 +104,10 @@ export default function WindowManager() {
         if (!tabToClose) {
             let targetPath = type === 'home' ? '/' : `/${type}`;
             if (type === 'post') {
-                const identifier = id.replace('post-window-', '');
-                tabToClose = currentTabs.find(t =>
-                    t.path === `/post?id=${identifier}` ||
-                    t.path === `/post?s=${identifier}` ||
-                    t.path.includes(`id=${identifier}`) ||
-                    t.path.includes(`s=${identifier}`)
-                );
+                const postId = id.replace('post-window-', '');
+                targetPath = `/post?id=${postId}`;
             }
+            tabToClose = currentTabs.find(t => t.path === targetPath || t.path.startsWith(`${targetPath}?`));
         }
 
         if (tabToClose) {
