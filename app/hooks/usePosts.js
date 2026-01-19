@@ -49,10 +49,15 @@ const adaptPost = (p) => {
     };
 };
 
-const postsFetcher = async () => {
+const postsFetcher = async (options = {}) => {
+    const { fetchContent = true } = options;
+    const columns = fetchContent
+        ? '*'
+        : 'id, slug, title, created_at, category, excerpt, author, author_avatar, image_url, published';
+
     const { data, error } = await supabase
         .from('posts')
-        .select('*')
+        .select(columns)
         .eq('published', true)
         .order('created_at', { ascending: false });
 
@@ -60,8 +65,8 @@ const postsFetcher = async () => {
     return data.map(adaptPost).filter(Boolean);
 };
 
-export const usePosts = () => {
-    const { data, error, isLoading, mutate } = useSWR('posts', postsFetcher, {
+export const usePosts = (options = { fetchContent: true }) => {
+    const { data, error, isLoading, mutate } = useSWR(['posts', options], (_, opts) => postsFetcher(opts), {
         revalidateOnFocus: false,
         dedupingInterval: 60000, // 1 minute
     });

@@ -18,7 +18,7 @@ const SearchIcon = () => (
 
 export default function ExplorePage({ isWindowMode = false }) {
     const router = useRouter();
-    const { posts, loading } = usePosts();
+    const { posts, loading } = usePosts({ fetchContent: false });
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
