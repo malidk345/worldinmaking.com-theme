@@ -20,7 +20,7 @@ import Image from 'next/image';
  */
 export default function HomeWindow(props) {
     const { onClose, zIndex, onFocus, isFocused, isMaximized, isMinimized, ...restProps } = props;
-    const { posts, loading } = usePosts();
+    const { posts, loading } = usePosts({ fetchContent: false });
     const { openWindow } = useWindow();
 
     const handleAuthorClick = (e, authorName) => {
