@@ -2,6 +2,7 @@
  * Logger utility with production/development awareness
  * In production, only errors and warnings are logged
  */
+/* eslint-disable no-console */
 
 const isDev = process.env.NODE_ENV === 'development';
 

@@ -1,10 +1,8 @@
 "use client";
 import React from 'react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 
 export default function AboutPage({ isWindowMode = false }) {
-    const router = useRouter();
 
     const content = (
         <div className="flex-1 overflow-y-auto bg-bg-3000 custom-scrollbar h-full" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>

@@ -337,24 +337,31 @@ export default function BlogWindow(props) {
                                 remarkPlugins={[remarkGfm]}
                                 rehypePlugins={[rehypeSlug, rehypeRaw]}
                                 components={{
-                                    h2: ({ node, ...props }) => <h2 className="mt-8 mb-4 scroll-mt-24" style={{ fontSize: '23.6px', lineHeight: '33px', fontWeight: 700, letterSpacing: '-0.54px', color: 'rgb(0, 0, 0)' }} {...props} />,
-                                    h3: ({ node, ...props }) => <h3 className="mt-6 mb-3 scroll-mt-24" style={{ fontSize: '16.5px', lineHeight: '30.8px', fontWeight: 700, color: 'rgb(0, 0, 0)' }} {...props} />,
-                                    h4: ({ node, ...props }) => <h4 className="mt-4 mb-2 scroll-mt-24" style={{ fontWeight: 600, color: 'rgb(0, 0, 0)' }} {...props} />,
-                                    p: ({ node, ...props }) => <p className="mb-4" style={{ fontSize: '15.4px', lineHeight: '23.1px', color: 'rgb(0, 0, 0)' }} {...props} />,
-                                    a: ({ node, ...props }) => <a {...props} />,
-                                    ul: ({ node, ...props }) => <ul className="list-disc list-inside mb-4 space-y-1" style={{ fontSize: '15.4px', lineHeight: '23.1px', color: 'rgb(0, 0, 0)' }} {...props} />,
-                                    ol: ({ node, ...props }) => <ol className="list-decimal list-inside mb-4 space-y-1" style={{ fontSize: '15.4px', lineHeight: '23.1px', color: 'rgb(0, 0, 0)' }} {...props} />,
-                                    li: ({ node, ...props }) => <li style={{ fontSize: '15.4px', lineHeight: '23.1px', color: 'rgb(0, 0, 0)' }} {...props} />,
-                                    blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-accent pl-4 italic my-4" style={{ color: 'rgb(0, 0, 0)' }} {...props} />,
-                                    code: ({ node, inline, ...props }) =>
+                                    h2: ({ ...props }) => <h2 className="mt-8 mb-4 scroll-mt-24" style={{ fontSize: '23.6px', lineHeight: '33px', fontWeight: 700, letterSpacing: '-0.54px', color: 'rgb(0, 0, 0)' }} {...props} />,
+                                    h3: ({ ...props }) => <h3 className="mt-6 mb-3 scroll-mt-24" style={{ fontSize: '16.5px', lineHeight: '30.8px', fontWeight: 700, color: 'rgb(0, 0, 0)' }} {...props} />,
+                                    h4: ({ ...props }) => <h4 className="mt-4 mb-2 scroll-mt-24" style={{ fontWeight: 600, color: 'rgb(0, 0, 0)' }} {...props} />,
+                                    p: ({ ...props }) => <p className="mb-4" style={{ fontSize: '15.4px', lineHeight: '23.1px', color: 'rgb(0, 0, 0)' }} {...props} />,
+                                    a: ({ ...props }) => <a {...props} />,
+                                    ul: ({ ...props }) => <ul className="list-disc list-inside mb-4 space-y-1" style={{ fontSize: '15.4px', lineHeight: '23.1px', color: 'rgb(0, 0, 0)' }} {...props} />,
+                                    ol: ({ ...props }) => <ol className="list-decimal list-inside mb-4 space-y-1" style={{ fontSize: '15.4px', lineHeight: '23.1px', color: 'rgb(0, 0, 0)' }} {...props} />,
+                                    li: ({ ...props }) => <li style={{ fontSize: '15.4px', lineHeight: '23.1px', color: 'rgb(0, 0, 0)' }} {...props} />,
+                                    blockquote: ({ ...props }) => <blockquote className="border-l-4 border-accent pl-4 italic my-4" style={{ color: 'rgb(0, 0, 0)' }} {...props} />,
+                                    code: ({ inline, ...props }) =>
                                         inline ? (
                                             <code className="bg-black/5 px-1.5 py-0.5 rounded text-sm font-mono" {...props} />
                                         ) : (
                                             <code className="block bg-black/5 p-4 rounded-lg text-sm font-mono overflow-x-auto" {...props} />
                                         ),
-                                    pre: ({ node, ...props }) => <pre className="bg-black/5 p-4 rounded-md overflow-x-auto mb-4" {...props} />,
-                                    hr: ({ node, ...props }) => <hr className="border-t border-black/20 my-8" {...props} />,
-                                    img: ({ node, ...props }) => <img className="rounded-md max-w-full h-auto my-4" {...props} />,
+                                    pre: ({ ...props }) => <pre className="bg-black/5 p-4 rounded-md overflow-x-auto mb-4" {...props} />,
+                                    hr: ({ ...props }) => <hr className="border-t border-black/20 my-8" {...props} />,
+                                    img: ({ src, alt, ...props }) => (
+                                        <img
+                                            src={src}
+                                            alt={alt || ''}
+                                            className="rounded-md max-w-full h-auto my-4"
+                                            {...props}
+                                        />
+                                    ),
                                 }}
                             >
                                 {post.content || ''}

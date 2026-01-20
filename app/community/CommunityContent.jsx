@@ -1,15 +1,14 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import RichTextEditor from '../components/RichTextEditor';
 import { useCommunity } from '../hooks/useCommunity';
-import { useAuth } from '../contexts/AuthContext';
 import UserAvatar from '../components/UserAvatar';
 import { useWindow } from '../contexts/WindowContext';
 
 export default function CommunityPage({ isWindowMode = false }) {
-    const router = useRouter();
+    const { openWindow } = useWindow();
+    const { posts, replies, userLikes, loading, fetchPosts, fetchReplies, createPost, createReply, toggleLike } = useCommunity();
 
     function timeAgo(dateString) {
         const date = new Date(dateString);
@@ -26,10 +25,6 @@ export default function CommunityPage({ isWindowMode = false }) {
         if (interval > 1) return Math.floor(interval) + "m";
         return Math.floor(seconds) + "s";
     }
-
-    const { user } = useAuth();
-    const { openWindow } = useWindow();
-    const { posts, replies, userLikes, loading, fetchPosts, fetchReplies, createPost, createReply, toggleLike } = useCommunity();
 
     const handleAuthorClick = (e, username) => {
         e.preventDefault();

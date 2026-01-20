@@ -47,15 +47,10 @@ export default function AdminPage({ isWindowMode = false }) {
     const [content, setContent] = useState('');
     const [excerpt, setExcerpt] = useState('');
     const [category, setCategory] = useState('');
-    const [authorAlias, setAuthorAlias] = useState('');
     const [featuredImage, setFeaturedImage] = useState('');
 
-    // Initialize author alias when profile loads
-    useEffect(() => {
-        if (profile?.username && authorAlias === '') {
-            setAuthorAlias(profile.username);
-        }
-    }, [profile, authorAlias]);
+    // Derive author alias from profile
+    const authorAlias = profile?.username || '';
 
     // Tab Effects - Fetch data when tab changes
     useEffect(() => {

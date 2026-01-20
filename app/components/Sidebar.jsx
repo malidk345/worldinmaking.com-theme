@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import Image from 'next/image';
 import * as Icons from './SidebarIcons';
 import { useSidebar } from '../contexts/SidebarContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -115,7 +116,7 @@ const MenuItem = React.memo(({
 });
 MenuItem.displayName = 'MenuItem';
 
-const Sidebar = () => {
+const Sidebar = React.memo(() => {
     const { isMobileOpen, closeMobileSidebar, isSidebarOpen, closeSidebar } = useSidebar();
     const { toggleTheme, isDark } = useTheme();
     const { user, profile } = useAuth();
@@ -150,9 +151,6 @@ const Sidebar = () => {
             return;
         }
     }, [closeMobileSidebar, user, openWindow]);
-
-    // Dynamic year
-    const currentYear = useMemo(() => new Date().getFullYear(), []);
 
     const userPath = user ? '/profile' : '/login';
 
@@ -276,7 +274,14 @@ const Sidebar = () => {
                     >
                         <span className={`flex text-black w-5 h-5 items-center justify-center shrink-0 overflow-hidden ${user ? 'border-[1.5px] border-black rounded-full p-0.5' : ''}`}>
                             {user && profile?.avatar_url ? (
-                                <img src={profile.avatar_url} className="w-full h-full object-cover rounded-full" alt="" />
+                                <Image
+                                    src={profile.avatar_url}
+                                    alt="User avatar"
+                                    width={20}
+                                    height={20}
+                                    className="w-full h-full object-cover rounded-full"
+                                    unoptimized
+                                />
                             ) : user ? (
                                 <Icons.User className="size-full p-px" />
                             ) : (
@@ -304,6 +309,8 @@ const Sidebar = () => {
             </nav >
         </>
     );
-};
+});
+
+export default Sidebar;
 
 export default React.memo(Sidebar);

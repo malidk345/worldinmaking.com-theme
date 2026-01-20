@@ -5,7 +5,6 @@ import Window from './Window';
 import UserAvatar from './UserAvatar';
 import { supabase } from '../lib/supabase';
 import Image from 'next/image';
-import { stripMarkdown } from '../lib/markdown';
 import { Skeleton } from './Skeleton';
 
 export default function AuthorProfileWindow(props) {

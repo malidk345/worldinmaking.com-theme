@@ -44,7 +44,7 @@ class ErrorBoundary extends React.Component {
 
             return (
                 <div
-                    className="flex flex-col items-center justify-center min-h-[200px] p-6 bg-surface-primary border border-border-primary rounded-lg m-4"
+                    className="flex flex-col items-center justify-center min-h-[200px] p-6 bg-surface-primary border border-(--border-primary) rounded-lg m-4"
                     role="alert"
                     aria-live="assertive"
                 >

@@ -3,7 +3,6 @@
  */
 import {
     sanitizeString,
-    sanitizeHtml,
     isValidEmail,
     isValidUrl,
     toSlug,

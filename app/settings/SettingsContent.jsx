@@ -11,10 +11,12 @@ export default function SettingsPage({ isWindowMode = false }) {
     const { addToast } = useToast();
     const { user, profile, loading: authLoading, updateProfile } = useAuth();
 
-    const [username, setUsername] = useState('');
-    const [avatarUrl, setAvatarUrl] = useState('');
+    // Form state with initial values from profile
+    const [username, setUsername] = useState(profile?.username || '');
+    const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '');
     const [saving, setSaving] = useState(false);
 
+    // Update form when profile changes
     useEffect(() => {
         if (profile) {
             setUsername(profile.username || '');

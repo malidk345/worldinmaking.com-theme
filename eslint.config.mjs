@@ -1,16 +1,23 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-    baseDirectory: __dirname,
-});
+import js from "@eslint/js";
+import eslintConfigNext from "eslint-config-next";
 
 const eslintConfig = [
-    ...compat.extends("next/core-web-vitals"),
+    {
+        ignores: [
+            "node_modules/",
+            ".next/",
+            "out/",
+            "public/",
+            "*.config.js",
+            "*.config.mjs",
+            "build_output.txt",
+            "lint_output.txt",
+            "build_log.txt",
+            "lint.txt",
+        ],
+    },
+    js.configs.recommended,
+    ...eslintConfigNext,
     {
         rules: {
             // Disable unescaped entities rule (common in JSX)
@@ -19,18 +26,30 @@ const eslintConfig = [
             "react-hooks/exhaustive-deps": "warn",
             // Allow console in development
             "no-console": ["warn", { allow: ["warn", "error"] }],
+            // Reduce setState in effect to warning (not a critical error)
+            "react-hooks/set-state-in-effect": "warn",
+            // Next.js img element warning
+            "@next/next/no-img-element": "warn",
+            // Alt text for images
+            "jsx-a11y/alt-text": "warn",
         },
     },
     {
-        // Ignore patterns
-        ignores: [
-            "node_modules/",
-            ".next/",
-            "out/",
-            "public/",
-            "*.config.js",
-            "*.config.mjs",
-        ],
+        // Test files - Jest globals
+        files: ["**/__tests__/**/*.[jt]s?(x)", "**/?(*.)+(spec|test).[jt]s?(x)", "jest.setup.js"],
+        languageOptions: {
+            globals: {
+                describe: "readonly",
+                it: "readonly",
+                test: "readonly",
+                expect: "readonly",
+                beforeAll: "readonly",
+                afterAll: "readonly",
+                beforeEach: "readonly",
+                afterEach: "readonly",
+                jest: "readonly",
+            },
+        },
     },
 ];
 

@@ -38,13 +38,6 @@ export function sanitizeString(input) {
 export function sanitizeHtml(html) {
     if (typeof html !== 'string') return '';
 
-    // List of allowed tags
-    const allowedTags = [
-        'p', 'br', 'b', 'i', 'u', 'strong', 'em', 'a', 'ul', 'ol', 'li',
-        'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'code', 'pre',
-        'img', 'hr', 'table', 'thead', 'tbody', 'tr', 'th', 'td'
-    ];
-
     // Remove script tags
     let clean = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
 

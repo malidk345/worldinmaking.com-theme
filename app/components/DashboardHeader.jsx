@@ -7,6 +7,7 @@ import { useTabs } from '../contexts/TabContext';
 import { useWindow } from '../contexts/WindowContext';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
+import Image from 'next/image';
 import { useAuth } from '../contexts/AuthContext';
 import * as HeaderIcons from './Icons';
 import * as SidebarIcons from './SidebarIcons';
@@ -19,19 +20,11 @@ const SidebarToggleIcon = HeaderIcons.Layout;
 const FilterSettingsIcon = HeaderIcons.Filter;
 const GridDisplayIcon = HeaderIcons.Grid;
 const ListDisplayIcon = HeaderIcons.List;
-const CloseIcon = HeaderIcons.Close;
-
-// Memoize the home icon to avoid re-calculating or creating components during render
-const HomeIcon = getIconByPath('/');
-
-const DashboardTabIcon = ({ className, style }) => {
-    return <HomeIcon className={`LemonIcon ${className || ''}`} style={style} />;
-};
 
 // Smooth spring for drawer animation
 const drawerSpring = { type: 'spring', damping: 30, stiffness: 300 };
 
-export default function DashboardHeader({
+const DashboardHeader = React.memo(function DashboardHeader({
     showCategories,
     setShowCategories,
     showFilter,
@@ -40,8 +33,8 @@ export default function DashboardHeader({
     setViewMode
 }) {
     const { toggleMobileSidebar, openSidebar, isSidebarOpen } = useSidebar();
-    const { tabs, closeTab, setActiveTab, history, reopenTab } = useTabs();
-    const { closeWindow, bringToFront, openWindow } = useWindow();
+    const { tabs, closeTab, history, reopenTab } = useTabs();
+    const { closeWindow, openWindow } = useWindow();
     const { user, profile } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
@@ -357,7 +350,14 @@ export default function DashboardHeader({
                 >
                     <span className={`flex items-center justify-center w-5 h-5 overflow-hidden ${user ? 'border-[1.5px] border-black rounded-full p-0.5' : ''}`}>
                         {user && profile?.avatar_url ? (
-                            <img src={profile.avatar_url} className="w-full h-full object-cover rounded-full" alt="" />
+                            <Image
+                                src={profile.avatar_url}
+                                alt="User avatar"
+                                width={20}
+                                height={20}
+                                className="w-full h-full object-cover rounded-full"
+                                unoptimized
+                            />
                         ) : user ? (
                             <SidebarIcons.User className="size-full p-px" />
                         ) : (
@@ -422,4 +422,6 @@ export default function DashboardHeader({
             )}
         </div>
     );
-}
+});
+
+export default DashboardHeader;
