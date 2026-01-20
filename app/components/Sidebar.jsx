@@ -311,6 +311,5 @@ const Sidebar = React.memo(() => {
     );
 });
 
-export default Sidebar;
 
-export default React.memo(Sidebar);
+export default Sidebar;
