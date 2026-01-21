@@ -104,7 +104,7 @@ export default function HomeWindow(props) {
                                 boxShadow: '0 4px 24px rgba(0, 0, 0, 0.15)'
                             }}
                         >
-                            <div className="px-2.5 py-1.5 border-b border-black/5 flex items-center justify-between" style={{ backgroundColor: 'rgba(0,0,0,0.02)' }}>
+                            <div className="px-2.5 py-1.5 border-b border-(--border-primary) flex items-center justify-between bg-gray-100/70 backdrop-blur-sm">
                                 <span className="text-[10px] font-bold text-secondary uppercase tracking-widest flex items-center gap-2">
                                     <Layout className="size-3 text-secondary" />
                                     categories

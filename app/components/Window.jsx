@@ -198,7 +198,7 @@ const Window = ({
             return { ...base, position: 'fixed', top: HEADER_HEIGHT + MARGIN + 8, left: MARGIN, right: MARGIN, bottom: MARGIN, width: 'auto', height: 'auto' };
         }
         return { ...base, position: 'fixed', top: pos.y, left: pos.x, width: size.width, height: size.height };
-    }, [zIndex, isMaximized, isMinimized, pos, size]);
+    }, [zIndex, isMaximized, pos, size]);
 
     const getAnimationProps = () => {
         // Exit animation (PostHog Hide)
@@ -255,8 +255,11 @@ const Window = ({
         >
             {/* Window Header */}
             <motion.div
-                className={`flex items-center justify-between h-[30px] px-2 border-b border-(--border-primary) select-none shrink-0 transition-colors duration-300 ${isFocused ? 'bg-posthog-3000-100' : 'bg-posthog-3000-50'
-                    } ${!isMaximized ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
+                className={`flex items-center justify-between h-[30px] px-2 border-b border-(--border-primary) select-none shrink-0 transition-all duration-300 backdrop-blur-md ${
+                    isFocused
+                        ? 'bg-gray-200/80 text-gray-900 shadow-inner'
+                        : 'bg-gray-50/60 text-gray-600'
+                    }${!isMaximized ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
                 onMouseDown={(e) => { e.preventDefault(); startDrag(e.clientX, e.clientY); }}
                 onTouchStart={(e) => startDrag(e.touches[0].clientX, e.touches[0].clientY)}
                 transition={PREMIUM_SPRING}
@@ -268,7 +271,11 @@ const Window = ({
                 <div className="flex items-center gap-0.5 shrink-0 h-full">
                     <motion.button
                         onClick={handleMinimize}
-                        className="p-2 md:p-1.5 rounded hover:bg-black/5 text-black h-full flex items-center justify-center min-w-[32px] md:min-w-[26px]"
+                        className={`p-2 md:p-1.5 rounded h-full flex items-center justify-center min-w-[32px] md:min-w-[26px] transition-all ${
+                            isFocused
+                                ? 'hover:bg-black/5 text-gray-900'
+                                : 'hover:bg-black/5 text-gray-700'
+                        }`}
                         whileTap={{ scale: 0.9 }}
                         aria-label={isMinimized ? 'Restore window' : 'Minimize window'}
                         title={isMinimized ? 'Restore' : 'Minimize'}
@@ -277,7 +284,11 @@ const Window = ({
                     </motion.button>
                     <motion.button
                         onClick={handleMaximize}
-                        className="p-2 md:p-1.5 rounded hover:bg-black/5 text-black h-full flex items-center justify-center min-w-[32px] md:min-w-[26px]"
+                        className={`p-2 md:p-1.5 rounded h-full flex items-center justify-center min-w-[32px] md:min-w-[26px] transition-all ${
+                            isFocused
+                                ? 'hover:bg-black/5 text-gray-900'
+                                : 'hover:bg-black/5 text-gray-700'
+                        }`}
                         whileTap={{ scale: 0.9 }}
                         aria-label={isMaximized ? 'Restore window' : 'Maximize window'}
                         title={isMaximized ? 'Restore' : 'Maximize'}
@@ -286,7 +297,11 @@ const Window = ({
                     </motion.button>
                     <motion.button
                         onClick={handleClose}
-                        className="p-2 md:p-1.5 rounded hover:bg-red-500/10 text-black hover:text-red-500 h-full flex items-center justify-center min-w-[32px] md:min-w-[26px]"
+                        className={`p-2 md:p-1.5 rounded h-full flex items-center justify-center min-w-[32px] md:min-w-[26px] transition-all ${
+                            isFocused
+                                ? 'hover:bg-red-500/10 text-gray-900 hover:text-red-600'
+                                : 'hover:bg-red-500/10 text-gray-700 hover:text-red-600'
+                        }`}
                         whileTap={{ scale: 0.9 }}
                         aria-label="Close window"
                         title="Close"
@@ -321,7 +336,7 @@ const Window = ({
                         <div className="absolute top-0 left-0 w-[12px] h-[12px] cursor-nw-resize z-30" onMouseDown={(e) => { e.preventDefault(); startResize(e.clientX, e.clientY, 'nw'); }} />
                         <div className="absolute top-0 right-0 w-[12px] h-[12px] cursor-ne-resize z-30" onMouseDown={(e) => { e.preventDefault(); startResize(e.clientX, e.clientY, 'ne'); }} />
                         <div className="absolute bottom-0 left-0 w-[12px] h-[12px] cursor-sw-resize z-30" onMouseDown={(e) => { e.preventDefault(); startResize(e.clientX, e.clientY, 'sw'); }} />
-                        <div className="absolute bottom-0 right-0 w-[16px] h-[16px] cursor-se-resize bg-posthog-3000-100 hover:bg-brand-navy/20 rounded-tl-lg transition-colors z-30 flex items-center justify-center shadow-sm" onMouseDown={(e) => { e.preventDefault(); startResize(e.clientX, e.clientY, 'se'); }}>
+                        <div className="absolute bottom-0 right-0 w-[16px] h-[16px] cursor-se-resize bg-gray-300/50 hover:bg-gray-400/50 rounded-tl-lg transition-colors z-30 flex items-center justify-center shadow-sm backdrop-blur-sm" onMouseDown={(e) => { e.preventDefault(); startResize(e.clientX, e.clientY, 'se'); }}>
                             <div className="w-1.5 h-1.5 bg-brand-navy/30 rounded-full" />
                         </div>
                     </>
