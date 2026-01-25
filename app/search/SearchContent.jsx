@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -67,7 +67,7 @@ const getRecentSearches = () => {
     if (typeof window === 'undefined') return [];
     try {
         return JSON.parse(localStorage.getItem('recentSearches') || '[]');
-    } catch {
+    } catch (e) {
         return [];
     }
 };
@@ -78,13 +78,15 @@ const saveRecentSearch = (query) => {
         const recent = getRecentSearches().filter(s => s !== query);
         const updated = [query, ...recent].slice(0, 5);
         localStorage.setItem('recentSearches', JSON.stringify(updated));
-    } catch {
+    } catch (e) {
+        // Ignore storage errors
     }
 };
 
 export default function SearchPage({ isWindowMode = false }) {
     const router = useRouter();
-    const { posts, loading } = usePosts();
+    // Fetch full content for client-side search relevance
+    const { posts, loading } = usePosts({ fetchContent: true });
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
