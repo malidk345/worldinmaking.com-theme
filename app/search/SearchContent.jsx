@@ -84,7 +84,7 @@ const saveRecentSearch = (query) => {
 
 export default function SearchPage({ isWindowMode = false }) {
     const router = useRouter();
-    const { posts, loading } = usePosts();
+    const { posts, loading } = usePosts({ fetchContent: true });
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
