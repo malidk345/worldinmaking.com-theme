@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -84,7 +84,7 @@ const saveRecentSearch = (query) => {
 
 export default function SearchPage({ isWindowMode = false }) {
     const router = useRouter();
-    const { posts, loading } = usePosts();
+    const { posts, loading } = usePosts({ fetchContent: true });
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
