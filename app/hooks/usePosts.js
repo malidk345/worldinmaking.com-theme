@@ -49,10 +49,17 @@ const adaptPost = (p) => {
     };
 };
 
-const postsFetcher = async () => {
+// Fetcher accepts explicit fetchContent flag to optimize payload size
+const postsFetcher = async (key, fetchContent) => {
+    // ⚡ Performance optimization: Only fetch 'content' when absolutely necessary
+    // This significantly reduces payload size for list views
+    const columns = fetchContent
+        ? '*'
+        : 'id, slug, title, created_at, category, excerpt, author, author_avatar, image_url, published';
+
     const { data, error } = await supabase
         .from('posts')
-        .select('*')
+        .select(columns)
         .eq('published', true)
         .order('created_at', { ascending: false });
 
@@ -60,11 +67,16 @@ const postsFetcher = async () => {
     return data.map(adaptPost).filter(Boolean);
 };
 
-export const usePosts = () => {
-    const { data, error, isLoading, mutate } = useSWR('posts', postsFetcher, {
-        revalidateOnFocus: false,
-        dedupingInterval: 60000, // 1 minute
-    });
+export const usePosts = ({ fetchContent = false } = {}) => {
+    // Pass args explicitly to handle SWR key array correctly
+    const { data, error, isLoading, mutate } = useSWR(
+        ['posts', fetchContent],
+        ([key, fc]) => postsFetcher(key, fc),
+        {
+            revalidateOnFocus: false,
+            dedupingInterval: 60000, // 1 minute
+        }
+    );
 
     return {
         posts: data || [],

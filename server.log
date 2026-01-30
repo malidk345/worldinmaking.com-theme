@@ -1,0 +1,27 @@
+
+> posthog-next@0.1.0 dev
+> next dev
+
+▲ Next.js 16.1.3 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+- Experiments (use with caution):
+  ✓ optimizeCss
+
+✓ Starting...
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+✓ Ready in 1149ms
+○ Compiling / ...
+[Supabase] Environment variables missing! Database features will be unavailable.
+ GET / 200 in 22.7s (compile: 21.4s, render: 1243ms)
+ GET / 200 in 194ms (compile: 9ms, render: 185ms)
+○ Compiling /search ...
+ GET /search/ 200 in 4.4s (compile: 4.3s, render: 132ms)
+[Supabase] Environment variables missing! Database features will be unavailable.
+ GET / 200 in 651ms (compile: 172ms, render: 479ms)
+[Supabase] Environment variables missing! Database features will be unavailable.
+ GET /search/ 200 in 544ms (compile: 121ms, render: 424ms)
