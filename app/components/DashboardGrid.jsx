@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { getExcerpt } from '../lib/markdown';
 import InsightCard from './InsightCard';
 import { SkeletonDashboardGrid } from './Skeleton';
 
@@ -54,7 +53,7 @@ export default function DashboardGrid({ posts = [], loading = false }) {
                         <InsightCard
                             id={item.id}
                             title={item.title}
-                            description={getExcerpt(item.content || item.description, 115)}
+                            description={item.description}
                             type={item.category}
                             ribbonColor={item.ribbon}
                             date={item.date}

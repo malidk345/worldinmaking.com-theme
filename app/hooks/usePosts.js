@@ -2,7 +2,7 @@
 
 // Supabase posts hook - Clean version for Markdown content
 import { supabase } from '../lib/supabase';
-import { stripMarkdown } from '../lib/markdown';
+import { stripMarkdown, getExcerpt } from '../lib/markdown';
 import useSWR from 'swr';
 import logger from '../utils/logger';
 
@@ -13,6 +13,13 @@ const adaptPost = (p) => {
 
     // Get raw content - ReactMarkdown will handle the rendering
     const rawContent = p.content || '';
+
+    // Calculate description ONCE.
+    // Prefer DB excerpt. If missing, generate from content.
+    // We strip markdown from DB excerpt too, just in case.
+    const description = p.excerpt
+        ? stripMarkdown(p.excerpt)
+        : getExcerpt(rawContent, 200);
 
     // Extract headings from Markdown for TOC (## syntax)
     const headings = [];
@@ -35,8 +42,8 @@ const adaptPost = (p) => {
         title: p.title,
         date: new Date(p.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
         category: p.category,
-        description: stripMarkdown(p.excerpt || ''),
-        excerpt: stripMarkdown(p.excerpt || ''),
+        description: description,
+        excerpt: description,
         content: rawContent,  // Pass raw content for ReactMarkdown
         author: p.author || 'Unknown',
         authorName: p.author || 'Unknown',

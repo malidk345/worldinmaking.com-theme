@@ -9,7 +9,6 @@ import { useWindow } from '../contexts/WindowContext';
 import DashboardGrid from './DashboardGrid';
 import { usePosts } from '../hooks/usePosts';
 import { SkeletonDashboardGrid } from './Skeleton';
-import { stripMarkdown } from '../lib/markdown';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -256,7 +255,7 @@ export default function HomeWindow(props) {
                                             {post.title}
                                         </h3>
                                         <p className="text-[13px] text-secondary line-clamp-1 mt-0.5">
-                                            {stripMarkdown(post.description)}
+                                            {post.description}
                                         </p>
                                     </div>
 

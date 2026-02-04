@@ -8,7 +8,6 @@ import DashboardHeader from './DashboardHeader';
 import DashboardGrid from './DashboardGrid';
 import { usePosts } from '../hooks/usePosts';
 import { SkeletonDashboardGrid } from './Skeleton';
-import { getExcerpt } from '../lib/markdown';
 import UserAvatar from './UserAvatar';
 
 
@@ -284,7 +283,7 @@ export default function Dashboard() {
                                             {post.title}
                                         </h3>
                                         <p className="text-[13px] text-secondary line-clamp-1 mt-0.5">
-                                            {getExcerpt(post.content || post.description, 115)}
+                                            {post.description}
                                         </p>
                                     </div>
 
