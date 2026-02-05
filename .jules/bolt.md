@@ -1,0 +1,3 @@
+## 2024-05-22 - [Optimization] Reduce payload size in usePosts
+**Learning:** Fetching the full `content` column (Markdown body) for every post in the list view was a significant performance bottleneck. Defaulting to fetching only metadata columns reduces the initial load size drastically. SWR fetcher arguments can vary (array key vs spread args), so robust handling in the fetcher function is crucial.
+**Action:** Always verify if `select('*')` is necessary. Implement conditional fetching for heavy columns like `content` or `description` if they are large. Use robust argument parsing in SWR fetchers.
