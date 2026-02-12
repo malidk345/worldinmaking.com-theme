@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react'
-import { AnimatePresence, motion, PanInfo, useDragControls, DragEvent } from 'framer-motion'
+import { AnimatePresence, motion, PanInfo, useDragControls } from 'framer-motion'
 import {
     IconChevronDown,
     IconDocument,
@@ -156,7 +156,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
         })
     }
 
-    const handleDrag = (_event: DragEvent, info: PanInfo) => {
+    const handleDrag = (_event: any, info: PanInfo) => {
         if (!dragging) setDragging(true)
         if (item.fixedSize) return
         if (!constraintsRef.current) return
@@ -173,7 +173,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
         }
     }
 
-    const handleDragEnd = (_event: DragEvent, info: PanInfo) => {
+    const handleDragEnd = (_event: any, info: PanInfo) => {
         setDragging(false)
         if (!item.fixedSize && snapIndicator !== null) {
             handleSnapToSide(snapIndicator)
@@ -226,7 +226,10 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
             }
         }
 
-        updateWindow(item, update)
+        if (update.position) {
+            update.position = { ...position, ...update.position }
+        }
+        updateWindow(item, update as any)
     }
 
     const handleMouseDown = () => {
@@ -444,7 +447,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                                         </div>
                                                     ),
                                                     items: [
-                                                        ...(item.props?.pageOptions || []),
+                                                        ...(Array.isArray(item.props?.pageOptions) ? item.props.pageOptions : []),
                                                         {
                                                             type: 'item',
                                                             label: 'Close',

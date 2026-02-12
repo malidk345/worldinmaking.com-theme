@@ -15,8 +15,9 @@ export interface AppWindow {
     minimized: boolean
     path: string
     fromHistory?: boolean
-    props?: Record<string, unknown>
-    ref?: React.RefObject<HTMLDivElement>
+    fromOrigin?: { x: number; y: number }
+    props?: Record<string, any>
+    ref?: React.RefObject<HTMLDivElement | null>
     sizeConstraints: {
         min: { width: number; height: number }
         max: { width: number; height: number }
@@ -49,6 +50,7 @@ interface WindowContextType {
     parent?: IMenu
     view: 'marketing' | 'developer'
     setView: (view: 'marketing' | 'developer') => void
+    addWindow: (item: Partial<AppWindow> & { key: string; path: string }) => void
 }
 
 export const Context = createContext<WindowContextType>({
@@ -61,6 +63,7 @@ export const Context = createContext<WindowContextType>({
     internalMenu: [],
     view: 'marketing',
     setView: () => { },
+    addWindow: () => { },
 })
 
 export const WindowProvider = ({

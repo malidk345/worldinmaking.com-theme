@@ -91,6 +91,7 @@ export default function TaskBarMenu() {
                     onClick: () => addWindow({
                         key: 'about',
                         title: 'About WorldInMaking',
+                        path: '/about',
                         element: (
                             <div className="w-full h-full flex flex-col items-center justify-center bg-accent text-primary p-10 text-center lowercase">
                                 <h1 className="text-4xl font-black mb-4">under construction</h1>
@@ -160,7 +161,7 @@ export default function TaskBarMenu() {
                         path: '/admin',
                         icon: <Settings className="size-4 text-purple-500" />,
                         element: <AdminPanel />,
-                        width: 'w-full max-w-5xl h-[80vh]',
+                        size: { width: 1000, height: 750 }
                     })
                 },
                 { type: 'separator' },

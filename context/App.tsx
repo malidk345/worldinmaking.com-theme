@@ -13,7 +13,7 @@ interface AppContextType {
     closeWindow: (itemOrKey: string | AppWindow) => void
     minimizeWindow: (itemOrKey: string | AppWindow) => void
     updateWindow: (itemOrKey: string | AppWindow, updates: Partial<AppWindow>) => AppWindow | null
-    updateWindowRef: (itemOrKey: string | AppWindow, ref: React.RefObject<HTMLDivElement>) => void
+    updateWindowRef: (itemOrKey: string | AppWindow, ref: React.RefObject<HTMLDivElement | null>) => void
     expandWindow: () => void
     handleSnapToSide: (side: 'left' | 'right') => void
     getDesktopCenterPosition: (size: { width: number; height: number }) => { x: number; y: number }
@@ -206,7 +206,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         return updated
     }, [])
 
-    const updateWindowRef = useCallback((itemOrKey: string | AppWindow, ref: React.RefObject<HTMLDivElement>) => {
+    const updateWindowRef = useCallback((itemOrKey: string | AppWindow, ref: React.RefObject<HTMLDivElement | null>) => {
         const key = typeof itemOrKey === 'string' ? itemOrKey : itemOrKey.key
         setWindows((prev) => prev.map(w => w.key === key ? { ...w, ref } : w))
     }, [])
