@@ -17,6 +17,13 @@ import {
 import { Placement } from '@popperjs/core'
 import * as icons from '@posthog/icons'
 import { IconExternal } from '@posthog/icons'
+
+declare global {
+    interface Window {
+        __theme: string
+        __setPreferredTheme: (theme: string) => void
+    }
+}
 import { CallToAction } from 'components/CallToAction'
 import { useLayoutData } from 'components/Layout/hooks'
 import { SignupCTA } from 'components/SignupCTA'
@@ -104,7 +111,7 @@ export default function Orders() {
 
 export const DarkModeToggle = () => {
     const [websiteTheme, setWebsiteTheme] = useState<'light' | 'dark'>(
-        typeof window !== 'undefined' && (window.__theme === 'dark' ? 'dark' : 'light')
+        typeof window !== 'undefined' && window.__theme === 'dark' ? 'dark' : 'light'
     )
 
     const handleClick = () => {
@@ -297,9 +304,9 @@ export const InternalMenu = ({ className = '', mobile = false, menu, activeIndex
                 ref={ref}
                 className={`flex space-x-4 list-none m-0 pt-1 px-4 border-b border-primary relative snap-x snap-mandatory overflow-x-auto overflow-y-hidden ${className}`}
             >
-                {menu.map((menuItem, index) => {
+                {menu?.map((menuItem, index) => {
                     const { url, color, colorDark, icon, name, onClick } = menuItem
-                    const Icon = icons[icon]
+                    const Icon = (typeof icon === 'string' && (icons as any)[icon]) || icons.IconApp
                     const active = menu[activeIndex]?.name === menuItem.name
                     return (
                         <li
@@ -319,7 +326,7 @@ export const InternalMenu = ({ className = '', mobile = false, menu, activeIndex
                                         scrollToIndex(index)
                                         onClick?.()
                                     }}
-                                    to={url}
+                                    to={url || ''}
                                     className={`snap-center group flex items-center relative px-2 pt-1.5 pb-1 mb-1 rounded hover:bg-light/50 hover:dark:bg-dark/50 ${active
                                         ? ''
                                         : 'border border-b-3 border-transparent md:hover:border-primary hover:translate-y-[-1px] active:translate-y-[1px] active:transition-all'
@@ -364,7 +371,7 @@ export const InternalMenu = ({ className = '', mobile = false, menu, activeIndex
 const keyboardShortcut =
     'box-content p-[5px] border border-b-2 border-primary  rounded-[3px] inline-flex text-black/35 dark:text-white/40 text-code text-xs'
 
-const enterpiseModeNames = {
+const enterpiseModeNames: Record<string, string> = {
     Products: 'Solutions',
     Pricing: 'Plans',
     Docs: 'Developer resources',
@@ -436,7 +443,7 @@ export const Main = () => {
     } = useLayoutData()
     const pathname = typeof window !== 'undefined' ? window.location.pathname : '/'
     const [websiteTheme, setWebsiteTheme] = useState<'light' | 'dark'>(
-        typeof window !== 'undefined' && (window.__theme === 'dark' ? 'dark' : 'light')
+        typeof window !== 'undefined' && window.__theme === 'dark' ? 'dark' : 'light'
     )
     const [posthogInstance, setPosthogInstance] = useState<string>()
     const [mediaModalOpen, setMediaModalOpen] = useState(false)
@@ -514,20 +521,20 @@ export const Main = () => {
                                 />
                             ) : (
                                 <Logo
-                                    color={websiteTheme === 'dark' && 'white'}
+                                    color={websiteTheme === 'dark' ? 'white' : undefined}
                                     className="h-[24px] fill-current relative px-2 box-content"
                                 />
                             )}
                         </Link>
                     </div>
                     <ul className="md:flex hidden list-none m-0 p-0">
-                        {menu.map((menuItem) => {
+                        {menu?.map((menuItem) => {
                             const active = menuItem.name === parent?.name
                             const { name, url } = menuItem
                             return (
                                 <li className="h-full" key={name}>
                                     <Link
-                                        to={url}
+                                        to={url || ''}
                                         className={`text-[13.5px] font-medium flex h-full items-center relative px-3 py-4 mdlg:p-4 ${active
                                             ? 'px-[calc(.75rem_+_10px)] mdlg:px-[calc(1rem_+_10px)] mx-[-10px]'
                                             : 'opacity-70 hover:opacity-100'
@@ -705,13 +712,6 @@ export const Mobile = () => {
         return <></>
     }
 
-    const enterpiseModeNames = {
-        Products: 'Solutions',
-        Pricing: 'Plans',
-        Docs: 'Developer resources',
-        Community: 'Newsroom',
-        Company: 'Investor relations',
-    }
     const { menu, parent, internalMenu, activeInternalMenu, enterpriseMode, setEnterpriseMode } = useLayoutData()
 
     return (
@@ -723,14 +723,14 @@ export const Mobile = () => {
                 activeIndex={internalMenu?.findIndex((menu) => menu === activeInternalMenu)}
             />
             <ul className="grid grid-cols-5 gap-[2px] list-none m-0 px-2 bg-accent border-t border-input">
-                {menu.map((menuItem) => {
+                {menu?.map((menuItem) => {
                     const active = menuItem.name === parent?.name
                     const { name, url, icon } = menuItem
-                    const Icon = icons[icon]
+                    const Icon = (typeof icon === 'string' && (icons as any)[icon]) || icons.IconApp
                     return (
                         <li className="h-full first:hidden" key={name}>
                             <Link
-                                to={url}
+                                to={url || ''}
                                 className={`text-[12.5px] font-medium relative px-4 py-4 flex flex-col space-y-1 items-center ${active
                                     ? 'bg-light dark:bg-dark font-bold px-[calc(1rem_+_10px)] mx-[-10px]'
                                     : 'opacity-70 hover:opacity-100'

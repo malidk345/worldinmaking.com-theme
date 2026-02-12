@@ -2,6 +2,12 @@ import React, { createContext, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { IMenu } from 'components/PostLayout/types'
 
+declare global {
+    interface Window {
+        __theme: string
+        __setPreferredTheme: (theme: string) => void
+    }
+}
 const docsMenu: IMenu = {
     name: 'Docs',
     url: '/docs',
@@ -26,7 +32,7 @@ const menu: IMenu[] = [
     },
 ]
 
-interface LayoutContextType {
+export interface LayoutContextType {
     menu: IMenu[]
     parent?: IMenu
     internalMenu?: IMenu[]

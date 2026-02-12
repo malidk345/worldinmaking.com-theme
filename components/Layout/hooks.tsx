@@ -1,7 +1,22 @@
 import { useContext } from 'react'
-import { Context } from './context'
+import { Context, LayoutContextType } from './context'
 
-export const useLayoutData = () => {
+export const useLayoutData = (): LayoutContextType => {
     const layoutData = useContext(Context)
-    return layoutData || {}
+    if (!layoutData) {
+        return {
+            menu: [],
+            fullWidthContent: false,
+            setFullWidthContent: () => { },
+            compact: false,
+            enterpriseMode: false,
+            setEnterpriseMode: () => { },
+            theoMode: false,
+            setTheoMode: () => { },
+            post: false,
+            hedgehogModeEnabled: false,
+            setHedgehogModeEnabled: () => { }
+        }
+    }
+    return layoutData
 }

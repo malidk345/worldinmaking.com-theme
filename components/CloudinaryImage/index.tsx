@@ -30,9 +30,10 @@ export default function CloudinaryImage({
     width?: number
     className?: string
     imgClassName?: string
+    placeholder?: string
     objectFit?: 'cover' | 'contain'
     objectPosition?: 'top' | 'bottom' | 'left' | 'right' | 'center'
-} & React.ImgHTMLAttributes<HTMLImageElement>): JSX.Element {
+} & React.ImgHTMLAttributes<HTMLImageElement>): any {
 
     // If it's a cloudinary image and we want to apply transformations
     let finalSrc = src
