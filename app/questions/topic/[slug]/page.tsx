@@ -1,31 +1,47 @@
 "use client"
 
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import ForumPageLayout from 'components/Forum/ForumPageLayout'
-import { getQuestionsByTopic, topicGroups } from 'components/Forum/sampleData'
+import { useCommunity } from 'hooks/useCommunity'
 
 export default function TopicPage() {
     const params = useParams()
     const slug = params?.slug as string
+    const { posts, loading, fetchPosts } = useCommunity()
 
-    const questions = getQuestionsByTopic(slug)
-
-    // Find the topic label
-    let topicLabel = slug
-    for (const group of topicGroups) {
-        const topic = group.topics.find((t) => t.slug === slug)
-        if (topic) {
-            topicLabel = topic.label
-            break
+    useEffect(() => {
+        if (slug) {
+            fetchPosts(undefined, slug)
         }
-    }
+    }, [slug, fetchPosts])
+
+    // Adapt Supabase posts to ForumQuestion type
+    const adaptedPosts = posts.map(p => ({
+        id: p.id,
+        permalink: p.id.toString(),
+        subject: p.title,
+        body: p.content,
+        createdAt: p.created_at,
+        profile: {
+            id: 0,
+            firstName: p.profiles?.username || 'Anonymous',
+            lastName: '',
+            avatar: p.profiles?.avatar_url || null,
+        },
+        replies: [],
+        topics: [],
+        pinnedTopics: [],
+        resolved: false,
+        archived: false
+    }))
 
     return (
         <ForumPageLayout
-            questions={questions}
+            questions={adaptedPosts as any}
+            loading={loading}
             activeTopicSlug={slug}
-            title={topicLabel}
+            title={slug}
         />
     )
 }
