@@ -18,10 +18,12 @@ export default function ForumMarkdown({
     children,
     className = '',
     allowedElements,
+    transformImageUri,
 }: {
     children: string
     className?: string
     allowedElements?: string[]
+    transformImageUri?: (href: string) => string
 }) {
     const content = replaceMentions(children || '')
 
@@ -30,6 +32,7 @@ export default function ForumMarkdown({
             allowedElements={allowedElements}
             remarkPlugins={[remarkGfm]}
             rehypePlugins={[rehypeSanitize]}
+            urlTransform={transformImageUri}
             className={`markdown prose dark:prose-invert prose-sm max-w-full text-primary [&_a]:font-semibold break-words [overflow-wrap:anywhere] ${className}`}
             components={{
                 pre: ({ children }) => (
