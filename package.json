@@ -78,6 +78,6 @@
     "supabase": "^2.76.8",
     "tailwindcss": "^4",
     "typescript": "5.9.3",
-    "wrangler": "^3.115.0"
+    "wrangler": "^4.65.0"
   }
 }
