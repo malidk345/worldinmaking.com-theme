@@ -14,14 +14,10 @@ export default function QuestionPermalinkPage() {
 
     useEffect(() => {
         if (permalink) {
-            // If permalink is an ID, we'll need to fetch carefully. 
-            // In our system, we might need a fetchById or just use posts list.
-            // For now, let's assume fetchPosts handles it or we filter.
-            fetchPosts(undefined, undefined) // Just fetch everything for now or add ID support
+            fetchPosts(undefined, undefined)
         }
     }, [permalink, fetchPosts])
 
-    // Find the specific post in the posts array
     const post = posts.find(p => p.id.toString() === permalink)
 
     if (loading && !post) {
@@ -47,7 +43,6 @@ export default function QuestionPermalinkPage() {
         )
     }
 
-    // Adapt to ForumQuestion
     const adaptedQuestion = {
         id: post.id,
         permalink: post.id.toString(),

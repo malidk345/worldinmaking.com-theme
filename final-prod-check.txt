@@ -1,0 +1,41 @@
+﻿
+> posthog-nextjs@0.1.0 build
+> next build
+
+   Ôû▓ Next.js 15.1.7
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ Ô£ô Compiled successfully
+   Skipping validation of types
+   Skipping linting
+
+   We detected TypeScript in your project and reconfigured your tsconfig.json file for you.
+   The following mandatory changes were made to your tsconfig.json:
+
+   	- jsx was set to preserve (next.js implements its own optimized jsx transform)
+
+   Collecting page data ...
+   Generating static pages (0/6) ...
+   Generating static pages (1/6) 
+   Generating static pages (2/6) 
+   Generating static pages (4/6) 
+ Ô£ô Generating static pages (6/6)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+Ôöî Ôùï /                                    148 kB          551 kB
+Ôö£ Ôùï /_not-found                          979 B           106 kB
+Ôö£ Ôùï /questions                           641 B           403 kB
+Ôö£ ãÆ /questions/[permalink]               900 B           403 kB
+Ôöö ãÆ /questions/topic/[slug]              637 B           403 kB
++ First Load JS shared by all            105 kB
+  Ôö£ chunks/4bd1b696-3958e336b232f656.js  52.9 kB
+  Ôö£ chunks/517-82daf3d15840b4f1.js       50.5 kB
+  Ôöö other shared chunks (total)          1.99 kB
+
+
+Ôùï  (Static)   prerendered as static content
+ãÆ  (Dynamic)  server-rendered on demand
+

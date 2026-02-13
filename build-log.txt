@@ -1,0 +1,28 @@
+﻿Ôû▓ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+Ô£ô Compiled successfully in 10.3s
+  Skipping validation of types
+  Collecting page data using 7 workers ...
+node.exe : 
+At line:1 char:1
++ & "C:\Program Files\nodejs
+/node.exe" "C:\Program Files
+\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~
+    + CategoryInfo          
+    : NotSpecified: (:Stri  
+  ng) [], RemoteException
+    + FullyQualifiedErrorId 
+    : NativeCommandError
+ 
+> Build error occurred
+Error: Page "/questions/[per
+malink]" is missing "generat
+eStaticParams()" so it canno
+t be used with "output: expo
+rt" config.
+    at ignore-listed frames

@@ -16,7 +16,6 @@ export default function TopicPage() {
         }
     }, [slug, fetchPosts])
 
-    // Adapt Supabase posts to ForumQuestion type
     const adaptedPosts = posts.map(p => ({
         id: p.id,
         permalink: p.id.toString(),
