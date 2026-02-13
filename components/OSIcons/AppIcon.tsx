@@ -307,7 +307,6 @@ export const AppLink = ({
     source,
     external,
 }: AppItem) => {
-    const posthog = usePostHog()
     const ref = useRef<HTMLSpanElement>(null)
     const { getThemeSpecificBackgroundColors } = useTheme()
 
