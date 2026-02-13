@@ -9,7 +9,7 @@ type IconComponent<T> = React.FunctionComponent<T & React.RefAttributes<SVGSVGEl
 export const BaseIcon: IconComponent<BaseIconProps> = forwardRef(function BaseIcon(
     { className, ...props }: BaseIconProps,
     ref
-): JSX.Element {
+) {
     const customClassName = className ? ` ${className}` : ''
     return (
         <svg
