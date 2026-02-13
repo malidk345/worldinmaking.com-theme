@@ -11,6 +11,8 @@ import { toSlug } from '../../utils/security'
 import dayjs from 'dayjs'
 import { useApp } from 'context/App'
 
+const ADMIN_EMAIL = 'malidk345@gmail.com'
+
 const AdminPanel = () => {
     const [activeTab, setActiveTab] = useState<'overview' | 'content' | 'users' | 'settings'>('overview')
     const [isCreating, setIsCreating] = useState(false)
@@ -21,6 +23,18 @@ const AdminPanel = () => {
 
     const { user, profile } = useAuth()
     const { posts, fetchPosts, createPost, updatePost, deletePost, loading } = useAdminData()
+
+    // Admin access control
+    const isAdmin = user?.email === ADMIN_EMAIL
+    
+    if (!isAdmin) {
+        return (
+            <div className="p-6 text-center">
+                <p className="text-red-500 font-semibold">Access Denied</p>
+                <p className="text-gray-600 text-sm mt-2">You do not have permission to access the admin panel.</p>
+            </div>
+        )
+    }
 
     useEffect(() => {
         if (activeTab === 'content') {
