@@ -14,6 +14,10 @@ interface ForumQuestionsTableProps {
     isLoading?: boolean
     className?: string
     sortBy?: 'newest' | 'activity' | 'popular'
+    showTopic?: boolean
+    showBody?: boolean
+    showAuthor?: boolean
+    showStatus?: boolean
 }
 
 const Row = ({

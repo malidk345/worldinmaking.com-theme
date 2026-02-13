@@ -1,8 +1,12 @@
 export default function usePostHog() {
     return {
-        capture: () => { },
-        register_once: () => { },
-        identify: () => { },
-        reset: () => { },
+        capture: (...args: any[]) => { },
+        register_once: (...args: any[]) => { },
+        identify: (...args: any[]) => { },
+        reset: (...args: any[]) => { },
+        createPersonProfile: () => { },
+        people: {
+            set: (...args: any[]) => { }
+        }
     }
 }

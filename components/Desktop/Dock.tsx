@@ -1,5 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { apps, productLinks } from '.'
+import { useApp } from 'context/App'
+import { AppIcon } from 'components/OSIcons/AppIcon'
+import PostsView from 'components/Posts'
+
+const productLinks: AppItem[] = []
 import { AppItem, AppLink } from 'components/OSIcons/AppIcon'
 import { motion } from 'framer-motion'
 
@@ -34,14 +38,13 @@ const Folder = ({
         <button onClick={() => onOpen(open ? null : label)}>
             <div
                 ref={ref}
-                className={`aspect-square rounded-md border ${
-                    open ? 'border-blue' : 'border-primary'
-                } bg-white relative flex items-center justify-center`}
+                className={`aspect-square rounded-md border ${open ? 'border-blue' : 'border-primary'
+                    } bg-white relative flex items-center justify-center`}
             >
                 <ul className="m-0 list-none grid grid-cols-2  p-1">
                     {items.slice(0, 4).map((item) => (
                         <li key={item.label} className="aspect-square size-full flex items-center justify-center">
-                            {item.Icon}
+                            {item.Icon as React.ReactNode}
                         </li>
                     ))}
                 </ul>
@@ -75,8 +78,35 @@ const Folder = ({
 }
 
 export default function Dock() {
+    const { addWindow } = useApp()
     const [openFolder, setOpenFolder] = useState<string | null>(null)
     const ref = useRef<HTMLDivElement>(null)
+
+    const apps: AppItem[] = [
+        {
+            label: 'home.mdx',
+            Icon: <AppIcon name="doc" />,
+            onClick: () => addWindow({
+                key: 'home',
+                path: '/',
+                title: 'home.mdx',
+                size: { width: 900, height: 750 },
+                position: { x: 50, y: 50 }
+            })
+        },
+        {
+            label: 'Posts',
+            Icon: <AppIcon name="newspaper" />,
+            onClick: () => addWindow({
+                key: 'posts',
+                path: '/posts',
+                title: 'Posts',
+                size: { width: 900, height: 750 },
+                position: { x: 50, y: 50 },
+                element: <PostsView />
+            })
+        }
+    ]
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {

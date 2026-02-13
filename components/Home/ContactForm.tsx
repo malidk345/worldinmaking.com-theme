@@ -53,7 +53,7 @@ export default function ContactForm({ className = '' }: ContactFormProps): JSX.E
                             placeholder="How can we help you?"
                         />
                     </div>
-                    <OSButton type="primary" size="sm">
+                    <OSButton variant="primary" type="submit" size="sm">
                         Send message
                     </OSButton>
                 </>

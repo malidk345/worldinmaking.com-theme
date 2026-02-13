@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Header } from '../Header/Header'
 import { Footer } from '../Footer/Footer'
-import CookieBanner from 'components/CookieBanner'
+
 import usePostHog from '../../hooks/usePostHog'
 import { SearchProvider } from 'components/Search/SearchContext'
 import './Fonts.css'
@@ -13,13 +13,14 @@ import SearchBox from 'components/Search/SearchBox'
 import Toggle from 'components/Toggle'
 import Tooltip from 'components/Tooltip'
 import Banner from 'components/Banner'
-import HedgeHogModeEmbed from 'components/HedgehogMode'
+
 import ScrollArea from 'components/RadixUI/ScrollArea'
 
 const TheoToggle = () => {
     const { theoMode, setTheoMode } = useLayoutData()
+    const TooltipAny = Tooltip as any
     return (
-        <Tooltip content="Want to disable Theo mode?" placement="right-start">
+        <TooltipAny content="Want to disable Theo mode?" placement="right-start">
             <div className="group fixed top-4 right-4 flex items-center bg-accent rounded-full border border-light hover:border-input py-1 pl-2 pr-3">
                 <img
                     className="w-[25px] inline-block mr-1.5 grayscale group-hover:grayscale-0 transition-all duration-300 opacity-50 dark:opacity-100 group-hover:opacity-100 relative group-hover:scale-[1.75] group-hover:-rotate-12 group-hover:-top-0.5"
@@ -28,7 +29,7 @@ const TheoToggle = () => {
                 />
                 <Toggle checked={theoMode} onChange={(checked) => setTheoMode(checked)} />
             </div>
-        </Tooltip>
+        </TooltipAny>
     )
 }
 
@@ -42,6 +43,9 @@ const Article = ({
     headerBlur?: boolean
 }) => {
     const { compact, theoMode } = useLayoutData()
+    const HeaderAny = Header as any
+    const MobileNavAny = MobileNav as any
+    const FooterAny = Footer as any
 
     return (
         <div className={className}>
@@ -51,18 +55,16 @@ const Article = ({
                     <SearchBox className="!w-full !py-2" location="mobile-header" />
                 </div>
             ) : theoMode ? null : (
-                <Header blur={headerBlur} />
+                <HeaderAny blur={headerBlur} />
             )}
             <main>{children}</main>
             {!compact && !theoMode && (
                 <>
-                    <Footer />
-                    <CookieBanner />
-                    <MobileNav />
+                    <FooterAny />
+                    <MobileNavAny />
                 </>
             )}
             {theoMode && <TheoToggle />}
-            <HedgeHogModeEmbed />
         </div>
     )
 }

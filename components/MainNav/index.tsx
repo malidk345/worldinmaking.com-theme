@@ -26,20 +26,15 @@ declare global {
 }
 import { CallToAction } from 'components/CallToAction'
 import { useLayoutData } from 'components/Layout/hooks'
-import { SignupCTA } from 'components/SignupCTA'
+
 import Toggle from 'components/Toggle'
 import HoverTooltip from 'components/Tooltip'
 import dayjs from 'dayjs'
 import usePostHog from 'hooks/usePostHog'
-import { useUser } from 'hooks/useUser'
+
 import React, { useEffect, useRef, useState } from 'react'
 import { useInView } from 'react-intersection-observer'
 import { usePopper } from 'react-popper'
-import getAvatarURL from 'components/Squeak/util/getAvatar'
-import MediaUploadModal from 'components/MediaUploadModal'
-import SideModal from 'components/Modal/SideModal'
-import { Authentication } from 'components/Squeak'
-import { useChat } from 'hooks/useChat'
 
 export const Avatar = (props: { className?: string; src?: string }) => {
     return (
@@ -62,52 +57,7 @@ export const Avatar = (props: { className?: string; src?: string }) => {
     )
 }
 
-export default function Orders() {
-    const { user, getJwt } = useUser()
-    const [orders, setOrders] = useState([])
 
-    const fetchOrders = async () => {
-        const { data } = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/orders`, {
-            headers: {
-                Authorization: `Bearer ${await getJwt()}`,
-            },
-        }).then((res) => res.json())
-        setOrders(data)
-    }
-
-    useEffect(() => {
-        if (user) {
-            fetchOrders()
-        }
-    }, [user])
-
-    return user && orders?.length > 0 ? (
-        <>
-            <li className="text-[13px] px-2 py-1.5 font-semibold">merch orders</li>
-            <li className="px-1">
-                <ul className="m-0 p-0 list-none px-1 max-h-[130px] overflow-auto">
-                    {orders.map(({ id, orderNumber, date, statusURL }) => {
-                        return (
-                            <li key={id}>
-                                <Link
-                                    externalNoIcon
-                                    className="group/item text-sm px-2 py-2 rounded-sm hover:bg-border dark:hover:bg-border-dark flex justify-between items-center"
-                                    to={statusURL}
-                                >
-                                    <span>
-                                        <p className="m-0 text-sm font-bold opacity-60">#{orderNumber}</p>
-                                        <p className="m-0 text-xs">{dayjs(date).format('MM/DD/YYYY')}</p>
-                                    </span>
-                                    <IconExternal className="w-4 opacity-50" />
-                                </Link>
-                            </li>
-                        )
-                    })}
-                </ul>
-            </li>
-        </>
-    ) : null
-}
 
 export const DarkModeToggle = () => {
     const [websiteTheme, setWebsiteTheme] = useState<'light' | 'dark'>(
@@ -152,16 +102,15 @@ function Tooltip({
     tooltipClassName = '',
     placement = 'bottom',
 }: {
-    children: JSX.Element
+    children: React.ReactNode
     content: string | ((setOpen: React.Dispatch<React.SetStateAction<boolean>>) => React.ReactNode)
     tooltipClassName?: string
     placement?: Placement
     className?: string
 }) {
-    const { user } = useUser()
     const [open, setOpen] = useState(false)
-    const [referenceElement, setReferenceElement] = useState(null)
-    const [popperElement, setPopperElement] = useState(null)
+    const [referenceElement, setReferenceElement] = useState<any>(null)
+    const [popperElement, setPopperElement] = useState<any>(null)
     const { styles, attributes } = usePopper(referenceElement, popperElement, {
         placement,
         modifiers: [
@@ -170,10 +119,10 @@ function Tooltip({
             },
         ],
     })
-    const containerEl = useRef(null)
+    const containerEl = useRef<any>(null)
 
     useEffect(() => {
-        function handleClick(e) {
+        function handleClick(e: any) {
             if (
                 containerEl?.current &&
                 !containerEl?.current.contains(e.target) &&
@@ -190,27 +139,14 @@ function Tooltip({
 
     return (
         <span ref={containerEl} className={className}>
-            {user?.profile ? (
-                <button
-                    ref={setReferenceElement}
-                    onClick={() => setOpen(!open)}
-                    className={`flex items-center rounded-full ml-1 border border-primary relative active:scale-[.99] ${open
-                        ? 'border-input-dark/50'
-                        : 'hover:border-input hover:dark:border-primary-dark/25 hover:scale-[1.05]'
-                        }`}
-                >
-                    {children}
-                </button>
-            ) : (
-                <button
-                    ref={setReferenceElement}
-                    onClick={() => setOpen(!open)}
-                    className={`flex items-center p-2 rounded-full hover:bg-border dark:hover:bg-border-dark relative active:top-[1px] active:scale-[.99] ${open ? 'bg-border dark:bg-border-dark' : ' hover:scale-[1.05]'
-                        }`}
-                >
-                    {children}
-                </button>
-            )}
+            <button
+                ref={setReferenceElement}
+                onClick={() => setOpen(!open)}
+                className={`flex items-center p-2 rounded-full hover:bg-border dark:hover:bg-border-dark relative active:top-[1px] active:scale-[.99] ${open ? 'bg-border dark:bg-border-dark' : ' hover:scale-[1.05]'
+                    }`}
+            >
+                {children}
+            </button>
             {open && (
                 <div
                     className="z-[10000] pt-1"
@@ -248,16 +184,16 @@ const ActiveBackground = ({ mobile = false }) => {
     )
 }
 
-export const InternalMenu = ({ className = '', mobile = false, menu, activeIndex, scrollOnRender = true }) => {
+export const InternalMenu = ({ className = '', mobile = false, menu, activeIndex, scrollOnRender = true }: any) => {
     const ref = useRef<HTMLUListElement>(null)
     const [firstRef, firstInView] = useInView({ threshold: 1 })
     const [lastRef, lastInView] = useInView({ threshold: 1 })
     const [overflowing, setOverflowing] = useState(false)
-    const menuItemsRef = useRef(null)
+    const menuItemsRef = useRef<any>(null)
 
-    const scrollToIndex = (index) => {
+    const scrollToIndex = (index: any) => {
         const map = getMap()
-        const node = map.get(index)
+        const node = map?.get(index)
         node?.scrollIntoView({
             block: 'nearest',
             inline: 'center',
@@ -268,7 +204,7 @@ export const InternalMenu = ({ className = '', mobile = false, menu, activeIndex
         if (!menuItemsRef.current) {
             menuItemsRef.current = new Map()
         }
-        return menuItemsRef.current
+        return menuItemsRef.current as unknown as Map<any, any>
     }
 
     function handleResize() {
@@ -304,10 +240,10 @@ export const InternalMenu = ({ className = '', mobile = false, menu, activeIndex
                 ref={ref}
                 className={`flex space-x-4 list-none m-0 pt-1 px-4 border-b border-primary relative snap-x snap-mandatory overflow-x-auto overflow-y-hidden ${className}`}
             >
-                {menu?.map((menuItem, index) => {
+                {menu?.map((menuItem: any, index: any) => {
                     const { url, color, colorDark, icon, name, onClick } = menuItem
                     const Icon = (typeof icon === 'string' && (icons as any)[icon]) || icons.IconApp
-                    const active = menu[activeIndex]?.name === menuItem.name
+                    const active = menu?.[activeIndex]?.name === menuItem.name
                     return (
                         <li
                             key={menuItem.name}
@@ -379,14 +315,7 @@ const enterpiseModeNames: Record<string, string> = {
     Company: 'Investor relations',
 }
 
-const Notifications = () => {
-    const { notifications } = useUser()
-    return notifications.length > 0 ? (
-        <span className="py-0.5 px-0.5 min-w-[20px] text-xs bg-red text-white flex justify-center items-center rounded-full">
-            {notifications.length}
-        </span>
-    ) : null
-}
+
 
 const TheoTooltip = () => {
     return (
@@ -423,8 +352,6 @@ const TheoTooltip = () => {
 }
 
 export const Main = () => {
-    const { user, logout } = useUser()
-    const { openChat, hasUnread } = useChat()
     const {
         menu,
         parent,
@@ -446,8 +373,6 @@ export const Main = () => {
         typeof window !== 'undefined' && window.__theme === 'dark' ? 'dark' : 'light'
     )
     const [posthogInstance, setPosthogInstance] = useState<string>()
-    const [mediaModalOpen, setMediaModalOpen] = useState(false)
-    const [authModalOpen, setAuthModalOpen] = useState(false)
     const posthog = usePostHog()
 
     useEffect(() => {
@@ -477,35 +402,8 @@ export const Main = () => {
         }
     }
 
-    const isModerator = user?.role?.type === 'moderator'
-
     return (
         <div>
-            <SideModal
-                open={authModalOpen}
-                setOpen={setAuthModalOpen}
-                title="Sign into PostHog.com"
-                className="!bg-light dark:!bg-dark !border-light dark:!border-dark"
-            >
-                <div className="bg-border dark:bg-border-dark p-4 mb-2">
-                    <p className="text-sm mb-2">
-                        <strong>note: posthog.com authentication is separate from your posthog app.</strong>
-                    </p>
-
-                    <p className="text-sm mb-0">
-                        We suggest signing up with your personal email. Soon you'll be able to link your PostHog app
-                        account.
-                    </p>
-                </div>
-
-                <Authentication
-                    onAuth={() => setAuthModalOpen(false)}
-                    initialView="sign-in"
-                    showBanner={false}
-                    showProfile={false}
-                />
-            </SideModal>
-            <MediaUploadModal open={mediaModalOpen} setOpen={setMediaModalOpen} />
             <div className="border-b border-primary bg-accent mb-1">
                 <div
                     className={`flex mx-auto px-2 md:px-0 mdlg:px-5 justify-between transition-all ${fullWidthContent ? 'max-w-full' : 'max-w-screen-3xl box-content'
@@ -556,7 +454,7 @@ export const Main = () => {
                                 className={'hidden sm:flex mr-2'}
                                 to={posthogInstance.replace(/"/g, '')}
                                 size={'sm'}
-                                event={'clicked Dashboard in main nav'}
+                                event={{ name: 'clicked Dashboard in main nav' }}
                             >
                                 Dashboard
                             </CallToAction>
@@ -565,24 +463,7 @@ export const Main = () => {
                                 Talk to sales
                             </CallToAction>
                         ) : null}
-                        <HoverTooltip
-                            content={() => (
-                                <div className="text-xs">
-                                    chat with <strong>posthog ai</strong>{' '}
-                                    <kbd className={`${keyboardShortcut} py-0 ml-0.5`}>?</kbd>
-                                </div>
-                            )}
-                        >
-                            <button
-                                className="group my-1mr-[1px] p-2 hover:bg-border dark:hover:bg-border-dark rounded-full relative"
-                                onClick={openChat}
-                            >
-                                <IconChatHelp className="opacity-50 inline-block w-6 group-hover:opacity-75" />
-                                {hasUnread && (
-                                    <span className="size-2 text-xs bg-red text-white flex justify-center items-center rounded-full absolute top-2 right-2 " />
-                                )}
-                            </button>
-                        </HoverTooltip>
+
 
                         <Tooltip
                             placement="bottom-end"
@@ -614,83 +495,11 @@ export const Main = () => {
                                                 Forums
                                             </Link>
                                         </li>
-                                        {user?.profile && (
-                                            <>
-                                                <li className="px-1">
-                                                    <Link
-                                                        className="group/item flex items-center text-sm px-2 py-2 rounded-sm hover:bg-border dark:hover:bg-border-dark justify-between"
-                                                        to="/community/notifications"
-                                                    >
-                                                        <span>
-                                                            <IconLetter className="opacity-50 group-hover/item:opacity-75 inline-block mr-2 w-6" />
-                                                            Notifications
-                                                        </span>
-                                                        <Notifications />
-                                                    </Link>
-                                                </li>
-                                                <li className="px-1">
-                                                    <Link
-                                                        className="group/item flex items-center text-sm px-2 py-2 rounded-sm hover:bg-border dark:hover:bg-border-dark"
-                                                        to={`/community/profiles/${user?.profile.id}`}
-                                                    >
-                                                        <IconUser className="opacity-50 inline-block w-6 group-hover/parent:opacity-75 mr-2" />
-                                                        My profile
-                                                    </Link>
-                                                </li>
-                                                {isModerator && (
-                                                    <li className="px-1">
-                                                        <button
-                                                            className="group/item flex items-center text-sm px-2 py-2 rounded-sm hover:bg-border dark:hover:bg-border-dark w-full"
-                                                            onClick={() => setMediaModalOpen(true)}
-                                                        >
-                                                            <IconUpload className="opacity-50 inline-block w-6 group-hover/parent:opacity-75 mr-2" />
-                                                            Upload media
-                                                        </button>
-                                                    </li>
-                                                )}
-                                            </>
-                                        )}
-
-                                        <li className="px-1">
-                                            {user?.profile ? (
-                                                <button
-                                                    onClick={() => logout()}
-                                                    className="group/item flex items-center text-sm px-2 py-2 rounded-sm hover:bg-border dark:hover:bg-border-dark w-full"
-                                                >
-                                                    <IconLock className="opacity-50 group-hover/item:opacity-75 inline-block mr-2 w-6" />
-                                                    Community logout
-                                                </button>
-                                            ) : (
-                                                <button
-                                                    onClick={() => setAuthModalOpen(true)}
-                                                    className="group/item flex items-center text-sm px-2 py-2 rounded-sm hover:bg-border dark:hover:bg-border-dark w-full"
-                                                >
-                                                    <IconUser className="opacity-50 group-hover/item:opacity-75 inline-block mr-2 w-6" />
-                                                    Community login
-                                                </button>
-                                            )}
-                                        </li>
-
-                                        {/* Display options removed */}
-                                        <Orders />
                                     </ul>
                                 )
                             }}
                         >
-                            {user?.profile ? (
-                                <div className="p-px bg-accent rounded-full inline-flex relative">
-                                    <Avatar
-                                        src={getAvatarURL(user?.profile)}
-                                        className={`w-9 h-9 inline-block bg-${user.profile.color ?? 'white dark:bg-dark'
-                                            } rounded-full`}
-                                    />
-                                    <div className="absolute bottom-0 right-0 translate-x-1/2">
-                                        <Notifications />
-                                    </div>
-                                </div>
-                            ) : (
-                                <IconUser className="opacity-50 inline-block w-6 group-hover/parent:opacity-75" />
-                            )}
+                            <IconUser className="opacity-50 inline-block w-6 group-hover/parent:opacity-75" />
                         </Tooltip>
                     </div>
                 </div>

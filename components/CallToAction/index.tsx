@@ -142,7 +142,7 @@ const containerSizes = {
     absurd: cntl`border-[1.5px] relative top-[2px] rounded-[8px]`,
 }
 
-export const container = (type = 'primary', size = 'lg', width = 'auto') => cntl`
+export const container = (type: keyof typeof containerTypes = 'primary', size: keyof typeof containerSizes = 'lg', width = 'auto') => cntl`
     ${containerTypes[type]}
     ${containerSizes[size]}
     w-${width}
@@ -194,7 +194,7 @@ export type CTAPropsType = {
     href?: string
     to?: string
     onClick?: () => void
-    children?: JSX.Element | string
+    children?: React.ReactNode | string
     className?: string
     childClassName?: string
     external?: boolean
@@ -216,7 +216,7 @@ export const TrackedCTA = ({
     width,
     event: { name: eventName, ...event },
     ...props
-}: TrackedCTAPropsType): JSX.Element => {
+}: TrackedCTAPropsType): any => {
     const posthog = usePostHog()
 
     return (
@@ -246,8 +246,8 @@ export const CallToAction = ({
     state = {},
     event,
     color = true,
-}: CTAPropsType): JSX.Element => {
-    const url = to || href
+}: CTAPropsType): any => {
+    const url = to || href || ''
 
     const posthog = usePostHog()
     const wrappedOnClick = () => {

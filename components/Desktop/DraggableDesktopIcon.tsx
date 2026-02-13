@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react'
-import { motion, useDragControls, DragEvent, PanInfo } from 'framer-motion'
+import { motion, useDragControls, PanInfo } from 'framer-motion'
 import { AppLink, AppItem } from 'components/OSIcons/AppIcon'
 import ZoomHover from 'components/ZoomHover'
 import { useApp } from '../../context/App'
@@ -27,7 +27,7 @@ export default function DraggableDesktopIcon({ app, initialPosition, onPositionC
         setHasDragged(false)
     }
 
-    const handleDrag = (_event: DragEvent, info: PanInfo) => {
+    const handleDrag = (_event: any, info: PanInfo) => {
         if (!isDragging) setIsDragging(true)
         // Mark that we've actually dragged (not just started)
         if (Math.abs(info.offset.x) > 5 || Math.abs(info.offset.y) > 5) {
@@ -35,7 +35,7 @@ export default function DraggableDesktopIcon({ app, initialPosition, onPositionC
         }
     }
 
-    const handleDragEnd = (_event: DragEvent, info: PanInfo) => {
+    const handleDragEnd = (_event: any, info: PanInfo) => {
         setIsDragging(false)
         if (!constraintsRef.current) return
 

@@ -18,7 +18,7 @@ export default function IntegrationPrompt(): JSX.Element {
                     placeholder="phc_..."
                     className="flex-1 px-3 py-2 border border-input rounded bg-white dark:bg-dark text-primary dark:text-primary-dark text-sm font-mono"
                 />
-                <OSButton type="primary" size="sm">
+                <OSButton variant="primary" type="button" size="sm">
                     Continue
                 </OSButton>
             </div>

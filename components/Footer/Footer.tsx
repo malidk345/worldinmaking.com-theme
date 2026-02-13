@@ -347,7 +347,14 @@ const link = (marginBottom = '1') => cntl`
     inline-block
 `
 
-const FooterMenuItem = ({ title, url, className = '', marginBottom = '1' }) => {
+interface FooterMenuItemProps {
+    title: string
+    url: string
+    className?: string
+    marginBottom?: string
+}
+
+const FooterMenuItem = ({ title, url, className = '', marginBottom = '1' }: FooterMenuItemProps) => {
     return (
         <li className={className}>
             <Link className={link(marginBottom)} to={url}>
@@ -357,11 +364,16 @@ const FooterMenuItem = ({ title, url, className = '', marginBottom = '1' }) => {
     )
 }
 
-export function Footer(): JSX.Element {
+export function Footer(): any {
     const pathname = usePathname()
     // Note: state.isComingFromAd check removed as it's not available in Next.js
     if (pathname === '/newsletter-fbc') {
         return <></>
+    }
+
+    interface Social {
+        Icon: React.ReactNode
+        url: string
     }
 
     const social: Social[] = [
@@ -435,52 +447,56 @@ export function Footer(): JSX.Element {
                     <small className="font-semibold dark:text-gray">
                         &copy; {new Date().getFullYear()} PostHog, Inc.
                     </small>
-                    <ul className="m-0 pl-0 pb-32 mdlg:pb-0 list-none sm:ml-auto flex flex-col mdlg:flex-row items-baseline sm:space-x-8 mdlg:space-x-4 mt-2 sm:mt-0 gap-2 mdlg:gap-0">
-                        <li>
-                            <Link
-                                to="https://status.posthog.com"
-                                className="font-bold text-sm text-secondary hover:text-primary"
-                            >
-                                System status
-                            </Link>
-                        </li>
-                        <li className="-mt-1 mdlg:mt-0">
-                            <span className="hidden mdlg:inline-block pr-1 text-xl relative top-0.5">👉</span>
-                            <Link to="/dpa" className="font-bold text-sm text-secondary hover:text-primary">
-                                Generate a DPA
-                            </Link>
-                            <span className="inline-block px-1 text-xl relative top-0.5">👈</span>
-                            <span className="text-gradient bg-[length:700%_100%] text-sm ml-1 font-semibold italic">
-                                (It's guaranteed fun!)
-                            </span>
-                        </li>
-                        <li>
-                            <Link
-                                to="/docs/privacy/soc2"
-                                className="font-bold text-sm text-secondary hover:text-primary"
-                            >
-                                SOC 2
-                            </Link>
-                        </li>
-                        <li>
-                            <Link
-                                to="/docs/privacy/hipaa-compliance"
-                                className="font-bold text-sm text-secondary hover:text-primary"
-                            >
-                                HIPAA
-                            </Link>
-                        </li>
-                        <li>
-                            <Link to="/privacy" className="font-bold text-sm text-secondary hover:text-primary">
-                                Privacy policy
-                            </Link>
-                        </li>
-                        <li>
-                            <Link to="/terms" className="font-bold text-sm text-secondary hover:text-primary">
-                                Terms
-                            </Link>
-                        </li>
-                    </ul>
+                    {
+                        (
+                            <ul className="m-0 pl-0 pb-32 mdlg:pb-0 list-none sm:ml-auto flex flex-col mdlg:flex-row items-baseline sm:space-x-8 mdlg:space-x-4 mt-2 sm:mt-0 gap-2 mdlg:gap-0">
+                                <li>
+                                    <Link
+                                        to="https://status.posthog.com"
+                                        className="font-bold text-sm text-secondary hover:text-primary"
+                                    >
+                                        System status
+                                    </Link>
+                                </li>
+                                <li className="-mt-1 mdlg:mt-0">
+                                    <span className="hidden mdlg:inline-block pr-1 text-xl relative top-0.5">👉</span>
+                                    <Link to="/dpa" className="font-bold text-sm text-secondary hover:text-primary">
+                                        Generate a DPA
+                                    </Link>
+                                    <span className="inline-block px-1 text-xl relative top-0.5">👈</span>
+                                    <span className="text-gradient bg-[length:700%_100%] text-sm ml-1 font-semibold italic">
+                                        (It's guaranteed fun!)
+                                    </span>
+                                </li>
+                                <li>
+                                    <Link
+                                        to="/docs/privacy/soc2"
+                                        className="font-bold text-sm text-secondary hover:text-primary"
+                                    >
+                                        SOC 2
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link
+                                        to="/docs/privacy/hipaa-compliance"
+                                        className="font-bold text-sm text-secondary hover:text-primary"
+                                    >
+                                        HIPAA
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link to="/privacy" className="font-bold text-sm text-secondary hover:text-primary">
+                                        Privacy policy
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link to="/terms" className="font-bold text-sm text-secondary hover:text-primary">
+                                        Terms
+                                    </Link>
+                                </li>
+                            </ul>
+                        ) as any
+                    }
                 </div>
             </div>
         </footer>

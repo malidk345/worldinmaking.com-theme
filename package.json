@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package",
+    "pages:build": "npx @cloudflare/next-on-pages@1",
+    "pages:deploy": "npm run pages:build && npx wrangler pages deploy .vercel/output/static"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",
@@ -44,6 +46,7 @@
     "@types/mark.js": "^8.11.12",
     "algoliasearch": "^4.25.3",
     "clsx": "^2.1.1",
+    "cntl": "^1.0.0",
     "dayjs": "^1.11.19",
     "framer-motion": "^12.33.0",
     "lodash": "^4.17.23",
@@ -64,6 +67,7 @@
     "tailwindcss-animated": "^2.0.0"
   },
   "devDependencies": {
+    "@cloudflare/next-on-pages": "^1.13.16",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

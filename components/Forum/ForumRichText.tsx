@@ -110,7 +110,7 @@ export default function ForumRichText({
     }
 
     const handleButtonClick = (
-        e: React.MouseEvent<HTMLButtonElement>,
+        e: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>,
         replaceWith: (text: string) => string,
         cursorPos: number
     ) => {
