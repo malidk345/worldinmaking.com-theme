@@ -3,8 +3,6 @@ import { BaseIcon, type IconProps } from './Icons'
 import Link from 'components/Link'
 import { useRef } from 'react'
 import useTheme from '../../hooks/useTheme'
-import { useApp } from '../../context/App'
-import usePostHog from 'hooks/usePostHog'
 
 // App icon mapping for different skins
 type AppIconVariants = {
@@ -310,7 +308,6 @@ export const AppLink = ({
     external,
 }: AppItem) => {
     const posthog = usePostHog()
-    const { posthogInstance } = useApp()
     const ref = useRef<HTMLSpanElement>(null)
     const { getThemeSpecificBackgroundColors } = useTheme()
 
@@ -319,20 +316,13 @@ export const AppLink = ({
         if (/(eu|us|app)\.posthog\.com/.test(initialUrl)) {
             try {
                 const urlObj = new URL(initialUrl)
-                return `${posthogInstance
-                        ? posthogInstance.replace(/"/g, '')
-                        : posthog?.isFeatureEnabled?.('direct-to-eu-cloud')
-                            ? `https://eu.posthog.com`
-                            : posthog?.isFeatureEnabled?.('direct-to-us-cloud') === false
-                                ? `https://us.posthog.com`
-                                : `https://app.posthog.com`
-                    }${urlObj.pathname}`
+                return `https://app.posthog.com${urlObj.pathname}`
             } catch {
                 return initialUrl
             }
         }
         return initialUrl
-    }, [initialUrl, posthogInstance, posthog])
+    }, [initialUrl])
 
     // Helper function to get conditional child icon classes based on parentIcon type
     const getChildIconClasses = () => {

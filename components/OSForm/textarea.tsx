@@ -1,7 +1,7 @@
 import React from 'react'
 import { IconInfo } from '@posthog/icons'
 
-interface TextareaProps {
+interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
     label?: string
     direction?: 'row' | 'column'
     size?: 'sm' | 'md' | 'lg'
@@ -13,9 +13,7 @@ interface TextareaProps {
     showLabel?: boolean
     labelWidth?: string
     required?: boolean
-    rows?: number
     dataScheme?: 'primary' | 'secondary' | 'tertiary'
-    [key: string]: any
 }
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
