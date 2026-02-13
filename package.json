@@ -8,8 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "postinstall": "patch-package",
-    "pages:build": "npx @cloudflare/next-on-pages@1",
-    "pages:deploy": "npm run pages:build && npx wrangler pages deploy .vercel/output/static --project-name=posthog-nextjs"
+    "pages:build": "npx @cloudflare/next-on-pages@1"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",
