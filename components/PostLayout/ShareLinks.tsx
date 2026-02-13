@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { LinkedIn, LinkIcon, Mail, Twitter } from 'components/Icons'
+import { LinkedIn, LinkIcon, Mail, Twitter } from 'components/OSIcons/Icons'
 import { usePost } from './hooks'
 import Tooltip from 'components/Tooltip'
 

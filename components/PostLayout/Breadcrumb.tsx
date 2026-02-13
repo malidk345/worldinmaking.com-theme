@@ -1,4 +1,4 @@
-import { RightArrow } from 'components/Icons'
+import { RightArrow } from 'components/OSIcons/Icons'
 import Link from 'components/Link'
 import { usePost } from './hooks'
 import React from 'react'

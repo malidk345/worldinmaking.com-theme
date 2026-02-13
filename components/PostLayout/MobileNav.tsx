@@ -1,4 +1,4 @@
-import { Chevron, RightArrow } from 'components/Icons'
+import { Chevron, RightArrow } from 'components/OSIcons/Icons'
 import { AnimatePresence, useDragControls, useMotionValue, useTransform, motion } from 'framer-motion'
 import React, { forwardRef, useEffect, useRef, useState } from 'react'
 import { IMenu } from './types'
