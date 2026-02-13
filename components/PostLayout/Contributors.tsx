@@ -128,33 +128,53 @@ export const Contributor = ({
     compact = false,
     roundedImage = false,
 }: ContributorProps) => {
-    const Container = url ? Link : 'div'
-    const containerProps = url ? { to: url, state } : {}
-    return (
-        <Container
-            {...containerProps}
-            className={`${compact ? 'overflow-hidden' : ''} flex bg-${color ? color : 'accent'} dark:bg-${color ? color : 'accent-dark'
-                } border border-primary md:mx-4 rounded relative hover:-translate-y-0.5 active:translate-y-0 hover:transition-all hover:border-b-[4px] active:border-b-1 active:top-[2px] justify-between text-primary dark:text-primary-dark hover:text-primary dark:hover:text-primary-dark ${roundedImage ? 'items-center' : ''
-                }`}
-        >
-            <div className={compact ? '' : 'pr-20'}>
-                <div className="flex flex-col justify-between px-4 py-2 w-full gap-0.5">
-                    <h3 className={`mb-0 leading-tight ${compact ? 'text-[15px]' : 'text-base'}`}>
-                        {text && <span>{name}</span>}
-                    </h3>
-                    {role && (
-                        <p
-                            className={`text-muted m-0 leading-tight text-sm line-clamp-1 ${compact ? 'text-[13px]' : 'text-sm'
-                                }`}
-                        >
-                            {role}
-                        </p>
-                    )}
+    const className = `${compact ? 'overflow-hidden' : ''} flex bg-${color ? color : 'accent'} dark:bg-${color ? color : 'accent-dark'
+        } border border-primary md:mx-4 rounded relative hover:-translate-y-0.5 active:translate-y-0 hover:transition-all hover:border-b-[4px] active:border-b-1 active:top-[2px] justify-between text-primary dark:text-primary-dark hover:text-primary dark:hover:text-primary-dark ${roundedImage ? 'items-center' : ''
+        }`
+
+    if (url) {
+        return (
+            <Link to={url} state={state} className={className}>
+                <div className={compact ? '' : 'pr-20'}>
+                    <div className="flex flex-col justify-between px-4 py-2 w-full gap-0.5">
+                        <h3 className={`mb-0 leading-tight ${compact ? 'text-[15px]' : 'text-base'}`}>
+                            {text && <span>{name}</span>}
+                        </h3>
+                        {role && (
+                            <p
+                                className={`text-muted m-0 leading-tight text-sm line-clamp-1 ${compact ? 'text-[13px]' : 'text-sm'
+                                    }`}
+                            >
+                                {role}
+                            </p>
+                        )}
+                    </div>
                 </div>
+                <ContributorImage image={image} name={name} compact={compact} rounded={roundedImage} />
+            </Link>
+        )
+    } else {
+        return (
+            <div className={className}>
+                <div className={compact ? '' : 'pr-20'}>
+                    <div className="flex flex-col justify-between px-4 py-2 w-full gap-0.5">
+                        <h3 className={`mb-0 leading-tight ${compact ? 'text-[15px]' : 'text-base'}`}>
+                            {text && <span>{name}</span>}
+                        </h3>
+                        {role && (
+                            <p
+                                className={`text-muted m-0 leading-tight text-sm line-clamp-1 ${compact ? 'text-[13px]' : 'text-sm'
+                                    }`}
+                            >
+                                {role}
+                            </p>
+                        )}
+                    </div>
+                </div>
+                <ContributorImage image={image} name={name} compact={compact} rounded={roundedImage} />
             </div>
-            <ContributorImage image={image} name={name} compact={compact} rounded={roundedImage} />
-        </Container>
-    )
+        )
+    }
 }
 
 interface ContributorsProps {
