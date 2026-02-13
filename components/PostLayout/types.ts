@@ -48,6 +48,7 @@ export interface IMenu {
         className?: string
     }
     color?: string
+    dynamicChildren?: string
     hidden?: boolean
     tag?: string
     active?: boolean

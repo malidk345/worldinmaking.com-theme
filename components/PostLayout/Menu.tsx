@@ -33,7 +33,7 @@ const Chevron = ({ open, className = '' }: { open: boolean; className?: string }
 }
 
 const getIcon = (name: string) => {
-    const Icon = NewIcons[name] || NotProductIcons[name] || OSIcons[name]
+    const Icon = (NewIcons as any)[name] || (NotProductIcons as any)[name] || (OSIcons as any)[name]
     return Icon && <Icon className="w-5" />
 }
 
@@ -52,7 +52,14 @@ export const Icon = ({ color, icon }: { color?: string; icon: string | React.Rea
 }
 export const badgeClasses = `bg-accent text-secondary  text-xs m-[-2px] font-medium rounded-sm px-1 py-0.5 inline-block`
 
-export const MenuItem = ({ icon, color, badge, name, isActive, isOpen }) => {
+export const MenuItem = ({ icon, color, badge, name, isActive, isOpen }: {
+    icon?: string | React.ReactNode
+    color?: string
+    badge?: { title: string; className?: string }
+    name: string
+    isActive?: boolean
+    isOpen?: boolean
+}) => {
     return icon ? (
         <span
             className={`cursor-pointer w-full flex space-x-2 font-medium text-primary hover:text-primary dark:text-primary-dark dark:hover:text-primary-dark leading-tight ${
@@ -106,7 +113,7 @@ export default function Menu({
     onClick,
     active,
     ...other
-}: IMenu): JSX.Element | null {
+}: IMenu): any {
     if (hidden) return null
     const { isMenuItemActive, isMenuItemOpen } = usePost()
     const pathname = usePathname()
@@ -177,7 +184,7 @@ export default function Menu({
                         className={`${buttonClasses} ${!topLevel ? 'group' : ''} ${color ? '!py-1' : ''} ${
                             isActive ? 'active' : ''
                         }`}
-                        to={menuType === 'scroll' ? url.replace(pathname + '#', '') : url}
+                        to={menuType === 'scroll' ? (url || '').replace(pathname + '#', '') : url || ''}
                         {...menuLinkProps}
                     >
                         <AnimatePresence>

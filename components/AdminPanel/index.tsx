@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { IconNewspaper, IconUser, IconActivity, IconTerminal, IconHome } from '@posthog/icons'
+import { IconNewspaper, IconUser, IconActivity, IconTerminal } from '@posthog/icons'
 import OSButton from 'components/OSButton'
 import { Edit, Save, Settings, Trash2, Plus, ArrowLeft } from 'lucide-react'
 import RichTextEditor from './RichTextEditor'
@@ -9,7 +9,6 @@ import { useAdminData } from '../../hooks/useAdminData'
 import { useAuth } from '../../context/AuthContext'
 import { toSlug } from '../../utils/security'
 import dayjs from 'dayjs'
-import OSTable from 'components/OSTable'
 import { useApp } from 'context/App'
 
 const AdminPanel = () => {

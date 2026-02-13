@@ -1,5 +1,5 @@
 import React, { createContext, useEffect, useMemo, useState } from 'react'
-import { IProps } from './types'
+import { IMenu, IProps } from './types'
 import { useLayoutData } from 'components/Layout/hooks'
 import useDataPipelinesNav from '../../navs/useDataPipelinesNav'
 
@@ -41,9 +41,12 @@ export const PostProvider: React.FC<ProviderProps> = ({
 
     const menu = useMemo(() => {
         const menu = other.menu || activeInternalMenu?.children
-        return menu?.map((item) => {
-            if (item.dynamicChildren && dynamicMenus[item.dynamicChildren]) {
-                const newChildren = [...item.children, ...dynamicMenus[item.dynamicChildren]].reduce((acc, child) => {
+        return menu?.map((item: IMenu) => {
+            if (item.dynamicChildren && (dynamicMenus as any)[item.dynamicChildren]) {
+                const newChildren = [
+                    ...((item.children as any[]) || []),
+                    ...((dynamicMenus as any)[item.dynamicChildren] || []),
+                ].reduce((acc: any[][], child) => {
                     if (isLabel(child)) {
                         acc.push([child])
                     } else {
@@ -57,7 +60,7 @@ export const PostProvider: React.FC<ProviderProps> = ({
                     return acc
                 }, [])
 
-                newChildren.forEach((group) => {
+                newChildren.forEach((group: any[]) => {
                     group.sort((a, b) => {
                         if (!a.url || !b.url) return 0
                         return a.name.localeCompare(b.name)

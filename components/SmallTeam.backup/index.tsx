@@ -137,9 +137,9 @@ export default function SmallTeam({ slug, children, inline = false, noMiniCrest 
 
     return (
         <>
-            <Tooltip trigger={triggerContent} delay={0}>
-                <>{tooltipContent()}</>
-            </>
+            <Tooltip content={tooltipContent()} delay={0}>
+                {triggerContent}
+            </Tooltip>
         </>
     )
 }

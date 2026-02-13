@@ -45,8 +45,10 @@ const getActiveMenu = ({
     }
 }
 
-const DropdownContainer = forwardRef(function DropdownContainer(props, ref) {
-    const { children } = props
+const DropdownContainer = forwardRef<HTMLDivElement, { children?: React.ReactNode }>(function DropdownContainer(
+    { children },
+    ref
+) {
     return (
         <div
             ref={ref}
@@ -84,7 +86,7 @@ export const MenuContainer: React.FC<{
         }
     }
 
-    const startDrag = (e) => {
+    const startDrag = (e: React.PointerEvent) => {
         dragControls.start(e)
     }
 
@@ -133,18 +135,18 @@ export const MenuContainer: React.FC<{
     )
 }
 
-export default function MobileNav({ className = '', menu: postMenu }) {
+export default function MobileNav({ className = '', menu: postMenu }: { className?: string; menu: IMenu[] }) {
     if (!postMenu) return null
     const { compact } = useLayoutData()
     const router = useRouter()
     const pathname = usePathname()
     const [open, setOpen] = useState<null | string>(null)
-    const previousMenu = useRef<IGetActiveMenu>()
+    const previousMenu = useRef<IGetActiveMenu>(undefined)
     const [menu, setMenu] = useState<IGetActiveMenu>(
         getActiveMenu({ menu: postMenu, url: pathname }) || { menu: postMenu, menuItem: postMenu[0] }
     )
     const [activeMenuItem, setActiveMenuItem] = useState(menu.menuItem)
-    const menuRef = useRef(null)
+    const menuRef = useRef<HTMLDivElement>(null)
     const handleClick = (menuItem: IMenu) => {
         const { children, url, name } = menuItem
         if (children) {
@@ -191,7 +193,7 @@ export default function MobileNav({ className = '', menu: postMenu }) {
     }, [postMenu])
 
     const Container = compact ? DropdownContainer : MenuContainer
-    const ActiveIcon = Icons[activeMenuItem.icon]
+    const ActiveIcon = typeof activeMenuItem.icon === 'string' ? (Icons as any)[activeMenuItem.icon] : null
     return (
         <div className={compact ? 'sticky top-[69px] z-[50] dark:bg-dark bg-tan' : ''}>
             <button
@@ -219,7 +221,7 @@ export default function MobileNav({ className = '', menu: postMenu }) {
                                     <button
                                         className="inline-block font-bold bg-accent mr-2 rounded-sm p-1"
                                         onClick={() => {
-                                            handleClick({ children: menu?.parent?.menu })
+                                            if (menu?.parent) handleClick(menu?.parent as any)
                                         }}
                                     >
                                         <RightArrow className="w-6 rotate-180" />
@@ -229,7 +231,7 @@ export default function MobileNav({ className = '', menu: postMenu }) {
                             )}
                             {menu?.menu?.map((menuItem, index) => {
                                 const { name, url, children, icon, color, active } = menuItem
-                                const Icon = Icons[icon]
+                                const Icon = (Icons as any)[icon as any]
                                 return (
                                     <li
                                         className={`${url === undefined ? 'mt-5 first:mt-0' : ''} relative`}

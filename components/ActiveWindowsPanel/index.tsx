@@ -6,8 +6,7 @@ import type { AppWindow as AppWindowType } from '../../context/Window'
 import SidePanel from 'components/SidePanel'
 import ScrollArea from 'components/RadixUI/ScrollArea'
 import OSButton from 'components/OSButton'
-import { Check, Copy, X } from 'lucide-react'
-import KeyboardShortcut from 'components/KeyboardShortcut'
+import { X } from 'lucide-react'
 
 export default function ActiveWindowsPanel() {
     const {

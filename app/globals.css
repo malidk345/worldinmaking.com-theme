@@ -5,10 +5,6 @@
 @plugin "@tailwindcss/typography";
 @plugin "@tailwindcss/container-queries";
 
-@theme {
-  --font-serif: "Charter", serif;
-}
-
 mark {
   background-color: rgba(245, 78, 0, 0.3);
   color: inherit;
@@ -56,6 +52,18 @@ mark {
 }
 
 @theme {
+  --font-fairytale-title: "Fairytale", sans-serif;
+  --font-fairytale: "Computer Modern", sans-serif;
+  --font-serif: "Charter", "MatterVF", "Arial", "Helvetica", sans-serif;
+  --font-sans: __nextjs-Geist, Geist, -apple-system, "Source Sans Pro", sans-serif;
+  --font-fancy: "Zapfino", serif;
+  --font-button: "IBM Plex Sans", sans-serif;
+  --font-nav: "IBM Plex Sans", sans-serif;
+  --font-code: "Source Code Pro", Menlo, Consolas, monaco, monospace;
+  --font-squeak: "Squeak", sans-serif;
+  --font-comic: "Comic Sans MS", "Comic Sans", "Arial Rounded MT Bold", "Helvetica Rounded", Arial, sans-serif;
+  --font-os: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+
   /* Screens */
   --breakpoint-2xs: 425px;
   --breakpoint-xs: 482px;
@@ -165,19 +173,6 @@ mark {
   --color-red-primary: #F54E00;
   --color-yellow-primary: #F7A501;
 
-  /* Fonts */
-  --font-fairytale-title: "Fairytale", sans-serif;
-  --font-fairytale: "Computer Modern", sans-serif;
-  --font-serif: "Charter", "MatterVF", "Arial", "Helvetica", sans-serif;
-  --font-sans: __nextjs-Geist, Geist, -apple-system, "Source Sans Pro", sans-serif;
-  --font-fancy: "Zapfino", serif;
-  --font-button: "IBM Plex Sans", sans-serif;
-  --font-nav: "IBM Plex Sans", sans-serif;
-  --font-code: "Source Code Pro", Menlo, Consolas, monaco, monospace;
-  --font-squeak: "Squeak", sans-serif;
-  --font-comic: "Comic Sans MS", "Comic Sans", "Arial Rounded MT Bold", "Helvetica Rounded", Arial, sans-serif;
-  --font-os: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-
   /* Border Radius */
   --radius-xs: 2px;
   --radius-sm: 4px;
@@ -211,8 +206,9 @@ mark {
   --animate-gradient-rotate: gradient-rotate 3s ease-in-out infinite;
   --animate-slide-up-fade-in: slideUpFadeIn 300ms ease-out forwards;
   --animate-slide-up-fade-out: slideUpFadeOut 300ms ease-in forwards;
+}
 
-  @keyframes wiggle {
+@keyframes wiggle {
 
     0%,
     100% {
@@ -262,7 +258,7 @@ mark {
 
   @keyframes reveal {
     0% {
-      maxHeight: 0;
+      max-height: 0;
       opacity: 0;
     }
 
@@ -271,7 +267,7 @@ mark {
     }
 
     100% {
-      maxHeight: 1000px;
+      max-height: 1000px;
       opacity: 1;
     }
   }
@@ -430,7 +426,6 @@ mark {
       transform: translateY(-10px);
     }
   }
-}
 
 @layer base {
 
@@ -712,7 +707,7 @@ mark {
     }
   }
 
-  &>*:last-child {
+  .prose > *:last-child {
     @apply mb-0;
   }
 }
@@ -800,7 +795,11 @@ details>div {
   @apply ml-2 mr-2 mt-2 rounded;
 }
 
-details ul,
+details ul {
+  @apply pl-12 pr-4 mt-0 mb-4;
+}
+
 details ol {
   @apply pl-12 pr-4 mt-0 mb-4;
 }
+

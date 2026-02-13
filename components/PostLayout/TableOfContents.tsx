@@ -24,7 +24,7 @@ export default function TableOfContents({
 }: {
     handleLinkClick?: () => void
     title?: string | boolean
-}): JSX.Element | null {
+}) {
     const { menu, menuType = 'standard' } = usePost()
     if (!menu) return null
     const Wrapper = {
