@@ -85,18 +85,29 @@ export const ContributorSmall = ({
     state,
     text = false,
 }: ContributorSmallProps) => {
-    const Container = url ? Link : 'div'
-    const containerProps = url ? { to: url, state } : {}
-    return (
-        <Container {...containerProps} className="flex space-x-2 items-center no-underline">
-            <ContributorImageSmall
-                className={url ? 'hover:border-red hover:z-10 dark:hover:border-red' : ''}
-                image={image}
-                name={name}
-            />
-            {text && <span className="author text-[14px] font-semibold">{name}</span>}
-        </Container>
-    )
+    if (url) {
+        return (
+            <Link to={url} state={state} className="flex space-x-2 items-center no-underline">
+                <ContributorImageSmall
+                    className="hover:border-red hover:z-10 dark:hover:border-red"
+                    image={image}
+                    name={name}
+                />
+                {text && <span className="author text-[14px] font-semibold">{name}</span>}
+            </Link>
+        )
+    } else {
+        return (
+            <div className="flex space-x-2 items-center no-underline">
+                <ContributorImageSmall
+                    className=""
+                    image={image}
+                    name={name}
+                />
+                {text && <span className="author text-[14px] font-semibold">{name}</span>}
+            </div>
+        )
+    }
 }
 
 interface ContributorProps extends ContributorSmallProps {
