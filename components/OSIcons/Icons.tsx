@@ -779,3 +779,15 @@ export const DigitComma = (props: IconProps) => (
         <path d="m2.637 17.164-1.019.945-.872-.945.236-2.528h1.89l-.235 2.528Z" />
     </BaseIcon>
 )
+
+export const Chevron = (props: IconProps) => (
+    <BaseIcon viewBox="0 0 10 7" {...props}>
+        <path d="M8.15448 0.316976L5.00049 3.47201L1.8465 0.316976C1.42387 -0.105659 0.73923 -0.105659 0.316596 0.316976C-0.105532 0.739104 -0.105532 1.42425 0.316596 1.84636L4.23586 5.76563C4.65799 6.18726 5.34211 6.18726 5.76421 5.76563L9.68296 1.84688V1.84637C10.1056 1.42425 10.1056 0.740128 9.68347 0.317507C9.26134 -0.105115 8.57722 -0.105128 8.1546 0.317L8.15448 0.316976Z" />
+    </BaseIcon>
+)
+
+export const RightArrow = (props: IconProps) => (
+    <BaseIcon fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} {...props}>
+        <path d="M13 7l5 5m0 0l-5 5m5-5H6" />
+    </BaseIcon>
+)
