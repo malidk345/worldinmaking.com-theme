@@ -53,7 +53,7 @@ const PresentationModeContext = React.createContext<PresentationModeContextValue
 // Export the presentation mode context for use in other components
 export { PresentationModeContext }
 
-const TabsRoot = ({
+const TabsRoot = React.forwardRef<HTMLDivElement, TabsRootProps>(({
     className,
     defaultValue,
     value,
@@ -61,7 +61,7 @@ const TabsRoot = ({
     orientation = 'vertical', // set to horizontal for responsive. starts horizontal, then use container queries to adjust to vertical like in @FeaturesSlide.tsx
     size = 'sm',
     children,
-}: TabsRootProps) => {
+}, ref) => {
     const presentationContext = React.useContext(PresentationModeContext)
 
     // If in presentation mode and size is lg, downgrade to sm
@@ -69,18 +69,21 @@ const TabsRoot = ({
 
     return (
         <TabsContext.Provider value={effectiveSize}>
-            <RadixTabs.Root
-                className={`flex items-start w-full ${orientation === 'vertical' ? '' : 'flex-col'} ${className}`}
-                defaultValue={defaultValue}
-                value={value}
-                onValueChange={onValueChange}
-                orientation={orientation}
-            >
-                {children}
-            </RadixTabs.Root>
+            <div ref={ref} className={`flex items-start w-full ${orientation === 'vertical' ? '' : 'flex-col'} ${className}`}>
+                <RadixTabs.Root
+                    defaultValue={defaultValue}
+                    value={value}
+                    onValueChange={onValueChange}
+                    orientation={orientation}
+                >
+                    {children}
+                </RadixTabs.Root>
+            </div>
         </TabsContext.Provider>
     )
-}
+})
+
+TabsRoot.displayName = 'TabsRoot'
 
 const TabsList = ({ 'aria-label': ariaLabel, orientation, className, children }: TabsListProps) => {
     return (
