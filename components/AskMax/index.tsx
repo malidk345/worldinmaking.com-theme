@@ -22,23 +22,14 @@ export default function AskMax({
     children,
 }: AskMaxProps) {
     const posthog = usePostHog()
-    const { openNewChat } = useApp()
-    
+
     const totalDocsCount = 1000 // Fallback or could be passed as prop
 
     const borderClasses = border ? 'py-6 mt-4 border-y border-primary' : 'mb-8'
 
-    const handleChatOpen = () => {
-        posthog?.capture('Opened MaxAI chat')
-        openNewChat({
-            path: `ask-max`,
-            quickQuestions,
-        })
-    }
-
     if (linkOnly) {
         return (
-            <button onClick={handleChatOpen} className={className}>
+            <button className={className}>
                 {children}
             </button>
         )
