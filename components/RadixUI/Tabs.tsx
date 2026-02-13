@@ -61,7 +61,7 @@ const TabsRoot = ({
     orientation = 'vertical', // set to horizontal for responsive. starts horizontal, then use container queries to adjust to vertical like in @FeaturesSlide.tsx
     size = 'sm',
     children,
-}: TabsRootProps): JSX.Element => {
+}: TabsRootProps) => {
     const presentationContext = React.useContext(PresentationModeContext)
 
     // If in presentation mode and size is lg, downgrade to sm
@@ -82,7 +82,7 @@ const TabsRoot = ({
     )
 }
 
-const TabsList = ({ 'aria-label': ariaLabel, orientation, className, children }: TabsListProps): JSX.Element => {
+const TabsList = ({ 'aria-label': ariaLabel, orientation, className, children }: TabsListProps) => {
     return (
         <RadixTabs.List
             className={`flex shrink-0 p-1 gap-0.5 min-w-52 ${className} ${
@@ -95,7 +95,7 @@ const TabsList = ({ 'aria-label': ariaLabel, orientation, className, children }:
     )
 }
 
-const TabsTrigger = ({ className, value, children, icon, color }: TabsTriggerProps): JSX.Element => {
+const TabsTrigger = ({ className, value, children, icon, color }: TabsTriggerProps) => {
     const size = React.useContext(TabsContext)
 
     // Size-based styling
@@ -140,7 +140,7 @@ const TabsTrigger = ({ className, value, children, icon, color }: TabsTriggerPro
     )
 }
 
-const TabsLabel = ({ className, children }: TabsLabelProps): JSX.Element => {
+const TabsLabel = ({ className, children }: TabsLabelProps) => {
     const size = React.useContext(TabsContext)
 
     // Size-based styling for labels (section dividers)
@@ -171,7 +171,7 @@ const TabsLabel = ({ className, children }: TabsLabelProps): JSX.Element => {
     return <div className={finalClassName}>{children}</div>
 }
 
-const TabsContent = ({ className, value, children }: TabsContentProps): JSX.Element => {
+const TabsContent = ({ className, value, children }: TabsContentProps) => {
     const size = React.useContext(TabsContext)
 
     // Size-based styling for content
