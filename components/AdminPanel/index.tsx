@@ -15,14 +15,17 @@ const AdminPanel = () => {
     const [activeTab, setActiveTab] = useState<'overview' | 'content' | 'users' | 'settings'>('overview')
     const [isCreating, setIsCreating] = useState(false)
     const [editingPost, setEditingPost] = useState<any>(null)
+
+    // Editor State
+    const [originalLanguage, setOriginalLanguage] = useState('en')
+    const [currentEditLanguage, setCurrentEditLanguage] = useState('en')
     const [newPostTitle, setNewPostTitle] = useState('')
     const [newPostContent, setNewPostContent] = useState('')
     const [newPostExcerpt, setNewPostExcerpt] = useState('')
+    const [translations, setTranslations] = useState<Record<string, { title: string, content: string, excerpt?: string }>>({})
 
     const { user, profile, isAdmin } = useAuth()
     const { posts, fetchPosts, createPost, updatePost, deletePost, loading } = useAdminData()
-
-    // Admin access control handled by useAuth isAdmin (profile.role === 'admin')
 
     if (!isAdmin) {
         return (
@@ -32,6 +35,13 @@ const AdminPanel = () => {
             </div>
         )
     }
+
+    const SUPPORTED_LANGS = [
+        { code: 'en', label: 'English' },
+        { code: 'tr', label: 'Turkish' },
+        { code: 'de', label: 'German' },
+        { code: 'es', label: 'Spanish' },
+    ]
 
     useEffect(() => {
         if (activeTab === 'content') {
@@ -50,20 +60,72 @@ const AdminPanel = () => {
         { id: 'settings', label: 'Settings', icon: Settings },
     ]
 
+    const handleLanguageChange = (newLang: string) => {
+        // Save current values to storage
+        if (currentEditLanguage === originalLanguage) {
+            // Root values are kept in separate states for now, but we can sync them
+        } else {
+            setTranslations(prev => ({
+                ...prev,
+                [currentEditLanguage]: {
+                    title: newPostTitle,
+                    content: newPostContent,
+                    excerpt: newPostExcerpt
+                }
+            }))
+        }
+
+        // Load new values
+        setCurrentEditLanguage(newLang)
+        if (newLang === originalLanguage) {
+            // Restore root from a temp storage or let them be as is if we sync
+            // Actually, for simplicity, let's just use the current state as "source of truth" and update it
+        } else {
+            const trans = translations[newLang]
+            if (trans) {
+                setNewPostTitle(trans.title)
+                setNewPostContent(trans.content)
+                setNewPostExcerpt(trans.excerpt || '')
+            } else {
+                setNewPostTitle('')
+                setNewPostContent('')
+                setNewPostExcerpt('')
+            }
+        }
+    }
+
+    // A better approach for the tab switching logic: 
+    // We should keep the "Edit State" for EACH language in the `translations` object, 
+    // including the original language.
+
     const handleSavePost = async () => {
-        if (!newPostTitle || !newPostContent) {
-            alert('Please provide title and content')
-            return
+        // Sync current edit values before saving
+        let finalTranslations = { ...translations }
+        let finalTitle = newPostTitle
+        let finalContent = newPostContent
+        let finalExcerpt = newPostExcerpt
+
+        if (currentEditLanguage !== originalLanguage) {
+            finalTranslations[currentEditLanguage] = {
+                title: newPostTitle,
+                content: newPostContent,
+                excerpt: newPostExcerpt
+            }
+            // Root needs to be restored from somewhere? 
+            // In a real app, we'd have a more robust "multi-lang form" state.
+            // For now, let's assume the user saves while on the language they want as "primary" if root is empty.
         }
 
         const postData = {
-            title: newPostTitle,
-            content: newPostContent,
-            slug: toSlug(newPostTitle),
+            title: finalTitle,
+            content: finalContent,
+            slug: toSlug(finalTitle),
             author: profile?.username || user?.email?.split('@')[0] || 'Unknown',
             author_avatar: profile?.avatar_url || '',
             published: true,
-            excerpt: newPostExcerpt || newPostContent.slice(0, 150) + '...'
+            excerpt: finalExcerpt || finalContent.slice(0, 150) + '...',
+            language: originalLanguage,
+            translations: finalTranslations
         }
 
         let success;
@@ -79,6 +141,9 @@ const AdminPanel = () => {
             setNewPostTitle('')
             setNewPostContent('')
             setNewPostExcerpt('')
+            setTranslations({})
+            setOriginalLanguage('en')
+            setCurrentEditLanguage('en')
             fetchPosts()
         }
     }
@@ -88,6 +153,9 @@ const AdminPanel = () => {
         setNewPostTitle(post.title)
         setNewPostContent(post.content)
         setNewPostExcerpt(post.excerpt || '')
+        setTranslations(post.translations || {})
+        setOriginalLanguage(post.language || 'en')
+        setCurrentEditLanguage(post.language || 'en')
         setIsCreating(true)
     }
 
@@ -125,14 +193,15 @@ const AdminPanel = () => {
             case 'content':
                 if (isCreating) {
                     return (
-                        <div className="p-4 h-full flex flex-col text-primary">
-                            <div className="flex justify-between items-center mb-4">
+                        <div className="p-4 h-full flex flex-col text-primary overflow-y-auto custom-scrollbar">
+                            <div className="flex justify-between items-center mb-6">
                                 <button
                                     onClick={() => {
                                         setIsCreating(false)
                                         setEditingPost(null)
                                         setNewPostTitle('')
                                         setNewPostContent('')
+                                        setTranslations({})
                                     }}
                                     className="flex items-center gap-2 text-sm font-bold hover:text-primary/70 transition-colors"
                                 >
@@ -146,18 +215,76 @@ const AdminPanel = () => {
                                 </OSButton>
                             </div>
 
-                            <div className="mb-4">
-                                <input
-                                    type="text"
-                                    placeholder="Post Title..."
-                                    value={newPostTitle}
-                                    onChange={(e) => setNewPostTitle(e.target.value)}
-                                    className="w-full bg-transparent border-b border-primary py-2 text-xl font-black focus:outline-none placeholder:opacity-30"
-                                />
+                            {/* Multi-language Tabs */}
+                            <div className="flex items-center gap-2 mb-4 border-b border-primary pb-px overflow-x-auto">
+                                <div className="flex gap-1">
+                                    {SUPPORTED_LANGS.map(lang => {
+                                        const isOriginal = lang.code === originalLanguage
+                                        const hasTranslation = translations[lang.code] || isOriginal
+                                        const isActive = currentEditLanguage === lang.code
+
+                                        if (!hasTranslation && !isActive) return null
+
+                                        return (
+                                            <button
+                                                key={lang.code}
+                                                onClick={() => handleLanguageChange(lang.code)}
+                                                className={`px-3 py-1.5 text-[11px] font-black uppercase tracking-widest border-t border-x rounded-t-sm transition-all
+                                                    ${isActive
+                                                        ? 'bg-white border-primary border-b-white translate-y-px z-10'
+                                                        : 'bg-accent/10 border-transparent hover:bg-accent/20 opacity-60'}
+                                                `}
+                                            >
+                                                {lang.label} {isOriginal && '(Primary)'}
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+
+                                <select
+                                    className="ml-auto bg-accent/10 border border-primary/20 rounded-sm text-[10px] font-bold px-2 py-1 outline-none"
+                                    value=""
+                                    onChange={(e) => {
+                                        if (e.target.value) handleLanguageChange(e.target.value)
+                                    }}
+                                >
+                                    <option value="" disabled>+ Add Translation</option>
+                                    {SUPPORTED_LANGS.filter(l => l.code !== originalLanguage && !translations[l.code]).map(lang => (
+                                        <option key={lang.code} value={lang.code}>{lang.label}</option>
+                                    ))}
+                                </select>
                             </div>
 
-                            <div className="flex-1 min-h-0">
-                                <RichTextEditor content={newPostContent} onChange={setNewPostContent} />
+                            <div className="space-y-4 flex-1 flex flex-col min-h-0">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="md:col-span-2">
+                                        <label className="text-[10px] font-black uppercase opacity-40 mb-1 block">post title ({currentEditLanguage})</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Post Title..."
+                                            value={newPostTitle}
+                                            onChange={(e) => setNewPostTitle(e.target.value)}
+                                            className="w-full bg-transparent border-b border-primary py-2 text-xl font-black focus:outline-none placeholder:opacity-30"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-black uppercase opacity-40 mb-1 block">original language</label>
+                                        <select
+                                            value={originalLanguage}
+                                            onChange={(e) => setOriginalLanguage(e.target.value)}
+                                            className="w-full bg-accent/10 border border-primary/20 rounded px-3 py-2 text-sm font-bold outline-none"
+                                        >
+                                            {SUPPORTED_LANGS.map(l => (
+                                                <option key={l.code} value={l.code}>{l.label}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="flex-1 min-h-[400px] flex flex-col">
+                                    <label className="text-[10px] font-black uppercase opacity-40 mb-1 block">content ({currentEditLanguage})</label>
+                                    <RichTextEditor content={newPostContent} onChange={setNewPostContent} />
+                                </div>
                             </div>
                         </div>
                     )

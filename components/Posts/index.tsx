@@ -17,26 +17,42 @@ import { useApp } from 'context/App'
 import BlogPostView from 'components/ReaderView/BlogPostView'
 import { usePosts } from 'hooks/usePosts'
 import { Popover } from 'components/RadixUI/Popover'
+import Link from 'components/Link'
 
 const MOCK_AUTHORS = [
     { name: 'James Hawkins', avatar: 'https://res.cloudinary.com/dmukukwp6/image/upload/v1710153303/posthog.com/contents/images/authors/james.png' },
     { name: 'Tim Glaser', avatar: 'https://res.cloudinary.com/dmukukwp6/image/upload/v1710153303/posthog.com/contents/images/authors/tim.png' },
 ]
 
+const getPostHref = (slug?: string) => {
+    if (!slug) return '/posts'
+    return `/posts/${encodeURIComponent(slug)}`
+}
+
+const isModifiedEvent = (event: React.MouseEvent) =>
+    event.metaKey || event.altKey || event.ctrlKey || event.shiftKey || event.button === 1
+
 const EditionPostCard = ({ post, isMobile }: { post: any; isMobile: boolean }) => {
     const { addWindow } = useApp()
     const postDate = dayjs(post.date).format('MMM D, YYYY')
     const author = post.authors[0]
+    const postHref = getPostHref(post.slug)
 
     const handleOpen = () => {
         addWindow({
             key: `blog-${post.id}`,
-            path: post.slug,
+            path: postHref,
             title: post.title,
             size: isMobile ? { width: window.innerWidth, height: window.innerHeight - 44 } : { width: 1000, height: 800 },
             position: isMobile ? { x: 0, y: 0 } : { x: 50, y: 50 },
             element: <BlogPostView post={post} />
         })
+    }
+
+    const handlePostLinkClick = (event: React.MouseEvent) => {
+        if (isModifiedEvent(event)) return
+        event.preventDefault()
+        handleOpen()
     }
 
     return (
@@ -71,7 +87,9 @@ const EditionPostCard = ({ post, isMobile }: { post: any; isMobile: boolean }) =
                 <div className={`@container p-4 grid gap-3 ${post.image ? '@md:grid-cols-[1fr_180px]' : 'grid-cols-1'} @md:items-start flex-grow`}>
                     <div className={`order-2 ${post.image ? '@md:order-1' : ''} grid gap-2`}>
                         <h3 className="m-0 text-[15px] leading-tight text-black group-hover:text-burnt-orange transition-colors">
-                            {post.title}
+                            <Link to={postHref} onClick={handlePostLinkClick} className="text-inherit hover:underline">
+                                {post.title}
+                            </Link>
                         </h3>
                         {post.excerpt && (
                             <p className="m-0 text-[14px] text-black line-clamp-4 leading-tight font-button font-normal">
@@ -95,16 +113,23 @@ const FeaturedPost = ({ post, isMobile }: { post: any; isMobile: boolean }) => {
     const { addWindow } = useApp()
     const postDate = dayjs(post.date).format('MMM D, YYYY')
     const author = post.authors[0]
+    const postHref = getPostHref(post.slug)
 
     const handleOpen = () => {
         addWindow({
             key: `blog-${post.id}`,
-            path: post.slug,
+            path: postHref,
             title: post.title,
             size: isMobile ? { width: window.innerWidth, height: window.innerHeight - 44 } : { width: 1000, height: 800 },
             position: isMobile ? { x: 0, y: 0 } : { x: 50, y: 50 },
             element: <BlogPostView post={post} />
         })
+    }
+
+    const handlePostLinkClick = (event: React.MouseEvent) => {
+        if (isModifiedEvent(event)) return
+        event.preventDefault()
+        handleOpen()
     }
 
     return (
@@ -153,7 +178,9 @@ const FeaturedPost = ({ post, isMobile }: { post: any; isMobile: boolean }) => {
                 </div>
 
                 <h2 className="mt-0 mb-4 text-xl lg:text-2xl text-black leading-tight group-hover:underline decoration-burnt-orange/30 underline-offset-4">
-                    {post.title}
+                    <Link to={postHref} onClick={handlePostLinkClick} className="text-inherit">
+                        {post.title}
+                    </Link>
                 </h2>
 
                 <p className="text-[14px] text-black leading-tight line-clamp-8 mb-8 max-w-none w-full font-button font-normal">
@@ -161,7 +188,14 @@ const FeaturedPost = ({ post, isMobile }: { post: any; isMobile: boolean }) => {
                 </p>
 
                 <div className="mt-auto">
-                    <OSButton variant="secondary" size="md" className="font-black tracking-widest text-[11px]">
+                    <OSButton
+                        variant="secondary"
+                        size="md"
+                        className="font-black tracking-widest text-[11px]"
+                        asLink
+                        to={postHref}
+                        onClick={handlePostLinkClick}
+                    >
                         Continue reading <IconArrowRight className="size-3.5 ml-2 group-hover:translate-x-1 transition-transform" />
                     </OSButton>
                 </div>

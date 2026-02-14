@@ -21,6 +21,8 @@ export interface Post {
     headings: { id: string, text: string, level: number }[];
     image: string | null;
     ribbon?: string;
+    translations?: Record<string, { title: string, content: string, excerpt?: string }>;
+    language?: string;
 }
 
 
@@ -93,7 +95,9 @@ const adaptPost = (p: any): Post | null => {
         wordCount: rawContent.split(/\s+/).filter((w: string) => w.length > 0).length,
         headings: sortedHeadings,
         image: p.image_url || p.image || null,
-        ribbon: p.ribbon || '#3546AB'
+        ribbon: p.ribbon || '#3546AB',
+        translations: p.translations || {},
+        language: p.language || 'en'
     };
 };
 

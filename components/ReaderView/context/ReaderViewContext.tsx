@@ -14,6 +14,8 @@ interface ReaderViewContextType {
     toggleToc: () => void
     handleLineHeightChange: (value: number[]) => void
     setBackgroundImage: (image: string | null) => void
+    currentLanguage: string
+    setCurrentLanguage: (lang: string) => void
 }
 
 const getComputedLineHeight = (selector: string) => {
@@ -52,6 +54,7 @@ export function ReaderViewProvider({ children }: { children: React.ReactNode }) 
     const [lineHeightP, setLineHeightP] = useState<number | null>(null)
     const [lineHeightLi, setLineHeightLi] = useState<number | null>(null)
     const [backgroundImage, setBackgroundImage] = useState<string | null>(null)
+    const [currentLanguage, setCurrentLanguage] = useState('en')
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -143,6 +146,8 @@ export function ReaderViewProvider({ children }: { children: React.ReactNode }) 
         toggleToc,
         handleLineHeightChange,
         setBackgroundImage: handleBackgroundImageChange,
+        currentLanguage,
+        setCurrentLanguage,
     }
 
     return <ReaderViewContext.Provider value={value}>{children}</ReaderViewContext.Provider>

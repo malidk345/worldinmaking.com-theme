@@ -11,12 +11,14 @@ import {
     IconSearch,
     IconTableOfContents,
     IconBookmark,
+    IconGlobe,
 } from '@posthog/icons'
 import Tooltip from 'components/RadixUI/Tooltip'
 import { useApp } from 'context/App'
 import { useWindow } from 'context/Window'
-import { MessageSquare, AlignLeft, AlignCenter, AlignRight, Search } from 'lucide-react'
+import { MessageSquare, Search } from 'lucide-react'
 import { InPageSearchBar } from 'components/Search/InPageSearchBar'
+import { LanguageSelector } from './LanguageSelector'
 import KeyboardShortcut from 'components/KeyboardShortcut'
 
 interface FooterBarProps {
@@ -36,10 +38,10 @@ interface FooterBarProps {
     searchContentRef?: React.RefObject<HTMLElement | null>
     onBookmark?: () => void
     onComment?: () => void
-    onAlignLeft?: () => void
-    onAlignCenter?: () => void
-    onAlignRight?: () => void
     onSearch?: (query: string) => void
+    currentLanguage?: string
+    availableLanguages?: string[]
+    onLanguageChange?: (code: string) => void
 }
 
 export default function FooterBar({
@@ -59,10 +61,10 @@ export default function FooterBar({
     searchContentRef,
     onBookmark,
     onComment,
-    onAlignLeft,
-    onAlignCenter,
-    onAlignRight,
     onSearch,
+    currentLanguage = 'en',
+    availableLanguages,
+    onLanguageChange,
 }: FooterBarProps) {
     const appContext = useApp()
     const compact = appContext?.compact
@@ -76,8 +78,10 @@ export default function FooterBar({
     const appWindow = windowContext?.appWindow
 
     const [searchOpen, setSearchOpen] = React.useState(false)
+    const [languageOpen, setLanguageOpen] = React.useState(false)
 
     const toggleSearch = () => setSearchOpen(!searchOpen)
+    const toggleLanguage = () => setLanguageOpen(!languageOpen)
 
     React.useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -181,26 +185,25 @@ export default function FooterBar({
             {/* RIGHT SECTION: Alignments, Separator, Search, TOC */}
             <div className="flex items-center gap-1 justify-end flex-shrink-0">
                 {rightActionButtons}
-
-                {/* Alignment Tools */}
-                <div className="flex items-center gap-0.5">
+                <div className="relative">
                     <Tooltip trigger={
-                        <OSButton size="sm" className={interactionBtnClass} onClick={onAlignLeft} disabled={!onAlignLeft}>
-                            <AlignLeft className={`size-[18px] ${onAlignLeft ? 'text-black' : 'text-black/30'}`} />
+                        <OSButton
+                            size="sm"
+                            className={interactionBtnClass}
+                            onClick={toggleLanguage}
+                            active={languageOpen}
+                        >
+                            <IconGlobe className="size-[18px] text-black" />
                         </OSButton>
-                    } side="bottom">align left</Tooltip>
+                    } side="bottom">language</Tooltip>
 
-                    <Tooltip trigger={
-                        <OSButton size="sm" className={interactionBtnClass} onClick={onAlignCenter} disabled={!onAlignCenter}>
-                            <AlignCenter className={`size-[18px] ${onAlignCenter ? 'text-black' : 'text-black/30'}`} />
-                        </OSButton>
-                    } side="bottom">align center</Tooltip>
-
-                    <Tooltip trigger={
-                        <OSButton size="sm" className={interactionBtnClass} onClick={onAlignRight} disabled={!onAlignRight}>
-                            <AlignRight className={`size-[18px] ${onAlignRight ? 'text-black' : 'text-black/30'}`} />
-                        </OSButton>
-                    } side="bottom">align right</Tooltip>
+                    <LanguageSelector
+                        visible={languageOpen}
+                        onClose={() => setLanguageOpen(false)}
+                        currentLanguage={currentLanguage}
+                        availableLanguages={availableLanguages}
+                        onLanguageChange={onLanguageChange || (() => { })}
+                    />
                 </div>
 
                 {/* Separator */}
@@ -263,6 +266,6 @@ export default function FooterBar({
                     )}
                 </div>
             </div>
-        </div>
+        </div >
     )
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import OSButton from 'components/OSButton'
 import { IconChevronDown } from '@posthog/icons'
@@ -57,6 +57,7 @@ interface ReaderViewProps {
     parent?: TreeMenuItem // For TreeMenu
     proseSize?: 'sm' | 'base' | 'lg'
     onSearch?: (query: string) => void
+    availableLanguages?: string[]
 }
 
 export default function ReaderView(props: ReaderViewProps) {
@@ -88,6 +89,7 @@ function ReaderViewContent({
     parent,
     proseSize = 'sm',
     onSearch,
+    availableLanguages,
 }: ReaderViewProps) {
     const {
         isNavVisible,
@@ -97,6 +99,8 @@ function ReaderViewContent({
         toggleNav,
         toggleToc,
         setFullWidthContent,
+        currentLanguage,
+        setCurrentLanguage,
     } = useReaderView()
 
     const { posts, loading: postsLoading } = usePosts()
@@ -341,10 +345,11 @@ function ReaderViewContent({
                 homeURL={homeURL}
                 title={title}
                 searchContentRef={contentRef}
-                onAlignLeft={() => setFullWidthContent(true)}
-                onAlignCenter={() => setFullWidthContent(false)}
                 onComment={handleComment}
                 onSearch={onSearch}
+                currentLanguage={currentLanguage}
+                availableLanguages={availableLanguages}
+                onLanguageChange={setCurrentLanguage}
                 rightActionButtons={
                     <div className="flex items-center gap-2">
                         {rightActionButtons}

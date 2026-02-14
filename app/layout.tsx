@@ -4,9 +4,34 @@ import { AppProvider } from "../context/App";
 import { AuthProvider } from "../context/AuthContext";
 import { ToastProvider } from "../context/ToastContext";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://worldinmaking.com";
+
 export const metadata: Metadata = {
-  title: "PostHog - The open source Product OS",
-  description: "PostHog provides open-source product analytics, session recording, feature flags and A/B testing that you can self-host.",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "World in Making",
+    template: "%s | World in Making",
+  },
+  description: "World in Making explores product, engineering, and community through stories, tools, and insights.",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    url: siteUrl,
+    siteName: "World in Making",
+    title: "World in Making",
+    description: "World in Making explores product, engineering, and community through stories, tools, and insights.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "World in Making",
+    description: "World in Making explores product, engineering, and community through stories, tools, and insights.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({

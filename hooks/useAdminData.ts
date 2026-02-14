@@ -20,6 +20,8 @@ export interface AdminPost {
     author_avatar?: string;
     excerpt?: string;
     isLocal?: boolean;
+    translations?: Record<string, { title: string, content: string, excerpt?: string }>;
+    language?: string;
 }
 
 export const useAdminData = () => {
