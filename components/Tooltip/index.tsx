@@ -126,7 +126,13 @@ export default function Tooltip({
                                     <div
                                         className={`text-primary dark:text-primary-dark px-2 py-2 text-sm z-20 ${contentContainerClassName}`}
                                     >
-                                        {content && (typeof content === 'string' ? content : content(setOpen))}
+                                        {content && (
+                                            typeof content === 'string'
+                                                ? content
+                                                : typeof content === 'function'
+                                                    ? content(setOpen)
+                                                    : content
+                                        )}
                                     </div>
                                 </div>
                             </div>

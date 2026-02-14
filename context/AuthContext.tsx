@@ -10,6 +10,12 @@ interface Profile {
     avatar_url: string;
     role: string;
     bio?: string;
+    website?: string;
+    github?: string;
+    linkedin?: string;
+    twitter?: string;
+    pronouns?: string;
+    location?: string;
 }
 
 interface AuthContextType {
@@ -18,7 +24,7 @@ interface AuthContextType {
     loading: boolean;
     signInWithEmail: (email: string) => Promise<{ error: any }>;
     signOut: () => Promise<void>;
-    updateProfile: (username: string, avatar_url: string, bio?: string) => Promise<boolean>;
+    updateProfile: (updates: Partial<Profile>) => Promise<boolean>;
     isAdmin: boolean;
 }
 
@@ -32,7 +38,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const fetchProfile = useCallback(async (userId: string) => {
         const { data } = await supabase
             .from('profiles')
-            .select('username, avatar_url, role, bio')
+            .select('username, avatar_url, role, bio, website, github, linkedin, twitter, pronouns, location')
             .eq('id', userId)
             .single();
         if (data) setProfile(data as Profile);
@@ -102,11 +108,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return () => subscription.unsubscribe();
     }, [fetchProfile]);
 
-    const updateProfile = async (username: string, avatar_url: string, bio?: string) => {
+    const updateProfile = async (updates: Partial<Profile>) => {
         if (!user) return false;
-
-        const updates: any = { username, avatar_url };
-        if (bio !== undefined) updates.bio = bio;
 
         const { error } = await supabase
             .from('profiles')
@@ -118,7 +121,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             return false;
         }
 
-        setProfile(prev => prev ? { ...prev, username, avatar_url, ...(bio !== undefined ? { bio } : {}) } : null);
+        setProfile(prev => prev ? { ...prev, ...updates } : null);
         return true;
     };
 
