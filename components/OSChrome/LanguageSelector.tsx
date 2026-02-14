@@ -51,42 +51,32 @@ export function LanguageSelector({
                     >
                         <div className="p-2 border-b border-primary bg-accent/30 flex items-center gap-2">
                             <IconGlobe className="size-3.5 opacity-50" />
-                            <span className="text-[10px] font-black uppercase tracking-widest opacity-50">select language</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest opacity-50 lowercase">select language</span>
                         </div>
                         <div className="py-1">
-                            {SUPPORTED_LANGUAGES.map((lang) => {
-                                const isAvailable = !availableLanguages || availableLanguages.includes(lang.code)
+                            {SUPPORTED_LANGUAGES.filter(lang => !availableLanguages || availableLanguages.includes(lang.code)).map((lang) => {
                                 const isSelected = currentLanguage === lang.code
 
                                 return (
                                     <button
                                         key={lang.code}
-                                        disabled={!isAvailable}
                                         onClick={() => {
-                                            if (isAvailable) {
-                                                onLanguageChange(lang.code)
-                                                onClose()
-                                            }
+                                            onLanguageChange(lang.code)
+                                            onClose()
                                         }}
-                                        className={`w-full flex items-center justify-between px-3 py-2 text-xs transition-colors
+                                        className={`w-full flex items-center justify-between px-3 py-2 text-xs transition-colors cursor-pointer
                                             ${isSelected ? 'bg-accent/20 text-primary font-bold' : 'hover:bg-accent/10 text-muted'}
-                                            ${!isAvailable ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}
                                         `}
                                     >
-                                        <div className="flex flex-col items-start translate-y-px">
-                                            <span className="font-bold">{lang.nativeName}</span>
-                                            <span className="text-[9px] opacity-50 leading-none">{lang.name}</span>
+                                        <div className="flex flex-col items-start translate-y-px lowercase">
+                                            <span className="font-bold">{lang.nativeName.toLowerCase()}</span>
+                                            <span className="text-[9px] opacity-50 leading-none">{lang.name.toLowerCase()}</span>
                                         </div>
                                         {isSelected && <IconCheck className="size-3.5 text-green-500" />}
                                     </button>
                                 )
                             })}
                         </div>
-                        {!availableLanguages && (
-                            <div className="p-2 bg-accent/5 border-t border-primary">
-                                <p className="text-[9px] text-center opacity-40 italic m-0">showing all possible languages</p>
-                            </div>
-                        )}
                     </motion.div>
                 </>
             )}

@@ -277,6 +277,18 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         return () => window.removeEventListener('resize', handleResize)
     }, [])
 
+    // URL Sync
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+
+        const currentPath = window.location.pathname
+        const targetPath = focusedWindow?.path || '/'
+
+        if (currentPath !== targetPath) {
+            window.history.pushState(null, '', targetPath)
+        }
+    }, [focusedWindow])
+
     const value = React.useMemo(() => ({
         windows,
         focusedWindow,
