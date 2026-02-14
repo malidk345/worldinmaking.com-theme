@@ -28,8 +28,12 @@ import { CallToAction } from 'components/CallToAction'
 import { useLayoutData } from 'components/Layout/hooks'
 
 import Toggle from 'components/Toggle'
-import HoverTooltip from 'components/Tooltip'
+import { useAuth } from 'context/AuthContext'
+import { useApp } from 'context/App'
+import LoginContent from 'components/Login/LoginContent'
 import dayjs from 'dayjs'
+import { Popover } from 'components/RadixUI/Popover'
+
 import usePostHog from 'hooks/usePostHog'
 
 import React, { useEffect, useRef, useState } from 'react'
@@ -374,6 +378,8 @@ export const Main = () => {
     )
     const [posthogInstance, setPosthogInstance] = useState<string>()
     const posthog = usePostHog()
+    const { user, profile, isAdmin, signOut } = useAuth()
+    const { addWindow } = useApp()
 
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -426,26 +432,6 @@ export const Main = () => {
                         </Link>
                     </div>
                     <ul className="md:flex hidden list-none m-0 p-0">
-                        {menu?.map((menuItem) => {
-                            const active = menuItem.name === parent?.name
-                            const { name, url } = menuItem
-                            return (
-                                <li className="h-full" key={name}>
-                                    <Link
-                                        to={url || ''}
-                                        className={`text-[13.5px] font-medium flex h-full items-center relative px-3 py-4 mdlg:p-4 ${active
-                                            ? 'px-[calc(.75rem_+_10px)] mdlg:px-[calc(1rem_+_10px)] mx-[-10px]'
-                                            : 'opacity-70 hover:opacity-100'
-                                            }`}
-                                    >
-                                        {active && <ActiveBackground />}
-                                        <span className="relative">
-                                            {enterpriseMode ? enterpiseModeNames[name] : name}
-                                        </span>
-                                    </Link>
-                                </li>
-                            )
-                        })}
                     </ul>
                     <div className="flex items-center justify-end flex-1">
                         {posthogInstance ? (
@@ -465,42 +451,33 @@ export const Main = () => {
                         ) : null}
 
 
-                        <Tooltip
-                            placement="bottom-end"
-                            className="group/parent relative text-primary dark:text-primary-dark"
-                            content={() => {
-                                return (
-                                    <ul className="list-none text-left m-0 p-0 pb-[3px] space-y-[2px] w-[200px]">
-                                        <li className="bg-border/20 dark:bg-border-dark/20 border-b border-primary text-[13px] px-2 py-1.5 text-muted z-20 m-0 !mb-[3px] font-semibold">
-                                            Go to...
-                                        </li>
-                                        <li className="px-1">
-                                            <Link
-                                                className="group/item text-sm px-2 py-2 rounded-sm hover:bg-border dark:hover:bg-border-dark block"
-                                                to="https://app.posthog.com"
-                                            >
-                                                <IconApp className="opacity-50 group-hover/item:opacity-75 inline-block mr-2 w-6" />
-                                                PostHog app
-                                            </Link>
-                                        </li>
-                                        <li className="bg-border/20 dark:bg-border-dark/20 border-y border-primary text-[13px] px-2 py-1.5 !my-1 text-muted z-20 m-0 font-semibold">
-                                            Community
-                                        </li>
-                                        <li className="px-1">
-                                            <Link
-                                                className="group/item text-sm px-2 py-2 rounded-sm hover:bg-border dark:hover:bg-border-dark block"
-                                                to="/questions"
-                                            >
-                                                <IconMessage className="opacity-50 group-hover/item:opacity-75 inline-block mr-2 w-6" />
-                                                Forums
-                                            </Link>
-                                        </li>
-                                    </ul>
-                                )
-                            }}
+                        <Popover
+                            side="bottom"
+                            sideOffset={10}
+                            dataScheme="secondary"
+                            trigger={
+                                <div className="cursor-pointer group px-2 py-1 hover:bg-black/5 dark:hover:bg-white/5 rounded transition-colors">
+                                    <IconUser className="opacity-70 inline-block w-6 group-hover:opacity-100 transition-opacity" />
+                                </div>
+                            }
                         >
-                            <IconUser className="opacity-50 inline-block w-6 group-hover/parent:opacity-75" />
-                        </Tooltip>
+                            <ul className="list-none text-left m-0 p-0 pb-[3px] space-y-[2px] w-[180px]">
+                                <li className="px-1">
+                                    <button
+                                        className="group/item text-[13px] px-3 py-2.5 rounded-sm hover:bg-black/5 dark:hover:bg-white/5 block w-full text-left font-bold lowercase"
+                                        onClick={() => addWindow({
+                                            key: 'login',
+                                            path: '/login',
+                                            title: user ? 'Account' : 'Member Access',
+                                            size: { width: 450, height: 450 },
+                                            element: <LoginContent />
+                                        })}
+                                    >
+                                        sign in
+                                    </button>
+                                </li>
+                            </ul>
+                        </Popover>
                     </div>
                 </div>
             </div>
