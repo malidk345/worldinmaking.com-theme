@@ -4,7 +4,6 @@ import React, { useMemo } from 'react'
 import ReaderView from './index'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { useReaderView } from './context/ReaderViewContext'
 
 interface BlogPostViewProps {
     post: {
@@ -22,7 +21,7 @@ interface BlogPostViewProps {
 }
 
 export default function BlogPostView({ post }: BlogPostViewProps) {
-    const { currentLanguage } = useReaderView()
+    const currentLanguage = post.language || 'en'
 
     // Get content based on current language
     const translation = post.translations?.[currentLanguage]
