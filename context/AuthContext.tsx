@@ -34,14 +34,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [profile, setProfile] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
+    const [hasExtendedProfileFields, setHasExtendedProfileFields] = useState(false);
 
     const fetchProfile = useCallback(async (userId: string) => {
-        const { data } = await supabase
+        const fullSelect = 'username, avatar_url, role, bio, website, github, linkedin, twitter, pronouns, location';
+        const minimalSelect = 'username, avatar_url, role';
+
+        const { data, error } = await supabase
             .from('profiles')
-            .select('username, avatar_url, role, bio, website, github, linkedin, twitter, pronouns, location')
+            .select(fullSelect)
             .eq('id', userId)
             .single();
-        if (data) setProfile(data as Profile);
+
+        if (!error && data) {
+            setHasExtendedProfileFields(true);
+            setProfile(data as Profile);
+            return;
+        }
+
+        if (error) {
+            logger.warn('[Auth] Profile query fallback to minimal fields:', error.message || error);
+        }
+
+        const { data: minimalData, error: minimalError } = await supabase
+            .from('profiles')
+            .select(minimalSelect)
+            .eq('id', userId)
+            .single();
+
+        if (minimalError) {
+            logger.error('[Auth] Minimal profile query failed:', minimalError);
+            return;
+        }
+
+        if (minimalData) {
+            setHasExtendedProfileFields(false);
+            setProfile(minimalData as Profile);
+        }
     }, []);
 
     useEffect(() => {
@@ -111,9 +140,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const updateProfile = async (updates: Partial<Profile>) => {
         if (!user) return false;
 
+        const safeUpdates = hasExtendedProfileFields
+            ? updates
+            : {
+                username: updates.username,
+                avatar_url: updates.avatar_url,
+            };
+
+        if (!Object.values(safeUpdates).some((value) => value !== undefined)) return false;
+
         const { error } = await supabase
             .from('profiles')
-            .update(updates)
+            .update(safeUpdates)
             .eq('id', user.id);
 
         if (error) {
@@ -121,7 +159,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             return false;
         }
 
-        setProfile(prev => prev ? { ...prev, ...updates } : null);
+        setProfile(prev => prev ? { ...prev, ...safeUpdates } : null);
         return true;
     };
 
