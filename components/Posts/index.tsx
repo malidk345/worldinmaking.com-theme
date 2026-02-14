@@ -54,27 +54,27 @@ const EditionPostCard = ({ post, isMobile }: { post: any; isMobile: boolean }) =
                                 <IconUser className="size-3.5 text-primary-text" />
                             </div>
                         )}
-                        <span className="text-[11px] font-black text-primary-text leading-none">{author.name}</span>
+                        <span className="text-[11px] text-primary-text leading-none">{author.name}</span>
                     </div>
                     <div className="flex items-center gap-1 text-primary-text">
                         <IconClock className="size-3" />
-                        <span className="text-[11px] font-black tracking-tighter">
+                        <span className="text-[11px] tracking-tighter">
                             {post.wordCount} words
                         </span>
                     </div>
                     <div className="flex items-center gap-1 text-primary-text">
                         <IconCalendar className="size-3" />
-                        <span className="text-[11px] font-bold">{postDate}</span>
+                        <span className="text-[11px]">{postDate}</span>
                     </div>
                 </div>
 
                 <div className={`@container p-3 grid gap-3 ${post.image ? '@md:grid-cols-[1fr_180px]' : 'grid-cols-1'} @md:items-start flex-grow`}>
                     <div className={`order-2 ${post.image ? '@md:order-1' : ''} grid gap-2`}>
-                        <h3 className="m-0 text-[15px] font-black leading-tight text-black group-hover:text-burnt-orange transition-colors">
+                        <h3 className="m-0 text-[15px] leading-tight text-black group-hover:text-burnt-orange transition-colors">
                             {post.title}
                         </h3>
                         {post.excerpt && (
-                            <p className="m-0 text-[12.5px] text-black line-clamp-4 leading-relaxed">
+                            <p className="m-0 text-[15px] text-black line-clamp-4 leading-[1.6] font-button">
                                 {post.excerpt}
                             </p>
                         )}
@@ -128,35 +128,35 @@ const FeaturedPost = ({ post, isMobile }: { post: any; isMobile: boolean }) => {
                             </div>
                         )}
                         <div className="flex flex-col -space-y-0.5">
-                            <span className="text-[13px] font-black text-primary-text">{author.name}</span>
-                            <span className="text-[10px] text-primary-text font-bold tracking-wider">author</span>
+                            <span className="text-[13px] text-primary-text">{author.name}</span>
+                            <span className="text-[10px] text-primary-text tracking-wider">author</span>
                         </div>
                     </div>
 
                     <div className="hidden sm:flex flex-col items-center text-primary-text">
                         <IconClock className="size-4 mb-0.5" />
                         <div className="flex flex-col items-center -space-y-1">
-                            <span className="text-[12px] font-black tracking-[0.2em]">{post.wordCount}</span>
-                            <span className="text-[10px] font-bold leading-none">words</span>
+                            <span className="text-[12px] tracking-[0.2em]">{post.wordCount}</span>
+                            <span className="text-[10px] leading-none">words</span>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <span className="px-2 py-0.5 bg-burnt-orange/10 text-burnt-orange text-[9px] font-black tracking-widest rounded-sm border border-burnt-orange/20">
+                        <span className="px-2 py-0.5 bg-burnt-orange/10 text-burnt-orange text-[9px] tracking-widest rounded-sm border border-burnt-orange/20">
                             Featured
                         </span>
                         <div className="flex items-center gap-1.5 text-primary-text italic">
                             <IconCalendar className="size-3.5" />
-                            <span className="text-[11px] font-black">{postDate}</span>
+                            <span className="text-[11px]">{postDate}</span>
                         </div>
                     </div>
                 </div>
 
-                <h2 className="mt-0 mb-4 text-xl lg:text-2xl font-black text-black leading-[1.1] group-hover:underline decoration-burnt-orange/30 underline-offset-4">
+                <h2 className="mt-0 mb-4 text-xl lg:text-2xl text-black leading-[1.1] group-hover:underline decoration-burnt-orange/30 underline-offset-4">
                     {post.title}
                 </h2>
 
-                <p className="text-[12.5px] text-black leading-relaxed line-clamp-8 mb-8 italic max-w-none w-full">
+                <p className="text-[15px] text-black leading-[1.6] line-clamp-8 mb-8 max-w-none w-full font-button">
                     {post.excerpt}
                 </p>
 

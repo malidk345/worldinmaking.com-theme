@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import ForumPageLayout from 'components/Forum/ForumPageLayout'
 import ForumQuestionDetail from 'components/Forum/ForumQuestionDetail'
+import AdminPanel from 'components/AdminPanel'
 import { WindowSearchUI } from 'components/Search/SearchUI'
 import { usePosts } from '../../hooks/usePosts'
 import { useCommunity } from '../../hooks/useCommunity'
@@ -60,6 +61,11 @@ export default function WindowRouter({ item }: { item: any }) {
     // /search
     if (path === '/search') {
         return <WindowSearchUI initialFilter={item.props?.initialFilter} />
+    }
+
+    // /admin
+    if (path === '/admin') {
+        return <AdminPanel />
     }
 
     // Fallback for any other path
