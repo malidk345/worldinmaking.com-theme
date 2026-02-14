@@ -159,7 +159,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         await supabase.auth.signOut();
     };
 
-    const isAdmin = profile?.role === 'admin';
+    const isAdmin = profile?.role?.toLowerCase() === 'admin';
 
     return (
         <AuthContext.Provider value={{ user, profile, loading, signInWithEmail, signOut, updateProfile, isAdmin }}>
