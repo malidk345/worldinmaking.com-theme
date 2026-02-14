@@ -1,19 +1,19 @@
-"use client"
-
-import React from 'react'
 import Link from 'components/Link'
+import React from 'react'
+import Logomark from 'components/Home/images/Logomark'
 
 interface ForumAvatarProps {
     image?: string | null
     url?: string | null
     className?: string
     color?: string
+    isTeamMember?: boolean
 }
 
 const PlaceholderImage = ({ className = '' }: { className?: string }) => {
     return (
         <svg
-            className={`bg-accent/40 rounded-full ${className}`}
+            className={`bg-accent rounded-full ${className}`}
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 40 40"
@@ -29,31 +29,41 @@ const PlaceholderImage = ({ className = '' }: { className?: string }) => {
     )
 }
 
-export default function ForumAvatar({
+const Image = ({ src, className = '' }: { src: string | null | undefined; className?: string }) => {
+    return src ? (
+        <img className={`object-fill rounded-full ${className}`} src={src} />
+    ) : (
+        <PlaceholderImage className={className} />
+    )
+}
+
+export const ForumAvatar = ({
     image,
     url,
     className = '',
     color,
-}: ForumAvatarProps) {
-    const content = (
+    isTeamMember = false,
+}: ForumAvatarProps) => {
+    return (
         <div
-            className={`leading-[0] rounded-full relative inline-block aspect-square p-px bg-white dark:bg-black border border-primary overflow-hidden ${className} ${color ? `!bg-${color}` : ''}`}
+            className={`float-left leading-[0] rounded-full relative inline-block aspect-square p-px bg-light dark:bg-dark border border-black ${color ? `hover:border-${color}` : 'hover:border-[rgba(0,0,0,0.2)] dark:hover:border-[rgba(255,255,255,0.2)]'
+                }`}
         >
-            {image ? (
-                <img className="object-cover w-full h-full rounded-full" src={image} alt="Avatar" />
+            {url ? (
+                <Link to={url} className={`shrink-0 ${color ? `bg-${color}` : 'bg-accent'}  `}>
+                    <Image className={className} src={image} />
+                </Link>
             ) : (
-                <PlaceholderImage className="w-full h-full" />
+                <Image className={`${color ? `bg-${color}` : 'bg-accent'} ${className}`} src={image} />
+            )}
+
+            {isTeamMember && (
+                <div className="absolute -bottom-1 -right-1.5 bg-primary rounded-full p-[1.5px] shadow-sm">
+                    <Logomark className="size-4" />
+                </div>
             )}
         </div>
     )
-
-    if (url) {
-        return (
-            <Link to={url} className="shrink-0 !no-underline">
-                {content}
-            </Link>
-        )
-    }
-
-    return content
 }
+
+export default ForumAvatar

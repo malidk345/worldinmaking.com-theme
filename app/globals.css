@@ -210,222 +210,222 @@ mark {
 
 @keyframes wiggle {
 
-    0%,
-    100% {
-      transform: rotate(6deg);
-    }
-
-    50% {
-      transform: rotate(-6deg);
-    }
+  0%,
+  100% {
+    transform: rotate(6deg);
   }
 
-  @keyframes grow {
+  50% {
+    transform: rotate(-6deg);
+  }
+}
 
-    0%,
-    100% {
-      transform: scale(1);
-    }
+@keyframes grow {
 
-    50% {
-      transform: scale(1.2);
-    }
+  0%,
+  100% {
+    transform: scale(1);
   }
 
-  @keyframes grow-sm {
+  50% {
+    transform: scale(1.2);
+  }
+}
 
-    0%,
-    100% {
-      transform: scale(1);
-    }
+@keyframes grow-sm {
 
-    50% {
-      transform: scale(1.05);
-    }
+  0%,
+  100% {
+    transform: scale(1);
   }
 
-  @keyframes flash {
+  50% {
+    transform: scale(1.05);
+  }
+}
 
-    0%,
-    100% {
-      transform: scale(1);
-    }
+@keyframes flash {
 
-    50% {
-      transform: scale(1.02);
-    }
+  0%,
+  100% {
+    transform: scale(1);
   }
 
-  @keyframes reveal {
-    0% {
-      max-height: 0;
-      opacity: 0;
-    }
+  50% {
+    transform: scale(1.02);
+  }
+}
 
-    50% {
-      opacity: 1;
-    }
-
-    100% {
-      max-height: 1000px;
-      opacity: 1;
-    }
+@keyframes reveal {
+  0% {
+    max-height: 0;
+    opacity: 0;
   }
 
-  @keyframes text-gradient {
-    0% {
-      background-position-x: 0%;
-    }
-
-    100% {
-      background-position-x: 100%;
-    }
+  50% {
+    opacity: 1;
   }
 
-  @keyframes slideDown {
-    from {
-      height: 0px;
-    }
+  100% {
+    max-height: 1000px;
+    opacity: 1;
+  }
+}
 
-    to {
-      height: var(--radix-accordion-content-height);
-    }
+@keyframes text-gradient {
+  0% {
+    background-position-x: 0%;
   }
 
-  @keyframes slideUp {
-    from {
-      height: var(--radix-accordion-content-height);
-    }
+  100% {
+    background-position-x: 100%;
+  }
+}
 
-    to {
-      height: 0px;
-    }
+@keyframes slideDown {
+  from {
+    height: 0px;
   }
 
-  @keyframes develop {
-    0% {
-      opacity: 0;
-      filter: grayscale(100%) brightness(200%);
-    }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
 
-    30% {
-      opacity: 1;
-      filter: grayscale(100%) brightness(150%);
-    }
-
-    100% {
-      opacity: 1;
-      filter: grayscale(0%) brightness(100%);
-    }
+@keyframes slideUp {
+  from {
+    height: var(--radix-accordion-content-height);
   }
 
-  @keyframes svg-stroke-dashoffset-around {
-    from {
-      stroke-dashoffset: 0;
-    }
+  to {
+    height: 0px;
+  }
+}
 
-    to {
-      stroke-dashoffset: 1000;
-    }
+@keyframes develop {
+  0% {
+    opacity: 0;
+    filter: grayscale(100%) brightness(200%);
   }
 
-  @keyframes wobble {
-
-    0%,
-    100% {
-      transform: rotate(-2deg) translateX(-5px);
-    }
-
-    50% {
-      transform: rotate(2deg) translateX(5px);
-    }
+  30% {
+    opacity: 1;
+    filter: grayscale(100%) brightness(150%);
   }
 
-  @keyframes hide {
-    from {
-      opacity: 1;
-    }
+  100% {
+    opacity: 1;
+    filter: grayscale(0%) brightness(100%);
+  }
+}
 
-    to {
-      opacity: 0;
-    }
+@keyframes svg-stroke-dashoffset-around {
+  from {
+    stroke-dashoffset: 0;
   }
 
-  @keyframes slideIn {
-    from {
-      transform: translateX(calc(100% + var(--viewport-padding)));
-    }
+  to {
+    stroke-dashoffset: 1000;
+  }
+}
 
-    to {
-      transform: translateX(0);
-    }
+@keyframes wobble {
+
+  0%,
+  100% {
+    transform: rotate(-2deg) translateX(-5px);
   }
 
-  @keyframes swipeOut {
-    from {
-      transform: translateX(var(--radix-toast-swipe-end-x));
-    }
+  50% {
+    transform: rotate(2deg) translateX(5px);
+  }
+}
 
-    to {
-      transform: translateX(calc(100% + var(--viewport-padding)));
-    }
+@keyframes hide {
+  from {
+    opacity: 1;
   }
 
-  @keyframes spin-slow {
-    from {
-      transform: rotate(0deg);
-    }
+  to {
+    opacity: 0;
+  }
+}
 
-    to {
-      transform: rotate(360deg);
-    }
+@keyframes slideIn {
+  from {
+    transform: translateX(calc(100% + var(--viewport-padding)));
   }
 
-  @keyframes spin-slow-reverse {
-    from {
-      transform: rotate(360deg);
-    }
+  to {
+    transform: translateX(0);
+  }
+}
 
-    to {
-      transform: rotate(0deg);
-    }
+@keyframes swipeOut {
+  from {
+    transform: translateX(var(--radix-toast-swipe-end-x));
   }
 
-  @keyframes gradient-rotate {
+  to {
+    transform: translateX(calc(100% + var(--viewport-padding)));
+  }
+}
 
-    0%,
-    100% {
-      background-position: 0% 50%;
-    }
-
-    50% {
-      background-position: 100% 50%;
-    }
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
   }
 
-  @keyframes slideUpFadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
+  to {
+    transform: rotate(360deg);
+  }
+}
 
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+@keyframes spin-slow-reverse {
+  from {
+    transform: rotate(360deg);
   }
 
-  @keyframes slideUpFadeOut {
-    from {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    to {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
+  to {
+    transform: rotate(0deg);
   }
+}
+
+@keyframes gradient-rotate {
+
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes slideUpFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUpFadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
 
 @layer base {
 
@@ -633,83 +633,79 @@ mark {
 
 /* Custom Component Styles from original global.css */
 @layer components {
-  .markdown.prose img {
-    @apply m-0 rounded;
+  /* ... existing components ... */
+
+  .squeak-left-border {
+    @apply relative before:border-l before:border-b before:border-solid before:border-black before:rounded-bl-md before:h-[20px] before:top-0 before:absolute before:w-[30px] before:left-0;
+  }
+
+  li.squeak-left-border {
+    @apply before:h-[14px];
+  }
+
+  .community-post-markdown {
+    @apply text-[15px] leading-normal break-words pb-3;
+
+    &>div>*:last-child {
+      @apply mb-0;
+    }
+
+    a {
+      @apply text-primary font-semibold underline decoration-primary/30 hover:decoration-primary transition-all;
+    }
+
+    p {
+      @apply m-0 pb-3;
+    }
+
+    ol,
+    ul {
+      @apply my-3 pl-5 space-y-1;
+
+      li {
+        @apply pl-1;
+      }
+    }
+
+    blockquote {
+      @apply border-l-4 border-primary/20 pl-4 py-1 my-4 italic text-primary/70;
+    }
+
+    pre {
+      @apply text-base my-3 overflow-auto p-4 text-[15px];
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+      @apply text-primary font-bold mt-4 mb-2;
+    }
   }
 
   .prose-sm {
-    @apply text-[18px] [&_table]:text-[15px];
+    font-size: 15px !important;
+    line-height: 1.6 !important;
+    /* Reverted to match 'aa' 15px */
 
     li p {
       @apply mt-2;
     }
   }
+}
 
-  .prose {
-    @apply max-w-none;
-  }
+.community-section {
+  text-transform: none !important;
+}
 
-  .prose h1 {
-    @apply text-[1.75rem] leading-tight;
-  }
-
-  .prose h1 code {
-    @apply !text-[1.75rem];
-  }
-
-  .prose h2 {
-    @apply text-[1.75rem] leading-tight;
-  }
-
-  .prose h2 code {
-    @apply !text-[1.75rem];
-  }
-
-  .prose h2+h3 {
-    @apply mt-4;
-  }
-
-  .prose h3 {
-    @apply text-xl;
-  }
-
-  .prose h3 code {
-    @apply !text-xl;
-  }
-
-  .prose code {
-    @apply before:hidden after:hidden;
-  }
-
-  p {
-    @apply mb-4;
-
-    &+h2,
-    &+h3,
-    &+h4 {
-      @apply mt-8;
-    }
-  }
-
-  ul,
-  ol {
-    @apply mb-4;
-
-    ul,
-    ol {
-      @apply mb-2;
-    }
-
-    &+h2,
-    &+h3,
-    &+h4 {
-      @apply mt-8;
-    }
-  }
-
-  .prose > *:last-child {
-    @apply mb-0;
-  }
+[data-scheme='primary'] {
+  /* Re-aligning with aa project color variables if they differ */
+  --bg: 253 253 248;
+  --accent: 229 231 224;
+  --border: 191 193 183;
+  --text-primary: 77 79 70;
+  --text-secondary: 101 103 94;
+  --text-muted: 158 160 150;
 }
 
 .reader-content-container {
@@ -802,4 +798,3 @@ details ul {
 details ol {
   @apply pl-12 pr-4 mt-0 mb-4;
 }
-

@@ -11,7 +11,7 @@ import CloudinaryImage from 'components/CloudinaryImage'
 import { ReaderViewProvider, useReaderView } from './context/ReaderViewContext'
 import { ContributorsSmall } from './ContributorsSmall'
 import { TableOfContents, type TableOfContentsItem } from './TableOfContents'
-import { Comments } from '../Forum'
+import CommentSection from '../Community/CommentSection'
 import { getProseClasses } from '../../constants/index'
 import { InPageSearchProvider } from 'components/Search/InPageSearchContext'
 import { usePosts } from 'hooks/usePosts'
@@ -184,10 +184,10 @@ function ReaderViewContent({
                     )
                 })()}
 
-                <div ref={scrollAreaRef} className="flex-grow flex flex-col min-h-0 relative bg-white">
+                <div ref={scrollAreaRef} className="flex-grow flex flex-col min-h-0 relative bg-[#fcfcfc]">
                     <ScrollArea
                         data-scheme="primary"
-                        className="flex-grow relative bg-white !text-black"
+                        className="flex-grow relative bg-[#fcfcfc]"
                         style={backgroundImage && backgroundImage !== 'none' ? {
                             backgroundImage: `url(${backgroundImage === 'james' ? 'https://res.cloudinary.com/dmukukwp6/image/upload/v1738943658/James_H_5cb4c53d9a.png' : 'https://res.cloudinary.com/dmukukwp6/image/upload/Frame_10127_b7362fd913.png'})`,
                             backgroundRepeat: backgroundImage === 'james' ? 'repeat' : 'no-repeat',
@@ -269,7 +269,7 @@ function ReaderViewContent({
                                 </div>
                                 {showQuestions && (
                                     <div id="comments" className="mt-12">
-                                        <Comments slug={title} parentName={title} />
+                                        <CommentSection slug={title} />
                                     </div>
                                 )}
                             </div>

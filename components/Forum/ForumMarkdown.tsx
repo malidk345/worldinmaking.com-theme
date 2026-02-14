@@ -25,7 +25,17 @@ export default function ForumMarkdown({
     allowedElements?: string[]
     transformImageUri?: (href: string) => string
 }) {
+    const isHtml = children?.trim().startsWith('<')
     const content = replaceMentions(children || '')
+
+    if (isHtml) {
+        return (
+            <div
+                className={`markdown prose dark:prose-invert prose-sm max-w-full text-primary [&_a]:font-semibold break-words [overflow-wrap:anywhere] ${className}`}
+                dangerouslySetInnerHTML={{ __html: content }}
+            />
+        )
+    }
 
     return (
         <ReactMarkdown
@@ -36,7 +46,7 @@ export default function ForumMarkdown({
             className={`markdown prose dark:prose-invert prose-sm max-w-full text-primary [&_a]:font-semibold break-words [overflow-wrap:anywhere] ${className}`}
             components={{
                 pre: ({ children }) => (
-                    <pre className="whitespace-pre-wrap bg-accent/20 rounded-md p-4 text-[13px] font-mono overflow-x-auto border border-primary my-4">
+                    <pre className="whitespace-pre-wrap bg-accent/20 rounded-md p-4 text-[13px] font-mono overflow-x-auto border border-black my-4">
                         {children}
                     </pre>
                 ),
@@ -58,7 +68,7 @@ export default function ForumMarkdown({
                     </a>
                 ),
                 img: (props) => (
-                    <img {...props} className="rounded-md max-w-full h-auto my-4 border border-primary" />
+                    <img {...props} className="rounded-md max-w-full h-auto my-4 border border-black" />
                 ),
             }}
         >

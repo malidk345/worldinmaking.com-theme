@@ -54,62 +54,51 @@ export default function ForumQuestionForm({ isInForum = false, archived = false,
     }
 
     return (
-        <div className={`p-4 bg-white dark:bg-black border border-primary rounded-md shadow-sm ${className}`}>
-            <div className="flex items-center justify-between mb-4 border-b border-primary pb-2">
-                <span className="text-sm font-bold text-primary opacity-60">New Post</span>
-                <button
-                    onClick={() => setIsOpen(false)}
-                    className="text-xs font-bold text-primary opacity-40 hover:opacity-100 transition-opacity"
-                >
-                    Cancel
-                </button>
+        <div className={`relative ${className}`}>
+            <div className="w-[40px] h-[40px] float-left rounded-full overflow-hidden">
+                <ForumAvatar
+                    className="w-full h-full"
+                    image={profile?.avatar_url}
+                />
             </div>
-
-            <div className="relative">
-                <div className="w-[40px] h-[40px] float-left rounded-full overflow-hidden">
-                    <ForumAvatar
-                        className="w-full h-full"
-                        image={profile?.avatar_url}
+            <div className="pl-[55px] space-y-4">
+                {isInForum && (
+                    <Input
+                        label="Subject"
+                        showLabel={false}
+                        value={subject}
+                        onChange={(e: any) => setSubject(e.target.value)}
+                        placeholder="Subject"
+                        className="text-primary font-bold !text-[17px] border-none !p-0 focus:ring-0"
+                        autoFocus
                     />
-                </div>
-                <div className="pl-[55px] space-y-4">
-                    {isInForum && (
-                        <Input
-                            label="Subject"
-                            showLabel={false}
-                            value={subject}
-                            onChange={(e: any) => setSubject(e.target.value)}
-                            placeholder="Subject"
-                            className="text-primary font-bold !text-[17px] border-none !p-0 focus:ring-0"
-                            autoFocus
-                        />
-                    )}
+                )}
 
-                    <ForumRichText
-                        initialValue={body}
-                        setFieldValue={(field: string, value: string) => setBody(value)}
-                        onSubmit={handleSubmit}
-                        autoFocus={!isInForum}
-                        className="bg-transparent min-h-[120px]"
-                        placeholder="Type more details..."
-                        cta={
-                            <OSButton
-                                size="sm"
-                                variant="primary"
-                                disabled={!body.trim() || (isInForum && !subject.trim())}
-                                onClick={handleSubmit}
-                            >
-                                Post
-                            </OSButton>
-                        }
-                    />
+                <ForumRichText
+                    initialValue={body}
+                    setFieldValue={(field: string, value: string) => setBody(value)}
+                    onSubmit={handleSubmit}
+                    autoFocus={!isInForum}
+                    boxed={false}
+                    className="bg-transparent min-h-[120px]"
+                    placeholder={isInForum ? "Type more details..." : "Add a comment..."}
+                    cta={
+                        <OSButton
+                            size="sm"
+                            variant="primary"
+                            disabled={!body.trim() || (isInForum && !subject.trim())}
+                            onClick={handleSubmit}
+                        >
+                            Post
+                        </OSButton>
+                    }
+                />
 
-                    <p className="text-[11px] opacity-40 mt-4 [text-wrap:balance] text-primary">
-                        If you need to share personal info relating to a bug or issue with your account, we suggest filing a support ticket in the app.
-                    </p>
-                </div>
-                <div className="clear-both" />
+                <p className="text-[11px] opacity-40 mt-4 [text-wrap:balance] text-primary">
+                    If you need to share personal info relating to a bug or issue with your account, we suggest filing a support ticket in the app.
+                </p>
             </div>
+            <div className="clear-both" />
         </div>
     )
 }

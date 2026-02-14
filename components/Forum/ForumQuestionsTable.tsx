@@ -81,7 +81,7 @@ export default function ForumQuestionsTable({
     sortBy = 'newest',
 }: ForumQuestionsTableProps) {
     return (
-        <div className="bg-white dark:bg-black border border-primary rounded-md overflow-hidden">
+        <div className="bg-[#fbfcfa] dark:bg-black border border-primary rounded-md overflow-hidden">
             {questions.length === 0 && !isLoading ? (
                 <div className="py-20 text-center opacity-40">
                     <div className="text-sm font-bold">No discussions found.</div>

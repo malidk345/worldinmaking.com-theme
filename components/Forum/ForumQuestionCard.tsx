@@ -60,7 +60,7 @@ export default function ForumQuestionCard({
             {question.archived && (
                 <div
                     data-scheme="secondary"
-                    className="m-4 mb-0 bg-primary border border-primary p-4 rounded text-center"
+                    className="m-4 mb-0 bg-primary border border-black p-4 rounded text-center"
                 >
                     <p className="font-bold text-base !m-0 !p-0">The following thread has been archived.</p>
                     <p className="!text-sm !m-0 text-balance opacity-60">
@@ -69,7 +69,7 @@ export default function ForumQuestionCard({
                 </div>
             )}
 
-            <div className={`flex items-center space-x-2 w-full ${isInForum ? 'pt-5 pl-5 pr-8' : ''}`}>
+            <div className={`flex items-center space-x-2 w-full ${isInForum ? 'pt-5 pl-5 pr-8' : ''} ${!question.subject ? '-mb-2' : ''}`}>
                 <ForumProfileBadge
                     profile={question.profile}
                     className={question.archived ? 'opacity-50' : ''}
@@ -84,21 +84,21 @@ export default function ForumQuestionCard({
                         icon={<IconPencil />}
                         size="md"
                         tooltip="Edit post"
-                        className="!p-1.5"
+                        className="!p-1.5 opacity-60 hover:opacity-100"
                     />
                     <OSButton
                         onClick={() => { }} // Handle archive toggle
                         icon={question.archived ? <IconUndo /> : <IconArchive />}
                         size="md"
                         tooltip={question.archived ? 'Restore thread' : 'Archive thread'}
-                        className="!p-1.5"
+                        className="!p-1.5 opacity-60 hover:opacity-100"
                     />
                 </div>
             </div>
 
             <div className={question.archived ? 'opacity-50' : ''}>
                 <div
-                    className={`pb-4 ${isInForum ? 'pl-[calc(2.5rem_+_30px)] pr-8' : 'border-l border-primary ml-5 pl-[30px]'
+                    className={`pb-4 ${isInForum ? 'pl-[calc(2.5rem_+_30px)] pr-8' : 'squeak-left-border ml-5 pl-[30px]'
                         }`}
                 >
                     {question.subject && (
@@ -115,20 +115,6 @@ export default function ForumQuestionCard({
                     <div className="question-content">
                         <ForumMarkdown>{question.body}</ForumMarkdown>
                     </div>
-
-                    {showSlug && question.topics && question.topics.length > 0 && (
-                        <div className="flex items-center gap-2 mt-4">
-                            {question.topics.map((topic) => (
-                                <Link
-                                    key={topic.id}
-                                    to={`/questions/topic/${topic.slug}`}
-                                    className="bg-accent/20 hover:bg-accent/40 py-0.5 px-2 rounded-sm text-sm text-primary transition-colors"
-                                >
-                                    {topic.label}
-                                </Link>
-                            ))}
-                        </div>
-                    )}
                 </div>
 
                 <ForumReplies
@@ -141,8 +127,8 @@ export default function ForumQuestionCard({
 
                 <div
                     className={`pb-1 relative w-full ${isInForum
-                        ? 'bg-primary border-t border-primary pt-4 px-4'
-                        : 'ml-5 pl-8 pr-5 border-l border-primary'
+                        ? 'bg-primary border-t border-black pt-4 px-4'
+                        : 'ml-5 pl-8 pr-5 squeak-left-border'
                         } ${question.archived ? 'opacity-25 pointer-events-none' : ''}`}
                 >
                     <ForumReplyForm

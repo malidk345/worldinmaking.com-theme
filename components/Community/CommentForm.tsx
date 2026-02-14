@@ -2,72 +2,72 @@
 
 import React, { useState } from 'react'
 import OSButton from 'components/OSButton'
-import ForumRichText from './ForumRichText'
-import ForumAvatar from './ForumAvatar'
 import { useAuth } from 'context/AuthContext'
+import ForumAvatar from '../Forum/ForumAvatar'
+import ForumRichText from '../Forum/ForumRichText'
 
-interface ForumReplyFormProps {
-    isInForum?: boolean
-    archived?: boolean
+interface CommentFormProps {
     onSubmit?: (content: string) => void
+    className?: string
+    placeholder?: string
 }
 
-export default function ForumReplyForm({ isInForum = false, archived = false, onSubmit }: ForumReplyFormProps) {
+export default function CommentForm({ onSubmit, className = '', placeholder = "Add a comment..." }: CommentFormProps) {
     const [body, setBody] = useState('')
-    const [isOpen, setIsOpen] = useState(false)
+    const [isActive, setIsActive] = useState(false)
     const { profile } = useAuth()
 
     const handleSubmit = () => {
         if (body.trim()) {
             onSubmit?.(body)
             setBody('')
-            setIsOpen(false)
+            setIsActive(false)
         }
     }
 
-    if (!isOpen) {
+    if (!isActive) {
         return (
-            <div className={`p-1 flex items-center space-x-3 ${archived ? 'opacity-25 pointer-events-none' : ''}`}>
-                <div className="w-[30px] h-[30px] ml-[-2px] rounded-full overflow-hidden shrink-0">
+            <div className={`flex flex-1 space-x-2 ${className}`}>
+                <div className="rounded-full overflow-hidden aspect-square w-[40px] shrink-0 border border-primary">
                     <ForumAvatar
                         className="w-full h-full"
                         image={profile?.avatar_url}
                     />
                 </div>
                 <OSButton
-                    onClick={() => setIsOpen(true)}
-                    disabled={archived}
+                    id="comment-form-button"
+                    onClick={() => setIsActive(true)}
                     size="md"
                     width="full"
                     align="left"
                     variant="underlineOnHover"
-                    className="border border-black bg-accent !p-2"
+                    className="border border-primary bg-accent !p-2 min-h-8"
                 >
-                    <span className="font-bold text-primary">Reply</span>
+                    <span className="font-bold text-primary">{placeholder}</span>
                 </OSButton>
             </div>
         )
     }
 
     return (
-        <div className={`relative ${archived ? 'opacity-25 pointer-events-none' : ''}`}>
-            <div className="w-[40px] h-[40px] float-left ml-[-2px] rounded-full overflow-hidden shrink-0">
+        <div className={`relative ${className}`}>
+            <div className="w-[40px] h-[40px] float-left rounded-full overflow-hidden shrink-0 mt-1">
                 <ForumAvatar
                     className="w-full h-full"
                     image={profile?.avatar_url}
                 />
             </div>
-            <div className="pl-[55px]">
+            <div className="pl-[55px] space-y-2">
                 <ForumRichText
                     initialValue={body}
                     setFieldValue={(field: string, value: string) => setBody(value)}
                     onSubmit={handleSubmit}
-                    autoFocus
+                    mentions={true}
                     boxed={false}
-                    className="bg-transparent min-h-[100px]"
-                    placeholder="Type your reply..."
+                    className="bg-transparent min-h-[120px]"
+                    placeholder={placeholder}
                     cta={
-                        <div className="flex gap-2">
+                        <div className="flex justify-end mt-2">
                             <OSButton
                                 size="sm"
                                 variant="primary"
@@ -76,16 +76,13 @@ export default function ForumReplyForm({ isInForum = false, archived = false, on
                             >
                                 Post
                             </OSButton>
-                            <OSButton
-                                size="sm"
-                                variant="default"
-                                onClick={() => setIsOpen(false)}
-                            >
-                                Cancel
-                            </OSButton>
                         </div>
                     }
                 />
+                <p className="text-xs text-center mt-4 [text-wrap:_balance] opacity-60 mb-0 text-primary">
+                    If you need to share personal info relating to a bug or issue with your account, we
+                    suggest filing a support ticket in the app.
+                </p>
             </div>
             <div className="clear-both" />
         </div>

@@ -1,41 +1,25 @@
 "use client"
 
 import React, { ChangeEvent, useEffect, useRef, useState, useCallback, useMemo } from 'react'
+import { useEditor, EditorContent } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import Placeholder from '@tiptap/extension-placeholder'
+import Link from '@tiptap/extension-link'
+import Image from '@tiptap/extension-image'
+import CharacterCount from '@tiptap/extension-character-count'
 import { useDropzone } from 'react-dropzone'
+import slugify from 'slugify'
 import { AnimatePresence, motion } from 'framer-motion'
 import { IconFeatures, IconImage, IconX } from '@posthog/icons'
-import slugify from 'slugify'
 
 import OSButton from 'components/OSButton'
-import OSTextarea from 'components/OSForm/textarea'
-import ForumMarkdown from './ForumMarkdown'
-import Tooltip from 'components/RadixUI/Tooltip'
+import ForumAvatar from './ForumAvatar'
+import MarkdownLogo from './MarkdownLogo'
 
-// Custom Spinner component since it's missing in bb
-const Spinner = ({ className = '' }: { className?: string }) => (
-    <svg className={`animate-spin ${className}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-    </svg>
-)
-
-const MarkdownLogo = () => (
-    <svg width="30" height="18" viewBox="0 0 30 18" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-        <path fillRule="evenodd" clipRule="evenodd" d="M2.74291 1.40625C2.35302 1.40625 2.03694 1.72105 2.03694 2.10938V15.8906C2.03694 16.2789 2.35302 16.5938 2.74291 16.5938H27.8755C28.2654 16.5938 28.5815 16.2789 28.5815 15.8906V2.10938C28.5815 1.72105 28.2654 1.40625 27.8755 1.40625H2.74291ZM0.625 2.10938C0.625 0.944399 1.57322 0 2.74291 0H27.8755C29.0452 0 29.9934 0.944399 29.9934 2.10938V15.8906C29.9934 17.0556 29.0452 18 27.8755 18H2.74291C1.57322 18 0.625 17.0556 0.625 15.8906V2.10938Z" />
-        <path d="M4.85938 13.7812V4.21875H7.68326L10.5071 7.73438L13.331 4.21875H16.1549V13.7812H13.331V8.29688L10.5071 11.8125L7.68326 8.29688V13.7812H4.85938ZM22.5087 13.7812L18.2728 9.14062H21.0967V4.21875H23.9206V9.14062H26.7445L22.5087 13.7812Z" />
-    </svg>
-)
-
-const EditIcon = () => (
-    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12.1464 0.146447C12.3417 -0.0488155 12.6583 -0.0488155 12.8536 0.146447L14.8536 2.14645C15.0488 2.34171 15.0488 2.65829 14.8536 2.85355L5.85355 11.8536C5.80588 11.9012 5.7483 11.9379 5.68494 11.9613L1.68494 13.4353C1.44299 13.524 1.17646 13.4338 1.04169 13.217C0.906927 13.0003 0.93291 12.7161 1.10444 12.5273L3.85355 9.14645C3.88279 9.11051 3.91899 9.08053 3.96023 9.0577L12.1464 0.146447ZM11.1464 2.14645L4.08579 9.20711L3.91421 11.0858L5.79289 10.9142L12.8536 3.85355L11.1464 2.14645Z" fill="currentColor" />
-    </svg>
-)
 
 const buttons = [
     {
-        cursor: -2,
-        replaceWith: (selectedText: string) => `**${selectedText}**`,
+        name: 'bold',
         icon: (
             <svg width="11" height="13" viewBox="0 0 11 13" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
@@ -45,10 +29,11 @@ const buttons = [
             </svg>
         ),
         tooltipContent: 'Bold',
+        action: (editor: any) => editor.chain().focus().toggleBold().run(),
+        isActive: (editor: any) => editor.isActive('bold'),
     },
     {
-        cursor: -1,
-        replaceWith: (selectedText: string) => `*${selectedText}*`,
+        name: 'italic',
         icon: (
             <svg width="4" height="13" viewBox="0 0 4 13" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
@@ -58,10 +43,11 @@ const buttons = [
             </svg>
         ),
         tooltipContent: 'Italic',
+        action: (editor: any) => editor.chain().focus().toggleItalic().run(),
+        isActive: (editor: any) => editor.isActive('italic'),
     },
     {
-        cursor: -4,
-        replaceWith: (selectedText: string) => `\n\`\`\`\n${selectedText}\n\`\`\``,
+        name: 'code',
         icon: (
             <svg width="14" height="10" viewBox="0 0 14 10" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
@@ -75,10 +61,11 @@ const buttons = [
             </svg>
         ),
         tooltipContent: 'Code',
+        action: (editor: any) => editor.chain().focus().toggleCode().run(),
+        isActive: (editor: any) => editor.isActive('code'),
     },
     {
-        cursor: -1,
-        replaceWith: (selectedText: string) => `[${selectedText}]()`,
+        name: 'link',
         icon: (
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <g clipPath="url(#clip0_3781_82365)">
@@ -99,8 +86,20 @@ const buttons = [
             </svg>
         ),
         tooltipContent: 'Link',
+        action: (editor: any) => {
+            const url = window.prompt('URL')
+            if (url) editor.chain().focus().setLink({ href: url }).run()
+        },
+        isActive: (editor: any) => editor.isActive('link'),
     },
 ]
+
+const Spinner = ({ className = '' }: { className?: string }) => (
+    <svg className={`animate-spin ${className}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+)
 
 interface ForumRichTextProps {
     initialValue?: string
@@ -112,17 +111,23 @@ interface ForumRichTextProps {
     className?: string
     cta?: React.ReactNode | (() => React.ReactNode)
     placeholder?: string
-    preview?: boolean
+    boxed?: boolean
+    label?: string
+    mentions?: boolean
 }
 
-const MentionProfile = ({ profile, onSelect, selectionStart, index, focused }: any) => {
-    const { username, avatar_url } = profile
-    const name = username || 'Anonymous'
+// Mock profiles for mentions
+const MOCK_PROFILES = [
+    { id: 'max', username: 'max', avatar_url: 'https://res.cloudinary.com/dmukukwp6/image/upload/v1710153303/posthog.com/contents/images/authors/james.png' },
+    { id: '1', username: 'james', avatar_url: 'https://res.cloudinary.com/dmukukwp6/image/upload/v1710153303/posthog.com/contents/images/authors/james.png' },
+    { id: '2', username: 'tim', avatar_url: 'https://res.cloudinary.com/dmukukwp6/image/upload/v1710153303/posthog.com/contents/images/authors/tim.png' },
+]
 
+const MentionProfile = ({ profile, onSelect, index, focused }: any) => {
     return (
-        <li className="border-b border-primary p-1">
+        <li className="border-b border-black/10 p-1">
             <OSButton
-                onClick={() => onSelect?.(profile, selectionStart)}
+                onClick={() => onSelect?.(profile)}
                 type="button"
                 variant="default"
                 width="full"
@@ -131,18 +136,14 @@ const MentionProfile = ({ profile, onSelect, selectionStart, index, focused }: a
                 active={focused === index}
             >
                 <div className="flex space-x-2 items-center w-full">
-                    <div className="size-6 overflow-hidden rounded-full shrink-0">
-                        {avatar_url ? (
-                            <img src={avatar_url} alt={name} className="w-full h-full object-cover" />
-                        ) : (
-                            <div className="w-full h-full bg-accent flex items-center justify-center text-[10px] font-bold">
-                                {name[0]}
-                            </div>
-                        )}
+                    <div className="size-6 overflow-hidden rounded-full">
+                        <ForumAvatar className="w-full h-full" image={profile.avatar_url} />
                     </div>
                     <div>
+                        <p className="m-0 text-[10px] font-semibold opacity-50 leading-none lowercase tracking-tighter">{profile.id}</p>
                         <div className="flex space-x-1 items-center">
-                            <p className="m-0 leading-none text-sm line-clamp-1">{name}</p>
+                            <p className="m-0 leading-none text-sm line-clamp-1 lowercase">{profile.username}</p>
+                            {profile.id === 'max' && <IconFeatures className="size-3.5 text-primary opacity-50" />}
                         </div>
                     </div>
                 </div>
@@ -151,52 +152,28 @@ const MentionProfile = ({ profile, onSelect, selectionStart, index, focused }: a
     )
 }
 
-const MentionProfiles = ({ onSelect, onClose, body, selectionStart }: any) => {
-    const [profiles, setProfiles] = useState<any[]>([])
-    const [loading, setLoading] = useState(true)
+const MentionProfiles = ({ onSelect, onClose, search = '' }: any) => {
+    const filteredProfiles = MOCK_PROFILES.filter(p => p.username.toLowerCase().includes(search.toLowerCase()))
     const [focused, setFocused] = useState(0)
-
-    // In a real app, this would be fetched from Supabase
-    // For now we'll mock some data or try a basic fetch if possible
-    useEffect(() => {
-        const fetchProfiles = async () => {
-            // Mocking some profiles for demonstration to match aa's behavior
-            setProfiles([
-                { id: 'max', username: 'max', avatar_url: 'https://res.cloudinary.com/dmukukwp6/image/upload/v1688579513/thumbnail_max_c5dd553db8.png' },
-                { id: '1', username: 'James', avatar_url: null },
-                { id: '2', username: 'Tim', avatar_url: null }
-            ])
-            setLoading(false)
-        }
-        fetchProfiles()
-    }, [])
-
-    const search = body.substring(selectionStart).split(' ')[0].replace('@', '')
-    const filteredProfiles = profiles.filter(p =>
-        p.username.toLowerCase().includes(search.toLowerCase())
-    )
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'ArrowDown') {
                 e.preventDefault()
-                setFocused((prev) => (prev + 1) % filteredProfiles.length)
+                setFocused((prev) => (prev + 1) % Math.max(1, filteredProfiles.length))
             }
             if (e.key === 'ArrowUp') {
                 e.preventDefault()
-                setFocused((prev) => (prev - 1 + filteredProfiles.length) % filteredProfiles.length)
+                setFocused((prev) => (prev - 1 + filteredProfiles.length) % Math.max(1, filteredProfiles.length))
             }
             if (e.key === 'Tab' || e.key === 'Enter') {
                 e.preventDefault()
-                if (filteredProfiles[focused]) {
-                    onSelect?.(filteredProfiles[focused], selectionStart)
-                }
+                if (filteredProfiles[focused]) onSelect?.(filteredProfiles[focused])
             }
         }
-
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [focused, search, filteredProfiles, onSelect, selectionStart])
+    }, [focused, filteredProfiles, onSelect])
 
     return (
         <motion.div
@@ -213,20 +190,17 @@ const MentionProfiles = ({ onSelect, onClose, body, selectionStart }: any) => {
                 className="!p-1 rounded-full absolute top-0.5 right-0.5 z-20"
                 onClick={onClose}
             />
-            <ul
-                className="m-0 p-0 list-none border border-primary bg-primary h-full rounded-md overflow-auto shadow-xl"
-            >
+            <ul className="m-0 p-0 list-none border border-input bg-light dark:bg-dark h-full rounded-md overflow-auto shadow-2xl">
                 {filteredProfiles.map((profile, index) => (
                     <MentionProfile
                         focused={focused}
                         index={index}
                         onSelect={onSelect}
                         profile={profile}
-                        selectionStart={selectionStart}
                         key={profile.id}
                     />
                 ))}
-                {filteredProfiles.length === 0 && !loading && (
+                {filteredProfiles.length === 0 && (
                     <li className="p-3 text-xs opacity-50 text-center">No results</li>
                 )}
             </ul>
@@ -244,33 +218,92 @@ export default function ForumRichText({
     className = '',
     cta = null,
     placeholder = 'Type more details...',
-    preview = true,
+    boxed = true,
+    label = '',
+    mentions = true,
 }: ForumRichTextProps) {
-    const textarea = useRef<HTMLTextAreaElement>(null)
-    const [value, setValue] = useState(initialValue)
-    const [cursor, setCursor] = useState<number | null>(null)
     const [imageLoading, setImageLoading] = useState(false)
-    const [showPreview, setShowPreview] = useState(false)
     const [showMentionProfiles, setShowMentionProfiles] = useState(false)
-    const mentionProfilesRef = useRef<HTMLDivElement>(null)
-
-    // We'll store local images for preview like in aa
+    const [mentionSearch, setMentionSearch] = useState('')
     const [localImages, setLocalImages] = useState<any[]>([])
+
+    const editor = useEditor({
+        extensions: [
+            StarterKit,
+            Placeholder.configure({
+                placeholder: placeholder,
+            }),
+            Link.configure({
+                openOnClick: false,
+            }),
+            Image.configure({
+                HTMLAttributes: {
+                    class: 'rounded-md max-w-full h-auto my-4 border border-black',
+                },
+            }),
+            CharacterCount.configure({
+                limit: maxLength,
+            }),
+        ],
+        content: initialValue,
+        onUpdate: ({ editor }) => {
+            const html = editor.getHTML()
+            setFieldValue(bodyKey, html)
+
+            // Mention detection logic
+            const { from } = editor.state.selection
+            const textBefore = editor.state.doc.textBetween(Math.max(0, from - 20), from)
+            const mentionMatch = textBefore.match(/@(\w*)$/)
+            if (mentionMatch) {
+                setMentionSearch(mentionMatch[1])
+                setShowMentionProfiles(true)
+            } else {
+                setShowMentionProfiles(false)
+            }
+        },
+        editorProps: {
+            attributes: {
+                // Exact styling from aa project's OSTextarea but applied to Tiptap
+                class: `focus:outline-none min-h-[160px] p-3 prose prose-sm dark:prose-invert max-w-none text-primary [&_a]:font-semibold break-words [overflow-wrap:anywhere] ${className}`,
+            },
+            handlePaste: (view, event) => {
+                const items = Array.from(event.clipboardData?.items || [])
+                const image = items.find(item => item.type.startsWith('image/'))
+                if (image) {
+                    const file = image.getAsFile()
+                    if (file) {
+                        onDrop([file])
+                        return true
+                    }
+                }
+                return false
+            }
+        },
+        immediatelyRender: false,
+    })
+
+    useEffect(() => {
+        if (editor && initialValue !== editor.getHTML()) {
+            editor.commands.setContent(initialValue)
+        }
+    }, [initialValue, editor])
 
     const onDrop = useCallback(
         async (acceptedFiles: File[]) => {
             const file = acceptedFiles[0]
-            if (!file) return
+            if (!file || !editor) return
 
-            setImageLoading(true)
             const fakeImagePath = `/${Date.now()}/${slugify(file.name)}`
             const objectURL = URL.createObjectURL(file)
 
-            setLocalImages(prev => [...prev, { fakeImagePath, file, objectURL }])
-            setValue(prev => prev + `![${file.name}](${fakeImagePath})`)
-            setImageLoading(false)
+            setLocalImages((prev) => [
+                ...prev,
+                { fakeImagePath, objectURL },
+            ])
+
+            editor.chain().focus().setImage({ src: fakeImagePath }).run()
         },
-        []
+        [editor]
     )
 
     const { getRootProps, getInputProps, open, isDragActive } = useDropzone({
@@ -281,116 +314,36 @@ export default function ForumRichText({
         accept: { 'image/png': ['.png'], 'image/jpeg': ['.jpg', '.jpeg'], 'image/gif': ['.gif'] },
     })
 
-    const replaceSelection = (selectionStart: number = 0, selectionEnd: number = 0, text = '', currentVal: string) => {
-        return currentVal.substring(0, selectionStart) + text + currentVal.substring(selectionEnd, currentVal.length)
-    }
+    const handleProfileSelect = (profile: any) => {
+        if (!editor) return
 
-    const getTextSelection = () => {
-        const selectionStart = textarea?.current?.selectionStart || 0
-        const selectionEnd = textarea?.current?.selectionEnd || 0
-        const selectedText = textarea?.current?.value.slice(selectionStart, selectionEnd) || ''
-        return { selectedText, selectionStart, selectionEnd }
-    }
+        const { from } = editor.state.selection
+        const textBefore = editor.state.doc.textBetween(Math.max(0, from - 20), from)
+        const match = textBefore.match(/@(\w*)$/)
 
-    const handleButtonClick = (
-        e: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>,
-        replaceWith: (text: string) => string,
-        cursorPos: number
-    ) => {
-        e.preventDefault()
-        const { selectionStart, selectionEnd, selectedText } = getTextSelection()
-        textarea?.current?.focus()
-        setValue((prevValue) => replaceSelection(selectionStart, selectionEnd, replaceWith(selectedText), prevValue))
-        setCursor(cursorPos)
-    }
+        if (match) {
+            const start = from - match[0].length
+            const mentionText = profile.id === 'max' ? `@max ` : `@${profile.username.toLowerCase().replace(' ', '_')}/${profile.id} `
 
-    const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-        setValue(e.target.value)
-    }
-
-    const isURL = (str: string) => {
-        try {
-            new URL(str)
-            return true
-        } catch (_) {
-            return false
-        }
-    }
-
-    const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
-        const text = e.clipboardData.getData('text')
-        if (text && isURL(text)) {
-            const { selectionStart, selectionEnd, selectedText } = getTextSelection()
-            if (selectedText) {
-                e.preventDefault()
-                textarea?.current?.focus()
-                setValue((prevValue) =>
-                    replaceSelection(selectionStart, selectionEnd, `[${selectedText}](${text})`, prevValue)
-                )
-            }
+            editor.chain()
+                .focus()
+                .insertContentAt({ from: start, to: from }, mentionText)
+                .run()
         }
 
-        const images = Array.from(e.clipboardData.items).filter((item) =>
-            ['image/jpeg', 'image/png'].includes(item.type)
-        )
-        if (images.length > 0) {
-            const imageFile = images[0].getAsFile()
-            if (imageFile) onDrop([imageFile])
-        }
-    }
-
-    useEffect(() => {
-        if (cursor !== null && textarea.current) {
-            textarea.current.focus()
-            const newPos = textarea.current.value.length + cursor // Adjust as per aa logic if needed
-            textarea.current.setSelectionRange(newPos, newPos)
-            setCursor(null)
-        }
-    }, [cursor])
-
-    useEffect(() => {
-        setFieldValue(bodyKey, value)
-    }, [value, setFieldValue, bodyKey])
-
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && onSubmit) {
-            onSubmit()
-        }
-        if (e.key === '@' && e.shiftKey) {
-            setShowMentionProfiles(true)
-        }
-    }
-
-    const handleContainerClick = (e: any) => {
-        if (mentionProfilesRef.current && !mentionProfilesRef.current.contains(e.target)) {
-            setShowMentionProfiles(false)
-        }
-    }
-
-    useEffect(() => {
-        const handleGlobalKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' || e.key === ' ') {
-                setShowMentionProfiles(false)
-            }
-        }
-        window.addEventListener('keydown', handleGlobalKeyDown)
-        return () => window.removeEventListener('keydown', handleGlobalKeyDown)
-    }, [])
-
-    const handleProfileSelect = (profile: any, selectionStart: number) => {
-        const { selectionEnd } = getTextSelection()
-        const mention = profile.id === 'max' ? `@max ` : `@${profile.username.trim().toLowerCase().replace(' ', '_')}/${profile.id} `
-        setValue((prevValue) => replaceSelection(selectionStart, selectionEnd, mention, prevValue))
         setShowMentionProfiles(false)
-        textarea.current?.focus()
     }
+
+    if (!editor) return null
 
     return (
-        <div className="relative" {...getRootProps()} onClick={handleContainerClick}>
+        <div className="relative" {...getRootProps()}>
             <input className="hidden" {...getInputProps()} />
+
+            {/* Toolbar - PIXEL PERFECT from aa */}
             <div
                 data-scheme="secondary"
-                className="not-prose bg-primary flex items-center justify-between py-0.5 border border-primary rounded-t"
+                className={`not-prose bg-primary flex items-center justify-between py-0.5 ${boxed ? 'border border-black rounded-t' : 'border-b border-black/20'}`}
             >
                 <ul className="flex items-center list-none p-0 mx-2 space-x-1 w-full !mb-0">
                     {buttons.map((button, index) => (
@@ -401,11 +354,10 @@ export default function ForumRichText({
                                 size="md"
                                 icon={button.icon}
                                 iconClassName="size-5 justify-center items-center flex"
-                                className="!text-secondary hover:!text-primary"
-                                disabled={imageLoading || showPreview}
-                                tooltip={!imageLoading && !showPreview ? button.tooltipContent : undefined}
+                                className={`!text-secondary hover:!text-primary ${button.isActive(editor) ? '!text-primary bg-accent' : ''}`}
+                                tooltip={button.tooltipContent}
                                 tooltipDelay={500}
-                                onClick={(e) => handleButtonClick(e, button.replaceWith, button.cursor)}
+                                onClick={() => button.action(editor)}
                             />
                         </li>
                     ))}
@@ -414,11 +366,10 @@ export default function ForumRichText({
                             type="button"
                             variant="default"
                             size="md"
-                            disabled={imageLoading || showPreview}
                             icon={<IconImage />}
                             iconClassName="size-5 justify-center items-center flex"
                             className="!text-secondary hover:!text-primary"
-                            tooltip={!imageLoading && !showPreview ? 'Image' : undefined}
+                            tooltip="Image"
                             tooltipDelay={500}
                             onClick={(e) => {
                                 e.preventDefault()
@@ -426,130 +377,50 @@ export default function ForumRichText({
                             }}
                         />
                     </li>
-                    {preview && (
-                        <>
-                            <li className="!ml-auto">
-                                <OSButton
-                                    type="button"
-                                    variant="default"
-                                    size="md"
-                                    icon={<EditIcon />}
-                                    iconClassName="size-5 justify-center items-center flex"
-                                    tooltip="Edit"
-                                    onClick={() => setShowPreview(false)}
-                                    active={!showPreview}
-                                />
-                            </li>
-                            <li>
-                                <OSButton
-                                    type="button"
-                                    variant="default"
-                                    size="md"
-                                    icon={
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            strokeWidth={1.5}
-                                            stroke="currentColor"
-                                            className="w-5 h-5"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
-                                            />
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                            />
-                                        </svg>
-                                    }
-                                    tooltip="Preview"
-                                    onClick={() => setShowPreview(true)}
-                                    active={showPreview}
-                                    iconClassName="size-5 justify-center items-center flex"
-                                />
-                            </li>
-                        </>
-                    )}
+
                 </ul>
             </div>
 
-            {showPreview ? (
-                <div className="bg-primary text-primary text-base h-[200px] px-3 py-2 resize-none w-full outline-none focus:ring-0 overflow-auto border border-primary border-t-0">
-                    <ForumMarkdown
-                        className="p-4"
-                        transformImageUri={(fakeImagePath) => {
-                            const objectURL = localImages.find(
-                                (image) => image.fakeImagePath === fakeImagePath
-                            )?.objectURL
-                            return objectURL || fakeImagePath
-                        }}
-                    >
-                        {value}
-                    </ForumMarkdown>
-                </div>
-            ) : (
-                <div className="relative border border-primary border-t-0 rounded-b">
-                    <AnimatePresence>
-                        {showMentionProfiles && (
-                            <div ref={mentionProfilesRef} onClick={(e) => e.stopPropagation()}>
+            {/* Editor Area - PIXEL PERFECT from aa */}
+            <div className={`relative ${boxed ? 'border border-black border-t-0 rounded-b' : ''} bg-primary`}>
+                <div className="relative">
+                    {mentions && (
+                        <AnimatePresence>
+                            {showMentionProfiles && (
                                 <MentionProfiles
-                                    body={value}
-                                    selectionStart={textarea.current?.selectionStart}
-                                    onClose={() => {
-                                        setShowMentionProfiles(false)
-                                        textarea.current?.focus()
-                                    }}
+                                    search={mentionSearch}
+                                    onClose={() => setShowMentionProfiles(false)}
                                     onSelect={handleProfileSelect}
                                 />
-                            </div>
-                        )}
-                    </AnimatePresence>
-                    <OSTextarea
-                        onPaste={handlePaste}
-                        disabled={imageLoading}
-                        autoFocus={autoFocus}
-                        className={`w-full !p-3 !bg-transparent [field-sizing:content] border-none rounded-b min-h-40 focus:ring-0 markdown prose dark:prose-invert prose-sm max-w-full text-primary [&_a]:font-semibold max-h-[500px] break-words [overflow-wrap:anywhere] ${className}`}
-                        onBlur={(e) => e.preventDefault()}
-                        name="body"
-                        value={value}
-                        onChange={handleChange}
-                        ref={textarea}
-                        required
-                        id="body"
-                        placeholder={placeholder}
-                        maxLength={maxLength}
-                        onKeyDown={handleKeyDown}
-                        showLabel={false}
-                    />
-
-                    {isDragActive && (
-                        <div className="bg-white dark:bg-accent-dark z-10 rounded-md flex items-center justify-center absolute w-full h-full inset-0 p-2 after:absolute after:left-1/2 after:top-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:w-[calc(100%-2rem)] after:h-[calc(100%-2rem)] after:border after:border-dashed after:border-primary after:dark:after:rounded-md">
-                            <p className="m-0 font-semibold">Drop image here</p>
-                        </div>
+                            )}
+                        </AnimatePresence>
                     )}
+                    {label && !!editor.getHTML() && (
+                        <label className="text-sm opacity-60 block font-medium mb-1 px-3 pt-2">{label}</label>
+                    )}
+                    <EditorContent editor={editor} />
                 </div>
-            )}
 
-            {imageLoading && (
-                <div className="w-full h-full inset-0 bg-white/50 dark:bg-black/50 absolute flex justify-center items-center z-20">
-                    <Spinner className="w-10 h-10" />
-                </div>
-            )}
+                {isDragActive && (
+                    <div className="bg-white/90 dark:bg-black/90 z-10 rounded-b flex items-center justify-center absolute w-full h-full inset-0 p-2">
+                        <div className="border border-dashed border-black rounded-md w-full h-full flex items-center justify-center">
+                            <p className="m-0 font-semibold lowercase">drop image here</p>
+                        </div>
+                    </div>
+                )}
+            </div>
 
+            {/* Bottom Bar - PIXEL PERFECT from aa */}
             <div className="flex justify-between items-center mt-2 px-1">
                 <div className="flex gap-2 items-center">
-                    {typeof cta === 'function' ? cta() : cta}
+                    {cta ? (typeof cta === 'function' ? cta() : cta) : <div />}
                 </div>
                 <aside className="flex items-center gap-3">
-                    <span className="text-[10px] font-bold opacity-40 text-primary">
-                        {value.length} / {maxLength}
+                    <span className="text-xs opacity-70 text-primary">
+                        {editor.storage.characterCount.characters()} / {maxLength}
                     </span>
                     <a
-                        className="opacity-40 hover:opacity-100 transition-opacity text-primary"
+                        className="text-muted hover:text-secondary opacity-40 hover:opacity-100 transition-opacity"
                         href="https://www.markdownguide.org/cheat-sheet/"
                         target="_blank"
                         rel="noreferrer"
@@ -559,6 +430,12 @@ export default function ForumRichText({
                     </a>
                 </aside>
             </div>
+
+            {imageLoading && (
+                <div className="inset-0 bg-white/50 dark:bg-black/50 absolute flex justify-center items-center z-50 rounded">
+                    <Spinner className="w-10 h-10" />
+                </div>
+            )}
         </div>
     )
 }

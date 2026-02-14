@@ -49,34 +49,34 @@ export default function ForumReplies({
         <ul className={`${isInForum ? '' : 'ml-5'} !mb-0 p-0 list-none`}>
             {!expanded && replyCount > 3 ? (
                 <>
-                    <li className={`!mb-0 relative ${isInForum ? '' : 'pr-[5px] pl-[30px] border-l border-primary'}`}>
+                    <li className={`!mb-0 relative ${isInForum ? '' : 'pr-[5px] pl-[30px] border-l border-solid border-black squeak-left-border before:border-l-0'}`}>
                         {isInForum ? (
-                            <div className="pb-4 justify-center !pl-0 flex items-center w-full relative before:content-[''] before:absolute before:top-[15px] before:left-0 before:w-full before:h-full before:border-t before:border-primary">
-                                <div className="bg-[#fdfdf8] flex justify-center -top-1/2 relative space-x-4 px-4">
-                                    <Squiggles className="text-black/10" />
+                            <div className="pb-4 justify-center !pl-0 flex items-center w-full relative before:content-[''] before:absolute before:top-[15px] before:left-0 before:w-full before:h-full before:border-t before:border-black">
+                                <div className="bg-primary flex justify-center -top-1/2 relative space-x-4 px-4">
+                                    <Squiggles className="fill-border opacity-20" />
                                     <div className="flex items-center -space-x-2">
                                         {avatars.map((avatar, index) => (
-                                            <ForumAvatar key={index} image={avatar as string} className="w-6 h-6 border-2 border-white" />
+                                            <ForumAvatar key={index} image={avatar as string} className="w-[25px] h-[25px] border-2 border-black" />
                                         ))}
                                     </div>
                                     <button
-                                        className="text-[13px] font-bold text-primary hover:underline"
+                                        className="text-sm font-semibold text-primary hover:underline"
                                         onClick={() => onToggleExpanded(true)}
                                     >
                                         view {replyCount - 1} other {replyCount - 1 === 1 ? 'reply' : 'replies'}
                                     </button>
-                                    <Squiggles className="text-black/10" />
+                                    <Squiggles className="fill-border opacity-20" />
                                 </div>
                             </div>
                         ) : (
                             <div className="pb-8 -my-2 flex items-center space-x-4">
                                 <div className="flex items-center -space-x-2">
                                     {avatars.map((avatar, index) => (
-                                        <ForumAvatar key={index} image={avatar as string} className="w-6 h-6 border-2 border-white" />
+                                        <ForumAvatar key={index} image={avatar as string} className="w-[25px] h-[25px] border-2 border-black" />
                                     ))}
                                 </div>
                                 <button
-                                    className="text-[13px] font-bold text-primary hover:underline"
+                                    className="text-sm font-semibold text-primary hover:underline"
                                     onClick={() => onToggleExpanded(true)}
                                 >
                                     view {replyCount - 1} more {replyCount - 1 === 1 ? 'reply' : 'replies'}
@@ -84,20 +84,20 @@ export default function ForumReplies({
                             </div>
                         )}
                     </li>
-                    <li className={`pr-[5px] !mb-0 relative ${isInForum ? '' : 'pl-[30px] border-l border-primary'}`}>
-                        <ForumReplyCard reply={replies[replies.length - 1]} isInForum={isInForum} />
+                    <li className={`pr-[5px] !mb-0 relative ${isInForum ? '' : 'pl-[30px] border-l border-solid border-black squeak-left-border before:border-l-0'}`}>
+                        <ForumReplyCard reply={replies[replies.length - 1]} isInForum={isInForum} questionAuthorId={question.profile.id} />
                     </li>
                 </>
             ) : (
                 replies.map((reply) => (
                     <li
                         key={reply.id}
-                        className={`pr-[5px] !mb-0 relative pb-4 border-primary ${isInForum
-                                ? 'border-t pt-4 px-5 first:border-t-0'
-                                : 'border-l pl-[30px]'
+                        className={`pr-[5px] !mb-0 relative pb-4 border-black ${isInForum
+                            ? 'border-t pt-4 px-5 first:border-t-0'
+                            : 'border-l border-solid border-black squeak-left-border before:border-l-0 pl-[30px]'
                             }`}
                     >
-                        <ForumReplyCard reply={reply} isInForum={isInForum} />
+                        <ForumReplyCard reply={reply} isInForum={isInForum} questionAuthorId={question.profile.id} />
                     </li>
                 ))
             )}

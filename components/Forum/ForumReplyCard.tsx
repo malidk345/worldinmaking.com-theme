@@ -12,9 +12,10 @@ import Link from 'components/Link'
 interface ForumReplyCardProps {
     reply: ForumReply
     isInForum?: boolean
+    questionAuthorId?: string | number
 }
 
-export default function ForumReplyCard({ reply, isInForum = false }: ForumReplyCardProps) {
+export default function ForumReplyCard({ reply, isInForum = false, questionAuthorId }: ForumReplyCardProps) {
     const [upvoted, setUpvoted] = useState(false)
     const [downvoted, setDownvoted] = useState(false)
     const [upvotes, setUpvotes] = useState(reply.upvotes || 0)
@@ -48,7 +49,8 @@ export default function ForumReplyCard({ reply, isInForum = false }: ForumReplyC
         }
     }
 
-    const isAI = reply.profile?.firstName === 'AI Responder'
+    const isAuthor = questionAuthorId && reply.profile.id === questionAuthorId
+    const isAI = reply.profile?.firstName?.toLowerCase().includes('ai')
 
     return (
         <div className="flex flex-col w-full text-primary mt-2">
@@ -61,10 +63,23 @@ export default function ForumReplyCard({ reply, isInForum = false }: ForumReplyC
                         <ForumAvatar
                             className={`${isInForum ? 'size-[40px]' : 'size-[25px]'} rounded-full`}
                             image={reply.profile.avatar}
+                            isTeamMember={isAI}
                         />
                     </div>
                     <strong className="text-primary">{reply.profile.firstName || 'Anonymous'}</strong>
                 </Link>
+
+                {isAuthor && (
+                    <span className="bg-accent text-primary-text text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-widest ml-1">
+                        Author
+                    </span>
+                )}
+                {isAI && (
+                    <span className="bg-accent text-primary-text text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-widest ml-1">
+                        AI
+                    </span>
+                )}
+
                 <ForumDays created={reply.createdAt} />
 
                 <div className="!ml-auto flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -86,17 +101,17 @@ export default function ForumReplyCard({ reply, isInForum = false }: ForumReplyC
                 <div className="flex items-center gap-1 mt-4">
                     <OSButton
                         onClick={handleUpvote}
-                        icon={<IconThumbsUp className={upvoted ? 'text-green' : ''} />}
                         size="md"
-                        className={upvoted ? '!bg-green/10 !border-green/50' : ''}
+                        className={upvoted ? '!bg-green !text-white !border-green' : ''}
+                        icon={<IconThumbsUp className={upvoted ? '!text-white' : ''} />}
                     >
                         <strong>{upvotes}</strong>
                     </OSButton>
                     <OSButton
                         onClick={handleDownvote}
-                        icon={<IconThumbsDown className={downvoted ? 'text-red' : ''} />}
                         size="md"
-                        className={downvoted ? '!bg-red/10 !border-red/50' : ''}
+                        className={downvoted ? '!bg-red !text-white !border-red' : ''}
+                        icon={<IconThumbsDown className={downvoted ? '!text-white' : ''} />}
                     >
                         <strong>{downvotes}</strong>
                     </OSButton>

@@ -36,7 +36,7 @@ export default function ForumQuestionDetail({ question }: ForumQuestionDetailPro
                     </div>
 
                     {/* Question detail card */}
-                    <div className="bg-white rounded-xl border border-black/[0.03] shadow-[0_4px_20px_rgba(0,0,0,0.02)] overflow-hidden">
+                    <div className="bg-[#fbfcfa] rounded-xl border border-black/[0.03] shadow-[0_4px_20px_rgba(0,0,0,0.02)] overflow-hidden">
                         <ForumQuestionCard
                             question={question}
                             isInForum

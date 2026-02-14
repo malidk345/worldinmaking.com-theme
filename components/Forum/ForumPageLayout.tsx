@@ -92,7 +92,7 @@ export default function ForumPageLayout({
 
                     {/* New question form */}
                     <div className="mb-12">
-                        <div className="bg-white rounded-xl border border-[#e5e7e0] p-1 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+                        <div className="bg-[#fbfcfa] rounded-xl border border-[#e5e7e0] p-1 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
                             <ForumQuestionForm onSubmit={onSubmit} className="!mb-0" isInForum={true} />
                         </div>
                     </div>

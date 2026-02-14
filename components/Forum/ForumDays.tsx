@@ -17,7 +17,7 @@ interface ForumDaysProps {
 
 const EditItem = ({ profile, date, text }: { profile: ForumProfile; date: string; text: string }) => {
     return (
-        <li className="border-b border-primary last:border-b-0 mb-2 pb-2 last:pb-0 last:mb-0 text-primary list-none">
+        <li className="border-b border-black last:border-b-0 mb-2 pb-2 last:pb-0 last:mb-0 text-primary list-none">
             <span className="flex items-center space-x-1 text-sm">
                 <ForumAvatar image={profile.avatar} color={profile.color} className="size-6" />
                 <span>
@@ -49,7 +49,7 @@ export default function ForumDays({ created, edits = [], profile }: ForumDaysPro
 
             {/* Simple CSS-based tooltip for edits history to avoid complex dependencies for now */}
             {hasEdits && (
-                <div className="absolute top-full left-0 mt-2 p-3 bg-white dark:bg-black border border-primary rounded-md shadow-xl z-50 hidden group-hover:block min-w-[200px]">
+                <div className="absolute top-full left-0 mt-2 p-3 bg-white dark:bg-black border border-black rounded-md shadow-xl z-50 hidden group-hover:block min-w-[200px]">
                     <ul className="m-0 p-0">
                         {edits.map((edit, idx) => (
                             <EditItem
