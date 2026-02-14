@@ -105,9 +105,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const updateProfile = async (username: string, avatar_url: string, bio?: string) => {
         if (!user) return false;
 
+        const updates: any = { username, avatar_url };
+        if (bio !== undefined) updates.bio = bio;
+
         const { error } = await supabase
             .from('profiles')
-            .update({ username, avatar_url, bio })
+            .update(updates)
             .eq('id', user.id);
 
         if (error) {
@@ -115,7 +118,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             return false;
         }
 
-        setProfile(prev => prev ? { ...prev, username, avatar_url, bio } : null);
+        setProfile(prev => prev ? { ...prev, username, avatar_url, ...(bio !== undefined ? { bio } : {}) } : null);
         return true;
     };
 
