@@ -26,7 +26,7 @@ const AdminPanel = () => {
 
     // Admin access control
     const isAdmin = user?.email === ADMIN_EMAIL
-    
+
     if (!isAdmin) {
         return (
             <div className="p-6 text-center">

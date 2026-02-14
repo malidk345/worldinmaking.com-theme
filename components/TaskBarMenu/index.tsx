@@ -28,9 +28,8 @@ import {
 import { AppWindow } from 'lucide-react'
 import { useApp } from '../../context/App'
 import MenuBar, { MenuItemType, MenuType } from 'components/RadixUI/MenuBar'
-import { Settings } from 'lucide-react'
 import OSButton from 'components/OSButton'
-import AdminPanel from 'components/AdminPanel'
+import LoginContent from 'components/Login/LoginContent'
 import Tooltip from 'components/RadixUI/Tooltip'
 import KeyboardShortcut from 'components/KeyboardShortcut'
 import PostsView from 'components/Posts'
@@ -140,6 +139,20 @@ export default function TaskBarMenu() {
             ]
         }
     ]
+    const accountMenuItems: MenuItemType[] = [
+        {
+            type: 'item',
+            label: 'Sign in',
+            onClick: () => addWindow({
+                key: 'login',
+                path: '/login',
+                title: 'Member Access',
+                size: { width: 450, height: 450 },
+                element: <LoginContent />
+            })
+        }
+    ]
+
     const accountMenu: MenuType[] = [
         {
             trigger: (
@@ -150,25 +163,7 @@ export default function TaskBarMenu() {
                     </div>
                 </OSButton>
             ),
-            items: [
-                {
-                    type: 'item',
-                    label: 'Admin Dashboard',
-                    icon: <Settings className="size-4" />,
-                    onClick: () => addWindow({
-                        key: 'admin-dashboard',
-                        title: 'Admin Dashboard',
-                        path: '/admin',
-                        icon: <Settings className="size-4 text-purple-500" />,
-                        element: <AdminPanel />,
-                        size: { width: 1000, height: 750 }
-                    })
-                },
-                { type: 'separator' },
-                { type: 'item', label: 'Sign in to community', onClick: () => { } },
-                { type: 'separator' },
-                { type: 'item', label: 'Go to app ↗', link: 'https://app.posthog.com', external: true }
-            ]
+            items: accountMenuItems
         }
     ]
 
