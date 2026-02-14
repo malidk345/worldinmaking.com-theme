@@ -68,13 +68,13 @@ const EditionPostCard = ({ post, isMobile }: { post: any; isMobile: boolean }) =
                     </div>
                 </div>
 
-                <div className={`@container p-3 grid gap-3 ${post.image ? '@md:grid-cols-[1fr_180px]' : 'grid-cols-1'} @md:items-start flex-grow`}>
+                <div className={`@container p-4 grid gap-3 ${post.image ? '@md:grid-cols-[1fr_180px]' : 'grid-cols-1'} @md:items-start flex-grow`}>
                     <div className={`order-2 ${post.image ? '@md:order-1' : ''} grid gap-2`}>
                         <h3 className="m-0 text-[15px] leading-tight text-black group-hover:text-burnt-orange transition-colors">
                             {post.title}
                         </h3>
                         {post.excerpt && (
-                            <p className="m-0 text-[15px] text-black line-clamp-4 leading-[1.6] font-button">
+                            <p className="m-0 text-[15px] text-black line-clamp-4 leading-relaxed font-button font-normal">
                                 {post.excerpt}
                             </p>
                         )}
@@ -152,11 +152,11 @@ const FeaturedPost = ({ post, isMobile }: { post: any; isMobile: boolean }) => {
                     </div>
                 </div>
 
-                <h2 className="mt-0 mb-4 text-xl lg:text-2xl text-black leading-[1.1] group-hover:underline decoration-burnt-orange/30 underline-offset-4">
+                <h2 className="mt-0 mb-4 text-xl lg:text-2xl text-black leading-tight group-hover:underline decoration-burnt-orange/30 underline-offset-4">
                     {post.title}
                 </h2>
 
-                <p className="text-[15px] text-black leading-[1.6] line-clamp-8 mb-8 max-w-none w-full font-button">
+                <p className="text-[15px] text-black leading-relaxed line-clamp-8 mb-8 max-w-none w-full font-button font-normal">
                     {post.excerpt}
                 </p>
 
