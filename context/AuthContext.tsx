@@ -159,13 +159,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         await supabase.auth.signOut();
     };
 
-    const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || process.env.NEXT_PUBLIC_ADMIN_EMAIL || '')
-        .split(',')
-        .map((email) => email.trim().toLowerCase())
-        .filter(Boolean);
-    const isAdmin = Boolean(
-        profile?.role === 'admin' || (adminEmails.length > 0 && user?.email && adminEmails.includes(user.email.toLowerCase()))
-    );
+    const isAdmin = profile?.role === 'admin';
 
     return (
         <AuthContext.Provider value={{ user, profile, loading, signInWithEmail, signOut, updateProfile, isAdmin }}>
