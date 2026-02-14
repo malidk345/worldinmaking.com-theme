@@ -47,7 +47,6 @@ export default function ForumDays({ created, edits = [], profile }: ForumDaysPro
                 {dayjs(displayDate).fromNow()}
             </span>
 
-            {/* Simple CSS-based tooltip for edits history to avoid complex dependencies for now */}
             {hasEdits && (
                 <div className="absolute top-full left-0 mt-2 p-3 bg-white dark:bg-black border border-black rounded-md shadow-xl z-50 hidden group-hover:block min-w-[200px]">
                     <ul className="m-0 p-0">

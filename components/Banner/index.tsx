@@ -36,7 +36,6 @@ export default function Banner() {
     const handleDismiss = () => {
         setCookie('bannerDismissed', 'true', 7)
         setIsCookieSet(true)
-        console.log('Banner dismissed')
     }
 
     return (

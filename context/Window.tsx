@@ -75,11 +75,7 @@ export const WindowProvider = ({
     children: React.ReactNode
     value?: Partial<WindowContextType>
 }) => {
-    // Placeholder for addWindow function if it's meant to be provided by the context
-    // In a real app, this would likely come from a state management solution or a parent component
     const addWindow = (newWindow: Omit<AppWindow, 'zIndex' | 'minimized' | 'sizeConstraints' | 'size' | 'previousSize' | 'position' | 'previousPosition' | 'fixedSize' | 'minimal'>) => {
-        console.log('addWindow called with:', newWindow);
-        // Implement actual window adding logic here
     };
 
     return (

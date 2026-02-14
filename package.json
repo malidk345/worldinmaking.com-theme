@@ -43,7 +43,6 @@
     "@tiptap/react": "^3.19.0",
     "@tiptap/starter-kit": "^3.19.0",
     "@types/lodash": "^4.17.23",
-    "@types/mark.js": "^8.11.12",
     "algoliasearch": "^4.25.3",
     "clsx": "^2.1.1",
     "cntl": "^1.0.0",

@@ -1,7 +1,6 @@
 "use client"
 
 import React from 'react'
-// import { Accordion } from '../RadixUI/Accordion' // Removed unused import
 
 export interface TableOfContentsItem {
     url: string

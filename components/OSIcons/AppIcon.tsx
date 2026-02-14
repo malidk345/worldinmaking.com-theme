@@ -252,7 +252,6 @@ export const AppIcon = ({ name, className, ...props }: AppIconProps) => {
     const getIconUrl = (iconName: AppIconName): string => {
         const iconVariants = PRODUCT_ICON_MAP[iconName] as AppIconVariants
         if (!iconVariants) {
-            console.warn(`AppIcon: Unknown icon name "${iconName}"`)
             return ''
         }
 
