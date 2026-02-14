@@ -25,11 +25,12 @@ import {
     IconNewspaper,
     IconApps
 } from '@posthog/icons'
-import { AppWindow } from 'lucide-react'
+import { AppWindow, Settings } from 'lucide-react'
 import { useApp } from '../../context/App'
 import { useAuth } from '../../context/AuthContext'
 import MenuBar, { MenuItemType, MenuType } from 'components/RadixUI/MenuBar'
 import OSButton from 'components/OSButton'
+import AdminPanel from 'components/AdminPanel'
 import LoginContent from 'components/Login/LoginContent'
 import ProfileContent from 'components/Login/ProfileContent'
 import Tooltip from 'components/RadixUI/Tooltip'
@@ -46,7 +47,7 @@ export default function TaskBarMenu() {
         addWindow,
         isMobile
     } = useApp()
-    const { user, signOut } = useAuth()
+    const { user, isAdmin, signOut } = useAuth()
 
     const [isAnimating, setIsAnimating] = useState(false)
     const totalWindows = windows.length
@@ -143,6 +144,20 @@ export default function TaskBarMenu() {
         }
     ]
     const accountMenuItems: MenuItemType[] = user ? [
+        ...(isAdmin ? [
+            {
+                type: 'item',
+                label: 'Admin Dashboard',
+                onClick: () => addWindow({
+                    key: 'admin-dashboard',
+                    title: 'Admin Dashboard',
+                    path: '/admin',
+                    icon: <Settings className="size-4 text-purple-500" />,
+                    element: <AdminPanel />,
+                    size: { width: 1100, height: 750 }
+                })
+            }
+        ] : []),
         {
             type: 'item',
             label: 'My profile',
