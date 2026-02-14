@@ -11,8 +11,6 @@ import { toSlug } from '../../utils/security'
 import dayjs from 'dayjs'
 import { useApp } from 'context/App'
 
-const ADMIN_EMAIL = 'malidk345@gmail.com'
-
 const AdminPanel = () => {
     const [activeTab, setActiveTab] = useState<'overview' | 'content' | 'users' | 'settings'>('overview')
     const [isCreating, setIsCreating] = useState(false)
@@ -21,11 +19,10 @@ const AdminPanel = () => {
     const [newPostContent, setNewPostContent] = useState('')
     const [newPostExcerpt, setNewPostExcerpt] = useState('')
 
-    const { user, profile } = useAuth()
+    const { user, profile, isAdmin } = useAuth()
     const { posts, fetchPosts, createPost, updatePost, deletePost, loading } = useAdminData()
 
-    // Admin access control
-    const isAdmin = user?.email === ADMIN_EMAIL
+    // Admin access control handled by useAuth isAdmin (profile.role === 'admin')
 
     if (!isAdmin) {
         return (

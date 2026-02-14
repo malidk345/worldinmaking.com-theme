@@ -74,7 +74,7 @@ const EditionPostCard = ({ post, isMobile }: { post: any; isMobile: boolean }) =
                             {post.title}
                         </h3>
                         {post.excerpt && (
-                            <p className="m-0 text-[15px] text-black line-clamp-4 leading-relaxed font-button font-normal">
+                            <p className="m-0 text-[14px] text-black line-clamp-4 leading-tight font-button font-normal">
                                 {post.excerpt}
                             </p>
                         )}
@@ -156,7 +156,7 @@ const FeaturedPost = ({ post, isMobile }: { post: any; isMobile: boolean }) => {
                     {post.title}
                 </h2>
 
-                <p className="text-[15px] text-black leading-relaxed line-clamp-8 mb-8 max-w-none w-full font-button font-normal">
+                <p className="text-[14px] text-black leading-tight line-clamp-8 mb-8 max-w-none w-full font-button font-normal">
                     {post.excerpt}
                 </p>
 
