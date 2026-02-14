@@ -27,9 +27,11 @@ import {
 } from '@posthog/icons'
 import { AppWindow } from 'lucide-react'
 import { useApp } from '../../context/App'
+import { useAuth } from '../../context/AuthContext'
 import MenuBar, { MenuItemType, MenuType } from 'components/RadixUI/MenuBar'
 import OSButton from 'components/OSButton'
 import LoginContent from 'components/Login/LoginContent'
+import ProfileContent from 'components/Login/ProfileContent'
 import Tooltip from 'components/RadixUI/Tooltip'
 import KeyboardShortcut from 'components/KeyboardShortcut'
 import PostsView from 'components/Posts'
@@ -44,6 +46,7 @@ export default function TaskBarMenu() {
         addWindow,
         isMobile
     } = useApp()
+    const { user, signOut } = useAuth()
 
     const [isAnimating, setIsAnimating] = useState(false)
     const totalWindows = windows.length
@@ -139,7 +142,24 @@ export default function TaskBarMenu() {
             ]
         }
     ]
-    const accountMenuItems: MenuItemType[] = [
+    const accountMenuItems: MenuItemType[] = user ? [
+        {
+            type: 'item',
+            label: 'My profile',
+            onClick: () => addWindow({
+                key: 'profile',
+                path: '/profile',
+                title: 'My Profile',
+                size: { width: 450, height: 600 },
+                element: <ProfileContent />
+            })
+        },
+        {
+            type: 'item',
+            label: 'Sign out',
+            onClick: () => signOut()
+        }
+    ] : [
         {
             type: 'item',
             label: 'Sign in',
