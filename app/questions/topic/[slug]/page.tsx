@@ -6,6 +6,7 @@ import React, { useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import ForumPageLayout from 'components/Forum/ForumPageLayout'
 import { useCommunity } from 'hooks/useCommunity'
+import SEO from 'components/SEO'
 
 export default function TopicPage() {
     const params = useParams()
@@ -38,11 +39,17 @@ export default function TopicPage() {
     }))
 
     return (
-        <ForumPageLayout
-            questions={adaptedPosts as any}
-            loading={loading}
-            activeTopicSlug={slug}
-            title={slug}
-        />
+        <>
+            <SEO
+                title={`Topic: ${slug}`}
+                url={`/questions/topic/${slug}`}
+            />
+            <ForumPageLayout
+                questions={adaptedPosts as any}
+                loading={loading}
+                activeTopicSlug={slug}
+                title={slug}
+            />
+        </>
     )
 }

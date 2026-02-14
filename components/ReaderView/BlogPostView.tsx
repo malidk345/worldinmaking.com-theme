@@ -81,7 +81,7 @@ export default function BlogPostView({ post }: BlogPostViewProps) {
                 description={post.description}
                 image={post.image || undefined}
                 article
-                url={post.slug ? `https://worldinmaking.com/posts/${post.slug}` : undefined}
+                url={post.slug ? `/posts/${post.slug}` : undefined}
             />
             <ReaderView
                 body={body}

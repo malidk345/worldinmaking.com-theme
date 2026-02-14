@@ -247,7 +247,7 @@ export default function PostsView() {
             <SEO
                 title="Latest Editions"
                 description="Exploring the future of making, engineering, and digital craft through curated stories and insights."
-                url="https://worldinmaking.com/posts"
+                url="/posts"
             />
             {/* TOOLBAR */}
             <div data-scheme="secondary" className={`flex-shrink-0 flex items-center justify-between m-1 rounded border border-border bg-accent ${isMobile ? 'py-1.5 px-2' : 'py-1 px-3'}`}>

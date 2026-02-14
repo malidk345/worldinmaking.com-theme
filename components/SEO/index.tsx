@@ -10,6 +10,8 @@ interface SEOProps {
     canonicalUrl?: string
 }
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://worldinmaking.com"
+
 export default function SEO({
     title,
     description,
@@ -57,6 +59,19 @@ export default function SEO({
             if (el) el.setAttribute('href', href)
         }
 
+        // Helper to ensure absolute URL
+        const getAbsoluteUrl = (pathOrUrl?: string) => {
+            if (!pathOrUrl) return undefined
+            if (pathOrUrl.startsWith('http')) return pathOrUrl
+            const base = SITE_URL.endsWith('/') ? SITE_URL.slice(0, -1) : SITE_URL
+            const path = pathOrUrl.startsWith('/') ? pathOrUrl : `/${pathOrUrl}`
+            return `${base}${path}`
+        }
+
+        const finalUrl = getAbsoluteUrl(url) || (typeof window !== 'undefined' ? window.location.href : SITE_URL)
+        const finalCanonical = getAbsoluteUrl(canonicalUrl) || finalUrl
+        const finalImage = getAbsoluteUrl(image)
+
         // Basic Meta
         updateMeta('meta[name="description"]', 'content', description || defaultDescription)
         updateMeta('meta[name="robots"]', 'content', noindex ? 'noindex' : 'index, follow')
@@ -65,20 +80,19 @@ export default function SEO({
         updateMeta('meta[property="og:title"]', 'content', title || siteTitle)
         updateMeta('meta[property="og:description"]', 'content', description || defaultDescription)
         updateMeta('meta[property="og:type"]', 'content', article ? 'article' : 'website')
-        updateMeta('meta[property="og:url"]', 'content', url || (typeof window !== 'undefined' ? window.location.href : ''))
-        if (image) updateMeta('meta[property="og:image"]', 'content', image)
+        updateMeta('meta[property="og:url"]', 'content', finalUrl)
+        if (finalImage) updateMeta('meta[property="og:image"]', 'content', finalImage)
 
         // Twitter Tags
         updateMeta('meta[name="twitter:card"]', 'content', 'summary_large_image')
         updateMeta('meta[name="twitter:title"]', 'content', title || siteTitle)
         updateMeta('meta[name="twitter:description"]', 'content', description || defaultDescription)
         updateMeta('meta[name="twitter:site"]', 'content', twitterHandle)
-        if (image) updateMeta('meta[name="twitter:image"]', 'content', image)
+        if (finalImage) updateMeta('meta[name="twitter:image"]', 'content', finalImage)
 
         // Canonical
-        if (canonicalUrl || url) {
-            updateLink('canonical', canonicalUrl || url)
-        }
+        updateLink('canonical', finalCanonical)
+
     }, [title, description, image, url, article, noindex, canonicalUrl])
 
     return <></>

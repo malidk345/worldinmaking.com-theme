@@ -20,7 +20,7 @@ export default function ForumQuestionDetail({ question }: ForumQuestionDetailPro
             <SEO
                 title={question.subject}
                 description={description}
-                url={`https://worldinmaking.com/questions/${question.permalink}`}
+                url={`/questions/${question.permalink}`}
             />
             <div className="max-w-7xl mx-auto px-4 py-6">
                 <div className="flex gap-8">

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import ForumPageLayout from 'components/Forum/ForumPageLayout'
 import { useCommunity } from 'hooks/useCommunity'
+import SEO from 'components/SEO'
 
 export default function QuestionsPage() {
     const {
@@ -55,12 +56,19 @@ export default function QuestionsPage() {
     }))
 
     return (
-        <ForumPageLayout
-            questions={adaptedPosts as any}
-            loading={loading}
-            activeChannelId={selectedChannelId}
-            onChannelChange={setSelectedChannelId}
-            onSubmit={handleCreatePost}
-        />
+        <>
+            <SEO
+                title="Transmissions"
+                description="Join the conversation on product, engineering, and making. Ask questions, share insights, and connect with the community."
+                url="/questions"
+            />
+            <ForumPageLayout
+                questions={adaptedPosts as any}
+                loading={loading}
+                activeChannelId={selectedChannelId}
+                onChannelChange={setSelectedChannelId}
+                onSubmit={handleCreatePost}
+            />
+        </>
     )
 }
