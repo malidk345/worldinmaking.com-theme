@@ -9,6 +9,7 @@ interface Profile {
     username: string;
     avatar_url: string;
     role: string;
+    bio?: string;
 }
 
 interface AuthContextType {
@@ -17,7 +18,7 @@ interface AuthContextType {
     loading: boolean;
     signInWithEmail: (email: string) => Promise<{ error: any }>;
     signOut: () => Promise<void>;
-    updateProfile: (username: string, avatar_url: string) => Promise<boolean>;
+    updateProfile: (username: string, avatar_url: string, bio?: string) => Promise<boolean>;
     isAdmin: boolean;
 }
 
@@ -31,7 +32,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const fetchProfile = useCallback(async (userId: string) => {
         const { data } = await supabase
             .from('profiles')
-            .select('username, avatar_url, role')
+            .select('username, avatar_url, role, bio')
             .eq('id', userId)
             .single();
         if (data) setProfile(data as Profile);
@@ -101,12 +102,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return () => subscription.unsubscribe();
     }, [fetchProfile]);
 
-    const updateProfile = async (username: string, avatar_url: string) => {
+    const updateProfile = async (username: string, avatar_url: string, bio?: string) => {
         if (!user) return false;
 
         const { error } = await supabase
             .from('profiles')
-            .update({ username, avatar_url })
+            .update({ username, avatar_url, bio })
             .eq('id', user.id);
 
         if (error) {
@@ -114,7 +115,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             return false;
         }
 
-        setProfile(prev => prev ? { ...prev, username, avatar_url } : null);
+        setProfile(prev => prev ? { ...prev, username, avatar_url, bio } : null);
         return true;
     };
 

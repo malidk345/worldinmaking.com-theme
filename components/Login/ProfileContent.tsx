@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { IconUser, IconUpload, IconLock, IconChevronRight } from '@posthog/icons';
 import Input from '../OSForm/input';
+import Textarea from '../OSForm/textarea';
 
 export default function ProfileContent() {
     const { user, profile, updateProfile, signOut } = useAuth();
@@ -13,12 +14,13 @@ export default function ProfileContent() {
 
     const [username, setUsername] = useState(profile?.username || '');
     const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '');
+    const [bio, setBio] = useState(profile?.bio || '');
     const [updating, setUpdating] = useState(false);
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setUpdating(true);
-        const success = await updateProfile(username, avatarUrl);
+        const success = await updateProfile(username, avatarUrl, bio);
         setUpdating(false);
 
         if (success) {
@@ -92,6 +94,16 @@ export default function ProfileContent() {
                                 tooltip="we recommend using a cloudinary or imgur link for best performance."
                                 showClearButton
                                 onClear={() => setAvatarUrl('')}
+                            />
+
+                            <Textarea
+                                label="bio"
+                                direction="column"
+                                value={bio}
+                                onChange={(e: any) => setBio(e.target.value)}
+                                placeholder="tell us about yourself..."
+                                description="this will be shown on your public profile."
+                                rows={3}
                             />
 
                             <div className="pt-4 flex items-center justify-end gap-3 border-t border-primary">
