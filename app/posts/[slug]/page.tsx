@@ -1,4 +1,5 @@
 "use client";
+export const runtime = 'edge';
 
 import React, { useEffect, useMemo, useState } from "react";
 import BlogPostView from "components/ReaderView/BlogPostView";

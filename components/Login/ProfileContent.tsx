@@ -9,7 +9,6 @@ import {
     IconUpload,
     IconLock,
     IconChevronRight,
-    IconLink,
     IconInfo,
     IconGlobe,
     IconMessage
@@ -192,7 +191,7 @@ export default function ProfileContent() {
                         <div className="bg-primary border border-primary rounded overflow-hidden shadow-sm">
                             <div className="px-6 py-4 border-b border-primary bg-accent/30 flex items-center justify-between">
                                 <h3 className="text-sm font-black lowercase m-0 opacity-70">social links</h3>
-                                <IconLink className="w-4 h-4 opacity-30" />
+                                <IconGlobe className="w-4 h-4 opacity-30" />
                             </div>
 
                             <div className="p-6 space-y-6">
