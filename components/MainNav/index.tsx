@@ -12,6 +12,7 @@ import {
     IconUpload,
     IconLock,
     IconChatHelp,
+    IconBolt
 } from '@posthog/icons'
 
 import { Placement } from '@popperjs/core'
@@ -451,6 +452,22 @@ export const Main = () => {
                                 Talk to sales
                             </CallToAction>
                         ) : null}
+
+                        {isAdmin && (
+                            <button
+                                onClick={() => addWindow({
+                                    key: 'admin',
+                                    path: '/admin',
+                                    title: 'Admin Dashboard',
+                                    size: { width: 1100, height: 750 },
+                                    element: <AdminPanel />
+                                })}
+                                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-purple-500/20 bg-purple-500/5 text-purple-600 dark:text-purple-400 font-bold text-[11px] lowercase hover:bg-purple-500/10 transition-colors mr-2"
+                            >
+                                <IconBolt className="size-3.5" />
+                                <span>admin</span>
+                            </button>
+                        )}
 
 
                         <Popover

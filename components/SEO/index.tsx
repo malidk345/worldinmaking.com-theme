@@ -1,40 +1,85 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 
 interface SEOProps {
     title?: string
     description?: string
     image?: string
     url?: string
+    article?: boolean
+    noindex?: boolean
+    canonicalUrl?: string
 }
 
-export default function SEO({ title, description, image, url }: SEOProps): JSX.Element {
-    React.useEffect(() => {
-        document.title = title || 'PostHog'
+export default function SEO({
+    title,
+    description,
+    image,
+    url,
+    article,
+    noindex,
+    canonicalUrl
+}: SEOProps) {
+    const siteTitle = "World in Making"
+    const defaultDescription = "Exploring product, engineering, and community through stories, tools, and insights."
+    const twitterHandle = "@PostHog"
 
-        // Update meta description
-        const metaDescription = document.querySelector('meta[name="description"]')
-        if (metaDescription && description) {
-            metaDescription.setAttribute('content', description)
+    useEffect(() => {
+        const finalTitle = title ? `${title} | ${siteTitle}` : siteTitle
+        document.title = finalTitle
+
+        const updateMeta = (selector: string, attr: string, content: string | undefined) => {
+            if (!content) return
+            let el = document.querySelector(selector)
+            if (!el) {
+                const nameMatch = selector.match(/name="([^"]+)"/)
+                const propMatch = selector.match(/property="([^"]+)"/)
+                if (nameMatch) {
+                    el = document.createElement('meta')
+                    el.setAttribute('name', nameMatch[1])
+                    document.head.appendChild(el)
+                } else if (propMatch) {
+                    el = document.createElement('meta')
+                    el.setAttribute('property', propMatch[1])
+                    document.head.appendChild(el)
+                }
+            }
+            if (el) el.setAttribute(attr, content)
         }
 
-        // Update og:title
-        const ogTitle = document.querySelector('meta[property="og:title"]')
-        if (ogTitle && title) {
-            ogTitle.setAttribute('content', title)
+        const updateLink = (rel: string, href: string | undefined) => {
+            if (!href) return
+            let el = document.querySelector(`link[rel="${rel}"]`)
+            if (!el) {
+                el = document.createElement('link')
+                el.setAttribute('rel', rel)
+                document.head.appendChild(el)
+            }
+            if (el) el.setAttribute('href', href)
         }
 
-        // Update og:description
-        const ogDescription = document.querySelector('meta[property="og:description"]')
-        if (ogDescription && description) {
-            ogDescription.setAttribute('content', description)
-        }
+        // Basic Meta
+        updateMeta('meta[name="description"]', 'content', description || defaultDescription)
+        updateMeta('meta[name="robots"]', 'content', noindex ? 'noindex' : 'index, follow')
 
-        // Update og:image
-        const ogImage = document.querySelector('meta[property="og:image"]')
-        if (ogImage && image) {
-            ogImage.setAttribute('content', image)
-        }
-    }, [title, description, image, url])
+        // OG Tags
+        updateMeta('meta[property="og:title"]', 'content', title || siteTitle)
+        updateMeta('meta[property="og:description"]', 'content', description || defaultDescription)
+        updateMeta('meta[property="og:type"]', 'content', article ? 'article' : 'website')
+        updateMeta('meta[property="og:url"]', 'content', url || (typeof window !== 'undefined' ? window.location.href : ''))
+        if (image) updateMeta('meta[property="og:image"]', 'content', image)
 
-    return null
+        // Twitter Tags
+        updateMeta('meta[name="twitter:card"]', 'content', 'summary_large_image')
+        updateMeta('meta[name="twitter:title"]', 'content', title || siteTitle)
+        updateMeta('meta[name="twitter:description"]', 'content', description || defaultDescription)
+        updateMeta('meta[name="twitter:site"]', 'content', twitterHandle)
+        if (image) updateMeta('meta[name="twitter:image"]', 'content', image)
+
+        // Canonical
+        if (canonicalUrl || url) {
+            updateLink('canonical', canonicalUrl || url)
+        }
+    }, [title, description, image, url, article, noindex, canonicalUrl])
+
+    return <></>
 }

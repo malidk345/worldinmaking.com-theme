@@ -17,8 +17,12 @@ interface BlogPostViewProps {
         headings: { id: string, text: string, level: number }[]
         translations?: Record<string, { title: string, content: string }>
         language?: string
+        description?: string
+        slug?: string
     }
 }
+
+import SEO from 'components/SEO'
 
 export default function BlogPostView({ post }: BlogPostViewProps) {
     const currentLanguage = post.language || 'en'
@@ -71,23 +75,32 @@ export default function BlogPostView({ post }: BlogPostViewProps) {
     }, [post])
 
     return (
-        <ReaderView
-            body={body}
-            title={title}
-            tableOfContents={tableOfContents}
-            showQuestions
-            availableLanguages={availableLanguages}
-        >
-            {isHtml ? (
-                <div
-                    className="tiptap-content"
-                    dangerouslySetInnerHTML={{ __html: processedContent }}
-                />
-            ) : (
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {content}
-                </ReactMarkdown>
-            )}
-        </ReaderView>
+        <>
+            <SEO
+                title={title}
+                description={post.description}
+                image={post.image || undefined}
+                article
+                url={post.slug ? `https://worldinmaking.com/posts/${post.slug}` : undefined}
+            />
+            <ReaderView
+                body={body}
+                title={title}
+                tableOfContents={tableOfContents}
+                showQuestions
+                availableLanguages={availableLanguages}
+            >
+                {isHtml ? (
+                    <div
+                        className="tiptap-content"
+                        dangerouslySetInnerHTML={{ __html: processedContent }}
+                    />
+                ) : (
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {content}
+                    </ReactMarkdown>
+                )}
+            </ReaderView>
+        </>
     )
 }

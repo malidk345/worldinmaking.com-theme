@@ -103,6 +103,22 @@ export default function TaskBarMenu() {
                         )
                     })
                 },
+                ...(isAdmin ? [
+                    { type: 'separator' as const },
+                    {
+                        type: 'item' as const,
+                        label: 'Admin Dashboard',
+                        icon: <IconBolt className="size-4 text-purple-500" />,
+                        onClick: () => addWindow({
+                            key: 'admin-dashboard',
+                            title: 'Admin Dashboard',
+                            path: '/admin',
+                            icon: <Settings className="size-4 text-purple-500" />,
+                            element: <AdminPanel />,
+                            size: { width: 1100, height: 750 }
+                        })
+                    }
+                ] : []),
                 { type: 'separator' },
                 ...(isMobile ? [
                     {
@@ -146,7 +162,7 @@ export default function TaskBarMenu() {
     const accountMenuItems: MenuItemType[] = user ? [
         ...(isAdmin ? [
             {
-                type: 'item',
+                type: 'item' as const,
                 label: 'Admin Dashboard',
                 onClick: () => addWindow({
                     key: 'admin-dashboard',
@@ -159,7 +175,7 @@ export default function TaskBarMenu() {
             }
         ] : []),
         {
-            type: 'item',
+            type: 'item' as const,
             label: 'My profile',
             onClick: () => addWindow({
                 key: 'profile',
@@ -170,13 +186,13 @@ export default function TaskBarMenu() {
             })
         },
         {
-            type: 'item',
+            type: 'item' as const,
             label: 'Sign out',
             onClick: () => signOut()
         }
     ] : [
         {
-            type: 'item',
+            type: 'item' as const,
             label: 'Sign in',
             onClick: () => addWindow({
                 key: 'login',

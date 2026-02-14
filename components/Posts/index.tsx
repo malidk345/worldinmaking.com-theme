@@ -18,6 +18,7 @@ import BlogPostView from 'components/ReaderView/BlogPostView'
 import { usePosts } from 'hooks/usePosts'
 import { Popover } from 'components/RadixUI/Popover'
 import Link from 'components/Link'
+import SEO from 'components/SEO'
 
 const MOCK_AUTHORS = [
     { name: 'James Hawkins', avatar: 'https://res.cloudinary.com/dmukukwp6/image/upload/v1710153303/posthog.com/contents/images/authors/james.png' },
@@ -243,6 +244,11 @@ export default function PostsView() {
 
     return (
         <div className="absolute inset-0 flex flex-col overflow-hidden bg-primary text-black">
+            <SEO
+                title="Latest Editions"
+                description="Exploring the future of making, engineering, and digital craft through curated stories and insights."
+                url="https://worldinmaking.com/posts"
+            />
             {/* TOOLBAR */}
             <div data-scheme="secondary" className={`flex-shrink-0 flex items-center justify-between m-1 rounded border border-border bg-accent ${isMobile ? 'py-1.5 px-2' : 'py-1 px-3'}`}>
                 <div className="flex items-center gap-3">
