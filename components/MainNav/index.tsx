@@ -459,92 +459,105 @@ export const Main = () => {
                             dataScheme="secondary"
                             trigger={
                                 <div className="cursor-pointer group px-1 py-1 hover:bg-black/5 dark:hover:bg-white/5 rounded transition-colors flex items-center justify-center min-w-[44px]">
-                                    {profile?.avatar_url ? (
+                                    {user && profile?.avatar_url ? (
                                         <div className="w-7 h-7 rounded-full overflow-hidden border border-black/10 shadow-sm">
-                                            <img src={profile.avatar_url} className="w-full h-full object-cover" alt={profile.username} />
+                                            <img src={profile.avatar_url} className="w-full h-full object-cover" alt={profile.username || 'user'} />
                                         </div>
                                     ) : (
-                                        <IconUser className="opacity-70 inline-block w-6 group-hover:opacity-100 transition-opacity" />
+                                        <div className="relative">
+                                            <IconUser className={`w-6 transition-all ${user ? 'text-primary opacity-100' : 'opacity-70 group-hover:opacity-100'}`} />
+                                            {user && (
+                                                <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white" />
+                                            )}
+                                        </div>
                                     )}
                                 </div>
                             }
                         >
-                            <ul className="list-none text-left m-0 p-0 pb-[3px] space-y-[2px] w-[200px]">
-                                {user && (
+                            <ul className="list-none text-left m-0 p-0 pb-[3px] space-y-[2px] w-[220px]">
+                                {user ? (
                                     <>
                                         <li className="bg-black/5 dark:bg-white/5 border-b border-primary text-[11px] px-3 py-2 text-primary/60 z-20 m-0 !mb-[3px] font-black uppercase tracking-widest">
-                                            account
+                                            active session
                                         </li>
                                         <li className="px-3 py-3 mb-1">
                                             <p className="m-0 text-[13px] font-bold truncate text-primary">{profile?.username || user.email}</p>
+                                            <p className="m-0 text-[11px] text-primary/40 truncate">{user.email}</p>
+                                        </li>
+
+                                        <li className="bg-black/5 dark:bg-white/5 border-y border-primary text-[11px] px-3 py-2 text-primary/60 !my-1 z-20 m-0 font-black uppercase tracking-widest">
+                                            system
+                                        </li>
+
+                                        {isAdmin && (
+                                            <li className="px-1">
+                                                <button
+                                                    className="group/item text-[13px] px-3 py-2.5 rounded-sm hover:bg-black/5 dark:hover:bg-white/5 block w-full text-left font-bold lowercase flex items-center justify-between"
+                                                    onClick={() => addWindow({
+                                                        key: 'admin',
+                                                        path: '/admin',
+                                                        title: 'Admin Dashboard',
+                                                        size: { width: 1100, height: 750 },
+                                                        element: <AdminPanel />
+                                                    })}
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        <IconApp className="w-5 h-5 opacity-40 group-hover/item:opacity-100 transition-opacity" />
+                                                        <span>dashboard</span>
+                                                    </div>
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-burnt-orange" />
+                                                </button>
+                                            </li>
+                                        )}
+
+                                        <li className="px-1">
+                                            <button
+                                                className="group/item text-[13px] px-3 py-2.5 rounded-sm hover:bg-black/5 dark:hover:bg-white/5 block w-full text-left font-bold lowercase flex items-center gap-2"
+                                                onClick={() => addWindow({
+                                                    key: 'profile',
+                                                    path: '/profile',
+                                                    title: 'My Profile',
+                                                    size: { width: 450, height: 600 },
+                                                    element: <ProfileContent />
+                                                })}
+                                            >
+                                                <IconUser className="w-5 h-5 opacity-40 group-hover/item:opacity-100 transition-opacity" />
+                                                my profile
+                                            </button>
+                                        </li>
+
+                                        <li className="px-1 pt-1 border-t border-primary/10 mt-1">
+                                            <button
+                                                className="group/item text-[13px] px-3 py-2.5 rounded-sm hover:bg-black/5 dark:hover:bg-white/5 block w-full text-left font-bold lowercase flex items-center gap-2 text-red"
+                                                onClick={() => signOut()}
+                                            >
+                                                <IconLock className="w-5 h-5 opacity-40 group-hover/item:opacity-100 transition-opacity text-red" />
+                                                sign out
+                                            </button>
                                         </li>
                                     </>
-                                )}
-
-                                <li className="bg-black/5 dark:bg-white/5 border-y border-primary text-[11px] px-3 py-2 text-primary/60 !my-1 z-20 m-0 font-black uppercase tracking-widest">
-                                    system
-                                </li>
-
-                                {isAdmin && (
-                                    <li className="px-1">
-                                        <button
-                                            className="group/item text-[13px] px-3 py-2.5 rounded-sm hover:bg-black/5 dark:hover:bg-white/5 block w-full text-left font-bold lowercase flex items-center justify-between"
-                                            onClick={() => addWindow({
-                                                key: 'admin',
-                                                path: '/admin',
-                                                title: 'Admin Dashboard',
-                                                size: { width: 1100, height: 750 },
-                                                element: <AdminPanel />
-                                            })}
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                <IconApp className="w-5 h-5 opacity-40 group-hover/item:opacity-100 transition-opacity" />
-                                                <span>dashboard</span>
-                                            </div>
-                                            <div className="w-1.5 h-1.5 rounded-full bg-burnt-orange" />
-                                        </button>
-                                    </li>
-                                )}
-
-                                {user && (
-                                    <li className="px-1">
-                                        <button
-                                            className="group/item text-[13px] px-3 py-2.5 rounded-sm hover:bg-black/5 dark:hover:bg-white/5 block w-full text-left font-bold lowercase flex items-center gap-2"
-                                            onClick={() => addWindow({
-                                                key: 'profile',
-                                                path: '/profile',
-                                                title: 'My Profile',
-                                                size: { width: 450, height: 600 },
-                                                element: <ProfileContent />
-                                            })}
-                                        >
-                                            <IconUser className="w-5 h-5 opacity-40 group-hover/item:opacity-100 transition-opacity" />
-                                            my profile
-                                        </button>
-                                    </li>
-                                )}
-
-                                <li className="px-1 pt-1 border-t border-primary/10 mt-1">
-                                    <button
-                                        className={`group/item text-[13px] px-3 py-2.5 rounded-sm hover:bg-black/5 dark:hover:bg-white/5 block w-full text-left font-bold lowercase flex items-center gap-2 ${user ? 'text-red' : ''}`}
-                                        onClick={() => {
-                                            if (user) {
-                                                signOut()
-                                            } else {
-                                                addWindow({
+                                ) : (
+                                    <>
+                                        <li className="bg-black/5 dark:bg-white/5 border-b border-primary text-[11px] px-3 py-2 text-primary/60 z-20 m-0 !mb-[3px] font-black uppercase tracking-widest">
+                                            access
+                                        </li>
+                                        <li className="px-1">
+                                            <button
+                                                className="group/item text-[13px] px-3 py-2.5 rounded-sm hover:bg-black/5 dark:hover:bg-white/5 block w-full text-left font-bold lowercase flex items-center gap-2"
+                                                onClick={() => addWindow({
                                                     key: 'login',
                                                     path: '/login',
                                                     title: 'Member Access',
                                                     size: { width: 450, height: 450 },
                                                     element: <LoginContent />
-                                                })
-                                            }
-                                        }}
-                                    >
-                                        <IconLock className={`w-5 h-5 opacity-40 group-hover/item:opacity-100 transition-opacity ${user ? 'text-red' : ''}`} />
-                                        {user ? 'sign out' : 'sign in'}
-                                    </button>
-                                </li>
+                                                })}
+                                            >
+                                                <IconLock className="w-5 h-5 opacity-40 group-hover/item:opacity-100 transition-opacity" />
+                                                sign in
+                                            </button>
+                                        </li>
+                                    </>
+                                )}
                             </ul>
                         </Popover>
                     </div>
