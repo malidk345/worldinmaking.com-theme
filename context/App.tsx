@@ -280,7 +280,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
             addWindow({
                 key: 'posts-newspaper',
                 path: '/posts',
-                title: getTitleFromPath(path),
+                title: getTitleFromPath('/posts'),
                 size: { width: 1000, height: 800 },
                 element: <PostsView />
             })
@@ -305,17 +305,20 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
             const path = window.location.pathname
             
             // Check if we already have a window for this path
+            let windowToFocus: AppWindow | null = null
+            
             setWindows((currentWindows) => {
                 const existingWindow = currentWindows.find(w => w.path === path)
                 
                 if (existingWindow) {
-                    // If window exists, bring it to front and update focused window
-                    setFocusedWindow(existingWindow)
+                    // If window exists, bring it to front
+                    windowToFocus = existingWindow
                     
-                    // Calculate new z-index: bring to front (highest), decrement others that were above it
+                    // Calculate new z-index: bring to front (highest + 1), decrement others that were above it
+                    const maxZIndex = Math.max(...currentWindows.map(w => w.zIndex), 0)
                     return currentWindows.map((el) => {
                         if (el.key === existingWindow.key) {
-                            return { ...el, zIndex: currentWindows.length, minimized: false }
+                            return { ...el, zIndex: maxZIndex + 1, minimized: false }
                         }
                         return {
                             ...el,
@@ -327,10 +330,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
                     const size = { width: 1000, height: 800 }
                     const position = getPositionDefaults(size, currentWindows)
                     
-                    const newWindow = {
+                    const newWindow: AppWindow = {
                         key: path === '/' || path === '/posts' ? 'posts-newspaper' : `window-${path}`,
                         path: path === '/' ? '/posts' : path,
-                        title: getTitleFromPath(path),
+                        title: getTitleFromPath(path === '/' ? '/posts' : path),
                         size,
                         position,
                         previousSize: size,
@@ -343,10 +346,15 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
                         element: (path === '/' || path === '/posts') ? <PostsView /> : undefined
                     }
                     
-                    setFocusedWindow(newWindow)
+                    windowToFocus = newWindow
                     return [...currentWindows, newWindow]
                 }
             })
+            
+            // Set focused window after state update to avoid race conditions
+            if (windowToFocus) {
+                setFocusedWindow(windowToFocus)
+            }
         }
 
         window.addEventListener('popstate', handlePopState)
