@@ -46,16 +46,22 @@ export default function WindowRouter({ item }: { item: any }) {
     if (permalinkMatch) {
         return <CommunityQuestionRouteView permalink={permalinkMatch[1]} />
     }
-
     // /questions
     if (path === '/questions') {
         return <CommunityMainRouteView />
     }
 
-    // /blog/:slug — fetch from Supabase via usePosts
-    const blogMatch = path.match(/^\/blog\/([^/]+)/)
+    // /posts or /blog
+    if (path === '/posts' || path === '/blog') {
+        const PostsView = require('components/Posts').default
+        return <PostsView />
+    }
+
+    // /posts/:slug or /blog/:slug — fetch from Supabase via usePosts
+    // Supporting both /posts/ and /blog/ for backward compatibility/flexibility
+    const blogMatch = path.match(/^\/(blog|posts)\/([^/]+)/)
     if (blogMatch) {
-        return <BlogRouteView slug={blogMatch[1]} />
+        return <BlogRouteView slug={blogMatch[2]} />
     }
 
     // /search

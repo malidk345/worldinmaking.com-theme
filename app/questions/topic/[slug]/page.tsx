@@ -1,55 +1,20 @@
 "use client"
-
-export const runtime = 'edge'
-
-import React, { useEffect } from 'react'
+import React from 'react'
 import { useParams } from 'next/navigation'
-import ForumPageLayout from 'components/Forum/ForumPageLayout'
-import { useCommunity } from 'hooks/useCommunity'
+import Wrapper from 'components/Wrapper'
 import SEO from 'components/SEO'
 
 export default function TopicPage() {
     const params = useParams()
     const slug = params?.slug as string
-    const { posts, loading, fetchPosts } = useCommunity()
-
-    useEffect(() => {
-        if (slug) {
-            fetchPosts(undefined, slug)
-        }
-    }, [slug, fetchPosts])
-
-    const adaptedPosts = posts.map(p => ({
-        id: p.id,
-        permalink: p.id.toString(),
-        subject: p.title,
-        body: p.content,
-        createdAt: p.created_at,
-        profile: {
-            id: 0,
-            firstName: p.profiles?.username || 'Anonymous',
-            lastName: '',
-            avatar: p.profiles?.avatar_url || null,
-        },
-        replies: [],
-        topics: [],
-        pinnedTopics: [],
-        resolved: false,
-        archived: false
-    }))
 
     return (
-        <>
+        <main className="h-screen w-screen overflow-hidden bg-light dark:bg-dark">
             <SEO
                 title={`Topic: ${slug}`}
                 url={`/questions/topic/${slug}`}
             />
-            <ForumPageLayout
-                questions={adaptedPosts as any}
-                loading={loading}
-                activeTopicSlug={slug}
-                title={slug}
-            />
-        </>
+            <Wrapper />
+        </main>
     )
 }

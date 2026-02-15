@@ -255,15 +255,40 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         setFocusedWindow(null)
     }, [])
 
-    // Initial window
+    // Initial window load based on current URL
     useEffect(() => {
-        addWindow({
-            key: 'posts',
-            path: '/posts',
-            title: 'Posts',
-            size: { width: 900, height: 750 },
-            element: <PostsView />
-        })
+        if (typeof window === 'undefined') return
+        const path = window.location.pathname
+
+        // Helper to get a decent title from path
+        const getTitleFromPath = (p: string) => {
+            if (p === '/' || p === '/posts') return 'Latest Editions'
+            if (p === '/questions') return 'Transmissions'
+            if (p.includes('/questions/topic/')) return `Topic: ${p.split('/').pop()}`
+            if (p.includes('/posts/')) return p.split('/').pop()?.replace(/-/g, ' ') || 'Post'
+            if (p === '/admin') return 'Admin Dashboard'
+            return p.split('/').pop() || 'Window'
+        }
+
+        // Always open the main Posts window as a base if we are at root or posts
+        if (path === '/' || path === '/posts') {
+            addWindow({
+                key: 'posts-newspaper',
+                path: '/posts',
+                title: 'Latest Editions',
+                size: { width: 1000, height: 800 },
+                element: <PostsView />
+            })
+        } else {
+            // If we're on a specific path, open that window
+            // We can also open the posts window in the background if desired
+            addWindow({
+                key: `window-${path}`,
+                path: path,
+                title: getTitleFromPath(path),
+                size: { width: 1000, height: 800 },
+            })
+        }
     }, [])
 
 
@@ -277,15 +302,18 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         return () => window.removeEventListener('resize', handleResize)
     }, [])
 
-    // URL Sync
+    // URL Sync - Updates the browser address bar to match the focused window's path
+    // We use replaceState instead of pushState to avoid polluting history with every focus change,
+    // and to prevent Next.js from interpreting this as a full navigation which might unmount components.
     useEffect(() => {
         if (typeof window === 'undefined') return
 
         const currentPath = window.location.pathname
         const targetPath = focusedWindow?.path || '/'
 
-        if (currentPath !== targetPath) {
-            window.history.pushState(null, '', targetPath)
+        // Only sync if the path actually changed and it's an internal path
+        if (currentPath !== targetPath && targetPath.startsWith('/')) {
+            window.history.replaceState(null, '', targetPath)
         }
     }, [focusedWindow])
 

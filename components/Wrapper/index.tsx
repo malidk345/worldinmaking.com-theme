@@ -14,7 +14,6 @@ export default function Wrapper() {
         windows,
         constraintsRef,
         compact,
-        closingAllWindowsAnimation,
         closeAllWindows
     } = useApp()
 
