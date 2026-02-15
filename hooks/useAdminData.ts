@@ -91,16 +91,16 @@ export const useAdminData = () => {
 
             if (createError) {
                 logger.error('[useAdminData] createPost error:', createError);
-                addToast('failed to create post: ' + createError.message, 'error');
+                addToast(createError.message || 'failed to create post', 'error');
                 return null;
             }
 
             addToast('post published successfully', 'success');
             if (data) setPosts(prev => [data, ...prev]);
             return data;
-        } catch (e) {
+        } catch (e: any) {
             logger.error('[useAdminData] createPost exception:', e);
-            addToast('failed to create post', 'error');
+            addToast(e.message || 'failed to create post', 'error');
             return null;
         }
     }, [addToast]);
@@ -116,7 +116,7 @@ export const useAdminData = () => {
 
             if (updateError) {
                 logger.error('[useAdminData] updatePost error:', updateError);
-                addToast('failed to update post: ' + updateError.message, 'error');
+                addToast(updateError.message || 'failed to update post', 'error');
                 return null;
             }
 
@@ -125,9 +125,9 @@ export const useAdminData = () => {
                 setPosts(prev => prev.map(p => p.id === id ? data : p));
             }
             return data;
-        } catch (e) {
+        } catch (e: any) {
             logger.error('[useAdminData] updatePost exception:', e);
-            addToast('failed to update post', 'error');
+            addToast(e.message || 'failed to update post', 'error');
             return null;
         }
     }, [addToast]);

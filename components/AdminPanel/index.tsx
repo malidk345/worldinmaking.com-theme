@@ -61,71 +61,78 @@ const AdminPanel = () => {
     ]
 
     const handleLanguageChange = (newLang: string) => {
-        // Save current values to storage
-        if (currentEditLanguage === originalLanguage) {
-            // Root values are kept in separate states for now, but we can sync them
-        } else {
-            setTranslations(prev => ({
-                ...prev,
-                [currentEditLanguage]: {
-                    title: newPostTitle,
-                    content: newPostContent,
-                    excerpt: newPostExcerpt
-                }
-            }))
+        // 1. Save CURRENT state into the translations object for the CURRENT lang
+        const currentData = {
+            title: newPostTitle,
+            content: newPostContent,
+            excerpt: newPostExcerpt
         }
 
-        // Load new values
-        setCurrentEditLanguage(newLang)
-        if (newLang === originalLanguage) {
-            // Restore root from a temp storage or let them be as is if we sync
-            // Actually, for simplicity, let's just use the current state as "source of truth" and update it
+        setTranslations(prev => ({
+            ...prev,
+            [currentEditLanguage]: currentData
+        }))
+
+        // 2. Load DATA for the NEW language from translations state
+        // Note: Because setTranslations is async, we use the translations from current render
+        // but we need to consider if we're switching away from the just-edited content
+        const nextData = newLang === currentEditLanguage ? currentData : translations[newLang]
+
+        if (nextData) {
+            setNewPostTitle(nextData.title || '')
+            setNewPostContent(nextData.content || '')
+            setNewPostExcerpt(nextData.excerpt || '')
         } else {
-            const trans = translations[newLang]
-            if (trans) {
-                setNewPostTitle(trans.title)
-                setNewPostContent(trans.content)
-                setNewPostExcerpt(trans.excerpt || '')
-            } else {
-                setNewPostTitle('')
-                setNewPostContent('')
-                setNewPostExcerpt('')
-            }
+            // If new language, clear fields
+            setNewPostTitle('')
+            setNewPostContent('')
+            setNewPostExcerpt('')
         }
+
+        setCurrentEditLanguage(newLang)
     }
 
-    // A better approach for the tab switching logic: 
-    // We should keep the "Edit State" for EACH language in the `translations` object, 
-    // including the original language.
-
     const handleSavePost = async () => {
-        // Sync current edit values before saving
-        let finalTranslations = { ...translations }
-        let finalTitle = newPostTitle
-        let finalContent = newPostContent
-        let finalExcerpt = newPostExcerpt
-
-        if (currentEditLanguage !== originalLanguage) {
-            finalTranslations[currentEditLanguage] = {
-                title: newPostTitle,
-                content: newPostContent,
-                excerpt: newPostExcerpt
-            }
-            // Root needs to be restored from somewhere? 
-            // In a real app, we'd have a more robust "multi-lang form" state.
-            // For now, let's assume the user saves while on the language they want as "primary" if root is empty.
+        // 1. Sync the currently viewed tab into the translations object first
+        const currentData = {
+            title: newPostTitle,
+            content: newPostContent,
+            excerpt: newPostExcerpt
         }
+
+        const finalTranslations = {
+            ...translations,
+            [currentEditLanguage]: currentData
+        }
+
+        // 2. Determine the "Root" content (the one for originalLanguage)
+        // This ensures the main DB columns always store the primary language content
+        const rootContent = finalTranslations[originalLanguage] || (currentEditLanguage === originalLanguage ? currentData : null)
+
+        if (!rootContent?.title) {
+            // Fallback: If root is missing, use current tab's content as root
+            // But ideally we should warn the user
+        }
+
+        const finalTitle = rootContent?.title || newPostTitle
+        const finalContent = rootContent?.content || newPostContent
+        const finalExcerpt = rootContent?.excerpt || newPostExcerpt
+
+        // 3. Remove the root language from the translations object to avoid redundancy
+        // (Supabase stores root in columns, translations in JSONB)
+        const dbTranslations = { ...finalTranslations }
+        delete dbTranslations[originalLanguage]
 
         const postData = {
             title: finalTitle,
             content: finalContent,
-            slug: toSlug(finalTitle),
+            slug: editingPost?.slug || toSlug(finalTitle), // Preserve slug on updates, only generate on new
             author: profile?.username || user?.email?.split('@')[0] || 'Unknown',
             author_avatar: profile?.avatar_url || '',
             published: true,
-            excerpt: finalExcerpt || finalContent.slice(0, 150) + '...',
+            excerpt: finalExcerpt || finalContent.replace(/<[^>]*>/g, ' ').slice(0, 150) + '...',
             language: originalLanguage,
-            translations: finalTranslations
+            translations: dbTranslations
         }
 
         let success;

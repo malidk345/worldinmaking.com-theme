@@ -1,3 +1,4 @@
+"use client"
 import React from 'react'
 import Wrapper from 'components/Wrapper'
 import SEO from 'components/SEO'
