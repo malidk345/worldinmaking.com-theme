@@ -19,6 +19,7 @@ import { usePosts } from 'hooks/usePosts'
 import { Popover } from 'components/RadixUI/Popover'
 import Link from 'components/Link'
 import SEO from 'components/SEO'
+import WriteForWIM from 'components/WriteForWIM'
 
 const MOCK_AUTHORS = [
     { name: 'James Hawkins', avatar: 'https://res.cloudinary.com/dmukukwp6/image/upload/v1710153303/posthog.com/contents/images/authors/james.png' },
@@ -261,11 +262,7 @@ export default function PostsView() {
                             title: 'Write for WIM',
                             path: '/write',
                             icon: <IconNewspaper className="size-4 text-navy" />,
-                            element: (
-                                <div className="flex items-center justify-center h-full bg-accent text-primary-text/20 text-xs font-bold tracking-[0.2em]">
-                                    🚧 Engineering in progress
-                                </div>
-                            )
+                            element: <WriteForWIM />
                         })}
                     >
                         <IconNewspaper className="size-3 text-navy" />
