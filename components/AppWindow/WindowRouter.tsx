@@ -190,6 +190,10 @@ function BlogRouteView({ slug }: { slug: string }) {
                 image: post.image,
                 content: post.content,
                 headings: post.headings,
+                translations: post.translations,
+                language: post.language,
+                description: post.description,
+                slug: post.slug
             }}
         />
     )

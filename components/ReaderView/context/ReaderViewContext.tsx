@@ -40,7 +40,7 @@ const getComputedLineHeight = (selector: string) => {
 
 const ReaderViewContext = createContext<ReaderViewContextType | undefined>(undefined)
 
-export function ReaderViewProvider({ children }: { children: React.ReactNode }) {
+export function ReaderViewProvider({ children, initialLanguage = 'en' }: { children: React.ReactNode, initialLanguage?: string }) {
     const { compact } = useApp()
 
     // In nextjs, we don't have appWindow.size.width directly in context like aa maybe
@@ -54,7 +54,7 @@ export function ReaderViewProvider({ children }: { children: React.ReactNode }) 
     const [lineHeightP, setLineHeightP] = useState<number | null>(null)
     const [lineHeightLi, setLineHeightLi] = useState<number | null>(null)
     const [backgroundImage, setBackgroundImage] = useState<string | null>(null)
-    const [currentLanguage, setCurrentLanguage] = useState('en')
+    const [currentLanguage, setCurrentLanguage] = useState(initialLanguage)
 
     useEffect(() => {
         if (typeof window !== 'undefined') {

@@ -58,11 +58,21 @@ interface ReaderViewProps {
     proseSize?: 'sm' | 'base' | 'lg'
     onSearch?: (query: string) => void
     availableLanguages?: string[]
+    useExternalProvider?: boolean
+    initialLanguage?: string
 }
 
 export default function ReaderView(props: ReaderViewProps) {
+    if (props.useExternalProvider) {
+        return (
+            <InPageSearchProvider>
+                <ReaderViewContent {...props} />
+            </InPageSearchProvider>
+        )
+    }
+
     return (
-        <ReaderViewProvider>
+        <ReaderViewProvider initialLanguage={props.initialLanguage}>
             <InPageSearchProvider>
                 <ReaderViewContent {...props} />
             </InPageSearchProvider>

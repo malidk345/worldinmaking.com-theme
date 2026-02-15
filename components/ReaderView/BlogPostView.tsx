@@ -4,6 +4,8 @@ import React, { useMemo } from 'react'
 import ReaderView from './index'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { ReaderViewProvider, useReaderView } from './context/ReaderViewContext'
+import SEO from 'components/SEO'
 
 interface BlogPostViewProps {
     post: {
@@ -15,22 +17,31 @@ interface BlogPostViewProps {
         content: string
         tags?: string[]
         headings: { id: string, text: string, level: number }[]
-        translations?: Record<string, { title: string, content: string }>
+        translations?: Record<string, { title: string, content: string, excerpt?: string }>
         language?: string
         description?: string
         slug?: string
     }
 }
 
-import SEO from 'components/SEO'
-
 export default function BlogPostView({ post }: BlogPostViewProps) {
-    const currentLanguage = post.language || 'en'
+    return (
+        <ReaderViewProvider initialLanguage={post.language || 'en'}>
+            <BlogPostInner post={post} />
+        </ReaderViewProvider>
+    )
+}
+
+function BlogPostInner({ post }: BlogPostViewProps) {
+    const { currentLanguage } = useReaderView()
 
     // Get content based on current language
+    const isOriginal = currentLanguage === (post.language || 'en')
     const translation = post.translations?.[currentLanguage]
-    const title = translation?.title || post.title
-    const content = translation?.content || post.content
+
+    const title = (!isOriginal && translation?.title) ? translation.title : post.title
+    const content = (!isOriginal && translation?.content) ? translation.content : post.content
+    const description = (!isOriginal && translation?.excerpt) ? translation.excerpt : (post.description || post.content.slice(0, 160))
 
     // Detect if content is HTML from Tiptap or raw Markdown
     const isHtml = content?.trim().startsWith('<');
@@ -78,7 +89,7 @@ export default function BlogPostView({ post }: BlogPostViewProps) {
         <>
             <SEO
                 title={title}
-                description={post.description}
+                description={description}
                 image={post.image || undefined}
                 article
                 url={post.slug ? `/posts/${post.slug}` : undefined}
@@ -89,6 +100,9 @@ export default function BlogPostView({ post }: BlogPostViewProps) {
                 tableOfContents={tableOfContents}
                 showQuestions
                 availableLanguages={availableLanguages}
+                // Important: Don't wrap in another provider inside ReaderView if we can help it, 
+                // but ReaderView currently does. We'll make ReaderView support external provider.
+                useExternalProvider
             >
                 {isHtml ? (
                     <div
