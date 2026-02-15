@@ -65,6 +65,16 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     const constraintsRef = useRef<HTMLDivElement>(null)
     const taskbarRef = useRef<HTMLDivElement>(null)
 
+    // Helper function to generate window titles from path
+    const getTitleFromPath = useCallback((p: string) => {
+        if (p === '/' || p === '/posts') return 'Latest Editions'
+        if (p === '/questions') return 'Transmissions'
+        if (p.includes('/questions/topic/')) return `Topic: ${p.split('/').pop()}`
+        if (p.includes('/posts/')) return p.split('/').pop()?.replace(/-/g, ' ') || 'Post'
+        if (p === '/admin') return 'Admin Dashboard'
+        return p.split('/').pop() || 'Window'
+    }, [])
+
     const getDesktopCenterPosition = useCallback((size: { width: number, height: number }) => {
         const inset = 0
         if (constraintsRef.current) {
@@ -255,33 +265,27 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         setFocusedWindow(null)
     }, [])
 
+    // Track if initial window has been loaded
+    const initializedRef = useRef(false)
+
     // Initial window load based on current URL
     useEffect(() => {
         if (typeof window === 'undefined') return
+        if (initializedRef.current) return
+        
         const path = window.location.pathname
-
-        // Helper to get a decent title from path
-        const getTitleFromPath = (p: string) => {
-            if (p === '/' || p === '/posts') return 'Latest Editions'
-            if (p === '/questions') return 'Transmissions'
-            if (p.includes('/questions/topic/')) return `Topic: ${p.split('/').pop()}`
-            if (p.includes('/posts/')) return p.split('/').pop()?.replace(/-/g, ' ') || 'Post'
-            if (p === '/admin') return 'Admin Dashboard'
-            return p.split('/').pop() || 'Window'
-        }
 
         // Always open the main Posts window as a base if we are at root or posts
         if (path === '/' || path === '/posts') {
             addWindow({
                 key: 'posts-newspaper',
                 path: '/posts',
-                title: 'Latest Editions',
+                title: getTitleFromPath('/posts'),
                 size: { width: 1000, height: 800 },
                 element: <PostsView />
             })
         } else {
             // If we're on a specific path, open that window
-            // We can also open the posts window in the background if desired
             addWindow({
                 key: `window-${path}`,
                 path: path,
@@ -289,7 +293,76 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
                 size: { width: 1000, height: 800 },
             })
         }
-    }, [])
+        
+        initializedRef.current = true
+    }, [addWindow, getTitleFromPath])
+
+    // Listen for browser navigation (back/forward buttons)
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+
+        const handlePopState = () => {
+            const path = window.location.pathname
+            
+            // Check if we already have a window for this path
+            let windowToFocus: AppWindow | null = null
+            
+            setWindows((currentWindows) => {
+                const existingWindow = currentWindows.find(w => w.path === path)
+                
+                if (existingWindow) {
+                    // If window exists, bring it to front
+                    windowToFocus = existingWindow
+                    
+                    // Calculate new z-index: bring to front (highest + 1), decrement others that were above it
+                    const maxZIndex = Math.max(...currentWindows.map(w => w.zIndex), 0)
+                    return currentWindows.map((el) => {
+                        if (el.key === existingWindow.key) {
+                            return { ...el, zIndex: maxZIndex + 1, minimized: false }
+                        }
+                        return {
+                            ...el,
+                            zIndex: el.zIndex > existingWindow.zIndex ? el.zIndex - 1 : el.zIndex,
+                        }
+                    })
+                } else {
+                    // If no window exists for this path, create one
+                    const size = { width: 1000, height: 800 }
+                    const position = getPositionDefaults(size, currentWindows)
+                    
+                    const newWindow: AppWindow = {
+                        key: path === '/' || path === '/posts' ? 'posts-newspaper' : `window-${path}`,
+                        path: path === '/' ? '/posts' : path,
+                        title: getTitleFromPath(path === '/' ? '/posts' : path),
+                        size,
+                        position,
+                        previousSize: size,
+                        previousPosition: position,
+                        zIndex: currentWindows.length + 1,
+                        minimized: false,
+                        sizeConstraints: { min: { width: 350, height: 250 }, max: { width: 2000, height: 2000 } },
+                        fixedSize: false,
+                        minimal: false,
+                        element: (path === '/' || path === '/posts') ? <PostsView /> : undefined
+                    }
+                    
+                    windowToFocus = newWindow
+                    return [...currentWindows, newWindow]
+                }
+            })
+            
+            // Set focused window after state update to avoid race conditions
+            if (windowToFocus) {
+                setFocusedWindow(windowToFocus)
+            }
+        }
+
+        window.addEventListener('popstate', handlePopState)
+        
+        return () => {
+            window.removeEventListener('popstate', handlePopState)
+        }
+    }, [getPositionDefaults, getTitleFromPath, setFocusedWindow])
 
 
     useEffect(() => {
