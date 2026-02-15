@@ -346,7 +346,7 @@ const AdminPanel = () => {
                                                     <span>/{post.slug}</span>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div className={`flex items-center gap-1 transition-opacity ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                                                 <OSButton size="xs" variant="secondary" onClick={() => handleEditClick(post)}>
                                                     <Edit className="size-3" />
                                                 </OSButton>
