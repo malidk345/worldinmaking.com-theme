@@ -27,8 +27,8 @@ export default function CommentForm({ onSubmit, className = '', placeholder = "A
 
     if (!isActive) {
         return (
-            <div className={`flex flex-1 space-x-2 ${className}`}>
-                <div className="rounded-full overflow-hidden aspect-square w-[40px] shrink-0 border border-primary">
+            <div className={`flex flex-1 space-x-3 ${className}`}>
+                <div className="rounded-full overflow-hidden aspect-square w-[40px] shrink-0 border border-border">
                     <ForumAvatar
                         className="w-full h-full"
                         image={profile?.avatar_url}
@@ -41,9 +41,9 @@ export default function CommentForm({ onSubmit, className = '', placeholder = "A
                     width="full"
                     align="left"
                     variant="underlineOnHover"
-                    className="border border-primary bg-accent !p-2 min-h-8"
+                    className="border border-border bg-accent hover:bg-accent/80 transition-colors !p-3 min-h-[40px]"
                 >
-                    <span className="font-bold text-primary">{placeholder}</span>
+                    <span className="text-primary/60">{placeholder}</span>
                 </OSButton>
             </div>
         )
@@ -51,7 +51,7 @@ export default function CommentForm({ onSubmit, className = '', placeholder = "A
 
     return (
         <div className={`relative ${className}`}>
-            <div className="w-[40px] h-[40px] float-left rounded-full overflow-hidden shrink-0 mt-1">
+            <div className="w-[40px] h-[40px] float-left rounded-full overflow-hidden shrink-0 mt-1 border border-border">
                 <ForumAvatar
                     className="w-full h-full"
                     image={profile?.avatar_url}
@@ -67,22 +67,28 @@ export default function CommentForm({ onSubmit, className = '', placeholder = "A
                     className="bg-transparent min-h-[120px]"
                     placeholder={placeholder}
                     cta={
-                        <div className="flex justify-end mt-2">
+                        <div className="flex justify-end gap-2 mt-3">
+                            <OSButton
+                                size="sm"
+                                variant="default"
+                                onClick={() => {
+                                    setBody('')
+                                    setIsActive(false)
+                                }}
+                            >
+                                Cancel
+                            </OSButton>
                             <OSButton
                                 size="sm"
                                 variant="primary"
                                 disabled={!body.trim()}
                                 onClick={handleSubmit}
                             >
-                                Post
+                                Post Comment
                             </OSButton>
                         </div>
                     }
                 />
-                <p className="text-xs text-center mt-4 [text-wrap:_balance] opacity-60 mb-0 text-primary">
-                    If you need to share personal info relating to a bug or issue with your account, we
-                    suggest filing a support ticket in the app.
-                </p>
             </div>
             <div className="clear-both" />
         </div>

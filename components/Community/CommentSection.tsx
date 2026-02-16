@@ -50,28 +50,31 @@ export default function CommentSection({
 
     return (
         <div className={`mt-12 community-section ${className}`}>
-            <h3 id="community-questions" className="text-xl font-bold mb-4">Questions</h3>
+            <h3 id="community-questions" className="text-xl font-bold mb-6 text-primary">Comments</h3>
 
             {loading && posts.length === 0 ? (
                 <div className="flex justify-center p-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
                 </div>
-            ) : (
-                <ul className="not-prose m-0 p-0 list-none mb-6">
+            ) : posts.length > 0 ? (
+                <ul className="not-prose m-0 p-0 list-none mb-6 space-y-6">
                     {adaptedPosts.map((post) => (
-                        <li key={post.id} className="py-4 first:pt-0">
+                        <li key={post.id} className="border-l-2 border-border pl-4">
                             <ForumQuestionCard
                                 question={post as any}
+                                isComment={true}
                             />
                         </li>
                     ))}
                 </ul>
+            ) : (
+                <p className="text-primary/60 text-sm mb-6">No comments yet. Be the first to comment!</p>
             )}
 
-            <div className="mt-8 border-t border-primary/20 pt-8">
+            <div className="mt-8 border-t border-border pt-6">
                 <CommentForm
                     onSubmit={handleCreatePost}
-                    placeholder="Ask a question"
+                    placeholder="Add a comment..."
                 />
             </div>
         </div>

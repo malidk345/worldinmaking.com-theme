@@ -18,6 +18,7 @@ interface ForumQuestionCardProps {
     isInForum?: boolean
     showSlug?: boolean
     expanded?: boolean
+    isComment?: boolean
 }
 
 export default function ForumQuestionCard({
@@ -25,6 +26,7 @@ export default function ForumQuestionCard({
     isInForum = false,
     showSlug = false,
     expanded: initialExpanded = false,
+    isComment = false,
 }: ForumQuestionCardProps) {
     const [expanded, setExpanded] = useState(initialExpanded)
     const { replies, fetchReplies, createReply } = useCommunity()
@@ -78,27 +80,29 @@ export default function ForumQuestionCard({
                     created={question.createdAt}
                     profile={question.profile}
                 />
-                <div className="!ml-auto flex items-center space-x-px">
-                    <OSButton
-                        onClick={() => setIsEditing(!isEditing)}
-                        icon={<IconPencil />}
-                        size="md"
-                        tooltip="Edit post"
-                        className="!p-1.5 opacity-60 hover:opacity-100"
-                    />
-                    <OSButton
-                        onClick={() => { }} // Handle archive toggle
-                        icon={question.archived ? <IconUndo /> : <IconArchive />}
-                        size="md"
-                        tooltip={question.archived ? 'Restore thread' : 'Archive thread'}
-                        className="!p-1.5 opacity-60 hover:opacity-100"
-                    />
-                </div>
+                {!isComment && (
+                    <div className="!ml-auto flex items-center space-x-px">
+                        <OSButton
+                            onClick={() => setIsEditing(!isEditing)}
+                            icon={<IconPencil />}
+                            size="md"
+                            tooltip="Edit post"
+                            className="!p-1.5 opacity-60 hover:opacity-100"
+                        />
+                        <OSButton
+                            onClick={() => { }} // Handle archive toggle
+                            icon={question.archived ? <IconUndo /> : <IconArchive />}
+                            size="md"
+                            tooltip={question.archived ? 'Restore thread' : 'Archive thread'}
+                            className="!p-1.5 opacity-60 hover:opacity-100"
+                        />
+                    </div>
+                )}
             </div>
 
             <div className={question.archived ? 'opacity-50' : ''}>
                 <div
-                    className={`pb-4 ${isInForum ? 'pl-[calc(2.5rem_+_30px)] pr-8' : 'squeak-left-border ml-5 pl-[30px]'
+                    className={`pb-4 ${isComment ? '' : isInForum ? 'pl-[calc(2.5rem_+_30px)] pr-8' : 'squeak-left-border ml-5 pl-[30px]'
                         }`}
                 >
                     {question.subject && (
@@ -117,26 +121,30 @@ export default function ForumQuestionCard({
                     </div>
                 </div>
 
-                <ForumReplies
-                    replies={adaptedReplies as any}
-                    question={question}
-                    expanded={expanded}
-                    onToggleExpanded={setExpanded}
-                    isInForum={isInForum}
-                />
+                {!isComment && (
+                    <>
+                        <ForumReplies
+                            replies={adaptedReplies as any}
+                            question={question}
+                            expanded={expanded}
+                            onToggleExpanded={setExpanded}
+                            isInForum={isInForum}
+                        />
 
-                <div
-                    className={`pb-1 relative w-full ${isInForum
-                        ? 'bg-primary border-t border-black pt-4 px-4'
-                        : 'ml-5 pl-8 pr-5 squeak-left-border'
-                        } ${question.archived ? 'opacity-25 pointer-events-none' : ''}`}
-                >
-                    <ForumReplyForm
-                        archived={question.archived}
-                        isInForum={isInForum}
-                        onSubmit={handleReplySubmit}
-                    />
-                </div>
+                        <div
+                            className={`pb-1 relative w-full ${isInForum
+                                ? 'bg-primary border-t border-black pt-4 px-4'
+                                : 'ml-5 pl-8 pr-5 squeak-left-border'
+                                } ${question.archived ? 'opacity-25 pointer-events-none' : ''}`}
+                        >
+                            <ForumReplyForm
+                                archived={question.archived}
+                                isInForum={isInForum}
+                                onSubmit={handleReplySubmit}
+                            />
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     )
