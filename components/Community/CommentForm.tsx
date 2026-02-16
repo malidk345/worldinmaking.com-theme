@@ -43,7 +43,7 @@ export default function CommentForm({ onSubmit, className = '', placeholder = "A
                     variant="underlineOnHover"
                     className="border border-border bg-accent hover:bg-accent/80 transition-colors !p-3 min-h-[40px]"
                 >
-                    <span className="text-primary/60">{placeholder}</span>
+                    <span className="text-primary/70">{placeholder}</span>
                 </OSButton>
             </div>
         )
