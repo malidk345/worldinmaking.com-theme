@@ -179,9 +179,13 @@ mark {
   --color-button-secondary-shadow-dark: #925D05;
 
   /* Theme Colors with CSS variable support */
-  --color-primary: rgb(var(--bg));
-  --color-secondary: rgb(var(--text-secondary));
-  --color-muted: rgb(var(--text-muted));
+  --color-bg-primary: rgb(var(--bg));
+  --color-text-primary: rgb(var(--text-primary));
+  --color-border-primary: rgb(var(--border));
+
+  --color-text-secondary: rgb(var(--text-secondary));
+  --color-text-muted: rgb(var(--text-muted));
+
   --color-input: rgb(var(--input-border));
   --color-accent: rgb(var(--accent));
   --color-accent-light: #e5e7e0;
@@ -575,22 +579,39 @@ mark {
   }
 }
 
+@utility bg-primary {
+  background-color: rgb(var(--bg) / <alpha-value>);
+}
+
+@utility text-primary {
+  color: rgb(var(--text-primary) / <alpha-value>);
+}
+
+@utility border-primary {
+  border-color: rgb(var(--border) / <alpha-value>);
+}
+
+@utility bg-accent {
+  background-color: rgb(var(--accent) / <alpha-value>);
+}
+
+@utility text-secondary {
+  color: rgb(var(--text-secondary) / <alpha-value>);
+}
+
+@utility text-muted {
+  color: rgb(var(--text-muted) / <alpha-value>);
+}
+
+@utility border-input {
+  border-color: rgb(var(--input-border) / <alpha-value>);
+}
+
+@utility decoration-primary {
+  text-decoration-color: rgb(var(--text-primary) / <alpha-value>);
+}
+
 @layer utilities {
-  .bg-primary {
-    background-color: rgb(var(--bg));
-  }
-
-  .text-primary {
-    color: rgb(var(--text-primary));
-  }
-
-  .border-primary {
-    border-color: rgb(var(--border));
-  }
-
-  .bg-accent {
-    background-color: rgb(var(--accent));
-  }
 
   /* Ghost variables for project compatibility */
   .text-primary-text,
