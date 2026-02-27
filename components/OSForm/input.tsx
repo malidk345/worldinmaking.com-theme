@@ -24,7 +24,7 @@ interface InputProps {
     actionButton?: {
         label: string
     } & React.ButtonHTMLAttributes<HTMLButtonElement>
-    [key: string]: any
+    [key: string]: unknown
 }
 
 const Input = ({

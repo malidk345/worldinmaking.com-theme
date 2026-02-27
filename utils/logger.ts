@@ -2,28 +2,28 @@
  * Logger utility with production/development awareness
  * In production, only errors and warnings are logged
  */
-/* eslint-disable no-console */
+
 
 const isDev = process.env.NODE_ENV === 'development';
 
 const logger = {
-    log: (...args: any[]) => {
+    log: (...args: unknown[]) => {
         if (isDev) {
             console.log(...args);
         }
     },
-    info: (...args: any[]) => {
+    info: (...args: unknown[]) => {
         if (isDev) {
             console.info(...args);
         }
     },
-    warn: (...args: any[]) => {
+    warn: (...args: unknown[]) => {
         console.warn(...args); // Always show warnings
     },
-    error: (...args: any[]) => {
+    error: (...args: unknown[]) => {
         console.error(...args); // Always show errors
     },
-    debug: (...args: any[]) => {
+    debug: (...args: unknown[]) => {
         if (isDev) {
             console.debug(...args);
         }

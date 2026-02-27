@@ -18,6 +18,7 @@ import { usePosts } from 'hooks/usePosts'
 import { useAuth } from 'context/AuthContext'
 import { useToast } from 'context/ToastContext'
 import { supabase } from 'lib/supabase'
+import { sanitizeHtml } from 'utils/security'
 
 interface BodyProps {
     type: 'mdx' | 'plain'
@@ -27,6 +28,8 @@ interface BodyProps {
     contributors?: Contributor[]
     date?: string
     tags?: { label: string; url?: string }[]
+    wordCount?: number
+    readTime?: number
 }
 
 interface Contributor {
@@ -282,7 +285,7 @@ const ReaderViewContent = React.memo(({
                                     <div>
                                         <div className="flex items-center gap-2 px-2 mb-3 pt-2">
                                             <div className="w-1 h-3 rounded-full bg-gradient-to-b from-burnt-orange to-burnt-orange/40" />
-                                            <h4 className="font-black text-primary/50 m-0 text-[10px] lowercase tracking-[0.2em]">
+                                            <h4 className="font-black text-black dark:text-white m-0 text-[10px] lowercase tracking-[0.2em]">
                                                 suggested posts
                                             </h4>
                                         </div>
@@ -298,18 +301,6 @@ const ReaderViewContent = React.memo(({
                                         ) : (
                                             <TreeMenu items={suggestedPosts} />
                                         )}
-                                    </div>
-
-                                    {/* Decorative separator */}
-                                    <div className="px-4 py-1">
-                                        <div className="h-[1px] bg-gradient-to-r from-transparent via-primary/8 to-transparent" />
-                                    </div>
-
-                                    {/* Mini branding footer */}
-                                    <div className="px-3 pb-2">
-                                        <p className="text-[9px] font-bold text-primary/15 uppercase tracking-[0.15em] m-0">
-                                            worldinmaking.com
-                                        </p>
                                     </div>
                                 </div>
                             )}
@@ -367,12 +358,10 @@ const ReaderViewContent = React.memo(({
                         <div className={`mx-auto p-4 md:p-8 transition-all ${fullWidthContent ? 'max-w-full' : contentMaxWidthClass}`}>
                             {body.featuredImage && (
                                 <div className="mb-8 rounded-lg overflow-hidden border border-primary shadow-lg aspect-video relative">
-                                    <CloudinaryImage
+                                    <img
                                         src={body.featuredImage}
                                         alt={title || ''}
-                                        fill
-                                        priority
-                                        imgClassName="object-contain" // Keep aspect ratio but fit
+                                        className="w-full h-full object-cover"
                                     />
                                     {body.featuredImageCaption && (
                                         <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-2 text-sm text-center italic text-white/80">
@@ -384,7 +373,7 @@ const ReaderViewContent = React.memo(({
 
                             {title && !hideTitle && (
                                 <h1
-                                    className={`mx-auto transition-all normal-case tracking-tight ${proseSize === 'lg' ? 'max-w-full' : 'max-w-2xl'
+                                    className={`mx-auto transition-all lowercase tracking-tight ${proseSize === 'lg' ? 'max-w-full' : 'max-w-2xl'
                                         }`}
                                 >
                                     {title}
@@ -392,33 +381,40 @@ const ReaderViewContent = React.memo(({
                             )}
 
                             {(body.date || body.contributors || body.tags) && (
-                                <div className="mt-6 mx-auto max-w-3xl w-full border border-border rounded bg-accent">
-                                    <div className="flex items-center divide-x divide-border">
+                                <div className="mt-6 mx-auto max-w-3xl w-full border-[1px] border-black dark:border-white rounded-[4px] bg-accent/40 dark:bg-black/20 shadow-sm">
+                                    <div className="flex flex-wrap items-center gap-x-3 sm:gap-x-4 gap-y-2.5 px-3 sm:px-4 py-2.5">
                                         {body.contributors && (
-                                            <div className="px-4 py-2 flex items-center">
+                                            <div className="flex items-center shrink-0">
                                                 <ContributorsSmall contributors={body.contributors} />
                                             </div>
                                         )}
+                                        {body.contributors && <div className="w-[1px] h-3.5 bg-black dark:bg-white"></div>}
                                         {body.date && (
-                                            <div className="px-4 py-2 flex items-center">
-                                                <span className="text-[11px] font-bold text-primary/50">{body.date}</span>
+                                            <div className="flex items-center shrink-0">
+                                                <span className="text-[11px] font-bold text-black dark:text-white whitespace-nowrap">{body.date}</span>
+                                            </div>
+                                        )}
+                                        {body.date && <div className="w-[1px] h-3.5 bg-black dark:bg-white"></div>}
+                                        {body.wordCount !== undefined && body.wordCount > 0 && (
+                                            <div className="flex items-center gap-1.5 opacity-80 shrink-0">
+                                                <span className="text-[11px] font-semibold text-black dark:text-white">{body.wordCount} words</span>
                                             </div>
                                         )}
                                         {body.tags && body.tags.length > 0 && (
-                                            <div className="px-4 py-2 flex items-center gap-2 ml-auto">
+                                            <div className="flex items-center flex-wrap gap-2 w-full sm:w-auto mt-1 sm:mt-0 sm:ml-auto pt-2 sm:pt-0 border-t border-black/10 dark:border-white/10 sm:border-t-0">
                                                 {body.tags?.map((tag) => (
                                                     tag.url && tag.url !== '#' ? (
                                                         <a
                                                             key={`${tag.label}-${tag.url}`}
                                                             href={tag.url}
-                                                            className="text-[10px] font-bold text-primary hover:text-burnt-orange transition-colors"
+                                                            className="text-[10px] font-bold text-black dark:text-white hover:opacity-70 transition-opacity"
                                                         >
                                                             {tag.label}
                                                         </a>
                                                     ) : (
                                                         <span
                                                             key={tag.label}
-                                                            className="text-[10px] font-bold text-primary"
+                                                            className="text-[10px] font-bold text-black dark:text-white"
                                                         >
                                                             {tag.label}
                                                         </span>
@@ -445,7 +441,7 @@ const ReaderViewContent = React.memo(({
                                         style={{ fontSize: '15px' }}
                                     >
                                         {body.type === 'mdx' ? (
-                                            <div dangerouslySetInnerHTML={{ __html: body.content }} />
+                                            <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(body.content) }} />
                                         ) : (
                                             children
                                         )}

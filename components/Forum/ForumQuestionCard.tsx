@@ -6,7 +6,7 @@ import ForumDays from './ForumDays'
 import ForumMarkdown from './ForumMarkdown'
 import ForumReplies from './ForumReplies'
 import ForumReplyForm from './ForumReplyForm'
-import { ForumQuestion } from './types'
+import { ForumQuestion, ForumReply } from './types'
 import Link from 'components/Link'
 import OSButton from 'components/OSButton'
 import { IconPencil, IconArchive, IconUndo } from '@posthog/icons'
@@ -43,7 +43,7 @@ export default function ForumQuestionCard({
     }
 
     // Adapt Supabase replies to ForumReply type
-    const adaptedReplies = (replies || []).map(r => ({
+    const adaptedReplies: ForumReply[] = (replies || []).map(r => ({
         id: r.id,
         body: r.content,
         createdAt: r.created_at,
@@ -71,7 +71,7 @@ export default function ForumQuestionCard({
                 </div>
             )}
 
-            <div className={`flex items-center space-x-2 w-full ${isInForum ? 'pt-5 pl-5 pr-8' : ''} ${!question.subject ? '-mb-2' : ''}`}>
+            <div className={`flex flex-wrap sm:flex-nowrap items-center space-x-2 w-full ${isInForum ? 'pt-3 sm:pt-5 pl-3 sm:pl-5 pr-3 sm:pr-8' : ''} ${!question.subject ? '-mb-2' : ''}`}>
                 <ForumProfileBadge
                     profile={question.profile}
                     className={question.archived ? 'opacity-50' : ''}
@@ -87,14 +87,14 @@ export default function ForumQuestionCard({
                             icon={<IconPencil />}
                             size="md"
                             tooltip="Edit post"
-                            className="!p-1.5 opacity-60 hover:opacity-100"
+                            className="!p-1.5 opacity-60 hover:opacity-100 hidden sm:flex"
                         />
                         <OSButton
                             onClick={() => { }} // Handle archive toggle
                             icon={question.archived ? <IconUndo /> : <IconArchive />}
                             size="md"
                             tooltip={question.archived ? 'Restore thread' : 'Archive thread'}
-                            className="!p-1.5 opacity-60 hover:opacity-100"
+                            className="!p-1.5 opacity-60 hover:opacity-100 hidden sm:flex"
                         />
                     </div>
                 )}
@@ -102,14 +102,14 @@ export default function ForumQuestionCard({
 
             <div className={question.archived ? 'opacity-50' : ''}>
                 <div
-                    className={`pb-4 ${isComment ? '' : isInForum ? 'pl-[calc(2.5rem_+_30px)] pr-8' : 'squeak-left-border ml-5 pl-[30px]'
+                    className={`pb-4 ${isComment ? '' : isInForum ? 'pl-3 sm:pl-[calc(2.5rem_+_30px)] pr-3 sm:pr-8 mt-2 sm:mt-0' : 'squeak-left-border ml-5 pl-[30px]'
                         }`}
                 >
                     {question.subject && (
                         <h3 className="text-base font-semibold !m-0 pb-1 leading-5">
                             <Link
                                 to={`/questions/${question.permalink}`}
-                                className="!no-underline hover:!underline font-semibold text-red dark:text-yellow"
+                                className="!no-underline hover:!underline font-semibold text-[#000080] dark:text-[#66b2ff]"
                             >
                                 {question.subject}
                             </Link>
@@ -124,7 +124,7 @@ export default function ForumQuestionCard({
                 {!isComment && (
                     <>
                         <ForumReplies
-                            replies={adaptedReplies as any}
+                            replies={adaptedReplies}
                             question={question}
                             expanded={expanded}
                             onToggleExpanded={setExpanded}
@@ -133,7 +133,7 @@ export default function ForumQuestionCard({
 
                         <div
                             className={`pb-1 relative w-full ${isInForum
-                                ? 'bg-primary border-t border-primary/20 pt-4 px-4'
+                                ? 'bg-primary border-t border-primary/20 pt-4 px-3 sm:px-4'
                                 : 'ml-5 pl-8 pr-5 squeak-left-border'
                                 } ${question.archived ? 'opacity-25 pointer-events-none' : ''}`}
                         >

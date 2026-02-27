@@ -19,7 +19,7 @@ export interface Props {
     state?: LinkState
     newWindow?: boolean
     onClick?: (e: React.MouseEvent) => void
-    [key: string]: any
+    [key: string]: unknown
 }
 
 export default function Link({
@@ -34,7 +34,7 @@ export default function Link({
     const { navigate, appWindow } = useWindow()
 
     // Strip non-DOM props so they don't get spread onto <a> / <NextLink>
-    const { externalNoIcon, state, newWindow, ...domProps } = other
+    const { state, newWindow, ...domProps } = other
 
     const handleClick = (e: React.MouseEvent) => {
         if (onClick) onClick(e)

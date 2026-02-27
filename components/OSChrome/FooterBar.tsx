@@ -1,6 +1,7 @@
 "use client"
 
 import React from 'react'
+import { createPortal } from 'react-dom'
 import OSButton from 'components/OSButton'
 import {
     IconHome,
@@ -115,8 +116,19 @@ export default function FooterBar({
     const mainIconBtnClass = "p-2 h-8 w-8 !rounded-md"
     const interactionBtnClass = "p-1.5 h-8 w-8 !rounded"
 
-    return (
-        <div data-scheme="secondary" className="bg-primary flex w-full h-[44px] items-center px-2 border-t border-primary select-none gap-2 justify-between">
+    const [footerTarget, setFooterTarget] = React.useState<HTMLElement | null>(null)
+
+    React.useEffect(() => {
+        if (appWindow?.key) {
+            const el = document.getElementById(`window-footer-${appWindow.key}`)
+            if (el) {
+                setFooterTarget(el)
+            }
+        }
+    }, [appWindow?.key])
+
+    const content = (
+        <div data-scheme="tertiary" className={`flex w-full items-center px-1.5 py-0.5 select-none gap-2 justify-between ${footerTarget ? 'bg-transparent' : 'bg-primary border-t border-primary'}`}>
 
             {/* LEFT SECTION: Sidebar, Nav, Separator, Bookmark, Comment */}
             <div className="flex items-center gap-1 flex-shrink-0">
@@ -145,7 +157,7 @@ export default function FooterBar({
 
                 {/* Back/Forward buttons */}
                 {(showBack || showForward) && (
-                    <div className="hidden sm:flex items-center gap-0.5 ml-1 pl-1 border-l border-primary/10 h-5">
+                    <div className="hidden sm:flex items-center gap-0.5 ml-1 pl-1 border-l border-black/10 dark:border-white/10 h-5">
                         {showBack && (
                             <OSButton
                                 size="sm"
@@ -170,7 +182,7 @@ export default function FooterBar({
                 )}
 
                 {/* Separator */}
-                <div className="w-px h-5 bg-primary/20 mx-1 flex-shrink-0" />
+                <div className="w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
 
                 {/* Bookmark & Comment */}
                 <div className="flex items-center gap-0.5">
@@ -223,7 +235,7 @@ export default function FooterBar({
                 </div>
 
                 {/* Separator */}
-                <div className="w-px h-5 bg-primary/20 mx-1 flex-shrink-0" />
+                <div className="w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
 
                 {/* Search & TOC */}
                 <div className="flex items-center gap-1 relative">
@@ -284,4 +296,10 @@ export default function FooterBar({
             </div>
         </div >
     )
+
+    if (footerTarget) {
+        return createPortal(content, footerTarget)
+    }
+
+    return content
 }

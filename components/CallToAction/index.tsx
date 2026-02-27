@@ -73,10 +73,10 @@ const sizes = {
 
 const primary = cntl`
     bg-orange
-    text-black
-    hover:text-black
-    dark:text-black
-    dark:hover:text-black
+    text-white
+    hover:text-white
+    dark:text-white
+    dark:hover:text-white
     border-button
     dark:border-button-dark
     dark:bg-orange
@@ -213,10 +213,9 @@ export interface TrackedCTAPropsType extends CTAPropsType {
 }
 
 export const TrackedCTA = ({
-    width,
     event: { name: eventName, ...event },
     ...props
-}: TrackedCTAPropsType): any => {
+}: TrackedCTAPropsType): JSX.Element => {
     const posthog = usePostHog()
 
     return (
@@ -224,7 +223,7 @@ export const TrackedCTA = ({
             {...props}
             onClick={() => {
                 posthog?.capture(eventName, event)
-                props.onClick && props.onClick()
+                if (props.onClick) props.onClick()
             }}
         />
     )
@@ -246,13 +245,13 @@ export const CallToAction = ({
     state = {},
     event,
     color = true,
-}: CTAPropsType): any => {
+}: CTAPropsType): JSX.Element => {
     const url = to || href || ''
 
     const posthog = usePostHog()
     const wrappedOnClick = () => {
         posthog?.createPersonProfile?.()
-        onClick && onClick()
+        if (onClick) onClick()
     }
     return (
         <Link

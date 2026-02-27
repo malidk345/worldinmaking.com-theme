@@ -43,15 +43,7 @@ export default function Desktop() {
 
     const isTechnical = siteSettings.wallpaper === 'technical'
 
-    const wallpaperClasses = useMemo(() => {
-        switch (siteSettings.wallpaper) {
-            case 'slate': return 'bg-slate-100 dark:bg-slate-900'
-            case 'zinc': return 'bg-zinc-100 dark:bg-zinc-900'
-            case 'neutral': return 'bg-neutral-100 dark:bg-neutral-900'
-            case 'technical': return 'bg-[#e9e9e9] text-zinc-900'
-            default: return 'bg-light dark:bg-black'
-        }
-    }, [siteSettings.wallpaper])
+    const wallpaperClasses = 'bg-white'
 
     return (
         <div
@@ -103,6 +95,26 @@ export default function Desktop() {
                     <div className="absolute inset-10 border border-black/[0.02] pointer-events-none" />
                 </>
             )}
+
+            {/* Keyboard Garden Pattern Only */}
+            <div className="absolute inset-0 select-none pointer-events-none">
+                <div
+                    className="absolute inset-0 opacity-100 dark:opacity-0"
+                    style={{
+                        backgroundImage: "url('https://res.cloudinary.com/dmukukwp6/image/upload/keyboard_garden_bg_light_03a349af5c.png')",
+                        backgroundSize: '100px 100px',
+                        backgroundRepeat: 'repeat',
+                    }}
+                />
+                <div
+                    className="absolute inset-0 opacity-0 dark:opacity-100"
+                    style={{
+                        backgroundImage: "url('https://res.cloudinary.com/dmukukwp6/image/upload/keyboard_garden_bg_dark_9ab088797a.png')",
+                        backgroundSize: '200px 200px',
+                        backgroundRepeat: 'repeat',
+                    }}
+                />
+            </div>
 
 
             <nav className="flex flex-col items-center justify-center pointer-events-none">

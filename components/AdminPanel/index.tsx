@@ -5,17 +5,17 @@ import { IconNewspaper, IconUser, IconActivity, IconTerminal, IconMessage } from
 import OSButton from 'components/OSButton'
 import { Edit, Save, Settings, Trash2, Plus, ArrowLeft, Mail, MessageSquare, ChevronDown, ChevronUp, Search } from 'lucide-react'
 import RichTextEditor from './RichTextEditor'
-import { useAdminData } from '../../hooks/useAdminData'
+import { useAdminData, AdminPost, AdminCommunityPost, AdminCommunityReply } from '../../hooks/useAdminData'
 import { useAuth } from '../../context/AuthContext'
 import { toSlug } from '../../utils/security'
 import dayjs from 'dayjs'
 import { useApp } from 'context/App'
 
 // Helper to normalize profiles from Supabase joins (can be object or array)
-const getProfile = (profiles: any) => {
+const getProfile = (profiles: unknown) => {
     if (!profiles) return null
-    if (Array.isArray(profiles)) return profiles[0] || null
-    return profiles
+    if (Array.isArray(profiles)) return (profiles[0] as { username?: string; avatar_url?: string }) || null
+    return profiles as { username?: string; avatar_url?: string }
 }
 
 import Loading from 'components/Loading'
@@ -23,7 +23,7 @@ import Loading from 'components/Loading'
 const AdminPanel = () => {
     const [activeTab, setActiveTab] = useState<'overview' | 'content' | 'comments' | 'writerApplications' | 'users' | 'settings'>('overview')
     const [isCreating, setIsCreating] = useState(false)
-    const [editingPost, setEditingPost] = useState<any>(null)
+    const [editingPost, setEditingPost] = useState<AdminPost | null>(null)
 
     // Editor State
     const [originalLanguage, setOriginalLanguage] = useState('en')
@@ -64,22 +64,6 @@ const AdminPanel = () => {
     const [expandedPostId, setExpandedPostId] = useState<number | null>(null)
     const [commentSearchQuery, setCommentSearchQuery] = useState('')
 
-    if (!isAdmin) {
-        return (
-            <div className="p-6 text-center">
-                <p className="text-red-500 font-semibold">Access Denied</p>
-                <p className="text-gray-600 text-sm mt-2">You do not have permission to access the admin panel.</p>
-            </div>
-        )
-    }
-
-    const SUPPORTED_LANGS = [
-        { code: 'en', label: 'English' },
-        { code: 'tr', label: 'Turkish' },
-        { code: 'de', label: 'German' },
-        { code: 'es', label: 'Spanish' },
-    ]
-
     useEffect(() => {
         if (activeTab === 'content') {
             fetchPosts()
@@ -102,6 +86,22 @@ const AdminPanel = () => {
     // useApp() can be undefined if accessed outside of provider, adding fallback just in case
     const app = useApp()
     const isMobile = app?.isMobile || false
+
+    if (!isAdmin) {
+        return (
+            <div className="p-6 text-center">
+                <p className="text-red-500 font-semibold">Access Denied</p>
+                <p className="text-gray-600 text-sm mt-2">You do not have permission to access the admin panel.</p>
+            </div>
+        )
+    }
+
+    const SUPPORTED_LANGS = [
+        { code: 'en', label: 'English' },
+        { code: 'tr', label: 'Turkish' },
+        { code: 'de', label: 'German' },
+        { code: 'es', label: 'Spanish' },
+    ]
 
     const TABS = [
         { id: 'overview', label: 'Overview', icon: IconActivity },
@@ -207,7 +207,7 @@ const AdminPanel = () => {
         }
     }
 
-    const handleEditClick = (post: any) => {
+    const handleEditClick = (post: AdminPost) => {
         setEditingPost(post)
         setNewPostTitle(post.title)
         setNewPostContent(post.content)
@@ -763,7 +763,7 @@ const AdminPanel = () => {
                                                             <span className="text-[10px] text-muted">{dayjs(reply.created_at).format('MMM D, YYYY HH:mm')}</span>
                                                             {parentPost && (
                                                                 <span className="text-[10px] text-muted italic">
-                                                                    → reply to "{parentPost.title?.replace(/<[^>]*>/g, '').slice(0, 40)}"
+                                                                    &rarr; reply to &ldquo;{parentPost.title?.replace(/<[^>]*>/g, '').slice(0, 40)}&rdquo;
                                                                 </span>
                                                             )}
                                                         </div>
@@ -868,7 +868,7 @@ const AdminPanel = () => {
                     {TABS.map((tab) => (
                         <button
                             key={tab.id}
-                            onClick={() => setActiveTab(tab.id as any)}
+                            onClick={() => setActiveTab(tab.id as typeof activeTab)}
                             className={`flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors text-left w-full
                                 ${activeTab === tab.id
                                     ? 'bg-accent/20 text-primary font-bold shadow-sm ring-1 ring-primary/10'

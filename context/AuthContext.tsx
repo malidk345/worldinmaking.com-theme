@@ -22,7 +22,7 @@ interface AuthContextType {
     user: User | null;
     profile: Profile | null;
     loading: boolean;
-    signInWithEmail: (email: string) => Promise<{ error: any }>;
+    signInWithEmail: (email: string) => Promise<{ error: { message: string } | null }>;
     signOut: () => Promise<void>;
     updateProfile: (updates: Partial<Profile>) => Promise<boolean>;
     isAdmin: boolean;
@@ -192,9 +192,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
 
             return { error: null };
-        } catch (e: any) {
+        } catch (e: unknown) {
             logger.error('[Auth] signInWithOtp exception:', e);
-            return { error: { message: e?.message || 'Unknown error' } };
+            return { error: { message: (e as Error)?.message || 'Unknown error' } };
         }
     };
 
@@ -206,8 +206,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const isEmailAdmin = !!user?.email && adminEmailAllowlist.includes(user.email.toLowerCase());
     const isAdmin = isRoleAdmin || isEmailAdmin;
 
+    const value = React.useMemo(() => ({
+        user,
+        profile,
+        loading,
+        signInWithEmail,
+        signOut,
+        updateProfile,
+        isAdmin
+    }), [user, profile, loading, signInWithEmail, signOut, updateProfile, isAdmin]);
+
     return (
-        <AuthContext.Provider value={{ user, profile, loading, signInWithEmail, signOut, updateProfile, isAdmin }}>
+        <AuthContext.Provider value={value}>
             {children}
         </AuthContext.Provider>
     );

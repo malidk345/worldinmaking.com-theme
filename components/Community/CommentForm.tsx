@@ -66,10 +66,10 @@ export default function CommentForm({ onSubmit, className = '', placeholder = "a
                     label="subject (optional)"
                     showLabel={false}
                     value={subject}
-                    onChange={(e: any) => setSubject(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSubject(e.target.value)}
                     placeholder="subject (optional)"
                     className="text-primary lowercase !border-black"
-                    onBlur={(e: any) => e.preventDefault()}
+                    onBlur={(e: React.FocusEvent<HTMLInputElement>) => e.preventDefault()}
                     id="comment-subject"
                     name="subject"
                     maxLength={140}

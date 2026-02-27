@@ -34,9 +34,9 @@ export default function ForumMarkdown({
             remarkPlugins={[remarkGfm]}
             rehypePlugins={[rehypeRaw, rehypeSanitize]}
             urlTransform={transformImageUri}
-            className={`markdown prose dark:prose-invert prose-sm max-w-full text-primary [&_p]:text-primary [&_a]:font-semibold break-words [overflow-wrap:anywhere] ${className}`}
+            className={`markdown prose dark:prose-invert prose-sm max-w-full text-black dark:text-white [&_p]:text-black dark:[&_p]:text-white [&_a]:font-semibold break-words [overflow-wrap:anywhere] ${className}`}
             components={{
-                p: ({ children }) => <p className="text-primary !m-0 pb-3 last:pb-0">{children}</p>,
+                p: ({ children }) => <p className="text-black dark:text-white !m-0 pb-3 last:pb-0">{children}</p>,
                 pre: ({ children }) => (
                     <pre className="whitespace-pre-wrap">
                         {children}

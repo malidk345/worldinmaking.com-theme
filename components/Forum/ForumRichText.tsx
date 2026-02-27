@@ -1,7 +1,7 @@
 "use client"
 
 import React, { ChangeEvent, useEffect, useRef, useState, useCallback, useMemo } from 'react'
-import { useEditor, EditorContent } from '@tiptap/react'
+import { useEditor, EditorContent, Editor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import Link from '@tiptap/extension-link'
@@ -30,8 +30,8 @@ const buttons = [
             </svg>
         ),
         tooltipContent: 'Bold',
-        action: (editor: any) => editor.chain().focus().toggleBold().run(),
-        isActive: (editor: any) => editor.isActive('bold'),
+        action: (editor: Editor) => editor.chain().focus().toggleBold().run(),
+        isActive: (editor: Editor) => editor.isActive('bold'),
     },
     {
         name: 'italic',
@@ -44,8 +44,8 @@ const buttons = [
             </svg>
         ),
         tooltipContent: 'Italic',
-        action: (editor: any) => editor.chain().focus().toggleItalic().run(),
-        isActive: (editor: any) => editor.isActive('italic'),
+        action: (editor: Editor) => editor.chain().focus().toggleItalic().run(),
+        isActive: (editor: Editor) => editor.isActive('italic'),
     },
     {
         name: 'code',
@@ -62,8 +62,8 @@ const buttons = [
             </svg>
         ),
         tooltipContent: 'Code',
-        action: (editor: any) => editor.chain().focus().toggleCode().run(),
-        isActive: (editor: any) => editor.isActive('code'),
+        action: (editor: Editor) => editor.chain().focus().toggleCode().run(),
+        isActive: (editor: Editor) => editor.isActive('code'),
     },
     {
         name: 'link',
@@ -87,11 +87,11 @@ const buttons = [
             </svg>
         ),
         tooltipContent: 'Link',
-        action: (editor: any) => {
+        action: (editor: Editor) => {
             const url = window.prompt('URL')
             if (url) editor.chain().focus().setLink({ href: url }).run()
         },
-        isActive: (editor: any) => editor.isActive('link'),
+        isActive: (editor: Editor) => editor.isActive('link'),
     },
 ]
 
@@ -112,14 +112,20 @@ interface ForumRichTextProps {
     showMarkdownLogo?: boolean
 }
 
+interface Profile {
+    id: string
+    username: string
+    avatar_url: string
+}
+
 // Mock profiles for mentions
-const MOCK_PROFILES = [
+const MOCK_PROFILES: Profile[] = [
     { id: 'max', username: 'max', avatar_url: 'https://res.cloudinary.com/dmukukwp6/image/upload/v1710153303/posthog.com/contents/images/authors/james.png' },
     { id: '1', username: 'james', avatar_url: 'https://res.cloudinary.com/dmukukwp6/image/upload/v1710153303/posthog.com/contents/images/authors/james.png' },
     { id: '2', username: 'tim', avatar_url: 'https://res.cloudinary.com/dmukukwp6/image/upload/v1710153303/posthog.com/contents/images/authors/tim.png' },
 ]
 
-const MentionProfile = ({ profile, onSelect, index, focused }: any) => {
+const MentionProfile = ({ profile, onSelect, index, focused }: { profile: Profile; onSelect?: (profile: Profile) => void; index: number; focused: number }) => {
     return (
         <li className="border-b border-black/10 p-1">
             <OSButton
@@ -148,7 +154,7 @@ const MentionProfile = ({ profile, onSelect, index, focused }: any) => {
     )
 }
 
-const MentionProfiles = ({ onSelect, onClose, search = '' }: any) => {
+const MentionProfiles = ({ onSelect, onClose, search = '' }: { onSelect?: (profile: Profile) => void; onClose?: () => void; search: string }) => {
     const filteredProfiles = MOCK_PROFILES.filter(p => p.username.toLowerCase().includes(search.toLowerCase()))
     const [focused, setFocused] = useState(0)
 
@@ -223,7 +229,7 @@ export default function ForumRichText({
     const [imageLoading, setImageLoading] = useState(false)
     const [showMentionProfiles, setShowMentionProfiles] = useState(false)
     const [mentionSearch, setMentionSearch] = useState('')
-    const [localImages, setLocalImages] = useState<any[]>([])
+    const [localImages, setLocalImages] = useState<unknown[]>([])
 
     const editor = useEditor({
         extensions: [
@@ -312,7 +318,7 @@ export default function ForumRichText({
         accept: { 'image/png': ['.png'], 'image/jpeg': ['.jpg', '.jpeg'], 'image/gif': ['.gif'] },
     })
 
-    const handleProfileSelect = (profile: any) => {
+    const handleProfileSelect = (profile: Profile) => {
         if (!editor) return
 
         const { from } = editor.state.selection

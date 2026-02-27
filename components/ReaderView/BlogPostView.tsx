@@ -15,7 +15,7 @@ interface BlogPostViewProps {
         id: string
         title: string
         date: string
-        authors: { name: string, avatar: string, username?: string }[]
+        authors?: { name: string, avatar: string, username?: string }[]
         image: string | null
         content: string
         tags?: string[]
@@ -50,14 +50,21 @@ const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
     const content = (!isOriginal && translation?.content) ? translation.content : post.content
     const description = (!isOriginal && translation?.excerpt) ? translation.excerpt : (post.description || post.content.slice(0, 160))
 
-    const body = useMemo(() => ({
-        type: 'plain' as const,
-        content: content || '',
-        featuredImage: post.image || undefined,
-        contributors: post.authors?.map(a => ({ name: a.name, image: a.avatar, username: a.username || a.name })) || [],
-        date: post.date,
-        tags: post.tags?.map(t => ({ label: t }))
-    }), [content, post.image, post.authors, post.date, post.tags]);
+    const body = useMemo(() => {
+        const wordCount = content ? content.split(/\s+/).filter(Boolean).length : 0;
+        const readTime = Math.max(1, Math.ceil(wordCount / 200));
+
+        return {
+            type: 'plain' as const,
+            content: content || '',
+            featuredImage: post.image || undefined,
+            contributors: post.authors?.map(a => ({ name: a.name, image: a.avatar, username: a.username || a.name })) || [],
+            date: post.date,
+            tags: post.tags?.map(t => ({ label: t })),
+            wordCount,
+            readTime
+        };
+    }, [content, post.image, post.authors, post.date, post.tags]);
 
     const tableOfContents = useMemo(() => post.headings?.map(h => ({
         url: `#${h.id}`,
@@ -156,7 +163,7 @@ const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
                         remarkPlugins={[remarkGfm]}
                         rehypePlugins={[rehypeRaw]}
                         components={{
-                            img: ({ node, src, ...props }: any) => {
+                            img: ({ src, alt, title }: { src?: string; alt?: string; title?: string }) => {
                                 let finalSrc = src || '';
                                 // If it's a relative Supabase path, make it absolute
                                 if (finalSrc.startsWith('/storage/v1/object/public/')) {
@@ -167,8 +174,8 @@ const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
                                 return (
                                     <CloudinaryImage
                                         src={finalSrc}
-                                        alt={props.alt || ''}
-                                        title={props.title}
+                                        alt={alt || ''}
+                                        title={title}
                                         className="my-10 rounded-xl border border-primary shadow-lg overflow-hidden"
                                         imgClassName="object-contain w-full h-auto"
                                         width={1200}

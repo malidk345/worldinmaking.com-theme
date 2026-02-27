@@ -44,10 +44,10 @@ export default function ForumQuestionForm({ isInForum = false, archived = false,
                             label="Subject"
                             showLabel={false}
                             value={subject}
-                            onChange={(e: any) => setSubject(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSubject(e.target.value)}
                             placeholder="Subject"
                             className="text-primary"
-                            onBlur={(e: any) => e.preventDefault()}
+                            onBlur={(e: React.FocusEvent<HTMLInputElement>) => e.preventDefault()}
                             required
                             id="subject"
                             name="subject"

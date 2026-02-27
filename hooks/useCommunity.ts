@@ -44,6 +44,28 @@ export interface CommunityChannel {
     description: string;
 }
 
+interface DBCommunityPost {
+    id: number;
+    channel_id?: number;
+    author_id: string;
+    title: string;
+    content: string;
+    created_at: string;
+    post_slug?: string | null;
+    profiles: Profile | Profile[];
+    community_replies?: { count: number }[];
+    community_likes?: { count: number }[];
+}
+
+interface DBCommunityReply {
+    id: number;
+    post_id: number;
+    author_id: string;
+    content: string;
+    created_at: string;
+    profiles: Profile | Profile[];
+}
+
 export const useCommunity = () => {
     const { addToast } = useToast();
     const { mutate } = useSWRConfig();
@@ -78,6 +100,7 @@ export const useCommunity = () => {
                 query = query.or(`post_slug.eq.${slug},title.ilike.comment_${slug}_%`)
             } else if (channelId) {
                 query = query.eq('channel_id', channelId)
+                query = query.is('post_slug', null).not('title', 'ilike', 'comment_%')
             }
 
             const { data, error } = await query.order('created_at', { ascending: false });
@@ -94,28 +117,31 @@ export const useCommunity = () => {
                     fallbackQuery = fallbackQuery.eq('id', Number(postId))
                 } else if (slug) {
                     fallbackQuery = fallbackQuery.or(`post_slug.eq.${slug},title.ilike.comment_${slug}_%`)
+                } else if (channelId) {
+                    fallbackQuery = fallbackQuery.eq('channel_id', channelId)
+                    fallbackQuery = fallbackQuery.is('post_slug', null).not('title', 'ilike', 'comment_%')
                 }
 
                 const { data: fallbackData, error: fallbackError } = await fallbackQuery.order('created_at', { ascending: false });
 
                 if (fallbackError) throw fallbackError;
 
-                return (fallbackData || []).map((p: any) => ({
+                return ((fallbackData || []) as unknown as DBCommunityPost[]).map((p) => ({
                     ...p,
                     profiles: Array.isArray(p.profiles) ? p.profiles[0] : p.profiles,
                     _count: { replies: 0, likes: 0 }
-                })) as CommunityPost[];
+                })) as unknown as CommunityPost[];
             }
 
-            return (data || []).map((p: any) => ({
+            return ((data || []) as unknown as DBCommunityPost[]).map((p) => ({
                 ...p,
                 profiles: Array.isArray(p.profiles) ? p.profiles[0] : p.profiles,
                 _count: {
                     replies: p.community_replies?.[0]?.count || 0,
                     likes: p.community_likes?.[0]?.count || 0
                 }
-            })) as CommunityPost[];
-        } catch (e: any) {
+            })) as unknown as CommunityPost[];
+        } catch (e: unknown) {
             logger.error('[useCommunity] postsFetcher error:', e);
             return [];
         }
@@ -133,11 +159,11 @@ export const useCommunity = () => {
                 logger.warn('[useCommunity] repliesFetcher error:', error.message);
                 return [];
             }
-            return (data || []).map((r: any) => ({
+            return ((data || []) as unknown as DBCommunityReply[]).map((r) => ({
                 ...r,
                 profiles: Array.isArray(r.profiles) ? r.profiles[0] : r.profiles,
-            })) as CommunityReply[];
-        } catch (e) {
+            })) as unknown as CommunityReply[];
+        } catch (e: unknown) {
             logger.error('[useCommunity] repliesFetcher exception:', e);
             return [];
         }
@@ -173,11 +199,15 @@ export const useCommunity = () => {
                 if (activeChannelId) mutate(['community_posts', activeChannelId]);
                 if (activePostSlug) mutate(['community_posts_slug', activePostSlug]);
             })
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'community_replies' }, (payload: any) => {
-                if (activePostId && payload.new?.post_id === activePostId) mutate(['community_replies', activePostId]);
-                if (activeChannelId) mutate(['community_posts', activeChannelId]);
-                if (activePostSlug) mutate(['community_posts_slug', activePostSlug]);
-            })
+            .on('postgres_changes',
+                { event: '*', schema: 'public', table: 'community_replies' },
+                (payload) => {
+                    const newRecord = payload.new as { post_id: number }
+                    if (activePostId && newRecord?.post_id === activePostId) mutate(['community_replies', activePostId]);
+                    if (activeChannelId) mutate(['community_posts', activeChannelId]);
+                    if (activePostSlug) mutate(['community_posts_slug', activePostSlug]);
+                }
+            )
             .subscribe();
 
         return () => {
@@ -220,7 +250,11 @@ export const useCommunity = () => {
 
             setUserLikes(prev => {
                 const next = new Set(prev);
-                isLiked ? next.delete(postId) : next.add(postId);
+                if (isLiked) {
+                    next.delete(postId);
+                } else {
+                    next.add(postId);
+                }
                 return next;
             });
 
@@ -273,7 +307,7 @@ export const useCommunity = () => {
         }
 
         // Build insert payload — always include post_slug and channel_id
-        const insertPayload: Record<string, any> = {
+        const insertPayload: Record<string, unknown> = {
             author_id: userData.user.id,
             title: sanitizedTitle,
             content: sanitizedContent,

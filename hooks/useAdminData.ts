@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../context/ToastContext';
 import logger from '../utils/logger';
@@ -84,10 +84,10 @@ export const useAdminData = () => {
             const dbPosts = data || [];
 
             setPosts(dbPosts.sort((a: AdminPost, b: AdminPost) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
-        } catch (e: any) {
+        } catch (e: unknown) {
             logger.error('[useAdminData] fetchPosts exception:', e);
             addToast('failed to fetch posts', 'error');
-            setError(e.message);
+            setError((e as Error).message);
         } finally {
             setLoading(false);
         }
@@ -133,9 +133,9 @@ export const useAdminData = () => {
             addToast('post published successfully', 'success');
             if (data) setPosts(prev => [data, ...prev]);
             return data;
-        } catch (e: any) {
+        } catch (e: unknown) {
             logger.error('[useAdminData] createPost exception:', e);
-            addToast(e.message || 'failed to create post', 'error');
+            addToast((e as Error).message || 'failed to create post', 'error');
             return null;
         }
     }, [addToast]);
@@ -160,9 +160,9 @@ export const useAdminData = () => {
                 setPosts(prev => prev.map(p => p.id === id ? data : p));
             }
             return data;
-        } catch (e: any) {
+        } catch (e: unknown) {
             logger.error('[useAdminData] updatePost exception:', e);
-            addToast(e.message || 'failed to update post', 'error');
+            addToast((e as Error).message || 'failed to update post', 'error');
             return null;
         }
     }, [addToast]);
@@ -183,7 +183,7 @@ export const useAdminData = () => {
             }
 
             setWriterApplications((data || []) as WriterApplication[]);
-        } catch (e: any) {
+        } catch (e: unknown) {
             logger.error('[useAdminData] fetchWriterApplications exception:', e);
             addToast('failed to fetch writer applications', 'error');
         } finally {
@@ -211,7 +211,7 @@ export const useAdminData = () => {
                 setWriterApplications(prev => prev.map(item => item.id === id ? (data as WriterApplication) : item));
             }
             return data as WriterApplication;
-        } catch (e: any) {
+        } catch (e: unknown) {
             logger.error('[useAdminData] updateWriterApplicationStatus exception:', e);
             addToast('failed to update application status', 'error');
             return null;
@@ -234,7 +234,7 @@ export const useAdminData = () => {
                 return;
             }
             setCommunityPosts((data || []) as unknown as AdminCommunityPost[]);
-        } catch (e: any) {
+        } catch (e: unknown) {
             logger.error('[useAdminData] fetchCommunityPosts exception:', e);
             addToast('failed to fetch community posts', 'error');
         } finally {
@@ -278,7 +278,7 @@ export const useAdminData = () => {
                 setCommunityPosts(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
             }
             return refreshed;
-        } catch (e: any) {
+        } catch (e: unknown) {
             logger.error('[useAdminData] updateCommunityPost exception:', e);
             addToast('failed to update comment', 'error');
             return null;
@@ -331,7 +331,7 @@ export const useAdminData = () => {
                 return;
             }
             setCommunityReplies((data || []) as unknown as AdminCommunityReply[]);
-        } catch (e: any) {
+        } catch (e: unknown) {
             logger.error('[useAdminData] fetchCommunityReplies exception:', e);
             addToast('failed to fetch replies', 'error');
         }
@@ -371,7 +371,7 @@ export const useAdminData = () => {
                 setCommunityReplies(prev => prev.map(r => r.id === id ? { ...r, content } : r));
             }
             return refreshed;
-        } catch (e: any) {
+        } catch (e: unknown) {
             logger.error('[useAdminData] updateCommunityReply exception:', e);
             addToast('failed to update reply', 'error');
             return null;

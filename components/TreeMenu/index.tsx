@@ -53,7 +53,7 @@ export function TreeMenu({ items = [], activeItem: propsActiveItem }: TreeMenuPr
                     )
                 })
             ) : (
-                <p className="text-[10px] font-bold opacity-20 px-4 lowercase">no items available</p>
+                <p className="text-[10px] font-bold opacity-40 px-4 lowercase text-black dark:text-white">no items available</p>
             )}
         </ul>
     )
@@ -94,8 +94,8 @@ function TreeMenuItem({
         before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2
         before:w-[2px] before:rounded-full before:transition-all before:duration-200
         ${active
-            ? 'text-primary bg-burnt-orange/10 before:h-3/5 before:bg-burnt-orange'
-            : 'text-primary/80 hover:text-primary hover:bg-accent/50 before:h-0 before:bg-burnt-orange hover:before:h-3/5'
+            ? 'text-black dark:text-white bg-burnt-orange/10 before:h-3/5 before:bg-burnt-orange'
+            : 'text-black dark:text-white hover:text-black dark:hover:text-white hover:bg-accent/50 before:h-0 before:bg-burnt-orange hover:before:h-3/5'
         }
         active:scale-[0.98]
     `
@@ -119,7 +119,7 @@ function TreeMenuItem({
                                             <IconChevronRight className="size-3 opacity-40" />
                                         </motion.div>
                                     )}
-                                    <span className={`break-words ${open ? 'font-semibold text-primary/70' : ''}`}>{item.name.toLowerCase()}</span>
+                                    <span className={`break-words ${open ? 'font-semibold text-black dark:text-white' : ''}`}>{item.name.toLowerCase()}</span>
                                 </span>
                             </button>
                         </Collapsible.Trigger>

@@ -1,7 +1,20 @@
-import { Placement, reference } from '@popperjs/core'
-import React, { useEffect, useState } from 'react'
+import { Placement } from '@popperjs/core'
+import React, { useEffect, useState, ReactElement, ReactNode } from 'react'
 import { usePopper } from 'react-popper'
 import { createPortal } from 'react-dom'
+
+interface TooltipProps {
+    children: ReactElement
+    content: ReactNode | ((setOpen: (open: boolean) => void) => ReactNode)
+    offset?: [number, number]
+    className?: string
+    tooltipClassName?: string
+    placement?: Placement
+    title?: string
+    contentContainerClassName?: string
+    open?: boolean
+    controlled?: boolean
+}
 
 export default function Tooltip({
     children,
@@ -14,26 +27,18 @@ export default function Tooltip({
     contentContainerClassName = '',
     controlled,
     ...other
-}: {
-    children: any
-    content: any
-    offset?: [number, number]
-    className?: string
-    tooltipClassName?: string
-    placement?: Placement
-    title?: string
-    contentContainerClassName?: string
-    open?: boolean
-    controlled?: boolean
-}): any {
+}: TooltipProps) {
     const [open, setOpen] = useState(other.open ?? false)
-    const [referenceElement, setReferenceElement] = useState<any>(null)
-    const [popperElement, setPopperElement] = useState<any>(null)
+    const [referenceElement, setReferenceElement] = useState<HTMLElement | null>(null)
+    const [popperElement, setPopperElement] = useState<HTMLElement | null>(null)
     const { styles, attributes } = usePopper(referenceElement, popperElement, {
         placement,
         modifiers: [
             {
                 name: 'offset',
+                options: {
+                    offset: offset,
+                },
             },
         ],
     })
@@ -42,7 +47,7 @@ export default function Tooltip({
         if (controlled && other.open !== undefined) {
             setOpen(other.open)
         }
-    }, [other.open])
+    }, [other.open, controlled])
 
     return (
         <span
@@ -56,6 +61,7 @@ export default function Tooltip({
             }}
         >
             {React.cloneElement(children, {
+                // @ts-expect-error - ref is not in the type of children
                 ref: setReferenceElement,
             })}
             {open &&
@@ -130,7 +136,7 @@ export default function Tooltip({
                                             typeof content === 'string'
                                                 ? content
                                                 : typeof content === 'function'
-                                                    ? content(setOpen)
+                                                    ? (content as (setOpen: (open: boolean) => void) => ReactNode)(setOpen)
                                                     : content
                                         )}
                                     </div>

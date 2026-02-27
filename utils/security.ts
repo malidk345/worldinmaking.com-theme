@@ -3,6 +3,8 @@
  * Provides security-focused helper functions for user input
  */
 
+import DOMPurify from 'isomorphic-dompurify';
+
 /**
  * Sanitize a string by removing potentially dangerous HTML/script content.
  * Preserves safe HTML tags from the rich text editor (Tiptap) while stripping
@@ -24,6 +26,24 @@ export function sanitizeString(input: string | null | undefined): string {
         .replace(/vbscript\s*:/gi, '')
         .trim();
 }
+
+/**
+ * Robust HTML sanitization using DOMPurify.
+ * Use this ideally anywhere you map HTML to dangerouslySetInnerHTML.
+ */
+export function sanitizeHtml(html: string | null | undefined, options = {}): string {
+    if (typeof html !== 'string') return '';
+    return DOMPurify.sanitize(html, {
+        ALLOWED_TAGS: [
+            'p', 'br', 'strong', 'em', 'u', 'a', 'ul', 'ol', 'li',
+            'h1', 'h2', 'h3', 'h4', 'code', 'pre', 'blockquote', 'img'
+        ],
+        ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'class', 'id'],
+        ALLOW_DATA_ATTR: false,
+        ...options
+    });
+}
+
 
 /**
  * Strip all HTML tags from a string, returning only plain text.

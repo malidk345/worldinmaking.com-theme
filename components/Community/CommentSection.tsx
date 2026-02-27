@@ -49,6 +49,10 @@ export default function CommentSection({
             avatar: p.profiles?.avatar_url || null,
         },
         replies: [],
+        topics: [],
+        pinnedTopics: [],
+        resolved: false,
+        archived: false,
     }))
 
     return (
@@ -62,14 +66,14 @@ export default function CommentSection({
                     {adaptedPosts.map((post) => (
                         <li key={post.id} className="border-l-2 border-border pl-4">
                             <ForumQuestionCard
-                                question={post as any}
+                                question={post}
                                 isComment={true}
                             />
                         </li>
                     ))}
                 </ul>
             ) : (
-                <p className="text-primary/60 text-sm mb-6 lowercase">no comments yet. be the first to comment!</p>
+                <p className="text-black dark:text-white font-medium text-sm mb-6 lowercase">no comments yet. be the first to comment!</p>
             )}
 
             <div className="mt-8 border-t border-border pt-6">

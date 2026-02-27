@@ -176,7 +176,7 @@ export default function WriteForWIM({ className = '' }: WriteForWIMProps) {
                             direction="column"
                             required
                             value={formData.name}
-                            onChange={(e) => handleChange('name', e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('name', e.target.value)}
                             onBlur={() => handleBlur('name')}
                             touched={touched.name}
                             error={getError('name')}
@@ -189,7 +189,7 @@ export default function WriteForWIM({ className = '' }: WriteForWIMProps) {
                             direction="column"
                             required
                             value={formData.email}
-                            onChange={(e) => handleChange('email', e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('email', e.target.value)}
                             onBlur={() => handleBlur('email')}
                             touched={touched.email}
                             error={getError('email')}
@@ -202,7 +202,7 @@ export default function WriteForWIM({ className = '' }: WriteForWIMProps) {
                             required
                             rows={8}
                             value={formData.message}
-                            onChange={(e) => handleChange('message', e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleChange('message', e.target.value)}
                             onBlur={() => handleBlur('message')}
                             touched={touched.message}
                             error={getError('message')}

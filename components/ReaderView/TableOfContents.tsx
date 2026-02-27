@@ -55,7 +55,7 @@ export const TableOfContents = ({ tableOfContents, contentRef, title = 'Content'
             {/* Header */}
             <div className="flex items-center gap-2 px-3 mb-3">
                 <div className="w-1 h-3 rounded-full bg-gradient-to-b from-burnt-orange to-burnt-orange/40" />
-                <h4 className="font-black text-primary/50 m-0 text-[9px] lowercase tracking-[0.2em]">
+                <h4 className="font-black text-black dark:text-white m-0 text-[9px] lowercase tracking-[0.2em]">
                     {title.toLowerCase()}
                 </h4>
             </div>
@@ -75,8 +75,8 @@ export const TableOfContents = ({ tableOfContents, contentRef, title = 'Content'
                                 className={`
                                     group/toc-item block py-1.5 px-3 rounded-md transition-all duration-200 relative
                                     ${isTopLevel
-                                        ? 'text-[11px] font-medium text-primary/80 hover:text-primary hover:bg-burnt-orange/8'
-                                        : 'text-[10px] font-normal text-primary/60 hover:text-primary/80 hover:bg-accent/40'
+                                        ? 'text-[11px] font-medium text-black dark:text-white hover:text-black dark:hover:text-white hover:bg-burnt-orange/8'
+                                        : 'text-[10px] font-normal text-black dark:text-white hover:text-black dark:hover:text-white hover:bg-accent/40'
                                     }
                                     before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2
                                     before:w-[2px] before:h-0 before:bg-burnt-orange before:rounded-full

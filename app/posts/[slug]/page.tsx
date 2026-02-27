@@ -36,7 +36,13 @@ function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
 
-function getExcerpt(post: any): string {
+interface Post {
+  title?: string;
+  excerpt?: string;
+  content?: string;
+}
+
+function getExcerpt(post: Post): string {
   if (post.excerpt) return stripHtml(post.excerpt).slice(0, 160);
   if (post.content) return stripHtml(post.content).slice(0, 160) + "...";
   return "Read this article on World in Making.";

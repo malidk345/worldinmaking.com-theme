@@ -3,7 +3,6 @@ import * as ScrollArea from '@radix-ui/react-scroll-area'
 import * as RadioGroup from '@radix-ui/react-radio-group'
 import * as Icons from '@posthog/icons'
 import { IMenu } from 'components/PostLayout/types'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useApp } from '../../context/App'
 import { useWindow } from '../../context/Window'
@@ -12,25 +11,10 @@ import { useWindow } from '../../context/Window'
 
 // Custom hook to process file data and provide utility functions
 function useFileData(sampleData: IMenu[]) {
-    const rootItems: IMenu[] = []
-
-    function processData(items: IMenu[], parentId: IMenu | null = null) {
-        items.forEach((item) => {
-            if (!parentId) {
-                rootItems.push(item)
-            }
-            if (item.children) {
-                processData(item.children, item)
-            }
-        })
-    }
-
-    processData(sampleData) // Process sample data into a structure for easier lookup
-
     const getItemChildren = useCallback((item: IMenu | null): IMenu[] => {
-        if (item === null) return rootItems // Root level
+        if (item === null) return sampleData // Root level
         return item.children || []
-    }, [])
+    }, [sampleData])
 
     return { getItemChildren }
 }
@@ -53,7 +37,6 @@ const FileColumn: React.FC<FileColumnProps> = ({ items, selectedId, onSelect }) 
                     className="flex flex-col space-y-px"
                 >
                     {items.map((item, index) => {
-                        const isSelected = index === selectedId
                         return (
                             <RadioGroup.Item
                                 key={index}
@@ -98,7 +81,7 @@ export const FileMenu: React.FC<{ initialPath?: IMenu[]; menu: IMenu[] }> = ({ i
     const router = useRouter()
     const { appWindow } = useWindow()
     const context = useApp()
-    const { compact, isMobile } = context || { compact: false, isMobile: false }
+    // const { compact, isMobile } = context || { compact: false, isMobile: false }
     const { getItemChildren } = useFileData(menu)
     const [path, setPath] = useState<(IMenu | null)[]>([null, ...initialPath]) // Start with null for root
 
@@ -125,7 +108,7 @@ export const FileMenu: React.FC<{ initialPath?: IMenu[]; menu: IMenu[] }> = ({ i
         if (foundPath) {
             setPath([null, ...foundPath])
         }
-    }, [menu])
+    }, [menu, appWindow?.path])
 
     const handleSelect = useCallback(
         (columnIndex: number, item: IMenu) => {
@@ -137,7 +120,7 @@ export const FileMenu: React.FC<{ initialPath?: IMenu[]; menu: IMenu[] }> = ({ i
 
             setPath(newPath)
         },
-        [path]
+        [path, router]
     )
 
     const columns = useMemo(() => {
@@ -158,7 +141,7 @@ export const FileMenu: React.FC<{ initialPath?: IMenu[]; menu: IMenu[] }> = ({ i
             }
         }
         return columns
-    }, [path])
+    }, [path, getItemChildren])
 
     // Determine if the very last selected item in the path is a file to show a preview
     const lastSelectedItem = path[path.length - 1]

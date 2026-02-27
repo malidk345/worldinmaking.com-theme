@@ -25,6 +25,25 @@ export interface Post {
     translations?: Record<string, { title: string, content: string, excerpt?: string }>;
     language?: string;
     authors?: { name: string, avatar: string, username?: string }[];
+    tags?: string[];
+}
+
+interface DBPost {
+    id: string;
+    slug: string;
+    title: string;
+    created_at?: string;
+    category?: string;
+    excerpt?: string;
+    description?: string;
+    content?: string;
+    author?: string;
+    author_avatar?: string;
+    image_url?: string;
+    image?: string;
+    ribbon?: string;
+    translations?: Record<string, { title: string, content: string, excerpt?: string }>;
+    language?: string;
 }
 
 
@@ -44,7 +63,7 @@ const generateExcerptFromContent = (content: string, wordLimit = 50): string => 
     return excerpt + (words.length > wordLimit ? '...' : '');
 };
 
-const adaptPost = (p: any): Post | null => {
+const adaptPost = (p: DBPost): Post | null => {
     if (!p) return null;
 
     const rawContent = p.content || '';
@@ -114,7 +133,7 @@ const adaptPost = (p: any): Post | null => {
 };
 
 const postsFetcher = async () => {
-    let dbData: any[] = [];
+    let dbData: DBPost[] = [];
     try {
         const { data, error } = await supabase
             .from('posts')

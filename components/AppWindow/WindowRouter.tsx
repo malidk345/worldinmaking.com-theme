@@ -9,31 +9,36 @@ import { usePosts } from '../../hooks/usePosts'
 import { useCommunity } from '../../hooks/useCommunity'
 import BlogPostView from 'components/ReaderView/BlogPostView'
 import PublicProfile from 'components/Profile/PublicProfile'
+import PostsView from 'components/Posts'
+import { AppWindow } from '../../context/Window'
 
-const adaptPost = (p: any) => ({
-    id: p.id,
-    permalink: p.id.toString(),
-    subject: p.title,
-    body: p.content || '',
-    createdAt: p.created_at,
-    profile: {
-        id: p.author_id || 0,
-        firstName: p.profiles?.username || 'anonymous',
-        lastName: '',
-        avatar: p.profiles?.avatar_url || null,
-    },
-    replies: [],
-    topics: [],
-    pinnedTopics: [],
-    resolved: false,
-    archived: false,
-})
+const adaptPost = (p: { id: number | string; title: string; content?: string; created_at: string; author_id?: string | number; profiles?: { username?: string; avatar_url?: string } | { username?: string; avatar_url?: string }[] }) => {
+    const profile = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles
+    return {
+        id: p.id,
+        permalink: p.id.toString(),
+        subject: p.title,
+        body: p.content || '',
+        createdAt: p.created_at,
+        profile: {
+            id: p.author_id || 0,
+            firstName: profile?.username || 'anonymous',
+            lastName: '',
+            avatar: profile?.avatar_url || null,
+        },
+        replies: [],
+        topics: [],
+        pinnedTopics: [],
+        resolved: false,
+        archived: false,
+    }
+}
 
 /**
  * Routes window content based on item.path.
  * This replaces item.element so every window gets proper React content.
  */
-export default function WindowRouter({ item }: { item: any }) {
+export default function WindowRouter({ item }: { item: AppWindow }) {
     const rawPath: string = item.path || ''
     const path: string = rawPath.replace(/\/+$/, '') || '/'
 
@@ -55,7 +60,6 @@ export default function WindowRouter({ item }: { item: any }) {
 
     // /posts or /blog
     if (path === '/posts' || path === '/blog') {
-        const PostsView = require('components/Posts').default
         return <PostsView />
     }
 
@@ -98,7 +102,7 @@ function CommunityMainRouteView() {
         if (channels.length > 0 && !selectedChannelId) {
             setSelectedChannelId(channels[0].id)
         }
-    }, [channels])
+    }, [channels, selectedChannelId])
 
     useEffect(() => {
         if (selectedChannelId) {
@@ -112,7 +116,7 @@ function CommunityMainRouteView() {
 
     return (
         <ForumPageLayout
-            questions={posts.map(adaptPost) as any}
+            questions={posts.map(adaptPost)}
             loading={loading}
             activeChannelId={selectedChannelId}
             onChannelChange={setSelectedChannelId}
@@ -130,7 +134,7 @@ function CommunityTopicRouteView({ slug }: { slug: string }) {
 
     return (
         <ForumPageLayout
-            questions={posts.map(adaptPost) as any}
+            questions={posts.map(adaptPost)}
             loading={loading}
             activeTopicSlug={slug}
             title={`topic: ${slug}`}
@@ -164,7 +168,7 @@ function CommunityQuestionRouteView({ permalink }: { permalink: string }) {
         )
     }
 
-    return <ForumQuestionDetail question={adaptPost(post) as any} />
+    return <ForumQuestionDetail question={adaptPost(post)} />
 }
 
 /** Separate component so usePosts hook can be called within the router */
@@ -187,7 +191,7 @@ function BlogRouteView({ slug }: { slug: string }) {
 
     return (
         <BlogPostView
-            post={post as any}
+            post={post}
         />
     )
 }

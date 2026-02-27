@@ -144,7 +144,7 @@ export default function ProfileContent() {
                                     label="username"
                                     direction="column"
                                     value={form.username}
-                                    onChange={(e: any) => handleChange('username', e.target.value)}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('username', e.target.value)}
                                     placeholder="choose a display name"
                                     description="visible across discussions and posts"
                                 />
@@ -152,7 +152,7 @@ export default function ProfileContent() {
                                     label="avatar url"
                                     direction="column"
                                     value={form.avatar_url}
-                                    onChange={(e: any) => handleChange('avatar_url', e.target.value)}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('avatar_url', e.target.value)}
                                     placeholder="https://example.com/avatar.png"
                                     description="use a direct image URL"
                                     showClearButton
@@ -163,7 +163,7 @@ export default function ProfileContent() {
                                 label="bio"
                                 direction="column"
                                 value={form.bio}
-                                onChange={(e: any) => handleChange('bio', e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleChange('bio', e.target.value)}
                                 placeholder="tell the community what you build, write, or care about"
                                 description="short and clear works best"
                                 rows={4}
@@ -181,14 +181,14 @@ export default function ProfileContent() {
                                 label="pronouns"
                                 direction="column"
                                 value={form.pronouns}
-                                onChange={(e: any) => handleChange('pronouns', e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('pronouns', e.target.value)}
                                 placeholder="e.g. she/her"
                             />
                             <Input
                                 label="location"
                                 direction="column"
                                 value={form.location}
-                                onChange={(e: any) => handleChange('location', e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('location', e.target.value)}
                                 placeholder="city, country"
                             />
                         </div>
@@ -204,28 +204,28 @@ export default function ProfileContent() {
                                 label="website"
                                 direction="column"
                                 value={form.website}
-                                onChange={(e: any) => handleChange('website', e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('website', e.target.value)}
                                 placeholder="https://your-site.com"
                             />
                             <Input
                                 label="github"
                                 direction="column"
                                 value={form.github}
-                                onChange={(e: any) => handleChange('github', e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('github', e.target.value)}
                                 placeholder="https://github.com/username"
                             />
                             <Input
                                 label="linkedin"
                                 direction="column"
                                 value={form.linkedin}
-                                onChange={(e: any) => handleChange('linkedin', e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('linkedin', e.target.value)}
                                 placeholder="https://linkedin.com/in/username"
                             />
                             <Input
                                 label="twitter"
                                 direction="column"
                                 value={form.twitter}
-                                onChange={(e: any) => handleChange('twitter', e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('twitter', e.target.value)}
                                 placeholder="https://x.com/username"
                             />
                         </div>

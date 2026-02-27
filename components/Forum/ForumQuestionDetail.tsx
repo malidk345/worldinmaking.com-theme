@@ -1,6 +1,7 @@
 "use client"
 
 import React from 'react'
+import { motion } from 'framer-motion'
 import ForumQuestionCard from './ForumQuestionCard'
 import ForumTopicSidebar from './ForumTopicSidebar'
 import { ForumQuestion } from './types'
@@ -33,20 +34,14 @@ export default function ForumQuestionDetail({ question }: ForumQuestionDetailPro
                         </div>
 
                         {/* Main content */}
-                        <div className="flex-1 min-w-0">
-                            {/* Breadcrumb */}
-                            <div className="mb-6">
-                                <Link
-                                    to="/questions"
-                                    className="flex items-center text-[11px] font-black text-secondary-text hover:text-burnt-orange transition-colors !no-underline lowercase tracking-tight"
-                                >
-                                    <ArrowLeft className="size-3 mr-1.5" />
-                                    back to transmissions
-                                </Link>
-                            </div>
-
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.98, y: 15 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            transition={{ duration: 0.25, ease: 'easeOut' }}
+                            className="flex-1 min-w-0"
+                        >
                             {/* Question detail card */}
-                            <div className="bg-primary rounded-lg border border-border shadow-sm overflow-hidden">
+                            <div className="bg-primary rounded-lg border border-primary shadow-sm overflow-hidden">
                                 <ForumQuestionCard
                                     question={question}
                                     isInForum
@@ -54,7 +49,7 @@ export default function ForumQuestionDetail({ question }: ForumQuestionDetailPro
                                     expanded
                                 />
                             </div>
-                        </div>
+                        </motion.div>
                     </div>
                 </div>
             </div>

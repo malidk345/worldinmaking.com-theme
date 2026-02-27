@@ -81,6 +81,7 @@ const Row = ({
         <div className="py-2.5">
             <Link
                 to={`/questions/${permalink}`}
+                newWindow
                 className="group flex items-center relative px-2 py-1.5 -mt-1.5 mx-[-2px] -mb-3 rounded active:bg-light dark:active:bg-dark border-primary border-b-3 border-transparent hover:border hover:translate-y-[-1px] active:translate-y-[1px] active:transition-all active:before:h-[2px] active:before:bg-light dark:active:before:bg-dark active:before:absolute active:before:content-[''] active:before:top-[-3px] active:before:left-0 active:before:right-0 !no-underline"
             >
                 <div className="grid grid-cols-12 items-center w-full">
@@ -89,21 +90,21 @@ const Row = ({
                             <Status resolved={resolved} />
                         </div>
 
-                        <div className="w-full">
-                            <span className="text-sm text-red dark:text-yellow line-clamp-1">{subject}</span>
+                        <div className="w-full min-w-0">
+                            <span className="text-sm font-semibold text-[#000080] dark:text-[#66b2ff] line-clamp-3 md:line-clamp-1 break-words">{subject}</span>
 
-                            <div className="flex justify-between items-center">
+                            <div className="flex justify-between items-center mt-0.5">
                                 <div className="text-primary dark:text-primary font-medium opacity-60 group-hover:opacity-100 line-clamp-1 text-sm">
                                     {topics?.[0]?.label || 'Uncategorized'}
                                 </div>
 
-                                <div className="md:hidden text-primary dark:text-primary text-sm font-medium opacity-60 line-clamp-2">
-                                    {dayjs(sortBy === 'activity' ? activeAt : createdAt).fromNow()}
+                                <div className="md:hidden text-primary dark:text-primary text-sm font-medium opacity-60 line-clamp-1">
+                                    {dayjs(sortBy === 'activity' ? activeAt : createdAt).fromNow()}{' '}by {profile?.firstName || 'anonymous'}
                                 </div>
                             </div>
 
                             {showBody && body && (
-                                <div className="items-baseline flex flex-1 min-w-0 whitespace-nowrap overflow-hidden text-primary/70 text-xs">
+                                <div className="mt-1 flex-1 min-w-0 text-black dark:text-white text-xs line-clamp-2 break-words">
                                     {body.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()}
                                 </div>
                             )}

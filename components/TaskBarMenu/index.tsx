@@ -4,28 +4,12 @@ import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
     IconSearch,
-
     IconUser,
-    IconApp,
-    IconMessage,
-    IconNotification,
-    IconLock,
-    IconBookmark,
-    IconUpload,
-    IconCode,
-    IconFeatures,
     IconChevronDown,
-    IconGlobe,
     IconBolt,
-    IconPeople,
-    IconActivity,
-    IconDatabase,
-    IconInfo,
-    IconExternal,
-    IconNewspaper,
     IconApps
 } from '@posthog/icons'
-import { AppWindow, Settings } from 'lucide-react'
+import { Settings } from 'lucide-react'
 import { useApp } from '../../context/App'
 import { useAuth } from '../../context/AuthContext'
 import MenuBar, { MenuItemType, MenuType } from 'components/RadixUI/MenuBar'
@@ -42,7 +26,6 @@ export default function TaskBarMenu() {
     const {
         windows,
         openSearch,
-        siteSettings,
         setIsActiveWindowsPanelOpen,
         taskbarRef,
         addWindow,
@@ -78,7 +61,7 @@ export default function TaskBarMenu() {
         setIsActiveWindowsPanelOpen(true)
     }
 
-    const menuData: any[] = [
+    const menuData: MenuType[] = React.useMemo(() => [
         {
             trigger: (
                 <div className="flex items-center gap-1.5 px-1">
@@ -90,7 +73,7 @@ export default function TaskBarMenu() {
             ),
             items: [
                 {
-                    type: 'item',
+                    type: 'item' as const,
                     label: 'System Settings',
                     icon: <Settings className="size-4 opacity-70" />,
                     onClick: () => addWindow({
@@ -102,9 +85,9 @@ export default function TaskBarMenu() {
                         size: { width: 680, height: 520 }
                     })
                 },
-                { type: 'separator' },
+                { type: 'separator' as const },
                 {
-                    type: 'item',
+                    type: 'item' as const,
                     label: 'About WorldInMaking',
                     onClick: () => addWindow({
                         key: 'about',
@@ -134,46 +117,47 @@ export default function TaskBarMenu() {
                         })
                     }
                 ] : []),
-                { type: 'separator' },
+                { type: 'separator' as const },
                 ...(isMobile ? [
                     {
-                        type: 'submenu',
+                        type: 'submenu' as const,
                         label: 'Posts',
                         items: [
-                            { type: 'item', label: 'All posts', onClick: () => addWindow({ key: 'posts-all', title: 'All Posts', path: '/posts' }) },
-                            { type: 'item', label: 'Tutorials', onClick: () => addWindow({ key: 'tutorials', title: 'Tutorials', path: '/tutorials' }) },
-                            { type: 'separator' },
-                            { type: 'item', label: 'Newspaper', onClick: () => addWindow({ key: 'posts', title: 'Posts', element: <PostsView />, path: '/posts-newspaper' }) },
+                            { type: 'item' as const, label: 'All posts', onClick: () => addWindow({ key: 'posts-all', title: 'All Posts', path: '/posts' }) },
+                            { type: 'item' as const, label: 'Tutorials', onClick: () => addWindow({ key: 'tutorials', title: 'Tutorials', path: '/tutorials' }) },
+                            { type: 'separator' as const },
+                            { type: 'item' as const, label: 'Newspaper', onClick: () => addWindow({ key: 'posts', title: 'Posts', element: <PostsView />, path: '/posts-newspaper' }) },
                         ]
                     },
                     {
-                        type: 'submenu',
+                        type: 'submenu' as const,
                         label: 'Community',
                         items: [
-                            { type: 'item', label: 'Forums', onClick: () => addWindow({ key: 'questions', title: 'Questions', path: '/questions' }) },
+                            { type: 'item' as const, label: 'Forums', onClick: () => addWindow({ key: 'questions', title: 'Questions', path: '/questions' }) },
                         ]
                     },
-                    { type: 'separator' },
+                    { type: 'separator' as const },
                 ] : []),
-                { type: 'item', label: 'Force restart', onClick: () => window.location.reload() },
+                { type: 'item' as const, label: 'Force restart', onClick: () => window.location.reload() },
             ]
         },
         {
             trigger: 'Posts',
             items: [
-                { type: 'item', label: 'All posts', onClick: () => addWindow({ key: 'posts-all', title: 'All Posts', path: '/posts' }) },
-                { type: 'item', label: 'Tutorials', onClick: () => addWindow({ key: 'tutorials', title: 'Tutorials', path: '/tutorials' }) },
-                { type: 'separator' },
-                { type: 'item', label: 'Newspaper', onClick: () => addWindow({ key: 'posts', title: 'Posts', element: <PostsView />, path: '/posts-newspaper' }) },
+                { type: 'item' as const, label: 'All posts', onClick: () => addWindow({ key: 'posts-all', title: 'All Posts', path: '/posts' }) },
+                { type: 'item' as const, label: 'Tutorials', onClick: () => addWindow({ key: 'tutorials', title: 'Tutorials', path: '/tutorials' }) },
+                { type: 'separator' as const },
+                { type: 'item' as const, label: 'Newspaper', onClick: () => addWindow({ key: 'posts', title: 'Posts', element: <PostsView />, path: '/posts-newspaper' }) },
             ]
         },
         {
             trigger: 'Community',
             items: [
-                { type: 'item', label: 'Forums', onClick: () => addWindow({ key: 'questions', title: 'Questions', path: '/questions' }) },
+                { type: 'item' as const, label: 'Forums', onClick: () => addWindow({ key: 'questions', title: 'Questions', path: '/questions' }) },
             ]
         }
-    ]
+    ], [isAdmin, isMobile, addWindow])
+
     const accountMenuItems: MenuItemType[] = user ? [
         ...(isAdmin ? [
             {
@@ -264,7 +248,7 @@ export default function TaskBarMenu() {
                         }}
                     >
                         <Tooltip
-                            trigger={
+                            trigger={React.useMemo(() => (
                                 <OSButton
                                     onClick={handleActiveWindowsClick}
                                     disabled={totalWindows <= 0}
@@ -279,7 +263,7 @@ export default function TaskBarMenu() {
                                         </div>
                                     </div>
                                 </OSButton>
-                            }
+                            ), [totalWindows, handleActiveWindowsClick])}
                             delay={0}
                         >
                             <div className="max-w-48 text-center p-1">

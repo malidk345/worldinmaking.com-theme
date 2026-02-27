@@ -16,7 +16,7 @@ export interface AppWindow {
     path: string
     fromHistory?: boolean
     fromOrigin?: { x: number; y: number }
-    props?: Record<string, any>
+    props?: Record<string, unknown>
     ref?: React.RefObject<HTMLDivElement | null>
     sizeConstraints: {
         min: { width: number; height: number }
@@ -80,24 +80,24 @@ export const WindowProvider = ({
     const addWindow = (newWindow: Omit<AppWindow, 'zIndex' | 'minimized' | 'sizeConstraints' | 'size' | 'previousSize' | 'position' | 'previousPosition' | 'fixedSize' | 'minimal'>) => {
     };
 
+    const mergedValue: WindowContextType = {
+        goBack: () => { },
+        goForward: () => { },
+        canGoBack: false,
+        canGoForward: false,
+        setPageOptions: () => { },
+        setActiveInternalMenu: () => { },
+        internalMenu: [],
+        view: 'marketing',
+        setView: () => { },
+        addWindow, // Provide addWindow through context
+        navigate: () => { },
+        ...value,
+        appWindow,
+    }
+
     return (
-        <Context.Provider
-            value={{
-                appWindow,
-                goBack: () => { },
-                goForward: () => { },
-                canGoBack: false,
-                canGoForward: false,
-                setPageOptions: () => { },
-                setActiveInternalMenu: () => { },
-                internalMenu: [],
-                view: 'marketing',
-                setView: () => { },
-                addWindow, // Provide addWindow through context
-                navigate: () => { },
-                ...value as any,
-            }}
-        >
+        <Context.Provider value={mergedValue}>
             {children}
         </Context.Provider>
     )

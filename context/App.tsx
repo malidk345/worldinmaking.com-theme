@@ -57,7 +57,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         colorMode: 'light',
         skinMode: 'modern',
         cursor: 'default',
-        wallpaper: 'technical',
+        wallpaper: 'keyboard-garden',
         screensaverDisabled: true,
         performanceBoost: false
     })
@@ -241,7 +241,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
     const minimizeWindow = useCallback((itemOrKey: string | AppWindow) => {
         const key = typeof itemOrKey === 'string' ? itemOrKey : itemOrKey.key
-        setWindows((prev) => prev.map(w => w.key === key ? { ...w, minimized: true } : w))
+        setWindows((prev) => {
+            const win = prev.find(w => w.key === key)
+            if (win?.minimized) return prev
+            return prev.map(w => w.key === key ? { ...w, minimized: true } : w)
+        })
         setFocusedWindow((prev) => prev?.key === key ? null : prev)
     }, [])
 

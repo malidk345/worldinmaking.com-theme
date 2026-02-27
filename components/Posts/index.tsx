@@ -2,358 +2,148 @@
 
 import React, { useMemo, useState } from 'react'
 import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+import relativeTime from 'dayjs/plugin/relativeTime'
 import {
-    IconNewspaper,
-    IconFilter,
-    IconChevronDown,
-    IconUser,
     IconArrowRight,
-    IconCalendar,
-    IconClock,
-    IconCheck
+    IconMessage,
+    IconPerson,
 } from '@posthog/icons'
 import OSButton from 'components/OSButton'
 import { useApp } from 'context/App'
+import { usePosts, Post } from 'hooks/usePosts'
+import ScrollArea from 'components/RadixUI/ScrollArea'
 import BlogPostView from 'components/ReaderView/BlogPostView'
-import { usePosts } from 'hooks/usePosts'
-import { Popover } from 'components/RadixUI/Popover'
-import Link from 'components/Link'
 import SEO from 'components/SEO'
-import WriteForWIM from 'components/WriteForWIM'
+import Loading from 'components/Loading'
 
-const MOCK_AUTHORS = [
-    { name: 'James Hawkins', avatar: 'https://res.cloudinary.com/dmukukwp6/image/upload/v1710153303/posthog.com/contents/images/authors/james.png' },
-    { name: 'Tim Glaser', avatar: 'https://res.cloudinary.com/dmukukwp6/image/upload/v1710153303/posthog.com/contents/images/authors/tim.png' },
-]
+dayjs.extend(utc)
+dayjs.extend(relativeTime)
 
 const getPostHref = (slug?: string) => {
     if (!slug) return '/posts'
     return `/posts/${encodeURIComponent(slug)}`
 }
 
-const isModifiedEvent = (event: React.MouseEvent) =>
-    event.metaKey || event.altKey || event.ctrlKey || event.shiftKey || event.button === 1
-
-const EditionPostCard = ({ post, isMobile }: { post: any; isMobile: boolean }) => {
-    const { addWindow } = useApp()
-    const postDate = dayjs(post.date).format('MMM D, YYYY')
-    const author = post.authors[0]
-    const postHref = getPostHref(post.slug)
-
-    const handleOpen = () => {
-        addWindow({
-            key: `blog-${post.id}`,
-            path: postHref,
-            title: post.title.toLowerCase(),
-            size: isMobile ? { width: window.innerWidth, height: window.innerHeight - 44 } : { width: 1000, height: 800 },
-            position: isMobile ? { x: 0, y: 0 } : { x: 50, y: 50 },
-            element: <BlogPostView post={post} />
-        })
-    }
-
-    const handlePostLinkClick = (event: React.MouseEvent) => {
-        if (isModifiedEvent(event)) return
-        event.preventDefault()
-        handleOpen()
-    }
-
-    return (
-        <div
-            onClick={handleOpen}
-            className="h-full group cursor-pointer"
-        >
-            <div className="flex flex-col h-full border border-primary rounded-md bg-primary hover:bg-accent hover:border-primary transition-all relative active:top-[1px] active:scale-[.99] overflow-hidden">
-                <div className="px-3 py-1.5 border-b border-primary bg-accent flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                        {author.avatar ? (
-                            <img src={author.avatar} className="size-5 rounded-full border border-primary bg-primary" alt={author.name} />
-                        ) : (
-                            <div className="size-5 rounded-full border border-primary bg-primary flex items-center justify-center">
-                                <IconUser className="size-3.5 text-primary" />
-                            </div>
-                        )}
-                        <span className="text-[11px] text-primary leading-none lowercase">{author.name}</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-primary">
-                        <IconClock className="size-3" />
-                        <span className="text-[11px] tracking-tighter lowercase">
-                            {post.wordCount} words
-                        </span>
-                    </div>
-                    <div className="flex items-center gap-1 text-primary">
-                        <IconCalendar className="size-3" />
-                        <span className="text-[11px] lowercase">{postDate}</span>
-                    </div>
-                </div>
-
-                <div className={`@container p-4 grid gap-3 ${post.image ? '@md:grid-cols-[1fr_180px]' : 'grid-cols-1'} @md:items-start flex-grow`}>
-                    <div className={`order-2 ${post.image ? '@md:order-1' : ''} grid gap-2`}>
-                        <h3 className="m-0 text-[15px] leading-tight text-primary group-hover:text-burnt-orange transition-colors lowercase">
-                            <Link to={postHref} onClick={handlePostLinkClick} className="text-inherit hover:underline">
-                                {post.title}
-                            </Link>
-                        </h3>
-                        {post.excerpt && (
-                            <p className="m-0 text-[14px] text-primary line-clamp-4 leading-tight font-button font-normal lowercase">
-                                {post.excerpt}
-                            </p>
-                        )}
-                    </div>
-
-                    {post.image && (
-                        <div className="order-1 @md:order-2 w-full aspect-[600/315] @md:aspect-[4/3] rounded-sm overflow-hidden bg-accent border border-primary">
-                            <img className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all duration-500" src={post.image} alt={post.title} />
-                        </div>
-                    )}
-                </div>
-            </div>
-        </div>
-    )
-}
-
-
-const FeaturedPost = ({ post, isMobile }: { post: any; isMobile: boolean }) => {
-    const { addWindow } = useApp()
-    const postDate = dayjs(post.date).format('MMM D, YYYY')
-    const author = post.authors[0]
-    const postHref = getPostHref(post.slug)
-
-    const handleOpen = () => {
-        addWindow({
-            key: `blog-${post.id}`,
-            path: postHref,
-            title: post.title.toLowerCase(),
-            size: isMobile ? { width: window.innerWidth, height: window.innerHeight - 44 } : { width: 1000, height: 800 },
-            position: isMobile ? { x: 0, y: 0 } : { x: 50, y: 50 },
-            element: <BlogPostView post={post} />
-        })
-    }
-
-    const handlePostLinkClick = (event: React.MouseEvent) => {
-        if (isModifiedEvent(event)) return
-        event.preventDefault()
-        handleOpen()
-    }
-
-    return (
-        <section
-            onClick={handleOpen}
-            className={`group cursor-pointer grid ${post.image ? 'md:grid-cols-2 gap-6 md:gap-10' : 'grid-cols-1'} items-center rounded-lg border border-primary p-6 mb-10 bg-accent hover:border-primary transition-all shadow-sm`}
-        >
-            {post.image && (
-                <div className="w-full aspect-[16/9] rounded-md overflow-hidden bg-primary border border-primary shadow-inner">
-                    <img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" src={post.image} alt={post.title} />
-                </div>
-            )}
-            <div className={`flex flex-col py-2 ${!post.image ? 'max-w-4xl mx-auto w-full' : ''}`}>
-                <div className="flex items-center justify-between mb-5">
-                    <div className="flex items-center gap-3">
-                        {author.avatar ? (
-                            <img src={author.avatar} className="size-8 rounded-full border border-primary bg-primary shadow-sm" alt={author.name} />
-                        ) : (
-                            <div className="size-8 rounded-full border border-primary bg-primary shadow-sm flex items-center justify-center">
-                                <IconUser className="size-4 text-primary" />
-                            </div>
-                        )}
-                        <div className="flex flex-col -space-y-0.5 lowercase">
-                            <span className="text-[13px] text-primary">{author.name}</span>
-                            <span className="text-[10px] text-primary tracking-wider opacity-60">author</span>
-                        </div>
-                    </div>
-
-                    <div className="hidden sm:flex flex-col items-center text-primary lowercase">
-                        <IconClock className="size-4 mb-0.5" />
-                        <div className="flex flex-col items-center -space-y-1">
-                            <span className="text-[12px] tracking-[0.2em]">{post.wordCount}</span>
-                            <span className="text-[10px] leading-none opacity-60">words</span>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        <span className="px-2 py-0.5 bg-burnt-orange/10 text-burnt-orange text-[9px] tracking-widest rounded-sm border border-burnt-orange/20 lowercase">
-                            featured
-                        </span>
-                        <div className="flex items-center gap-1.5 text-primary italic lowercase">
-                            <IconCalendar className="size-3.5" />
-                            <span className="text-[11px]">{postDate}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <h2 className="mt-0 mb-4 text-xl lg:text-2xl text-primary leading-tight group-hover:underline decoration-burnt-orange/30 underline-offset-4 lowercase">
-                    <Link to={postHref} onClick={handlePostLinkClick} className="text-inherit">
-                        {post.title}
-                    </Link>
-                </h2>
-
-                <p className="text-[14px] text-primary leading-tight line-clamp-8 mb-8 max-w-none w-full font-button font-normal lowercase">
-                    {post.excerpt}
-                </p>
-
-                <div className="mt-auto">
-                    <OSButton
-                        variant="secondary"
-                        size="md"
-                        className="font-black tracking-widest text-[11px] lowercase"
-                        asLink
-                        to={postHref}
-                        onClick={handlePostLinkClick}
-                    >
-                        continue reading <IconArrowRight className="size-3.5 ml-2 group-hover:translate-x-1 transition-transform" />
-                    </OSButton>
-                </div>
-            </div>
-        </section>
-    )
-}
-
-
-import Loading from 'components/Loading'
-
 export default function PostsView() {
-    const { isMobile, addWindow } = useApp()
     const { posts, loading } = usePosts()
-    const [visibleCount, setVisibleCount] = useState(10)
-    const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+    const { addWindow } = useApp()
 
-    const uniqueCategories = useMemo(() => {
-        const cats = new Set(posts.map(p => p.category).filter(Boolean))
-        return Array.from(cats).sort()
+    const [selectedAuthor, setSelectedAuthor] = useState('All')
+    const [selectedCategory, setSelectedCategory] = useState('All')
+
+    const sortedRoadmaps = useMemo(() => {
+        return [...posts].sort((a, b) => dayjs.utc(b.date).unix() - dayjs.utc(a.date).unix())
     }, [posts])
 
-    const ALL_POSTS = useMemo(() => {
-        let filtered = posts
-        if (selectedCategory) {
-            filtered = posts.filter(p => p.category === selectedCategory)
+    const { authors, categories } = useMemo(() => {
+        const auths = new Set<string>()
+        const cats = new Set<string>()
+        posts.forEach(p => {
+            auths.add(p.authorName || 'WorldInMaking')
+            if (p.category) cats.add(p.category)
+        })
+        return {
+            authors: Array.from(auths).sort(),
+            categories: Array.from(cats).sort()
         }
-        return filtered.map((p) => ({
-            ...p,
-            authors: [{ name: p.authorName || 'Unknown', avatar: p.authorAvatar || '' }]
-        }))
-    }, [posts, selectedCategory])
+    }, [posts])
 
-    if (loading && ALL_POSTS.length === 0) {
-        return <Loading fullScreen label="assembling edition..." />
+    const filteredRoadmaps = useMemo(() => {
+        return sortedRoadmaps.filter(r => {
+            const authorMatch = selectedAuthor === 'All' || (r.authorName || 'WorldInMaking') === selectedAuthor
+            const categoryMatch = selectedCategory === 'All' || (r.category || 'Uncategorized') === selectedCategory
+            return authorMatch && categoryMatch
+        })
+    }, [sortedRoadmaps, selectedAuthor, selectedCategory])
+
+    const handleRoadmapClick = (roadmap: Post) => {
+        addWindow({
+            key: `blog-${roadmap.id}`,
+            path: getPostHref(roadmap.slug),
+            title: roadmap.title.toLowerCase(),
+            size: { width: 900, height: 800 },
+            position: { x: 100, y: 50 },
+            element: <BlogPostView post={roadmap} />
+        })
     }
 
-    const [featuredPost, ...otherPosts] = ALL_POSTS
-    const visiblePosts = otherPosts.slice(0, visibleCount)
-    const hasMore = visibleCount < otherPosts.length
+    if (loading) return <Loading fullScreen label="loading changelog..." />
 
     return (
-        <div className="absolute inset-0 flex flex-col overflow-hidden bg-primary text-primary">
-            <SEO
-                title="Latest Editions"
-                description="Exploring the future of making, engineering, and digital craft through curated stories and insights."
-                url="/posts"
-            />
-            {/* TOOLBAR */}
-            <div data-scheme="secondary" className={`flex-shrink-0 flex items-center justify-between m-1 rounded border border-primary bg-accent ${isMobile ? 'py-1.5 px-2' : 'py-1 px-3'}`}>
-                <div className="flex items-center gap-3">
-                    <OSButton
-                        variant="secondary"
-                        size="xs"
-                        className="font-bold gap-1"
-                        onClick={() => addWindow({
-                            key: 'write-for-wim',
-                            title: 'Write for WIM',
-                            path: '/write',
-                            icon: <IconNewspaper className="size-4 text-navy" />,
-                            element: <WriteForWIM />
-                        })}
-                    >
-                        <IconNewspaper className="size-3 text-navy" />
-                        <span className="text-primary">write for wim</span>
-                    </OSButton>
-                    <div className="h-4 w-px bg-primary/10" />
-                    <span className="text-[10px] font-bold tracking-widest text-primary/30">
-                        {ALL_POSTS.length} {selectedCategory ? `in ${selectedCategory.toLowerCase()}` : 'articles'}
-                    </span>
-                </div>
+        <div className="absolute inset-0 flex flex-col text-primary bg-primary overflow-hidden">
+            <SEO title="Changelog" />
 
-                <div className="flex items-center gap-2">
-                    <Popover
-                        dataScheme="secondary"
-                        trigger={
-                            <button className={`p-1 hover:bg-primary/5 rounded-sm transition-colors ${selectedCategory ? 'text-burnt-orange' : 'text-secondary hover:text-primary'}`}>
-                                <IconFilter className="size-3.5" />
-                            </button>
-                        }
-                    >
-                        <div className="w-48 py-1">
-                            <div className="px-3 py-1.5 text-[10px] uppercase font-bold tracking-widest text-primary/30 border-b border-primary/50 mb-1">
-                                Filter by category
+            {/* Community-style Post Rows */}
+            <div className="flex-grow flex min-h-0 relative bg-primary">
+                <ScrollArea className="size-full">
+                    <div className="w-full max-w-3xl mx-auto py-8 px-4 sm:px-6">
+                        {sortedRoadmaps.length === 0 ? (
+                            <div className="py-16 text-center text-secondary/70 text-sm font-bold bg-accent rounded border border-primary/10">
+                                No logs found.
                             </div>
-                            <button
-                                onClick={() => setSelectedCategory(null)}
-                                className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-bold hover:bg-primary/5 text-left"
-                            >
-                                <span className="lowercase">all articles</span>
-                                {!selectedCategory && <IconCheck className="size-3" />}
-                            </button>
-                            {uniqueCategories.map(cat => (
-                                <button
-                                    key={cat}
-                                    onClick={() => setSelectedCategory(cat)}
-                                    className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-bold hover:bg-primary/5 text-left"
-                                >
-                                    <span className="lowercase">{cat}</span>
-                                    {selectedCategory === cat && <IconCheck className="size-3" />}
-                                </button>
-                            ))}
-                        </div>
-                    </Popover>
-                    {!isMobile && (
-                        <button className="flex items-center gap-1 p-1 hover:bg-primary/5 rounded-sm transition-colors text-secondary hover:text-primary text-[11px] font-bold">
-                            Sort
-                            <IconChevronDown className="size-3.5" />
-                        </button>
-                    )}
-                </div>
-            </div>
+                        ) : (
+                            <ul className="m-0 p-0 list-none">
+                                {sortedRoadmaps.map((roadmap) => {
+                                    const teamName = roadmap.authorName || 'WorldInMaking'
+                                    const computedReadTime = roadmap.wordCount ? `${Math.max(1, Math.ceil(roadmap.wordCount / 200))}m` : '2m'
 
-            {/* CONTENT AREA */}
-            <div className="flex-grow overflow-y-auto custom-scrollbar bg-[radial-gradient(circle_at_top,_rgba(var(--accent-rgb),0.05),_transparent)]">
-                <div className={`max-w-[1300px] mx-auto py-8 ${isMobile ? 'px-4' : 'px-8'}`}>
+                                    return (
+                                        <li key={roadmap.id} className="list-none px-[2px]">
+                                            <div className="py-2.5">
+                                                <div
+                                                    className="group flex flex-col relative px-3 md:px-5 py-3 -mt-1.5 mx-[-2px] -mb-3 rounded active:bg-light dark:active:bg-dark border-primary border-b-3 border-transparent hover:border hover:translate-y-[-1px] active:translate-y-[1px] active:transition-all active:before:h-[2px] active:before:bg-light dark:active:before:bg-dark active:before:absolute active:before:content-[''] active:before:top-[-3px] active:before:left-0 active:before:right-0 cursor-pointer"
+                                                    onClick={() => handleRoadmapClick(roadmap)}
+                                                >
+                                                    <div className="w-full min-w-0 flex flex-col items-start text-left">
+                                                        <span className="text-sm font-semibold text-[#000080] dark:text-[#66b2ff] line-clamp-3 md:line-clamp-1 break-words leading-snug lowercase">
+                                                            {roadmap.title}
+                                                        </span>
 
-                    {/* Featured Post (Magazine Style) */}
-                    {ALL_POSTS.length > 0 && (
-                        <>
-                            {!isMobile && <FeaturedPost post={featuredPost} isMobile={isMobile} />}
-                            {isMobile && <EditionPostCard post={featuredPost} isMobile={isMobile} />}
-                        </>
-                    )}
+                                                        {roadmap.description && (
+                                                            <div className="mt-1 flex-1 min-w-0 text-black dark:text-white text-xs line-clamp-2 break-words">
+                                                                {roadmap.description}
+                                                            </div>
+                                                        )}
 
-                    {/* Posts Grid */}
-                    <div className="@container list-none m-0 p-0 grid gap-4 mt-6 @md:grid-cols-2 @xl:grid-cols-3">
-                        {visiblePosts.map((post) => (
-                            <div key={post.id}>
-                                <EditionPostCard post={post} isMobile={isMobile} />
-                            </div>
-                        ))}
+                                                        {roadmap.image && (
+                                                            <div className="mt-4 mb-2 w-full max-w-3xl border border-primary/20 rounded overflow-hidden aspect-video relative">
+                                                                <img
+                                                                    src={roadmap.image}
+                                                                    alt={roadmap.title}
+                                                                    className="w-full h-full object-cover relative z-10 select-none pointer-events-none"
+                                                                />
+                                                            </div>
+                                                        )}
+
+                                                        {/* Bottom Meta Frame (Full-width OS Status Bar style) */}
+                                                        <div className="mt-4 flex items-center justify-between border-[1px] border-primary/30 bg-accent/40 dark:bg-black/20 px-3 py-1.5 rounded-[4px] w-full max-w-3xl shadow-sm">
+                                                            <div className="flex items-center gap-2">
+                                                                {roadmap.authorAvatar ? (
+                                                                    <img src={roadmap.authorAvatar} alt={teamName} className="size-5 rounded-full object-cover shrink-0 border border-primary/20 bg-white" />
+                                                                ) : (
+                                                                    <div className="size-5 rounded-full bg-black/5 dark:bg-white/5 text-black dark:text-white shrink-0 border border-primary/20 flex items-center justify-center">
+                                                                        <IconPerson className="size-3.5 shrink-0" />
+                                                                    </div>
+                                                                )}
+                                                                <span className="text-[12px] font-semibold text-primary truncate max-w-[150px]">{teamName}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-2.5">
+                                                                <span className="text-[11px] font-semibold text-black dark:text-white whitespace-nowrap">{dayjs.utc(roadmap.date).fromNow()}</span>
+                                                                <div className="w-[1px] h-[12px] bg-black/50 dark:bg-white/50 rounded-full mx-0.5"></div>
+                                                                <span className="text-[11px] font-semibold text-black dark:text-white whitespace-nowrap">{computedReadTime} read</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    )
+                                })}
+                            </ul>
+                        )}
                     </div>
-
-                    {/* More Button */}
-                    {hasMore ? (
-                        <div className="py-12 flex justify-center">
-                            <OSButton
-                                variant="secondary"
-                                size="sm"
-                                className="font-bold"
-                                onClick={() => setVisibleCount((prev: number) => prev + 10)}
-                            >
-                                <span className="px-6">more</span>
-                            </OSButton>
-                        </div>
-                    ) : (
-                        <div className="py-24 flex flex-col items-center gap-4">
-                            <div className="w-16 h-px bg-primary/10" />
-                            <span className="text-[10px] font-black tracking-[1em] text-primary/5 pl-[1em]">
-                                End of Edition
-                            </span>
-                        </div>
-                    )}
-                </div>
+                </ScrollArea>
             </div>
         </div>
     )

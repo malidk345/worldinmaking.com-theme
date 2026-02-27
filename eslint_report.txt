@@ -1,0 +1,825 @@
+
+D:\all works\worldinmaking.com-theme\PortableGit\mingw64\share\doc\xz\api\dynsections.js
+  26:10  warning  'toggleVisibility' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\all works\worldinmaking.com-theme\PortableGit\mingw64\share\doc\xz\api\jquery.js
+    2:1     warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+    2:29    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+    2:794   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+    3:189   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+    4:227   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+    4:284   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+    5:363   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+    5:470   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+    5:519   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+    7:944   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+    8:8     warning  'e' is defined but never used                                          @typescript-eslint/no-unused-vars
+    8:784   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+    9:12    warning  'e' is defined but never used                                          @typescript-eslint/no-unused-vars
+    9:31    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+    9:316   warning  'e' is defined but never used                                          @typescript-eslint/no-unused-vars
+    9:336   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   10:327   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   11:947   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   12:281   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   12:534   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   13:352   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   13:863   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   15:220   warning  'e' is defined but never used                                          @typescript-eslint/no-unused-vars
+   15:357   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   15:850   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   18:94    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   19:63    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   21:819   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   22:158   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   22:201   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   22:255   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   22:281   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   22:344   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   22:399   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   23:194   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   23:406   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   23:646   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   23:679   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   23:944   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   24:7     warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   24:16    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   24:120   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   24:157   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   24:564   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   25:698   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   26:32    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   26:468   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   26:712   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+   27:149   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   27:531   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   27:922   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   29:728   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   29:860   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   30:72    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   30:133   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   30:269   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   30:463   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   31:408   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   31:509   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   31:719   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+   31:852   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   32:69    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   32:190   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   32:311   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   32:530   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   32:910   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   33:190   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   33:229   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   33:438   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   33:524   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   33:664   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   34:492   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   35:151   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   35:633   warning  'e' is defined but never used                                          @typescript-eslint/no-unused-vars
+   35:673   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   36:65    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   36:740   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   37:217   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   37:461   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+   37:495   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   37:522   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   37:577   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   37:897   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   38:322   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   38:355   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   38:411   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   38:605   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   38:1000  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   39:206   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   39:363   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   40:294   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   40:642   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   40:819   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   40:908   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   40:968   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   41:42    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   41:229   warning  'e' is defined but never used                                          @typescript-eslint/no-unused-vars
+   41:692   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   41:822   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   42:73    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   42:247   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   42:336   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   42:668   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   43:426   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   43:582   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   43:773   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   43:925   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   44:254   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   44:337   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   44:426   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   44:966   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   45:88    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   45:133   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+   45:963   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   46:73    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   46:200   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   46:769   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   46:890   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   47:1     warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   49:48    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   49:283   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   49:475   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   49:616   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   49:938   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   50:39    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   50:265   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   50:711   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   50:784   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   51:1     warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   51:164   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   51:475   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   51:586   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   51:708   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   52:117   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   52:195   warning  'e' is defined but never used                                          @typescript-eslint/no-unused-vars
+   52:200   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   52:344   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   52:618   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   52:897   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   53:396   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   53:427   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   53:723   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   53:1010  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   55:425   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   56:353   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   56:972   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   58:315   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   58:803   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   59:616   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   59:840   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   60:112   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   61:609   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   62:1     warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   62:143   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   62:208   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   62:352   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+   62:528   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   62:599   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   63:295   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   63:382   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   63:660   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   64:84    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   64:380   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   64:541   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   64:718   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   64:759   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   64:816   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   64:898   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   65:132   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   65:217   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   65:766   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   65:804   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   65:860   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   65:930   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   66:437   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   67:773   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   68:531   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   68:1014  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   69:26    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   69:418   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   69:731   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   69:768   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   69:818   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   70:118   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   70:227   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   71:139   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   71:285   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   71:590   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   72:326   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   72:340   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   72:455   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   73:473   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   73:611   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   73:855   warning  'e' is defined but never used                                          @typescript-eslint/no-unused-vars
+   74:181   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   74:334   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   75:357   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   75:453   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   75:853   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   75:926   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   76:704   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   77:761   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   77:857   warning  'e' is defined but never used                                          @typescript-eslint/no-unused-vars
+   79:123   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   79:208   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   79:320   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   79:491   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   79:705   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   80:269   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   81:358   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   81:811   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+   82:16    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   82:504   warning  'e' is defined but never used                                          @typescript-eslint/no-unused-vars
+   82:558   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   82:1004  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   83:19    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   83:480   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   83:522   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   83:625   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   83:664   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   83:974   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   84:120   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   84:232   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   84:333   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   84:380   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   85:51    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   85:714   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+   85:920   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   86:245   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   87:46    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   87:208   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   87:798   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   89:341   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   89:571   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   94:70    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   94:96    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   94:294   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   94:368   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   94:772   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   95:666   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   95:951   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+   96:446   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   96:731   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   97:3     warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   97:511   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+   97:518   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   98:60    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   98:550   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   98:759   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   99:90    error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+   99:142   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   99:207   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   99:236   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   99:753   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+   99:760   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+   99:804   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  100:266   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+  100:273   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  100:553   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  100:681   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  100:727   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  100:969   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+  101:78    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  101:318   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  101:736   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  102:45    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  102:264   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  102:324   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  102:532   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  104:333   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  105:19    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  105:232   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  105:732   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  106:122   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  106:459   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  106:972   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  107:437   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  107:615   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  107:722   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  107:820   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  108:251   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  108:691   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  108:865   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  109:158   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  109:425   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  109:649   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  110:114   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  111:145   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  111:236   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  111:413   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  111:555   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+  111:562   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  111:883   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  112:82    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  112:166   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+  113:665   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  114:477   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  114:677   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  114:726   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  115:361   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  115:390   warning  't' is defined but never used                                          @typescript-eslint/no-unused-vars
+  115:444   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+  115:451   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  116:728   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  116:829   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  116:951   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  117:458   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  117:603   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+  118:41    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  118:329   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  118:408   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  119:198   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  119:511   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  121:266   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+  122:1     warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  122:759   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  123:49    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  124:623   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  124:884   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  125:157   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  126:338   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  127:378   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  127:688   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  128:555   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  130:56    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  130:1015  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  131:41    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  131:243   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  131:608   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  131:745   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  132:227   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  132:765   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  138:30    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  138:151   error    A `require()` style import is forbidden                                @typescript-eslint/no-require-imports
+  138:532   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  138:563   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  138:602   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  138:696   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  139:316   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  139:588   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  139:651   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  140:230   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  148:168   error    A `require()` style import is forbidden                                @typescript-eslint/no-require-imports
+  149:168   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+  152:459   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+  176:4     warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  176:170   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  176:413   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  176:443   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+  176:450   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  176:607   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  176:674   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  176:775   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+  176:782   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  176:944   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+  176:951   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  180:93    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  180:226   error    A `require()` style import is forbidden                                @typescript-eslint/no-require-imports
+  180:354   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  180:683   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  180:823   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  180:941   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  181:119   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  181:516   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  182:205   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+  182:219   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  182:438   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  183:740   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  183:1002  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  184:198   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+  184:205   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  184:257   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  184:1003  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  186:450   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  186:524   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+  186:691   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  186:878   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  187:174   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  188:875   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+  189:221   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  189:356   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  190:362   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  190:514   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  190:588   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+  190:836   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  191:123   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  191:508   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  192:125   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  192:294   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  192:476   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  192:956   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  193:1     warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  193:155   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  193:410   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  194:590   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+  194:597   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  194:838   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  194:930   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  195:674   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  196:694   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  196:758   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  196:832   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+  197:28    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  197:176   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  197:928   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  198:394   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  198:731   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  198:916   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  199:950   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  200:131   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  200:562   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  200:636   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+  201:99    error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+  201:147   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  201:327   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  201:467   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  201:521   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  201:635   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  201:936   error    Unexpected aliasing of 'this' to local variable                        @typescript-eslint/no-this-alias
+  202:22    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  202:300   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  202:983   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  203:129   warning  'e' is defined but never used                                          @typescript-eslint/no-unused-vars
+  203:132   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+D:\all works\worldinmaking.com-theme\PortableGit\mingw64\share\doc\xz\api\menudata.js
+  25:5  warning  'menudata' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\all works\worldinmaking.com-theme\PortableGit\mingw64\share\doc\xz\api\resize.js
+   26:10  warning  'initResizable' is defined but never used  @typescript-eslint/no-unused-vars
+  116:58  warning  'e' is defined but never used              @typescript-eslint/no-unused-vars
+  116:61  warning  'ui' is defined but never used             @typescript-eslint/no-unused-vars
+
+D:\all works\worldinmaking.com-theme\PortableGit\usr\lib\terminfo\78\xterm.js
+  1:0  error  Parsing error: Invalid character
+
+D:\all works\worldinmaking.com-theme\PortableGit\usr\share\terminfo\78\xterm.js
+  1:0  error  Parsing error: Invalid character
+
+D:\all works\worldinmaking.com-theme\app\layout.tsx
+  57:17  warning  Custom fonts not added in `pages/_document.js` will only load for a single page. This is discouraged. See: https://nextjs.org/docs/messages/no-page-custom-font  @next/next/no-page-custom-font
+
+D:\all works\worldinmaking.com-theme\app\posts\[slug]\page.tsx
+  39:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\all works\worldinmaking.com-theme\components\ActiveWindowsPanel\index.tsx
+  42:8  warning  React Hook useEffect has a missing dependency: 'closeActiveWindowsPanel'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\all works\worldinmaking.com-theme\components\AdminPanel\RichTextEditor.tsx
+  15:40  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\all works\worldinmaking.com-theme\components\AdminPanel\index.tsx
+   15:31   error  Unexpected any. Specify a different type                                                                                      @typescript-eslint/no-explicit-any
+   26:52   error  Unexpected any. Specify a different type                                                                                      @typescript-eslint/no-explicit-any
+   83:5    error  React Hook "useEffect" is called conditionally. React Hooks must be called in the exact same order in every component render  react-hooks/rules-of-hooks
+   89:5    error  React Hook "useEffect" is called conditionally. React Hooks must be called in the exact same order in every component render  react-hooks/rules-of-hooks
+   95:5    error  React Hook "useEffect" is called conditionally. React Hooks must be called in the exact same order in every component render  react-hooks/rules-of-hooks
+  103:17   error  React Hook "useApp" is called conditionally. React Hooks must be called in the exact same order in every component render     react-hooks/rules-of-hooks
+  210:36   error  Unexpected any. Specify a different type                                                                                      @typescript-eslint/no-explicit-any
+  766:80   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                               react/no-unescaped-entities
+  766:137  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                               react/no-unescaped-entities
+  871:67   error  Unexpected any. Specify a different type                                                                                      @typescript-eslint/no-explicit-any
+
+D:\all works\worldinmaking.com-theme\components\AppWindow\WindowRouter.tsx
+   13:23  error    Unexpected any. Specify a different type                                                                              @typescript-eslint/no-explicit-any
+   36:56  error    Unexpected any. Specify a different type                                                                              @typescript-eslint/no-explicit-any
+   58:27  error    A `require()` style import is forbidden                                                                               @typescript-eslint/no-require-imports
+  101:8   warning  React Hook useEffect has a missing dependency: 'selectedChannelId'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  115:48  error    Unexpected any. Specify a different type                                                                              @typescript-eslint/no-explicit-any
+  133:48  error    Unexpected any. Specify a different type                                                                              @typescript-eslint/no-explicit-any
+  167:62  error    Unexpected any. Specify a different type                                                                              @typescript-eslint/no-explicit-any
+  190:27  error    Unexpected any. Specify a different type                                                                              @typescript-eslint/no-explicit-any
+
+D:\all works\worldinmaking.com-theme\components\AppWindow\index.tsx
+   13:5   warning  'IconArrowLeft' is defined but never used                                                                                        @typescript-eslint/no-unused-vars
+   14:5   warning  'IconArrowRight' is defined but never used                                                                                       @typescript-eslint/no-unused-vars
+   15:5   warning  'IconTerminal' is defined but never used                                                                                         @typescript-eslint/no-unused-vars
+   19:26  warning  'useWindow' is defined but never used                                                                                            @typescript-eslint/no-unused-vars
+   20:13  warning  'ContextMenu' is defined but never used                                                                                          @typescript-eslint/no-unused-vars
+   23:19  warning  'MenuItemType' is defined but never used                                                                                         @typescript-eslint/no-unused-vars
+   27:8   warning  'KeyboardShortcut' is defined but never used                                                                                     @typescript-eslint/no-unused-vars
+   47:9   warning  'windows' is assigned a value but never used                                                                                     @typescript-eslint/no-unused-vars
+   53:23  warning  'globalExpand' is assigned a value but never used                                                                                @typescript-eslint/no-unused-vars
+  106:8   warning  React Hook useEffect has missing dependencies: 'item' and 'minimizeWindow'. Either include them or remove the dependency array   react-hooks/exhaustive-deps
+  159:33  error    Unexpected any. Specify a different type                                                                                         @typescript-eslint/no-explicit-any
+  176:36  error    Unexpected any. Specify a different type                                                                                         @typescript-eslint/no-explicit-any
+  232:38  error    Unexpected any. Specify a different type                                                                                         @typescript-eslint/no-explicit-any
+  258:8   warning  React Hook useMemo has a missing dependency: 'getActiveWindowsButtonPosition'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  269:8   warning  React Hook useEffect has a missing dependency: 'history'. Either include it or remove the dependency array                       react-hooks/exhaustive-deps
+  289:8   warning  React Hook useEffect has a missing dependency: 'constraintsRef'. Either include it or remove the dependency array                react-hooks/exhaustive-deps
+  483:76  error    Unexpected any. Specify a different type                                                                                         @typescript-eslint/no-explicit-any
+  486:85  error    Unexpected any. Specify a different type                                                                                         @typescript-eslint/no-explicit-any
+  498:84  error    Unexpected any. Specify a different type                                                                                         @typescript-eslint/no-explicit-any
+
+D:\all works\worldinmaking.com-theme\components\CallToAction\index.tsx
+  216:5   warning  'width' is defined but never used                                      @typescript-eslint/no-unused-vars
+  219:26  error    Unexpected any. Specify a different type                               @typescript-eslint/no-explicit-any
+  227:17  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  249:19  error    Unexpected any. Specify a different type                               @typescript-eslint/no-explicit-any
+  255:9   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+D:\all works\worldinmaking.com-theme\components\Community\CommentForm.tsx
+  69:35  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  72:33  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\all works\worldinmaking.com-theme\components\Community\CommentSection.tsx
+  65:51  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\all works\worldinmaking.com-theme\components\Desktop\DraggableDesktopIcon.tsx
+   1:38  warning  'useRef' is defined but never used        @typescript-eslint/no-unused-vars
+  30:33  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  38:36  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\all works\worldinmaking.com-theme\components\Desktop\index.tsx
+   3:38  warning  'useRef' is defined but never used                   @typescript-eslint/no-unused-vars
+  11:24  warning  'constraintsRef' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\all works\worldinmaking.com-theme\components\Forum\ForumAvatar.tsx
+  35:9   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  35:9   warning  img elements must have an alt prop, either with meaningful text, or an empty string for decorative images                                                                                                                                                                                jsx-a11y/alt-text
+  55:21  warning  Image elements must have an alt prop, either with meaningful text, or an empty string for decorative images                                                                                                                                                                              jsx-a11y/alt-text
+  58:17  warning  Image elements must have an alt prop, either with meaningful text, or an empty string for decorative images                                                                                                                                                                              jsx-a11y/alt-text
+
+D:\all works\worldinmaking.com-theme\components\Forum\ForumDays.tsx
+  15:13  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\all works\worldinmaking.com-theme\components\Forum\ForumMarkdown.tsx
+  63:21  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  63:21  warning  img elements must have an alt prop, either with meaningful text, or an empty string for decorative images                                                                                                                                                                                jsx-a11y/alt-text
+
+D:\all works\worldinmaking.com-theme\components\Forum\ForumPageLayout.tsx
+  22:5  warning  'title' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\all works\worldinmaking.com-theme\components\Forum\ForumProfileBadge.tsx
+  7:8  warning  'Logomark' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\all works\worldinmaking.com-theme\components\Forum\ForumQuestionCard.tsx
+   27:5   warning  'showSlug' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  127:56  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+
+D:\all works\worldinmaking.com-theme\components\Forum\ForumQuestionForm.tsx
+  47:43  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  50:41  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\all works\worldinmaking.com-theme\components\Forum\ForumQuestionsTable.tsx
+  66:9  warning  'id' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\all works\worldinmaking.com-theme\components\Forum\ForumReplies.tsx
+  3:17  warning  'useState' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\all works\worldinmaking.com-theme\components\Forum\ForumReplyCard.tsx
+  9:40  warning  'IconCheck' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\all works\worldinmaking.com-theme\components\Forum\ForumReplyForm.tsx
+  16:42  warning  'isInForum' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\all works\worldinmaking.com-theme\components\Forum\ForumRichText.tsx
+    3:17  warning  'ChangeEvent' is defined but never used               @typescript-eslint/no-unused-vars
+    3:41  warning  'useRef' is defined but never used                    @typescript-eslint/no-unused-vars
+    3:72  warning  'useMemo' is defined but never used                   @typescript-eslint/no-unused-vars
+   33:26  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+   34:28  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+   47:26  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+   48:28  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+   65:26  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+   66:28  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+   90:26  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+   94:28  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  122:64  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  151:62  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  210:5   warning  'autoFocus' is defined but never used                 @typescript-eslint/no-unused-vars
+  211:5   warning  'onSubmit' is defined but never used                  @typescript-eslint/no-unused-vars
+  223:26  warning  'setImageLoading' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  226:12  warning  'localImages' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  226:52  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  315:43  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+
+D:\all works\worldinmaking.com-theme\components\Forum\ForumTopicSidebar.tsx
+  18:5  warning  'activeTopicSlug' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\all works\worldinmaking.com-theme\components\Link\index.tsx
+  22:20  error    Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  37:13  warning  'externalNoIcon' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\all works\worldinmaking.com-theme\components\Login\LoginContent.tsx
+  24:24  warning  'closeWindow' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\all works\worldinmaking.com-theme\components\Login\ProfileContent.tsx
+  111:37  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  147:51  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  155:51  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  166:47  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  184:47  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  191:47  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  207:47  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  214:47  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  221:47  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  228:47  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+
+D:\all works\worldinmaking.com-theme\components\OSButton\index.tsx
+   7:24  warning  'ChevronRight' is defined but never used    @typescript-eslint/no-unused-vars
+  46:13  warning  'iconClassName' is defined but never used   @typescript-eslint/no-unused-vars
+  49:13  warning  'label' is defined but never used           @typescript-eslint/no-unused-vars
+  50:13  warning  'chip' is defined but never used            @typescript-eslint/no-unused-vars
+  51:13  warning  'chipColor' is defined but never used       @typescript-eslint/no-unused-vars
+  64:13  warning  'hover' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\all works\worldinmaking.com-theme\components\OSChrome\FooterBar.tsx
+   6:5   warning  'IconHome' is defined but never used  @typescript-eslint/no-unused-vars
+  21:10  warning  'Search' is defined but never used    @typescript-eslint/no-unused-vars
+  62:5   warning  'homeURL' is defined but never used   @typescript-eslint/no-unused-vars
+
+D:\all works\worldinmaking.com-theme\components\OSForm\input.tsx
+  27:20  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\all works\worldinmaking.com-theme\components\OSIcons\AppIcon.tsx
+  354:74  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  360:67  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  372:66  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  378:59  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\all works\worldinmaking.com-theme\components\Posts\index.tsx
+   24:7   warning  'MOCK_AUTHORS' is assigned a value but never used                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+   37:54  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+   69:29  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  105:29  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  115:51  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  145:21  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  152:29  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\all works\worldinmaking.com-theme\components\Profile\PublicProfile.tsx
+  129:37  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\all works\worldinmaking.com-theme\components\RadixUI\FileMenu.tsx
+    6:8   warning  'Link' is defined but never used                                                                                    @typescript-eslint/no-unused-vars
+   33:8   warning  React Hook useCallback has a missing dependency: 'rootItems'. Either include it or remove the dependency array      react-hooks/exhaustive-deps
+   56:31  warning  'isSelected' is assigned a value but never used                                                                     @typescript-eslint/no-unused-vars
+  101:13  warning  'compact' is assigned a value but never used                                                                        @typescript-eslint/no-unused-vars
+  101:22  warning  'isMobile' is assigned a value but never used                                                                       @typescript-eslint/no-unused-vars
+  128:8   warning  React Hook useEffect has a missing dependency: 'appWindow?.path'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  140:9   warning  React Hook useCallback has a missing dependency: 'router'. Either include it or remove the dependency array         react-hooks/exhaustive-deps
+  161:8   warning  React Hook useMemo has a missing dependency: 'getItemChildren'. Either include it or remove the dependency array    react-hooks/exhaustive-deps
+
+D:\all works\worldinmaking.com-theme\components\RadixUI\Popover.tsx
+  43:17  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+D:\all works\worldinmaking.com-theme\components\ReaderView\BlogPostView.tsx
+  159:37  warning  'node' is defined but never used          @typescript-eslint/no-unused-vars
+  159:60  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\all works\worldinmaking.com-theme\components\ReaderView\context\ReaderViewContext.tsx
+  44:13  warning  'compact' is assigned a value but never used         @typescript-eslint/no-unused-vars
+  49:12  warning  'navUserToggled' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  51:12  warning  'tocUserToggled' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\all works\worldinmaking.com-theme\components\ReaderView\index.tsx
+    5:8   warning  'OSButton' is defined but never used                      @typescript-eslint/no-unused-vars
+    6:10  warning  'IconChevronDown' is defined but never used               @typescript-eslint/no-unused-vars
+   88:5   warning  'padding' is assigned a value but never used              @typescript-eslint/no-unused-vars
+   90:5   warning  'description' is defined but never used                   @typescript-eslint/no-unused-vars
+  108:9   warning  'setFullWidthContent' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\all works\worldinmaking.com-theme\components\Search\InPageSearchBar.tsx
+  85:32  warning  The ref value 'contentRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'contentRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+  89:8   warning  React Hook useEffect has missing dependencies: 'contentRef' and 'createDuplicateForHighlighting'. Either include them or remove the dependency array                                                                                                                 react-hooks/exhaustive-deps
+
+D:\all works\worldinmaking.com-theme\components\Search\SearchContext.tsx
+   33:12  warning  '_location' is defined but never used                                                                                        @typescript-eslint/no-unused-vars
+   33:23  warning  '_filter' is defined but never used                                                                                          @typescript-eslint/no-unused-vars
+   70:8   warning  React Hook React.useEffect has missing dependencies: 'close' and 'open'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  118:38  error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free          @typescript-eslint/ban-ts-comment
+
+D:\all works\worldinmaking.com-theme\components\Search\SearchResults.tsx
+  152:54  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  152:81  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  180:8   warning  React Hook useEffect has a missing dependency: 'refine'. Either include it or remove the dependency array                                                                                                                                                                                                                                     react-hooks/exhaustive-deps
+  227:8   warning  React Hook useEffect has a missing dependency: 'props'. Either include it or remove the dependency array. However, 'props' will change when *any* prop changes, so the preferred fix is to destructure the 'props' object outside of the useEffect call and refer to those specific props inside useEffect                                    react-hooks/exhaustive-deps
+  244:8   warning  React Hook useEffect has missing dependencies: 'posthog', 'props', and 'selected.type'. Either include them or remove the dependency array. However, 'props' will change when *any* prop changes, so the preferred fix is to destructure the 'props' object outside of the useEffect call and refer to those specific props inside useEffect  react-hooks/exhaustive-deps
+  390:47  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                                                                                                                                                                                                                                                                               react/no-unescaped-entities
+  390:70  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                                                                                                                                                                                                                                                                               react/no-unescaped-entities
+  408:80  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                                                                                                                                                                                                                                                                               react/no-unescaped-entities
+
+D:\all works\worldinmaking.com-theme\components\Search\SearchUI.tsx
+   39:34  warning  'initialFilter' is defined but never used                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+   40:38  warning  'isMobile' is assigned a value but never used                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   50:8   warning  React Hook useEffect has missing dependencies: 'appWindow' and 'updateWindow'. Either include them or remove the dependency array                                                                                                                                                        react-hooks/exhaustive-deps
+  141:41  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  159:5   warning  'className' is assigned a value but never used                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+  160:5   warning  'isRefinedClassName' is assigned a value but never used                                                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+  161:5   warning  'hideFilters' is assigned a value but never used                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+  162:5   warning  'autoFocus' is assigned a value but never used                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+
+D:\all works\worldinmaking.com-theme\components\TaskBarMenu\index.tsx
+   9:5   warning  'IconApp' is defined but never used                @typescript-eslint/no-unused-vars
+  10:5   warning  'IconMessage' is defined but never used            @typescript-eslint/no-unused-vars
+  11:5   warning  'IconNotification' is defined but never used       @typescript-eslint/no-unused-vars
+  12:5   warning  'IconLock' is defined but never used               @typescript-eslint/no-unused-vars
+  13:5   warning  'IconBookmark' is defined but never used           @typescript-eslint/no-unused-vars
+  14:5   warning  'IconUpload' is defined but never used             @typescript-eslint/no-unused-vars
+  15:5   warning  'IconCode' is defined but never used               @typescript-eslint/no-unused-vars
+  16:5   warning  'IconFeatures' is defined but never used           @typescript-eslint/no-unused-vars
+  18:5   warning  'IconGlobe' is defined but never used              @typescript-eslint/no-unused-vars
+  20:5   warning  'IconPeople' is defined but never used             @typescript-eslint/no-unused-vars
+  21:5   warning  'IconActivity' is defined but never used           @typescript-eslint/no-unused-vars
+  22:5   warning  'IconDatabase' is defined but never used           @typescript-eslint/no-unused-vars
+  23:5   warning  'IconInfo' is defined but never used               @typescript-eslint/no-unused-vars
+  24:5   warning  'IconExternal' is defined but never used           @typescript-eslint/no-unused-vars
+  25:5   warning  'IconNewspaper' is defined but never used          @typescript-eslint/no-unused-vars
+  28:10  warning  'AppWindow' is defined but never used              @typescript-eslint/no-unused-vars
+  45:9   warning  'siteSettings' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  81:21  error    Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+
+D:\all works\worldinmaking.com-theme\components\Tooltip\index.tsx
+   1:21  warning  'reference' is defined but never used                                                                          @typescript-eslint/no-unused-vars
+  18:15  error    Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+  19:14  error    Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+  28:5   error    Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+  30:62  error    Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+  31:56  error    Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+  45:8   warning  React Hook useEffect has a missing dependency: 'controlled'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\all works\worldinmaking.com-theme\components\TreeMenu\index.tsx
+  81:8  warning  React Hook useEffect has missing dependencies: 'item.children' and 'open'. Either include them or remove the dependency array. If 'setOpen' needs the current value of 'item.children', you can also switch to useReducer instead of useState and read 'item.children' in the reducer  react-hooks/exhaustive-deps
+
+D:\all works\worldinmaking.com-theme\components\Wrapper\index.tsx
+   3:17  warning  'useEffect' is defined but never used                 @typescript-eslint/no-unused-vars
+   3:28  warning  'useRef' is defined but never used                    @typescript-eslint/no-unused-vars
+   5:28  warning  'AppWindowType' is defined but never used             @typescript-eslint/no-unused-vars
+  16:9   warning  'compact' is assigned a value but never used          @typescript-eslint/no-unused-vars
+  17:9   warning  'closeAllWindows' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  20:24  warning  'setShakeReady' is assigned a value but never used    @typescript-eslint/no-unused-vars
+
+D:\all works\worldinmaking.com-theme\components\WriteForWIM\index.tsx
+    7:21  warning  'IconX' is defined but never used         @typescript-eslint/no-unused-vars
+  179:43  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  192:43  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  205:43  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\all works\worldinmaking.com-theme\context\App.tsx
+  223:8   warning  React Hook useCallback has a missing dependency: 'setFocusedWindowKey'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  268:37  warning  'filter' is defined but never used                                                                                        @typescript-eslint/no-unused-vars
+  342:8   warning  React Hook useEffect has a missing dependency: 'normalizePath'. Either include it or remove the dependency array          react-hooks/exhaustive-deps
+
+D:\all works\worldinmaking.com-theme\context\AuthContext.tsx
+   25:58  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  195:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\all works\worldinmaking.com-theme\context\ToastContext.tsx
+  38:45  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\all works\worldinmaking.com-theme\context\Window.tsx
+  19:28  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  80:24  warning  'newWindow' is defined but never used     @typescript-eslint/no-unused-vars
+  98:29  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\all works\worldinmaking.com-theme\hooks\useAdminData.ts
+    3:33  warning  'useMemo' is defined but never used       @typescript-eslint/no-unused-vars
+   87:21  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  136:21  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  163:21  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  186:21  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  214:21  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  237:21  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  281:21  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  334:21  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  374:21  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\all works\worldinmaking.com-theme\hooks\useCommunity.ts
+  103:53   error    Unexpected any. Specify a different type                               @typescript-eslint/no-explicit-any
+  110:41   error    Unexpected any. Specify a different type                               @typescript-eslint/no-explicit-any
+  118:21   error    Unexpected any. Specify a different type                               @typescript-eslint/no-explicit-any
+  136:41   error    Unexpected any. Specify a different type                               @typescript-eslint/no-explicit-any
+  176:109  error    Unexpected any. Specify a different type                               @typescript-eslint/no-explicit-any
+  223:17   warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+  276:45   error    Unexpected any. Specify a different type                               @typescript-eslint/no-explicit-any
+
+D:\all works\worldinmaking.com-theme\hooks\usePostHog.ts
+  3:22  warning  'args' is defined but never used          @typescript-eslint/no-unused-vars
+  3:28  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  4:28  warning  'args' is defined but never used          @typescript-eslint/no-unused-vars
+  4:34  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  5:23  warning  'args' is defined but never used          @typescript-eslint/no-unused-vars
+  5:29  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  6:20  warning  'args' is defined but never used          @typescript-eslint/no-unused-vars
+  6:26  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  9:22  warning  'args' is defined but never used          @typescript-eslint/no-unused-vars
+  9:28  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\all works\worldinmaking.com-theme\hooks\usePosts.ts
+    5:25  warning  'getExcerpt' is defined but never used    @typescript-eslint/no-unused-vars
+   47:23  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   95:22  warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
+  117:17  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\all works\worldinmaking.com-theme\hooks\useTheme.tsx
+  1:10  warning  'useState' is defined but never used   @typescript-eslint/no-unused-vars
+  1:20  warning  'useEffect' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\all works\worldinmaking.com-theme\lib\markdown.ts
+  38:18  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\all works\worldinmaking.com-theme\lib\supabase.ts
+  43:19  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  45:21  warning  'args' is defined but never used          @typescript-eslint/no-unused-vars
+  45:27  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\all works\worldinmaking.com-theme\middleware.ts
+  18:58  warning  'options' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\all works\worldinmaking.com-theme\utils\logger.ts
+   5:1   warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+  10:20  error    Unexpected any. Specify a different type                                       @typescript-eslint/no-explicit-any
+  15:21  error    Unexpected any. Specify a different type                                       @typescript-eslint/no-explicit-any
+  20:21  error    Unexpected any. Specify a different type                                       @typescript-eslint/no-explicit-any
+  23:22  error    Unexpected any. Specify a different type                                       @typescript-eslint/no-explicit-any
+  26:22  error    Unexpected any. Specify a different type                                       @typescript-eslint/no-explicit-any
+
+✖ 687 problems (154 errors, 533 warnings)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+

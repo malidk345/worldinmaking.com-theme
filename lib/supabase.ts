@@ -40,9 +40,9 @@ if (supabaseUrl && supabaseKey) {
 }
 
 // Create a robust mock client that returns empty data for graceful degradation
-const mockClient: any = {
+const mockClient = {
     from: () => ({
-        select: (...args: any[]) => ({
+        select: (..._args: unknown[]) => ({
             data: [],
             error: null, // Return null error to prevent unnecessary UI error states
             order: function () { return this; },

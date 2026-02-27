@@ -118,7 +118,7 @@ export const WindowSearchUI = ({ initialFilter }: { initialFilter?: string }) =>
                                 <div className="flex items-start gap-2">
                                     <div className="flex-1 min-w-0">
                                         {post.category && (
-                                            <span className="text-[10px] font-bold uppercase tracking-wider text-orange-500 opacity-80">
+                                            <span className="text-[10px] font-bold uppercase tracking-wider text-orange opacity-80">
                                                 {post.category}
                                             </span>
                                         )}

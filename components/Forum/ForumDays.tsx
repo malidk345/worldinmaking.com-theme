@@ -12,7 +12,7 @@ dayjs.extend(relativeTime)
 
 interface ForumDaysProps {
     created: string
-    edits?: any[]
+    edits?: { id: number; date: string; by: ForumProfile }[]
     profile?: ForumProfile
 }
 

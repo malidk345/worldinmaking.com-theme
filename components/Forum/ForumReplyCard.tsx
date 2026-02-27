@@ -54,14 +54,14 @@ export default function ForumReplyCard({ reply, isInForum = false, questionAutho
 
     return (
         <div className="flex flex-col w-full text-primary mt-2">
-            <div className={`pb-1 flex items-center space-x-2 ${isInForum ? 'pr-8' : ''}`}>
+            <div className={`pb-1 flex flex-wrap sm:flex-nowrap items-center space-x-2 ${isInForum ? 'pr-3 sm:pr-8' : ''}`}>
                 <Link
                     to={`/profile/${reply.profile.firstName}`}
                     className="flex items-center text-primary hover:!underline !no-underline"
                 >
                     <div className="mr-2 relative ml-[-2px]">
                         <ForumAvatar
-                            className={`${isInForum ? 'size-[40px]' : 'size-[25px]'} rounded-full`}
+                            className={`${isInForum ? 'size-[32px] sm:size-[40px]' : 'size-[25px]'} rounded-full`}
                             image={reply.profile.avatar}
                             isTeamMember={isAI}
                         />
@@ -82,7 +82,7 @@ export default function ForumReplyCard({ reply, isInForum = false, questionAutho
 
                 <ForumDays created={reply.createdAt} />
 
-                <div className="!ml-auto flex items-center space-x-1 opacity-60 hover:opacity-100 transition-opacity">
+                <div className="!ml-auto hidden sm:flex items-center space-x-1 opacity-60 hover:opacity-100 transition-opacity">
                     <OSButton
                         size="sm"
                         tooltip="Edit reply"
@@ -93,7 +93,7 @@ export default function ForumReplyCard({ reply, isInForum = false, questionAutho
                 </div>
             </div>
 
-            <div className={`border-l-0 ${isInForum ? 'pl-[calc(44px_+_.5rem)] pr-8 -mt-2' : 'ml-[33px]'} pl-0 pb-1`}>
+            <div className={`border-l-0 ${isInForum ? 'pl-[40px] sm:pl-[calc(44px_+_.5rem)] pr-3 sm:pr-8 md:-mt-2' : 'ml-[33px]'} pl-0 pb-1`}>
                 <div className="reply-content">
                     <ForumMarkdown>{reply.body}</ForumMarkdown>
                 </div>

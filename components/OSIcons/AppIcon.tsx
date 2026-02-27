@@ -351,13 +351,13 @@ export const AppLink = ({
         }
 
         if (React.isValidElement(iconToRender)) {
-            return React.cloneElement(iconToRender as React.ReactElement<any>, {
+            return React.cloneElement(iconToRender as React.ReactElement<{ className?: string }>, {
                 className: `${parentIcon ? '' : `text-${color}`} ${className}`,
             })
         }
 
         // Icon is a ComponentType
-        const IconComponent = iconToRender as React.ComponentType<any>
+        const IconComponent = iconToRender as React.ComponentType<{ className?: string }>
         return <IconComponent className={`${parentIcon ? '' : `text-${color}`} ${className}`} />
     }
 
@@ -369,13 +369,13 @@ export const AppLink = ({
         }
 
         if (React.isValidElement(Icon)) {
-            return React.cloneElement(Icon as React.ReactElement<any>, {
+            return React.cloneElement(Icon as React.ReactElement<{ className?: string }>, {
                 className: getChildIconClasses(),
             })
         }
 
         // Icon is a ComponentType
-        const IconComponent = Icon as React.ComponentType<any>
+        const IconComponent = Icon as React.ComponentType<{ className?: string }>
 
         return <IconComponent className={getChildIconClasses()} />
     }

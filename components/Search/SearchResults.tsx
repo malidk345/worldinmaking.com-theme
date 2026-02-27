@@ -9,11 +9,11 @@ import { useRouter } from 'next/navigation'
 import { Combobox, RadioGroup } from '@headlessui/react'
 import { RefinementListItem } from 'instantsearch.js/es/connectors/refinement-list/connectRefinementList'
 import { CallToAction } from 'components/CallToAction'
-import { Search } from 'components/Icons/Icons'
+import { IconSearch as Search } from '@posthog/icons'
 import usePostHog from '../../hooks/usePostHog'
 import { IconCheckCircle } from '@posthog/icons'
 import Tooltip from 'components/Tooltip'
-import Markdown from 'components/Squeak/components/Markdown'
+import ReactMarkdown from 'react-markdown'
 
 type Result = Hit<{
     id: string
@@ -177,7 +177,7 @@ const SearchBox = () => {
 
     useEffect(() => {
         refine(query)
-    }, [query])
+    }, [query, refine])
 
     return (
         <div className="relative flex items-center border-b border-input dark:border-black dark:border-b-2">
@@ -216,39 +216,39 @@ type RefinementListProps = {
     refine: (value: string) => void
 }
 
-const RefinementList: React.FC<RefinementListProps> = (props) => {
-    const [selected, setSelected] = React.useState<Category>(props.category)
+const RefinementList: React.FC<RefinementListProps> = ({ initialFilter, category, setCategory, items, refine }) => {
+    const [selected, setSelected] = React.useState<Category>(category)
     const posthog = usePostHog()
 
     useEffect(() => {
-        if (props.initialFilter) {
-            props.refine(props.initialFilter)
+        if (initialFilter) {
+            refine(initialFilter)
         }
-    }, [props.initialFilter])
+    }, [initialFilter, refine])
 
     useEffect(() => {
         if (selected.type !== 'all') {
-            props.refine(selected.type)
+            refine(selected.type)
         }
 
-        if (props.category.type !== 'all') {
-            props.refine(props.category.type)
+        if (category.type !== 'all') {
+            refine(category.type)
         }
 
         posthog?.capture('web search category refine', {
             previous: selected.type,
-            category: props.category.type,
+            category: category.type,
         })
 
-        setSelected(props.category)
-    }, [props.category])
+        setSelected(category)
+    }, [category, refine, posthog, selected.type])
 
     return (
-        <RadioGroup value={props.category} onChange={props.setCategory} className="bg-tan/25  -mt-[1px]">
+        <RadioGroup value={category} onChange={setCategory} className="bg-tan/25  -mt-[1px]">
             <RadioGroup.Label className="sr-only">filter results by category</RadioGroup.Label>
             <div className="flex items-center md:flex-wrap list-none p-0 overflow-auto dark:border-t dark:border-black">
                 {categories.map((item) => {
-                    const result = props.items.find((res) => res.value === item.type)
+                    const result = items.find((res) => res.value === item.type)
 
                     return (
                         <RadioGroup.Option
@@ -256,8 +256,8 @@ const RefinementList: React.FC<RefinementListProps> = (props) => {
                             value={item}
                             disabled={!result?.count && item.type !== 'all'}
                             onClick={() => {
-                                if (item.type === props.category.type) {
-                                    props.setCategory(categories[0])
+                                if (item.type === category.type) {
+                                    setCategory(categories[0])
                                 }
                             }}
                             className={
@@ -387,13 +387,12 @@ const Hits: React.FC<HitsProps> = ({ activeOption, close }) => {
                             <div className="text-center">
                                 <h3 className="mb-0 text-xl">No results</h3>
                                 <p className="text-[15px] opacity-75 mb-0">
-                                    This doesn't happen often, but we're stumped!
+                                    This doesn&apos;t happen often, but we&apos;re stumped!
                                 </p>
                             </div>
 
                             <div className="text-center mb-4">
                                 <CloudinaryImage
-                                    placeholder="none"
                                     loading="eager"
                                     quality={100}
                                     objectFit="contain"
@@ -406,7 +405,7 @@ const Hits: React.FC<HitsProps> = ({ activeOption, close }) => {
                             <div className="border border-primary dark: p-4 rounded bg-tan/50 dark:bg-primary">
                                 <h5 className="text-base opacity-75 mb-0">Tip: Ask the community</h5>
                                 <p className="text-sm mb-4 opacity-80">
-                                    Our team monitor the Questions page. Somone's bound to know the answer!
+                                    Our team monitor the Questions page. Someone&apos;s bound to know the answer!
                                 </p>
 
                                 <CallToAction type="primary" size="sm" width="full" className="" href="/questions">
@@ -435,7 +434,7 @@ const Hits: React.FC<HitsProps> = ({ activeOption, close }) => {
                                         <span>answer</span>
                                     </h5>
                                     <div className="text-black/70 dark:text-white/80 text-[15px]">
-                                        <Markdown>{activeOption.resolutionBody}</Markdown>
+                                        <ReactMarkdown>{activeOption.resolutionBody}</ReactMarkdown>
                                     </div>
                                 </div>
                             )}
