@@ -268,7 +268,7 @@ export default function ForumRichText({
         editorProps: {
             attributes: {
                 // Exact styling from aa project's OSTextarea but applied to Tiptap
-                class: `focus:outline-none min-h-[160px] p-3 prose prose-sm dark:prose-invert max-w-none text-primary [&_p]:text-primary [&_a]:font-semibold break-words [overflow-wrap:anywhere] ${className}`,
+                class: `focus:outline-none min-h-[160px] max-h-[350px] overflow-y-auto p-3 prose prose-sm dark:prose-invert max-w-none text-black dark:text-white [&_p]:text-black [&_p]:dark:text-white focus:[&_p]:!text-black focus:[&_p]:dark:!text-white [&_a]:font-semibold break-words [overflow-wrap:anywhere] ${className}`,
             },
             handlePaste: (view, event) => {
                 const items = Array.from(event.clipboardData?.items || [])

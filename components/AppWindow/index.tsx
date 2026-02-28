@@ -365,7 +365,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             data-app="AppWindow"
                             data-scheme="tertiary"
                             className={`@container absolute flex flex-col bg-white/25 dark:bg-black/30 backdrop-blur-xl border ${isFocused ? 'shadow-2xl border-primary ring-1 ring-primary/10' : 'shadow-lg border-primary/30 opacity-95'
-                                } ${dragging ? 'select-none' : ''} ${isMaximized ? 'rounded-none' : 'rounded-xl'} ${chrome ? 'overflow-hidden' : ''}`}
+                                } ${dragging ? 'select-none' : ''} ${isMaximized ? 'rounded-none' : 'rounded-sm'} ${chrome ? 'overflow-hidden' : ''}`}
                             style={{ zIndex: item.zIndex }}
                             initial={{
                                 scale: 0.08,
@@ -608,7 +608,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                 </div>
                             )}
                             <div className="w-full flex-1 flex flex-col bg-transparent min-h-0 relative pt-1 px-1.5 has-[+div:empty]:pb-1.5">
-                                <div className="w-full h-full bg-primary flex-1 overflow-hidden relative shadow-[0_0_0_1px_rgba(0,0,0,0.05)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.05)] border border-black/10 dark:border-white/10 rounded-md shadow-inner">
+                                <div className="w-full h-full bg-primary flex-1 overflow-hidden relative shadow-[0_0_0_1px_rgba(0,0,0,0.05)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.05)] border border-black/10 dark:border-white/10 rounded-sm shadow-inner">
                                     {(!animating || rendered) && (
                                         item.key === 'home' ? <HomeControl /> : <WindowRouter item={item} />
                                     )}

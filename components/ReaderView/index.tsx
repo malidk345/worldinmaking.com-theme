@@ -19,6 +19,10 @@ import { useAuth } from 'context/AuthContext'
 import { useToast } from 'context/ToastContext'
 import { supabase } from 'lib/supabase'
 import { sanitizeHtml } from 'utils/security'
+import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+
+dayjs.extend(utc)
 
 interface BodyProps {
     type: 'mdx' | 'plain'
@@ -381,42 +385,45 @@ const ReaderViewContent = React.memo(({
                             )}
 
                             {(body.date || body.contributors || body.tags) && (
-                                <div className="mt-6 mx-auto max-w-3xl w-full border-[1px] border-black dark:border-white rounded-[4px] bg-accent/40 dark:bg-black/20 shadow-sm">
-                                    <div className="flex flex-wrap items-center gap-x-3 sm:gap-x-4 gap-y-2.5 px-3 sm:px-4 py-2.5">
+                                <div className="mt-6 mx-auto max-w-2xl w-full border border-black/30 dark:border-white/25 rounded-[2px] bg-black/[0.02] dark:bg-white/[0.02] overflow-hidden">
+                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-3 sm:px-4 py-2 font-mono text-xs lowercase">
                                         {body.contributors && (
                                             <div className="flex items-center shrink-0">
                                                 <ContributorsSmall contributors={body.contributors} />
                                             </div>
                                         )}
-                                        {body.contributors && <div className="w-[1px] h-3.5 bg-black dark:bg-white"></div>}
+
                                         {body.date && (
-                                            <div className="flex items-center shrink-0">
-                                                <span className="text-[11px] font-bold text-black dark:text-white whitespace-nowrap">{body.date}</span>
+                                            <div className="flex items-center shrink-0 opacity-60">
+                                                <span className="text-[10px] whitespace-nowrap">
+                                                    [{dayjs.utc(body.date).format('YY.MM.DD')}]
+                                                </span>
                                             </div>
                                         )}
-                                        {body.date && <div className="w-[1px] h-3.5 bg-black dark:bg-white"></div>}
-                                        {body.wordCount !== undefined && body.wordCount > 0 && (
-                                            <div className="flex items-center gap-1.5 opacity-80 shrink-0">
-                                                <span className="text-[11px] font-semibold text-black dark:text-white">{body.wordCount} words</span>
+
+                                        {body.readTime !== undefined && (
+                                            <div className="flex items-center gap-1.5 opacity-40 shrink-0 ml-auto">
+                                                <span className="text-[10px] font-bold tracking-tighter">{body.readTime}m</span>
                                             </div>
                                         )}
+
                                         {body.tags && body.tags.length > 0 && (
-                                            <div className="flex items-center flex-wrap gap-2 w-full sm:w-auto mt-1 sm:mt-0 sm:ml-auto pt-2 sm:pt-0 border-t border-black/10 dark:border-white/10 sm:border-t-0">
+                                            <div className="flex items-center flex-wrap gap-2 w-full mt-2 pt-2 border-t border-black/5 dark:border-white/5">
                                                 {body.tags?.map((tag) => (
                                                     tag.url && tag.url !== '#' ? (
                                                         <a
                                                             key={`${tag.label}-${tag.url}`}
                                                             href={tag.url}
-                                                            className="text-[10px] font-bold text-black dark:text-white hover:opacity-70 transition-opacity"
+                                                            className="text-[10px] opacity-40 hover:opacity-100 transition-opacity"
                                                         >
-                                                            {tag.label}
+                                                            #{tag.label.toLowerCase()}
                                                         </a>
                                                     ) : (
                                                         <span
                                                             key={tag.label}
-                                                            className="text-[10px] font-bold text-black dark:text-white"
+                                                            className="text-[10px] opacity-40"
                                                         >
-                                                            {tag.label}
+                                                            #{tag.label.toLowerCase()}
                                                         </span>
                                                     )
                                                 ))}

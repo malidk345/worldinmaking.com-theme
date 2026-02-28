@@ -21,6 +21,7 @@ import Tooltip from 'components/RadixUI/Tooltip'
 import KeyboardShortcut from 'components/KeyboardShortcut'
 import PostsView from 'components/Posts'
 import SystemSettings from 'components/Home/SystemSettings'
+import ScrollArea from 'components/RadixUI/ScrollArea'
 
 export default function TaskBarMenu() {
     const {
@@ -94,9 +95,51 @@ export default function TaskBarMenu() {
                         title: 'About WorldInMaking',
                         path: '/about',
                         element: (
-                            <div className="w-full h-full flex flex-col items-center justify-center bg-accent text-primary p-10 text-center lowercase">
-                                <h1 className="text-4xl font-black mb-4">under construction</h1>
-                                <p className="text-lg opacity-60">this area is being updated.</p>
+                            <div className="w-full h-full bg-accent text-primary p-6 md:p-10 overflow-hidden flex flex-col font-mono">
+                                <ScrollArea>
+                                    <div className="max-w-2xl mx-auto lowercase leading-relaxed space-y-6 text-[13px] md:text-sm">
+                                        <div className="mb-12">
+                                            <p className="font-bold text-lg">i am mustafa ali.</p>
+                                        </div>
+
+                                        <p>
+                                            world in making began from a simple but unsettling intuition: the world is not something we merely inhabit — it is something continuously being formed.
+                                        </p>
+
+                                        <p>
+                                            what appears stable is often the result of repetition. what feels natural is usually constructed. institutions harden over time and begin to look inevitable. moral language disguises power. economic systems present themselves as neutral mechanisms. even desire carries the marks of history.
+                                        </p>
+
+                                        <p>
+                                            this project exists in that unstable space where certainty starts to fracture.
+                                        </p>
+
+                                        <p>
+                                            world in making is an independent writing and research platform where ideas are not treated as finished monuments but as living structures — open to interrogation, reinterpretation, and reconstruction. rather than offering definitive answers, it lingers with tension. it questions what presents itself as obvious. it returns to inherited concepts not to preserve them, but to test their foundations.
+                                        </p>
+
+                                        <p>
+                                            the sacred, the ethical, the political, the psychological — none are approached as fixed domains. they intersect. they shape one another. they produce the world we move through every day without noticing its architecture.
+                                        </p>
+
+                                        <div>
+                                            <p>to think is not a passive act. thought participates in construction.</p>
+                                            <p>to question is already to intervene.</p>
+                                        </div>
+
+                                        <p>
+                                            world in making is an ongoing attempt to remain intellectually restless — to resist comfort, to slow down judgment, and to take ideas seriously in a time that prefers immediacy.
+                                        </p>
+
+                                        <p>
+                                            if the world is still in formation, then responsibility begins with attention.
+                                        </p>
+
+                                        <div className="pt-8 border-t border-primary/10">
+                                            <p>— mustafa ali</p>
+                                        </div>
+                                    </div>
+                                </ScrollArea>
                             </div>
                         )
                     })

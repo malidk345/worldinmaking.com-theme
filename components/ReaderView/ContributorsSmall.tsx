@@ -23,7 +23,7 @@ export const ContributorsSmall = ({ contributors }: { contributors?: Contributor
                     const profilePath = `/profile/${encodeURIComponent(username || name)}`
 
                     return (
-                        <li className="!mb-0 flex items-center gap-2" key={name}>
+                        <li className="!mb-0 flex items-center gap-2 font-mono text-xs lowercase" key={name}>
                             <button
                                 type="button"
                                 onMouseDown={(e) => e.stopPropagation()}
@@ -37,21 +37,20 @@ export const ContributorsSmall = ({ contributors }: { contributors?: Contributor
                                         size: { width: 900, height: 680 }
                                     })
                                 }}
-                                className="flex items-center gap-2 rounded px-1 py-0.5 border border-transparent hover:border-primary hover:bg-accent/60 transition-colors"
+                                className="flex items-center gap-2 hover:opacity-70 transition-opacity"
                             >
                                 {image ? (
                                     <CloudinaryImage
-                                        width={24}
-                                        className={`w-6 h-6 border border-primary rounded-full overflow-hidden bg-${color ? color : 'red'
-                                            }`}
+                                        width={20}
+                                        className="w-5 h-5 border border-black/40 dark:border-white/30 rounded-sm overflow-hidden"
                                         src={image}
                                     />
                                 ) : (
-                                    <div className="w-6 h-6 border border-primary rounded-full bg-accent flex items-center justify-center">
-                                        <IconUser className="size-3.5 text-primary/50" />
+                                    <div className="w-5 h-5 border border-black/40 dark:border-white/30 rounded-sm bg-accent flex items-center justify-center">
+                                        <IconUser className="size-3 text-black/60 dark:text-white/60" />
                                     </div>
                                 )}
-                                <span className="text-sm font-semibold">{name}</span>
+                                <span className="text-[10px] font-bold">@{(username || name).toLowerCase()}</span>
                             </button>
                         </li>
                     )

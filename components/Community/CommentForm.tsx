@@ -32,7 +32,7 @@ export default function CommentForm({ onSubmit, className = '', placeholder = "a
     if (!isActive) {
         return (
             <div className={`p-1 flex items-center space-x-3 ${className}`}>
-                <div className="w-[30px] h-[30px] ml-[-2px] rounded-full overflow-hidden shrink-0 border border-border">
+                <div className="w-[30px] h-[30px] ml-[-2px] rounded-full overflow-hidden shrink-0 border !border-black dark:border-white">
                     <ForumAvatar
                         className="w-full h-full"
                         image={profile?.avatar_url}
@@ -45,7 +45,7 @@ export default function CommentForm({ onSubmit, className = '', placeholder = "a
                     width="full"
                     align="left"
                     variant="underlineOnHover"
-                    className="border border-border bg-accent/70 hover:bg-accent !p-2"
+                    className="border !border-black dark:border-white bg-accent/70 hover:bg-accent !p-2"
                 >
                     <span className="font-bold text-primary">{placeholder}</span>
                 </OSButton>
