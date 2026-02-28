@@ -92,46 +92,55 @@ export default function PostsView() {
                                         <li key={roadmap.id} className="list-none px-[2px]">
                                             <div className="py-2.5">
                                                 <div
-                                                    className="group flex flex-col relative px-3 md:px-5 py-3 -mt-1.5 mx-[-2px] -mb-3 rounded active:bg-light dark:active:bg-dark border-primary border-b-3 border-transparent hover:border hover:translate-y-[-1px] active:translate-y-[1px] active:transition-all active:before:h-[2px] active:before:bg-light dark:active:before:bg-dark active:before:absolute active:before:content-[''] active:before:top-[-3px] active:before:left-0 active:before:right-0 cursor-pointer"
+                                                    className="group flex flex-col relative py-3 -mt-1.5 mx-[-2px] -mb-3 rounded active:bg-light dark:active:bg-dark border-primary border-b-3 border-transparent hover:border hover:translate-y-[-1px] active:translate-y-[1px] active:transition-all active:before:h-[2px] active:before:bg-light dark:active:before:bg-dark active:before:absolute active:before:content-[''] active:before:top-[-3px] active:before:left-0 active:before:right-0 cursor-pointer"
                                                     onClick={() => handleRoadmapClick(roadmap)}
                                                 >
-                                                    <div className="w-full min-w-0 flex flex-col items-start text-left">
-                                                        <span className="text-sm font-semibold text-[#000080] dark:text-[#66b2ff] line-clamp-3 md:line-clamp-1 break-words leading-snug lowercase">
-                                                            {roadmap.title}
-                                                        </span>
-
-                                                        {roadmap.description && (
-                                                            <div className="mt-1 flex-1 min-w-0 text-black dark:text-white text-xs line-clamp-2 break-words">
-                                                                {roadmap.description}
+                                                    <div className="flex flex-col w-full text-primary">
+                                                        <div className="flex flex-wrap sm:flex-nowrap items-center space-x-2 w-full pt-1 sm:pt-2 pl-3 sm:pl-5 pr-3 sm:pr-8">
+                                                            <div className="flex items-center relative">
+                                                                <div className="w-[44px] h-[44px] ml-[-2px] rounded-full mr-[10px] overflow-hidden relative flex-shrink-0">
+                                                                    {roadmap.authorAvatar ? (
+                                                                        <img src={roadmap.authorAvatar} alt={teamName} className="w-[40px] h-[40px] rounded-full object-cover shrink-0 relative top-[2px] left-[2px] border border-primary" />
+                                                                    ) : (
+                                                                        <div className="w-[40px] h-[40px] rounded-full bg-black/5 dark:bg-white/5 text-primary shrink-0 flex items-center justify-center relative top-[2px] left-[2px] border border-primary">
+                                                                            <IconPerson className="size-5 shrink-0" />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <strong className="text-primary leading-none text-[15px]">{teamName}</strong>
                                                             </div>
-                                                        )}
-
-                                                        {roadmap.image && (
-                                                            <div className="mt-4 mb-2 w-full max-w-3xl border border-primary/20 rounded overflow-hidden aspect-video relative">
-                                                                <img
-                                                                    src={roadmap.image}
-                                                                    alt={roadmap.title}
-                                                                    className="w-full h-full object-cover relative z-10 select-none pointer-events-none"
-                                                                />
+                                                            <div className="!ml-auto text-sm text-secondary font-medium">
+                                                                {dayjs.utc(roadmap.date).fromNow()}
                                                             </div>
-                                                        )}
+                                                        </div>
 
-                                                        {/* Bottom Meta Frame (Full-width OS Status Bar style) */}
-                                                        <div className="mt-4 flex items-center justify-between border-[1px] border-primary/30 bg-accent/40 dark:bg-black/20 px-3 py-1.5 rounded-[4px] w-full max-w-3xl shadow-sm">
-                                                            <div className="flex items-center gap-2">
-                                                                {roadmap.authorAvatar ? (
-                                                                    <img src={roadmap.authorAvatar} alt={teamName} className="size-5 rounded-full object-cover shrink-0 border border-primary/20 bg-white" />
-                                                                ) : (
-                                                                    <div className="size-5 rounded-full bg-black/5 dark:bg-white/5 text-black dark:text-white shrink-0 border border-primary/20 flex items-center justify-center">
-                                                                        <IconPerson className="size-3.5 shrink-0" />
+                                                        <div className="pb-2 pt-1 pl-3 sm:pl-[calc(2.5rem_+_30px)] pr-3 sm:pr-8 mt-2 sm:mt-0 squeak-left-border">
+                                                            <h3 className="text-base font-semibold !m-0 pb-1 leading-5">
+                                                                <span className="!no-underline group-hover:!underline font-semibold text-[#000080] dark:text-[#66b2ff] lowercase">
+                                                                    {roadmap.title}
+                                                                </span>
+                                                            </h3>
+
+                                                            <div className="question-content">
+                                                                {roadmap.description && (
+                                                                    <div className="mt-1 flex-1 min-w-0 text-primary text-[13px] leading-relaxed opacity-80 line-clamp-2 break-words">
+                                                                        {roadmap.description}
                                                                     </div>
                                                                 )}
-                                                                <span className="text-[12px] font-semibold text-primary truncate max-w-[150px]">{teamName}</span>
+
+                                                                {roadmap.image && (
+                                                                    <div className="mt-3 w-full max-w-2xl border border-primary/20 rounded overflow-hidden aspect-video relative">
+                                                                        <img
+                                                                            src={roadmap.image}
+                                                                            alt={roadmap.title}
+                                                                            className="w-full h-full object-cover relative z-10 select-none pointer-events-none"
+                                                                        />
+                                                                    </div>
+                                                                )}
                                                             </div>
-                                                            <div className="flex items-center gap-2.5">
-                                                                <span className="text-[11px] font-semibold text-black dark:text-white whitespace-nowrap">{dayjs.utc(roadmap.date).fromNow()}</span>
-                                                                <div className="w-[1px] h-[12px] bg-black/50 dark:bg-white/50 rounded-full mx-0.5"></div>
-                                                                <span className="text-[11px] font-semibold text-black dark:text-white whitespace-nowrap">{computedReadTime} read</span>
+
+                                                            <div className="mt-3 text-xs opacity-60 font-medium">
+                                                                {computedReadTime} read
                                                             </div>
                                                         </div>
                                                     </div>
