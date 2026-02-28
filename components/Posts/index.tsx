@@ -105,6 +105,7 @@ export default function PostsView() {
                                                             )}
                                                         </div>
                                                         <span className="text-[10px] font-bold">@{teamName.toLowerCase()}</span>
+                                                        <span className="text-[9px] opacity-60 ml-1">[{dayjs.utc(roadmap.date).format('YY.MM.DD')}]</span>
                                                     </div>
 
                                                     <span className="text-primary font-bold group-hover:!text-black dark:group-hover:!text-white leading-tight break-words text-[13px]">
