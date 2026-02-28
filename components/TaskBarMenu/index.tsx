@@ -254,12 +254,11 @@ export default function TaskBarMenu() {
                                     disabled={totalWindows <= 0}
                                     data-active-windows
                                     size="sm"
-                                    variant="secondary"
-                                    className="!px-1 group/wm relative"
+                                    className="!px-0.5 group/wm relative"
                                 >
                                     <div className="flex items-center gap-1">
-                                        <IconApps className="size-5 transition-transform group-hover/wm:scale-110" />
-                                        <div className="bg-primary/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-primary/20 text-[11px] font-bold min-w-[1.25rem] text-center shadow-inner">
+                                        <IconApps className="size-5 text-black transition-transform group-hover/wm:scale-110" />
+                                        <div className="bg-primary/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-primary/20 text-[11px] font-bold min-w-[1.25rem] text-center shadow-inner !text-black">
                                             {totalWindows}
                                         </div>
                                     </div>
