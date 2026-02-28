@@ -62,12 +62,13 @@ export default function ActiveWindowsPanel() {
                         {windows.map((w) => (
                             <div key={w.key} className="relative group">
                                 <OSButton
+                                    variant={focusedWindow?.key === w.key ? 'secondary' : 'default'}
                                     size="sm"
                                     width="full"
                                     align="left"
                                     active={focusedWindow?.key === w.key}
                                     onClick={() => handleWindowClick(w)}
-                                    className="justify-between py-1 h-auto min-h-0 pr-7"
+                                    className={`justify-between py-1 h-auto min-h-0 pr-7 ${focusedWindow?.key === w.key ? 'text-primary' : ''}`}
                                 >
                                     <span className={`flex-1 text-xs leading-tight text-left whitespace-normal break-words ${w.minimized ? 'italic opacity-60' : ''}`}>
                                         {w.title || 'untitled'}
