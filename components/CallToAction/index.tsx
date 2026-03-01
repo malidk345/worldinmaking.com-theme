@@ -212,23 +212,6 @@ export interface TrackedCTAPropsType extends CTAPropsType {
     }
 }
 
-export const TrackedCTA = ({
-    event: { name: eventName, ...event },
-    ...props
-}: TrackedCTAPropsType): JSX.Element => {
-    const posthog = usePostHog()
-
-    return (
-        <CallToAction
-            {...props}
-            onClick={() => {
-                posthog?.capture(eventName, event)
-                if (props.onClick) props.onClick()
-            }}
-        />
-    )
-}
-
 export const CallToAction = ({
     type = 'primary',
     width = 'auto',
@@ -245,7 +228,7 @@ export const CallToAction = ({
     state = {},
     event,
     color = true,
-}: CTAPropsType): JSX.Element => {
+}: CTAPropsType): React.ReactNode => {
     const url = to || href || ''
 
     const posthog = usePostHog()
@@ -277,5 +260,22 @@ export const CallToAction = ({
                 {children}
             </span>
         </Link>
+    )
+}
+
+export const TrackedCTA = ({
+    event: { name: eventName, ...event },
+    ...props
+}: TrackedCTAPropsType): React.ReactNode => {
+    const posthog = usePostHog()
+
+    return (
+        <CallToAction
+            {...props}
+            onClick={() => {
+                posthog?.capture(eventName, event)
+                if (props.onClick) props.onClick()
+            }}
+        />
     )
 }

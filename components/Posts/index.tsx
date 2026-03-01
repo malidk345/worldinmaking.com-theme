@@ -113,7 +113,7 @@ export default function PostsView() {
                                                     </span>
                                                     {roadmap.description && (
                                                         <span className="opacity-50 text-[10px] mt-0.5 leading-snug line-clamp-6 italic">
-                                                            {"//"} {roadmap.description}
+                                                            <span>{'//'}</span> {roadmap.description}
                                                         </span>
                                                     )}
                                                     {/* Colored Preview Image */}
