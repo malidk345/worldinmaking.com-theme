@@ -67,7 +67,7 @@ const Input = ({
         fit: 'w-fit',
     }
 
-    const inputId = props.id || props.name || label?.toLowerCase().replace(/\s+/g, '-')
+    const inputId = (props.id as string) || (props.name as string) || label.toLowerCase().replace(/\s+/g, '-')
 
     return (
         <div
@@ -113,7 +113,7 @@ const Input = ({
                         } ${className}`}
                     type={type}
                     id={inputId}
-                    placeholder={props.placeholder || label}
+                    placeholder={(props.placeholder as string) || label}
                     value={value}
                     required={required}
                     {...props}
