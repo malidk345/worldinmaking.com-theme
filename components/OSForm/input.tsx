@@ -49,19 +49,19 @@ const Input = ({
     actionButton,
     ...props
 }: InputProps) => {
-    const sizeClasses = {
+    const sizeClasses: Record<string, string> = {
         sm: 'px-1.5 py-1 text-sm',
         md: 'px-2.5 py-2 text-[15px]',
         lg: 'px-3 py-2.5 text-base',
     }
 
-    const labelSizeClasses = {
+    const labelSizeClasses: Record<string, string> = {
         sm: 'text-sm',
         md: 'text-[15px]',
         lg: 'text-base',
     }
 
-    const widthClasses = {
+    const widthClasses: Record<string, string> = {
         full: 'w-full',
         auto: 'w-auto',
         fit: 'w-fit',

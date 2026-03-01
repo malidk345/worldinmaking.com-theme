@@ -228,7 +228,7 @@ export const CallToAction = ({
     state = {},
     event,
     color = true,
-}: CTAPropsType): React.ReactNode => {
+}: CTAPropsType) => {
     const url = to || href || ''
 
     const posthog = usePostHog()
@@ -266,7 +266,7 @@ export const CallToAction = ({
 export const TrackedCTA = ({
     event: { name: eventName, ...event },
     ...props
-}: TrackedCTAPropsType): React.ReactNode => {
+}: TrackedCTAPropsType) => {
     const posthog = usePostHog()
 
     return (
