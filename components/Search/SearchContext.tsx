@@ -116,13 +116,18 @@ export const SearchProvider = ({ children }: { children: React.ReactNode }) => {
                             >
                                 <Dialog.Panel className="w-full max-w-4xl md:mx-4 h-[90vh] md:h-[600px] z-[999998]">
 
-                                    <InstantSearch
-                                        searchClient={searchClient}
-                                        indexName={process.env.GATSBY_ALGOLIA_INDEX_NAME as string}
-                                        stalledSearchDelay={750}
-                                    >
-                                        <SearchResults initialFilter={initialFilter} />
-                                    </InstantSearch>
+                                    {(() => {
+                                        const BaseInstantSearch = InstantSearch as any
+                                        return (
+                                            <BaseInstantSearch
+                                                searchClient={searchClient}
+                                                indexName={process.env.GATSBY_ALGOLIA_INDEX_NAME as string}
+                                                stalledSearchDelay={750}
+                                            >
+                                                <SearchResults initialFilter={initialFilter} />
+                                            </BaseInstantSearch>
+                                        )
+                                    })()}
                                 </Dialog.Panel>
                             </Transition.Child>
                         </div>
