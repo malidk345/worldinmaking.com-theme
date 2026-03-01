@@ -24,12 +24,12 @@ export default function Desktop() {
             })
         },
         {
-            label: 'Posts',
+            label: 'posts',
             Icon: <AppIcon name="newspaper" />,
             onClick: () => addWindow({
                 key: 'posts',
                 path: '/posts',
-                title: 'Posts',
+                title: 'posts',
                 size: { width: 900, height: 750 },
                 position: { x: 50, y: 50 },
                 element: <PostsView />

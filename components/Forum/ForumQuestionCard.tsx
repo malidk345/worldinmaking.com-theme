@@ -49,7 +49,7 @@ export default function ForumQuestionCard({
         createdAt: r.created_at,
         profile: {
             id: r.profiles?.id || 0,
-            firstName: r.profiles?.username || 'Anonymous',
+            firstName: r.profiles?.username || 'anonymous',
             lastName: '',
             avatar: r.profiles?.avatar_url || null
         },
@@ -64,9 +64,9 @@ export default function ForumQuestionCard({
                     data-scheme="secondary"
                     className="m-4 mb-0 bg-primary border border-black p-4 rounded text-center"
                 >
-                    <p className="font-bold text-base !m-0 !p-0">The following thread has been archived.</p>
-                    <p className="!text-sm !m-0 text-balance opacity-60">
-                        It&apos;s likely out of date, no longer relevant, or the answer has been added to our documentation.
+                    <p className="font-bold text-base !m-0 !p-0 lowercase">the following thread has been archived.</p>
+                    <p className="!text-sm !m-0 text-balance opacity-60 lowercase">
+                        it&apos;s likely out of date, no longer relevant, or the answer has been added to our documentation.
                     </p>
                 </div>
             )}
@@ -86,14 +86,14 @@ export default function ForumQuestionCard({
                             onClick={() => setIsEditing(!isEditing)}
                             icon={<IconPencil />}
                             size="md"
-                            tooltip="Edit post"
+                            tooltip="edit post"
                             className="!p-1.5 opacity-60 hover:opacity-100 hidden sm:flex"
                         />
                         <OSButton
                             onClick={() => { }} // Handle archive toggle
                             icon={question.archived ? <IconUndo /> : <IconArchive />}
                             size="md"
-                            tooltip={question.archived ? 'Restore thread' : 'Archive thread'}
+                            tooltip={question.archived ? 'restore thread' : 'archive thread'}
                             className="!p-1.5 opacity-60 hover:opacity-100 hidden sm:flex"
                         />
                     </div>

@@ -29,8 +29,8 @@ export default function PostsView() {
     const { posts, loading } = usePosts()
     const { addWindow } = useApp()
 
-    const [selectedAuthor, setSelectedAuthor] = useState('All')
-    const [selectedCategory, setSelectedCategory] = useState('All')
+    const [selectedAuthor, setSelectedAuthor] = useState('all')
+    const [selectedCategory, setSelectedCategory] = useState('all')
 
     const sortedRoadmaps = useMemo(() => {
         return [...posts].sort((a, b) => dayjs.utc(b.date).unix() - dayjs.utc(a.date).unix())
@@ -40,7 +40,7 @@ export default function PostsView() {
         const auths = new Set<string>()
         const cats = new Set<string>()
         posts.forEach(p => {
-            auths.add(p.authorName || 'WorldInMaking')
+            auths.add(p.authorName || 'worldinmaking')
             if (p.category) cats.add(p.category)
         })
         return {
@@ -51,8 +51,8 @@ export default function PostsView() {
 
     const filteredRoadmaps = useMemo(() => {
         return sortedRoadmaps.filter(r => {
-            const authorMatch = selectedAuthor === 'All' || (r.authorName || 'WorldInMaking') === selectedAuthor
-            const categoryMatch = selectedCategory === 'All' || (r.category || 'Uncategorized') === selectedCategory
+            const authorMatch = selectedAuthor === 'all' || (r.authorName || 'worldinmaking') === selectedAuthor
+            const categoryMatch = selectedCategory === 'all' || (r.category || 'uncategorized') === selectedCategory
             return authorMatch && categoryMatch
         })
     }, [sortedRoadmaps, selectedAuthor, selectedCategory])
@@ -72,7 +72,7 @@ export default function PostsView() {
 
     return (
         <div className="absolute inset-0 flex flex-col text-primary bg-primary overflow-hidden">
-            <SEO title="Changelog" />
+            <SEO title="changelog" />
 
             {/* Community-style Post Rows */}
             <div className="flex-grow flex min-h-0 relative bg-primary">
@@ -80,12 +80,12 @@ export default function PostsView() {
                     <div className="w-full max-w-3xl mx-auto py-8 px-4 sm:px-6">
                         {sortedRoadmaps.length === 0 ? (
                             <div className="py-16 text-center text-secondary/70 text-sm font-bold bg-accent rounded border border-primary/10">
-                                No logs found.
+                                no logs found.
                             </div>
                         ) : (
                             <ul className="m-0 p-0 list-none">
                                 {sortedRoadmaps.map((roadmap) => {
-                                    const teamName = roadmap.authorName || 'WorldInMaking'
+                                    const teamName = roadmap.authorName || 'worldinmaking'
                                     const computedReadTime = roadmap.wordCount ? `${Math.max(1, Math.ceil(roadmap.wordCount / 200))}m` : '2m'
 
                                     return (

@@ -452,7 +452,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                                     ...(Array.isArray(item.props?.pageOptions) ? item.props.pageOptions : []),
                                                     {
                                                         type: 'item',
-                                                        label: 'Close',
+                                                        label: 'close',
                                                         onClick: handleClose,
                                                         shortcut: ['Shift', 'W'],
                                                     },
@@ -464,15 +464,15 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                     <div className="flex-1 truncate flex items-center justify-start @md:justify-center">
                                         {item.props?.hasDeveloperMode ? (
                                             <ToggleGroup
-                                                title="View mode"
+                                                title="view mode"
                                                 hideTitle
                                                 options={[
                                                     {
-                                                        label: 'Slides',
+                                                        label: 'slides',
                                                         value: 'marketing',
                                                     },
                                                     {
-                                                        label: 'Dev mode',
+                                                        label: 'dev mode',
                                                         value: 'developer',
                                                     },
                                                 ]}
@@ -483,7 +483,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                             <Popover
                                                 trigger={
                                                     <button className="text-primary hover:text-primary dark:text-primary-dark dark:hover:text-primary-dark text-left items-center justify-center text-sm font-semibold flex select-none">
-                                                        {(item.meta?.title && item.meta.title) || item.title || (item.key === 'home' ? 'Home' : item.key)}
+                                                        {(item.meta?.title && item.meta.title) || item.title || (item.key === 'home' ? 'home' : item.key)}
                                                         <IconChevronDown className="size-6 -m-1" />
                                                     </button>
                                                 }
@@ -518,7 +518,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                                             }
                                                         }}
                                                         className="group"
-                                                        tooltip="Right click for more options"
+                                                        tooltip="right click for more options"
                                                     >
                                                         <span>
                                                             <IconSquare className="size-5 group-hover:hidden" />
@@ -536,13 +536,13 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                                         data-scheme="primary"
                                                     >
                                                         <ContextMenu.Label className="px-2.5 text-[13px] leading-[25px] text-muted">
-                                                            Snap to...
+                                                            snap to...
                                                         </ContextMenu.Label>
                                                         <ContextMenu.Item
                                                             className="group relative flex h-[25px] select-none items-center rounded px-2.5 text-sm leading-none text-primary hover:bg-accent outline-none data-[disabled]:pointer-events-none data-[highlighted]:bg-input-bg data-[disabled]:text-muted"
                                                             onClick={() => handleSnapToSide('left')}
                                                         >
-                                                            Left half
+                                                            left half
                                                             <div className="ml-auto pl-5 text-secondary group-data-[disabled]:text-muted group-data-[highlighted]:text-primary">
                                                                 <KeyboardShortcut text="Shift" size="xs" />
                                                                 <KeyboardShortcut
@@ -555,7 +555,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                                             className="group relative flex h-[25px] select-none items-center rounded px-2.5 text-sm leading-none text-primary hover:bg-accent outline-none data-[disabled]:pointer-events-none data-[highlighted]:bg-input-bg data-[disabled]:text-muted"
                                                             onClick={() => handleSnapToSide('right')}
                                                         >
-                                                            Right half
+                                                            right half
                                                             <div className="ml-auto pl-5 text-secondary group-data-[disabled]:text-muted group-data-[highlighted]:text-primary">
                                                                 <KeyboardShortcut text="Shift" size="xs" />
                                                                 <KeyboardShortcut
@@ -566,14 +566,14 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                                         </ContextMenu.Item>
                                                         <ContextMenu.Separator className="m-[5px] h-px bg-border" />
                                                         <ContextMenu.Label className="px-2.5 text-[13px] leading-[25px] text-muted">
-                                                            Resize
+                                                            resize
                                                         </ContextMenu.Label>
                                                         <ContextMenu.Item
                                                             disabled={isMaximized}
                                                             className="group relative flex h-[25px] select-none items-center rounded px-2.5 text-sm leading-none text-primary hover:bg-accent outline-none data-[disabled]:pointer-events-none data-[highlighted]:bg-input-bg data-[disabled]:text-muted"
                                                             onClick={handleDoubleClick}
                                                         >
-                                                            Maximize
+                                                            maximize
                                                             <div className="ml-auto pl-5 text-secondary group-data-[disabled]:text-muted group-data-[highlighted]:text-primary">
                                                                 <KeyboardShortcut text="Shift" size="xs" />
                                                                 <KeyboardShortcut
@@ -597,7 +597,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                             }
                                         >
                                             <div className="flex flex-col items-center gap-2">
-                                                <span>Close window</span>
+                                                <span>close window</span>
                                                 <div className="flex items-center gap-1">
                                                     <KeyboardShortcut text="Shift" size="xs" />
                                                     <KeyboardShortcut text="W" size="xs" />

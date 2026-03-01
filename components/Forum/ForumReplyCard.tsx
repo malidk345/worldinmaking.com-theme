@@ -66,16 +66,16 @@ export default function ForumReplyCard({ reply, isInForum = false, questionAutho
                             isTeamMember={isAI}
                         />
                     </div>
-                    <strong>{reply.profile.firstName || 'Anonymous'}</strong>
+                    <strong>{reply.profile.firstName || 'anonymous'}</strong>
                 </Link>
 
                 {isAuthor && (
-                    <span className="bg-accent text-primary text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-widest ml-1">
-                        Author
+                    <span className="bg-accent text-primary text-[10px] px-1.5 py-0.5 rounded font-bold lowercase tracking-widest ml-1">
+                        author
                     </span>
                 )}
                 {isAI && (
-                    <span className="bg-accent text-primary text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-widest ml-1">
+                    <span className="bg-accent text-primary text-[10px] px-1.5 py-0.5 rounded font-bold lowercase tracking-widest ml-1">
                         AI
                     </span>
                 )}
@@ -85,7 +85,7 @@ export default function ForumReplyCard({ reply, isInForum = false, questionAutho
                 <div className="!ml-auto hidden sm:flex items-center space-x-1 opacity-60 hover:opacity-100 transition-opacity">
                     <OSButton
                         size="sm"
-                        tooltip="Edit reply"
+                        tooltip="edit reply"
                         onClick={() => { }}
                         icon={<IconPencil />}
                         className="!p-1"

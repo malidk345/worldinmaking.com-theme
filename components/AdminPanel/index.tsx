@@ -48,6 +48,8 @@ const AdminPanel = () => {
         communityPosts,
         communityReplies,
         communityLoading,
+        totalUsers,
+        fetchTotalUsers,
         fetchCommunityPosts,
         updateCommunityPost,
         deleteCommunityPost,
@@ -63,6 +65,16 @@ const AdminPanel = () => {
     const [editingCommentTitle, setEditingCommentTitle] = useState('')
     const [expandedPostId, setExpandedPostId] = useState<number | null>(null)
     const [commentSearchQuery, setCommentSearchQuery] = useState('')
+
+    // Fetch initial overview data
+    useEffect(() => {
+        if (activeTab === 'overview') {
+            fetchPosts()
+            fetchCommunityPosts()
+            fetchCommunityReplies()
+            fetchTotalUsers()
+        }
+    }, [activeTab, fetchPosts, fetchCommunityPosts, fetchCommunityReplies, fetchTotalUsers])
 
     useEffect(() => {
         if (activeTab === 'content') {
@@ -90,26 +102,26 @@ const AdminPanel = () => {
     if (!isAdmin) {
         return (
             <div className="p-6 text-center">
-                <p className="text-red-500 font-semibold">Access Denied</p>
-                <p className="text-gray-600 text-sm mt-2">You do not have permission to access the admin panel.</p>
+                <p className="text-red-500 font-semibold lowercase">access denied</p>
+                <p className="text-gray-600 text-sm mt-2 lowercase">you do not have permission to access the admin panel.</p>
             </div>
         )
     }
 
     const SUPPORTED_LANGS = [
-        { code: 'en', label: 'English' },
-        { code: 'tr', label: 'Turkish' },
-        { code: 'de', label: 'German' },
-        { code: 'es', label: 'Spanish' },
+        { code: 'en', label: 'english' },
+        { code: 'tr', label: 'turkish' },
+        { code: 'de', label: 'german' },
+        { code: 'es', label: 'spanish' },
     ]
 
     const TABS = [
-        { id: 'overview', label: 'Overview', icon: IconActivity },
-        { id: 'content', label: 'Content', icon: IconNewspaper },
-        { id: 'comments', label: 'Comments', icon: IconMessage },
-        { id: 'writerApplications', label: 'WIM writers', icon: Mail },
-        { id: 'users', label: 'Users', icon: IconUser },
-        { id: 'settings', label: 'Settings', icon: Settings },
+        { id: 'overview', label: 'overview', icon: IconActivity },
+        { id: 'content', label: 'content', icon: IconNewspaper },
+        { id: 'comments', label: 'comments', icon: IconMessage },
+        { id: 'writerApplications', label: 'wim writers', icon: Mail },
+        { id: 'users', label: 'users', icon: IconUser },
+        { id: 'settings', label: 'settings', icon: Settings },
     ]
 
     const handleLanguageChange = (newLang: string) => {
@@ -179,7 +191,7 @@ const AdminPanel = () => {
             title: finalTitle,
             content: finalContent,
             slug: editingPost?.slug || toSlug(finalTitle), // Preserve slug on updates, only generate on new
-            author: profile?.username || user?.email?.split('@')[0] || 'Unknown',
+            author: profile?.username || user?.email?.split('@')[0] || 'unknown',
             author_avatar: profile?.avatar_url || '',
             published: true,
             excerpt: finalExcerpt || finalContent.replace(/<[^>]*>/g, ' ').slice(0, 150) + '...',
@@ -220,36 +232,37 @@ const AdminPanel = () => {
 
     const renderContent = () => {
         switch (activeTab) {
-            case 'overview':
+            case 'overview': {
                 return (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 text-primary">
-                        <StatCard title="Total Views" value="12,450" change="+12%" />
-                        <StatCard title="Active Users" value="845" change="+5%" />
-                        <StatCard title="New Posts" value="24" change="+2" />
-                        <StatCard title="Avg. Read Time" value="4m 12s" change="-1%" />
+                        <StatCard title="total views" value="---" change="0%" />
+                        <StatCard title="active users" value={totalUsers.toString()} change="---" />
+                        <StatCard title="total posts" value={posts.length.toString()} change={(posts.length > 0 ? "+" + posts.length : "0")} />
+                        <StatCard title="community messages" value={(communityPosts.length + communityReplies.length).toString()} change="0" />
 
                         <div className="col-span-full mt-4 p-4 border border-primary rounded bg-accent/5">
-                            <h3 className="text-sm font-bold mb-2 flex items-center gap-2">
+                            <h3 className="text-sm font-bold mb-2 flex items-center gap-2 lowercase">
                                 <IconTerminal className="size-4" /> system status
                             </h3>
-                            <div className="space-y-2 text-xs font-mono">
+                            <div className="space-y-2 text-xs font-mono lowercase">
                                 <div className="flex justify-between">
-                                    <span className="text-muted">database:</span>
+                                    <span className="opacity-40">database:</span>
                                     <span className="text-green-500">connected</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-muted">build status:</span>
-                                    <span className="text-green-500">passing</span>
+                                    <span className="opacity-40">auth backend:</span>
+                                    <span className="text-green-500">active</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-muted">last deploy:</span>
-                                    <span>2 mins ago</span>
+                                    <span className="opacity-40">admin role:</span>
+                                    <span>{profile?.role || 'authorized'}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 )
-            case 'content':
+            }
+            case 'content': {
                 if (isCreating) {
                     return (
                         <div className="p-4 h-full flex flex-col text-primary overflow-y-auto custom-scrollbar">
@@ -262,14 +275,14 @@ const AdminPanel = () => {
                                         setNewPostContent('')
                                         setTranslations({})
                                     }}
-                                    className="flex items-center gap-2 text-sm font-bold hover:text-primary/70 transition-colors"
+                                    className="flex items-center gap-2 text-sm font-bold hover:text-primary/70 transition-colors lowercase"
                                 >
-                                    <ArrowLeft className="size-4" /> Back to List
+                                    <ArrowLeft className="size-4" /> back to list
                                 </button>
                                 <OSButton size="sm" variant="primary" onClick={handleSavePost}>
                                     <div className="flex items-center gap-1">
                                         <Save className="size-3" />
-                                        <span>{editingPost ? (editingPost.isLocal ? 'Publish to Cloud' : 'Update Post') : 'Save Post'}</span>
+                                        <span className="lowercase">{editingPost ? (editingPost.isLocal ? 'publish to cloud' : 'update post') : 'save post'}</span>
                                     </div>
                                 </OSButton>
                             </div>
@@ -294,7 +307,7 @@ const AdminPanel = () => {
                                                         : 'bg-accent/5 border-transparent hover:bg-accent/10 opacity-60'}
                                                 `}
                                             >
-                                                {lang.label} {isOriginal && '(Primary)'}
+                                                {lang.label} {isOriginal && '(primary)'}
                                             </button>
                                         )
                                     })}
@@ -307,7 +320,7 @@ const AdminPanel = () => {
                                         if (e.target.value) handleLanguageChange(e.target.value)
                                     }}
                                 >
-                                    <option value="" disabled>+ Add Translation</option>
+                                    <option value="" disabled>+ add translation</option>
                                     {SUPPORTED_LANGS.filter(l => l.code !== originalLanguage && !translations[l.code]).map(lang => (
                                         <option key={lang.code} value={lang.code}>{lang.label}</option>
                                     ))}
@@ -320,7 +333,7 @@ const AdminPanel = () => {
                                         <label className="text-[10px] font-black uppercase opacity-40 mb-1 block">post title ({currentEditLanguage})</label>
                                         <input
                                             type="text"
-                                            placeholder="Post Title..."
+                                            placeholder="post title..."
                                             value={newPostTitle}
                                             onChange={(e) => setNewPostTitle(e.target.value)}
                                             className="w-full bg-transparent border-b border-primary py-2 text-xl font-black focus:outline-none placeholder:opacity-30"
@@ -415,10 +428,11 @@ const AdminPanel = () => {
                         </div>
                     </div>
                 )
-            case 'users':
+            }
+            case 'users': {
                 return (
                     <div className="p-4 h-full flex flex-col text-primary">
-                        <h2 className="text-sm font-bold mb-4">manage users</h2>
+                        <h2 className="text-sm font-bold mb-4 lowercase">manage users</h2>
                         <div className="border border-primary rounded flex-1 bg-primary/40 flex items-center justify-center">
                             <div className="text-center p-4">
                                 <IconUser className="size-8 text-primary/20 mx-auto mb-2" />
@@ -429,7 +443,8 @@ const AdminPanel = () => {
                         </div>
                     </div>
                 )
-            case 'writerApplications':
+            }
+            case 'writerApplications': {
                 return (
                     <div className="p-4 h-full flex flex-col text-primary">
                         <div className="flex items-center justify-between mb-4">
@@ -448,7 +463,7 @@ const AdminPanel = () => {
                                 <div className="text-center p-8">
                                     <Mail className="size-8 text-primary/20 mx-auto mb-2" />
                                     <div className="text-primary/40 italic text-sm font-medium lowercase">
-                                        no writer applications yet
+                                        no transmissions found
                                     </div>
                                 </div>
                             )}
@@ -456,17 +471,22 @@ const AdminPanel = () => {
                             {!writerApplicationsLoading && writerApplications.length > 0 && (
                                 <div className="divide-y divide-primary/10">
                                     {writerApplications.map(application => (
-                                        <div key={application.id} className="p-4 space-y-3 hover:bg-primary/[0.02] transition-colors">
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div className="space-y-1">
-                                                    <div className="text-sm font-black lowercase">{application.name}</div>
-                                                    <div className="text-xs opacity-60">{application.email}</div>
-                                                    <div className="text-[10px] opacity-40 lowercase">
-                                                        {dayjs(application.created_at).format('MMM D, YYYY • HH:mm')}
+                                        <div key={application.id} className="p-4 hover:bg-primary/[0.03] transition-colors space-y-3">
+                                            <div className="flex items-start justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 border border-primary/20 rounded-sm bg-accent/5">
+                                                        <Mail className="size-4" />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-xs font-black lowercase">{application.name}</h3>
+                                                        <p className="text-[10px] opacity-40 lowercase">{application.email}</p>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-2">
-                                                    <span className={`text-[10px] px-2 py-1 rounded border font-bold uppercase tracking-wider ${application.status === 'reviewed' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
+                                                    <span className={`text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-sm border ${application.status === 'new'
+                                                        ? 'bg-blue-500/10 border-blue-500/20 text-blue-500'
+                                                        : 'bg-green-500/10 border-green-500/20 text-green-500 opacity-60'
+                                                        }`}>
                                                         {application.status}
                                                     </span>
                                                     {application.status !== 'reviewed' && (
@@ -491,7 +511,8 @@ const AdminPanel = () => {
                         </div>
                     </div>
                 )
-            case 'comments':
+            }
+            case 'comments': {
                 const filteredCommunityPosts = communityPosts.filter(p => {
                     if (!commentSearchQuery) return true
                     const q = commentSearchQuery.toLowerCase()
@@ -516,7 +537,7 @@ const AdminPanel = () => {
                     <div className="p-4 h-full flex flex-col text-primary overflow-hidden">
                         {/* Header */}
                         <div className="flex items-center justify-between mb-4 flex-shrink-0">
-                            <h2 className="text-sm font-bold">community comments</h2>
+                            <h2 className="text-sm font-bold lowercase">community comments</h2>
                             <div className="flex items-center gap-2 text-xs text-muted">
                                 <span>{communityPosts.length} posts</span>
                                 <span>·</span>
@@ -569,176 +590,104 @@ const AdminPanel = () => {
                                             <div key={cp.id} className="border border-primary rounded bg-primary/40">
                                                 {/* Post Header */}
                                                 <div className="p-3 flex items-start justify-between gap-2">
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                                            <span className="text-xs font-bold text-primary">
-                                                                {getProfile(cp.profiles)?.username || 'anonymous'}
-                                                            </span>
-                                                            <span className="text-[10px] text-muted">
-                                                                {dayjs(cp.created_at).format('MMM D, YYYY HH:mm')}
-                                                            </span>
-                                                            {cp.post_slug && (
-                                                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 border border-blue-200 font-mono">
-                                                                    {cp.post_slug}
-                                                                </span>
-                                                            )}
-                                                            {postReplies.length > 0 && (
-                                                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-bold">
-                                                                    {postReplies.length} {postReplies.length === 1 ? 'reply' : 'replies'}
-                                                                </span>
-                                                            )}
+                                                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                                                        <div className="size-8 rounded border border-primary/20 bg-accent/5 flex-shrink-0 overflow-hidden">
+                                                            <img
+                                                                src={getProfile(cp.profiles)?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${getProfile(cp.profiles)?.username}`}
+                                                                alt=""
+                                                                className="size-full object-cover grayscale"
+                                                            />
                                                         </div>
-
-                                                        {isEditing ? (
-                                                            <div className="space-y-2 mt-2">
-                                                                <input
-                                                                    type="text"
-                                                                    value={editingCommentTitle}
-                                                                    onChange={(e) => setEditingCommentTitle(e.target.value)}
-                                                                    className="w-full px-2 py-1 text-sm border border-primary rounded bg-primary text-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-                                                                    placeholder="title"
-                                                                />
-                                                                <textarea
-                                                                    value={editingCommentContent}
-                                                                    onChange={(e) => setEditingCommentContent(e.target.value)}
-                                                                    rows={4}
-                                                                    className="w-full px-2 py-1 text-sm border border-primary rounded bg-white text-primary resize-y font-mono focus:outline-none focus:ring-1 focus:ring-primary/30"
-                                                                />
-                                                                <div className="flex gap-1.5">
-                                                                    <OSButton
-                                                                        size="xs"
-                                                                        variant="primary"
-                                                                        onClick={async () => {
-                                                                            await updateCommunityPost(cp.id, {
-                                                                                title: editingCommentTitle,
-                                                                                content: editingCommentContent
-                                                                            })
-                                                                            setEditingCommentId(null)
-                                                                        }}
-                                                                    >
-                                                                        <div className="flex items-center gap-1"><Save className="size-3" /> save</div>
-                                                                    </OSButton>
-                                                                    <OSButton
-                                                                        size="xs"
-                                                                        variant="secondary"
-                                                                        onClick={() => setEditingCommentId(null)}
-                                                                    >
-                                                                        cancel
-                                                                    </OSButton>
-                                                                </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-xs font-black">{getProfile(cp.profiles)?.username}</span>
+                                                                <span className="text-[10px] opacity-40">{dayjs(cp.created_at).format('MMM D, h:mm a')}</span>
                                                             </div>
-                                                        ) : (
-                                                            <>
-                                                                {cp.title && !cp.title.startsWith('comment_') && (
-                                                                    <h4 className="text-sm font-bold mb-0.5">{cp.title}</h4>
-                                                                )}
-                                                                <p className="text-xs text-primary/70 line-clamp-2 break-all">
-                                                                    {cp.content?.replace(/<[^>]*>/g, '').slice(0, 200)}
-                                                                </p>
-                                                            </>
-                                                        )}
-                                                    </div>
-
-                                                    {!isEditing && (
-                                                        <div className="flex items-center gap-1 flex-shrink-0">
-                                                            {postReplies.length > 0 && (
-                                                                <button
-                                                                    onClick={() => setExpandedPostId(isExpanded ? null : cp.id)}
-                                                                    className="p-1 rounded hover:bg-accent/20 transition-colors text-muted hover:text-primary"
-                                                                    title="show replies"
-                                                                >
-                                                                    {isExpanded ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
-                                                                </button>
-                                                            )}
-                                                            <button
-                                                                onClick={() => {
-                                                                    setEditingCommentId(cp.id)
-                                                                    setEditingCommentTitle(cp.title || '')
-                                                                    setEditingCommentContent(cp.content || '')
-                                                                }}
-                                                                className="p-1 rounded hover:bg-blue-50 transition-colors text-muted hover:text-blue-600"
-                                                                title="edit"
-                                                            >
-                                                                <Edit className="size-3.5" />
-                                                            </button>
-                                                            <button
-                                                                onClick={async () => {
-                                                                    if (confirm(`Delete this comment by ${getProfile(cp.profiles)?.username || 'anonymous'}? This will also delete ${postReplies.length} replies.`)) {
-                                                                        await deleteCommunityPost(cp.id)
-                                                                    }
-                                                                }}
-                                                                className="p-1 rounded hover:bg-red-50 transition-colors text-muted hover:text-red-600"
-                                                                title="delete"
-                                                            >
-                                                                <Trash2 className="size-3.5" />
-                                                            </button>
+                                                            <h3 className="text-xs font-bold text-primary/90 truncate">{cp.title}</h3>
                                                         </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-1 flex-shrink-0">
+                                                        <button
+                                                            onClick={() => setExpandedPostId(isExpanded ? null : cp.id)}
+                                                            className="flex items-center gap-1 text-[10px] font-bold text-muted hover:text-primary transition-colors px-1.5 py-0.5"
+                                                        >
+                                                            <MessageSquare className="size-3" />
+                                                            {postReplies.length}
+                                                            {isExpanded ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
+                                                        </button>
+                                                        <OSButton size="xs" variant="secondary" onClick={() => {
+                                                            setEditingCommentId(cp.id)
+                                                            setEditingCommentContent(cp.content)
+                                                            setEditingCommentTitle(cp.title)
+                                                        }}>
+                                                            <Edit className="size-3" />
+                                                        </OSButton>
+                                                        <OSButton size="xs" variant="secondary" onClick={() => deleteCommunityPost(cp.id)}>
+                                                            <Trash2 className="size-3 text-red-500" />
+                                                        </OSButton>
+                                                    </div>
+                                                </div>
+
+                                                {/* Post Content */}
+                                                <div className="px-3 pb-3 pl-14">
+                                                    {isEditing ? (
+                                                        <div className="space-y-2">
+                                                            <input
+                                                                type="text"
+                                                                value={editingCommentTitle}
+                                                                onChange={(e) => setEditingCommentTitle(e.target.value)}
+                                                                className="w-full bg-primary border border-primary/30 rounded px-2 py-1 text-xs focus:outline-none"
+                                                            />
+                                                            <textarea
+                                                                value={editingCommentContent}
+                                                                onChange={(e) => setEditingCommentContent(e.target.value)}
+                                                                className="w-full bg-primary border border-primary/30 rounded p-2 text-xs h-24 focus:outline-none resize-none"
+                                                            />
+                                                            <div className="flex justify-end gap-2">
+                                                                <OSButton size="xs" variant="secondary" onClick={() => setEditingCommentId(null)}>cancel</OSButton>
+                                                                <OSButton size="xs" variant="primary" onClick={async () => {
+                                                                    const res = await updateCommunityPost(cp.id, { title: editingCommentTitle, content: editingCommentContent })
+                                                                    if (res) setEditingCommentId(null)
+                                                                }}>save</OSButton>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-sm text-primary/80 line-clamp-3">{cp.content}</p>
                                                     )}
                                                 </div>
 
                                                 {/* Expanded Replies */}
-                                                {isExpanded && postReplies.length > 0 && (
-                                                    <div className="border-t border-primary/10 bg-accent/5">
-                                                        {postReplies.map(reply => {
-                                                            const isEditingReply = editingCommentId === reply.id && commentFilter === 'posts'
-                                                            return (
-                                                                <div key={reply.id} className="px-3 py-2 border-b border-primary/5 last:border-b-0 flex items-start gap-2">
-                                                                    <MessageSquare className="size-3 mt-1 text-muted flex-shrink-0" />
-                                                                    <div className="flex-1 min-w-0">
-                                                                        <div className="flex items-center gap-2 mb-0.5">
-                                                                            <span className="text-[11px] font-bold">{getProfile(reply.profiles)?.username || 'anonymous'}</span>
-                                                                            <span className="text-[10px] text-muted">{dayjs(reply.created_at).format('MMM D, HH:mm')}</span>
+                                                {isExpanded && (
+                                                    <div className="border-t border-primary/10 bg-black/5 divide-y divide-primary/5">
+                                                        {postReplies.length === 0 ? (
+                                                            <div className="p-4 text-center text-[10px] italic text-muted">no replies yet</div>
+                                                        ) : (
+                                                            postReplies.map(reply => (
+                                                                <div key={reply.id} className="p-3 pl-14 flex items-start justify-between group">
+                                                                    <div className="flex gap-3">
+                                                                        <div className="size-6 rounded-sm border border-primary/20 bg-accent/5 flex-shrink-0 overflow-hidden">
+                                                                            <img
+                                                                                src={getProfile(reply.profiles)?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${getProfile(reply.profiles)?.username}`}
+                                                                                alt=""
+                                                                                className="size-full object-cover grayscale"
+                                                                            />
                                                                         </div>
-                                                                        {isEditingReply ? (
-                                                                            <div className="space-y-1.5">
-                                                                                <textarea
-                                                                                    value={editingCommentContent}
-                                                                                    onChange={(e) => setEditingCommentContent(e.target.value)}
-                                                                                    rows={2}
-                                                                                    className="w-full px-2 py-1 text-xs border border-primary rounded bg-primary text-primary resize-y font-mono focus:outline-none"
-                                                                                />
-                                                                                <div className="flex gap-1">
-                                                                                    <OSButton size="xs" variant="primary" onClick={async () => {
-                                                                                        await updateCommunityReply(reply.id, editingCommentContent)
-                                                                                        setEditingCommentId(null)
-                                                                                    }}>
-                                                                                        <div className="flex items-center gap-1"><Save className="size-3" /> save</div>
-                                                                                    </OSButton>
-                                                                                    <OSButton size="xs" variant="secondary" onClick={() => setEditingCommentId(null)}>cancel</OSButton>
-                                                                                </div>
+                                                                        <div className="flex-1">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className="text-[10px] font-black">{getProfile(reply.profiles)?.username}</span>
+                                                                                <span className="text-[9px] opacity-40">{dayjs(reply.created_at).format('MMM D, h:mm a')}</span>
                                                                             </div>
-                                                                        ) : (
-                                                                            <p className="text-xs text-primary/70 break-all">
-                                                                                {reply.content?.replace(/<[^>]*>/g, '').slice(0, 150)}
-                                                                            </p>
-                                                                        )}
-                                                                    </div>
-                                                                    {!isEditingReply && (
-                                                                        <div className="flex items-center gap-0.5 flex-shrink-0">
-                                                                            <button
-                                                                                onClick={() => {
-                                                                                    setEditingCommentId(reply.id)
-                                                                                    setEditingCommentContent(reply.content || '')
-                                                                                }}
-                                                                                className="p-0.5 rounded hover:bg-blue-50 transition-colors text-muted hover:text-blue-600"
-                                                                            >
-                                                                                <Edit className="size-3" />
-                                                                            </button>
-                                                                            <button
-                                                                                onClick={async () => {
-                                                                                    if (confirm('Delete this reply?')) {
-                                                                                        await deleteCommunityReply(reply.id)
-                                                                                    }
-                                                                                }}
-                                                                                className="p-0.5 rounded hover:bg-red-50 transition-colors text-muted hover:text-red-600"
-                                                                            >
-                                                                                <Trash2 className="size-3" />
-                                                                            </button>
+                                                                            <p className="text-xs text-primary/80">{reply.content}</p>
                                                                         </div>
-                                                                    )}
+                                                                    </div>
+                                                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                        <OSButton size="xs" variant="secondary" onClick={() => deleteCommunityReply(reply.id)}>
+                                                                            <Trash2 className="size-2.5 text-red-500" />
+                                                                        </OSButton>
+                                                                    </div>
                                                                 </div>
-                                                            )
-                                                        })}
+                                                            ))
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
@@ -748,84 +697,57 @@ const AdminPanel = () => {
                             ) : (
                                 /* Replies Tab */
                                 filteredCommunityReplies.length === 0 ? (
-                                    <div className="text-center text-muted text-sm py-12 italic">no replies found</div>
+                                    <div className="text-center text-muted text-sm py-12 italic">no community replies found</div>
                                 ) : (
                                     filteredCommunityReplies.map(reply => {
-                                        const isEditing = editingCommentId === reply.id
+                                        const isEditing = editingCommentId === reply.id && commentFilter === 'replies'
                                         const parentPost = communityPosts.find(p => p.id === reply.post_id)
 
                                         return (
-                                            <div key={reply.id} className="border border-primary rounded bg-accent/5 p-3">
-                                                <div className="flex items-start justify-between gap-2">
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                                            <span className="text-xs font-bold">{getProfile(reply.profiles)?.username || 'anonymous'}</span>
-                                                            <span className="text-[10px] text-muted">{dayjs(reply.created_at).format('MMM D, YYYY HH:mm')}</span>
-                                                            {parentPost && (
-                                                                <span className="text-[10px] text-muted italic">
-                                                                    &rarr; reply to &ldquo;{parentPost.title?.replace(/<[^>]*>/g, '').slice(0, 40)}&rdquo;
-                                                                </span>
-                                                            )}
+                                            <div key={reply.id} className="border border-primary rounded bg-primary/40 p-3 flex items-start justify-between gap-3">
+                                                <div className="flex items-start gap-3 flex-1">
+                                                    <div className="size-8 rounded border border-primary/20 bg-accent/5 flex-shrink-0 overflow-hidden">
+                                                        <img
+                                                            src={getProfile(reply.profiles)?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${getProfile(reply.profiles)?.username}`}
+                                                            alt=""
+                                                            className="size-full object-cover grayscale"
+                                                        />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-xs font-black">{getProfile(reply.profiles)?.username}</span>
+                                                            <span className="text-[10px] opacity-40">{dayjs(reply.created_at).format('MMM D, h:mm a')}</span>
                                                         </div>
                                                         {isEditing ? (
-                                                            <div className="space-y-2 mt-1">
+                                                            <div className="mt-2 space-y-2">
                                                                 <textarea
                                                                     value={editingCommentContent}
                                                                     onChange={(e) => setEditingCommentContent(e.target.value)}
-                                                                    rows={3}
-                                                                    className="w-full px-2 py-1 text-sm border border-primary rounded bg-primary text-primary resize-y font-mono focus:outline-none focus:ring-1 focus:ring-primary/30"
+                                                                    className="w-full bg-primary border border-primary/30 rounded p-2 text-xs h-24 focus:outline-none resize-none"
                                                                 />
-                                                                <div className="flex gap-1.5">
-                                                                    <OSButton
-                                                                        size="xs"
-                                                                        variant="primary"
-                                                                        onClick={async () => {
-                                                                            await updateCommunityReply(reply.id, editingCommentContent)
-                                                                            setEditingCommentId(null)
-                                                                        }}
-                                                                    >
-                                                                        <div className="flex items-center gap-1"><Save className="size-3" /> save</div>
-                                                                    </OSButton>
-                                                                    <OSButton
-                                                                        size="xs"
-                                                                        variant="secondary"
-                                                                        onClick={() => setEditingCommentId(null)}
-                                                                    >
-                                                                        cancel
-                                                                    </OSButton>
+                                                                <div className="flex justify-end gap-2">
+                                                                    <OSButton size="xs" variant="secondary" onClick={() => setEditingCommentId(null)}>cancel</OSButton>
+                                                                    <OSButton size="xs" variant="primary" onClick={async () => {
+                                                                        const res = await updateCommunityReply(reply.id, editingCommentContent)
+                                                                        if (res) setEditingCommentId(null)
+                                                                    }}>save</OSButton>
                                                                 </div>
                                                             </div>
                                                         ) : (
-                                                            <p className="text-xs text-primary/70 line-clamp-2 break-all">
-                                                                {reply.content?.replace(/<[^>]*>/g, '').slice(0, 200)}
-                                                            </p>
+                                                            <p className="text-sm text-primary/80">{reply.content}</p>
                                                         )}
                                                     </div>
-                                                    {!isEditing && (
-                                                        <div className="flex items-center gap-1 flex-shrink-0">
-                                                            <button
-                                                                onClick={() => {
-                                                                    setEditingCommentId(reply.id)
-                                                                    setEditingCommentContent(reply.content || '')
-                                                                }}
-                                                                className="p-1 rounded hover:bg-blue-50 transition-colors text-muted hover:text-blue-600"
-                                                                title="edit"
-                                                            >
-                                                                <Edit className="size-3.5" />
-                                                            </button>
-                                                            <button
-                                                                onClick={async () => {
-                                                                    if (confirm('Delete this reply?')) {
-                                                                        await deleteCommunityReply(reply.id)
-                                                                    }
-                                                                }}
-                                                                className="p-1 rounded hover:bg-red-50 transition-colors text-muted hover:text-red-600"
-                                                                title="delete"
-                                                            >
-                                                                <Trash2 className="size-3.5" />
-                                                            </button>
-                                                        </div>
-                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                    <OSButton size="xs" variant="secondary" onClick={() => {
+                                                        setEditingCommentId(reply.id)
+                                                        setEditingCommentContent(reply.content)
+                                                    }}>
+                                                        <Edit className="size-3" />
+                                                    </OSButton>
+                                                    <OSButton size="xs" variant="secondary" onClick={() => deleteCommunityReply(reply.id)}>
+                                                        <Trash2 className="size-3 text-red-500" />
+                                                    </OSButton>
                                                 </div>
                                             </div>
                                         )
@@ -835,7 +757,8 @@ const AdminPanel = () => {
                         </div>
                     </div>
                 )
-            case 'settings':
+            }
+            case 'settings': {
                 return (
                     <div className="p-4 h-full flex flex-col text-primary">
                         <h2 className="text-sm font-bold mb-4">system settings</h2>
@@ -843,12 +766,13 @@ const AdminPanel = () => {
                             <div className="text-center p-4">
                                 <Settings className="size-8 text-primary/20 mx-auto mb-2" />
                                 <div className="text-primary/40 italic text-sm font-medium">
-                                    System configuration
+                                    configuration panel
                                 </div>
                             </div>
                         </div>
                     </div>
                 )
+            }
             default:
                 return null
         }

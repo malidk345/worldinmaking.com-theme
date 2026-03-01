@@ -16,14 +16,14 @@ export function sanitizeString(input: string | null | undefined): string {
     return input
         // Remove script tags and their content
         .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-        // Remove iframe tags
-        .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
-        // Remove on* event handlers from tags (e.g. onclick, onload)
-        .replace(/\s*on\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]*)/gi, '')
-        // Remove javascript: URLs
-        .replace(/javascript\s*:/gi, '')
-        // Remove vbscript: URLs
-        .replace(/vbscript\s*:/gi, '')
+        // Remove iframe, object, embed, base, link, meta, style tags
+        .replace(/<(iframe|object|embed|base|link|meta|style)\b[^<]*(?:(?!<\/\1>)<[^<]*)*<\/\1>/gi, '')
+        // Remove tags that are opened but not closed (basic)
+        .replace(/<(script|iframe|object|embed|base|link|meta|style)\b[^>]*>/gi, '')
+        // Remove on* event handlers more aggressively
+        .replace(/\s+on\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]*)/gi, ' ')
+        // Remove javascript:, vbscript:, data: (for non-images) URLs
+        .replace(/(javascript|vbscript|data):/gi, (match) => `_target_${match}`)
         .trim();
 }
 

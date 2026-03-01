@@ -22,7 +22,7 @@ export default function SEO({
     noindex,
     canonicalUrl
 }: SEOProps) {
-    const siteTitle = "World in Making"
+    const siteTitle = "world in making"
     const defaultDescription = "Exploring product, engineering, and community through stories, tools, and insights."
     const twitterHandle = "@worldinmaking"
 

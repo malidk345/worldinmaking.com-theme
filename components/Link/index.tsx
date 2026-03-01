@@ -47,7 +47,7 @@ export default function Link({
                 addWindow({
                     key: to,
                     path: to,
-                    title: to.split('/').pop() || 'Window',
+                    title: to.split('/').pop() || 'window',
                     size: { width: 800, height: 600 },
                     position: { x: 150, y: 150 },
                 })

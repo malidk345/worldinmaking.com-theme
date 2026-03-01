@@ -7,6 +7,7 @@ import remarkGfm from 'remark-gfm'
 import { ReaderViewProvider, useReaderView } from './context/ReaderViewContext'
 import SEO from 'components/SEO'
 import rehypeRaw from 'rehype-raw'
+import rehypeSanitize from 'rehype-sanitize'
 import CloudinaryImage from 'components/CloudinaryImage'
 import { ArticleJsonLd, BreadcrumbJsonLd } from 'components/SEO/JsonLd'
 
@@ -161,7 +162,7 @@ const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
                 <div className="tiptap-content">
                     <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeRaw]}
+                        rehypePlugins={[rehypeRaw, rehypeSanitize]}
                         components={{
                             img: ({ src, alt, title }: { src?: string; alt?: string; title?: string }) => {
                                 let finalSrc = src || '';

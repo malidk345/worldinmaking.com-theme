@@ -150,7 +150,7 @@ export default function FooterBar({
                                 </OSButton>
                             }
                         >
-                            {isNavVisible ? 'Hide' : 'Show'} sidebar
+                            {isNavVisible ? 'hide' : 'show'} sidebar
                         </Tooltip>
                     )}
                 </div>

@@ -61,10 +61,10 @@ export default function ForumReplies({
                                         ))}
                                     </div>
                                     <button
-                                        className="text-sm font-semibold text-primary hover:underline"
+                                        className="text-sm font-semibold text-primary hover:underline lowercase"
                                         onClick={() => onToggleExpanded(true)}
                                     >
-                                        View {replyCount - 1} other {replyCount - 1 === 1 ? 'reply' : 'replies'}
+                                        view {replyCount - 1} other {replyCount - 1 === 1 ? 'reply' : 'replies'}
                                     </button>
                                     <Squiggles className="fill-border opacity-20" />
                                 </div>
@@ -77,10 +77,10 @@ export default function ForumReplies({
                                     ))}
                                 </div>
                                 <button
-                                    className="text-sm font-semibold text-primary hover:underline"
+                                    className="text-sm font-semibold text-primary hover:underline lowercase"
                                     onClick={() => onToggleExpanded(true)}
                                 >
-                                    View {replyCount - 1} more {replyCount - 1 === 1 ? 'reply' : 'replies'}
+                                    view {replyCount - 1} more {replyCount - 1 === 1 ? 'reply' : 'replies'}
                                 </button>
                             </div>
                         )}

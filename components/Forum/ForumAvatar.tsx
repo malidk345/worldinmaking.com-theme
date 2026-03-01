@@ -47,7 +47,7 @@ export const ForumAvatar = ({
 }: ForumAvatarProps) => {
     return (
         <div
-            className={`float-left leading-[0] rounded-full relative inline-block aspect-square p-px bg-primary border border-primary ${color ? `hover:border-${color}` : 'hover:border-primary/40 dark:hover:border-primary/40'
+            className={`float-left leading-[0] rounded-full relative inline-block aspect-square p-px bg-primary border !border-black dark:!border-white ${color ? `hover:opacity-80` : ''
                 }`}
         >
             {url ? (

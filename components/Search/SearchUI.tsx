@@ -45,7 +45,7 @@ export const WindowSearchUI = ({ initialFilter }: { initialFilter?: string }) =>
 
     useEffect(() => {
         if (appWindow) {
-            updateWindow(appWindow, { meta: { title: 'Search' } })
+            updateWindow(appWindow, { meta: { title: 'search' } })
         }
     }, [])
 
@@ -74,7 +74,7 @@ export const WindowSearchUI = ({ initialFilter }: { initialFilter?: string }) =>
                         ref={inputRef}
                         type="text"
                         className="flex-1 bg-transparent border-0 outline-none text-sm text-primary placeholder:text-muted"
-                        placeholder="Search blog posts..."
+                        placeholder="search blog posts..."
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         autoFocus
@@ -94,19 +94,19 @@ export const WindowSearchUI = ({ initialFilter }: { initialFilter?: string }) =>
             <div className="flex-1 overflow-y-auto">
                 {loading ? (
                     <div className="p-4 text-center text-muted text-sm">
-                        Loading posts...
+                        loading posts...
                     </div>
                 ) : query.length < 2 ? (
                     <div className="p-4 text-center text-muted text-sm">
-                        Type at least 2 characters to search...
+                        type at least 2 characters to search...
                     </div>
                 ) : results.length === 0 ? (
                     <div className="p-4 text-center text-muted text-sm">
-                        No results found for &quot;{query}&quot;
+                        no results found for &quot;{query}&quot;
                     </div>
                 ) : (
                     <div className="divide-y divide-border">
-                        <div className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-muted bg-accent/20">
+                        <div className="px-3 py-1.5 text-[11px] font-bold lowercase tracking-wider text-muted bg-accent/20">
                             {results.length} result{results.length !== 1 ? 's' : ''}
                         </div>
                         {results.map((post) => (
@@ -118,7 +118,7 @@ export const WindowSearchUI = ({ initialFilter }: { initialFilter?: string }) =>
                                 <div className="flex items-start gap-2">
                                     <div className="flex-1 min-w-0">
                                         {post.category && (
-                                            <span className="text-[10px] font-bold uppercase tracking-wider text-orange opacity-80">
+                                            <span className="text-[10px] font-bold lowercase tracking-wider text-orange opacity-80">
                                                 {post.category}
                                             </span>
                                         )}

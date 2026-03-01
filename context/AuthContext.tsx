@@ -94,7 +94,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     if (error) {
                         logger.error('[Auth] Code exchange error:', error);
                     } else if (data.session) {
-                        logger.log('[Auth] PKCE exchange success:', data.session.user.email);
+                        logger.log('[Auth] PKCE exchange success');
                         setUser(data.session.user);
                         fetchProfile(data.session.user.id);
 
@@ -115,7 +115,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
 
             if (session) {
-                logger.log('[Auth] Session found for user:', session.user.email);
+                logger.log('[Auth] Session found');
                 setUser(session.user);
                 fetchProfile(session.user.id);
             } else {
@@ -128,7 +128,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         getSession();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            logger.log('[Auth] Auth state changed:', event, session?.user?.email || 'no user');
+            logger.log('[Auth] Auth state changed:', event);
 
             setUser(session?.user ?? null);
             if (session?.user) {

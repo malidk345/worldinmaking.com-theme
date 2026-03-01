@@ -67,7 +67,7 @@ const RichTextEditor = ({ content, onChange }: { content: string, onChange: (con
         extensions: [
             StarterKit,
             Placeholder.configure({
-                placeholder: 'Yazmaya başlayın...',
+                placeholder: 'yazmaya başlayın...',
             }),
             Link.configure({
                 openOnClick: false,
@@ -80,7 +80,7 @@ const RichTextEditor = ({ content, onChange }: { content: string, onChange: (con
         },
         editorProps: {
             attributes: {
-                class: 'prose prose-sm max-w-none focus:outline-none p-4 min-h-[300px] text-primary',
+                class: 'prose prose-sm max-w-none focus:outline-none p-4 min-h-[300px] text-black dark:text-white',
             },
         },
     })

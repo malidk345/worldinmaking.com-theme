@@ -10,24 +10,24 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://worldinmaking.com";
 export const metadata: Metadata = {
     metadataBase: new URL(siteUrl),
     title: {
-        default: "World in Making",
-        template: "%s | World in Making",
+        default: "world in making",
+        template: "%s | world in making",
     },
-    description: "World in Making explores product, engineering, and community through stories, tools, and insights.",
+    description: "the world is not something we merely inhabit — it is something continuously being formed. world in making explores product, engineering, and community through the interrogation of constructed realities.",
     alternates: {
         canonical: "/",
     },
     openGraph: {
         type: "website",
         url: siteUrl,
-        siteName: "World in Making",
-        title: "World in Making",
-        description: "World in Making explores product, engineering, and community through stories, tools, and insights.",
+        siteName: "world in making",
+        title: "world in making",
+        description: "the world is not something we merely inhabit — it is something continuously being formed. world in making explores product, engineering, and community through the interrogation of constructed realities.",
     },
     twitter: {
         card: "summary_large_image",
-        title: "World in Making",
-        description: "World in Making explores product, engineering, and community through stories, tools, and insights.",
+        title: "world in making",
+        description: "the world is not something we merely inhabit — it is something continuously being formed. world in making explores product, engineering, and community through the interrogation of constructed realities.",
     },
     robots: {
         index: true,
@@ -59,9 +59,9 @@ export default function RootLayout({
             </head>
             <body className="antialiased">
                 <WebSiteJsonLd
-                    name="World in Making"
+                    name="world in making"
                     url={siteUrl}
-                    description="World in Making explores product, engineering, and community through stories, tools, and insights."
+                    description="the world is not something we merely inhabit — it is something continuously being formed. world in making explores product, engineering, and community through the interrogation of constructed realities."
                 />
                 <AppProvider>
                     <AuthProvider>

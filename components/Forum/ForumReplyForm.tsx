@@ -44,7 +44,7 @@ export default function ForumReplyForm({ isInForum = false, archived = false, on
                     variant="underlineOnHover"
                     className="border border-border bg-accent/70 hover:bg-accent !p-2"
                 >
-                    <span className="font-bold text-primary">Reply</span>
+                    <span className="font-bold text-primary lowercase">reply</span>
                 </OSButton>
             </div>
         )
@@ -66,7 +66,7 @@ export default function ForumReplyForm({ isInForum = false, archived = false, on
                     autoFocus
                     boxed={false}
                     className="bg-transparent min-h-[100px]"
-                    placeholder="Type your reply..."
+                    placeholder="type your reply..."
                     cta={
                         <div className="flex gap-2">
                             <OSButton
@@ -75,14 +75,14 @@ export default function ForumReplyForm({ isInForum = false, archived = false, on
                                 disabled={!stripHtmlTags(body)}
                                 onClick={handleSubmit}
                             >
-                                Post
+                                <span className="lowercase">post</span>
                             </OSButton>
                             <OSButton
                                 size="sm"
                                 variant="default"
                                 onClick={() => setIsOpen(false)}
                             >
-                                Cancel
+                                <span className="lowercase">cancel</span>
                             </OSButton>
                         </div>
                     }

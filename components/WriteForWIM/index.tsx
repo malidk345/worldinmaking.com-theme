@@ -19,7 +19,8 @@ const MIN_MESSAGE_LENGTH = 60
 const INITIAL_FORM = {
     name: '',
     email: '',
-    message: ''
+    message: '',
+    hp: '' // honeypot
 }
 
 export default function WriteForWIM({ className = '' }: WriteForWIMProps) {
@@ -81,7 +82,8 @@ export default function WriteForWIM({ className = '' }: WriteForWIMProps) {
             message: true
         })
 
-        if (!isFormValid()) {
+        if (!isFormValid() || formData.hp) {
+            if (formData.hp) logger.warn('[WriteForWIM] Bot detected via honeypot')
             return
         }
 
@@ -171,6 +173,17 @@ export default function WriteForWIM({ className = '' }: WriteForWIMProps) {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-5 rounded-lg border border-border bg-accent/20 p-4 md:p-5">
+                        {/* Honeypot field for spam protection */}
+                        <div className="hidden" aria-hidden="true">
+                            <input
+                                type="text"
+                                name="full_name_hp"
+                                autoComplete="off"
+                                tabIndex={-1}
+                                onChange={(e) => handleChange('hp', e.target.value)}
+                            />
+                        </div>
+
                         <Input
                             label="Full Name"
                             direction="column"

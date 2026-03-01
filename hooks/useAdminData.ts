@@ -64,6 +64,7 @@ export const useAdminData = () => {
     const [loading, setLoading] = useState(false);
     const [writerApplicationsLoading, setWriterApplicationsLoading] = useState(false);
     const [communityLoading, setCommunityLoading] = useState(false);
+    const [totalUsers, setTotalUsers] = useState(0);
     const [error, setError] = useState<string | null>(null);
 
     const fetchPosts = useCallback(async () => {
@@ -401,6 +402,22 @@ export const useAdminData = () => {
         }
     }, [addToast]);
 
+    const fetchTotalUsers = useCallback(async () => {
+        try {
+            const { count, error: fetchError } = await supabase
+                .from('profiles')
+                .select('*', { count: 'exact', head: true });
+
+            if (fetchError) {
+                logger.error('[useAdminData] fetchTotalUsers error:', fetchError);
+                return;
+            }
+            setTotalUsers(count || 0);
+        } catch (e: unknown) {
+            logger.error('[useAdminData] fetchTotalUsers exception:', e);
+        }
+    }, []);
+
     return {
         posts,
         writerApplications,
@@ -409,6 +426,7 @@ export const useAdminData = () => {
         loading,
         writerApplicationsLoading,
         communityLoading,
+        totalUsers,
         error,
         fetchPosts,
         fetchWriterApplications,
@@ -422,5 +440,6 @@ export const useAdminData = () => {
         fetchCommunityReplies,
         updateCommunityReply,
         deleteCommunityReply,
+        fetchTotalUsers,
     };
 };
