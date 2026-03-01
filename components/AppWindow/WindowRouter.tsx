@@ -72,7 +72,8 @@ export default function WindowRouter({ item }: { item: AppWindow }) {
 
     // /search
     if (path === '/search') {
-        return <WindowSearchUI initialFilter={item.props?.initialFilter} />
+        const initialFilter = item.props?.initialFilter as string | undefined
+        return <WindowSearchUI initialFilter={initialFilter} />
     }
 
     // /profile/:username

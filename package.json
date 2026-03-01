@@ -68,6 +68,7 @@
     "tailwindcss-animated": "^2.0.0"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.2.0",
     "@cloudflare/next-on-pages": "^1.13.16",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/mark.js": "^8.11.12",
