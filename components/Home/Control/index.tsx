@@ -8,7 +8,7 @@ export default function HomeControl() {
             <div className="max-w-2xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
                 <div className="space-y-2">
                     <h1 className="text-4xl font-black tracking-tighter">world in making</h1>
-                    <p className="text-sm opacity-40 italic">// an exploration of constructed realities</p>
+                    <p className="text-sm opacity-40 italic">{"// an exploration of constructed realities"}</p>
                 </div>
 
                 <div className="space-y-4 text-[15px] leading-relaxed border-l border-primary/10 pl-6 py-2">
