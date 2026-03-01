@@ -117,6 +117,7 @@ export const SearchProvider = ({ children }: { children: React.ReactNode }) => {
                                 <Dialog.Panel className="w-full max-w-4xl md:mx-4 h-[90vh] md:h-[600px] z-[999998]">
 
                                     {(() => {
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                         const BaseInstantSearch = InstantSearch as any
                                         return (
                                             <BaseInstantSearch
