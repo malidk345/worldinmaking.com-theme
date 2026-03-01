@@ -1,8 +1,7 @@
 "use client"
 
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useState } from 'react'
 import { useApp } from '../../context/App'
-import type { AppWindow as AppWindowType } from '../../context/Window'
 import Desktop from 'components/Desktop'
 import TaskBarMenu from 'components/TaskBarMenu'
 import AppWindow from 'components/AppWindow'
@@ -12,12 +11,10 @@ import { AnimatePresence, motion } from 'framer-motion'
 export default function Wrapper() {
     const {
         windows,
-        constraintsRef,
-        compact,
-        closeAllWindows
+        constraintsRef
     } = useApp()
 
-    const [shakeReady, setShakeReady] = useState(false)
+    const [shakeReady] = useState(false)
 
     return (
         <div className="fixed inset-0 size-full flex flex-col select-none overflow-hidden skin-classic:font-sans">

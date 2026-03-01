@@ -19,9 +19,9 @@ export default function ActiveWindowsPanel() {
         closeAllWindows,
     } = useApp()
 
-    const closeActiveWindowsPanel = () => {
+    const closeActiveWindowsPanel = React.useCallback(() => {
         setIsActiveWindowsPanelOpen(false)
-    }
+    }, [setIsActiveWindowsPanelOpen])
 
     // Add keyboard listener for Escape key
     useEffect(() => {
@@ -39,7 +39,7 @@ export default function ActiveWindowsPanel() {
         return () => {
             document.removeEventListener('keydown', handleKeyDown)
         }
-    }, [isActiveWindowsPanelOpen])
+    }, [isActiveWindowsPanelOpen, closeActiveWindowsPanel])
 
     const handleWindowClick = (appWindow: AppWindowType) => {
         bringToFront(appWindow)

@@ -78,7 +78,7 @@ function TreeMenuItem({
         if (item.children && !open && activeItem) {
             setOpen(isOpen(item.children, activeItem))
         }
-    }, [activeItem])
+    }, [activeItem, item.children, open])
 
     const handleOpenChange = (open: boolean) => {
         setOpen(open)

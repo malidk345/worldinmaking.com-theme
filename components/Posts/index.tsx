@@ -5,11 +5,8 @@ import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import {
-    IconArrowRight,
-    IconMessage,
     IconPerson,
 } from '@posthog/icons'
-import OSButton from 'components/OSButton'
 import { useApp } from 'context/App'
 import { usePosts, Post } from 'hooks/usePosts'
 import ScrollArea from 'components/RadixUI/ScrollArea'
@@ -29,33 +26,9 @@ export default function PostsView() {
     const { posts, loading } = usePosts()
     const { addWindow } = useApp()
 
-    const [selectedAuthor, setSelectedAuthor] = useState('all')
-    const [selectedCategory, setSelectedCategory] = useState('all')
-
     const sortedRoadmaps = useMemo(() => {
         return [...posts].sort((a, b) => dayjs.utc(b.date).unix() - dayjs.utc(a.date).unix())
     }, [posts])
-
-    const { authors, categories } = useMemo(() => {
-        const auths = new Set<string>()
-        const cats = new Set<string>()
-        posts.forEach(p => {
-            auths.add(p.authorName || 'worldinmaking')
-            if (p.category) cats.add(p.category)
-        })
-        return {
-            authors: Array.from(auths).sort(),
-            categories: Array.from(cats).sort()
-        }
-    }, [posts])
-
-    const filteredRoadmaps = useMemo(() => {
-        return sortedRoadmaps.filter(r => {
-            const authorMatch = selectedAuthor === 'all' || (r.authorName || 'worldinmaking') === selectedAuthor
-            const categoryMatch = selectedCategory === 'all' || (r.category || 'uncategorized') === selectedCategory
-            return authorMatch && categoryMatch
-        })
-    }, [sortedRoadmaps, selectedAuthor, selectedCategory])
 
     const handleRoadmapClick = (roadmap: Post) => {
         addWindow({

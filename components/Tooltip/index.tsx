@@ -65,7 +65,7 @@ export default function Tooltip({
                 ref: setReferenceElement,
             })}
             {open &&
-                createPortal(
+                (createPortal(
                     <div
                         id="portal-tooltip"
                         className="z-[9999999999] print:hidden"
@@ -145,7 +145,8 @@ export default function Tooltip({
                         </div>
                     </div>,
                     document.body
-                )}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                ) as any)}
         </span>
     )
 }

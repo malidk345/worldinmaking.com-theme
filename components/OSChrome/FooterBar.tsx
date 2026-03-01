@@ -298,7 +298,8 @@ export default function FooterBar({
     )
 
     if (footerTarget) {
-        return createPortal(content, footerTarget)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return createPortal(content, footerTarget) as any
     }
 
     return content

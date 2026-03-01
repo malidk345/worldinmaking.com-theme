@@ -101,7 +101,7 @@ export default function SearchResults(props: SearchResultsProps) {
     const { query } = useSearchBox()
     const posthog = usePostHog()
 
-    const onSelect = (result: Result) => {
+    const onSelect = (result: Result | null) => {
         if (!result) return
         posthog?.capture('web search result clicked', {
             objectID: result.objectID,
@@ -144,7 +144,7 @@ export default function SearchResults(props: SearchResultsProps) {
         }
     }
 
-    const compareResults = (a: Result, b: Result) => {
+    const compareResults = (a: Result | null, b: Result | null) => {
         return a?.objectID === b?.objectID
     }
 

@@ -5,7 +5,7 @@ import { IconNewspaper, IconUser, IconActivity, IconTerminal, IconMessage } from
 import OSButton from 'components/OSButton'
 import { Edit, Save, Settings, Trash2, Plus, ArrowLeft, Mail, MessageSquare, ChevronDown, ChevronUp, Search } from 'lucide-react'
 import RichTextEditor from './RichTextEditor'
-import { useAdminData, AdminPost, AdminCommunityPost, AdminCommunityReply } from '../../hooks/useAdminData'
+import { useAdminData, AdminPost } from '../../hooks/useAdminData'
 import { useAuth } from '../../context/AuthContext'
 import { toSlug } from '../../utils/security'
 import dayjs from 'dayjs'
@@ -701,7 +701,6 @@ const AdminPanel = () => {
                                 ) : (
                                     filteredCommunityReplies.map(reply => {
                                         const isEditing = editingCommentId === reply.id && commentFilter === 'replies'
-                                        const parentPost = communityPosts.find(p => p.id === reply.post_id)
 
                                         return (
                                             <div key={reply.id} className="border border-primary rounded bg-primary/40 p-3 flex items-start justify-between gap-3">

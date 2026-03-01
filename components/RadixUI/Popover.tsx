@@ -40,7 +40,7 @@ export const Popover = React.forwardRef<HTMLDivElement, PopoverProps>(
             if (scrollRef.current) {
                 const element = scrollRef.current
                 element.style.display = 'none'
-                element.offsetHeight // Trigger reflow
+                void element.offsetHeight // Trigger reflow
                 element.style.display = ''
             }
         }, [children])

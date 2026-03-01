@@ -58,9 +58,9 @@ export default function TaskBarMenu() {
         }
     }, [isAnimating])
 
-    const handleActiveWindowsClick = () => {
+    const handleActiveWindowsClick = React.useCallback(() => {
         setIsActiveWindowsPanelOpen(true)
-    }
+    }, [setIsActiveWindowsPanelOpen])
 
     const menuData: MenuType[] = React.useMemo(() => [
         {

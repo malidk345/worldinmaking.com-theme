@@ -236,7 +236,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
 
     const isFocused = focusedWindow?.key === item.key
 
-    const getActiveWindowsButtonPosition = () => {
+    const getActiveWindowsButtonPosition = React.useCallback(() => {
         const activeWindowsButton = typeof document !== 'undefined' ? taskbarRef.current?.querySelector('[data-active-windows]') : null
         if (!activeWindowsButton) return { x: typeof window !== 'undefined' ? window.innerWidth / 2 : 0, y: typeof window !== 'undefined' ? window.innerHeight : 0 }
         const rect = activeWindowsButton.getBoundingClientRect()
@@ -244,7 +244,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
             x: rect.left + rect.width / 2,
             y: rect.top + rect.height / 2,
         }
-    }
+    }, [taskbarRef])
 
     const windowPosition = useMemo(() => {
         if (typeof window === 'undefined') return { x: 0, y: 0 }
@@ -284,7 +284,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
 
         hasMobileAdjusted.current = true
         updateWindow(item, { size: nextSize, position: nextPosition })
-    }, [item, size.width, size.height, taskbarHeight, updateWindow])
+    }, [item, updateWindow])
 
     const isMaximized = useMemo(() => {
         if (!constraintsRef.current) return false
@@ -298,7 +298,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
             Math.abs(position.x - inset) <= 2 &&
             Math.abs(position.y - inset) <= 2
         )
-    }, [constraintsRef, position.x, position.y, size.height, size.width, isFocused])
+    }, [position.x, position.y, size.height, size.width])
 
     const canGoBack = activeHistoryIndex > 0
     const canGoForward = activeHistoryIndex < history.length - 1

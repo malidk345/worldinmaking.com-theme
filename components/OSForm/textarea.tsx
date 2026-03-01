@@ -37,25 +37,25 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         },
         ref
     ) => {
-        const sizeClasses = {
+        const sizeClasses: Record<string, string> = {
             sm: 'px-1.5 py-1 text-sm',
             md: 'px-2.5 py-2 text-[15px]',
             lg: 'px-3 py-2.5 text-base',
         }
 
-        const labelSizeClasses = {
+        const labelSizeClasses: Record<string, string> = {
             sm: 'text-sm',
             md: 'text-[15px]',
             lg: 'text-base',
         }
 
-        const widthClasses = {
+        const widthClasses: Record<string, string> = {
             full: 'w-full',
             auto: 'w-auto',
             fit: 'w-fit',
         }
 
-        const textareaId = props.id || props.name || label?.toLowerCase().replace(/\s+/g, '-')
+        const textareaId = (props.id as string) || (props.name as string) || label?.toLowerCase().replace(/\s+/g, '-')
 
         return (
             <div
@@ -87,7 +87,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
                         className={`bg-primary border border-primary rounded ring-0 focus:ring-1 resize-y ${touched && error ? 'border-red dark:border-yellow' : 'border-primary'
                             } ${sizeClasses[size]} ${widthClasses[width]} ${className}`}
                         id={textareaId}
-                        placeholder={props.placeholder || label}
+                        placeholder={(props.placeholder as string) || label}
                         rows={rows}
                         {...props}
                     />

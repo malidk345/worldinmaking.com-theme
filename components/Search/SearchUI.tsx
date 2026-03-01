@@ -47,7 +47,7 @@ export const WindowSearchUI = ({ initialFilter }: { initialFilter?: string }) =>
         if (appWindow) {
             updateWindow(appWindow, { meta: { title: 'search' } })
         }
-    }, [])
+    }, [appWindow, updateWindow])
 
     useEffect(() => {
         // Auto-focus the input
