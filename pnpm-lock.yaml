@@ -104,6 +104,9 @@ importers:
       framer-motion:
         specifier: ^12.33.0
         version: 12.34.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      instantsearch.js:
+        specifier: ^4.60.0
+        version: 4.90.0(algoliasearch@4.25.3)
       lodash:
         specifier: ^4.17.23
         version: 4.17.23
@@ -2394,6 +2397,11 @@ packages:
     peerDependencies:
       algoliasearch: '>= 3.1 < 6'
 
+  algoliasearch-helper@3.28.0:
+    resolution: {integrity: sha512-GBN0xsxGggaCPElZq24QzMdfphrjIiV2xA+hRXE4/UMpN3nsF2WrM8q+x80OGvGpJWtB7F+4Hq5eSfWwuejXrg==}
+    peerDependencies:
+      algoliasearch: '>= 3.1 < 6'
+
   algoliasearch@4.25.3:
     resolution: {integrity: sha512-kgeIixgDiB+FbH1cHDFUtTNkxdJadHryF8lSPIHHQkEeUrzZA1Hi3PLL+EgNubO0dch4ALNb5G4rw+FDCv3Vbw==}
 
@@ -3286,8 +3294,16 @@ packages:
   inline-style-parser@0.2.7:
     resolution: {integrity: sha512-Nb2ctOyNR8DqQoR0OwRG95uNWIC0C1lCgf5Naz5H6Ji72KZ8OcFZLz2P5sNgwlyoJ8Yif11oMuYs5pBQa86csA==}
 
+  instantsearch-ui-components@0.20.0:
+    resolution: {integrity: sha512-wZ+GT8lb10m3r6+9TEVLDQeB1YNRgXFSFSsfhzh4jUFMVDiovY+NE+cj7oNFk7GzFWvxQvXd7aPjTLDD7RkhnA==}
+
   instantsearch.js@4.56.8:
     resolution: {integrity: sha512-40DJ5l70ZzVzWPK3qrHTKlJLaHGq1PRZpzfL6281P2mz8G19WOHQHKAP4Zh6a4lOZaRtJQUiPjQwqCHSurXZ5g==}
+    peerDependencies:
+      algoliasearch: '>= 3.1 < 6'
+
+  instantsearch.js@4.90.0:
+    resolution: {integrity: sha512-HfMMvQCsmrLikx93skFNXsoX+zkPEqzszYuFbh1nKMI7qy18QfL+yG7BKX/mt7HPC/SbP+k4vZQzXgIT2+SXPw==}
     peerDependencies:
       algoliasearch: '>= 3.1 < 6'
 
@@ -3621,6 +3637,15 @@ packages:
 
   markdown-table@3.0.4:
     resolution: {integrity: sha512-wiYz4+JrLyb/DqW2hkFJxP7Vd7JuTDm77fvbM8VfEQdmSMqcImWeeRbHwZjBjIFki/VaMK2BhFi7oUUZeM5bqw==}
+
+  markdown-to-jsx@7.7.17:
+    resolution: {integrity: sha512-7mG/1feQ0TX5I7YyMZVDgCC/y2I3CiEhIRQIhyov9nGBP5eoVrOXXHuL5ZP8GRfxVZKRiXWJgwXkb9It+nQZfQ==}
+    engines: {node: '>= 10'}
+    peerDependencies:
+      react: '>= 0.14.0'
+    peerDependenciesMeta:
+      react:
+        optional: true
 
   math-intrinsics@1.1.0:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
@@ -4730,6 +4755,11 @@ packages:
 
   youch@4.1.0-beta.10:
     resolution: {integrity: sha512-rLfVLB4FgQneDr0dv1oddCVZmKjcJ6yX6mS4pU82Mq/Dt9a3cLZQ62pDBL4AUO+uVrCvtWz3ZFUL2HFAFJ/BXQ==}
+
+  zod-to-json-schema@3.24.6:
+    resolution: {integrity: sha512-h/z3PKvcTcTetyjl1fkj79MHNEjm+HpD6NXheWjzOekY7kV+lwDYnHw+ivHkijnCSMz1yJaWBD9vu/Fcmk+vEg==}
+    peerDependencies:
+      zod: ^3.24.1
 
   zod@3.22.3:
     resolution: {integrity: sha512-EjIevzuJRiRPbVH4mGc8nApb/lVLKVpmUhAaR5R5doKGfAnGJ6Gr3CViAVjP+4FWSxCsybeWQdcgCtbX+7oZug==}
@@ -6775,6 +6805,11 @@ snapshots:
       '@algolia/events': 4.0.1
       algoliasearch: 4.25.3
 
+  algoliasearch-helper@3.28.0(algoliasearch@4.25.3):
+    dependencies:
+      '@algolia/events': 4.0.1
+      algoliasearch: 4.25.3
+
   algoliasearch@4.25.3:
     dependencies:
       '@algolia/cache-browser-local-storage': 4.25.3
@@ -7850,6 +7885,15 @@ snapshots:
 
   inline-style-parser@0.2.7: {}
 
+  instantsearch-ui-components@0.20.0(react@19.0.0):
+    dependencies:
+      '@swc/helpers': 0.5.18
+      markdown-to-jsx: 7.7.17(react@19.0.0)
+      zod: 4.3.6
+      zod-to-json-schema: 3.24.6(zod@4.3.6)
+    transitivePeerDependencies:
+      - react
+
   instantsearch.js@4.56.8(algoliasearch@4.25.3):
     dependencies:
       '@algolia/events': 4.0.1
@@ -7866,6 +7910,26 @@ snapshots:
       preact: 10.28.3
       qs: 6.9.9
       search-insights: 2.17.3
+
+  instantsearch.js@4.90.0(algoliasearch@4.25.3):
+    dependencies:
+      '@algolia/events': 4.0.1
+      '@swc/helpers': 0.5.18
+      '@types/dom-speech-recognition': 0.0.1
+      '@types/google.maps': 3.58.1
+      '@types/hogan.js': 3.0.5
+      '@types/qs': 6.14.0
+      algoliasearch: 4.25.3
+      algoliasearch-helper: 3.28.0(algoliasearch@4.25.3)
+      hogan.js: 3.0.2
+      htm: 3.1.1
+      instantsearch-ui-components: 0.20.0(react@19.0.0)
+      preact: 10.28.3
+      qs: 6.9.9
+      react: 19.0.0
+      search-insights: 2.17.3
+      zod: 4.3.6
+      zod-to-json-schema: 3.24.6(zod@4.3.6)
 
   internal-slot@1.1.0:
     dependencies:
@@ -8191,6 +8255,10 @@ snapshots:
       uc.micro: 2.1.0
 
   markdown-table@3.0.4: {}
+
+  markdown-to-jsx@7.7.17(react@19.0.0):
+    optionalDependencies:
+      react: 19.0.0
 
   math-intrinsics@1.1.0: {}
 
@@ -9796,6 +9864,10 @@ snapshots:
       '@speed-highlight/core': 1.2.14
       cookie: 1.1.1
       youch-core: 0.3.3
+
+  zod-to-json-schema@3.24.6(zod@4.3.6):
+    dependencies:
+      zod: 4.3.6
 
   zod@3.22.3: {}
 

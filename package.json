@@ -40,6 +40,7 @@
     "@types/dompurify": "^3.2.0",
     "@types/lodash": "^4.17.23",
     "algoliasearch": "^4.25.3",
+    "instantsearch.js": "^4.60.0",
     "clsx": "^2.1.1",
     "cntl": "^1.0.0",
     "dayjs": "^1.11.19",
