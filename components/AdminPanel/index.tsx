@@ -332,40 +332,37 @@ const AdminPanel = () => {
             case 'content': {
                 if (isCreating) {
                     return (
-                        <div className={`${focusMode ? 'fixed inset-0 z-[9999] bg-primary' : 'p-4 h-full'} flex flex-col text-primary overflow-y-auto custom-scrollbar`}>
+                        <div className={`${focusMode ? 'fixed inset-0 z-[9999] bg-white' : 'p-3 sm:p-4 h-full'} flex flex-col text-black overflow-y-auto custom-scrollbar`}>
                             {/* Focus Mode Header */}
                             {focusMode && (
-                                <div className="flex items-center justify-between px-4 py-2 border-b border-primary bg-accent/5 flex-shrink-0">
-                                    <div className="flex items-center gap-3">
-                                        <button
-                                            onClick={() => setFocusMode(false)}
-                                            className="flex items-center gap-1 text-xs font-bold hover:text-primary/70 transition-colors lowercase"
-                                        >
-                                            <ArrowLeft className="size-3" /> exit focus
-                                        </button>
-                                        <span className="text-[10px] font-black uppercase tracking-widest opacity-30">focus mode</span>
-                                    </div>
+                                <div className="flex items-center justify-between px-3 py-2 border-b border-black/10 bg-neutral-50 flex-shrink-0">
+                                    <button
+                                        onClick={() => setFocusMode(false)}
+                                        className="flex items-center gap-1 text-[11px] font-bold text-black/60 hover:text-black transition-colors lowercase"
+                                    >
+                                        <ArrowLeft className="size-3" /> exit focus
+                                    </button>
                                     <div className="flex items-center gap-2">
                                         <input
                                             type="text"
                                             placeholder="post title..."
                                             value={newPostTitle}
                                             onChange={(e) => setNewPostTitle(e.target.value)}
-                                            className="bg-transparent border-b border-primary/30 py-1 text-sm font-black focus:outline-none placeholder:opacity-30 w-64"
+                                            className="bg-transparent border-b border-black/15 py-1 text-sm font-bold text-black focus:outline-none placeholder:text-black/25 w-36 sm:w-64"
                                         />
                                         <OSButton size="sm" variant="primary" onClick={handleSavePost}>
                                             <div className="flex items-center gap-1">
                                                 <Save className="size-3" />
-                                                <span className="lowercase">save</span>
+                                                <span className="lowercase text-xs">save</span>
                                             </div>
                                         </OSButton>
                                     </div>
                                 </div>
                             )}
 
-                            {/* Normal Header - hidden in focus mode */}
+                            {/* Normal Header */}
                             {!focusMode && (
-                                <div className="flex justify-between items-center mb-6">
+                                <div className="flex justify-between items-center mb-3 sm:mb-4">
                                     <button
                                         onClick={() => {
                                             setFocusMode(false)
@@ -380,14 +377,14 @@ const AdminPanel = () => {
                                             setNewPostPublished(true)
                                             setTranslations({})
                                         }}
-                                        className="flex items-center gap-2 text-sm font-bold hover:text-primary/70 transition-colors lowercase"
+                                        className="flex items-center gap-1.5 text-xs font-bold text-black/60 hover:text-black transition-colors lowercase"
                                     >
-                                        <ArrowLeft className="size-4" /> back to list
+                                        <ArrowLeft className="size-3.5" /> back
                                     </button>
                                     <OSButton size="sm" variant="primary" onClick={handleSavePost}>
                                         <div className="flex items-center gap-1">
                                             <Save className="size-3" />
-                                            <span className="lowercase">{editingPost ? (editingPost.isLocal ? 'publish to cloud' : 'update post') : 'save post'}</span>
+                                            <span className="lowercase text-xs">{editingPost ? (editingPost.isLocal ? 'publish' : 'update') : 'save'}</span>
                                         </div>
                                     </OSButton>
                                 </div>
@@ -397,8 +394,8 @@ const AdminPanel = () => {
                             {!focusMode && (
                                 <>
                                     {/* Multi-language Tabs */}
-                                    <div className="flex items-center gap-2 mb-4 border-b border-primary pb-px overflow-x-auto">
-                                        <div className="flex gap-1">
+                                    <div className="flex items-center gap-1.5 mb-3 border-b border-black/10 pb-px overflow-x-auto">
+                                        <div className="flex gap-0.5">
                                             {SUPPORTED_LANGS.map(lang => {
                                                 const isOriginal = lang.code === originalLanguage
                                                 const hasTranslation = translations[lang.code] || isOriginal
@@ -410,122 +407,124 @@ const AdminPanel = () => {
                                                     <button
                                                         key={lang.code}
                                                         onClick={() => handleLanguageChange(lang.code)}
-                                                        className={`px-3 py-1.5 text-[11px] font-black uppercase tracking-widest border-t border-x rounded-t-sm transition-all
+                                                        className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-wider border-t border-x rounded-t-sm transition-all
                                                             ${isActive
-                                                                ? 'bg-accent/30 border-primary border-b-transparent translate-y-px z-10'
-                                                                : 'bg-accent/5 border-transparent hover:bg-accent/10 opacity-60'}
+                                                                ? 'bg-white border-black/15 border-b-transparent translate-y-px text-black'
+                                                                : 'border-transparent text-black/35 hover:text-black/60'}
                                                         `}
                                                     >
-                                                        {lang.label} {isOriginal && '(primary)'}
+                                                        {lang.label} {isOriginal && '·'}
                                                     </button>
                                                 )
                                             })}
                                         </div>
 
                                         <select
-                                            className="ml-auto bg-accent/10 border border-primary/20 rounded-sm text-[10px] font-bold px-2 py-1 outline-none"
+                                            className="ml-auto bg-transparent border border-black/10 rounded-sm text-[10px] font-bold text-black/50 px-1.5 py-0.5 outline-none"
                                             value=""
                                             onChange={(e) => {
                                                 if (e.target.value) handleLanguageChange(e.target.value)
                                             }}
                                         >
-                                            <option value="" disabled>+ add translation</option>
+                                            <option value="" disabled>+ lang</option>
                                             {SUPPORTED_LANGS.filter(l => l.code !== originalLanguage && !translations[l.code]).map(lang => (
                                                 <option key={lang.code} value={lang.code}>{lang.label}</option>
                                             ))}
                                         </select>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                                        <div className="md:col-span-2">
-                                            <label className="text-[10px] font-black uppercase opacity-40 mb-1 block">post title ({currentEditLanguage})</label>
+                                    {/* Title */}
+                                    <input
+                                        type="text"
+                                        placeholder="post title..."
+                                        value={newPostTitle}
+                                        onChange={(e) => {
+                                            setNewPostTitle(e.target.value)
+                                            if (!editingPost && !newPostSlug) {
+                                                setNewPostSlug(toSlug(e.target.value))
+                                            }
+                                        }}
+                                        className="w-full bg-transparent border-b border-black/10 py-1.5 text-base sm:text-lg font-black text-black focus:outline-none placeholder:text-black/20 mb-2.5"
+                                    />
+
+                                    {/* Compact Row: slug + status + language */}
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-2.5">
+                                        <div className="col-span-2 sm:col-span-1">
+                                            <label className="text-[9px] font-black uppercase text-black/30 mb-0.5 block tracking-wider">slug</label>
                                             <input
                                                 type="text"
-                                                placeholder="post title..."
-                                                value={newPostTitle}
-                                                onChange={(e) => {
-                                                    setNewPostTitle(e.target.value)
-                                                    if (!editingPost && !newPostSlug) {
-                                                        setNewPostSlug(toSlug(e.target.value))
-                                                    }
-                                                }}
-                                                className="w-full bg-transparent border-b border-primary py-1.5 md:py-2 text-lg md:text-xl font-black focus:outline-none placeholder:opacity-30"
+                                                placeholder="my-post-url"
+                                                value={newPostSlug}
+                                                onChange={(e) => setNewPostSlug(e.target.value)}
+                                                className="w-full bg-neutral-50 border border-black/10 rounded-sm px-2 py-1 text-xs font-bold text-black focus:outline-none placeholder:text-black/20"
                                             />
                                         </div>
                                         <div>
-                                            <label className="text-[10px] font-black uppercase opacity-40 mb-1 block">custom url (slug)</label>
-                                            <input
-                                                type="text"
-                                                placeholder="e.g. my-awesome-post"
-                                                value={newPostSlug}
-                                                onChange={(e) => setNewPostSlug(e.target.value)}
-                                                className="w-full bg-accent/5 border border-primary/20 rounded px-2.5 py-1.5 text-sm font-bold focus:outline-none"
-                                            />
+                                            <label className="text-[9px] font-black uppercase text-black/30 mb-0.5 block tracking-wider">status</label>
+                                            <button
+                                                onClick={() => setNewPostPublished(!newPostPublished)}
+                                                className={`w-full px-2 py-1 text-[10px] font-bold rounded-sm border transition-colors ${newPostPublished
+                                                    ? 'bg-black text-white border-black'
+                                                    : 'bg-neutral-100 text-black/50 border-black/10'
+                                                    }`}
+                                            >
+                                                {newPostPublished ? '● published' : '○ draft'}
+                                            </button>
                                         </div>
-                                        <div className="flex flex-col gap-1">
-                                            <label className="text-[10px] font-black uppercase opacity-40 mb-1 block">status / language</label>
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => setNewPostPublished(!newPostPublished)}
-                                                    className={`flex-1 px-3 py-1.5 text-xs font-bold rounded border transition-colors ${newPostPublished
-                                                        ? 'bg-green-500/10 border-green-500/30 text-green-600'
-                                                        : 'bg-yellow-500/10 border-yellow-500/30 text-yellow-600'
-                                                        }`}
-                                                >
-                                                    {newPostPublished ? '● Published' : '○ Draft'}
-                                                </button>
-                                                <select
-                                                    value={originalLanguage}
-                                                    onChange={(e) => setOriginalLanguage(e.target.value)}
-                                                    className="w-1/2 bg-accent/10 border border-primary/20 rounded px-2 text-xs font-bold outline-none"
-                                                >
-                                                    {SUPPORTED_LANGS.map(l => (
-                                                        <option key={l.code} value={l.code}>{l.label}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
+                                        <div>
+                                            <label className="text-[9px] font-black uppercase text-black/30 mb-0.5 block tracking-wider">language</label>
+                                            <select
+                                                value={originalLanguage}
+                                                onChange={(e) => setOriginalLanguage(e.target.value)}
+                                                className="w-full bg-neutral-50 border border-black/10 rounded-sm px-2 py-1 text-xs font-bold text-black outline-none"
+                                            >
+                                                {SUPPORTED_LANGS.map(l => (
+                                                    <option key={l.code} value={l.code}>{l.label}</option>
+                                                ))}
+                                            </select>
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
-                                        <div className="md:col-span-2">
-                                            <label className="text-[10px] font-black uppercase opacity-40 mb-1 block">excerpt / meta description ({currentEditLanguage})</label>
-                                            <textarea
-                                                placeholder="short description for seo (optional)..."
-                                                value={newPostExcerpt}
-                                                onChange={(e) => setNewPostExcerpt(e.target.value)}
-                                                className="w-full bg-accent/5 border border-primary/20 rounded px-2.5 py-1.5 text-xs md:text-sm focus:outline-none resize-none h-16 md:h-20"
+                                    {/* Excerpt */}
+                                    <div className="mb-2.5">
+                                        <label className="text-[9px] font-black uppercase text-black/30 mb-0.5 block tracking-wider">excerpt</label>
+                                        <textarea
+                                            placeholder="short description for seo..."
+                                            value={newPostExcerpt}
+                                            onChange={(e) => setNewPostExcerpt(e.target.value)}
+                                            className="w-full bg-neutral-50 border border-black/10 rounded-sm px-2 py-1 text-xs text-black focus:outline-none resize-none h-12 placeholder:text-black/20"
+                                        />
+                                    </div>
+
+                                    {/* Category + Image URL */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2.5">
+                                        <div>
+                                            <label className="text-[9px] font-black uppercase text-black/30 mb-0.5 block tracking-wider">category</label>
+                                            <input
+                                                type="text"
+                                                placeholder="e.g. technology"
+                                                value={newPostCategory}
+                                                onChange={(e) => setNewPostCategory(e.target.value)}
+                                                className="w-full bg-neutral-50 border border-black/10 rounded-sm px-2 py-1 text-xs font-bold text-black focus:outline-none placeholder:text-black/20"
                                             />
                                         </div>
-                                        <div className="grid grid-cols-2 gap-3 md:col-span-2">
-                                            <div>
-                                                <label className="text-[10px] font-black uppercase opacity-40 mb-1 block">category (global)</label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="e.g. technology..."
-                                                    value={newPostCategory}
-                                                    onChange={(e) => setNewPostCategory(e.target.value)}
-                                                    className="w-full bg-accent/5 border border-primary/20 rounded px-2.5 py-1.5 text-xs md:text-sm font-bold focus:outline-none"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="text-[10px] font-black uppercase opacity-40 mb-1 block">image url (global)</label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="https://..."
-                                                    value={newPostImageUrl}
-                                                    onChange={(e) => setNewPostImageUrl(e.target.value)}
-                                                    className="w-full bg-accent/5 border border-primary/20 rounded px-2.5 py-1.5 text-xs md:text-sm font-bold focus:outline-none"
-                                                />
-                                            </div>
+                                        <div>
+                                            <label className="text-[9px] font-black uppercase text-black/30 mb-0.5 block tracking-wider">image url</label>
+                                            <input
+                                                type="text"
+                                                placeholder="https://..."
+                                                value={newPostImageUrl}
+                                                onChange={(e) => setNewPostImageUrl(e.target.value)}
+                                                className="w-full bg-neutral-50 border border-black/10 rounded-sm px-2 py-1 text-xs font-bold text-black focus:outline-none placeholder:text-black/20"
+                                            />
                                         </div>
                                     </div>
                                 </>
                             )}
 
                             {/* Editor - always visible */}
-                            <div className={`${focusMode ? 'flex-1 p-4' : 'flex-1 min-h-[300px] md:min-h-[400px] mt-2 md:mt-4'} flex flex-col`}>
-                                {!focusMode && <label className="text-[10px] font-black uppercase opacity-40 mb-1 block">content ({currentEditLanguage})</label>}
+                            <div className={`${focusMode ? 'flex-1 p-3 sm:p-4' : 'flex-1 min-h-[200px] sm:min-h-[300px]'} flex flex-col`}>
+                                {!focusMode && <label className="text-[9px] font-black uppercase text-black/30 mb-0.5 block tracking-wider">content</label>}
                                 <RichTextEditor
                                     content={newPostContent}
                                     onChange={setNewPostContent}
@@ -533,36 +532,36 @@ const AdminPanel = () => {
                                     onToggleFocusMode={() => setFocusMode(prev => !prev)}
                                 />
                             </div>
-                        </div>
+                        </div >
                     )
                 }
 
                 return (
-                    <div className="p-4 h-full flex flex-col text-primary">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-sm font-bold lowercase">manage content</h2>
+                    <div className="p-3 sm:p-4 h-full flex flex-col text-black">
+                        <div className="flex justify-between items-center mb-3">
+                            <h2 className="text-xs font-black uppercase tracking-wider text-black/50">manage content</h2>
                             <OSButton size="sm" variant="primary" onClick={() => setIsCreating(true)}>
                                 <div className="flex items-center gap-1">
                                     <Plus className="size-3" />
-                                    <span>new post</span>
+                                    <span className="text-xs">new post</span>
                                 </div>
                             </OSButton>
                         </div>
 
-                        <div className="flex-grow overflow-y-auto custom-scrollbar border border-primary rounded bg-primary/40">
+                        <div className="flex-grow overflow-y-auto custom-scrollbar border border-black/10 rounded-sm bg-white">
                             {loading && (
                                 <Loading label="indexing content" />
                             )}
 
                             {!loading && posts.length === 0 && (
-                                <div className="text-center p-8">
-                                    <IconNewspaper className="size-8 text-primary/20 mx-auto mb-2" />
-                                    <div className="text-primary/40 italic text-sm font-medium lowercase">
+                                <div className="text-center p-6 sm:p-8">
+                                    <IconNewspaper className="size-6 text-black/15 mx-auto mb-2" />
+                                    <div className="text-black/30 text-xs font-bold lowercase">
                                         no articles found
                                     </div>
                                     <button
                                         onClick={() => setIsCreating(true)}
-                                        className="mt-4 text-xs font-bold text-primary hover:underline lowercase"
+                                        className="mt-3 text-[11px] font-bold text-black/50 hover:text-black hover:underline lowercase"
                                     >
                                         + create your first post
                                     </button>
@@ -570,32 +569,32 @@ const AdminPanel = () => {
                             )}
 
                             {!loading && posts.length > 0 && (
-                                <div className="divide-y divide-primary/10">
+                                <div className="divide-y divide-black/5">
                                     {posts.map(post => (
-                                        <div key={post.id} className="p-3 flex items-center justify-between hover:bg-primary/[0.05] group transition-colors">
-                                            <div className="flex flex-col">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-sm font-black lowercase">{post.title}</span>
+                                        <div key={post.id} className="px-3 py-2.5 flex items-center justify-between hover:bg-neutral-50 group transition-colors">
+                                            <div className="flex flex-col gap-0.5 min-w-0 flex-1 mr-2">
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                    <span className="text-xs font-black text-black lowercase truncate">{post.title}</span>
                                                     {!post.published && (
-                                                        <span className="bg-yellow-50 text-yellow-600 text-[10px] px-1.5 py-0.5 rounded font-black border border-yellow-200 uppercase tracking-tighter">draft</span>
+                                                        <span className="bg-neutral-100 text-black/40 text-[9px] px-1 py-px rounded-sm font-black border border-black/10 uppercase tracking-wider shrink-0">draft</span>
                                                     )}
                                                     {post.isLocal && (
-                                                        <span className="bg-blue-50 text-blue-500 text-[10px] px-1.5 py-0.5 rounded font-black border border-blue-200 uppercase tracking-tighter">read-only file</span>
+                                                        <span className="bg-neutral-100 text-black/40 text-[9px] px-1 py-px rounded-sm font-black border border-black/10 uppercase tracking-wider shrink-0">local</span>
                                                     )}
                                                 </div>
-                                                <div className="flex items-center gap-2 text-[10px] opacity-40 lowercase">
+                                                <div className="flex items-center gap-1.5 text-[9px] text-black/30 lowercase">
                                                     <span>{dayjs(post.created_at).format('MMM D, YYYY')}</span>
-                                                    <span>•</span>
-                                                    <span>/{post.slug}</span>
+                                                    <span>·</span>
+                                                    <span className="truncate">/{post.slug}</span>
                                                 </div>
                                             </div>
-                                            <div className={`flex items-center gap-1 transition-opacity ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                            <div className={`flex items-center gap-1 transition-opacity shrink-0 ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                                                 <OSButton size="xs" variant="secondary" onClick={() => handleEditClick(post)}>
-                                                    <Edit className="size-3" />
+                                                    <Edit className="size-3 text-black/60" />
                                                 </OSButton>
                                                 {!post.isLocal && (
                                                     <OSButton size="xs" variant="secondary" onClick={() => deletePost(post.id)}>
-                                                        <Trash2 className="size-3 text-red-500" />
+                                                        <Trash2 className="size-3 text-black/40" />
                                                     </OSButton>
                                                 )}
                                             </div>

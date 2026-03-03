@@ -11,7 +11,6 @@ import {
     Link as LinkIcon, Image as ImageIcon, Undo, Redo, Code,
     Maximize2, Minimize2, Eye, EyeOff, Save
 } from 'lucide-react'
-import OSButton from 'components/OSButton'
 
 // --- Auto-Save Helpers ---
 const DRAFT_STORAGE_KEY = 'wim_admin_draft'
@@ -45,6 +44,24 @@ export function clearDraftFromStorage() {
     try { localStorage.removeItem(DRAFT_STORAGE_KEY) } catch { /* noop */ }
 }
 
+// --- Toolbar Button ---
+interface TBProps {
+    active?: boolean
+    onClick: () => void
+    title?: string
+    children: React.ReactNode
+}
+const TB = ({ active, onClick, title, children }: TBProps) => (
+    <button
+        type="button"
+        onClick={onClick}
+        title={title}
+        className={`p-1 rounded transition-colors ${active ? 'bg-black text-white' : 'text-black/70 hover:bg-black/10 hover:text-black'}`}
+    >
+        {children}
+    </button>
+)
+
 // --- Toolbar ---
 const EditorMenuBar = ({ editor }: { editor: Editor | null }) => {
     if (!editor) return null
@@ -63,35 +80,61 @@ const EditorMenuBar = ({ editor }: { editor: Editor | null }) => {
         }
     }
 
-    const items = [
-        { icon: Bold, action: () => editor.chain().focus().toggleBold().run(), active: 'bold', tooltip: 'Bold (Ctrl+B)' },
-        { icon: Italic, action: () => editor.chain().focus().toggleItalic().run(), active: 'italic', tooltip: 'Italic (Ctrl+I)' },
-        { icon: Code, action: () => editor.chain().focus().toggleCode().run(), active: 'code', tooltip: 'Code' },
-        { icon: Heading1, action: () => editor.chain().focus().toggleHeading({ level: 1 }).run(), active: 'heading', params: { level: 1 }, tooltip: 'Heading 1' },
-        { icon: Heading2, action: () => editor.chain().focus().toggleHeading({ level: 2 }).run(), active: 'heading', params: { level: 2 }, tooltip: 'Heading 2' },
-        { icon: Heading3, action: () => editor.chain().focus().toggleHeading({ level: 3 }).run(), active: 'heading', params: { level: 3 }, tooltip: 'Heading 3' },
-        { icon: List, action: () => editor.chain().focus().toggleBulletList().run(), active: 'bulletList', tooltip: 'Bullet List' },
-        { icon: ListOrdered, action: () => editor.chain().focus().toggleOrderedList().run(), active: 'orderedList', tooltip: 'Ordered List' },
-        { icon: Quote, action: () => editor.chain().focus().toggleBlockquote().run(), active: 'blockquote', tooltip: 'Blockquote' },
-        { icon: LinkIcon, action: addLink, active: 'link', tooltip: 'Insert Link (Ctrl+K)' },
-        { icon: ImageIcon, action: addImage, tooltip: 'Insert Image' },
-        { icon: Undo, action: () => editor.chain().focus().undo().run(), tooltip: 'Undo (Ctrl+Z)' },
-        { icon: Redo, action: () => editor.chain().focus().redo().run(), tooltip: 'Redo (Ctrl+Shift+Z)' },
-    ]
-
     return (
-        <div className="flex flex-wrap gap-1 p-2 border-b border-primary bg-accent/5">
-            {items.map((item, index) => (
-                <OSButton
-                    key={index}
-                    size="xs"
-                    variant={item.active && editor.isActive(item.active, item.params) ? 'primary' : 'secondary'}
-                    onClick={item.action}
-                    className="p-1"
-                >
-                    <item.icon className={`size-3.5 ${item.active && editor.isActive(item.active, item.params) ? 'text-white' : 'text-primary'}`} />
-                </OSButton>
-            ))}
+        <div className="flex flex-wrap gap-0.5 p-1.5">
+            <TB active={editor.isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()} title="Bold">
+                <Bold className="size-3.5" />
+            </TB>
+            <TB active={editor.isActive('italic')} onClick={() => editor.chain().focus().toggleItalic().run()} title="Italic">
+                <Italic className="size-3.5" />
+            </TB>
+            <TB active={editor.isActive('code')} onClick={() => editor.chain().focus().toggleCode().run()} title="Code">
+                <Code className="size-3.5" />
+            </TB>
+
+            <div className="w-px bg-black/10 mx-1 self-stretch" />
+
+            <TB active={editor.isActive('heading', { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} title="H1">
+                <Heading1 className="size-3.5" />
+            </TB>
+            <TB active={editor.isActive('heading', { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} title="H2">
+                <Heading2 className="size-3.5" />
+            </TB>
+            <TB active={editor.isActive('heading', { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} title="H3">
+                <Heading3 className="size-3.5" />
+            </TB>
+
+            <div className="w-px bg-black/10 mx-1 self-stretch" />
+
+            <TB active={editor.isActive('bulletList')} onClick={() => editor.chain().focus().toggleBulletList().run()} title="Bullet List">
+                <List className="size-3.5" />
+            </TB>
+            <TB active={editor.isActive('orderedList')} onClick={() => editor.chain().focus().toggleOrderedList().run()} title="Ordered List">
+                <ListOrdered className="size-3.5" />
+            </TB>
+            <TB active={editor.isActive('blockquote')} onClick={() => editor.chain().focus().toggleBlockquote().run()} title="Quote">
+                <Quote className="size-3.5" />
+            </TB>
+
+            <div className="w-px bg-black/10 mx-1 self-stretch" />
+
+            <TB active={editor.isActive('link')} onClick={addLink} title="Link">
+                <LinkIcon className="size-3.5" />
+            </TB>
+            <TB onClick={addImage} title="Image">
+                <ImageIcon className="size-3.5" />
+            </TB>
+
+            {/* Hide undo/redo on very small screens */}
+            <div className="hidden sm:flex items-center">
+                <div className="w-px bg-black/10 mx-1 self-stretch" />
+                <TB onClick={() => editor.chain().focus().undo().run()} title="Undo">
+                    <Undo className="size-3.5" />
+                </TB>
+                <TB onClick={() => editor.chain().focus().redo().run()} title="Redo">
+                    <Redo className="size-3.5" />
+                </TB>
+            </div>
         </div>
     )
 }
@@ -105,7 +148,7 @@ function getWordCount(html: string): number {
 
 function getReadingTime(wordCount: number): string {
     const minutes = Math.ceil(wordCount / 200)
-    return `${minutes} min read`
+    return `${minutes} min`
 }
 
 // --- Main Editor ---
@@ -138,7 +181,6 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
             const html = editor.getHTML()
             onChange(html)
 
-            // Auto-save debounce: save draft 2 seconds after last edit
             if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
             autoSaveTimerRef.current = setTimeout(() => {
                 setLastSaved(new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }))
@@ -146,7 +188,7 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
         },
         editorProps: {
             attributes: {
-                class: `prose prose-sm max-w-none focus:outline-none p-4 ${focusMode ? 'min-h-[70vh] text-base' : 'min-h-[300px]'} text-black dark:text-white dark:prose-invert`,
+                class: `prose prose-sm max-w-none focus:outline-none px-3 py-2 ${focusMode ? 'min-h-[70vh] text-base' : 'min-h-[200px]'} text-black prose-headings:text-black prose-p:text-black prose-strong:text-black prose-a:text-black`,
             },
         },
     })
@@ -180,16 +222,19 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
 
     const wordCount = getWordCount(content)
 
+    // On mobile, disable split preview
+    const canShowPreview = showPreview
+
     return (
-        <div className={`border border-primary rounded bg-primary overflow-hidden shadow-inner flex flex-col ${focusMode ? 'h-full' : 'h-full'}`}>
+        <div className={`border border-black/20 rounded-sm bg-white overflow-hidden flex flex-col ${focusMode ? 'h-full' : 'h-full'}`}>
             {/* Toolbar Row */}
-            <div className="flex items-center justify-between border-b border-primary bg-accent/5">
+            <div className="flex items-center justify-between border-b border-black/10 bg-neutral-50">
                 <EditorMenuBar editor={editor} />
-                <div className="flex items-center gap-1 pr-2">
-                    {/* Preview Toggle */}
+                <div className="flex items-center gap-0.5 pr-1.5">
+                    {/* Preview Toggle - hidden on small screens */}
                     <button
                         onClick={() => setShowPreview(!showPreview)}
-                        className={`p-1.5 rounded transition-colors ${showPreview ? 'bg-accent/30 text-primary' : 'hover:bg-accent/10 text-primary/60'}`}
+                        className={`hidden sm:flex p-1.5 rounded transition-colors ${showPreview ? 'bg-black text-white' : 'text-black/50 hover:bg-black/10 hover:text-black'}`}
                         title={showPreview ? 'Hide Preview' : 'Show Preview'}
                     >
                         {showPreview ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
@@ -199,8 +244,8 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
                     {onToggleFocusMode && (
                         <button
                             onClick={onToggleFocusMode}
-                            className={`p-1.5 rounded transition-colors ${focusMode ? 'bg-accent/30 text-primary' : 'hover:bg-accent/10 text-primary/60'}`}
-                            title={focusMode ? 'Exit Focus Mode (Ctrl+Shift+F)' : 'Focus Mode (Ctrl+Shift+F)'}
+                            className={`p-1.5 rounded transition-colors ${focusMode ? 'bg-black text-white' : 'text-black/50 hover:bg-black/10 hover:text-black'}`}
+                            title={focusMode ? 'Exit Focus (Ctrl+Shift+F)' : 'Focus Mode (Ctrl+Shift+F)'}
                         >
                             {focusMode ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
                         </button>
@@ -209,18 +254,18 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
             </div>
 
             {/* Editor + Preview */}
-            <div className={`flex-1 flex ${showPreview ? 'flex-row' : 'flex-col'} min-h-0 overflow-hidden`}>
+            <div className={`flex-1 flex ${canShowPreview ? 'flex-row' : 'flex-col'} min-h-0 overflow-hidden`}>
                 {/* Editor */}
-                <div className={`${showPreview ? 'w-1/2 border-r border-primary' : 'w-full'} overflow-auto bg-primary`}>
+                <div className={`${canShowPreview ? 'w-1/2 border-r border-black/10' : 'w-full'} overflow-auto bg-white`}>
                     <EditorContent editor={editor} />
                 </div>
 
                 {/* Live Preview */}
-                {showPreview && (
-                    <div className="w-1/2 overflow-auto bg-primary p-4">
-                        <div className="text-[10px] font-black uppercase tracking-widest opacity-30 mb-3">preview</div>
+                {canShowPreview && (
+                    <div className="w-1/2 overflow-auto bg-neutral-50 px-3 py-2">
+                        <div className="text-[9px] font-black uppercase tracking-widest text-black/25 mb-2">preview</div>
                         <div
-                            className="prose prose-sm max-w-none dark:prose-invert text-black dark:text-white"
+                            className="prose prose-sm max-w-none text-black prose-headings:text-black"
                             dangerouslySetInnerHTML={{ __html: content }}
                         />
                     </div>
@@ -228,20 +273,18 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
             </div>
 
             {/* Status Bar */}
-            <div className="flex items-center justify-between px-3 py-1.5 border-t border-primary bg-accent/5 text-[10px] font-bold tracking-wide lowercase">
-                <div className="flex items-center gap-3 opacity-50">
+            <div className="flex items-center justify-between px-2.5 py-1 border-t border-black/10 bg-neutral-50 text-[9px] font-bold tracking-wide lowercase text-black/40">
+                <div className="flex items-center gap-2">
                     <span>{wordCount} words</span>
-                    <span>•</span>
+                    <span>·</span>
                     <span>{getReadingTime(wordCount)}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                    {lastSaved && (
-                        <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
-                            <Save className="size-2.5" />
-                            draft saved {lastSaved}
-                        </span>
-                    )}
-                </div>
+                {lastSaved && (
+                    <span className="flex items-center gap-1 text-black/50">
+                        <Save className="size-2" />
+                        saved {lastSaved}
+                    </span>
+                )}
             </div>
         </div>
     )
