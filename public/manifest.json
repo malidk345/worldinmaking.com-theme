@@ -4,8 +4,8 @@
     "description": "World in Making explores product, engineering, and community through stories, tools, and insights.",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#1a1a2e",
-    "theme_color": "#e67e22",
+    "background_color": "#E5E7E0",
+    "theme_color": "#E5E7E0",
     "icons": [
         {
             "src": "/logo.svg",

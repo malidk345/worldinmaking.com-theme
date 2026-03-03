@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { WebSiteJsonLd } from "../components/SEO/JsonLd";
 import { AppProvider } from "../context/App";
@@ -43,6 +43,15 @@ export const metadata: Metadata = {
     manifest: '/manifest.json',
 };
 
+export const viewport: Viewport = {
+    themeColor: '#E5E7E0',
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+    interactiveWidget: 'resizes-content',
+};
+
 export default function RootLayout({
     children,
 }: Readonly<{
@@ -51,9 +60,8 @@ export default function RootLayout({
     return (
         <html lang="en">
             <head>
-                <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, interactive-widget=resizes-content" />
-                <meta name="theme-color" content="#E5E7E0" />
-                <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+                <meta name="apple-mobile-web-app-capable" content="yes" />
+                <meta name="apple-mobile-web-app-status-bar-style" content="default" />
                 <link rel="preconnect" href="https://fonts.googleapis.com" />
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
                 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
