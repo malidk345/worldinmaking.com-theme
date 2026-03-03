@@ -111,7 +111,7 @@ const adaptPost = (p: DBPost): Post | null => {
                 return isNaN(d.getTime())
                     ? new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                     : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-            } catch (e) {
+            } catch {
                 return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
             }
         })(),
@@ -122,7 +122,7 @@ const adaptPost = (p: DBPost): Post | null => {
         author: p.author || 'Unknown',
         authorName: p.author || 'Unknown',
         authorAvatar: p.author_avatar || undefined,
-        wordCount: rawContent.split(/\s+/).filter((w: string) => w.length > 0).length,
+        wordCount: rawContent.split(/\s+/).filter((w) => w.length > 0).length,
         headings: sortedHeadings,
         image: p.image_url || p.image || null,
         ribbon: p.ribbon || '#3546AB',
@@ -146,7 +146,7 @@ const postsFetcher = async () => {
         } else {
             dbData = data || [];
         }
-    } catch (e) {
+    } catch (e: unknown) {
         logger.error('[postsFetcher] Supabase connection failed:', e);
     }
 
@@ -187,7 +187,7 @@ export const getPostBySlug = async (slug: string): Promise<Post | null> => {
         }
 
         return adaptPost(data);
-    } catch (e) {
+    } catch (e: unknown) {
         logger.error('[getPostBySlug] Exception:', e);
         return null;
     }
@@ -207,7 +207,7 @@ export const getPostById = async (id: string): Promise<Post | null> => {
         }
 
         return adaptPost(data);
-    } catch (e) {
+    } catch (e: unknown) {
         logger.error('[getPostById] Exception:', e);
         return null;
     }

@@ -35,7 +35,7 @@ export function stripMarkdown(markdown: string | null | undefined): string {
         try {
             const doc = new DOMParser().parseFromString(text, 'text/html');
             text = doc.body.textContent || text;
-        } catch (_e) {
+        } catch {
             // Fallback if DOMParser fails
         }
     }

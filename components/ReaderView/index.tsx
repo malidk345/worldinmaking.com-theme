@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import OSButton from 'components/OSButton'
-import { IconChevronDown } from '@posthog/icons'
+
 import ScrollArea from 'components/RadixUI/ScrollArea'
 import FooterBar from '../OSChrome/FooterBar'
 import { TreeMenu } from '../TreeMenu'
@@ -111,7 +111,6 @@ const ReaderViewContent = React.memo(({
         backgroundImage,
         toggleNav,
         toggleToc,
-        setFullWidthContent,
         currentLanguage,
         setCurrentLanguage,
     } = useReaderView()
@@ -525,7 +524,6 @@ const ReaderViewContent = React.memo(({
                 showSearch
                 showToc={showSidebar}
                 hasLeftSidebar={renderLeftSidebar}
-                homeURL={homeURL}
                 title={title}
                 searchContentRef={contentRef}
                 onComment={handleComment}

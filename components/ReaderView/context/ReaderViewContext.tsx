@@ -41,14 +41,11 @@ const getComputedLineHeight = (selector: string) => {
 const ReaderViewContext = createContext<ReaderViewContextType | undefined>(undefined)
 
 export function ReaderViewProvider({ children, initialLanguage = 'en' }: { children: React.ReactNode, initialLanguage?: string }) {
-    const { compact } = useApp()
 
     // In nextjs, we don't have appWindow.size.width directly in context like aa maybe
     // We'll use window.innerWidth or a default
     const [isNavVisible, setIsNavVisible] = useState(false)
-    const [navUserToggled, setNavUserToggled] = useState(false)
     const [isTocVisible, setIsTocVisible] = useState(false)
-    const [tocUserToggled, setTocUserToggled] = useState(false)
     const [fullWidthContent, setFullWidthContent] = useState(false)
     const [lineHeightMultiplier, setLineHeightMultiplier] = useState<number>(1)
     const [lineHeightP, setLineHeightP] = useState<number | null>(null)
@@ -78,12 +75,10 @@ export function ReaderViewProvider({ children, initialLanguage = 'en' }: { child
     }, [])
 
     const toggleNav = useCallback(() => {
-        setNavUserToggled(true)
         setIsNavVisible((prev) => !prev)
     }, [])
 
     const toggleToc = useCallback(() => {
-        setTocUserToggled(true)
         setIsTocVisible((prev) => !prev)
     }, [])
 

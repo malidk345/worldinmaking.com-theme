@@ -8,7 +8,6 @@ import { ForumQuestion } from './types'
 
 interface ForumPageLayoutProps {
     questions: ForumQuestion[]
-    activeTopicSlug?: string
     title?: string
     loading?: boolean
     activeChannelId?: number | null
@@ -18,8 +17,6 @@ interface ForumPageLayoutProps {
 
 export default function ForumPageLayout({
     questions,
-    activeTopicSlug,
-    title = 'community discussions',
     loading = false,
     activeChannelId,
     onChannelChange,
@@ -53,7 +50,6 @@ export default function ForumPageLayout({
                     {/* Sidebar */}
                     <div className="hidden lg:block w-[220px] flex-shrink-0">
                         <ForumTopicSidebar
-                            activeTopicSlug={activeTopicSlug}
                             activeChannelId={activeChannelId}
                             onChannelChange={onChannelChange}
                         />
@@ -104,10 +100,7 @@ export default function ForumPageLayout({
                                 <ForumQuestionsTable
                                     questions={sortedQuestions}
                                     sortBy={sortBy}
-                                    showTopic
                                     showBody
-                                    showAuthor
-                                    showStatus
                                 />
                             )}
                         </div>

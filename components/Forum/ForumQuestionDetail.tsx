@@ -5,8 +5,6 @@ import { motion } from 'framer-motion'
 import ForumQuestionCard from './ForumQuestionCard'
 import ForumTopicSidebar from './ForumTopicSidebar'
 import { ForumQuestion } from './types'
-import Link from 'components/Link'
-import { ArrowLeft } from 'lucide-react'
 import SEO from 'components/SEO'
 
 interface ForumQuestionDetailProps {
@@ -45,7 +43,6 @@ export default function ForumQuestionDetail({ question }: ForumQuestionDetailPro
                                 <ForumQuestionCard
                                     question={question}
                                     isInForum
-                                    showSlug
                                     expanded
                                 />
                             </div>

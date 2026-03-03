@@ -16,7 +16,6 @@ import { useCommunity } from 'hooks/useCommunity'
 interface ForumQuestionCardProps {
     question: ForumQuestion
     isInForum?: boolean
-    showSlug?: boolean
     expanded?: boolean
     isComment?: boolean
 }
@@ -24,7 +23,6 @@ interface ForumQuestionCardProps {
 export default function ForumQuestionCard({
     question,
     isInForum = false,
-    showSlug = false,
     expanded: initialExpanded = false,
     isComment = false,
 }: ForumQuestionCardProps) {

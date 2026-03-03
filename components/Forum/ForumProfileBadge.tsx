@@ -4,7 +4,6 @@ import React from 'react'
 import ForumAvatar from './ForumAvatar'
 import { ForumProfile } from './types'
 import Link from 'components/Link'
-import Logomark from '../Home/images/Logomark'
 
 interface ForumProfileBadgeProps {
     profile: ForumProfile

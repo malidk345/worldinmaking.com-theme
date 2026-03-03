@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { IconNewspaper, IconUser, IconActivity, IconTerminal, IconMessage } from '@posthog/icons'
 import OSButton from 'components/OSButton'
-import { Edit, Save, Settings, Trash2, Plus, ArrowLeft, Mail, MessageSquare, ChevronDown, ChevronUp, Search } from 'lucide-react'
+import { Edit, Save, Settings, Trash2, Plus, ArrowLeft, MessageSquare, ChevronDown, ChevronUp, Search } from 'lucide-react'
 import RichTextEditor from './RichTextEditor'
 import { useAdminData, AdminPost } from '../../hooks/useAdminData'
 import { useAuth } from '../../context/AuthContext'
@@ -31,6 +31,10 @@ const AdminPanel = () => {
     const [newPostTitle, setNewPostTitle] = useState('')
     const [newPostContent, setNewPostContent] = useState('')
     const [newPostExcerpt, setNewPostExcerpt] = useState('')
+    const [newPostCategory, setNewPostCategory] = useState('')
+    const [newPostImageUrl, setNewPostImageUrl] = useState('')
+    const [newPostSlug, setNewPostSlug] = useState('')
+    const [newPostPublished, setNewPostPublished] = useState(true)
     const [translations, setTranslations] = useState<Record<string, { title: string, content: string, excerpt?: string }>>({})
 
     const { user, profile, isAdmin } = useAuth()
@@ -108,18 +112,18 @@ const AdminPanel = () => {
         )
     }
 
-    const SUPPORTED_LANGS = [
+    const SUPPORTED_LANGS: { code: string; label: string }[] = [
         { code: 'en', label: 'english' },
         { code: 'tr', label: 'turkish' },
         { code: 'de', label: 'german' },
         { code: 'es', label: 'spanish' },
     ]
 
-    const TABS = [
+    const TABS: { id: typeof activeTab; label: string; icon: React.ComponentType<any> }[] = [
         { id: 'overview', label: 'overview', icon: IconActivity },
         { id: 'content', label: 'content', icon: IconNewspaper },
         { id: 'comments', label: 'comments', icon: IconMessage },
-        { id: 'writerApplications', label: 'wim writers', icon: Mail },
+        { id: 'writerApplications', label: 'wim writers', icon: MessageSquare },
         { id: 'users', label: 'users', icon: IconUser },
         { id: 'settings', label: 'settings', icon: Settings },
     ]
@@ -190,16 +194,18 @@ const AdminPanel = () => {
         const postData = {
             title: finalTitle,
             content: finalContent,
-            slug: editingPost?.slug || toSlug(finalTitle), // Preserve slug on updates, only generate on new
+            slug: newPostSlug || toSlug(finalTitle), // Preserve manual slug if entered
             author: profile?.username || user?.email?.split('@')[0] || 'unknown',
             author_avatar: profile?.avatar_url || '',
-            published: true,
+            published: newPostPublished,
             excerpt: finalExcerpt || finalContent.replace(/<[^>]*>/g, ' ').slice(0, 150) + '...',
             language: originalLanguage,
-            translations: dbTranslations
+            translations: dbTranslations,
+            category: newPostCategory,
+            image_url: newPostImageUrl
         }
 
-        let success;
+        let success: boolean;
         if (editingPost && !editingPost.isLocal) {
             success = await updatePost(editingPost.id, postData)
         } else {
@@ -212,6 +218,10 @@ const AdminPanel = () => {
             setNewPostTitle('')
             setNewPostContent('')
             setNewPostExcerpt('')
+            setNewPostCategory('')
+            setNewPostImageUrl('')
+            setNewPostSlug('')
+            setNewPostPublished(true)
             setTranslations({})
             setOriginalLanguage('en')
             setCurrentEditLanguage('en')
@@ -224,6 +234,10 @@ const AdminPanel = () => {
         setNewPostTitle(post.title)
         setNewPostContent(post.content)
         setNewPostExcerpt(post.excerpt || '')
+        setNewPostCategory(post.category || '')
+        setNewPostImageUrl(post.image_url || '')
+        setNewPostSlug(post.slug || '')
+        setNewPostPublished(post.published ?? true)
         setTranslations(post.translations || {})
         setOriginalLanguage(post.language || 'en')
         setCurrentEditLanguage(post.language || 'en')
@@ -273,6 +287,11 @@ const AdminPanel = () => {
                                         setEditingPost(null)
                                         setNewPostTitle('')
                                         setNewPostContent('')
+                                        setNewPostExcerpt('')
+                                        setNewPostCategory('')
+                                        setNewPostImageUrl('')
+                                        setNewPostSlug('')
+                                        setNewPostPublished(true)
                                         setTranslations({})
                                     }}
                                     className="flex items-center gap-2 text-sm font-bold hover:text-primary/70 transition-colors lowercase"
@@ -328,32 +347,93 @@ const AdminPanel = () => {
                             </div>
 
                             <div className="space-y-4 flex-1 flex flex-col min-h-0">
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                                     <div className="md:col-span-2">
                                         <label className="text-[10px] font-black uppercase opacity-40 mb-1 block">post title ({currentEditLanguage})</label>
                                         <input
                                             type="text"
                                             placeholder="post title..."
                                             value={newPostTitle}
-                                            onChange={(e) => setNewPostTitle(e.target.value)}
-                                            className="w-full bg-transparent border-b border-primary py-2 text-xl font-black focus:outline-none placeholder:opacity-30"
+                                            onChange={(e) => {
+                                                setNewPostTitle(e.target.value)
+                                                if (!editingPost && !newPostSlug) {
+                                                    // Auto-generate slug for new posts if custom slug is empty
+                                                    setNewPostSlug(toSlug(e.target.value))
+                                                }
+                                            }}
+                                            className="w-full bg-transparent border-b border-primary py-1.5 md:py-2 text-lg md:text-xl font-black focus:outline-none placeholder:opacity-30"
                                         />
                                     </div>
                                     <div>
-                                        <label className="text-[10px] font-black uppercase opacity-40 mb-1 block">original language</label>
-                                        <select
-                                            value={originalLanguage}
-                                            onChange={(e) => setOriginalLanguage(e.target.value)}
-                                            className="w-full bg-accent/10 border border-primary/20 rounded px-3 py-2 text-sm font-bold outline-none"
-                                        >
-                                            {SUPPORTED_LANGS.map(l => (
-                                                <option key={l.code} value={l.code}>{l.label}</option>
-                                            ))}
-                                        </select>
+                                        <label className="text-[10px] font-black uppercase opacity-40 mb-1 block">custom url (slug)</label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. my-awesome-post"
+                                            value={newPostSlug}
+                                            onChange={(e) => setNewPostSlug(e.target.value)}
+                                            className="w-full bg-accent/5 border border-primary/20 rounded px-2.5 py-1.5 text-sm font-bold focus:outline-none"
+                                        />
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-[10px] font-black uppercase opacity-40 mb-1 block">status / language</label>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => setNewPostPublished(!newPostPublished)}
+                                                className={`flex-1 px-3 py-1.5 text-xs font-bold rounded border transition-colors ${newPostPublished
+                                                    ? 'bg-green-500/10 border-green-500/30 text-green-600'
+                                                    : 'bg-yellow-500/10 border-yellow-500/30 text-yellow-600'
+                                                    }`}
+                                            >
+                                                {newPostPublished ? '● Published' : '○ Draft'}
+                                            </button>
+                                            <select
+                                                value={originalLanguage}
+                                                onChange={(e) => setOriginalLanguage(e.target.value)}
+                                                className="w-1/2 bg-accent/10 border border-primary/20 rounded px-2 text-xs font-bold outline-none"
+                                            >
+                                                {SUPPORTED_LANGS.map(l => (
+                                                    <option key={l.code} value={l.code}>{l.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div className="flex-1 min-h-[400px] flex flex-col">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                                    <div className="md:col-span-2">
+                                        <label className="text-[10px] font-black uppercase opacity-40 mb-1 block">excerpt / meta description ({currentEditLanguage})</label>
+                                        <textarea
+                                            placeholder="short description for seo (optional)..."
+                                            value={newPostExcerpt}
+                                            onChange={(e) => setNewPostExcerpt(e.target.value)}
+                                            className="w-full bg-accent/5 border border-primary/20 rounded px-2.5 py-1.5 text-xs md:text-sm focus:outline-none resize-none h-16 md:h-20"
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3 md:col-span-2">
+                                        <div>
+                                            <label className="text-[10px] font-black uppercase opacity-40 mb-1 block">category (global)</label>
+                                            <input
+                                                type="text"
+                                                placeholder="e.g. technology..."
+                                                value={newPostCategory}
+                                                onChange={(e) => setNewPostCategory(e.target.value)}
+                                                className="w-full bg-accent/5 border border-primary/20 rounded px-2.5 py-1.5 text-xs md:text-sm font-bold focus:outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-black uppercase opacity-40 mb-1 block">image url (global)</label>
+                                            <input
+                                                type="text"
+                                                placeholder="https://..."
+                                                value={newPostImageUrl}
+                                                onChange={(e) => setNewPostImageUrl(e.target.value)}
+                                                className="w-full bg-accent/5 border border-primary/20 rounded px-2.5 py-1.5 text-xs md:text-sm font-bold focus:outline-none"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex-1 min-h-[300px] md:min-h-[400px] flex flex-col mt-2 md:mt-4">
                                     <label className="text-[10px] font-black uppercase opacity-40 mb-1 block">content ({currentEditLanguage})</label>
                                     <RichTextEditor content={newPostContent} onChange={setNewPostContent} />
                                 </div>
@@ -401,6 +481,9 @@ const AdminPanel = () => {
                                             <div className="flex flex-col">
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-sm font-black lowercase">{post.title}</span>
+                                                    {!post.published && (
+                                                        <span className="bg-yellow-50 text-yellow-600 text-[10px] px-1.5 py-0.5 rounded font-black border border-yellow-200 uppercase tracking-tighter">draft</span>
+                                                    )}
                                                     {post.isLocal && (
                                                         <span className="bg-blue-50 text-blue-500 text-[10px] px-1.5 py-0.5 rounded font-black border border-blue-200 uppercase tracking-tighter">read-only file</span>
                                                     )}
@@ -461,7 +544,7 @@ const AdminPanel = () => {
 
                             {!writerApplicationsLoading && writerApplications.length === 0 && (
                                 <div className="text-center p-8">
-                                    <Mail className="size-8 text-primary/20 mx-auto mb-2" />
+                                    <MessageSquare className="size-8 text-primary/20 mx-auto mb-2" />
                                     <div className="text-primary/40 italic text-sm font-medium lowercase">
                                         no transmissions found
                                     </div>
@@ -475,7 +558,7 @@ const AdminPanel = () => {
                                             <div className="flex items-start justify-between">
                                                 <div className="flex items-center gap-3">
                                                     <div className="p-2 border border-primary/20 rounded-sm bg-accent/5">
-                                                        <Mail className="size-4" />
+                                                        <MessageSquare className="size-4" />
                                                     </div>
                                                     <div>
                                                         <h3 className="text-xs font-black lowercase">{application.name}</h3>

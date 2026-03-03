@@ -4,7 +4,7 @@ import React from 'react'
 import Tooltip from 'components/RadixUI/Tooltip'
 import Link from 'components/Link'
 import ZoomHover from 'components/ZoomHover'
-import { ExternalLink, ChevronRight } from 'lucide-react'
+import { ExternalLink } from 'lucide-react'
 import type { LinkState } from 'components/Link'
 
 // basic usage
@@ -15,12 +15,8 @@ interface OSButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElemen
     variant?: 'default' | 'primary' | 'secondary' | 'underline' | 'underlineOnHover' | 'ghost'
     size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
     icon?: React.ReactNode
-    iconClassName?: string
     tooltip?: string | React.ReactNode
     tooltipDelay?: number
-    label?: string
-    chip?: string
-    chipColor?: string
     className?: string
     active?: boolean
     disabled?: boolean
@@ -33,7 +29,6 @@ interface OSButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElemen
     onClick?: (e: React.MouseEvent<HTMLButtonElement> | React.MouseEvent<HTMLAnchorElement>) => void
     state?: LinkState
     zoomHover?: boolean | 'xs' | 'sm' | 'md' | 'lg'
-    hover?: 'border' | 'background'
 }
 
 const OSButton = React.forwardRef<HTMLButtonElement | HTMLAnchorElement, OSButtonProps>(
@@ -43,12 +38,8 @@ const OSButton = React.forwardRef<HTMLButtonElement | HTMLAnchorElement, OSButto
             variant = 'default',
             size = 'lg',
             icon,
-            iconClassName,
             tooltip,
             tooltipDelay = 0,
-            label,
-            chip,
-            chipColor,
             className = '',
             active = false,
             disabled = false,
@@ -61,7 +52,6 @@ const OSButton = React.forwardRef<HTMLButtonElement | HTMLAnchorElement, OSButto
             onClick,
             state = {},
             zoomHover,
-            hover = 'border',
             ...props
         },
         ref

@@ -4,7 +4,6 @@ import React from 'react'
 import { createPortal } from 'react-dom'
 import OSButton from 'components/OSButton'
 import {
-    IconHome,
     IconSidebarOpen,
     IconSidebarClose,
     IconChevronLeft,
@@ -19,7 +18,6 @@ import {
 import Tooltip from 'components/RadixUI/Tooltip'
 import { useApp } from 'context/App'
 import { useWindow } from 'context/Window'
-import { Search } from 'lucide-react'
 import { InPageSearchBar } from 'components/Search/InPageSearchBar'
 import { LanguageSelector } from './LanguageSelector'
 import KeyboardShortcut from 'components/KeyboardShortcut'
@@ -35,7 +33,6 @@ interface FooterBarProps {
     showToc?: boolean
     hasLeftSidebar?: boolean
     rightActionButtons?: React.ReactNode
-    homeURL?: string
     title?: string
     navIconClassName?: string
     searchContentRef?: React.RefObject<HTMLElement | null>
@@ -60,7 +57,6 @@ export default function FooterBar({
     showToc = false,
     hasLeftSidebar = false,
     rightActionButtons,
-    homeURL,
     title,
     navIconClassName = '',
     searchContentRef,

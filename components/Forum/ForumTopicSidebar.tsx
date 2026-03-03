@@ -9,13 +9,11 @@ import { useCommunity } from 'hooks/useCommunity'
 dayjs.extend(relativeTime)
 
 interface ForumTopicSidebarProps {
-    activeTopicSlug?: string
     activeChannelId?: number | null
     onChannelChange?: (id: number | null) => void
 }
 
 export default function ForumTopicSidebar({
-    activeTopicSlug,
     activeChannelId,
     onChannelChange
 }: ForumTopicSidebarProps) {

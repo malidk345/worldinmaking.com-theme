@@ -266,7 +266,7 @@ export default function TaskBarMenu() {
                 ref={taskbarRef}
                 id="taskbar"
                 data-scheme="primary"
-                className="w-full bg-accent/75 backdrop-blur border-b border-primary top-0 z-[9999] flex justify-between pl-0.5 pr-2 items-center"
+                className="w-full bg-accent/90 backdrop-blur-md border-b border-primary top-0 z-[9999] flex justify-between pl-0.5 pr-2 items-center"
             >
                 <MenuBar
                     menus={menuData}

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { ChangeEvent, useEffect, useRef, useState, useCallback, useMemo } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useEditor, EditorContent, Editor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
@@ -213,8 +213,6 @@ const MentionProfiles = ({ onSelect, onClose, search = '' }: { onSelect?: (profi
 export default function ForumRichText({
     initialValue = '',
     setFieldValue,
-    autoFocus,
-    onSubmit,
     maxLength = 2000,
     bodyKey = 'body',
     className = '',
@@ -226,10 +224,8 @@ export default function ForumRichText({
     borderClass = 'border-border',
     showMarkdownLogo = false,
 }: ForumRichTextProps) {
-    const [imageLoading, setImageLoading] = useState(false)
     const [showMentionProfiles, setShowMentionProfiles] = useState(false)
     const [mentionSearch, setMentionSearch] = useState('')
-    const [localImages, setLocalImages] = useState<unknown[]>([])
 
     const editor = useEditor({
         extensions: [
@@ -297,15 +293,7 @@ export default function ForumRichText({
             const file = acceptedFiles[0]
             if (!file || !editor) return
 
-            const fakeImagePath = `/${Date.now()}/${slugify(file.name)}`
-            const objectURL = URL.createObjectURL(file)
-
-            setLocalImages((prev) => [
-                ...prev,
-                { fakeImagePath, objectURL },
-            ])
-
-            editor.chain().focus().setImage({ src: fakeImagePath }).run()
+            // editor.chain().focus().setImage({ src: fakeImagePath }).run()
         },
         [editor]
     )
@@ -357,7 +345,6 @@ export default function ForumRichText({
                                 variant="default"
                                 size="md"
                                 icon={button.icon}
-                                iconClassName="size-5 justify-center items-center flex"
                                 className={`!text-secondary hover:!text-primary ${button.isActive(editor) ? '!text-primary bg-accent' : ''}`}
                                 tooltip={button.tooltipContent}
                                 tooltipDelay={500}
@@ -371,7 +358,6 @@ export default function ForumRichText({
                             variant="default"
                             size="md"
                             icon={<IconImage />}
-                            iconClassName="size-5 justify-center items-center flex"
                             className="!text-secondary hover:!text-primary"
                             tooltip="Image"
                             tooltipDelay={500}
@@ -437,11 +423,6 @@ export default function ForumRichText({
                 </aside>
             </div>
 
-            {imageLoading && (
-                <div className="inset-0 bg-primary/70 absolute flex justify-center items-center z-50 rounded">
-                    <Loading label="processing asset" />
-                </div>
-            )}
         </div>
     )
 }

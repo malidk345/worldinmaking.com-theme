@@ -7,14 +7,6 @@ import { useApp } from '../../context/App'
 export default function SystemSettings() {
     const { siteSettings, updateSiteSettings } = useApp()
 
-    const wallpapers = [
-        { id: 'hogzilla', label: 'Hogzilla', color: 'bg-[#DAE0EB]' },
-        { id: 'office-party', label: 'Office Party', color: 'bg-white' },
-        { id: 'keyboard-garden', label: 'Keyboard Garden', color: 'bg-[#E1D7C2]' },
-        { id: 'technical', label: 'Technical', color: 'bg-[#e9e9e9]' },
-        { id: 'slate', label: 'Slate', color: 'bg-slate-100 dark:bg-slate-900' },
-        { id: 'zinc', label: 'Zinc', color: 'bg-zinc-100 dark:bg-zinc-900' },
-    ]
 
     return (
         <div className="h-full bg-primary flex flex-col overflow-hidden lowercase">

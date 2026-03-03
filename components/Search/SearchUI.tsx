@@ -156,16 +156,8 @@ export const WindowSearchUI = ({ initialFilter }: { initialFilter?: string }) =>
 
 export const SearchUI = ({
     initialFilter = '',
-    className = '',
-    isRefinedClassName = 'bg-primary',
-    hideFilters = false,
-    autoFocus = true,
 }: {
     initialFilter?: string
-    className?: string
-    isRefinedClassName?: string
-    hideFilters?: boolean
-    autoFocus?: boolean
 }) => {
     return <WindowSearchUI initialFilter={initialFilter} />
 }

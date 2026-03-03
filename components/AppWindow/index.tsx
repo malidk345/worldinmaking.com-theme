@@ -20,7 +20,7 @@ import { WindowProvider } from '../../context/Window'
 import { IMenu } from 'components/PostLayout/types'
 import Tooltip from 'components/RadixUI/Tooltip'
 import OSButton from 'components/OSButton'
-import MenuBar, { MenuItemType } from 'components/RadixUI/MenuBar'
+import MenuBar from 'components/RadixUI/MenuBar'
 import { Popover } from '../RadixUI/Popover'
 import { FileMenu } from '../RadixUI/FileMenu'
 import { ToggleGroup } from '../RadixUI/ToggleGroup'
@@ -43,7 +43,6 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
         minimizeWindow,
         bringToFront,
         focusedWindow,
-        taskbarHeight,
         updateWindowRef,
         updateWindow,
         getDesktopCenterPosition,
@@ -284,7 +283,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
 
         hasMobileAdjusted.current = true
         updateWindow(item, { size: nextSize, position: nextPosition })
-    }, [item, updateWindow])
+    }, [item, constraintsRef, updateWindow])
 
     const isMaximized = useMemo(() => {
         if (!constraintsRef.current) return false
@@ -298,7 +297,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
             Math.abs(position.x - inset) <= 2 &&
             Math.abs(position.y - inset) <= 2
         )
-    }, [position.x, position.y, size.height, size.width])
+    }, [constraintsRef, position.x, position.y, size.height, size.width])
 
     const canGoBack = activeHistoryIndex > 0
     const canGoForward = activeHistoryIndex < history.length - 1

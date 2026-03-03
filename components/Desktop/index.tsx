@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useRef, useMemo } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useApp } from '../../context/App'
 import { AppIcon } from 'components/OSIcons/AppIcon'
 import DraggableDesktopIcon from './DraggableDesktopIcon'
@@ -8,7 +8,7 @@ import { motion } from 'framer-motion'
 import PostsView from 'components/Posts'
 
 export default function Desktop() {
-    const { addWindow, constraintsRef, siteSettings } = useApp()
+    const { addWindow, siteSettings } = useApp()
     const [rendered, setRendered] = useState(false)
 
     const apps = useMemo(() => [
@@ -43,7 +43,7 @@ export default function Desktop() {
 
     const isTechnical = siteSettings.wallpaper === 'technical'
 
-    const wallpaperClasses = 'bg-white'
+    const wallpaperClasses = 'bg-accent'
 
     return (
         <div

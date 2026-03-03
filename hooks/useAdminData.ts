@@ -84,7 +84,7 @@ export const useAdminData = () => {
 
             const dbPosts = data || [];
 
-            setPosts(dbPosts.sort((a: AdminPost, b: AdminPost) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+            setPosts(dbPosts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
         } catch (e: unknown) {
             logger.error('[useAdminData] fetchPosts exception:', e);
             addToast('failed to fetch posts', 'error');
@@ -110,7 +110,7 @@ export const useAdminData = () => {
             addToast('post deleted', 'success');
             setPosts(prev => prev.filter(p => p.id !== id));
             return true;
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error('[useAdminData] deletePost exception:', e);
             addToast('failed to delete post', 'error');
             return false;
@@ -306,7 +306,7 @@ export const useAdminData = () => {
             setCommunityPosts(prev => prev.filter(p => p.id !== id));
             setCommunityReplies(prev => prev.filter(r => r.post_id !== id));
             return true;
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error('[useAdminData] deleteCommunityPost exception:', e);
             addToast('failed to delete comment', 'error');
             return false;
@@ -395,7 +395,7 @@ export const useAdminData = () => {
             addToast('reply deleted', 'success');
             setCommunityReplies(prev => prev.filter(r => r.id !== id));
             return true;
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error('[useAdminData] deleteCommunityReply exception:', e);
             addToast('failed to delete reply', 'error');
             return false;

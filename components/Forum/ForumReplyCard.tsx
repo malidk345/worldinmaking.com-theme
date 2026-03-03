@@ -6,7 +6,7 @@ import ForumMarkdown from './ForumMarkdown'
 import { ForumReply } from './types'
 import ForumAvatar from './ForumAvatar'
 import OSButton from 'components/OSButton'
-import { IconThumbsUp, IconThumbsDown, IconCheck, IconPencil } from '@posthog/icons'
+import { IconThumbsUp, IconThumbsDown, IconPencil } from '@posthog/icons'
 import Link from 'components/Link'
 
 interface ForumReplyCardProps {

@@ -13,7 +13,7 @@ interface ForumReplyFormProps {
     onSubmit?: (content: string) => void
 }
 
-export default function ForumReplyForm({ isInForum = false, archived = false, onSubmit }: ForumReplyFormProps) {
+export default function ForumReplyForm({ archived = false, onSubmit }: ForumReplyFormProps) {
     const [body, setBody] = useState('')
     const [isOpen, setIsOpen] = useState(false)
     const { profile } = useAuth()

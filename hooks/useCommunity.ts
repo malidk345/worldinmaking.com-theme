@@ -268,7 +268,7 @@ export const useCommunity = () => {
             if (activePostSlug) mutate(['community_posts_slug', activePostSlug]);
             if (activePostLookupId) mutate(['community_post_id', activePostLookupId]);
             return true;
-        } catch (e) {
+        } catch (e: unknown) {
             logger.error('[useCommunity] toggleLike error:', e);
             return false;
         }
