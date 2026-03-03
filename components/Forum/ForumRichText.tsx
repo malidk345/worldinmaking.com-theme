@@ -8,14 +8,14 @@ import Link from '@tiptap/extension-link'
 import Image from '@tiptap/extension-image'
 import CharacterCount from '@tiptap/extension-character-count'
 import { useDropzone } from 'react-dropzone'
-import slugify from 'slugify'
+
 import { AnimatePresence, motion } from 'framer-motion'
 import { IconFeatures, IconImage, IconX } from '@posthog/icons'
 
 import OSButton from 'components/OSButton'
 import ForumAvatar from './ForumAvatar'
 import MarkdownLogo from './MarkdownLogo'
-import Loading from 'components/Loading'
+
 
 
 const buttons = [

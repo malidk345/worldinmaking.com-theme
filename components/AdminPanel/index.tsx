@@ -119,7 +119,7 @@ const AdminPanel = () => {
         { code: 'es', label: 'spanish' },
     ]
 
-    const TABS: { id: typeof activeTab; label: string; icon: React.ComponentType<any> }[] = [
+    const TABS: { id: typeof activeTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
         { id: 'overview', label: 'overview', icon: IconActivity },
         { id: 'content', label: 'content', icon: IconNewspaper },
         { id: 'comments', label: 'comments', icon: IconMessage },
