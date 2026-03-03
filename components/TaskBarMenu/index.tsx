@@ -90,7 +90,7 @@ export default function TaskBarMenu() {
                                         </div>
 
                                         <p>
-                                            world in making began from a simple but unsettling intuition: the world is not something we merely inhabit — it is something continuously being formed.
+                                            worldinmaking (wim) began from a simple but unsettling intuition: the world is not something we merely inhabit — it is something continuously being formed.
                                         </p>
 
                                         <p>
@@ -102,7 +102,7 @@ export default function TaskBarMenu() {
                                         </p>
 
                                         <p>
-                                            world in making is an independent writing and research platform where ideas are not treated as finished monuments but as living structures — open to interrogation, reinterpretation, and reconstruction. rather than offering definitive answers, it lingers with tension. it questions what presents itself as obvious. it returns to inherited concepts not to preserve them, but to test their foundations.
+                                            worldinmaking (wim) is an independent writing and research platform where ideas are not treated as finished monuments but as living structures — open to interrogation, reinterpretation, and reconstruction. rather than offering definitive answers, it lingers with tension. it questions what presents itself as obvious. it returns to inherited concepts not to preserve them, but to test their foundations.
                                         </p>
 
                                         <p>
@@ -115,7 +115,7 @@ export default function TaskBarMenu() {
                                         </div>
 
                                         <p>
-                                            world in making is an ongoing attempt to remain intellectually restless — to resist comfort, to slow down judgment, and to take ideas seriously in a time that prefers immediacy.
+                                            worldinmaking (wim) is an ongoing attempt to remain intellectually restless — to resist comfort, to slow down judgment, and to take ideas seriously in a time that prefers immediacy.
                                         </p>
 
                                         <p>
