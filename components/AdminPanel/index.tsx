@@ -394,8 +394,8 @@ const AdminPanel = () => {
                             {!focusMode && (
                                 <>
                                     {/* Multi-language Tabs */}
-                                    <div className="flex items-center gap-1.5 mb-3 border-b border-black/10 pb-px overflow-x-auto">
-                                        <div className="flex gap-0.5">
+                                    <div className="flex items-center gap-1.5 mb-3 border border-black/10 rounded-sm bg-neutral-50 p-1.5 overflow-x-auto">
+                                        <div className="flex gap-1 flex-shrink-0">
                                             {SUPPORTED_LANGS.map(lang => {
                                                 const isOriginal = lang.code === originalLanguage
                                                 const hasTranslation = translations[lang.code] || isOriginal
@@ -407,10 +407,10 @@ const AdminPanel = () => {
                                                     <button
                                                         key={lang.code}
                                                         onClick={() => handleLanguageChange(lang.code)}
-                                                        className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-wider border-t border-x rounded-t-sm transition-all
+                                                        className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-sm transition-all
                                                             ${isActive
-                                                                ? 'bg-white border-black/15 border-b-transparent translate-y-px text-black'
-                                                                : 'border-transparent text-black/35 hover:text-black/60'}
+                                                                ? 'bg-black text-white'
+                                                                : 'text-black/40 hover:bg-black/5 hover:text-black/70'}
                                                         `}
                                                     >
                                                         {lang.label} {isOriginal && '·'}
@@ -420,7 +420,7 @@ const AdminPanel = () => {
                                         </div>
 
                                         <select
-                                            className="ml-auto bg-transparent border border-black/10 rounded-sm text-[10px] font-bold text-black/50 px-1.5 py-0.5 outline-none"
+                                            className="ml-auto bg-transparent border border-black/10 rounded-sm text-[10px] font-bold text-black/50 px-1.5 py-0.5 outline-none flex-shrink-0"
                                             value=""
                                             onChange={(e) => {
                                                 if (e.target.value) handleLanguageChange(e.target.value)
