@@ -26,9 +26,7 @@ export default function ForumQuestionDetail({ question }: ForumQuestionDetailPro
                     <div className="flex gap-8">
                         {/* Sidebar */}
                         <div className="hidden lg:block w-[220px] flex-shrink-0">
-                            <ForumTopicSidebar
-                                activeTopicSlug={question.topics[0]?.slug}
-                            />
+                            <ForumTopicSidebar />
                         </div>
 
                         {/* Main content */}
