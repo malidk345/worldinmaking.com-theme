@@ -137,8 +137,6 @@ function CommunityTopicRouteView({ slug }: { slug: string }) {
         <ForumPageLayout
             questions={posts.map(adaptPost)}
             loading={loading}
-            activeTopicSlug={slug}
-            title={`topic: ${slug}`}
         />
     )
 }
