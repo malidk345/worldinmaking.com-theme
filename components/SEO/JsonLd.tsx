@@ -123,3 +123,48 @@ export function WebSiteJsonLd({ name, url, description }: WebSiteJsonLdProps) {
         />
     )
 }
+
+interface DiscussionForumPostingJsonLdProps {
+    title: string
+    description: string
+    url: string
+    authorName: string
+    datePublished: string
+    replyCount?: number
+}
+
+export function DiscussionForumPostingJsonLd({
+    title,
+    description,
+    url,
+    authorName,
+    datePublished,
+    replyCount = 0,
+}: DiscussionForumPostingJsonLdProps) {
+    const absoluteUrl = url.startsWith('http') ? url : `${SITE_URL}${url}`
+
+    const schema = {
+        "@context": "https://schema.org",
+        "@type": "DiscussionForumPosting",
+        headline: title,
+        text: description,
+        url: absoluteUrl,
+        datePublished,
+        author: {
+            "@type": "Person",
+            name: authorName,
+        },
+        interactionStatistic: {
+            "@type": "InteractionCounter",
+            interactionType: "https://schema.org/CommentAction",
+            userInteractionCount: replyCount,
+        }
+    }
+
+    return (
+        <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        />
+    )
+}

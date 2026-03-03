@@ -85,6 +85,23 @@ async function getQuestionTopicRoutes(): Promise<MetadataRoute.Sitemap> {
     }));
 }
 
+async function getQuestionRoutes(): Promise<MetadataRoute.Sitemap> {
+  const data = await fetchFromSupabase(
+    "community_posts",
+    "id,created_at",
+    {}
+  ) as Array<{ id: number; created_at?: string }>;
+
+  return data
+    .filter((item) => item.id)
+    .map((item) => ({
+      url: `${siteUrl}/questions/${item.id}`,
+      lastModified: item.created_at ? new Date(item.created_at) : new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.6,
+    }));
+}
+
 async function getProfileRoutes(): Promise<MetadataRoute.Sitemap> {
   const data = await fetchFromSupabase(
     "profiles",
@@ -102,11 +119,12 @@ async function getProfileRoutes(): Promise<MetadataRoute.Sitemap> {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [posts, topics, profiles] = await Promise.all([
+  const [posts, topics, profiles, questions] = await Promise.all([
     getPostRoutes(),
     getQuestionTopicRoutes(),
     getProfileRoutes(),
+    getQuestionRoutes(),
   ]);
 
-  return [...staticRoutes, ...posts, ...topics, ...profiles];
+  return [...staticRoutes, ...posts, ...topics, ...profiles, ...questions];
 }

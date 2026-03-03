@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ArticleJsonLd } from "components/SEO/JsonLd";
 
 export const runtime = 'edge';
 
@@ -99,4 +100,32 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export { default } from "./page-client";
+import PostPageClient from "./page-client";
+
+export default async function PostPage({ params }: Props) {
+  const { slug } = await params;
+  const post = await getPost(slug);
+
+  if (!post) {
+    return <PostPageClient />;
+  }
+
+  const title = post.title || slug;
+  const description = getExcerpt(post);
+  const postUrl = `${siteUrl}/posts/${slug}/`;
+  const authorName = post.author || "World in Making";
+
+  return (
+    <>
+      <ArticleJsonLd
+        title={title}
+        description={description}
+        url={postUrl}
+        image={post.image_url || undefined}
+        datePublished={post.created_at || new Date().toISOString()}
+        authorName={authorName}
+      />
+      <PostPageClient />
+    </>
+  );
+}
