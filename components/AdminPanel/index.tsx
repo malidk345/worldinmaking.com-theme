@@ -394,43 +394,45 @@ const AdminPanel = () => {
                             {!focusMode && (
                                 <>
                                     {/* Multi-language Tabs */}
-                                    <div className="flex items-center gap-1.5 mb-3 border border-black/10 rounded-sm bg-neutral-50 p-1.5 overflow-x-auto">
-                                        <div className="flex gap-1 flex-shrink-0">
-                                            {SUPPORTED_LANGS.map(lang => {
-                                                const isOriginal = lang.code === originalLanguage
-                                                const hasTranslation = translations[lang.code] || isOriginal
-                                                const isActive = currentEditLanguage === lang.code
+                                    <div className="mb-2.5">
+                                        <label className="text-[9px] font-black uppercase text-black/30 mb-0.5 block tracking-wider">language</label>
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex gap-1 overflow-x-auto">
+                                                {SUPPORTED_LANGS.map(lang => {
+                                                    const isOriginal = lang.code === originalLanguage
+                                                    const hasTranslation = translations[lang.code] || isOriginal
+                                                    const isActive = currentEditLanguage === lang.code
 
-                                                if (!hasTranslation && !isActive) return null
+                                                    if (!hasTranslation && !isActive) return null
 
-                                                return (
-                                                    <button
-                                                        key={lang.code}
-                                                        onClick={() => handleLanguageChange(lang.code)}
-                                                        className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-sm transition-all
-                                                            ${isActive
-                                                                ? 'bg-black text-white'
-                                                                : 'text-black/40 hover:bg-black/5 hover:text-black/70'}
-                                                        `}
-                                                    >
-                                                        {lang.label} {isOriginal && '·'}
-                                                    </button>
-                                                )
-                                            })}
+                                                    return (
+                                                        <button
+                                                            key={lang.code}
+                                                            onClick={() => handleLanguageChange(lang.code)}
+                                                            className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-sm border transition-all flex-shrink-0
+                                                                ${isActive
+                                                                    ? 'bg-black text-white border-black'
+                                                                    : 'bg-neutral-50 border-black/10 text-black/40 hover:bg-black/5 hover:text-black/70'}
+                                                            `}
+                                                        >
+                                                            {lang.label} {isOriginal && '·'}
+                                                        </button>
+                                                    )
+                                                })}
+                                            </div>
+                                            <select
+                                                className="bg-neutral-50 border border-black/10 rounded-sm text-[10px] font-bold text-black/50 px-2 py-1 outline-none flex-shrink-0"
+                                                value=""
+                                                onChange={(e) => {
+                                                    if (e.target.value) handleLanguageChange(e.target.value)
+                                                }}
+                                            >
+                                                <option value="" disabled>+ add</option>
+                                                {SUPPORTED_LANGS.filter(l => l.code !== originalLanguage && !translations[l.code]).map(lang => (
+                                                    <option key={lang.code} value={lang.code}>{lang.label}</option>
+                                                ))}
+                                            </select>
                                         </div>
-
-                                        <select
-                                            className="ml-auto bg-transparent border border-black/10 rounded-sm text-[10px] font-bold text-black/50 px-1.5 py-0.5 outline-none flex-shrink-0"
-                                            value=""
-                                            onChange={(e) => {
-                                                if (e.target.value) handleLanguageChange(e.target.value)
-                                            }}
-                                        >
-                                            <option value="" disabled>+ lang</option>
-                                            {SUPPORTED_LANGS.filter(l => l.code !== originalLanguage && !translations[l.code]).map(lang => (
-                                                <option key={lang.code} value={lang.code}>{lang.label}</option>
-                                            ))}
-                                        </select>
                                     </div>
 
                                     {/* Title */}
