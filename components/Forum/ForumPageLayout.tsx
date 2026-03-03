@@ -85,13 +85,8 @@ export default function ForumPageLayout({
                             </div>
                         </div>
 
-                        {/* New question form */}
-                        <div className="mb-8">
-                            <ForumQuestionForm onSubmit={onSubmit} className="!mb-0" isInForum />
-                        </div>
-
                         {/* Questions list */}
-                        <div className="relative">
+                        <div className="relative mb-8">
                             {loading && questions.length === 0 ? (
                                 <div className="py-20 text-center">
                                     <div className="text-[11px] font-bold lowercase opacity-20 tracking-widest">polling...</div>
@@ -103,6 +98,11 @@ export default function ForumPageLayout({
                                     showBody
                                 />
                             )}
+                        </div>
+
+                        {/* New question form */}
+                        <div>
+                            <ForumQuestionForm onSubmit={onSubmit} className="!mb-0" isInForum />
                         </div>
                     </div>
                 </div>
