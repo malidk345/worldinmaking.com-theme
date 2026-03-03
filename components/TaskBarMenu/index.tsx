@@ -9,7 +9,7 @@ import {
     IconBolt,
     IconApps
 } from '@posthog/icons'
-import { Settings } from 'lucide-react'
+import { Settings, Info, FileText, BookOpen, Newspaper, MessageSquare, RotateCw, LogOut, LogIn } from 'lucide-react'
 import { useApp } from '../../context/App'
 import { useAuth } from '../../context/AuthContext'
 import MenuBar, { MenuItemType, MenuType } from 'components/RadixUI/MenuBar'
@@ -75,21 +75,8 @@ export default function TaskBarMenu() {
             items: [
                 {
                     type: 'item' as const,
-                    label: 'System Settings',
-                    icon: <Settings className="size-4 opacity-70" />,
-                    onClick: () => addWindow({
-                        key: 'system-settings',
-                        title: 'System Settings',
-                        icon: <Settings className="size-4" />,
-                        path: '/settings',
-                        element: <SystemSettings />,
-                        size: { width: 680, height: 520 }
-                    })
-                },
-                { type: 'separator' as const },
-                {
-                    type: 'item' as const,
                     label: 'About WorldInMaking',
+                    icon: <Info className="size-4 opacity-70" />,
                     onClick: () => addWindow({
                         key: 'about',
                         title: 'About WorldInMaking',
@@ -166,37 +153,51 @@ export default function TaskBarMenu() {
                         type: 'submenu' as const,
                         label: 'Posts',
                         items: [
-                            { type: 'item' as const, label: 'All posts', onClick: () => addWindow({ key: 'posts-all', title: 'All Posts', path: '/posts' }) },
-                            { type: 'item' as const, label: 'Tutorials', onClick: () => addWindow({ key: 'tutorials', title: 'Tutorials', path: '/tutorials' }) },
+                            { type: 'item' as const, label: 'All posts', icon: <FileText className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'posts-all', title: 'All Posts', path: '/posts' }) },
+                            { type: 'item' as const, label: 'Tutorials', icon: <BookOpen className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'tutorials', title: 'Tutorials', path: '/tutorials' }) },
                             { type: 'separator' as const },
-                            { type: 'item' as const, label: 'Newspaper', onClick: () => addWindow({ key: 'posts', title: 'Posts', element: <PostsView />, path: '/posts-newspaper' }) },
+                            { type: 'item' as const, label: 'Newspaper', icon: <Newspaper className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'posts', title: 'Posts', element: <PostsView />, path: '/posts-newspaper' }) },
                         ]
                     },
                     {
                         type: 'submenu' as const,
                         label: 'Community',
                         items: [
-                            { type: 'item' as const, label: 'Forums', onClick: () => addWindow({ key: 'questions', title: 'Questions', path: '/questions' }) },
+                            { type: 'item' as const, label: 'Forums', icon: <MessageSquare className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'questions', title: 'Questions', path: '/questions' }) },
                         ]
                     },
                     { type: 'separator' as const },
                 ] : []),
-                { type: 'item' as const, label: 'Force restart', onClick: () => window.location.reload() },
+                { type: 'item' as const, label: 'Force restart', icon: <RotateCw className="size-4 opacity-70" />, onClick: () => window.location.reload() },
+                { type: 'separator' as const },
+                {
+                    type: 'item' as const,
+                    label: 'System Settings',
+                    icon: <Settings className="size-4 opacity-70" />,
+                    onClick: () => addWindow({
+                        key: 'system-settings',
+                        title: 'System Settings',
+                        icon: <Settings className="size-4" />,
+                        path: '/settings',
+                        element: <SystemSettings />,
+                        size: { width: 680, height: 520 }
+                    })
+                },
             ]
         },
         {
             trigger: 'Posts',
             items: [
-                { type: 'item' as const, label: 'All posts', onClick: () => addWindow({ key: 'posts-all', title: 'All Posts', path: '/posts' }) },
-                { type: 'item' as const, label: 'Tutorials', onClick: () => addWindow({ key: 'tutorials', title: 'Tutorials', path: '/tutorials' }) },
+                { type: 'item' as const, label: 'All posts', icon: <FileText className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'posts-all', title: 'All Posts', path: '/posts' }) },
+                { type: 'item' as const, label: 'Tutorials', icon: <BookOpen className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'tutorials', title: 'Tutorials', path: '/tutorials' }) },
                 { type: 'separator' as const },
-                { type: 'item' as const, label: 'Newspaper', onClick: () => addWindow({ key: 'posts', title: 'Posts', element: <PostsView />, path: '/posts-newspaper' }) },
+                { type: 'item' as const, label: 'Newspaper', icon: <Newspaper className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'posts', title: 'Posts', element: <PostsView />, path: '/posts-newspaper' }) },
             ]
         },
         {
             trigger: 'Community',
             items: [
-                { type: 'item' as const, label: 'Forums', onClick: () => addWindow({ key: 'questions', title: 'Questions', path: '/questions' }) },
+                { type: 'item' as const, label: 'Forums', icon: <MessageSquare className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'questions', title: 'Questions', path: '/questions' }) },
             ]
         }
     ], [isAdmin, isMobile, addWindow])
@@ -219,6 +220,7 @@ export default function TaskBarMenu() {
         {
             type: 'item' as const,
             label: 'My profile',
+            icon: <IconUser className="size-4 opacity-70" />,
             onClick: () => addWindow({
                 key: 'profile',
                 path: '/profile',
@@ -230,12 +232,14 @@ export default function TaskBarMenu() {
         {
             type: 'item' as const,
             label: 'Sign out',
+            icon: <LogOut className="size-4 opacity-70" />,
             onClick: () => signOut()
         }
     ] : [
         {
             type: 'item' as const,
             label: 'Sign in',
+            icon: <LogIn className="size-4 opacity-70" />,
             onClick: () => addWindow({
                 key: 'login',
                 path: '/login',
