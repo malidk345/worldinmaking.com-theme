@@ -154,7 +154,7 @@ export default function TaskBarMenu() {
                         label: 'Posts',
                         items: [
                             { type: 'item' as const, label: 'All posts', icon: <FileText className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'posts-all', title: 'All Posts', path: '/posts' }) },
-                            { type: 'item' as const, label: 'Tutorials', icon: <BookOpen className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'tutorials', title: 'Tutorials', path: '/tutorials' }) },
+                            { type: 'item' as const, label: 'Blueprints', icon: <BookOpen className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'blueprints', title: 'Blueprints', path: '/blueprints' }) },
                             { type: 'separator' as const },
                             { type: 'item' as const, label: 'Newspaper', icon: <Newspaper className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'posts', title: 'Posts', element: <PostsView />, path: '/posts-newspaper' }) },
                         ]
@@ -189,7 +189,7 @@ export default function TaskBarMenu() {
             trigger: 'Posts',
             items: [
                 { type: 'item' as const, label: 'All posts', icon: <FileText className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'posts-all', title: 'All Posts', path: '/posts' }) },
-                { type: 'item' as const, label: 'Tutorials', icon: <BookOpen className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'tutorials', title: 'Tutorials', path: '/tutorials' }) },
+                { type: 'item' as const, label: 'Blueprints', icon: <BookOpen className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'blueprints', title: 'Blueprints', path: '/blueprints' }) },
                 { type: 'separator' as const },
                 { type: 'item' as const, label: 'Newspaper', icon: <Newspaper className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'posts', title: 'Posts', element: <PostsView />, path: '/posts-newspaper' }) },
             ]

@@ -58,8 +58,8 @@ const categories = [
         name: 'Blog',
     },
     {
-        type: 'tutorial',
-        name: 'Tutorials',
+        type: 'blueprint',
+        name: 'Blueprints',
     },
     {
         type: 'question',
