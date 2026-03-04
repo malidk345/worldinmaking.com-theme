@@ -123,7 +123,7 @@ const ReaderViewContent = React.memo(({
     const suggestedPosts = React.useMemo(() => {
         return posts.slice(0, 10).map(p => ({
             name: p.title.toLowerCase(),
-            url: p.slug.startsWith('/') ? p.slug : `/blog/${p.slug}`
+            url: p.slug.startsWith('/') ? p.slug : `/posts/${p.slug}`
         }))
     }, [posts])
 
