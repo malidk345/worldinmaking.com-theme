@@ -24,10 +24,15 @@ const Tooltip = ({
     sideOffset = 0,
     className = '',
 }: TooltipProps) => {
+    const rootProps = open !== undefined ? { open, onOpenChange } : { onOpenChange }
+
     return (
-        <RadixTooltip.Root open={open} onOpenChange={onOpenChange} delayDuration={delay}>
-            <RadixTooltip.Trigger>
-                <span className={className}>{trigger}</span>
+        <RadixTooltip.Root {...rootProps} delayDuration={delay}>
+            {/* Wrap the trigger in a div to prevent button-in-button hydration warnings and absorb the ref safely */}
+            <RadixTooltip.Trigger asChild>
+                <div className={`inline-flex ${className}`}>
+                    {trigger}
+                </div>
             </RadixTooltip.Trigger>
             <RadixTooltip.Portal>
                 <RadixTooltip.Content
