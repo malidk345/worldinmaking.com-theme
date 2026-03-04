@@ -92,6 +92,16 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         localStorage.setItem('colorMode', siteSettings.colorMode)
     }, [siteSettings.colorMode])
 
+    // Synchronize focused window path with browser URL (Address Bar Sync)
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        if (focusedWindow && focusedWindow.path) {
+            window.history.pushState(null, '', focusedWindow.path)
+        } else if (windows.length === 0) {
+            window.history.pushState(null, '', '/')
+        }
+    }, [focusedWindow?.path, windows.length])
+
     const constraintsRef = useRef<HTMLDivElement>(null)
     const taskbarRef = useRef<HTMLDivElement>(null)
 
