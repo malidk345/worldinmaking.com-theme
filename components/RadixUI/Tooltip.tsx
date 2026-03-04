@@ -26,7 +26,7 @@ const Tooltip = ({
 }: TooltipProps) => {
     return (
         <RadixTooltip.Root open={open} onOpenChange={onOpenChange} delayDuration={delay}>
-            <RadixTooltip.Trigger asChild>
+            <RadixTooltip.Trigger>
                 <span className={className}>{trigger}</span>
             </RadixTooltip.Trigger>
             <RadixTooltip.Portal>
