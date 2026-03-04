@@ -6,12 +6,13 @@ import { useApp } from '../../context/App'
 import { IconSearch } from '@posthog/icons'
 import { usePosts, Post } from '../../hooks/usePosts'
 
+// Simple local search function
 function searchPosts(allPosts: Post[], query: string) {
     if (!query || query.length < 2) return []
     const lowerQuery = query.toLowerCase()
     return allPosts.filter(post => {
-        const title = post.title?.toLowerCase() || ''
-        const content = post.content?.toLowerCase() || ''
+        const title = post.title.toLowerCase()
+        const content = post.content.toLowerCase()
         const category = post.category?.toLowerCase() || ''
         const excerpt = post.excerpt?.toLowerCase() || ''
         return (
@@ -23,16 +24,15 @@ function searchPosts(allPosts: Post[], query: string) {
     }).slice(0, 20) // Limit results
 }
 
-function getExcerpt(content: string | undefined | null, query: string, maxLen = 120): string {
-    const safeContent = content || ''
-    const lower = safeContent.toLowerCase()
+function getExcerpt(content: string, query: string, maxLen = 120): string {
+    const lower = content.toLowerCase()
     const idx = lower.indexOf(query.toLowerCase())
-    if (idx === -1) return safeContent.slice(0, maxLen).replace(/\n/g, ' ').replace(/[#*_`]/g, '') + '...'
+    if (idx === -1) return content.slice(0, maxLen).replace(/\n/g, ' ').replace(/[#*_`]/g, '') + '...'
     const start = Math.max(0, idx - 40)
-    const end = Math.min(safeContent.length, idx + query.length + 80)
-    let excerpt = safeContent.slice(start, end).replace(/\n/g, ' ').replace(/[#*_`]/g, '')
+    const end = Math.min(content.length, idx + query.length + 80)
+    let excerpt = content.slice(start, end).replace(/\n/g, ' ').replace(/[#*_`]/g, '')
     if (start > 0) excerpt = '...' + excerpt
-    if (end < safeContent.length) excerpt = excerpt + '...'
+    if (end < content.length) excerpt = excerpt + '...'
     return excerpt
 }
 
@@ -47,7 +47,8 @@ export const WindowSearchUI = ({ initialFilter }: { initialFilter?: string }) =>
         if (appWindow) {
             updateWindow(appWindow, { meta: { title: 'search' } })
         }
-    }, [appWindow, updateWindow])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [appWindow?.key])
 
     useEffect(() => {
         // Auto-focus the input
@@ -58,8 +59,8 @@ export const WindowSearchUI = ({ initialFilter }: { initialFilter?: string }) =>
 
     const handleResultClick = (post: Post) => {
         addWindow({
-            key: `posts-${post.id}`,
-            path: `/posts/${post.slug}`,
+            key: `blog-${post.id}`,
+            path: `/blog/${post.slug}`,
             title: post.title,
         })
     }

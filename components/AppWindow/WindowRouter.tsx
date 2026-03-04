@@ -173,7 +173,7 @@ function CommunityQuestionRouteView({ permalink }: { permalink: string }) {
 /** Separate component so usePosts hook can be called within the router */
 function BlogRouteView({ slug }: { slug: string }) {
     const { posts, loading } = usePosts()
-    const post = posts.find((p) => p.slug === slug || p.slug === `/posts/${slug}` || p.slug === `/blog/${slug}`)
+    const post = posts.find((p) => p.slug === slug || p.slug === `/blog/${slug}`)
 
     if (loading && posts.length === 0) {
         return <Loading fullScreen label="fetching node" />

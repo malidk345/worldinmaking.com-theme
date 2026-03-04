@@ -295,7 +295,7 @@ export default function TaskBarMenu() {
                         }}
                     >
                         <Tooltip
-                            trigger={
+                            trigger={React.useMemo(() => (
                                 <OSButton
                                     onClick={handleActiveWindowsClick}
                                     disabled={totalWindows <= 0}
@@ -310,7 +310,7 @@ export default function TaskBarMenu() {
                                         </div>
                                     </div>
                                 </OSButton>
-                            }
+                            ), [totalWindows, handleActiveWindowsClick])}
                             delay={0}
                         >
                             <div className="max-w-48 text-center p-1">
