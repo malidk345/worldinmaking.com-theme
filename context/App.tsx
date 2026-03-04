@@ -201,7 +201,19 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
                 return newWindows
             }
 
-            const size = item.size || DEFAULT_SIZE
+            let size = item.size
+            if (!size) {
+                if (typeof window !== 'undefined') {
+                    // Start with 90% of screen size, cap at maximum reasonable bounds (e.g., 2000x2000)
+                    size = {
+                        width: Math.min(window.innerWidth * 0.9, 2000),
+                        height: Math.min((window.innerHeight - 44) * 0.9, 2000)
+                    }
+                } else {
+                    size = DEFAULT_SIZE
+                }
+            }
+
             const position = item.position || getPositionDefaults(size, prev)
 
             const newWindow = {
@@ -329,7 +341,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
                 key: 'posts-newspaper',
                 path: '/posts',
                 title: getTitleFromPath('/posts'),
-                size: { width: 1000, height: 800 },
                 element: <PostsView />
             })
         } else {
@@ -337,8 +348,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
             addWindow({
                 key: `window-${path}`,
                 path: path,
-                title: getTitleFromPath(path),
-                size: { width: 1000, height: 800 },
+                title: getTitleFromPath(path)
             })
         }
 

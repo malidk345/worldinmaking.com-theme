@@ -35,8 +35,6 @@ export default function PostsView() {
             key: `blog-${roadmap.id}`,
             path: getPostHref(roadmap.slug),
             title: roadmap.title.toLowerCase(),
-            size: { width: 900, height: 800 },
-            position: { x: 100, y: 50 },
             element: <BlogPostView post={roadmap} />
         })
     }

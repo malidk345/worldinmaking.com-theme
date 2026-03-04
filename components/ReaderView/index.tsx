@@ -288,7 +288,7 @@ const ReaderViewContent = React.memo(({
                                     <div>
                                         <div className="flex items-center gap-2 px-2 mb-3 pt-2">
                                             <div className="w-1 h-3 rounded-full bg-gradient-to-b from-burnt-orange to-burnt-orange/40" />
-                                            <h4 className="font-black text-black dark:text-white m-0 text-[10px] lowercase tracking-[0.2em]">
+                                            <h4 className="font-nav font-black text-black dark:text-white m-0 text-[10px] lowercase tracking-[0.2em]">
                                                 suggested posts
                                             </h4>
                                         </div>

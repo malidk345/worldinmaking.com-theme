@@ -51,7 +51,7 @@ export const TableOfContents = ({ tableOfContents, contentRef, title = 'Content'
     }
 
     return (
-        <div className={`not-prose ${className}`}>
+        <div className={`font-nav not-prose ${className}`}>
             {/* Header */}
             <div className="flex items-center gap-2 px-3 mb-3">
                 <div className="w-1 h-3 rounded-full bg-gradient-to-b from-burnt-orange to-burnt-orange/40" />

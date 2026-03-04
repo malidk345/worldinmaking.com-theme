@@ -18,9 +18,7 @@ export default function Desktop() {
             onClick: () => addWindow({
                 key: 'home',
                 path: '/',
-                title: 'home.mdx',
-                size: { width: 900, height: 750 },
-                position: { x: 50, y: 50 }
+                title: 'home.mdx'
             })
         },
         {
@@ -30,8 +28,6 @@ export default function Desktop() {
                 key: 'posts',
                 path: '/posts',
                 title: 'posts',
-                size: { width: 900, height: 750 },
-                position: { x: 50, y: 50 },
                 element: <PostsView />
             })
         }

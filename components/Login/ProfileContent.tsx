@@ -249,8 +249,7 @@ export default function ProfileContent() {
                                             onClick={() => addWindow({
                                                 key: `post-${post.post_slug}`,
                                                 path: toPostPath(post.post_slug),
-                                                title: post.post_title || post.post_slug,
-                                                size: { width: 1000, height: 800 }
+                                                title: post.post_title || post.post_slug
                                             })}
                                         >
                                             {post.post_title || post.post_slug}

@@ -181,8 +181,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                         onClick={() => addWindow({
                                             key: `post-${post.slug}`,
                                             path: toPostPath(post.slug),
-                                            title: post.title,
-                                            size: { width: 1000, height: 800 }
+                                            title: post.title
                                         })}
                                     >
                                         {post.title}

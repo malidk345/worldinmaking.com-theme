@@ -111,7 +111,11 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
     }
 
     const handleExit = () => {
-        closeWindow(item)
+        if (closing) {
+            closeWindow(item)
+        } else if (minimizing) {
+            setMinimizing(false)
+        }
     }
 
     const handleDoubleClick = () => {

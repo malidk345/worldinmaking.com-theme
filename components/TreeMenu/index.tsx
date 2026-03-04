@@ -38,7 +38,7 @@ export function TreeMenu({ items = [], activeItem: propsActiveItem }: TreeMenuPr
     }
 
     return (
-        <ul className="list-none m-0 p-0 flex flex-col gap-[1px]">
+        <ul className="font-nav list-none m-0 p-0 flex flex-col gap-[1px]">
             {items.length > 0 ? (
                 items.map((item, index) => {
                     const key = `${item.name}-${index}-${item.url}`

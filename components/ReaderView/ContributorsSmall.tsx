@@ -33,8 +33,7 @@ export const ContributorsSmall = ({ contributors }: { contributors?: Contributor
                                     addWindow({
                                         key: profileKey,
                                         path: profilePath,
-                                        title: `${username || name} profile`,
-                                        size: { width: 900, height: 680 }
+                                        title: `${username || name} profile`
                                     })
                                 }}
                                 className="flex items-center gap-2 hover:opacity-70 transition-opacity"
