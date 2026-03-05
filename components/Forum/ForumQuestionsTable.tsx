@@ -73,47 +73,53 @@ const Row = ({
     const activeAt = replies.length > 0 ? replies[replies.length - 1].createdAt : createdAt
 
     return (
-        <div className="py-2.5">
+        <div className="py-1">
             <Link
                 to={`/questions/${permalink}`}
                 newWindow
-                className="group flex items-center relative px-2 py-1.5 -mt-1.5 mx-[-2px] -mb-3 rounded active:bg-light dark:active:bg-dark border-primary border-b-3 border-transparent hover:border hover:translate-y-[-1px] active:translate-y-[1px] active:transition-all active:before:h-[2px] active:before:bg-light dark:active:before:bg-dark active:before:absolute active:before:content-[''] active:before:top-[-3px] active:before:left-0 active:before:right-0 !no-underline"
+                className="group flex items-center relative px-4 py-4 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 border border-transparent hover:border-primary/20 transition-all duration-300 !no-underline"
             >
-                <div className="grid grid-cols-12 items-center w-full">
-                    <div className="col-span-12 md:col-span-8 flex items-center space-x-4">
-                        <div className="w-5 flex-shrink-0">
+                <div className="grid grid-cols-12 items-center w-full gap-4">
+                    <div className="col-span-12 md:col-span-8 flex items-start space-x-4">
+                        <div className="w-5 flex-shrink-0 pt-0.5">
                             <Status resolved={resolved} />
                         </div>
 
                         <div className="w-full min-w-0">
-                            <span className="text-sm font-semibold text-[#000080] dark:text-[#66b2ff] line-clamp-3 md:line-clamp-1 break-words">{subject}</span>
+                            <span className="text-[15px] font-bold text-primary opacity-90 group-hover:opacity-100 transition-opacity line-clamp-2 break-words leading-tight">{subject}</span>
 
-                            <div className="flex justify-between items-center mt-0.5">
-                                <div className="text-primary dark:text-primary font-medium opacity-60 group-hover:opacity-100 line-clamp-1 text-sm">
+                            <div className="flex justify-between items-center mt-2 group-hover:opacity-100 opacity-60 transition-opacity">
+                                <div className="text-[10px] uppercase tracking-widest font-black text-primary/80 bg-primary/5 px-2 py-0.5 rounded border border-primary/10">
                                     {topics?.[0]?.label || 'Uncategorized'}
                                 </div>
 
-                                <div className="md:hidden text-primary dark:text-primary text-sm font-medium opacity-60 line-clamp-1">
-                                    {dayjs(sortBy === 'activity' ? activeAt : createdAt).fromNow()}{' '}by {profile?.firstName || 'anonymous'}
+                                <div className="md:hidden text-[11px] font-medium opacity-80 line-clamp-1 italic">
+                                    {dayjs(sortBy === 'activity' ? activeAt : createdAt).fromNow()}{' '}by <span className="font-bold not-italic">{profile?.firstName || 'anonymous'}</span>
                                 </div>
                             </div>
 
                             {showBody && body && (
-                                <div className="mt-1 flex-1 min-w-0 text-black dark:text-white text-xs line-clamp-2 break-words">
+                                <div className="mt-2.5 flex-1 min-w-0 text-primary/70 text-[13px] leading-relaxed line-clamp-2 break-words">
                                     {body.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()}
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    <div className="hidden md:block md:col-span-1 text-center text-sm font-normal text-secondary">
-                        {numReplies}
+                    <div className="hidden md:flex md:col-span-1 justify-center items-center">
+                        <div className={`text-[12px] font-bold px-3 py-1 rounded-full border ${numReplies > 0 ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-transparent border-primary/10 text-primary/40'}`}>
+                            {numReplies}
+                        </div>
                     </div>
 
-                    <div className="hidden md:block md:col-span-3 text-sm font-normal text-secondary">
-                        <div className="text-primary dark:text-primary font-medium opacity-60 line-clamp-2">
-                            {dayjs(sortBy === 'activity' ? activeAt : createdAt).fromNow()}
-                            {' '}by {profile?.firstName || 'anonymous'}
+                    <div className="hidden md:flex md:col-span-3 items-center pl-4 border-l border-primary/10 h-full">
+                        <div className="text-[11px] text-primary/60 font-medium">
+                            <div className="opacity-70 group-hover:opacity-100 transition-opacity">
+                                {dayjs(sortBy === 'activity' ? activeAt : createdAt).fromNow()}
+                            </div>
+                            <div className="mt-0.5 opacity-50">
+                                by <span className="font-bold text-primary/80">{profile?.firstName || 'anonymous'}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -130,14 +136,18 @@ export default function ForumQuestionsTable({
 }: ForumQuestionsTableProps) {
     return (
         <ul className="m-0 p-0 list-none">
-            <li className="grid grid-cols-12 pl-2 pr-3 py-1.5 items-center text-secondary !text-sm bg-accent rounded">
-                <div className="col-span-12 md:col-span-8 pl-8">Question / Topic</div>
-                <div className="hidden md:block md:col-span-1 text-center">Replies</div>
-                <div className="hidden md:block md:col-span-3">{sortBy === 'activity' ? 'Last active' : 'Created'}</div>
+            <li className="grid grid-cols-12 px-4 py-2 mb-4 items-center text-[10px] font-black uppercase tracking-widest text-primary/50 border-b border-dashed border-primary/20">
+                <div className="col-span-12 md:col-span-8">Transmissions / Topic</div>
+                <div className="hidden md:block md:col-span-1 text-center">Responses</div>
+                <div className="hidden md:block md:col-span-3 pl-4">{sortBy === 'activity' ? 'Last Broadcast' : 'Originated'}</div>
             </li>
 
             {questions.length === 0 && !isLoading ? (
-                <li className="py-16 text-center text-secondary/70 text-sm font-bold">No discussions found.</li>
+                <li className="py-24 text-center">
+                    <div className="inline-block border border-dashed border-primary/30 rounded-lg px-8 py-6 bg-primary/5 text-primary/60 text-[11px] font-black uppercase tracking-widest">
+                        No active signals detected in this channel.
+                    </div>
+                </li>
             ) : (
                 questions.map((question) => (
                     <li key={question.id} className="list-none px-[2px] divide-y divide-primary">
