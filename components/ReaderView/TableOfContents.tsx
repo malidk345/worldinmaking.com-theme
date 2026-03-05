@@ -30,8 +30,9 @@ const ElementScrollLink = ({ id, label, className, element, style }: ElementScro
         if (targetElement && element.current) {
             const scrollElement = element.current.closest('[data-radix-scroll-area-viewport]') as HTMLElement
             if (scrollElement) {
+                const offsetTop = targetElement.getBoundingClientRect().top - scrollElement.getBoundingClientRect().top + scrollElement.scrollTop - 20
                 scrollElement.scrollTo({
-                    top: targetElement.offsetTop || 0,
+                    top: offsetTop,
                     behavior: 'smooth',
                 })
             }

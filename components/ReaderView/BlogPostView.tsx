@@ -8,6 +8,8 @@ import { ReaderViewProvider, useReaderView } from './context/ReaderViewContext'
 import SEO from 'components/SEO'
 import rehypeRaw from 'rehype-raw'
 import rehypeSanitize from 'rehype-sanitize'
+import { defaultSchema } from 'hast-util-sanitize'
+import rehypeSlug from 'rehype-slug'
 import CloudinaryImage from 'components/CloudinaryImage'
 import { ArticleJsonLd, BreadcrumbJsonLd } from 'components/SEO/JsonLd'
 
@@ -162,7 +164,7 @@ const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
                 <div className="tiptap-content">
                     <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeRaw, rehypeSanitize]}
+                        rehypePlugins={[rehypeRaw, rehypeSlug, [rehypeSanitize, { ...defaultSchema, clobberPrefix: '' }]]}
                         components={{
                             img: ({ src, alt, title }: { src?: string; alt?: string; title?: string }) => {
                                 let finalSrc = src || '';

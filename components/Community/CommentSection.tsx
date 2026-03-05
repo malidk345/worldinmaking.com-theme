@@ -4,6 +4,7 @@ import React, { useEffect } from 'react'
 import ForumQuestionCard from '../Forum/ForumQuestionCard'
 import CommentForm from './CommentForm'
 import { useCommunity } from 'hooks/useCommunity'
+import ArticleActions from './ArticleActions'
 
 interface CommentSectionProps {
     slug?: string
@@ -57,6 +58,8 @@ export default function CommentSection({
 
     return (
         <div className={`mt-12 community-section ${className}`}>
+            <ArticleActions slug={slug} />
+
             <h3 id="community-questions" className="text-xl font-bold mb-6 text-primary lowercase">comments</h3>
 
             {loading && posts.length === 0 ? (
@@ -76,7 +79,7 @@ export default function CommentSection({
                 <p className="text-black dark:text-white font-medium text-sm mb-6 lowercase">no comments yet. be the first to comment!</p>
             )}
 
-            <div className="mt-8 border-t border-border pt-6">
+            <div className="mt-8 border-t border-black/20 dark:border-white/20 pt-6">
                 <CommentForm
                     onSubmit={handleCreatePost}
                     placeholder="add a comment..."
