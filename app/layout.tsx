@@ -53,6 +53,9 @@ export const viewport: Viewport = {
     interactiveWidget: 'resizes-content',
 };
 
+import { PostHogProvider } from "../providers/PostHogProvider";
+import PostHogPageView from "../providers/PostHogPageView";
+
 export default function RootLayout({
     children,
 }: Readonly<{
@@ -67,18 +70,21 @@ export default function RootLayout({
                 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
             </head>
             <body className="antialiased">
-                <WebSiteJsonLd
-                    name="world in making"
-                    url={siteUrl}
-                    description="the world is not something we merely inhabit — it is something continuously being formed. world in making explores product, engineering, and community through the interrogation of constructed realities."
-                />
-                <AppProvider>
-                    <AuthProvider>
-                        <ToastProvider>
-                            {children}
-                        </ToastProvider>
-                    </AuthProvider>
-                </AppProvider>
+                <PostHogProvider>
+                    <PostHogPageView />
+                    <WebSiteJsonLd
+                        name="world in making"
+                        url={siteUrl}
+                        description="the world is not something we merely inhabit — it is something continuously being formed. world in making explores product, engineering, and community through the interrogation of constructed realities."
+                    />
+                    <AppProvider>
+                        <AuthProvider>
+                            <ToastProvider>
+                                {children}
+                            </ToastProvider>
+                        </AuthProvider>
+                    </AppProvider>
+                </PostHogProvider>
             </body>
         </html>
     );

@@ -52,6 +52,7 @@
     "lucide-react": "^0.563.0",
     "mark.js": "^8.11.1",
     "next": "15.5.12",
+    "posthog-js": "^1.359.0",
     "radix-ui": "^1.4.3",
     "react": "19.0.0",
     "react-dom": "19.0.0",
