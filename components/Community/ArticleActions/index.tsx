@@ -90,10 +90,36 @@ export default function ArticleActions({ slug }: ArticleActionsProps) {
         }
     }
 
-    const handleShare = () => {
-        if (typeof window !== 'undefined') {
-            navigator.clipboard.writeText(window.location.href)
-            addToast('link copied to clipboard!', 'success')
+    const handleShare = async () => {
+        if (typeof window === 'undefined') return
+
+        try {
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(window.location.href)
+                addToast('link copied to clipboard!', 'success')
+            } else {
+                // Fallback for non-secure contexts (like plain http localhost)
+                const textArea = document.createElement("textarea")
+                textArea.value = window.location.href
+                textArea.style.position = "fixed"
+                textArea.style.left = "-999999px"
+                document.body.appendChild(textArea)
+                textArea.focus()
+                textArea.select()
+
+                try {
+                    document.execCommand('copy')
+                    addToast('link copied to clipboard!', 'success')
+                } catch (err) {
+                    console.error('Fallback copy failed', err)
+                    addToast('Failed to copy link', 'error')
+                }
+
+                document.body.removeChild(textArea)
+            }
+        } catch (err) {
+            console.error('Share failed', err)
+            addToast('Failed to copy link', 'error')
         }
     }
 
