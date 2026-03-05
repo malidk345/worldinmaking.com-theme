@@ -107,6 +107,9 @@ importers:
       framer-motion:
         specifier: ^12.33.0
         version: 12.34.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      hast-util-sanitize:
+        specifier: ^5.0.2
+        version: 5.0.2
       instantsearch.js:
         specifier: ^4.60.0
         version: 4.90.0(algoliasearch@4.25.3)

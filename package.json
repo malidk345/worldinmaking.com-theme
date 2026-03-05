@@ -46,6 +46,7 @@
     "dayjs": "^1.11.19",
     "dompurify": "^3.3.1",
     "framer-motion": "^12.33.0",
+    "hast-util-sanitize": "^5.0.2",
     "instantsearch.js": "^4.60.0",
     "lodash": "^4.17.23",
     "lucide-react": "^0.563.0",
