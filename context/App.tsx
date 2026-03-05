@@ -81,8 +81,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         const saved = localStorage.getItem('colorMode')
         if (saved) {
             setSiteSettings(prev => ({ ...prev, colorMode: saved }))
-        } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            setSiteSettings(prev => ({ ...prev, colorMode: 'dark' }))
         }
     }, [])
 
