@@ -13,6 +13,7 @@
     "pages:build": "npx @cloudflare/next-on-pages@1"
   },
   "dependencies": {
+    "@fontsource-variable/ibm-plex-sans": "^5.2.8",
     "@headlessui/react": "^2.2.9",
     "@headlessui/tailwindcss": "^0.2.2",
     "@popperjs/core": "^2.11.8",
@@ -40,12 +41,12 @@
     "@types/dompurify": "^3.2.0",
     "@types/lodash": "^4.17.23",
     "algoliasearch": "^4.25.3",
-    "instantsearch.js": "^4.60.0",
     "clsx": "^2.1.1",
     "cntl": "^1.0.0",
     "dayjs": "^1.11.19",
     "dompurify": "^3.3.1",
     "framer-motion": "^12.33.0",
+    "instantsearch.js": "^4.60.0",
     "lodash": "^4.17.23",
     "lucide-react": "^0.563.0",
     "mark.js": "^8.11.1",
@@ -69,8 +70,8 @@
     "tailwindcss-animated": "^2.0.0"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.2.0",
     "@cloudflare/next-on-pages": "^1.13.16",
+    "@eslint/eslintrc": "^3.2.0",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/mark.js": "^8.11.12",
     "@types/node": "20.19.33",

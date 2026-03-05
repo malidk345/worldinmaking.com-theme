@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import '@fontsource-variable/ibm-plex-sans';
 import "./globals.css";
 import { WebSiteJsonLd } from "../components/SEO/JsonLd";
 import { AppProvider } from "../context/App";
@@ -62,9 +63,7 @@ export default function RootLayout({
             <head>
                 <meta name="apple-mobile-web-app-capable" content="yes" />
                 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-                <link rel="preconnect" href="https://fonts.googleapis.com" />
-                <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-                <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
                 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
             </head>
             <body className="antialiased">

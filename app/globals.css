@@ -14,6 +14,28 @@ body {
   height: 100dvh;
 }
 
+body {
+  font-family: 'IBM Plex Sans Variable', 'IBM Plex Sans', '-apple-system', 'BlinkMacSystemFont', 'avenir next',
+    'avenir', 'segoe ui', 'helvetica neue', 'helvetica', 'Ubuntu', 'roboto', 'noto', 'arial', 'sans-serif' !important;
+  overflow-x: hidden;
+  word-wrap: break-word;
+  margin: 0;
+}
+
+*,
+a {
+  box-sizing: border-box;
+  font-variant-ligatures: none;
+}
+
+p {
+  font-variant-numeric: proportional-nums;
+}
+
+blockquote {
+  letter-spacing: -0.015em;
+}
+
 /* Prevent iOS zoom on input focus (font-size < 16px triggers zoom) */
 @supports (-webkit-touch-callout: none) {
 
@@ -81,10 +103,10 @@ mark {
   --font-fairytale-title: "Fairytale", sans-serif;
   --font-fairytale: "Computer Modern", sans-serif;
   --font-serif: "Charter", "MatterVF", "Arial", "Helvetica", sans-serif;
-  --font-sans: __nextjs-Geist, Geist, -apple-system, "Source Sans Pro", sans-serif;
+  --font-sans: 'IBM Plex Sans Variable', 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui', 'helvetica neue', helvetica, Ubuntu, roboto, noto, arial, sans-serif;
   --font-fancy: "Zapfino", serif;
-  --font-button: "IBM Plex Sans", sans-serif;
-  --font-nav: "IBM Plex Sans", sans-serif;
+  --font-button: 'IBM Plex Sans Variable', 'IBM Plex Sans', sans-serif;
+  --font-nav: 'IBM Plex Sans Variable', 'IBM Plex Sans', sans-serif;
   --font-code: "Source Code Pro", Menlo, Consolas, monaco, monospace;
   --font-squeak: "Squeak", sans-serif;
   --font-comic: "Comic Sans MS", "Comic Sans", "Arial Rounded MT Bold", "Helvetica Rounded", Arial, sans-serif;
@@ -555,7 +577,7 @@ mark {
   body {
     background-color: rgb(var(--bg));
     color: rgb(var(--text-primary));
-    font-family: __nextjs-Geist, Geist, -apple-system, "Source Sans Pro", sans-serif !important;
+    font-family: 'IBM Plex Sans Variable', 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui', 'helvetica neue', helvetica, Ubuntu, roboto, noto, arial, sans-serif !important;
     word-wrap: break-word;
     position: fixed;
     inset: 0;
@@ -622,11 +644,11 @@ mark {
   h6 {
     @apply font-bold;
     letter-spacing: -0.015em;
-    font-family: __nextjs-Geist, Geist, -apple-system, "Source Sans Pro", sans-serif !important;
+    font-family: 'IBM Plex Sans Variable', 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui', 'helvetica neue', helvetica, Ubuntu, roboto, noto, arial, sans-serif !important;
   }
 
   [data-app="AppWindow"] header {
-    font-family: __nextjs-Geist, Geist, -apple-system, "Source Sans Pro", sans-serif !important;
+    font-family: 'IBM Plex Sans Variable', 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui', 'helvetica neue', helvetica, Ubuntu, roboto, noto, arial, sans-serif !important;
   }
 
   h1 {
@@ -672,7 +694,7 @@ mark {
   .reader-view-content-container h5,
   .reader-view-content-container h6,
   .reader-view-content-container blockquote {
-    font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, "avenir next", avenir, "segoe ui", "helvetica neue", helvetica, Ubuntu, roboto, noto, arial, sans-serif !important;
+    font-family: 'IBM Plex Sans Variable', 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui', 'helvetica neue', helvetica, Ubuntu, roboto, noto, arial, sans-serif !important;
   }
 
   mark {
