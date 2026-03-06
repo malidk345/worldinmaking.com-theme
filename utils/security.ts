@@ -43,10 +43,11 @@ export function sanitizeHtml(html: string | null | undefined, options = {}): str
     return DOMPurify.sanitize(html, {
         ALLOWED_TAGS: [
             'p', 'br', 'strong', 'em', 'u', 'a', 'ul', 'ol', 'li',
-            'h1', 'h2', 'h3', 'h4', 'code', 'pre', 'blockquote', 'img'
+            'h1', 'h2', 'h3', 'h4', 'code', 'pre', 'blockquote', 'img',
+            'div', 'span', 'mark', 'sub', 'sup', 'table', 'tbody', 'thead', 'tr', 'td', 'th', 's', 'del'
         ],
-        ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'class', 'id'],
-        ALLOW_DATA_ATTR: false,
+        ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'class', 'id', 'style', 'data-type'],
+        ALLOW_DATA_ATTR: true,
         ...options
     });
 }
