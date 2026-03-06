@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import '@fontsource-variable/ibm-plex-sans';
 import "./globals.css";
+import 'highlight.js/styles/github.css';
 import { WebSiteJsonLd } from "../components/SEO/JsonLd";
 import { AppProvider } from "../context/App";
 import { AuthProvider } from "../context/AuthContext";
