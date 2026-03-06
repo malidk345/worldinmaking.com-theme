@@ -6,11 +6,60 @@ import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import Link from '@tiptap/extension-link'
 import Image from '@tiptap/extension-image'
+import Highlight from '@tiptap/extension-highlight'
+import TextAlign from '@tiptap/extension-text-align'
+import Underline from '@tiptap/extension-underline'
+import Subscript from '@tiptap/extension-subscript'
+import Superscript from '@tiptap/extension-superscript'
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
+import { Table } from '@tiptap/extension-table'
+import { TableRow } from '@tiptap/extension-table-row'
+import { TableCell } from '@tiptap/extension-table-cell'
+import { TableHeader } from '@tiptap/extension-table-header'
+import { createLowlight, common } from 'lowlight'
+import 'highlight.js/styles/github-dark.css'
+
 import {
     Bold, Italic, List, ListOrdered, Quote, Heading1, Heading2, Heading3,
     Link as LinkIcon, Image as ImageIcon, Undo, Redo, Code,
-    Maximize2, Minimize2, Eye, EyeOff, Save
+    Maximize2, Minimize2, Eye, EyeOff, Save,
+    Underline as UnderlineIcon, Highlighter,
+    AlignLeft, AlignCenter, AlignRight, AlignJustify,
+    Superscript as SuperscriptIcon, Subscript as SubscriptIcon,
+    Terminal, Table as TableIcon, MessageSquareWarning
 } from 'lucide-react'
+
+// Initialize lowlight for code blocks
+const lowlight = createLowlight(common)
+
+import { Node, mergeAttributes } from '@tiptap/core'
+
+declare module '@tiptap/core' {
+    interface Commands<ReturnType> {
+        callout: {
+            setCallout: () => ReturnType
+        }
+    }
+}
+
+export const CalloutNode = Node.create({
+    name: 'callout',
+    group: 'block',
+    content: 'inline*',
+    parseHTML() {
+        return [{ tag: 'div[data-type="callout"]' }]
+    },
+    renderHTML({ HTMLAttributes }) {
+        return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'callout', class: 'p-5 my-6 bg-primary/5 border-l-4 border-primary/50 rounded-r-xl font-medium text-primary/90 shadow-sm leading-relaxed' }), 0]
+    },
+    addCommands() {
+        return {
+            setCallout: () => ({ commands }) => {
+                return commands.toggleNode(this.name, 'paragraph')
+            }
+        }
+    }
+})
 
 // --- Auto-Save Helpers ---
 const DRAFT_STORAGE_KEY = 'wim_admin_draft'
@@ -81,26 +130,50 @@ const EditorMenuBar = ({ editor }: { editor: Editor | null }) => {
     }
 
     return (
-        <div className="flex flex-wrap gap-0.5 p-1.5">
+        <div className="flex flex-wrap gap-0.5 p-1.5 border-b border-black/5 bg-white">
             <TB active={editor.isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()} title="Bold">
                 <Bold className="size-3.5" />
             </TB>
             <TB active={editor.isActive('italic')} onClick={() => editor.chain().focus().toggleItalic().run()} title="Italic">
                 <Italic className="size-3.5" />
             </TB>
-            <TB active={editor.isActive('code')} onClick={() => editor.chain().focus().toggleCode().run()} title="Code">
+            <TB active={editor.isActive('underline')} onClick={() => editor.chain().focus().toggleUnderline().run()} title="Underline">
+                <UnderlineIcon className="size-3.5" />
+            </TB>
+            <TB active={editor.isActive('highlight')} onClick={() => editor.chain().focus().toggleHighlight().run()} title="Highlight text">
+                <Highlighter className="size-3.5" />
+            </TB>
+            <TB active={editor.isActive('subscript')} onClick={() => editor.chain().focus().toggleSubscript().run()} title="Subscript">
+                <SubscriptIcon className="size-3.5" />
+            </TB>
+            <TB active={editor.isActive('superscript')} onClick={() => editor.chain().focus().toggleSuperscript().run()} title="Superscript">
+                <SuperscriptIcon className="size-3.5" />
+            </TB>
+            <TB active={editor.isActive('code')} onClick={() => editor.chain().focus().toggleCode().run()} title="Inline Code">
                 <Code className="size-3.5" />
             </TB>
 
             <div className="w-px bg-black/10 mx-1 self-stretch" />
 
-            <TB active={editor.isActive('heading', { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} title="H1">
-                <Heading1 className="size-3.5" />
+            <TB active={editor.isActive({ textAlign: 'left' })} onClick={() => editor.chain().focus().setTextAlign('left').run()} title="Align Left">
+                <AlignLeft className="size-3.5" />
             </TB>
-            <TB active={editor.isActive('heading', { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} title="H2">
+            <TB active={editor.isActive({ textAlign: 'center' })} onClick={() => editor.chain().focus().setTextAlign('center').run()} title="Align Center">
+                <AlignCenter className="size-3.5" />
+            </TB>
+            <TB active={editor.isActive({ textAlign: 'right' })} onClick={() => editor.chain().focus().setTextAlign('right').run()} title="Align Right">
+                <AlignRight className="size-3.5" />
+            </TB>
+            <TB active={editor.isActive({ textAlign: 'justify' })} onClick={() => editor.chain().focus().setTextAlign('justify').run()} title="Justify">
+                <AlignJustify className="size-3.5" />
+            </TB>
+
+            <div className="w-px bg-black/10 mx-1 self-stretch" />
+
+            <TB active={editor.isActive('heading', { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} title="Heading 2">
                 <Heading2 className="size-3.5" />
             </TB>
-            <TB active={editor.isActive('heading', { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} title="H3">
+            <TB active={editor.isActive('heading', { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} title="Heading 3">
                 <Heading3 className="size-3.5" />
             </TB>
 
@@ -114,6 +187,15 @@ const EditorMenuBar = ({ editor }: { editor: Editor | null }) => {
             </TB>
             <TB active={editor.isActive('blockquote')} onClick={() => editor.chain().focus().toggleBlockquote().run()} title="Quote">
                 <Quote className="size-3.5" />
+            </TB>
+            <TB active={editor.isActive('callout')} onClick={() => editor.chain().focus().setCallout().run()} title="Callout (Info Box)">
+                <MessageSquareWarning className="size-3.5" />
+            </TB>
+            <TB active={editor.isActive('codeBlock')} onClick={() => editor.chain().focus().toggleCodeBlock().run()} title="Code Block">
+                <Terminal className="size-3.5" />
+            </TB>
+            <TB active={editor.isActive('table')} onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} title="Insert Table">
+                <TableIcon className="size-3.5" />
             </TB>
 
             <div className="w-px bg-black/10 mx-1 self-stretch" />
@@ -167,7 +249,9 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
     const editor = useEditor({
         immediatelyRender: false,
         extensions: [
-            StarterKit,
+            StarterKit.configure({
+                codeBlock: false, // Turn off so we can use Lowlight codeBlock
+            }),
             Placeholder.configure({
                 placeholder: 'yazmaya başlayın...',
             }),
@@ -175,6 +259,23 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
                 openOnClick: false,
             }),
             Image,
+            Highlight,
+            Underline,
+            Subscript,
+            Superscript,
+            TextAlign.configure({
+                types: ['heading', 'paragraph'],
+            }),
+            CodeBlockLowlight.configure({
+                lowlight,
+            }),
+            Table.configure({
+                resizable: true,
+            }),
+            TableRow,
+            TableHeader,
+            TableCell,
+            CalloutNode,
         ],
         content: content,
         onUpdate: ({ editor }) => {
