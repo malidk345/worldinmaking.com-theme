@@ -32,53 +32,46 @@ export default function ForumTopicSidebar({
 
     return (
         <aside className="w-full sticky top-10">
-            <div className="mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-primary/50 border-b border-dashed border-primary/20 pb-2 px-2">
-                Directory
-            </div>
-
-            <ul className="m-0 p-0 list-none flex flex-col gap-1.5">
-                <li className="list-none">
-                    <button
-                        onClick={() => onChannelChange?.(null)}
-                        className={`group flex flex-col px-3 py-2.5 rounded-lg border transition-all w-full text-left relative overflow-hidden ${!activeChannelId
-                                ? 'bg-primary/5 border-primary/30 shadow-sm'
-                                : 'bg-transparent border-transparent hover:bg-black/5 dark:hover:bg-white/5'
-                            }`}
-                    >
-                        {!activeChannelId && (
-                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary/40 rounded-l-lg" />
-                        )}
-                        <div className="flex items-center space-x-2.5">
-                            <IconMessage className={`w-4 ${!activeChannelId ? 'text-primary' : 'text-primary/40 group-hover:text-primary/70 transition-colors'}`} />
-                            <span className={`text-[13px] font-bold line-clamp-1 ${!activeChannelId ? 'text-primary' : 'text-primary/70'}`}>all transmissions</span>
-                        </div>
-                    </button>
+            <ul className="m-0 p-0 list-none">
+                <li className="grid grid-cols-12 pb-1 items-center text-secondary text-sm">
+                    <div className="col-span-9">Topics</div>
+                    <div className="col-span-3">Last active</div>
                 </li>
-
-                {channels.map((channel) => (
-                    <li key={channel.id} className="list-none">
+                <li className="list-none px-[2px] divide-y divide-primary">
+                    <div className="py-2.5">
                         <button
-                            onClick={() => onChannelChange?.(channel.id)}
-                            className={`group flex flex-col px-3 py-2.5 rounded-lg border transition-all w-full text-left relative overflow-hidden ${activeChannelId === channel.id
-                                    ? 'bg-primary/5 border-primary/30 shadow-sm'
-                                    : 'bg-transparent border-transparent hover:bg-black/5 dark:hover:bg-white/5'
-                                }`}
+                            onClick={() => onChannelChange?.(null)}
+                            className={`group flex items-center relative px-2 py-2.5 -mt-2.5 mx-[-2px] -mb-3 rounded border border-b-3 border-transparent hover:border hover:translate-y-[-1px] active:translate-y-[1px] transition-all w-full text-left ${!activeChannelId ? 'border-primary bg-accent/70' : ''}`}
                         >
-                            {activeChannelId === channel.id && (
-                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary/40 rounded-l-lg" />
-                            )}
-                            <div className="flex items-center space-x-2.5 mb-1">
-                                <IconMessage className={`w-4 ${activeChannelId === channel.id ? 'text-primary' : 'text-primary/40 group-hover:text-primary/70 transition-colors'}`} />
-                                <span className={`text-[13px] font-bold line-clamp-1 ${activeChannelId === channel.id ? 'text-primary' : 'text-primary/70 group-hover:text-primary'}`}>{channel.name}</span>
-                            </div>
-
-                            <div className="pl-6.5 text-[10px] font-medium text-primary/40 group-hover:text-primary/50 flex justify-between items-center w-full">
-                                <span>Signal activity:</span>
-                                <span>{getLastActive(channel.id) || 'dormant'}</span>
+                            <div className="grid grid-cols-12 items-center w-full">
+                                <div className="col-span-9 flex items-center space-x-3">
+                                    <IconMessage className="w-5 opacity-60 text-primary" />
+                                    <span className="text-red dark:text-yellow line-clamp-1">all transmissions</span>
+                                </div>
+                                <div className="col-span-3 text-sm font-normal text-secondary">-</div>
                             </div>
                         </button>
-                    </li>
-                ))}
+                    </div>
+
+                    {channels.map((channel) => (
+                        <div key={channel.id} className="py-2.5">
+                            <button
+                                onClick={() => onChannelChange?.(channel.id)}
+                                className={`group flex items-center relative px-2 py-2.5 -mt-2.5 mx-[-2px] -mb-3 rounded border border-b-3 border-transparent hover:border hover:translate-y-[-1px] active:translate-y-[1px] transition-all w-full text-left ${activeChannelId === channel.id ? 'border-primary bg-accent/70' : ''}`}
+                            >
+                                <div className="grid grid-cols-12 items-center w-full">
+                                    <div className="col-span-9 flex items-center space-x-3">
+                                        <IconMessage className="w-5 opacity-60 text-primary" />
+                                        <span className="text-red dark:text-yellow line-clamp-1">{channel.name}</span>
+                                    </div>
+                                    <div className="col-span-3 text-sm font-normal text-secondary">
+                                        {getLastActive(channel.id) || '-'}
+                                    </div>
+                                </div>
+                            </button>
+                        </div>
+                    ))}
+                </li>
             </ul>
         </aside>
     )
