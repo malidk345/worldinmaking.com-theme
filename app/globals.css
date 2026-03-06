@@ -55,11 +55,11 @@ blockquote {
 }
 
 mark {
-  background-color: rgba(30, 47, 70, 0.3);
-  color: inherit;
-  border-bottom: 2px solid rgba(30, 47, 70, 0.6);
-  border-radius: 2px;
-  padding: 0 1px;
+  background-color: #fef08a;
+  /* Yellow-200 from Tailwind */
+  color: #000;
+  border-radius: 4px;
+  padding: 2px 4px;
 }
 
 @font-face {
