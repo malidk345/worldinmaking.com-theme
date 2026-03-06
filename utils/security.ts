@@ -17,9 +17,10 @@ export function sanitizeString(input: string | null | undefined): string {
         // Remove script tags and their content
         .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
         // Remove iframe, object, embed, base, link, meta, style tags
-        .replace(/<(iframe|object|embed|base|link|meta|style)\b[^<]*(?:(?!<\/\1>)<[^<]*)*<\/\1>/gi, '')
+        // Updated: 'iframe' kept safe so YouTube/video embeds from editor render fine on SSR
+        .replace(/<(object|embed|base|link|meta|style)\b[^<]*(?:(?!<\/\1>)<[^<]*)*<\/\1>/gi, '')
         // Remove tags that are opened but not closed (basic)
-        .replace(/<(script|iframe|object|embed|base|link|meta|style)\b[^>]*>/gi, '')
+        .replace(/<(script|object|embed|base|link|meta|style)\b[^>]*>/gi, '')
         // Remove on* event handlers more aggressively
         .replace(/\s+on\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]*)/gi, ' ')
         // Remove javascript:, vbscript:, data: (for non-images) URLs
@@ -41,12 +42,14 @@ export function sanitizeHtml(html: string | null | undefined, options = {}): str
     }
 
     return DOMPurify.sanitize(html, {
-        ALLOWED_TAGS: [
-            'p', 'br', 'strong', 'em', 'u', 'a', 'ul', 'ol', 'li',
-            'h1', 'h2', 'h3', 'h4', 'code', 'pre', 'blockquote', 'img',
-            'div', 'span', 'mark', 'sub', 'sup', 'table', 'tbody', 'thead', 'tr', 'td', 'th', 's', 'del'
+        // By using ADD_TAGS instead of ALLOWED_TAGS, we let DOMPurify keep its default safe list
+        // which already securely allows table, hr, img, a, br, p, em, strong, etc.
+        ADD_TAGS: [
+            'iframe' // If you plan to embed youtube later
         ],
-        ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'class', 'id', 'style', 'data-type'],
+        // ADD_ATTR prevents DOMPurify from clearing structural attributes like
+        // Tiptap's table colwidths, html spans, target="_blank", or callout nodes' data-type.
+        ADD_ATTR: ['target', 'data-type', 'class', 'style', 'colspan', 'rowspan', 'colwidth', 'width', 'height'],
         ALLOW_DATA_ATTR: true,
         ...options
     });

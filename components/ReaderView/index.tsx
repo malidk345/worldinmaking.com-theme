@@ -443,7 +443,7 @@ const ReaderViewContent = React.memo(({
                                         ref={contentRef}
                                         className={`reader-view-content-container @container/reader-content-container ${getProseClasses(
                                             proseSize
-                                        )} max-w-none relative text-primary`}
+                                        )} max-w-none relative`}
                                         style={{ fontSize: '15px' }}
                                     >
                                         {body.type === 'mdx' ? (
