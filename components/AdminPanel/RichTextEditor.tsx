@@ -17,7 +17,7 @@ import { TableRow } from '@tiptap/extension-table-row'
 import { TableCell } from '@tiptap/extension-table-cell'
 import { TableHeader } from '@tiptap/extension-table-header'
 import { createLowlight, common } from 'lowlight'
-import 'highlight.js/styles/github-dark.css'
+import 'highlight.js/styles/github.css' // Light mode theme to prevent white text
 
 import {
     Bold, Italic, List, ListOrdered, Quote, Heading1, Heading2, Heading3,
@@ -289,7 +289,7 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
         },
         editorProps: {
             attributes: {
-                class: `prose prose-sm max-w-none focus:outline-none px-3 py-2 ${focusMode ? 'min-h-[70vh] text-base' : 'min-h-[200px]'} text-black prose-headings:text-black prose-p:text-black prose-strong:text-black prose-a:text-black`,
+                class: `prose prose-sm max-w-none focus:outline-none px-4 py-3 ${focusMode ? 'min-h-[70vh] text-base' : 'min-h-[300px]'} prose-stone text-black prose-headings:text-black prose-p:text-black prose-strong:text-black prose-a:text-primary prose-a:font-medium prose-a:no-underline hover:prose-a:underline prose-code:text-black prose-code:bg-black/5 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none prose-pre:bg-black/5 prose-pre:text-black prose-pre:border prose-pre:border-black/10 prose-blockquote:text-black/80 prose-blockquote:border-black/20 prose-blockquote:font-normal prose-blockquote:not-italic prose-li:text-black prose-td:border-black/10 prose-th:border-black/10 prose-th:text-black prose-hr:border-black/10 transition-all`,
             },
         },
     })
@@ -363,10 +363,10 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
 
                 {/* Live Preview */}
                 {canShowPreview && (
-                    <div className="w-1/2 overflow-auto bg-neutral-50 px-3 py-2">
-                        <div className="text-[9px] font-black uppercase tracking-widest text-black/25 mb-2">preview</div>
+                    <div className="w-1/2 overflow-auto bg-neutral-50 border-l border-black/10 px-5 py-4">
+                        <div className="text-[9px] font-black uppercase tracking-widest text-black/30 mb-4 select-none">Canlı Önizleme</div>
                         <div
-                            className="prose prose-sm max-w-none text-black prose-headings:text-black"
+                            className="prose prose-sm max-w-none prose-stone text-black prose-headings:text-black prose-p:text-black prose-strong:text-black prose-a:text-primary prose-a:font-medium prose-a:no-underline hover:prose-a:underline prose-code:text-black prose-code:bg-black/5 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none prose-pre:bg-black/5 prose-pre:text-black prose-pre:border prose-pre:border-black/10 prose-blockquote:text-black/80 prose-blockquote:border-black/20 prose-blockquote:font-normal prose-blockquote:not-italic prose-li:text-black prose-td:border-black/10 prose-th:border-black/10 prose-th:text-black prose-hr:border-black/10"
                             dangerouslySetInnerHTML={{ __html: content }}
                         />
                     </div>
