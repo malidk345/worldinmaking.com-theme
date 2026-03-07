@@ -221,33 +221,38 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                     </span>
                                 </p>
                                 <div className="corpus-profile-slot">
+                                    {/* Cover */}
                                     <div className="h-24 w-full relative overflow-hidden rounded-t-lg">
                                         {profile.cover_url
                                             ? <img src={profile.cover_url} alt="cover" className="size-full object-cover" />
                                             : <div className="size-full bg-gradient-to-br from-primary/10 via-primary/5 to-accent"><div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, var(--color-primary) 0%, transparent 60%), radial-gradient(circle at 80% 20%, var(--color-primary) 0%, transparent 50%)' }} /></div>
                                         }
                                     </div>
-                                    <div className="px-4 py-3">
-                                        <div className="flex items-end gap-3 -mt-12 pb-3 border-b border-primary/10">
-                                            <div className="size-16 rounded-xl border-3 border-white dark:border-primary/20 bg-accent overflow-hidden shrink-0 flex items-center justify-center ring-1 ring-primary/10">
-                                                {profile.avatar_url ? <img src={profile.avatar_url} alt={displayName} className="size-full object-cover" /> : <IconUser className="size-6 text-primary/30" />}
+                                    {/* Avatar + name row */}
+                                    <div className="px-4 pt-0 pb-3">
+                                        <div className="flex items-end gap-3 -mt-8 mb-3">
+                                            <div className="size-14 rounded-xl border-2 border-white dark:border-black/40 bg-accent overflow-hidden shrink-0 flex items-center justify-center shadow-sm">
+                                                {profile.avatar_url ? <img src={profile.avatar_url} alt={displayName} className="size-full object-cover" /> : <IconUser className="size-5 text-primary/30" />}
                                             </div>
-                                            <div className="flex-1 min-w-0">
+                                            <div className="flex-1 min-w-0 pb-1">
                                                 <h2 className="text-sm font-black lowercase tracking-tight text-primary m-0 leading-tight">{displayName}</h2>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2 pt-2 border-t border-primary/10">
-                                            {isOwner && (
-                                                <OSButton size="sm" className="h-6 px-2 !rounded text-[9px] font-bold lowercase flex items-center gap-1"
-                                                    onClick={() => addWindow({ key: `corpus-${normalizedUsername}`, path: `/u/${normalizedUsername}`, title: displayName + `'s corpus` })}>
-                                                    <PenLine className="size-2.5" />edit
-                                                </OSButton>
-                                            )}
-                                            {profile.website && <Tooltip trigger={<a href={profile.website} target="_blank" rel="noopener noreferrer"><OSButton size="sm" className="h-6 w-6 !rounded"><Globe className="size-2.5" /></OSButton></a>} side="bottom">website</Tooltip>}
-                                            {profile.github && <Tooltip trigger={<a href={profile.github} target="_blank" rel="noopener noreferrer"><OSButton size="sm" className="h-6 w-6 !rounded"><Github className="size-2.5" /></OSButton></a>} side="bottom">github</Tooltip>}
-                                            {profile.linkedin && <Tooltip trigger={<a href={profile.linkedin} target="_blank" rel="noopener noreferrer"><OSButton size="sm" className="h-6 w-6 !rounded"><Linkedin className="size-2.5" /></OSButton></a>} side="bottom">linkedin</Tooltip>}
-                                            {profile.twitter && <Tooltip trigger={<a href={profile.twitter} target="_blank" rel="noopener noreferrer"><OSButton size="sm" className="h-6 w-6 !rounded"><Twitter className="size-2.5" /></OSButton></a>} side="bottom">twitter</Tooltip>}
-                                        </div>
+                                        {/* Social links */}
+                                        {(isOwner || profile.website || profile.github || profile.linkedin || profile.twitter) && (
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                {isOwner && (
+                                                    <OSButton size="sm" className="h-6 px-2 !rounded text-[9px] font-bold lowercase flex items-center gap-1"
+                                                        onClick={() => addWindow({ key: `corpus-${normalizedUsername}`, path: `/u/${normalizedUsername}`, title: displayName + `'s corpus` })}>
+                                                        <PenLine className="size-2.5" />edit
+                                                    </OSButton>
+                                                )}
+                                                {profile.website && <Tooltip trigger={<a href={profile.website} target="_blank" rel="noopener noreferrer"><OSButton size="sm" className="h-6 w-6 !rounded"><Globe className="size-2.5" /></OSButton></a>} side="bottom">website</Tooltip>}
+                                                {profile.github && <Tooltip trigger={<a href={profile.github} target="_blank" rel="noopener noreferrer"><OSButton size="sm" className="h-6 w-6 !rounded"><Github className="size-2.5" /></OSButton></a>} side="bottom">github</Tooltip>}
+                                                {profile.linkedin && <Tooltip trigger={<a href={profile.linkedin} target="_blank" rel="noopener noreferrer"><OSButton size="sm" className="h-6 w-6 !rounded"><Linkedin className="size-2.5" /></OSButton></a>} side="bottom">linkedin</Tooltip>}
+                                                {profile.twitter && <Tooltip trigger={<a href={profile.twitter} target="_blank" rel="noopener noreferrer"><OSButton size="sm" className="h-6 w-6 !rounded"><Twitter className="size-2.5" /></OSButton></a>} side="bottom">twitter</Tooltip>}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>

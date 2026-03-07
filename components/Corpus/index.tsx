@@ -567,15 +567,15 @@ export default function CorpusView({ username }: { username: string }) {
                                                 </div>
 
                                                 {/* Avatar + Info */}
-                                                <div className="px-4 py-3">
-                                                    <div className="flex items-end gap-3 -mt-12 pb-3 border-b border-primary/10">
-                                                        <div className="size-16 rounded-xl border-3 border-white dark:border-primary/20 bg-accent overflow-hidden shrink-0 flex items-center justify-center ring-1 ring-primary/10">
+                                                <div className="px-4 pt-0 pb-3">
+                                                    <div className="flex items-end gap-3 -mt-8 mb-3">
+                                                        <div className="size-14 rounded-xl border-2 border-white dark:border-black/40 bg-accent overflow-hidden shrink-0 flex items-center justify-center shadow-sm">
                                                             {profile?.avatar_url
                                                                 ? <img src={profile.avatar_url} alt={displayName} className="size-full object-cover" />
-                                                                : <IconUser className="size-6 text-primary/30" />
+                                                                : <IconUser className="size-5 text-primary/30" />
                                                             }
                                                         </div>
-                                                        <div className="flex-1 min-w-0">
+                                                        <div className="flex-1 min-w-0 pb-1">
                                                             <h2 className="text-sm font-black lowercase tracking-tight text-primary m-0 leading-tight">
                                                                 {displayName}
                                                             </h2>
@@ -583,7 +583,7 @@ export default function CorpusView({ username }: { username: string }) {
                                                     </div>
 
                                                     {/* Social Links */}
-                                                    <div className="flex items-center gap-2 pt-2 border-t border-primary/10">
+                                                    <div className="flex items-center gap-1.5 flex-wrap">
                                                         <OSButton
                                                             size="sm"
                                                             onClick={() => setIsEditing(true)}
