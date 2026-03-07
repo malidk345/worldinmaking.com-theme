@@ -579,30 +579,8 @@ export default function CorpusView({ username }: { username: string }) {
                                                             <h2 className="text-sm font-black lowercase tracking-tight text-primary m-0 leading-tight">
                                                                 {displayName}
                                                             </h2>
-                                                            <div className="flex gap-1 mt-1 flex-wrap">
-                                                                {profile?.role && (
-                                                                    <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full border border-primary/20 bg-primary/5 text-primary/60">
-                                                                        {profile.role}
-                                                                    </span>
-                                                                )}
-                                                                {profile?.pronouns && (
-                                                                    <span className="text-[9px] font-bold text-primary/50">{profile.pronouns}</span>
-                                                                )}
-                                                            </div>
                                                         </div>
                                                     </div>
-
-                                                    {profile?.location && (
-                                                        <div className="flex items-center gap-1 text-[10px] font-medium text-primary/50 mt-2 mb-2">
-                                                            <MapPin className="size-3" />{profile.location}
-                                                        </div>
-                                                    )}
-
-                                                    {profile?.bio && (
-                                                        <p className="text-[10px] leading-relaxed text-primary/70 mb-3 lowercase">
-                                                            {profile.bio}
-                                                        </p>
-                                                    )}
 
                                                     {/* Social Links */}
                                                     <div className="flex items-center gap-2 pt-2 border-t border-primary/10">
@@ -662,6 +640,18 @@ export default function CorpusView({ username }: { username: string }) {
                                         </span>
                                     </div>
                                     <dl className="corpus-status-dl">
+                                        {profile?.role && (
+                                            <>
+                                                <dt><Star className="size-3.5" /><span>role</span></dt>
+                                                <dd>{profile.role}</dd>
+                                            </>
+                                        )}
+                                        {profile?.bio && (
+                                            <>
+                                                <dt><PenLine className="size-3.5" /><span>bio</span></dt>
+                                                <dd className="corpus-info-bio">{profile.bio}</dd>
+                                            </>
+                                        )}
                                         {profile?.pronouns && (
                                             <>
                                                 <dt><Star className="size-3.5" /><span>pronouns</span></dt>
@@ -698,10 +688,10 @@ export default function CorpusView({ username }: { username: string }) {
                                                 <dd><a href={profile.twitter} target="_blank" rel="noopener noreferrer" className="corpus-link">{profile.twitter.replace(/^https?:\/\/(www\.)?(twitter|x)\.com\//, '')}</a></dd>
                                             </>
                                         )}
-                                        {!profile?.pronouns && !profile?.location && !profile?.website && !profile?.github && !profile?.linkedin && !profile?.twitter && (
+                                        {!profile?.role && !profile?.bio && !profile?.pronouns && !profile?.location && !profile?.website && !profile?.github && !profile?.linkedin && !profile?.twitter && (
                                             <>
                                                 <dt><PenLine className="size-3.5" /><span>bio</span></dt>
-                                                <dd className="corpus-info-bio">{profile?.bio || '—'}</dd>
+                                                <dd className="corpus-info-bio">—</dd>
                                             </>
                                         )}
                                     </dl>
