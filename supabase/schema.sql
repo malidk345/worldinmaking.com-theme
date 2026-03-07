@@ -505,13 +505,10 @@ CREATE INDEX IF NOT EXISTS idx_saved_posts_slug ON user_saved_posts(post_slug);
 -- ─────────────────────────────────────────────────────────────
 -- 10. REALTIME  — enable for live updates
 -- ─────────────────────────────────────────────────────────────
-DO $$ BEGIN
-    -- These may fail silently if realtime is already configured via Dashboard
-    BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE community_posts;   EXCEPTION WHEN OTHERS THEN NULL; END;
-    BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE community_replies;  EXCEPTION WHEN OTHERS THEN NULL; END;
-    BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE community_likes;    EXCEPTION WHEN OTHERS THEN NULL; END;
-    BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE nodes;              EXCEPTION WHEN OTHERS THEN NULL; END;
-END $$;
+DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE community_posts;  EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE community_replies; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE community_likes;   EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE nodes;             EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 -- ─────────────────────────────────────────────────────────────
 -- 11. DATA FIX — backfill post_slug for legacy comments
