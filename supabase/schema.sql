@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS profiles (
     id          UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     username    TEXT,
     avatar_url  TEXT,
+    cover_url   TEXT,
     role        TEXT DEFAULT 'member',
     bio         TEXT,
     website     TEXT,
@@ -37,6 +38,7 @@ DO $$ BEGIN
     ALTER TABLE profiles ADD COLUMN IF NOT EXISTS pronouns TEXT;
     ALTER TABLE profiles ADD COLUMN IF NOT EXISTS location TEXT;
     ALTER TABLE profiles ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'member';
+    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS cover_url TEXT;
 END $$;
 
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
@@ -84,7 +86,75 @@ CREATE TRIGGER on_auth_user_created
     FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 
 -- ─────────────────────────────────────────────────────────────
--- 2. POSTS  (blog posts)
+-- 2. NODES  (user corpus documents)
+-- ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS nodes (
+    id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    author_id   UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    title       TEXT NOT NULL DEFAULT 'Untitled',
+    content     TEXT DEFAULT '',
+    status      TEXT DEFAULT 'draft' CHECK (status IN ('published', 'draft')),
+    updated_at  TIMESTAMPTZ DEFAULT now(),
+    created_at  TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE nodes ENABLE ROW LEVEL SECURITY;
+
+-- Published nodes are readable by everyone
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='nodes' AND policyname='Published nodes are viewable by everyone') THEN
+        CREATE POLICY "Published nodes are viewable by everyone" ON nodes FOR SELECT USING (status = 'published');
+    END IF;
+END $$;
+
+-- Authors can see all their own nodes (including drafts)
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='nodes' AND policyname='Authors can view own nodes') THEN
+        CREATE POLICY "Authors can view own nodes" ON nodes FOR SELECT USING (auth.uid() = author_id);
+    END IF;
+END $$;
+
+-- Authors can create nodes
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='nodes' AND policyname='Authors can create nodes') THEN
+        CREATE POLICY "Authors can create nodes" ON nodes FOR INSERT WITH CHECK (auth.uid() = author_id);
+    END IF;
+END $$;
+
+-- Authors can update their own nodes
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='nodes' AND policyname='Authors can update own nodes') THEN
+        CREATE POLICY "Authors can update own nodes" ON nodes FOR UPDATE USING (auth.uid() = author_id);
+    END IF;
+END $$;
+
+-- Authors can delete their own nodes
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='nodes' AND policyname='Authors can delete own nodes') THEN
+        CREATE POLICY "Authors can delete own nodes" ON nodes FOR DELETE USING (auth.uid() = author_id);
+    END IF;
+END $$;
+
+-- Auto-update updated_at on row change
+CREATE OR REPLACE FUNCTION update_nodes_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS nodes_updated_at ON nodes;
+CREATE TRIGGER nodes_updated_at
+    BEFORE UPDATE ON nodes
+    FOR EACH ROW EXECUTE FUNCTION update_nodes_updated_at();
+
+CREATE INDEX IF NOT EXISTS idx_nodes_author    ON nodes(author_id);
+CREATE INDEX IF NOT EXISTS idx_nodes_status    ON nodes(status);
+CREATE INDEX IF NOT EXISTS idx_nodes_updated   ON nodes(updated_at DESC);
+
+-- ─────────────────────────────────────────────────────────────
+-- 3. POSTS  (blog posts)
 -- ─────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS posts (
     id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -161,7 +231,7 @@ CREATE INDEX IF NOT EXISTS idx_posts_published ON posts(published);
 CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC);
 
 -- ─────────────────────────────────────────────────────────────
--- 3. COMMUNITY CHANNELS
+-- 4. COMMUNITY CHANNELS
 -- ─────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS community_channels (
     id          SERIAL PRIMARY KEY,
@@ -188,7 +258,7 @@ INSERT INTO community_channels (slug, name, description) VALUES
 ON CONFLICT (slug) DO NOTHING;
 
 -- ─────────────────────────────────────────────────────────────
--- 4. COMMUNITY POSTS  (forum threads & blog comments)
+-- 5. COMMUNITY POSTS  (forum threads & blog comments)
 -- ─────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS community_posts (
     id          SERIAL PRIMARY KEY,
@@ -262,7 +332,7 @@ CREATE INDEX IF NOT EXISTS idx_community_posts_slug      ON community_posts(post
 CREATE INDEX IF NOT EXISTS idx_community_posts_created   ON community_posts(created_at DESC);
 
 -- ─────────────────────────────────────────────────────────────
--- 5. COMMUNITY REPLIES
+-- 6. COMMUNITY REPLIES
 -- ─────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS community_replies (
     id          SERIAL PRIMARY KEY,
@@ -320,7 +390,7 @@ CREATE INDEX IF NOT EXISTS idx_community_replies_post   ON community_replies(pos
 CREATE INDEX IF NOT EXISTS idx_community_replies_author ON community_replies(author_id);
 
 -- ─────────────────────────────────────────────────────────────
--- 6. COMMUNITY LIKES
+-- 7. COMMUNITY LIKES
 -- ─────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS community_likes (
     id          SERIAL PRIMARY KEY,
@@ -354,7 +424,7 @@ CREATE INDEX IF NOT EXISTS idx_community_likes_post ON community_likes(post_id);
 CREATE INDEX IF NOT EXISTS idx_community_likes_user ON community_likes(user_id);
 
 -- ─────────────────────────────────────────────────────────────
--- 7. WRITER APPLICATIONS
+-- 8. WRITER APPLICATIONS
 -- ─────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS writer_applications (
     id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -394,7 +464,7 @@ DO $$ BEGIN
 END $$;
 
 -- ─────────────────────────────────────────────────────────────
--- 8. USER SAVED POSTS  (bookmarks)
+-- 9. USER SAVED POSTS  (bookmarks)
 -- ─────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS user_saved_posts (
     id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -433,17 +503,18 @@ CREATE INDEX IF NOT EXISTS idx_saved_posts_user ON user_saved_posts(user_id);
 CREATE INDEX IF NOT EXISTS idx_saved_posts_slug ON user_saved_posts(post_slug);
 
 -- ─────────────────────────────────────────────────────────────
--- 9. REALTIME  — enable for live updates
+-- 10. REALTIME  — enable for live updates
 -- ─────────────────────────────────────────────────────────────
 DO $$ BEGIN
     -- These may fail silently if realtime is already configured via Dashboard
     BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE community_posts;   EXCEPTION WHEN OTHERS THEN NULL; END;
     BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE community_replies;  EXCEPTION WHEN OTHERS THEN NULL; END;
     BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE community_likes;    EXCEPTION WHEN OTHERS THEN NULL; END;
+    BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE nodes;              EXCEPTION WHEN OTHERS THEN NULL; END;
 END $$;
 
 -- ─────────────────────────────────────────────────────────────
--- 10. DATA FIX — backfill post_slug for legacy comments
+-- 11. DATA FIX — backfill post_slug for legacy comments
 -- ─────────────────────────────────────────────────────────────
 UPDATE community_posts
 SET post_slug = substring(title from 'comment_(.+)_\d+$')
@@ -451,5 +522,5 @@ WHERE post_slug IS NULL
   AND title ~ '^comment_.+_\d+$';
 
 -- ============================================================
---  Done! All 8 tables are ready with full RLS.
+--  Done! All 9 tables are ready with full RLS.
 -- ============================================================

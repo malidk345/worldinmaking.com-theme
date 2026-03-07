@@ -8,6 +8,7 @@ import logger from '../utils/logger';
 interface Profile {
     username: string;
     avatar_url: string;
+    cover_url?: string;
     role: string;
     bio?: string;
     website?: string;
@@ -42,7 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .filter(Boolean);
 
     const fetchProfile = useCallback(async (userId: string) => {
-        const fullSelect = 'username, avatar_url, role, bio, website, github, linkedin, twitter, pronouns, location';
+        const fullSelect = 'username, avatar_url, cover_url, role, bio, website, github, linkedin, twitter, pronouns, location';
         const minimalSelect = 'username, avatar_url, role';
 
         const { data, error } = await supabase
