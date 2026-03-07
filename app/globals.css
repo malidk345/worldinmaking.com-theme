@@ -202,7 +202,7 @@ mark {
   --color-button-secondary-shadow-dark: #081321;
 
   /* Theme Colors with CSS variable support */
-  --color-primary: rgb(var(--bg));
+  --color-primary: rgb(var(--text-primary));
   --color-secondary: rgb(var(--text-secondary));
   --color-muted: rgb(var(--text-muted));
   --color-input: rgb(var(--input-border));
@@ -484,6 +484,7 @@ mark {
 
   :root,
   [data-scheme='primary'] {
+    color-scheme: light;
     --bg: 255 255 255;
     --accent: 245 245 245;
     --border: 220 220 220;
@@ -521,6 +522,7 @@ mark {
 
   .dark,
   .dark [data-scheme='primary'] {
+    color-scheme: dark;
     --bg: 30 31 35;
     --accent: 45 46 55;
     --border: 62 66 79;

@@ -2,7 +2,7 @@
 
 @layer base {
   .corpus-root {
-    color-scheme: light dark;
+    /* color-scheme inherited from :root (light) or .dark (dark) in globals.css */
   }
 }
 
