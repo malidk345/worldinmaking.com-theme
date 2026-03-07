@@ -320,7 +320,7 @@ function WriteRouteView() {
                                 >
                                     <div className="flex flex-col gap-0.5">
                                         {(Object.keys(statusConfig) as Array<keyof typeof statusConfig>).map(s => (
-                                            <button key={s} onClick={() => setStatus(s as any)} className={`text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 ${statusConfig[s as keyof typeof statusConfig].color}`}>
+                                            <button key={s} onClick={() => setStatus(s as keyof typeof statusConfig)} className={`text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 ${statusConfig[s as keyof typeof statusConfig].color}`}>
                                                 {statusConfig[s as keyof typeof statusConfig].icon} {statusConfig[s as keyof typeof statusConfig].label}
                                             </button>
                                         ))}
@@ -348,7 +348,7 @@ function WriteRouteView() {
                                 >
                                     <div className="flex flex-col gap-0.5">
                                         {(Object.keys(typeConfig) as Array<keyof typeof typeConfig>).map(t => (
-                                            <button key={t} onClick={() => setNodeType(t as any)} className="text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-primary">
+                                            <button key={t} onClick={() => setNodeType(t as keyof typeof typeConfig)} className="text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-primary">
                                                 {typeConfig[t as keyof typeof typeConfig].icon} {typeConfig[t as keyof typeof typeConfig].label}
                                             </button>
                                         ))}
@@ -393,7 +393,7 @@ function WriteRouteView() {
                                     <div className="flex flex-col gap-1">
                                         <span className="text-[10px] font-black uppercase tracking-widest text-primary/40 px-2 py-1">node theme</span>
                                         {(Object.keys(themeClasses) as Array<keyof typeof themeClasses>).map(t => (
-                                            <button key={t} onClick={() => setTheme(t as any)} className="text-left px-2 py-1.5 text-xs font-bold hover:bg-black/5 rounded-md lowercase">
+                                            <button key={t} onClick={() => setTheme(t as keyof typeof themeClasses)} className="text-left px-2 py-1.5 text-xs font-bold hover:bg-black/5 rounded-md lowercase">
                                                 {t} canvas
                                             </button>
                                         ))}
