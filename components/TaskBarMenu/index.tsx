@@ -16,7 +16,7 @@ import MenuBar, { MenuItemType, MenuType } from 'components/RadixUI/MenuBar'
 import OSButton from 'components/OSButton'
 import AdminPanel from 'components/AdminPanel'
 import LoginContent from 'components/Login/LoginContent'
-import ProfileContent from 'components/Login/ProfileContent'
+import CorpusView from 'components/Corpus'
 import Tooltip from 'components/RadixUI/Tooltip'
 import KeyboardShortcut from 'components/KeyboardShortcut'
 import PostsView from 'components/Posts'
@@ -32,7 +32,7 @@ export default function TaskBarMenu() {
         addWindow,
         isMobile
     } = useApp()
-    const { user, isAdmin, signOut } = useAuth()
+    const { user, profile, isAdmin, signOut } = useAuth()
 
     const [isAnimating, setIsAnimating] = useState(false)
     const totalWindows = windows.length
@@ -219,14 +219,14 @@ export default function TaskBarMenu() {
         ] : []),
         {
             type: 'item' as const,
-            label: 'My profile',
+            label: 'My corpus',
             icon: <IconUser className="size-4 opacity-70" />,
-            onClick: () => addWindow({
-                key: 'profile',
-                path: '/profile',
-                title: 'My Profile',
-                size: { width: 450, height: 600 },
-                element: <ProfileContent />
+            onClick: () => profile?.username && addWindow({
+                key: `corpus-${profile.username}`,
+                path: `/u/${profile.username}`,
+                title: `${profile.username}'s corpus`,
+                size: { width: 900, height: 680 },
+                element: <CorpusView username={profile.username} />
             })
         },
         {
