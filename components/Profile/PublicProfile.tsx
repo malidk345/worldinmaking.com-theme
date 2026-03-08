@@ -27,6 +27,7 @@ import {
     IconSidebarOpen,
     IconSidebarClose,
     IconPlus,
+    IconBookmark,
 } from '@posthog/icons'
 import '../Corpus/styles.css'
 
@@ -67,6 +68,12 @@ interface PostItem {
     published: boolean
 }
 
+interface SavedPostItem {
+    post_slug: string
+    post_title: string | null
+    saved_at: string
+}
+
 function relativeTime(iso: string): string {
     const diff = Date.now() - new Date(iso).getTime()
     const mins = Math.floor(diff / 60_000)
@@ -92,7 +99,7 @@ function toPostPath(slug: string) {
 }
 
 export default function PublicProfile({ username }: PublicProfileProps) {
-    const { profile: authProfile, updateProfile } = useAuth()
+    const { user, profile: authProfile, updateProfile } = useAuth()
     const { addWindow, isMobile } = useApp()
     const { addToast } = useToast()
     const windowCtx = useWindow()
@@ -106,10 +113,12 @@ export default function PublicProfile({ username }: PublicProfileProps) {
     const [profile, setProfile] = useState<ProfileData | null>(null)
     const [nodes, setNodes] = useState<NodeDoc[]>([])
     const [posts, setPosts] = useState<PostItem[]>([])
+    const [savedPosts, setSavedPosts] = useState<SavedPostItem[]>([])
     const [nodesLoading, setNodesLoading] = useState(false)
     const [postsLoading, setPostsLoading] = useState(false)
+    const [savedPostsLoading, setSavedPostsLoading] = useState(false)
     const [sidebarOpen, setSidebarOpen] = useState(!isMobile)
-    const [activeSection, setActiveSection] = useState<'overview' | 'nodes-all' | 'nodes-published' | 'nodes-drafts' | 'posts-all' | 'posts-published' | 'posts-drafts'>('overview')
+    const [activeSection, setActiveSection] = useState<'overview' | 'nodes-all' | 'nodes-published' | 'nodes-drafts' | 'posts-all' | 'posts-published' | 'posts-drafts' | 'saved-posts'>('overview')
     const [isEditingProfile, setIsEditingProfile] = useState(false)
     const [updatingProfile, setUpdatingProfile] = useState(false)
     const [form, setForm] = useState<Partial<ProfileData>>({
@@ -170,7 +179,16 @@ export default function PublicProfile({ username }: PublicProfileProps) {
     }, [addWindow])
 
     const openNodeEditor = useCallback((node: NodeDoc) => {
-        if (!isOwner) return
+        if (!isOwner) {
+            addWindow({
+                key: `node-view-${node.id}`,
+                title: node.title || 'Untitled Node',
+                path: '/write',
+                icon: <FileText className="size-4" />,
+                props: { nodeId: node.id, isCanvas: true, readOnly: true },
+            })
+            return
+        }
         addWindow({
             key: `node-${node.id}`,
             title: node.title || 'Untitled Node',
@@ -357,6 +375,33 @@ export default function PublicProfile({ username }: PublicProfileProps) {
     }, [loadPosts])
 
     useEffect(() => {
+        const loadSavedPosts = async () => {
+            if (!isOwner || !user?.id) {
+                setSavedPosts([])
+                return
+            }
+
+            setSavedPostsLoading(true)
+
+            const { data, error } = await supabase
+                .from('user_saved_posts')
+                .select('post_slug, post_title, saved_at')
+                .eq('user_id', user.id)
+                .order('saved_at', { ascending: false })
+
+            if (!error && data) {
+                setSavedPosts(data as SavedPostItem[])
+            } else {
+                setSavedPosts([])
+            }
+
+            setSavedPostsLoading(false)
+        }
+
+        void loadSavedPosts()
+    }, [isOwner, user?.id])
+
+    useEffect(() => {
         setSidebarOpen(!isMobile)
     }, [isMobile])
 
@@ -404,6 +449,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
     const draftNodeCount = nodes.filter((node) => node.status === 'draft').length
     const publishedPostCount = posts.filter((post) => post.published).length
     const draftPostCount = posts.filter((post) => !post.published).length
+    const savedPostCount = savedPosts.length
 
     const tableRows = [
         { field: 'name', value: displayName },
@@ -416,6 +462,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
 
     const showNodesSection = !isEditingProfile && (!isOwner || activeSection === 'overview' || activeSection.startsWith('nodes-'))
     const showPostsSection = !isEditingProfile && (!isOwner || activeSection === 'overview' || activeSection.startsWith('posts-'))
+    const showSavedPostsSection = isOwner && !isEditingProfile && activeSection === 'saved-posts'
     const nodeSectionLabel = !isOwner
         ? 'published nodes'
         : activeSection === 'nodes-published'
@@ -496,27 +543,22 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                 </div>
 
                 <div className="flex items-center gap-1 justify-end flex-shrink-0">
-                    {isOwner && (
+                    {isOwner && !isEditingProfile && (
                         <>
-                            {!isEditingProfile && (
-                                <>
-                                    <OSButton size="sm" className="!px-2 h-8 !rounded flex items-center gap-1.5 flex-shrink-0" onClick={handleAddNode}>
-                                        <IconPlus className="size-[14px] opacity-70" />
-                                        <span className="hidden md:inline text-[12px] font-semibold">new node</span>
-                                    </OSButton>
-                                    <OSButton size="sm" className="!px-2 h-8 !rounded flex items-center gap-1.5 flex-shrink-0" onClick={handleAddPost}>
-                                        <BookOpen className="size-[14px] opacity-70" />
-                                        <span className="hidden md:inline text-[12px] font-semibold">new post</span>
-                                    </OSButton>
-                                    <OSButton size="sm" className="!px-2 h-8 !rounded flex items-center gap-1.5 flex-shrink-0" onClick={openProfileEditor}>
-                                        <PenLine className="size-[14px] opacity-70" />
-                                        <span className="hidden md:inline text-[12px] font-semibold">edit profile</span>
-                                    </OSButton>
-                                </>
-                            )}
+                            <OSButton size="sm" className="!px-2 h-8 !rounded flex items-center gap-1.5 flex-shrink-0" onClick={handleAddNode}>
+                                <IconPlus className="size-[14px] opacity-70" />
+                                <span className="hidden md:inline text-[12px] font-semibold">new node</span>
+                            </OSButton>
+                            <OSButton size="sm" className="!px-2 h-8 !rounded flex items-center gap-1.5 flex-shrink-0" onClick={handleAddPost}>
+                                <BookOpen className="size-[14px] opacity-70" />
+                                <span className="hidden md:inline text-[12px] font-semibold">new post</span>
+                            </OSButton>
+                            <OSButton size="sm" className="!px-2 h-8 !rounded flex items-center gap-1.5 flex-shrink-0" onClick={openProfileEditor}>
+                                <PenLine className="size-[14px] opacity-70" />
+                                <span className="hidden md:inline text-[12px] font-semibold">edit profile</span>
+                            </OSButton>
                         </>
                     )}
-
                     <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
                     <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded" onClick={refreshAll}><RefreshCw className={`size-[16px] opacity-70 ${refreshing ? 'animate-spin' : ''}`} /></OSButton>} side="bottom">refresh profile</Tooltip>
                     <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded" onClick={() => copyLink(publicProfilePath, 'profile')}><Share className="size-[16px] opacity-70" /></OSButton>} side="bottom">share profile</Tooltip>
@@ -538,6 +580,29 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                 <PanelsTopLeft className="size-4 text-primary/40" />
                             </button>
 
+                            <div className="space-y-1">
+                                {!isEditingProfile ? (
+                                    <>
+                                        <OSButton size="sm" className="w-full !h-9 !rounded-md !px-2.5 flex items-center justify-start gap-2" onClick={handleAddNode}>
+                                            <IconPlus className="size-[14px] opacity-70" />
+                                            <span className="text-[12px] font-semibold">new node</span>
+                                        </OSButton>
+                                        <OSButton size="sm" className="w-full !h-9 !rounded-md !px-2.5 flex items-center justify-start gap-2" onClick={handleAddPost}>
+                                            <BookOpen className="size-[14px] opacity-70" />
+                                            <span className="text-[12px] font-semibold">new post</span>
+                                        </OSButton>
+                                        <OSButton size="sm" className="w-full !h-9 !rounded-md !px-2.5 flex items-center justify-start gap-2" onClick={openProfileEditor}>
+                                            <PenLine className="size-[14px] opacity-70" />
+                                            <span className="text-[12px] font-semibold">edit profile</span>
+                                        </OSButton>
+                                    </>
+                                ) : (
+                                    <div className="rounded-lg border border-primary/10 bg-black/5 dark:bg-white/5 px-2.5 py-2 text-[11px] font-bold lowercase text-primary/60">
+                                        editing profile… save and cancel are below
+                                    </div>
+                                )}
+                            </div>
+
                             <div className="space-y-0.5">
                                 {[
                                     { key: 'overview', label: 'overview', icon: <PanelsTopLeft className="size-4 opacity-80" />, count: null },
@@ -547,6 +612,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                     { key: 'posts-all', label: 'all posts', icon: <ArrowUpRight className="size-4 opacity-80" />, count: posts.length },
                                     { key: 'posts-published', label: 'published posts', icon: <BookOpen className="size-4 opacity-80" />, count: publishedPostCount },
                                     { key: 'posts-drafts', label: 'draft posts', icon: <PenLine className="size-4 opacity-80" />, count: draftPostCount },
+                                    { key: 'saved-posts', label: 'saved posts', icon: <IconBookmark className="size-4 opacity-80" />, count: savedPostCount },
                                 ].map((item) => (
                                     <button
                                         key={item.key}
@@ -661,7 +727,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                 ) : filteredNodes.length > 0 ? (
                                     <div className="corpus-doc-grid">
                                         {filteredNodes.map((node) => (
-                                            <article key={node.id} className={`corpus-doc-card relative ${isOwner ? 'cursor-pointer' : ''}`} onClick={isOwner ? () => openNodeEditor(node) : undefined}>
+                                            <article key={node.id} className="corpus-doc-card relative cursor-pointer" onClick={() => openNodeEditor(node)}>
                                                 {isOwner && (
                                                     <button
                                                         type="button"
@@ -735,6 +801,40 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                     </div>
                                 ) : (
                                     <div className="corpus-doc-empty"><BookOpen className="size-8" style={{ opacity: 0.2 }} /><p>no {postSectionLabel.replace('posts', '').trim() || 'published'} posts yet</p></div>
+                                )}
+                            </div>
+                        )}
+
+                        {showSavedPostsSection && (
+                            <div className="corpus-doc-grid-wrapper">
+                                <div className="corpus-doc-tabs">
+                                    <button className="corpus-doc-tab corpus-doc-tab--active">saved posts <span>{savedPostCount}</span></button>
+                                </div>
+                                {savedPostsLoading ? (
+                                    <div className="corpus-doc-empty"><RefreshCw className="size-6 animate-spin" style={{ opacity: 0.3 }} /><p>loading saved posts...</p></div>
+                                ) : savedPosts.length > 0 ? (
+                                    <div className="corpus-doc-grid">
+                                        {savedPosts.map((savedPost) => (
+                                            <article
+                                                key={`${savedPost.post_slug}-${savedPost.saved_at}`}
+                                                className="corpus-doc-card cursor-pointer"
+                                                onClick={() => openPost({ id: savedPost.post_slug, title: savedPost.post_title || savedPost.post_slug, slug: savedPost.post_slug, created_at: savedPost.saved_at, published: true })}
+                                            >
+                                                <div className="corpus-doc-media">
+                                                    <div className="corpus-doc-preview-text">{savedPost.post_title || savedPost.post_slug}</div>
+                                                    <div className="corpus-doc-media-fade" />
+                                                    <div className="corpus-doc-badge"><IconBookmark className="size-3" /><span>saved</span></div>
+                                                </div>
+                                                <div className="corpus-doc-info">
+                                                    <div><BookOpen className="size-3.5" /><span>{relativeTime(savedPost.saved_at)}</span></div>
+                                                    <h3>{savedPost.post_title || savedPost.post_slug}</h3>
+                                                    <p>open saved post</p>
+                                                </div>
+                                            </article>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="corpus-doc-empty"><IconBookmark className="size-8" style={{ opacity: 0.2 }} /><p>no saved posts yet</p></div>
                                 )}
                             </div>
                         )}

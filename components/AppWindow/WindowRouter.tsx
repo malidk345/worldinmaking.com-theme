@@ -104,7 +104,7 @@ export default function WindowRouter({ item }: { item: AppWindow }) {
 
     // /write (New Node / Canvas Experience)
     if (path === '/write') {
-        return <WriteRouteView nodeId={item.props?.nodeId as string | undefined} />
+        return <WriteRouteView nodeId={item.props?.nodeId as string | undefined} readOnly={Boolean(item.props?.readOnly)} />
     }
 
     // /write-post (User Post Editor)
@@ -221,7 +221,7 @@ function BlogRouteView({ slug }: { slug: string }) {
 }
 
 /** Node editor route view */
-function WriteRouteView({ nodeId }: { nodeId?: string }) {
+function WriteRouteView({ nodeId, readOnly = false }: { nodeId?: string; readOnly?: boolean }) {
     const { user } = useAuth()
     const { addToast } = useToast()
     const [title, setTitle] = useState('untitled node')
@@ -307,6 +307,59 @@ function WriteRouteView({ nodeId }: { nodeId?: string }) {
         { IconNode: Wrench, color: "text-slate-500" },
         { IconNode: Sparkles, color: "text-amber-400" },
     ]
+
+    if (readOnly) {
+        return (
+            <div className={`flex flex-col size-full overflow-y-auto overflow-x-hidden text-black transition-colors duration-500 ${themeClasses[theme]}`}>
+                <aside data-scheme="secondary" className="bg-primary p-2 border-b border-primary sticky top-0 z-50">
+                    <div className="flex items-center justify-between gap-3 px-2 py-1">
+                        <div className="flex items-center gap-2 lowercase text-primary/70 text-sm font-semibold">
+                            {statusConfig[nodeStatus].icon}
+                            <span>{statusConfig[nodeStatus].label} node</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <OSButton size="sm" onClick={() => navigator.clipboard.writeText(window.location.href).then(() => addToast('node link copied', 'success')).catch(() => addToast('failed to copy node link', 'error'))}>
+                                <div className="flex items-center gap-1.5 lowercase">
+                                    <Share className="size-4" />
+                                    <span className="hidden md:inline font-semibold">share</span>
+                                </div>
+                            </OSButton>
+                        </div>
+                    </div>
+                </aside>
+
+                <div className="flex-col relative w-full flex-1 flex min-h-0">
+                    {coverImage && (
+                        <div className="relative w-full h-48 sm:h-64 group bg-black/5 shrink-0">
+                            <img src={coverImage} alt="Cover" className="w-full h-full object-cover" />
+                        </div>
+                    )}
+
+                    <div className={`w-full max-w-4xl mx-auto px-4 sm:px-6 pb-20 flex-1 flex flex-col min-h-0 ${coverImage ? 'pt-8' : 'pt-12'}`}>
+                        <div className="relative flex flex-col mb-8 shrink-0">
+                            <div className={`relative ${coverImage ? '-mt-16 sm:-mt-20 mb-4' : 'mb-2'}`}>
+                                <div className={`rounded-lg p-3 -ml-3 block w-fit ${coverImage ? 'bg-white/10 backdrop-blur-xl shadow-lg border border-white/20 z-10' : ''}`}>
+                                    {React.createElement(ICONS[iconIndex].IconNode, { className: `size-12 sm:size-16 ${ICONS[iconIndex].color}` })}
+                                </div>
+                            </div>
+
+                            <div className="rounded border border-primary bg-primary p-3 mb-3">
+                                <h1 className="m-0 text-3xl sm:text-5xl font-black tracking-tight text-primary leading-tight lowercase">{title}</h1>
+                            </div>
+                        </div>
+
+                        <div className="w-full flex-1 min-h-[400px] rounded border border-primary bg-primary p-4 sm:p-6 overflow-auto">
+                            {content ? (
+                                <div className="prose prose-sm sm:prose-base max-w-none text-primary dark:prose-invert" dangerouslySetInnerHTML={{ __html: content }} />
+                            ) : (
+                                <p className="m-0 text-sm text-primary/40 lowercase">no content yet</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className={`flex flex-col size-full overflow-y-auto overflow-x-hidden text-black transition-colors duration-500 ${themeClasses[theme]}`}>
