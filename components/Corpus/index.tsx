@@ -74,8 +74,9 @@ function relativeTime(iso: string): string {
     return `${Math.floor(months / 12)}y ago`
 }
 
-export default function CorpusView({ username }: { username: string }) {
-    const [sidebarOpen, setSidebarOpen] = useState(true)
+export default function CorpusView({ username, startEditingProfile = false }: { username: string; startEditingProfile?: boolean }) {
+    const app = useApp()
+    const [sidebarOpen, setSidebarOpen] = useState(!app?.isMobile)
     const [profile, setProfile] = useState<ProfileData | null>(null)
     const [activeTab, setActiveTab] = useState<'all' | 'published' | 'drafts'>('all')
     const [docs, setDocs] = useState<NodeDoc[]>([])
@@ -88,7 +89,6 @@ export default function CorpusView({ username }: { username: string }) {
     const canGoBack = windowContext?.canGoBack || false
     const canGoForward = windowContext?.canGoForward || false
 
-    const app = useApp()
     const { profile: authProfile, updateProfile: authUpdateProfile, signOut } = useAuth()
     const { addToast } = useToast()
     const [isEditing, setIsEditing] = useState(false)
@@ -168,6 +168,16 @@ export default function CorpusView({ username }: { username: string }) {
     const isOwner = !!authProfile?.username &&
         (authProfile.username.toLowerCase() === decodeURIComponent(username).toLowerCase() ||
             authProfile.username.toLowerCase() === profile?.username?.toLowerCase())
+
+    useEffect(() => {
+        setSidebarOpen(!app?.isMobile)
+    }, [app?.isMobile])
+
+    useEffect(() => {
+        if (startEditingProfile && isOwner) {
+            setIsEditing(true)
+        }
+    }, [isOwner, startEditingProfile])
 
     const handleSaveProfile = async () => {
         setUpdating(true)
@@ -467,10 +477,10 @@ export default function CorpusView({ username }: { username: string }) {
                     {isEditing ? (
                         /* Profile Edit — public profile inspired */
                         <div className="flex-1 overflow-y-auto custom-scrollbar">
-                            <div className="corpus-nodes-wrapper" style={{ marginTop: 'clamp(0.5rem, 2vw, 1.5rem)' }}>
+                            <div className="mx-auto w-full max-w-4xl px-2 sm:px-4 py-3 sm:py-5">
                                 <div className="corpus-profile-slot">
                                     <div className="corpus-profile-stack">
-                                        <div className="corpus-profile-visual corpus-profile-cardShadow">
+                                        <div className="corpus-profile-visual corpus-profile-cardShadow" style={{ minHeight: '180px' }}>
                                             <div className="corpus-profile-cover">
                                                 {form.cover_url ? (
                                                     <img src={form.cover_url} alt="cover preview" />
@@ -488,7 +498,7 @@ export default function CorpusView({ username }: { username: string }) {
                                         </div>
 
                                         <div className="corpus-profile-layerStack">
-                                            <div className="space-y-4">
+                                            <div className="space-y-3">
                                                 <div className="corpus-profile-tableCard corpus-profile-cardShadow">
                                                     <div className="corpus-profile-cardHeading">
                                                         <Users className="size-4" />
@@ -545,7 +555,7 @@ export default function CorpusView({ username }: { username: string }) {
                                                             value={form.bio || ''}
                                                             onChange={e => setForm({ ...form, bio: e.target.value })}
                                                             placeholder="tell people what you build, write, or care about"
-                                                            rows={4}
+                                                            rows={3}
                                                             className="w-full resize-none bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30"
                                                             style={{ margin: 0, lineHeight: 1.6, padding: '0.75rem' }}
                                                         />
@@ -603,21 +613,6 @@ export default function CorpusView({ username }: { username: string }) {
                     ) : (
                         /* Normal View */
                         <div className="flex-1 overflow-y-auto custom-scrollbar">
-                            {/* ── Edit button (owner only) ── */}
-                            <div className="flex items-center justify-between px-4 py-3 border-b border-primary/10">
-                                <span className="text-xs opacity-40 lowercase">{displayName}</span>
-                                {isOwner && (
-                                    <OSButton
-                                        size="sm"
-                                        onClick={() => setIsEditing(true)}
-                                        className="h-6 px-2 !rounded text-[9px] font-bold lowercase flex items-center gap-1"
-                                    >
-                                        <PenLine className="size-2.5" />
-                                        edit profile
-                                    </OSButton>
-                                )}
-                            </div>
-
                             {/* ── Document Grid ── */}
                             <div className="corpus-doc-grid-wrapper">
                                 {/* Tab strip */}

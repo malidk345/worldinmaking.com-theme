@@ -72,7 +72,7 @@ export default function WindowRouter({ item }: { item: AppWindow }) {
     const corpusMatch = path.match(/^\/u\/([^/]+)/)
     if (corpusMatch) {
         // Will import Corpus component dynamically or directly
-        return <CorpusView username={corpusMatch[1]} />
+        return <CorpusView username={corpusMatch[1]} startEditingProfile={Boolean(item.props?.startEditingProfile)} />
     }
 
     // /posts or /blog

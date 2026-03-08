@@ -145,6 +145,16 @@ export default function PublicProfile({ username }: PublicProfileProps) {
         })
     }, [addWindow, corpusPath, displayName, normalizedUsername])
 
+    const openProfileEditor = useCallback(() => {
+        if (!normalizedUsername || !isOwner) return
+        addWindow({
+            key: `corpus-edit-${normalizedUsername}`,
+            path: corpusPath,
+            title: `${displayName}'s profile`,
+            props: { startEditingProfile: true },
+        })
+    }, [addWindow, corpusPath, displayName, isOwner, normalizedUsername])
+
     const openPost = useCallback((post: PostItem) => {
         addWindow({
             key: `post-${post.slug}`,
@@ -324,9 +334,9 @@ export default function PublicProfile({ username }: PublicProfileProps) {
 
                 <div className="flex items-center gap-1 justify-end flex-shrink-0">
                     {isOwner && (
-                        <OSButton size="sm" className="!px-2 h-8 !rounded flex items-center gap-1.5 flex-shrink-0" onClick={openCorpus}>
+                        <OSButton size="sm" className="!px-2 h-8 !rounded flex items-center gap-1.5 flex-shrink-0" onClick={openProfileEditor}>
                             <PenLine className="size-[14px] opacity-70" />
-                            <span className="hidden md:inline text-[12px] font-semibold">edit corpus</span>
+                            <span className="hidden md:inline text-[12px] font-semibold">edit profile</span>
                         </OSButton>
                     )}
                     <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
