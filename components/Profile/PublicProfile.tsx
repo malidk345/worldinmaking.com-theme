@@ -704,18 +704,32 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                         {filteredNodes.map((node) => (
                                             <article key={node.id} className="corpus-doc-card relative cursor-pointer" onClick={() => openNodeEditor(node)}>
                                                 {isOwner && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation()
-                                                            void handleDeleteNode(node)
-                                                        }}
-                                                        className="absolute right-2 top-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded-md border border-primary/10 bg-white/80 text-primary/60 backdrop-blur hover:text-red-600"
-                                                        aria-label={`delete ${node.title}`}
-                                                        title="delete node"
-                                                    >
-                                                        <Trash2 className="size-3.5" />
-                                                    </button>
+                                                    <div className="absolute right-2 top-2 z-10 flex items-center gap-1">
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                openNodeEditor(node)
+                                                            }}
+                                                            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-primary/10 bg-white/80 text-primary/60 backdrop-blur hover:text-primary"
+                                                            aria-label={`edit ${node.title}`}
+                                                            title="edit node"
+                                                        >
+                                                            <PenLine className="size-3.5" />
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                void handleDeleteNode(node)
+                                                            }}
+                                                            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-primary/10 bg-white/80 text-primary/60 backdrop-blur hover:text-red-600"
+                                                            aria-label={`delete ${node.title}`}
+                                                            title="delete node"
+                                                        >
+                                                            <Trash2 className="size-3.5" />
+                                                        </button>
+                                                    </div>
                                                 )}
                                                 <div className="corpus-doc-media">
                                                     <div className="corpus-doc-preview-text">{node.preview}</div>
@@ -748,18 +762,32 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                         {filteredPosts.map((post) => (
                                             <article key={post.id} className={`corpus-doc-card relative ${isOwner ? 'cursor-pointer' : ''}`} onClick={() => handleOpenPost(post)}>
                                                 {isOwner && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation()
-                                                            void handleDeletePost(post)
-                                                        }}
-                                                        className="absolute right-2 top-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded-md border border-primary/10 bg-white/80 text-primary/60 backdrop-blur hover:text-red-600"
-                                                        aria-label={`delete ${post.title}`}
-                                                        title="delete post"
-                                                    >
-                                                        <Trash2 className="size-3.5" />
-                                                    </button>
+                                                    <div className="absolute right-2 top-2 z-10 flex items-center gap-1">
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                handleOpenPost(post)
+                                                            }}
+                                                            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-primary/10 bg-white/80 text-primary/60 backdrop-blur hover:text-primary"
+                                                            aria-label={`edit ${post.title}`}
+                                                            title="edit post"
+                                                        >
+                                                            <PenLine className="size-3.5" />
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                void handleDeletePost(post)
+                                                            }}
+                                                            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-primary/10 bg-white/80 text-primary/60 backdrop-blur hover:text-red-600"
+                                                            aria-label={`delete ${post.title}`}
+                                                            title="delete post"
+                                                        >
+                                                            <Trash2 className="size-3.5" />
+                                                        </button>
+                                                    </div>
                                                 )}
                                                 <div className="corpus-doc-media">
                                                     {/* eslint-disable-next-line @next/next/no-img-element */}
