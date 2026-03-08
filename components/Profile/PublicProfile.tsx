@@ -498,16 +498,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                 <div className="flex items-center gap-1 justify-end flex-shrink-0">
                     {isOwner && (
                         <>
-                            {isEditingProfile ? (
-                                <>
-                                    <OSButton size="sm" type="button" variant="underlineOnHover" className="!px-2 h-8 !rounded flex items-center gap-1.5 flex-shrink-0" onClick={() => setIsEditingProfile(false)}>
-                                        <span className="text-[12px] font-semibold">cancel</span>
-                                    </OSButton>
-                                    <OSButton size="sm" type="button" variant="primary" className="!px-2 h-8 !rounded flex items-center gap-1.5 flex-shrink-0" onClick={handleSaveProfile} disabled={updatingProfile || !hasProfileChanges}>
-                                        <span className="text-[12px] font-semibold">{updatingProfile ? 'saving...' : 'save profile'}</span>
-                                    </OSButton>
-                                </>
-                            ) : (
+                            {!isEditingProfile && (
                                 <>
                                     <OSButton size="sm" className="!px-2 h-8 !rounded flex items-center gap-1.5 flex-shrink-0" onClick={handleAddNode}>
                                         <IconPlus className="size-[14px] opacity-70" />
@@ -633,14 +624,22 @@ export default function PublicProfile({ username }: PublicProfileProps) {
 
                                         <div className="corpus-profile-meta">
                                             {isEditingProfile ? (
-                                                <textarea
-                                                    value={form.bio || ''}
-                                                    onChange={(e) => setForm({ ...form, bio: e.target.value })}
-                                                    placeholder="tell people what you build, write, or care about"
-                                                    rows={4}
-                                                    className="w-full resize-none bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30"
-                                                    style={{ margin: 0, lineHeight: 1.6, padding: '0.75rem' }}
-                                                />
+                                                <div>
+                                                    <textarea
+                                                        value={form.bio || ''}
+                                                        onChange={(e) => setForm({ ...form, bio: e.target.value })}
+                                                        placeholder="tell people what you build, write, or care about"
+                                                        rows={4}
+                                                        className="w-full resize-none bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30"
+                                                        style={{ margin: 0, lineHeight: 1.6, padding: '0.75rem' }}
+                                                    />
+                                                    <div className="flex items-center justify-end gap-2 px-3 py-3 border-t border-primary/10">
+                                                        <OSButton type="button" variant="underlineOnHover" size="sm" onClick={() => setIsEditingProfile(false)}>cancel</OSButton>
+                                                        <OSButton type="button" variant="primary" size="sm" onClick={handleSaveProfile} disabled={updatingProfile || !hasProfileChanges}>
+                                                            {updatingProfile ? 'saving...' : 'save profile'}
+                                                        </OSButton>
+                                                    </div>
+                                                </div>
                                             ) : (
                                                 <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.6, padding: '0.75rem' }}>
                                                     {profile.bio ? <span style={{ opacity: 0.8 }}>{profile.bio}</span> : <span style={{ opacity: 0.35, fontStyle: 'italic' }}>no bio yet</span>}
