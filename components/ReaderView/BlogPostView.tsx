@@ -12,6 +12,7 @@ import { defaultSchema } from 'hast-util-sanitize'
 import rehypeSlug from 'rehype-slug'
 import CloudinaryImage from 'components/CloudinaryImage'
 import { ArticleJsonLd, BreadcrumbJsonLd } from 'components/SEO/JsonLd'
+import { sanitizeHtml } from 'utils/security'
 
 interface BlogPostViewProps {
     post: {
@@ -52,6 +53,7 @@ const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
     const title = (!isOriginal && translation?.title) ? translation.title : post.title
     const content = (!isOriginal && translation?.content) ? translation.content : post.content
     const description = (!isOriginal && translation?.excerpt) ? translation.excerpt : (post.description || post.content.slice(0, 160))
+    const isRichTextHtml = useMemo(() => /<\/?[a-z][\s\S]*>/i.test(content || ''), [content])
 
     const body = useMemo(() => {
         const wordCount = content ? content.split(/\s+/).filter(Boolean).length : 0;
@@ -110,11 +112,23 @@ const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
                 }
             })
 
+            doc.querySelectorAll('img').forEach((image) => {
+                const src = (image.getAttribute('src') || '').trim()
+                if (!src.startsWith('/storage/v1/object/public/')) return
+
+                const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, '') || ''
+                if (!baseUrl) return
+
+                image.setAttribute('src', `${baseUrl}${src}`)
+            })
+
             return doc.body.innerHTML
         } catch {
             return content
         }
     }, [content]);
+
+    const sanitizedProcessedContent = useMemo(() => sanitizeHtml(processedContent), [processedContent])
 
     const availableLanguages = useMemo(() => {
         const langs = [post.language || 'en']
@@ -162,35 +176,38 @@ const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
                 useExternalProvider
             >
                 <div className="tiptap-content">
-                    <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeRaw, rehypeSlug, [rehypeSanitize, { ...defaultSchema, clobberPrefix: '' }]]}
-                        components={{
-                            img: ({ src, alt, title }: { src?: string; alt?: string; title?: string }) => {
-                                let finalSrc = src || '';
-                                // If it's a relative Supabase path, make it absolute
-                                if (finalSrc.startsWith('/storage/v1/object/public/')) {
-                                    const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, '') || '';
-                                    finalSrc = `${baseUrl}${finalSrc}`;
-                                }
+                    {isRichTextHtml ? (
+                        <div dangerouslySetInnerHTML={{ __html: sanitizedProcessedContent }} />
+                    ) : (
+                        <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[rehypeRaw, rehypeSlug, [rehypeSanitize, { ...defaultSchema, clobberPrefix: '' }]]}
+                            components={{
+                                img: ({ src, alt, title }: { src?: string; alt?: string; title?: string }) => {
+                                    let finalSrc = src || '';
+                                    if (finalSrc.startsWith('/storage/v1/object/public/')) {
+                                        const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, '') || '';
+                                        finalSrc = `${baseUrl}${finalSrc}`;
+                                    }
 
-                                return (
-                                    <CloudinaryImage
-                                        src={finalSrc}
-                                        alt={alt || ''}
-                                        title={title}
-                                        className="my-10 rounded-xl border border-primary shadow-lg overflow-hidden"
-                                        imgClassName="object-contain w-full h-auto"
-                                        width={1200}
-                                        height={675}
-                                        priority={false}
-                                    />
-                                );
-                            }
-                        }}
-                    >
-                        {processedContent}
-                    </ReactMarkdown>
+                                    return (
+                                        <CloudinaryImage
+                                            src={finalSrc}
+                                            alt={alt || ''}
+                                            title={title}
+                                            className="my-10 rounded-xl border border-primary shadow-lg overflow-hidden"
+                                            imgClassName="object-contain w-full h-auto"
+                                            width={1200}
+                                            height={675}
+                                            priority={false}
+                                        />
+                                    );
+                                }
+                            }}
+                        >
+                            {processedContent}
+                        </ReactMarkdown>
+                    )}
                 </div>
             </ReaderView>
         </>

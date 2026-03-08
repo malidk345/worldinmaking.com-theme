@@ -19,7 +19,7 @@ import { Save, Share, Image as ImageIcon, Palette, Hash, CheckCircle, ChevronDow
 import OSButton from 'components/OSButton'
 import { Popover } from 'components/RadixUI/Popover'
 import { Toolbar } from 'components/RadixUI/Toolbar'
-import { toSlug } from '../../utils/security'
+import { sanitizeHtml, toSlug } from '../../utils/security'
 
 const adaptPost = (p: { id: number | string; title: string; content?: string; created_at: string; author_id?: string | number; profiles?: { username?: string; avatar_url?: string } | { username?: string; avatar_url?: string }[] }) => {
     const profile = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles
@@ -351,7 +351,7 @@ function WriteRouteView({ nodeId, readOnly = false }: { nodeId?: string; readOnl
 
                         <div className="w-full flex-1 min-h-[400px] rounded border border-primary bg-primary p-4 sm:p-6 overflow-auto">
                             {content ? (
-                                <div className="prose prose-sm sm:prose-base max-w-none text-primary dark:prose-invert" dangerouslySetInnerHTML={{ __html: content }} />
+                                <div className="prose prose-sm sm:prose-base max-w-none text-primary dark:prose-invert" dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }} />
                             ) : (
                                 <p className="m-0 text-sm text-primary/40 lowercase">no content yet</p>
                             )}
