@@ -6,7 +6,7 @@ import './styles.css'
 import {
     FileText,
     ChevronDown, RefreshCw, Share, MoreHorizontal,
-    BookOpen, PenLine, Layers,
+    BookOpen, PenLine, Layers, Users, PanelsTopLeft,
     LogOut
 } from 'lucide-react'
 import {
@@ -15,6 +15,7 @@ import {
     IconChevronLeft,
     IconChevronRight,
     IconPlus,
+    IconUser,
 } from '@posthog/icons'
 import { Popover } from 'components/RadixUI/Popover'
 import Tooltip from 'components/RadixUI/Tooltip'
@@ -229,6 +230,16 @@ export default function CorpusView({ username }: { username: string }) {
     const displayName = profile?.username || decodeURIComponent(username)
     const publishedCount = docs.filter(d => d.status === 'published').length
     const draftCount = docs.filter(d => d.status === 'draft').length
+    const hasProfileChanges =
+        (form.avatar_url || '') !== (profile?.avatar_url || '') ||
+        (form.cover_url || '') !== (profile?.cover_url || '') ||
+        (form.bio || '') !== (profile?.bio || '') ||
+        (form.website || '') !== (profile?.website || '') ||
+        (form.github || '') !== (profile?.github || '') ||
+        (form.linkedin || '') !== (profile?.linkedin || '') ||
+        (form.twitter || '') !== (profile?.twitter || '') ||
+        (form.location || '') !== (profile?.location || '') ||
+        (form.pronouns || '') !== (profile?.pronouns || '')
 
     const mainIconBtnClass = "p-2 h-8 w-8 !rounded-md"
     const interactionBtnClass = "p-1.5 h-8 w-8 !rounded"
@@ -379,111 +390,139 @@ export default function CorpusView({ username }: { username: string }) {
 
                 <main className="flex-1 flex flex-col min-w-0 bg-[#fafcfc] dark:bg-primary relative overflow-hidden">
                     {isEditing ? (
-                        /* Profile Edit — simple list */
+                        /* Profile Edit — public profile inspired */
                         <div className="flex-1 overflow-y-auto custom-scrollbar">
-                            <div className="mx-auto w-full max-w-xl py-2">
+                            <div className="corpus-nodes-wrapper" style={{ marginTop: 'clamp(0.5rem, 2vw, 1.5rem)' }}>
+                                <div className="corpus-profile-slot">
+                                    <div className="corpus-profile-stack">
+                                        <div className="corpus-profile-visual corpus-profile-cardShadow">
+                                            <div className="corpus-profile-cover">
+                                                {form.cover_url ? (
+                                                    <img src={form.cover_url} alt="cover preview" />
+                                                ) : (
+                                                    <div className="corpus-profile-coverEmpty" />
+                                                )}
+                                            </div>
+                                            <div className="corpus-profile-avatar">
+                                                {form.avatar_url ? (
+                                                    <img src={form.avatar_url} alt={displayName} />
+                                                ) : (
+                                                    <IconUser className="size-5 text-primary/30" />
+                                                )}
+                                            </div>
+                                        </div>
 
-                                {/* identity */}
-                                <div className="px-4 pt-5 pb-1 text-[10px] font-black uppercase tracking-widest opacity-25">identity</div>
+                                        <div className="corpus-profile-layerStack">
+                                            <div className="space-y-4">
+                                                <div className="corpus-profile-tableCard corpus-profile-cardShadow">
+                                                    <div className="corpus-profile-cardHeading">
+                                                        <Users className="size-4" />
+                                                        <span>profile editor</span>
+                                                        <span className="corpus-badge" style={{ marginLeft: 'auto' }}>
+                                                            <PanelsTopLeft className="size-3" />
+                                                            <span>{hasProfileChanges ? 'unsaved' : 'synced'}</span>
+                                                        </span>
+                                                    </div>
 
-                                <div className="flex items-center gap-4 px-4 py-3 border-b border-primary/10">
-                                    <span className="w-20 shrink-0 text-xs lowercase opacity-40">username</span>
-                                    <span className="flex-1 text-sm opacity-40">{profile?.username || '—'}</span>
-                                </div>
+                                                    <div className="corpus-profile-tableScroll custom-scrollbar">
+                                                        <table className="corpus-profile-table">
+                                                            <thead>
+                                                                <tr>
+                                                                    <td>field</td>
+                                                                    <td>value</td>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                <tr>
+                                                                    <td>username</td>
+                                                                    <td><span style={{ opacity: 0.55 }}>@{profile?.username || 'anonymous'}</span></td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>pronouns</td>
+                                                                    <td><input type="text" value={form.pronouns || ''} onChange={e => setForm({ ...form, pronouns: e.target.value })} placeholder="she/her" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>location</td>
+                                                                    <td><input type="text" value={form.location || ''} onChange={e => setForm({ ...form, location: e.target.value })} placeholder="istanbul, TR" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>website</td>
+                                                                    <td><input type="text" value={form.website || ''} onChange={e => setForm({ ...form, website: e.target.value })} placeholder="https://your-site.com" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>github</td>
+                                                                    <td><input type="text" value={form.github || ''} onChange={e => setForm({ ...form, github: e.target.value })} placeholder="https://github.com/username" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>linkedin</td>
+                                                                    <td><input type="text" value={form.linkedin || ''} onChange={e => setForm({ ...form, linkedin: e.target.value })} placeholder="https://linkedin.com/in/username" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>twitter</td>
+                                                                    <td><input type="text" value={form.twitter || ''} onChange={e => setForm({ ...form, twitter: e.target.value })} placeholder="https://x.com/username" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td>
+                                                                </tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
 
-                                <div className="flex items-center gap-4 px-4 py-3 border-b border-primary/10">
-                                    <span className="w-20 shrink-0 text-xs lowercase opacity-40">avatar</span>
-                                    <input
-                                        type="text"
-                                        value={form.avatar_url || ''}
-                                        onChange={e => setForm({ ...form, avatar_url: e.target.value })}
-                                        placeholder="https://example.com/photo.png"
-                                        className="flex-1 min-w-0 bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30 py-0"
-                                    />
-                                    {form.avatar_url && (
-                                        <button type="button" onClick={() => setForm({ ...form, avatar_url: '' })} className="shrink-0 text-xs opacity-30 hover:opacity-70 bg-transparent border-none cursor-pointer px-0">✕</button>
-                                    )}
-                                </div>
+                                                    <div className="corpus-profile-meta">
+                                                        <textarea
+                                                            value={form.bio || ''}
+                                                            onChange={e => setForm({ ...form, bio: e.target.value })}
+                                                            placeholder="tell people what you build, write, or care about"
+                                                            rows={4}
+                                                            className="w-full resize-none bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30"
+                                                            style={{ margin: 0, lineHeight: 1.6, padding: '0.75rem' }}
+                                                        />
+                                                    </div>
+                                                </div>
 
-                                <div className="flex items-center gap-4 px-4 py-3 border-b border-primary/10">
-                                    <span className="w-20 shrink-0 text-xs lowercase opacity-40">cover</span>
-                                    <input
-                                        type="text"
-                                        value={form.cover_url || ''}
-                                        onChange={e => setForm({ ...form, cover_url: e.target.value })}
-                                        placeholder="https://example.com/cover.jpg"
-                                        className="flex-1 min-w-0 bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30 py-0"
-                                    />
-                                    {form.cover_url && (
-                                        <button type="button" onClick={() => setForm({ ...form, cover_url: '' })} className="shrink-0 text-xs opacity-30 hover:opacity-70 bg-transparent border-none cursor-pointer px-0">✕</button>
-                                    )}
-                                </div>
+                                                <div className="corpus-profile-tableCard corpus-profile-cardShadow">
+                                                    <div className="corpus-profile-cardHeading">
+                                                        <FileText className="size-4" />
+                                                        <span>media sources</span>
+                                                        <span className="corpus-badge" style={{ marginLeft: 'auto' }}>
+                                                            <span>live preview</span>
+                                                        </span>
+                                                    </div>
 
-                                <div className="flex items-start gap-4 px-4 py-3 border-b border-primary/10">
-                                    <span className="w-20 shrink-0 text-xs lowercase opacity-40 pt-0.5">bio</span>
-                                    <textarea
-                                        value={form.bio || ''}
-                                        onChange={e => setForm({ ...form, bio: e.target.value })}
-                                        placeholder="tell us about yourself..."
-                                        rows={3}
-                                        className="flex-1 min-w-0 bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30 py-0 resize-none leading-relaxed"
-                                    />
-                                </div>
+                                                    <div className="corpus-profile-tableScroll custom-scrollbar">
+                                                        <table className="corpus-profile-table">
+                                                            <thead>
+                                                                <tr>
+                                                                    <td>asset</td>
+                                                                    <td>url</td>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                <tr>
+                                                                    <td>avatar</td>
+                                                                    <td><input type="text" value={form.avatar_url || ''} onChange={e => setForm({ ...form, avatar_url: e.target.value })} placeholder="https://example.com/photo.png" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>cover</td>
+                                                                    <td><input type="text" value={form.cover_url || ''} onChange={e => setForm({ ...form, cover_url: e.target.value })} placeholder="https://example.com/cover.jpg" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td>
+                                                                </tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
 
-                                {/* details */}
-                                <div className="px-4 pt-5 pb-1 text-[10px] font-black uppercase tracking-widest opacity-25">details</div>
-
-                                <div className="flex items-center gap-4 px-4 py-3 border-b border-primary/10">
-                                    <span className="w-20 shrink-0 text-xs lowercase opacity-40">pronouns</span>
-                                    <input
-                                        type="text"
-                                        value={form.pronouns || ''}
-                                        onChange={e => setForm({ ...form, pronouns: e.target.value })}
-                                        placeholder="she/her"
-                                        className="flex-1 min-w-0 bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30 py-0"
-                                    />
-                                </div>
-
-                                <div className="flex items-center gap-4 px-4 py-3 border-b border-primary/10">
-                                    <span className="w-20 shrink-0 text-xs lowercase opacity-40">location</span>
-                                    <input
-                                        type="text"
-                                        value={form.location || ''}
-                                        onChange={e => setForm({ ...form, location: e.target.value })}
-                                        placeholder="istanbul, TR"
-                                        className="flex-1 min-w-0 bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30 py-0"
-                                    />
-                                </div>
-
-                                {/* links */}
-                                <div className="px-4 pt-5 pb-1 text-[10px] font-black uppercase tracking-widest opacity-25">links</div>
-
-                                {([
-                                    { key: 'website', label: 'website', placeholder: 'https://your-site.com' },
-                                    { key: 'github', label: 'github', placeholder: 'https://github.com/username' },
-                                    { key: 'linkedin', label: 'linkedin', placeholder: 'https://linkedin.com/in/username' },
-                                    { key: 'twitter', label: 'twitter', placeholder: 'https://x.com/username' },
-                                ] as const).map(({ key, label, placeholder }) => (
-                                    <div key={key} className="flex items-center gap-4 px-4 py-3 border-b border-primary/10">
-                                        <span className="w-20 shrink-0 text-xs lowercase opacity-40">{label}</span>
-                                        <input
-                                            type="text"
-                                            value={form[key] || ''}
-                                            onChange={e => setForm({ ...form, [key]: e.target.value })}
-                                            placeholder={placeholder}
-                                            className="flex-1 min-w-0 bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30 py-0"
-                                        />
+                                                    <div className="flex items-center justify-between gap-3 px-3 py-3 border-t border-primary/10">
+                                                        <div className="text-xs lowercase" style={{ opacity: 0.45 }}>
+                                                            {hasProfileChanges ? 'you have unsaved profile changes' : 'all profile changes saved'}
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <OSButton type="button" variant="underlineOnHover" size="sm" onClick={() => setIsEditing(false)}>cancel</OSButton>
+                                                            <OSButton type="button" variant="primary" size="sm" onClick={handleSaveProfile} disabled={updating || !hasProfileChanges}>
+                                                                {updating ? 'saving...' : 'save changes'}
+                                                            </OSButton>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                ))}
-
-                                {/* actions */}
-                                <div className="flex items-center justify-end gap-2 px-4 py-5">
-                                    <OSButton type="button" variant="underlineOnHover" size="sm" onClick={() => setIsEditing(false)}>cancel</OSButton>
-                                    <OSButton type="button" variant="primary" size="sm" onClick={handleSaveProfile} disabled={updating}>
-                                        {updating ? 'saving...' : 'save changes'}
-                                    </OSButton>
                                 </div>
-
                             </div>
                         </div>
                     ) : (
