@@ -53,6 +53,16 @@ interface NodeDoc {
     preview: string
 }
 
+interface PostItem {
+    id: string
+    title: string
+    slug: string
+    excerpt?: string
+    image_url?: string
+    created_at: string
+    published: boolean
+}
+
 function relativeTime(iso: string): string {
     const diff = Date.now() - new Date(iso).getTime()
     const mins = Math.floor(diff / 60_000)
@@ -75,6 +85,8 @@ export default function CorpusView({ username }: { username: string }) {
     const [activeTab, setActiveTab] = useState<'all' | 'published' | 'drafts'>('all')
     const [docs, setDocs] = useState<NodeDoc[]>([])
     const [docsLoading, setDocsLoading] = useState(false)
+    const [posts, setPosts] = useState<PostItem[]>([])
+    const [postsLoading, setPostsLoading] = useState(false)
     const windowContext = useWindow()
     const goBack = windowContext?.goBack
     const goForward = windowContext?.goForward
@@ -139,6 +151,25 @@ export default function CorpusView({ username }: { username: string }) {
         loadNodes()
     }, [profile?.id])
 
+    // Load blog posts by this username
+    useEffect(() => {
+        if (!username) return
+        const loadPosts = async () => {
+            setPostsLoading(true)
+            const decoded = decodeURIComponent(username)
+            const { data } = await supabase
+                .from('posts')
+                .select('id, title, slug, excerpt, image_url, created_at, published')
+                .ilike('author', decoded)
+                .order('created_at', { ascending: false })
+            if (data) {
+                setPosts(data as PostItem[])
+            }
+            setPostsLoading(false)
+        }
+        loadPosts()
+    }, [username])
+
     const isOwner = !!authProfile?.username &&
         (authProfile.username.toLowerCase() === decodeURIComponent(username).toLowerCase() ||
             authProfile.username.toLowerCase() === profile?.username?.toLowerCase())
@@ -177,9 +208,18 @@ export default function CorpusView({ username }: { username: string }) {
 
     const handleAddNode = async () => {
         if (!profile?.id) return
-        const tempId = `temp-${Date.now()}`
+        // Insert to Supabase first so we get a real nodeId
+        const { data, error } = await supabase
+            .from('nodes')
+            .insert({ author_id: profile.id, title: 'Untitled Node', content: '', status: 'draft' })
+            .select('id')
+            .single()
+        if (error || !data) {
+            addToast('failed to create node', 'error')
+            return
+        }
         const newDoc: NodeDoc = {
-            id: tempId,
+            id: data.id as string,
             title: 'Untitled Node',
             updated: 'just now',
             status: 'draft',
@@ -187,22 +227,22 @@ export default function CorpusView({ username }: { username: string }) {
         }
         setDocs(prev => [newDoc, ...prev])
         app?.addWindow({
-            key: `node-${Date.now()}`,
+            key: `node-${data.id}`,
             title: 'Untitled Node',
             path: '/write',
             icon: <FileText className="size-4" />,
-            props: { isCanvas: true }
+            props: { nodeId: data.id, isCanvas: true }
         })
-        const { data, error } = await supabase
-            .from('nodes')
-            .insert({ author_id: profile.id, title: 'Untitled Node', content: '', status: 'draft' })
-            .select('id')
-            .single()
-        if (!error && data) {
-            setDocs(prev => prev.map(d => d.id === tempId ? { ...d, id: data.id } : d))
-        } else if (error) {
-            setDocs(prev => prev.filter(d => d.id !== tempId))
-        }
+    }
+
+    const handleOpenNode = (doc: NodeDoc) => {
+        app?.addWindow({
+            key: `node-${doc.id}`,
+            title: doc.title || 'Untitled Node',
+            path: '/write',
+            icon: <FileText className="size-4" />,
+            props: { nodeId: doc.id, isCanvas: true }
+        })
     }
 
     const filteredDocs = docs.filter(doc => {
@@ -267,8 +307,8 @@ export default function CorpusView({ username }: { username: string }) {
                     <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
 
                     <div className="flex items-center gap-0.5">
-                        <Tooltip trigger={<OSButton size="sm" className={interactionBtnClass}><RefreshCw className="size-[16px] opacity-70" /></OSButton>} side="bottom">refresh</Tooltip>
-                        <Tooltip trigger={<OSButton size="sm" className={interactionBtnClass}><Share className="size-[16px] opacity-70" /></OSButton>} side="bottom">share</Tooltip>
+                        <Tooltip trigger={<OSButton size="sm" className={interactionBtnClass} onClick={() => { if (profile?.id) { setDocsLoading(true); supabase.from('nodes').select('id, title, content, status, updated_at').eq('author_id', profile.id).order('updated_at', { ascending: false }).then(({ data }) => { if (data) setDocs(data.map(row => ({ id: row.id as string, title: row.title || 'Untitled', updated: relativeTime(row.updated_at), status: (row.status as 'published' | 'draft') || 'draft', preview: (row.content || '').slice(0, 400) }))); setDocsLoading(false); }) } }}><RefreshCw className="size-[16px] opacity-70" /></OSButton>} side="bottom">refresh</Tooltip>
+                        <Tooltip trigger={<OSButton size="sm" className={interactionBtnClass} onClick={() => { const url = `${window.location.origin}/u/${encodeURIComponent(profile?.username || username)}`; navigator.clipboard.writeText(url).then(() => addToast('profile link copied!', 'success')).catch(() => addToast('could not copy link', 'error')) }}><Share className="size-[16px] opacity-70" /></OSButton>} side="bottom">share</Tooltip>
                         <Tooltip trigger={<OSButton size="sm" className={interactionBtnClass}><Settings2 className="size-[16px] opacity-70" /></OSButton>} side="bottom">customize layout</Tooltip>
 
                         <Popover
@@ -291,7 +331,10 @@ export default function CorpusView({ username }: { username: string }) {
                                     edit profile
                                 </button>
 
-                                <button className="w-full text-left px-2 py-2 text-xs font-bold rounded flex items-center gap-2 hover:bg-primary/5 text-primary transition-colors">
+                                <button
+                                    onClick={() => { const url = `${window.location.origin}/u/${encodeURIComponent(profile?.username || username)}`; navigator.clipboard.writeText(url).then(() => addToast('profile link copied!', 'success')).catch(() => addToast('could not copy link', 'error')) }}
+                                    className="w-full text-left px-2 py-2 text-xs font-bold rounded flex items-center gap-2 hover:bg-primary/5 text-primary transition-colors"
+                                >
                                     <Share className="size-3.5" /> share corpus
                                 </button>
 
@@ -395,326 +438,127 @@ export default function CorpusView({ username }: { username: string }) {
 
                 <main className="flex-1 flex flex-col min-w-0 bg-[#fafcfc] dark:bg-primary relative overflow-hidden">
                     {isEditing ? (
-                        /* Profile Edit — corpus design language */
+                        /* Profile Edit — simple list */
                         <div className="flex-1 overflow-y-auto custom-scrollbar">
-                            {/* Edit header card */}
-                            <div className="corpus-edit-wrapper">
+                            <div className="mx-auto w-full max-w-xl py-2">
 
-                                {/* ── Avatar card ── */}
-                                <div className="corpus-nodes-card">
-                                    <div className="corpus-table-heading">
-                                        <IconUser className="size-3.5" style={{ color: 'var(--corpus-accent)' }} />
-                                        <span>avatar</span>
-                                        <span className="corpus-badge">
-                                            <Settings2 className="size-3" />
-                                            <span>settings</span>
-                                        </span>
-                                    </div>
-                                    {/* Cover preview strip */}
-                                    <div className="corpus-edit-cover-preview">
-                                        {form.cover_url
-                                            ? <img src={form.cover_url} alt="cover preview" className="size-full object-cover" />
-                                            : <span className="corpus-edit-cover-empty">no cover</span>
-                                        }
-                                    </div>
-                                    <div className="corpus-edit-section">
-                                        <div className="corpus-edit-avatar-preview">
-                                            {form.avatar_url
-                                                ? <img src={form.avatar_url} alt="preview" className="size-full object-cover" />
-                                                : <IconUser className="size-8" style={{ color: 'var(--corpus-accent)', opacity: 0.4 }} />
-                                            }
-                                        </div>
-                                        <div className="corpus-edit-fields">
-                                            <Input
-                                                label="cover url"
-                                                value={form.cover_url || ''}
-                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, cover_url: e.target.value })}
-                                                placeholder="https://example.com/cover.jpg"
-                                                size="sm"
-                                                direction="column"
-                                                description="Wide banner image shown at the top of your profile."
-                                            />
-                                            <Input
-                                                label="avatar url"
-                                                value={form.avatar_url || ''}
-                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, avatar_url: e.target.value })}
-                                                placeholder="https://example.com/photo.png"
-                                                size="sm"
-                                                direction="column"
-                                                description="Square profile photo."
-                                            />
-                                        </div>
-                                    </div>
+                                {/* identity */}
+                                <div className="px-4 pt-5 pb-1 text-[10px] font-black uppercase tracking-widest opacity-25">identity</div>
+
+                                <div className="flex items-center gap-4 px-4 py-3 border-b border-primary/10">
+                                    <span className="w-20 shrink-0 text-xs lowercase opacity-40">username</span>
+                                    <span className="flex-1 text-sm opacity-40">{profile?.username || '—'}</span>
                                 </div>
 
-                                {/* ── Profile info card ── */}
-                                <div className="corpus-nodes-card">
-                                    <div className="corpus-table-heading">
-                                        <PenLine className="size-3.5" style={{ color: 'var(--corpus-accent)' }} />
-                                        <span>identity</span>
-                                        <span className="corpus-badge">
-                                            <Globe className="size-3" />
-                                            <span>public</span>
-                                        </span>
-                                    </div>
-                                    <div className="corpus-edit-section corpus-edit-grid">
-                                        <Input
-                                            label="username"
-                                            value={profile?.username || ''}
-                                            readOnly
-                                            disabled
-                                            size="sm"
-                                            direction="column"
-                                            description="Your unique ID — cannot be changed."
-                                        />
-                                        <Input
-                                            label="pronouns"
-                                            value={form.pronouns || ''}
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, pronouns: e.target.value })}
-                                            placeholder="e.g. they/them"
-                                            size="sm"
-                                            direction="column"
-                                        />
-                                        <Input
-                                            label="location"
-                                            value={form.location || ''}
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, location: e.target.value })}
-                                            placeholder="e.g. Istanbul, TR"
-                                            size="sm"
-                                            direction="column"
-                                        />
-                                        <div className="corpus-edit-full">
-                                            <Textarea
-                                                label="bio"
-                                                value={form.bio || ''}
-                                                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setForm({ ...form, bio: e.target.value })}
-                                                placeholder="Tell us about yourself..."
-                                                size="sm"
-                                                direction="column"
-                                                rows={4}
-                                            />
-                                        </div>
-                                    </div>
+                                <div className="flex items-center gap-4 px-4 py-3 border-b border-primary/10">
+                                    <span className="w-20 shrink-0 text-xs lowercase opacity-40">avatar</span>
+                                    <input
+                                        type="text"
+                                        value={form.avatar_url || ''}
+                                        onChange={e => setForm({ ...form, avatar_url: e.target.value })}
+                                        placeholder="https://example.com/photo.png"
+                                        className="flex-1 min-w-0 bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30 py-0"
+                                    />
+                                    {form.avatar_url && (
+                                        <button type="button" onClick={() => setForm({ ...form, avatar_url: '' })} className="shrink-0 text-xs opacity-30 hover:opacity-70 bg-transparent border-none cursor-pointer px-0">✕</button>
+                                    )}
                                 </div>
 
-                                {/* ── Links card ── */}
-                                <div className="corpus-nodes-card">
-                                    <div className="corpus-table-heading">
-                                        <Globe className="size-3.5" style={{ color: 'var(--corpus-accent)' }} />
-                                        <span>links</span>
-                                        <span className="corpus-badge">
-                                            <Layers className="size-3" />
-                                            <span>social</span>
-                                        </span>
-                                    </div>
-                                    <div className="corpus-edit-section corpus-edit-grid">
-                                        <Input label="website" value={form.website || ''} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, website: e.target.value })} placeholder="https://..." size="sm" direction="column" />
-                                        <Input label="github" value={form.github || ''} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, github: e.target.value })} placeholder="https://github.com/..." size="sm" direction="column" />
-                                        <Input label="linkedin" value={form.linkedin || ''} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, linkedin: e.target.value })} placeholder="https://linkedin.com/in/..." size="sm" direction="column" />
-                                        <Input label="twitter / x" value={form.twitter || ''} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, twitter: e.target.value })} placeholder="https://x.com/..." size="sm" direction="column" />
-                                    </div>
+                                <div className="flex items-center gap-4 px-4 py-3 border-b border-primary/10">
+                                    <span className="w-20 shrink-0 text-xs lowercase opacity-40">cover</span>
+                                    <input
+                                        type="text"
+                                        value={form.cover_url || ''}
+                                        onChange={e => setForm({ ...form, cover_url: e.target.value })}
+                                        placeholder="https://example.com/cover.jpg"
+                                        className="flex-1 min-w-0 bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30 py-0"
+                                    />
+                                    {form.cover_url && (
+                                        <button type="button" onClick={() => setForm({ ...form, cover_url: '' })} className="shrink-0 text-xs opacity-30 hover:opacity-70 bg-transparent border-none cursor-pointer px-0">✕</button>
+                                    )}
                                 </div>
 
-                                {/* ── Action bar ── */}
-                                <div className="corpus-edit-actions">
-                                    <span className="corpus-edit-status">
-                                        <span className="corpus-edit-dot" />
-                                        unsaved changes
-                                    </span>
-                                    <div className="corpus-edit-btns">
-                                        <button className="corpus-edit-cancel" onClick={() => setIsEditing(false)}>cancel</button>
-                                        <button className="corpus-edit-save" onClick={handleSaveProfile} disabled={updating}>
-                                            {updating ? 'saving...' : 'save changes'}
-                                        </button>
+                                <div className="flex items-start gap-4 px-4 py-3 border-b border-primary/10">
+                                    <span className="w-20 shrink-0 text-xs lowercase opacity-40 pt-0.5">bio</span>
+                                    <textarea
+                                        value={form.bio || ''}
+                                        onChange={e => setForm({ ...form, bio: e.target.value })}
+                                        placeholder="tell us about yourself..."
+                                        rows={3}
+                                        className="flex-1 min-w-0 bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30 py-0 resize-none leading-relaxed"
+                                    />
+                                </div>
+
+                                {/* details */}
+                                <div className="px-4 pt-5 pb-1 text-[10px] font-black uppercase tracking-widest opacity-25">details</div>
+
+                                <div className="flex items-center gap-4 px-4 py-3 border-b border-primary/10">
+                                    <span className="w-20 shrink-0 text-xs lowercase opacity-40">pronouns</span>
+                                    <input
+                                        type="text"
+                                        value={form.pronouns || ''}
+                                        onChange={e => setForm({ ...form, pronouns: e.target.value })}
+                                        placeholder="she/her"
+                                        className="flex-1 min-w-0 bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30 py-0"
+                                    />
+                                </div>
+
+                                <div className="flex items-center gap-4 px-4 py-3 border-b border-primary/10">
+                                    <span className="w-20 shrink-0 text-xs lowercase opacity-40">location</span>
+                                    <input
+                                        type="text"
+                                        value={form.location || ''}
+                                        onChange={e => setForm({ ...form, location: e.target.value })}
+                                        placeholder="istanbul, TR"
+                                        className="flex-1 min-w-0 bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30 py-0"
+                                    />
+                                </div>
+
+                                {/* links */}
+                                <div className="px-4 pt-5 pb-1 text-[10px] font-black uppercase tracking-widest opacity-25">links</div>
+
+                                {([
+                                    { key: 'website', label: 'website', placeholder: 'https://your-site.com' },
+                                    { key: 'github', label: 'github', placeholder: 'https://github.com/username' },
+                                    { key: 'linkedin', label: 'linkedin', placeholder: 'https://linkedin.com/in/username' },
+                                    { key: 'twitter', label: 'twitter', placeholder: 'https://x.com/username' },
+                                ] as const).map(({ key, label, placeholder }) => (
+                                    <div key={key} className="flex items-center gap-4 px-4 py-3 border-b border-primary/10">
+                                        <span className="w-20 shrink-0 text-xs lowercase opacity-40">{label}</span>
+                                        <input
+                                            type="text"
+                                            value={form[key] || ''}
+                                            onChange={e => setForm({ ...form, [key]: e.target.value })}
+                                            placeholder={placeholder}
+                                            className="flex-1 min-w-0 bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30 py-0"
+                                        />
                                     </div>
+                                ))}
+
+                                {/* actions */}
+                                <div className="flex items-center justify-end gap-2 px-4 py-5">
+                                    <OSButton type="button" variant="underlineOnHover" size="sm" onClick={() => setIsEditing(false)}>cancel</OSButton>
+                                    <OSButton type="button" variant="primary" size="sm" onClick={handleSaveProfile} disabled={updating}>
+                                        {updating ? 'saving...' : 'save changes'}
+                                    </OSButton>
                                 </div>
 
                             </div>
                         </div>
                     ) : (
-                        /* Normal View with Banner + Docs */
+                        /* Normal View */
                         <div className="flex-1 overflow-y-auto custom-scrollbar">
-                            {/* ── Profile Section with Complete Layered Design ── */}
-                            <main className="corpus-main">
-                                <div className="corpus-shadow corpus-shadow--main">
-                                    <div></div>
-                                </div>
-                                
-                                {/* Layer 1: Main Profile Section */}
-                                <section className="corpus-layer">
-                                    <div className="corpus-mover">
-                                        <div className="corpus-shadow corpus-shadow--main">
-                                            <div></div>
-                                        </div>
-
-                                        <div className="corpus-content--main">
-                                            {/* Profile Heading */}
-                                            <p className="corpus-heading">
-                                                <IconUser className="size-4" />
-                                                <span className="lowercase">{displayName}&apos;s profile</span>
-                                            </p>
-
-                                            {/* Profile Card Slot */}
-                                            <div className="corpus-profile-slot">
-                                                {/* Cover */}
-                                                <div className="h-24 w-full relative overflow-hidden rounded-t-lg">
-                                                    {profile?.cover_url
-                                                        ? <img src={profile.cover_url} alt="cover" className="size-full object-cover" />
-                                                        : <div className="size-full bg-gradient-to-br from-primary/10 via-primary/5 to-accent">
-                                                            <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, var(--color-primary) 0%, transparent 60%), radial-gradient(circle at 80% 20%, var(--color-primary) 0%, transparent 50%)' }} />
-                                                          </div>
-                                                    }
-                                                </div>
-
-                                                {/* Avatar + Info */}
-                                                <div className="px-4 pt-0 pb-3">
-                                                    <div className="flex items-end gap-3 -mt-8 mb-3">
-                                                        <div className="size-14 rounded-xl border-2 border-white dark:border-black/40 bg-accent overflow-hidden shrink-0 flex items-center justify-center shadow-sm">
-                                                            {profile?.avatar_url
-                                                                ? <img src={profile.avatar_url} alt={displayName} className="size-full object-cover" />
-                                                                : <IconUser className="size-5 text-primary/30" />
-                                                            }
-                                                        </div>
-                                                        <div className="flex-1 min-w-0 pb-1">
-                                                            <h2 className="text-sm font-black lowercase tracking-tight text-primary m-0 leading-tight">
-                                                                {displayName}
-                                                            </h2>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Social Links */}
-                                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                                        <OSButton
-                                                            size="sm"
-                                                            onClick={() => setIsEditing(true)}
-                                                            className="h-6 px-2 !rounded text-[9px] font-bold lowercase flex items-center gap-1"
-                                                        >
-                                                            <PenLine className="size-2.5" />
-                                                            edit
-                                                        </OSButton>
-                                                        {profile?.website && (
-                                                            <Tooltip trigger={
-                                                                <a href={profile.website} target="_blank" rel="noopener noreferrer">
-                                                                    <OSButton size="sm" className="h-6 w-6 !rounded"><Globe className="size-2.5" /></OSButton>
-                                                                </a>
-                                                            } side="bottom">website</Tooltip>
-                                                        )}
-                                                        {profile?.github && (
-                                                            <Tooltip trigger={
-                                                                <a href={profile.github} target="_blank" rel="noopener noreferrer">
-                                                                    <OSButton size="sm" className="h-6 w-6 !rounded"><Github className="size-2.5" /></OSButton>
-                                                                </a>
-                                                            } side="bottom">github</Tooltip>
-                                                        )}
-                                                        {profile?.linkedin && (
-                                                            <Tooltip trigger={
-                                                                <a href={profile.linkedin} target="_blank" rel="noopener noreferrer">
-                                                                    <OSButton size="sm" className="h-6 w-6 !rounded"><Linkedin className="size-2.5" /></OSButton>
-                                                                </a>
-                                                            } side="bottom">linkedin</Tooltip>
-                                                        )}
-                                                        {profile?.twitter && (
-                                                            <Tooltip trigger={
-                                                                <a href={profile.twitter} target="_blank" rel="noopener noreferrer">
-                                                                    <OSButton size="sm" className="h-6 w-6 !rounded"><Twitter className="size-2.5" /></OSButton>
-                                                                </a>
-                                                            } side="bottom">twitter</Tooltip>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </section>
-                            </main>
-
-                            {/* ── Profile Info + Stats Cards ── */}
-                            <div className="corpus-nodes-wrapper">
-                                <div className="corpus-nodes-card">
-                                    <div className="corpus-table-heading">
-                                        <IconUser className="size-3.5" style={{ color: 'var(--corpus-accent)' }} />
-                                        <span>profile</span>
-                                        <span className="corpus-badge">
-                                            <Globe className="size-3" />
-                                            <span>info</span>
-                                        </span>
-                                    </div>
-                                    <dl className="corpus-status-dl">
-                                        {profile?.role && (
-                                            <>
-                                                <dt><Star className="size-3.5" /><span>role</span></dt>
-                                                <dd>{profile.role}</dd>
-                                            </>
-                                        )}
-                                        {profile?.bio && (
-                                            <>
-                                                <dt><PenLine className="size-3.5" /><span>bio</span></dt>
-                                                <dd className="corpus-info-bio">{profile.bio}</dd>
-                                            </>
-                                        )}
-                                        {profile?.pronouns && (
-                                            <>
-                                                <dt><Star className="size-3.5" /><span>pronouns</span></dt>
-                                                <dd>{profile.pronouns}</dd>
-                                            </>
-                                        )}
-                                        {profile?.location && (
-                                            <>
-                                                <dt><MapPin className="size-3.5" /><span>location</span></dt>
-                                                <dd>{profile.location}</dd>
-                                            </>
-                                        )}
-                                        {profile?.website && (
-                                            <>
-                                                <dt><Globe className="size-3.5" /><span>website</span></dt>
-                                                <dd><a href={profile.website} target="_blank" rel="noopener noreferrer" className="corpus-link">{profile.website.replace(/^https?:\/\//, '')}</a></dd>
-                                            </>
-                                        )}
-                                        {profile?.github && (
-                                            <>
-                                                <dt><Github className="size-3.5" /><span>github</span></dt>
-                                                <dd><a href={profile.github} target="_blank" rel="noopener noreferrer" className="corpus-link">{profile.github.replace(/^https?:\/\/(www\.)?github\.com\//, '')}</a></dd>
-                                            </>
-                                        )}
-                                        {profile?.linkedin && (
-                                            <>
-                                                <dt><Linkedin className="size-3.5" /><span>linkedin</span></dt>
-                                                <dd><a href={profile.linkedin} target="_blank" rel="noopener noreferrer" className="corpus-link">linkedin</a></dd>
-                                            </>
-                                        )}
-                                        {profile?.twitter && (
-                                            <>
-                                                <dt><Twitter className="size-3.5" /><span>twitter</span></dt>
-                                                <dd><a href={profile.twitter} target="_blank" rel="noopener noreferrer" className="corpus-link">{profile.twitter.replace(/^https?:\/\/(www\.)?(twitter|x)\.com\//, '')}</a></dd>
-                                            </>
-                                        )}
-                                        {!profile?.role && !profile?.bio && !profile?.pronouns && !profile?.location && !profile?.website && !profile?.github && !profile?.linkedin && !profile?.twitter && (
-                                            <>
-                                                <dt><PenLine className="size-3.5" /><span>bio</span></dt>
-                                                <dd className="corpus-info-bio">—</dd>
-                                            </>
-                                        )}
-                                    </dl>
-                                </div>
-
-                                <div className="corpus-stats-card">
-                                    <div className="corpus-table-heading">
-                                        <Layers className="size-3.5" style={{ color: 'var(--corpus-accent)' }} />
-                                        <span>corpus</span>
-                                        <span className="corpus-badge">
-                                            <BookOpen className="size-3" />
-                                            <span>stats</span>
-                                        </span>
-                                    </div>
-                                    <dl className="corpus-status-dl">
-                                        <dt><BookOpen className="size-3.5" /><span>published</span></dt>
-                                        <dd>{publishedCount}</dd>
-                                        <dt><PenLine className="size-3.5" /><span>drafts</span></dt>
-                                        <dd>{draftCount}</dd>
-                                        <dt><Layers className="size-3.5" /><span>total nodes</span></dt>
-                                        <dd className="corpus-highlight">{docs.length}</dd>
-                                    </dl>
-                                </div>
+                            {/* ── Edit button ── */}
+                            <div className="flex items-center justify-between px-4 py-3 border-b border-primary/10">
+                                <span className="text-xs opacity-40 lowercase">{displayName}</span>
+                                <OSButton
+                                    size="sm"
+                                    onClick={() => setIsEditing(true)}
+                                    className="h-6 px-2 !rounded text-[9px] font-bold lowercase flex items-center gap-1"
+                                >
+                                    <PenLine className="size-2.5" />
+                                    edit profile
+                                </OSButton>
                             </div>
 
                             {/* ── Document Grid ── */}
@@ -745,7 +589,7 @@ export default function CorpusView({ username }: { username: string }) {
                                         <article
                                             key={doc.id}
                                             className="corpus-doc-card"
-                                            onClick={handleAddNode}
+                                            onClick={() => handleOpenNode(doc)}
                                         >
                                             <div className="corpus-doc-media">
                                                 <div className="corpus-doc-preview-text">{doc.preview}</div>
@@ -773,6 +617,64 @@ export default function CorpusView({ username }: { username: string }) {
                                     <div className="corpus-doc-empty">
                                         <PenLine className="size-8" style={{ opacity: 0.2 }} />
                                         <p>no {activeTab === 'all' ? 'nodes' : activeTab} yet</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* ── Blog Posts Grid ── */}
+                            <div className="corpus-doc-grid-wrapper">
+                                <div className="corpus-doc-tabs">
+                                    <div className="corpus-doc-tab corpus-doc-tab--active" style={{ cursor: 'default' }}>
+                                        posts
+                                        <span>{posts.length}</span>
+                                    </div>
+                                </div>
+
+                                {postsLoading && (
+                                    <div className="corpus-doc-empty">
+                                        <RefreshCw className="size-6 animate-spin" style={{ opacity: 0.3 }} />
+                                        <p>loading posts...</p>
+                                    </div>
+                                )}
+
+                                <div className="corpus-doc-grid">
+                                    {posts.map(post => (
+                                        <article
+                                            key={post.id}
+                                            className="corpus-doc-card"
+                                            onClick={() => app?.addWindow({
+                                                key: `post-${post.slug}`,
+                                                title: post.title,
+                                                path: `/posts/${post.slug}`,
+                                                icon: <BookOpen className="size-4" />,
+                                            })}
+                                        >
+                                            <div className="corpus-doc-media">
+                                                {post.image_url
+                                                    ? <img src={post.image_url} alt={post.title} className="w-full h-full object-cover" />
+                                                    : <div className="corpus-doc-preview-text">{post.excerpt || ''}</div>
+                                                }
+                                                <div className="corpus-doc-media-fade" />
+                                                <div className="corpus-doc-badge">
+                                                    <BookOpen className="size-3" /><span>post</span>
+                                                </div>
+                                            </div>
+                                            <div className="corpus-doc-info">
+                                                <div>
+                                                    <BookOpen className="size-3.5" />
+                                                    <span>{relativeTime(post.created_at)}</span>
+                                                </div>
+                                                <h3>{post.title}</h3>
+                                                <p>{post.published ? 'published' : 'draft'}</p>
+                                            </div>
+                                        </article>
+                                    ))}
+                                </div>
+
+                                {!postsLoading && posts.length === 0 && (
+                                    <div className="corpus-doc-empty">
+                                        <BookOpen className="size-8" style={{ opacity: 0.2 }} />
+                                        <p>no posts yet</p>
                                     </div>
                                 )}
                             </div>

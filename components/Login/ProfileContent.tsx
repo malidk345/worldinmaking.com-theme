@@ -1,20 +1,14 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { supabase } from '../../lib/supabase';
 import { useApp } from '../../context/App';
 import {
-    IconUser,
-    IconGlobe,
-    IconLock,
-    IconMessage,
     IconBolt,
     IconBookmark
 } from '@posthog/icons';
-import Input from '../OSForm/input';
-import Textarea from '../OSForm/textarea';
 import OSButton from 'components/OSButton';
 
 export default function ProfileContent() {
@@ -25,6 +19,7 @@ export default function ProfileContent() {
     const [form, setForm] = useState({
         username: profile?.username || '',
         avatar_url: profile?.avatar_url || '',
+        cover_url: profile?.cover_url || '',
         bio: profile?.bio || '',
         website: profile?.website || '',
         github: profile?.github || '',
@@ -37,6 +32,25 @@ export default function ProfileContent() {
     const [updating, setUpdating] = useState(false);
     const [savedPosts, setSavedPosts] = useState<Array<{ post_slug: string; post_title: string | null; saved_at: string }>>([]);
     const [savedPostsLoading, setSavedPostsLoading] = useState(false);
+
+    const normalizedUsername = useMemo(() => (form.username || profile?.username || '').trim(), [form.username, profile?.username]);
+    const publicProfilePath = normalizedUsername ? `/profile/${encodeURIComponent(normalizedUsername)}` : '/profile';
+    const corpusPath = normalizedUsername ? `/u/${encodeURIComponent(normalizedUsername)}` : '/';
+
+    useEffect(() => {
+        setForm({
+            username: profile?.username || '',
+            avatar_url: profile?.avatar_url || '',
+            cover_url: profile?.cover_url || '',
+            bio: profile?.bio || '',
+            website: profile?.website || '',
+            github: profile?.github || '',
+            linkedin: profile?.linkedin || '',
+            twitter: profile?.twitter || '',
+            pronouns: profile?.pronouns || '',
+            location: profile?.location || '',
+        });
+    }, [profile]);
 
     const toPostPath = (slug: string) => {
         const normalized = (slug || '').trim().replace(/\/+$/, '')
@@ -73,6 +87,7 @@ export default function ProfileContent() {
     const hasChanges =
         form.username !== (profile?.username || '') ||
         form.avatar_url !== (profile?.avatar_url || '') ||
+        form.cover_url !== (profile?.cover_url || '') ||
         form.bio !== (profile?.bio || '') ||
         form.website !== (profile?.website || '') ||
         form.github !== (profile?.github || '') ||
@@ -80,6 +95,33 @@ export default function ProfileContent() {
         form.twitter !== (profile?.twitter || '') ||
         form.pronouns !== (profile?.pronouns || '') ||
         form.location !== (profile?.location || '');
+
+    const handleCopyLink = async (path: string, label: string) => {
+        if (typeof window === 'undefined') return;
+
+        const url = `${window.location.origin}${path}`;
+
+        try {
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(url);
+                addToast(`${label} link copied`, 'success');
+                return;
+            }
+
+            const textArea = document.createElement('textarea');
+            textArea.value = url;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            addToast(`${label} link copied`, 'success');
+        } catch {
+            addToast(`failed to copy ${label} link`, 'error');
+        }
+    };
 
     const handleChange = (field: string, value: string) => {
         setForm(prev => ({ ...prev, [field]: value }));
@@ -100,185 +142,173 @@ export default function ProfileContent() {
 
     if (!user) return null;
 
+    const inputCls = 'flex-1 min-w-0 bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30 py-0';
+    const labelCls = 'w-20 shrink-0 text-xs lowercase opacity-40 select-none';
+    const rowCls = 'flex items-center gap-4 px-4 py-3 border-b border-primary';
+    const groupCls = 'px-4 pt-5 pb-1 text-[10px] font-black uppercase tracking-widest opacity-25';
+
     return (
-        <div className="flex-1 h-full overflow-y-auto custom-scrollbar bg-accent p-5 md:p-6 text-primary">
-            <div className="mx-auto w-full max-w-4xl space-y-5">
-                <section className="rounded border border-primary bg-primary p-4 md:p-5">
-                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                        <div className="flex items-center gap-4">
-                            <div className="size-16 overflow-hidden rounded border border-primary bg-accent md:size-20">
-                                {form.avatar_url ? (
-                                    <img src={form.avatar_url} alt={form.username || 'avatar'} className="size-full object-cover" />
-                                ) : (
-                                    <div className="flex size-full items-center justify-center text-secondary">
-                                        <IconUser className="size-9" />
-                                    </div>
-                                )}
-                            </div>
-                            <div>
-                                <h2 className="m-0 text-xl font-black lowercase md:text-2xl">{form.username || profile?.username || 'anonymous'}</h2>
-                                <p className="m-0 text-sm text-secondary">{user.email}</p>
-                                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-bold lowercase">
-                                    <span className="rounded border border-primary bg-accent px-2 py-0.5">{profile?.role || 'member'}</span>
-                                    {form.location && (
-                                        <span className="rounded border border-primary bg-accent px-2 py-0.5">{form.location}</span>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                        <div className="rounded border border-primary bg-accent px-3 py-2 text-xs text-secondary">
-                            profile is synced via Supabase
-                        </div>
+        <div className="flex-1 h-full overflow-y-auto custom-scrollbar bg-accent text-primary">
+            <form onSubmit={handleSave} className="mx-auto w-full max-w-xl py-2">
+
+                {/* identity */}
+                <div className={groupCls}>identity</div>
+
+                <div className={rowCls}>
+                    <span className={labelCls}>username</span>
+                    <input
+                        type="text"
+                        value={form.username}
+                        onChange={e => handleChange('username', e.target.value)}
+                        placeholder="display name"
+                        className={inputCls}
+                    />
+                </div>
+
+                <div className={rowCls}>
+                    <span className={labelCls}>avatar</span>
+                    <input
+                        type="text"
+                        value={form.avatar_url}
+                        onChange={e => handleChange('avatar_url', e.target.value)}
+                        placeholder="https://example.com/avatar.png"
+                        className={inputCls}
+                    />
+                    {form.avatar_url && (
+                        <button type="button" onClick={() => handleChange('avatar_url', '')} className="shrink-0 text-xs opacity-30 hover:opacity-70 bg-transparent border-none cursor-pointer px-0">✕</button>
+                    )}
+                </div>
+
+                <div className={rowCls}>
+                    <span className={labelCls}>cover</span>
+                    <input
+                        type="text"
+                        value={form.cover_url}
+                        onChange={e => handleChange('cover_url', e.target.value)}
+                        placeholder="https://example.com/cover.jpg"
+                        className={inputCls}
+                    />
+                    {form.cover_url && (
+                        <button type="button" onClick={() => handleChange('cover_url', '')} className="shrink-0 text-xs opacity-30 hover:opacity-70 bg-transparent border-none cursor-pointer px-0">✕</button>
+                    )}
+                </div>
+
+                <div className="flex items-start gap-4 px-4 py-3 border-b border-primary">
+                    <span className={`${labelCls} pt-0.5`}>bio</span>
+                    <textarea
+                        value={form.bio}
+                        onChange={e => handleChange('bio', e.target.value)}
+                        placeholder="tell the community what you build, write, or care about"
+                        rows={3}
+                        className={`${inputCls} resize-none leading-relaxed`}
+                    />
+                </div>
+
+                {/* details */}
+                <div className={groupCls}>details</div>
+
+                <div className={rowCls}>
+                    <span className={labelCls}>pronouns</span>
+                    <input
+                        type="text"
+                        value={form.pronouns}
+                        onChange={e => handleChange('pronouns', e.target.value)}
+                        placeholder="she/her"
+                        className={inputCls}
+                    />
+                </div>
+
+                <div className={rowCls}>
+                    <span className={labelCls}>location</span>
+                    <input
+                        type="text"
+                        value={form.location}
+                        onChange={e => handleChange('location', e.target.value)}
+                        placeholder="city, country"
+                        className={inputCls}
+                    />
+                </div>
+
+                {/* links */}
+                <div className={groupCls}>links</div>
+
+                {[
+                    { key: 'website', label: 'website', placeholder: 'https://your-site.com' },
+                    { key: 'github', label: 'github', placeholder: 'https://github.com/username' },
+                    { key: 'linkedin', label: 'linkedin', placeholder: 'https://linkedin.com/in/username' },
+                    { key: 'twitter', label: 'twitter', placeholder: 'https://x.com/username' },
+                ].map(({ key, label, placeholder }) => (
+                    <div key={key} className={rowCls}>
+                        <span className={labelCls}>{label}</span>
+                        <input
+                            type="text"
+                            value={form[key as keyof typeof form]}
+                            onChange={e => handleChange(key, e.target.value)}
+                            placeholder={placeholder}
+                            className={inputCls}
+                        />
                     </div>
-                </section>
+                ))}
 
-                <form onSubmit={handleSave} className="space-y-5">
-                    <section className="rounded border border-primary bg-primary">
-                        <div className="flex items-center justify-between border-b border-primary px-4 py-3">
-                            <h3 className="m-0 text-sm font-black lowercase">identity</h3>
-                            <IconLock className="size-4 opacity-50" />
-                        </div>
-                        <div className="space-y-4 p-4 md:p-5">
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                <Input
-                                    label="username"
-                                    direction="column"
-                                    value={form.username}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('username', e.target.value)}
-                                    placeholder="choose a display name"
-                                    description="visible across discussions and posts"
-                                />
-                                <Input
-                                    label="avatar url"
-                                    direction="column"
-                                    value={form.avatar_url}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('avatar_url', e.target.value)}
-                                    placeholder="https://example.com/avatar.png"
-                                    description="use a direct image URL"
-                                    showClearButton
-                                    onClear={() => handleChange('avatar_url', '')}
-                                />
-                            </div>
-                            <Textarea
-                                label="bio"
-                                direction="column"
-                                value={form.bio}
-                                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleChange('bio', e.target.value)}
-                                placeholder="tell the community what you build, write, or care about"
-                                description="short and clear works best"
-                                rows={4}
-                            />
-                        </div>
-                    </section>
+                {/* presence */}
+                <div className={groupCls}>presence</div>
 
-                    <section className="rounded border border-primary bg-primary">
-                        <div className="flex items-center justify-between border-b border-primary px-4 py-3">
-                            <h3 className="m-0 text-sm font-black lowercase">details</h3>
-                            <IconMessage className="size-4 opacity-50" />
-                        </div>
-                        <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 md:p-5">
-                            <Input
-                                label="pronouns"
-                                direction="column"
-                                value={form.pronouns}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('pronouns', e.target.value)}
-                                placeholder="e.g. she/her"
-                            />
-                            <Input
-                                label="location"
-                                direction="column"
-                                value={form.location}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('location', e.target.value)}
-                                placeholder="city, country"
-                            />
-                        </div>
-                    </section>
+                <div className={rowCls}>
+                    <span className={labelCls}>profile</span>
+                    <span className="flex-1 min-w-0 text-sm opacity-50 truncate">{publicProfilePath}</span>
+                    <div className="flex gap-1 shrink-0">
+                        <OSButton type="button" size="sm" disabled={!normalizedUsername} onClick={() => addWindow({ key: `public-profile-${normalizedUsername}`, path: publicProfilePath, title: `${normalizedUsername}'s profile` })}>open</OSButton>
+                        <OSButton type="button" size="sm" disabled={!normalizedUsername} onClick={() => handleCopyLink(publicProfilePath, 'profile')}>copy</OSButton>
+                    </div>
+                </div>
 
-                    <section className="rounded border border-primary bg-primary">
-                        <div className="flex items-center justify-between border-b border-primary px-4 py-3">
-                            <h3 className="m-0 text-sm font-black lowercase">links</h3>
-                            <IconGlobe className="size-4 opacity-50" />
-                        </div>
-                        <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 md:p-5">
-                            <Input
-                                label="website"
-                                direction="column"
-                                value={form.website}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('website', e.target.value)}
-                                placeholder="https://your-site.com"
-                            />
-                            <Input
-                                label="github"
-                                direction="column"
-                                value={form.github}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('github', e.target.value)}
-                                placeholder="https://github.com/username"
-                            />
-                            <Input
-                                label="linkedin"
-                                direction="column"
-                                value={form.linkedin}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('linkedin', e.target.value)}
-                                placeholder="https://linkedin.com/in/username"
-                            />
-                            <Input
-                                label="twitter"
-                                direction="column"
-                                value={form.twitter}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('twitter', e.target.value)}
-                                placeholder="https://x.com/username"
-                            />
-                        </div>
-                    </section>
+                <div className={rowCls}>
+                    <span className={labelCls}>corpus</span>
+                    <span className="flex-1 min-w-0 text-sm opacity-50 truncate">{corpusPath}</span>
+                    <div className="flex gap-1 shrink-0">
+                        <OSButton type="button" size="sm" disabled={!normalizedUsername} onClick={() => addWindow({ key: `corpus-${normalizedUsername}`, path: corpusPath, title: `${normalizedUsername}'s corpus` })}>open</OSButton>
+                        <OSButton type="button" size="sm" disabled={!normalizedUsername} onClick={() => handleCopyLink(corpusPath, 'corpus')}>copy</OSButton>
+                    </div>
+                </div>
 
-                    <section className="rounded border border-primary bg-primary p-4 md:p-5">
-                        <h3 className="m-0 mb-3 flex items-center gap-2 text-sm font-black lowercase">
-                            <IconBookmark className="size-4 opacity-50" /> saved posts
-                        </h3>
-                        {savedPostsLoading ? (
-                            <p className="m-0 text-sm text-secondary lowercase">loading saved posts...</p>
-                        ) : savedPosts.length === 0 ? (
-                            <p className="m-0 text-sm text-secondary lowercase">you have not saved any posts yet.</p>
-                        ) : (
-                            <div className="space-y-2">
-                                {savedPosts.map((post) => (
-                                    <div key={post.post_slug} className="flex items-center justify-between rounded border border-primary bg-accent px-3 py-2">
-                                        <button
-                                            type="button"
-                                            className="bg-transparent border-none p-0 text-sm font-semibold text-primary cursor-pointer hover:underline"
-                                            onClick={() => addWindow({
-                                                key: `post-${post.post_slug}`,
-                                                path: toPostPath(post.post_slug),
-                                                title: post.post_title || post.post_slug
-                                            })}
-                                        >
-                                            {post.post_title || post.post_slug}
-                                        </button>
-                                        <span className="text-xs text-secondary">{new Date(post.saved_at).toLocaleDateString('en-US')}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </section>
+                {/* saved posts */}
+                <div className={groupCls}>
+                    <IconBookmark className="inline size-3 mr-1 opacity-60" />
+                    saved — {savedPosts.length}
+                </div>
 
-                    <section className="rounded border border-primary bg-primary p-4 md:p-5">
-                        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                            <div className="flex items-center gap-2 text-xs text-secondary">
-                                <IconBolt className="size-4" />
-                                Keep profile URLs in full format (https://...) for best rendering.
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <OSButton type="button" variant="underlineOnHover" size="md" onClick={() => signOut()}>
-                                    sign out
-                                </OSButton>
-                                <OSButton type="submit" variant="primary" size="md" disabled={updating || !hasChanges}>
-                                    {updating ? 'saving...' : 'save changes'}
-                                </OSButton>
-                            </div>
-                        </div>
-                    </section>
-                </form>
-            </div>
+                {savedPostsLoading ? (
+                    <div className={rowCls}><span className="text-sm opacity-40">loading...</span></div>
+                ) : savedPosts.length === 0 ? (
+                    <div className={rowCls}><span className="text-sm opacity-40">no saved posts yet</span></div>
+                ) : savedPosts.map((post) => (
+                    <div key={post.post_slug} className={rowCls}>
+                        <button
+                            type="button"
+                            className="flex-1 min-w-0 bg-transparent border-none p-0 text-sm text-left text-primary cursor-pointer hover:underline truncate"
+                            onClick={() => addWindow({ key: `post-${post.post_slug}`, path: toPostPath(post.post_slug), title: post.post_title || post.post_slug })}
+                        >
+                            {post.post_title || post.post_slug}
+                        </button>
+                        <span className="shrink-0 text-xs opacity-30">{new Date(post.saved_at).toLocaleDateString('en-US')}</span>
+                    </div>
+                ))}
+
+                {/* actions */}
+                <div className="flex items-center justify-between gap-3 px-4 py-5">
+                    <div className="flex items-center gap-1.5 text-xs opacity-40">
+                        <IconBolt className="size-3" />
+                        use full URLs (https://...)
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <OSButton type="button" variant="underlineOnHover" size="md" onClick={() => signOut()}>sign out</OSButton>
+                        <OSButton type="submit" variant="primary" size="md" disabled={updating || !hasChanges}>
+                            {updating ? 'saving...' : 'save changes'}
+                        </OSButton>
+                    </div>
+                </div>
+
+            </form>
         </div>
     );
 }
