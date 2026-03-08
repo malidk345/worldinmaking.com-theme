@@ -531,6 +531,14 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                     </div>
 
                     <div className="flex items-center gap-1 justify-end flex-shrink-0">
+                        {isOwner && !isEditingProfile && (
+                            <>
+                                <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
+                                <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-md flex items-center gap-1.5" onClick={handleAddNode}><IconPlus className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">new node</span></OSButton>} side="bottom">new node</Tooltip>
+                                <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-md flex items-center gap-1.5" onClick={handleAddPost}><BookOpen className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">new post</span></OSButton>} side="bottom">new post</Tooltip>
+                                <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-md flex items-center gap-1.5" onClick={openProfileEditor}><PenLine className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">edit profile</span></OSButton>} side="bottom">edit profile</Tooltip>
+                            </>
+                        )}
                         <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
                         <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded" onClick={refreshAll}><RefreshCw className={`size-[16px] opacity-70 ${refreshing ? 'animate-spin' : ''}`} /></OSButton>} side="bottom">refresh profile</Tooltip>
                         <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded" onClick={() => copyLink(publicProfilePath, 'profile')}><Share className="size-[16px] opacity-70" /></OSButton>} side="bottom">share profile</Tooltip>
