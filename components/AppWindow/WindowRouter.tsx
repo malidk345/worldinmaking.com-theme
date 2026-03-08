@@ -368,6 +368,7 @@ function WriteRouteView({ nodeId, readOnly = false }: { nodeId?: string; readOnl
             <aside className="sticky top-0 z-50 shrink-0">
                 <div data-scheme="tertiary" className="mx-1 mt-1 rounded-md border border-primary bg-primary px-1.5 py-1">
                     <Toolbar
+                        className="rounded-none border-0 bg-transparent p-0"
                         elements={[
                         /* Cover — prompts for URL */
                         ...(!coverImage ? [{
@@ -681,6 +682,7 @@ function WritePostRouteView({ postId }: { postId?: string }) {
             <aside className="sticky top-0 z-50 shrink-0">
                 <div data-scheme="tertiary" className="mx-1 mt-1 rounded-md border border-primary bg-primary px-1.5 py-1">
                     <Toolbar
+                        className="rounded-none border-0 bg-transparent p-0"
                         elements={[
                         {
                             type: 'button' as const,
