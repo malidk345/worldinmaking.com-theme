@@ -37,11 +37,13 @@ function getExcerpt(content: string, query: string, maxLen = 120): string {
 }
 
 export const WindowSearchUI = ({ initialFilter }: { initialFilter?: string }) => {
-    const { addWindow, updateWindow, isMobile } = useApp()
+    const { addWindow, updateWindow } = useApp()
     const { appWindow } = useWindow()
     const { posts, loading } = usePosts()
     const [query, setQuery] = useState('')
     const inputRef = useRef<HTMLInputElement>(null)
+
+    void initialFilter
 
     useEffect(() => {
         if (appWindow) {
@@ -139,6 +141,7 @@ export const WindowSearchUI = ({ initialFilter }: { initialFilter?: string }) =>
                                         </div>
                                     </div>
                                     {post.image && (
+                                        // eslint-disable-next-line @next/next/no-img-element
                                         <img
                                             src={post.image}
                                             alt=""

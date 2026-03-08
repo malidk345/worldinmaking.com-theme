@@ -60,7 +60,8 @@ export default function ForumMarkdown({
                     </a>
                 ),
                 img: (props) => (
-                    <img {...props} className="rounded-md max-w-full h-auto my-4" />
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img {...props} alt={props.alt || ''} className="rounded-md max-w-full h-auto my-4" />
                 ),
             }}
         >

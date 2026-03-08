@@ -35,7 +35,7 @@ export const InPageSearchBar: React.FC<InPageSearchBarProps> = ({
         setInputValue(searchQuery)
     }, [searchQuery])
 
-    const createDuplicateForHighlighting = () => {
+    const createDuplicateForHighlighting = React.useCallback(() => {
         if (!contentRef?.current) return
 
         if (duplicateContainerRef.current) {
@@ -58,20 +58,19 @@ export const InPageSearchBar: React.FC<InPageSearchBarProps> = ({
             markedRef.current.unmark()
             markedRef.current.mark(inputValue)
         }
-    }
+    }, [contentRef, inputValue])
 
     // Setup/Teardown setup
     useEffect(() => {
-        if (!contentRef?.current) return
+        const currentContent = contentRef?.current
+        if (!currentContent) return
 
         if (!visible) {
             setInputValue('')
             if (duplicateContainerRef.current) {
                 duplicateContainerRef.current.remove()
                 duplicateContainerRef.current = null
-                if (contentRef.current) {
-                    contentRef.current.style.display = 'block'
-                }
+                currentContent.style.display = 'block'
             }
         } else {
             createDuplicateForHighlighting()
@@ -81,12 +80,10 @@ export const InPageSearchBar: React.FC<InPageSearchBarProps> = ({
             if (duplicateContainerRef.current) {
                 duplicateContainerRef.current.remove()
                 duplicateContainerRef.current = null
-                if (contentRef.current) {
-                    contentRef.current.style.display = 'block'
-                }
+                currentContent.style.display = 'block'
             }
         }
-    }, [visible])
+    }, [visible, contentRef, createDuplicateForHighlighting])
 
     // Handle Escape key to close search
     const handleKeyDown = (e: React.KeyboardEvent) => {

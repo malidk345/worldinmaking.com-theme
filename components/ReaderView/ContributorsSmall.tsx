@@ -18,7 +18,7 @@ export const ContributorsSmall = ({ contributors }: { contributors?: Contributor
     return contributors?.[0] ? (
         <div className="not-prose">
             <ul className="flex space-x-2 list-none p-0 m-0">
-                {contributors.map(({ name, image, color, username }) => {
+                {contributors.map(({ name, image, username }) => {
                     const profileKey = `profile-${(username || name).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
                     const profilePath = `/profile/${encodeURIComponent(username || name)}`
 

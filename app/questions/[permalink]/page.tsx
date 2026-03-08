@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { DiscussionForumPostingJsonLd } from "components/SEO/JsonLd";
 
-export const runtime = 'edge';
-
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://worldinmaking.com";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";

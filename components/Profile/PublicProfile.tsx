@@ -7,6 +7,7 @@ import { useApp } from 'context/App'
 import { useWindow } from 'context/Window'
 import { useToast } from 'context/ToastContext'
 import OSButton from 'components/OSButton'
+import Loading from 'components/Loading'
 import Tooltip from 'components/RadixUI/Tooltip'
 import {
     BookOpen,
@@ -469,11 +470,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                 : 'all posts'
 
     if (loading) {
-        return (
-            <div className="corpus-root flex items-center justify-center size-full bg-primary">
-                <RefreshCw className="size-5 animate-spin opacity-30" />
-            </div>
-        )
+        return <Loading fullScreen label="loading profile" />
     }
 
     if (!profile) {
@@ -520,6 +517,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                     {!isOwner && (
                         <div className="flex items-center gap-1.5 ml-1 min-w-0">
                             {profile.avatar_url ? (
+                                // eslint-disable-next-line @next/next/no-img-element
                                 <img src={profile.avatar_url} alt={displayName} className="size-5 rounded-full object-cover border border-primary/20 shrink-0" />
                             ) : (
                                 <div className="size-5 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 shrink-0">
@@ -548,6 +546,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                         <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-4 min-w-[256px]">
                             <button className="flex items-center gap-2 w-full hover:bg-black/5 dark:hover:bg-white/5 p-1.5 rounded-lg transition-colors">
                                 <div className="size-6 overflow-hidden rounded bg-primary/10 flex items-center justify-center shrink-0 shadow-sm border border-primary/10">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
                                     {profile.avatar_url ? <img src={profile.avatar_url} alt={displayName} className="size-full object-cover" /> : <span className="text-xs font-black text-primary">{displayName.charAt(0).toUpperCase()}</span>}
                                 </div>
                                 <span className="text-sm font-bold flex-1 text-left truncate lowercase">my profile</span>
@@ -612,9 +611,11 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                             <div className="corpus-profile-stack">
                                 <div className="corpus-profile-visual corpus-profile-cardShadow">
                                     <div className="corpus-profile-cover">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
                                         {(isEditingProfile ? form.cover_url : profile.cover_url) ? <img src={(isEditingProfile ? form.cover_url : profile.cover_url) || ''} alt="cover" /> : <div className="corpus-profile-coverEmpty" />}
                                     </div>
                                     <div className="corpus-profile-avatar">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
                                         {(isEditingProfile ? form.avatar_url : profile.avatar_url) ? <img src={(isEditingProfile ? form.avatar_url : profile.avatar_url) || ''} alt={displayName} /> : <IconUser className="size-5 text-primary/30" />}
                                     </div>
                                 </div>
@@ -761,6 +762,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                     </button>
                                                 )}
                                                 <div className="corpus-doc-media">
+                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
                                                     {post.image_url ? <img src={post.image_url} alt={post.title} className="size-full object-cover" /> : <div className="corpus-doc-preview-text">{post.excerpt || 'open the full post to read more'}</div>}
                                                     <div className="corpus-doc-media-fade" />
                                                     <div className="corpus-doc-badge"><ArrowUpRight className="size-3" /><span>{post.published ? 'post' : 'draft'}</span></div>

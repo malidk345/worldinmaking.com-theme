@@ -30,7 +30,7 @@ const searchClient = algoliasearch(
 
 const SearchContext = React.createContext<SearchContextValue>({
     isVisible: false,
-    open: (_location, _filter) => {
+    open: () => {
         /* noop */
     },
     close: () => {
@@ -42,6 +42,22 @@ export const SearchProvider = ({ children }: { children: React.ReactNode }) => {
     const posthog = usePostHog()
     const [isVisible, setIsVisible] = React.useState<boolean>(false)
     const [initialFilter, setInitialFilter] = React.useState<SearchResultType | undefined>(undefined)
+
+    const open = React.useCallback((from: SearchLocation, filter?: SearchResultType) => {
+        posthog?.capture('web search opened', {
+            filter,
+            from,
+        })
+
+        setInitialFilter(filter)
+        setIsVisible(true)
+    }, [posthog])
+
+    const close = React.useCallback(() => {
+        posthog?.capture('web search closed')
+        setIsVisible(false)
+        setInitialFilter(undefined)
+    }, [posthog])
 
     React.useEffect(() => {
         const handler = (event: KeyboardEvent) => {
@@ -67,23 +83,7 @@ export const SearchProvider = ({ children }: { children: React.ReactNode }) => {
         return () => {
             window.removeEventListener('keydown', handler)
         }
-    }, [isVisible])
-
-    const open = (from: SearchLocation, filter?: SearchResultType) => {
-        posthog?.capture('web search opened', {
-            filter,
-            from,
-        })
-
-        setInitialFilter(filter)
-        setIsVisible(true)
-    }
-
-    const close = () => {
-        posthog?.capture('web search closed')
-        setIsVisible(false)
-        setInitialFilter(undefined)
-    }
+    }, [close, isVisible, open])
 
     return (
         <SearchContext.Provider value={{ isVisible, open, close }}>

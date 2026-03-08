@@ -2,12 +2,10 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import OSButton from 'components/OSButton'
 
 import ScrollArea from 'components/RadixUI/ScrollArea'
 import FooterBar from '../OSChrome/FooterBar'
 import { TreeMenu } from '../TreeMenu'
-import CloudinaryImage from 'components/CloudinaryImage'
 import { ReaderViewProvider, useReaderView } from './context/ReaderViewContext'
 import { ContributorsSmall } from './ContributorsSmall'
 import { TableOfContents, type TableOfContentsItem } from './TableOfContents'
@@ -91,9 +89,6 @@ const ReaderViewContent = React.memo(({
     hideLeftSidebar = false,
     hideRightSidebar = false,
     contentMaxWidthClass = 'max-w-2xl',
-    padding = true,
-    homeURL,
-    description,
     rightActionButtons,
     showAbout = false,
     showQuestions = false,
@@ -361,6 +356,7 @@ const ReaderViewContent = React.memo(({
                         <div className={`mx-auto p-4 md:p-8 transition-all ${fullWidthContent ? 'max-w-full' : contentMaxWidthClass}`}>
                             {body.featuredImage && (
                                 <div className="mb-8 rounded-lg overflow-hidden border border-primary shadow-lg aspect-video relative">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
                                         src={body.featuredImage}
                                         alt={title || ''}

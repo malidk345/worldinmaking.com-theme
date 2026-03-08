@@ -70,6 +70,7 @@ export default function PostsView() {
                                                     <div className="flex items-center gap-2 mb-2 opacity-50">
                                                         <div className="size-5 shrink-0 border border-primary/20 bg-primary/5 rounded-sm overflow-hidden flex items-center justify-center">
                                                             {roadmap.authorAvatar ? (
+                                                                // eslint-disable-next-line @next/next/no-img-element
                                                                 <img src={roadmap.authorAvatar} alt="" className="size-full object-cover" />
                                                             ) : (
                                                                 <IconPerson className="size-3" />
@@ -90,6 +91,7 @@ export default function PostsView() {
                                                     {/* Colored Preview Image */}
                                                     {roadmap.image && (
                                                         <div className="mt-2 w-full max-w-[240px] aspect-video border border-primary/10 bg-primary/5 overflow-hidden rounded-[1px] shadow-sm">
+                                                            {/* eslint-disable-next-line @next/next/no-img-element */}
                                                             <img
                                                                 src={roadmap.image}
                                                                 alt=""

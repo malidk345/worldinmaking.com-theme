@@ -1,9 +1,11 @@
 import type { NextConfig } from "next";
 
+const isDevelopment = process.env.NODE_ENV === 'development'
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   trailingSlash: true,
-  distDir: process.env.NEXT_DIST_DIR || '.next',
+  distDir: process.env.NEXT_DIST_DIR || (isDevelopment ? '.next-dev' : '.next'),
   poweredByHeader: false,
   images: {
     unoptimized: true,

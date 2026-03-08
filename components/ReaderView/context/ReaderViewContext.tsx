@@ -1,7 +1,6 @@
 "use client"
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react'
-import { useApp } from 'context/App'
 
 interface ReaderViewContextType {
     isNavVisible: boolean

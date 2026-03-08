@@ -331,6 +331,7 @@ function WriteRouteView({ nodeId, readOnly = false }: { nodeId?: string; readOnl
                 <div className="flex-col relative w-full flex-1 flex min-h-0">
                     {coverImage && (
                         <div className="relative w-full h-48 sm:h-64 group bg-black/5 shrink-0">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={coverImage} alt="Cover" className="w-full h-full object-cover" />
                         </div>
                     )}
@@ -516,6 +517,7 @@ function WriteRouteView({ nodeId, readOnly = false }: { nodeId?: string; readOnl
                 {/* Cover Image */}
                 {coverImage && (
                     <div className="relative w-full h-48 sm:h-64 group bg-black/5 shrink-0">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={coverImage} alt="Cover" className="w-full h-full object-cover" />
                         <button
                             onClick={() => setCoverImage(null)}
@@ -745,6 +747,7 @@ function WritePostRouteView({ postId }: { postId?: string }) {
             <div className="flex-col relative w-full flex-1 flex min-h-0">
                 {imageUrl && (
                     <div className="relative w-full h-48 sm:h-64 group bg-black/5 shrink-0">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={imageUrl} alt={title || 'post cover'} className="w-full h-full object-cover" />
                         <button
                             onClick={() => setImageUrl('')}

@@ -771,6 +771,7 @@ const AdminPanel = () => {
                                                 <div className="p-3 flex items-start justify-between gap-2">
                                                     <div className="flex items-start gap-3 flex-1 min-w-0">
                                                         <div className="size-8 rounded border border-primary/20 bg-accent/5 flex-shrink-0 overflow-hidden">
+                                                            {/* eslint-disable-next-line @next/next/no-img-element */}
                                                             <img
                                                                 src={getProfile(cp.profiles)?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${getProfile(cp.profiles)?.username}`}
                                                                 alt=""
@@ -845,6 +846,7 @@ const AdminPanel = () => {
                                                                 <div key={reply.id} className="p-3 pl-14 flex items-start justify-between group">
                                                                     <div className="flex gap-3">
                                                                         <div className="size-6 rounded-sm border border-primary/20 bg-accent/5 flex-shrink-0 overflow-hidden">
+                                                                            {/* eslint-disable-next-line @next/next/no-img-element */}
                                                                             <img
                                                                                 src={getProfile(reply.profiles)?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${getProfile(reply.profiles)?.username}`}
                                                                                 alt=""
@@ -885,6 +887,7 @@ const AdminPanel = () => {
                                             <div key={reply.id} className="border border-primary rounded bg-primary/40 p-3 flex items-start justify-between gap-3">
                                                 <div className="flex items-start gap-3 flex-1">
                                                     <div className="size-8 rounded border border-primary/20 bg-accent/5 flex-shrink-0 overflow-hidden">
+                                                        {/* eslint-disable-next-line @next/next/no-img-element */}
                                                         <img
                                                             src={getProfile(reply.profiles)?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${getProfile(reply.profiles)?.username}`}
                                                             alt=""

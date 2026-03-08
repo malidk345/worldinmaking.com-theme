@@ -30,9 +30,10 @@ const PlaceholderImage = ({ className = '' }: { className?: string }) => {
     )
 }
 
-const Image = ({ src, className = '' }: { src: string | null | undefined; className?: string }) => {
+const AvatarImage = ({ src, className = '' }: { src: string | null | undefined; className?: string }) => {
     return src ? (
-        <img className={`object-fill rounded-full ${className}`} src={src} />
+        // eslint-disable-next-line @next/next/no-img-element
+        <img className={`object-fill rounded-full ${className}`} src={src} alt="" />
     ) : (
         <PlaceholderImage className={className} />
     )
@@ -52,10 +53,10 @@ export const ForumAvatar = ({
         >
             {url ? (
                 <Link to={url} className={`shrink-0 ${color ? `bg-${color}` : 'bg-accent'}  `}>
-                    <Image className={className} src={image} />
+                    <AvatarImage className={className} src={image} />
                 </Link>
             ) : (
-                <Image className={`${color ? `bg-${color}` : 'bg-accent'} ${className}`} src={image} />
+                <AvatarImage className={`${color ? `bg-${color}` : 'bg-accent'} ${className}`} src={image} />
             )}
 
             {isTeamMember && (
