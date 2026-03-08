@@ -220,7 +220,7 @@ function BlogRouteView({ slug }: { slug: string }) {
     )
 }
 
-/** New Canvas/Write View for Corpus documents */
+/** Node editor route view */
 function WriteRouteView({ nodeId }: { nodeId?: string }) {
     const { user } = useAuth()
     const { addToast } = useToast()
@@ -256,7 +256,7 @@ function WriteRouteView({ nodeId }: { nodeId?: string }) {
 
     const handleSave = async (publishStatus: 'draft' | 'published' = 'draft') => {
         if (!nodeId) {
-            addToast('no node id — open from corpus to edit', 'error')
+            addToast('no node id — open from my profile to edit', 'error')
             return
         }
         if (!user) {
