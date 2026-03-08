@@ -10,7 +10,6 @@ import { useCommunity } from '../../hooks/useCommunity'
 import BlogPostView from 'components/ReaderView/BlogPostView'
 import PublicProfile from 'components/Profile/PublicProfile'
 import PostsView from 'components/Posts'
-import CorpusView from 'components/Corpus'
 import RichTextEditor from 'components/AdminPanel/RichTextEditor'
 import { AppWindow } from '../../context/Window'
 import { useAuth } from '../../context/AuthContext'
@@ -68,11 +67,10 @@ export default function WindowRouter({ item }: { item: AppWindow }) {
         return <CommunityMainRouteView />
     }
 
-    // /u/:username (User Corpus / Profile)
+    // /u/:username (legacy alias for profile)
     const corpusMatch = path.match(/^\/u\/([^/]+)/)
     if (corpusMatch) {
-        // Will import Corpus component dynamically or directly
-        return <CorpusView username={corpusMatch[1]} startEditingProfile={Boolean(item.props?.startEditingProfile)} />
+        return <PublicProfile username={corpusMatch[1]} />
     }
 
     // /posts or /blog

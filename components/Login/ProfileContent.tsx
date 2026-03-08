@@ -35,7 +35,6 @@ export default function ProfileContent() {
 
     const normalizedUsername = useMemo(() => (form.username || profile?.username || '').trim(), [form.username, profile?.username]);
     const publicProfilePath = normalizedUsername ? `/profile/${encodeURIComponent(normalizedUsername)}` : '/profile';
-    const corpusPath = normalizedUsername ? `/u/${encodeURIComponent(normalizedUsername)}` : '/';
 
     useEffect(() => {
         setForm({
@@ -263,11 +262,11 @@ export default function ProfileContent() {
                 </div>
 
                 <div className={rowCls}>
-                    <span className={labelCls}>corpus</span>
-                    <span className="flex-1 min-w-0 text-sm opacity-50 truncate">{corpusPath}</span>
+                    <span className={labelCls}>my profile</span>
+                    <span className="flex-1 min-w-0 text-sm opacity-50 truncate">{publicProfilePath}</span>
                     <div className="flex gap-1 shrink-0">
-                        <OSButton type="button" size="sm" disabled={!normalizedUsername} onClick={() => addWindow({ key: `corpus-${normalizedUsername}`, path: corpusPath, title: `${normalizedUsername}'s corpus` })}>open</OSButton>
-                        <OSButton type="button" size="sm" disabled={!normalizedUsername} onClick={() => handleCopyLink(corpusPath, 'corpus')}>copy</OSButton>
+                        <OSButton type="button" size="sm" disabled={!normalizedUsername} onClick={() => addWindow({ key: `profile-${normalizedUsername}`, path: publicProfilePath, title: `${normalizedUsername}'s profile` })}>open</OSButton>
+                        <OSButton type="button" size="sm" disabled={!normalizedUsername} onClick={() => handleCopyLink(publicProfilePath, 'profile')}>copy</OSButton>
                     </div>
                 </div>
 
