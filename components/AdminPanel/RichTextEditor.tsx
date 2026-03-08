@@ -20,7 +20,7 @@ import { createLowlight, common } from 'lowlight'
 import 'highlight.js/styles/github.css' // Light mode theme to prevent white text
 
 import {
-    Bold, Italic, List, ListOrdered, Quote, Heading1, Heading2, Heading3,
+    Bold, Italic, List, ListOrdered, Quote, Heading2, Heading3,
     Link as LinkIcon, Image as ImageIcon, Undo, Redo, Code,
     Maximize2, Minimize2, Eye, EyeOff, Save,
     Underline as UnderlineIcon, Highlighter,
@@ -188,7 +188,7 @@ const EditorMenuBar = ({ editor }: { editor: Editor | null }) => {
             <TB active={editor.isActive('blockquote')} onClick={() => editor.chain().focus().toggleBlockquote().run()} title="Quote">
                 <Quote className="size-3.5" />
             </TB>
-            <TB active={editor.isActive('callout')} onClick={() => (editor.chain().focus() as any).setCallout().run()} title="Callout (Info Box)">
+            <TB active={editor.isActive('callout')} onClick={() => (editor.chain().focus() as unknown as { setCallout: () => { run: () => void } }).setCallout().run()} title="Callout (Info Box)">
                 <MessageSquareWarning className="size-3.5" />
             </TB>
             <TB active={editor.isActive('codeBlock')} onClick={() => editor.chain().focus().toggleCodeBlock().run()} title="Code Block">
@@ -275,6 +275,7 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
             TableRow,
             TableHeader,
             TableCell,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             CalloutNode as any,
         ],
         content: content,

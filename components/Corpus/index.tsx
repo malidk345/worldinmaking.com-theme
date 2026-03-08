@@ -6,7 +6,7 @@ import './styles.css'
 import {
     FileText,
     ChevronDown, RefreshCw, Share, MoreHorizontal,
-    Globe, BookOpen, PenLine, Layers,
+    BookOpen, PenLine, Layers,
     LogOut
 } from 'lucide-react'
 import {
@@ -15,7 +15,6 @@ import {
     IconChevronLeft,
     IconChevronRight,
     IconPlus,
-    IconUser,
 } from '@posthog/icons'
 import { Popover } from 'components/RadixUI/Popover'
 import Tooltip from 'components/RadixUI/Tooltip'

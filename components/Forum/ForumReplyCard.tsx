@@ -7,7 +7,7 @@ import { ForumReply } from './types'
 import ForumAvatar from './ForumAvatar'
 import OSButton from 'components/OSButton'
 import VotePicker from 'components/VotePicker'
-import { IconThumbsUp, IconPencil } from '@posthog/icons'
+import { IconPencil } from '@posthog/icons'
 import Link from 'components/Link'
 
 interface ForumReplyCardProps {

@@ -9,13 +9,8 @@ import { useToast } from 'context/ToastContext'
 import OSButton from 'components/OSButton'
 import Tooltip from 'components/RadixUI/Tooltip'
 import {
-    Globe,
-    Github,
-    MapPin,
     BookOpen,
     PenLine,
-    Linkedin,
-    Twitter,
     FileText,
     RefreshCw,
     Share,
@@ -269,7 +264,6 @@ export default function PublicProfile({ username }: PublicProfileProps) {
         loadPosts()
     }, [loadPosts])
 
-    const linkCount = [profile?.website, profile?.github, profile?.linkedin, profile?.twitter].filter(Boolean).length
     const tableRows = [
         { field: 'name', value: displayName },
         { field: 'username', value: `@${displayName}` },
