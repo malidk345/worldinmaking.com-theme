@@ -4,21 +4,18 @@ import React, { useState, useEffect } from 'react'
 import OSButton from '../OSButton'
 import './styles.css'
 import {
-    FileText, CheckSquare, Calendar, Cloud, Users,
-    Inbox, ChevronDown, RefreshCw, Share, Settings2, MoreHorizontal,
-    Globe, Github, MapPin, BookOpen, PenLine, Star, Layers, Bookmark,
-    Linkedin, Twitter, LogOut
+    FileText,
+    ChevronDown, RefreshCw, Share, MoreHorizontal,
+    Globe, BookOpen, PenLine, Layers,
+    LogOut
 } from 'lucide-react'
 import {
     IconSidebarOpen,
     IconSidebarClose,
     IconChevronLeft,
     IconChevronRight,
-    IconCalendar,
     IconPlus,
     IconUser,
-    IconCheck,
-    IconX
 } from '@posthog/icons'
 import { Popover } from 'components/RadixUI/Popover'
 import Tooltip from 'components/RadixUI/Tooltip'
@@ -27,8 +24,6 @@ import { useApp } from '../../context/App'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { supabase } from '../../lib/supabase'
-import Input from '../OSForm/input'
-import Textarea from '../OSForm/textarea'
 
 interface ProfileData {
     id?: string
@@ -174,33 +169,14 @@ export default function CorpusView({ username }: { username: string }) {
         (authProfile.username.toLowerCase() === decodeURIComponent(username).toLowerCase() ||
             authProfile.username.toLowerCase() === profile?.username?.toLowerCase())
 
-    // Debug ownership
-    useEffect(() => {
-        if (authProfile || profile) {
-            console.log('CorpusView Ownership Debug:', {
-                urlUsername: decodeURIComponent(username),
-                authUsername: authProfile?.username,
-                profileUsername: profile?.username,
-                isOwner
-            })
-        }
-    }, [username, authProfile, profile, isOwner])
-
     const handleSaveProfile = async () => {
         setUpdating(true)
-        console.log('Saving profile with form data:', form)
         const success = await authUpdateProfile(form)
         if (success) {
-            // Update local profile state immediately
-            setProfile(prev => {
-                const updated = prev ? { ...prev, ...form } : { ...form } as ProfileData
-                console.log('Updated profile state:', updated)
-                return updated
-            })
+            setProfile(prev => prev ? { ...prev, ...form } : { ...form } as ProfileData)
             setIsEditing(false)
             addToast('profile updated successfully', 'success')
         } else {
-            console.error('Failed to update profile')
             addToast('failed to update profile', 'error')
         }
         setUpdating(false)
@@ -293,23 +269,18 @@ export default function CorpusView({ username }: { username: string }) {
 
                 {/* RIGHT */}
                 <div className="flex items-center gap-1 justify-end flex-shrink-0">
-                    <OSButton size="sm" className="!px-2 h-8 !rounded flex items-center gap-1.5 flex-shrink-0">
-                        <IconCalendar className="size-[15px] opacity-70" />
-                        <span className="hidden md:inline text-[12px] font-semibold">last 7 days</span>
-                        <ChevronDown className="size-3 opacity-50 ml-0.5" />
-                    </OSButton>
-
-                    <OSButton size="sm" onClick={handleAddNode} className="!px-2 h-8 !rounded flex items-center gap-1.5 flex-shrink-0">
-                        <IconPlus className="size-[15px] opacity-70" />
-                        <span className="hidden lg:inline text-[12px] font-semibold">add node</span>
-                    </OSButton>
+                    {isOwner && (
+                        <OSButton size="sm" onClick={handleAddNode} className="!px-2 h-8 !rounded flex items-center gap-1.5 flex-shrink-0">
+                            <IconPlus className="size-[15px] opacity-70" />
+                            <span className="hidden lg:inline text-[12px] font-semibold">add node</span>
+                        </OSButton>
+                    )}
 
                     <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
 
                     <div className="flex items-center gap-0.5">
                         <Tooltip trigger={<OSButton size="sm" className={interactionBtnClass} onClick={() => { if (profile?.id) { setDocsLoading(true); supabase.from('nodes').select('id, title, content, status, updated_at').eq('author_id', profile.id).order('updated_at', { ascending: false }).then(({ data }) => { if (data) setDocs(data.map(row => ({ id: row.id as string, title: row.title || 'Untitled', updated: relativeTime(row.updated_at), status: (row.status as 'published' | 'draft') || 'draft', preview: (row.content || '').slice(0, 400) }))); setDocsLoading(false); }) } }}><RefreshCw className="size-[16px] opacity-70" /></OSButton>} side="bottom">refresh</Tooltip>
                         <Tooltip trigger={<OSButton size="sm" className={interactionBtnClass} onClick={() => { const url = `${window.location.origin}/u/${encodeURIComponent(profile?.username || username)}`; navigator.clipboard.writeText(url).then(() => addToast('profile link copied!', 'success')).catch(() => addToast('could not copy link', 'error')) }}><Share className="size-[16px] opacity-70" /></OSButton>} side="bottom">share</Tooltip>
-                        <Tooltip trigger={<OSButton size="sm" className={interactionBtnClass}><Settings2 className="size-[16px] opacity-70" /></OSButton>} side="bottom">customize layout</Tooltip>
 
                         <Popover
                             trigger={
@@ -323,23 +294,21 @@ export default function CorpusView({ username }: { username: string }) {
                             <div className="flex flex-col gap-0.5">
                                 <div className="text-[10px] font-black uppercase tracking-widest text-primary/40 px-2 py-1.5 border-b border-primary/5 mb-0.5">corpus options</div>
 
-                                <button
-                                    onClick={() => setIsEditing(true)}
-                                    className="w-full text-left px-2 py-1.5 text-xs font-bold rounded flex items-center gap-2 transition-colors hover:bg-primary/5 text-primary mb-1"
-                                >
-                                    <PenLine className="size-3.5" />
-                                    edit profile
-                                </button>
+                                {isOwner && (
+                                    <button
+                                        onClick={() => setIsEditing(true)}
+                                        className="w-full text-left px-2 py-1.5 text-xs font-bold rounded flex items-center gap-2 transition-colors hover:bg-primary/5 text-primary mb-1"
+                                    >
+                                        <PenLine className="size-3.5" />
+                                        edit profile
+                                    </button>
+                                )}
 
                                 <button
                                     onClick={() => { const url = `${window.location.origin}/u/${encodeURIComponent(profile?.username || username)}`; navigator.clipboard.writeText(url).then(() => addToast('profile link copied!', 'success')).catch(() => addToast('could not copy link', 'error')) }}
                                     className="w-full text-left px-2 py-2 text-xs font-bold rounded flex items-center gap-2 hover:bg-primary/5 text-primary transition-colors"
                                 >
                                     <Share className="size-3.5" /> share corpus
-                                </button>
-
-                                <button className="w-full text-left px-2 py-2 text-xs font-bold rounded flex items-center gap-2 hover:bg-primary/5 text-primary transition-colors border-t border-primary/5 mt-0.5">
-                                    <Settings2 className="size-3.5" /> corpus settings
                                 </button>
 
                                 {isOwner && (
@@ -399,33 +368,6 @@ export default function CorpusView({ username }: { username: string }) {
                                 <PenLine className="size-4 opacity-80" />
                                 <span>drafts</span>
                                 <span className="ml-auto text-[11px] font-black opacity-40">{draftCount}</span>
-                            </button>
-                        </div>
-
-                        <div className="space-y-0.5 border-t border-primary/5 pt-4">
-                            <button className="flex items-center gap-2.5 w-full hover:bg-black/5 dark:hover:bg-white/5 p-1.5 px-2.5 rounded-lg transition-colors text-primary/70 hover:text-primary font-medium text-[13px]">
-                                <Bookmark className="size-4 opacity-70" />
-                                <span>saved posts</span>
-                            </button>
-                            <button className="flex items-center gap-2.5 w-full hover:bg-black/5 dark:hover:bg-white/5 p-1.5 px-2.5 rounded-lg transition-colors text-primary/70 hover:text-primary font-medium text-[13px]">
-                                <Star className="size-4 opacity-70" />
-                                <span>starred</span>
-                            </button>
-                            <button className="flex items-center gap-2.5 w-full hover:bg-black/5 dark:hover:bg-white/5 p-1.5 px-2.5 rounded-lg transition-colors text-primary/70 hover:text-primary font-medium text-[13px]">
-                                <Cloud className="size-4 opacity-70" />
-                                <span>imagine</span>
-                            </button>
-                            <button className="flex items-center gap-2.5 w-full hover:bg-black/5 dark:hover:bg-white/5 p-1.5 px-2.5 rounded-lg transition-colors text-primary/70 hover:text-primary font-medium text-[13px]">
-                                <Users className="size-4 opacity-70" />
-                                <span>shared with me</span>
-                            </button>
-                        </div>
-
-                        <div className="pt-2">
-                            <div className="text-[11px] font-black lowercase tracking-widest text-primary/60 px-2.5 mb-1.5">folders</div>
-                            <button className="flex items-center gap-2.5 w-full hover:bg-black/5 dark:hover:bg-white/5 p-1.5 px-2.5 rounded-lg transition-colors text-primary/70 hover:text-primary font-medium text-[13px]">
-                                <Inbox className="size-4 opacity-70" />
-                                <span>unsorted</span>
                             </button>
                         </div>
 
@@ -548,17 +490,19 @@ export default function CorpusView({ username }: { username: string }) {
                     ) : (
                         /* Normal View */
                         <div className="flex-1 overflow-y-auto custom-scrollbar">
-                            {/* ── Edit button ── */}
+                            {/* ── Edit button (owner only) ── */}
                             <div className="flex items-center justify-between px-4 py-3 border-b border-primary/10">
                                 <span className="text-xs opacity-40 lowercase">{displayName}</span>
-                                <OSButton
-                                    size="sm"
-                                    onClick={() => setIsEditing(true)}
-                                    className="h-6 px-2 !rounded text-[9px] font-bold lowercase flex items-center gap-1"
-                                >
-                                    <PenLine className="size-2.5" />
-                                    edit profile
-                                </OSButton>
+                                {isOwner && (
+                                    <OSButton
+                                        size="sm"
+                                        onClick={() => setIsEditing(true)}
+                                        className="h-6 px-2 !rounded text-[9px] font-bold lowercase flex items-center gap-1"
+                                    >
+                                        <PenLine className="size-2.5" />
+                                        edit profile
+                                    </OSButton>
+                                )}
                             </div>
 
                             {/* ── Document Grid ── */}
