@@ -45,7 +45,8 @@ export function sanitizeHtml(html: string | null | undefined, options = {}): str
         // By using ADD_TAGS instead of ALLOWED_TAGS, we let DOMPurify keep its default safe list
         // which already securely allows table, hr, img, a, br, p, em, strong, etc.
         ADD_TAGS: [
-            'iframe' // If you plan to embed youtube later
+            'iframe', // If you plan to embed youtube later
+            'mark', 'u', 'sub', 'sup', 'div', 'span'
         ],
         // ADD_ATTR prevents DOMPurify from clearing structural attributes like
         // Tiptap's table colwidths, html spans, target="_blank", or callout nodes' data-type.

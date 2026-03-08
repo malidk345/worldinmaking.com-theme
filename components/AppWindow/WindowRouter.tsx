@@ -11,9 +11,12 @@ import BlogPostView from 'components/ReaderView/BlogPostView'
 import PublicProfile from 'components/Profile/PublicProfile'
 import PostsView from 'components/Posts'
 import CorpusView from 'components/Corpus'
-import RichTextEditor, { loadDraftFromStorage, saveDraftToStorage } from 'components/AdminPanel/RichTextEditor'
+import RichTextEditor from 'components/AdminPanel/RichTextEditor'
 import { AppWindow } from '../../context/Window'
-import { Save, Image as ImageIcon, Palette, Hash, Circle, CheckCircle, Clock, Map, ChevronDown, FileText, Flame, Rocket, Lightbulb, PenTool, Brain, Wrench, Sparkles, LayoutTemplate, Database, CalendarHeart } from 'lucide-react'
+import { useAuth } from '../../context/AuthContext'
+import { useToast } from '../../context/ToastContext'
+import { supabase } from '../../lib/supabase'
+import { Save, Image as ImageIcon, Palette, Hash, CheckCircle, ChevronDown, FileText, Flame, Rocket, Lightbulb, PenTool, Brain, Wrench, Sparkles, LayoutTemplate, Database, CalendarHeart } from 'lucide-react'
 import OSButton from 'components/OSButton'
 import { Popover } from 'components/RadixUI/Popover'
 import { Toolbar } from 'components/RadixUI/Toolbar'
@@ -102,7 +105,7 @@ export default function WindowRouter({ item }: { item: AppWindow }) {
 
     // /write (New Node / Canvas Experience)
     if (path === '/write') {
-        return <WriteRouteView />
+        return <WriteRouteView nodeId={item.props?.nodeId as string | undefined} />
     }
 
     // Fallback for any other path
@@ -214,38 +217,62 @@ function BlogRouteView({ slug }: { slug: string }) {
 }
 
 /** New Canvas/Write View for Corpus documents */
-function WriteRouteView() {
+function WriteRouteView({ nodeId }: { nodeId?: string }) {
+    const { profile } = useAuth()
+    const { addToast } = useToast()
     const [title, setTitle] = useState('untitled node')
     const [content, setContent] = useState('')
+    const [saving, setSaving] = useState(false)
     const [saved, setSaved] = useState(false)
+    const [nodeStatus, setNodeStatus] = useState<'draft' | 'published'>('draft')
 
     const [coverImage, setCoverImage] = useState<string | null>(null)
     const [iconIndex, setIconIndex] = useState<number>(0)
     const [theme, setTheme] = useState<'default' | 'yellow' | 'green' | 'blue'>('default')
-    const [status, setStatus] = useState<'todo' | 'in-progress' | 'done'>('todo')
     const [nodeType, setNodeType] = useState<'canvas' | 'list' | 'journal'>('canvas')
-    const [tags, setTags] = useState<string[]>(['draft'])
+    const [tags, setTags] = useState<string[]>([])
 
+    // Load existing node from Supabase when nodeId is provided
     useEffect(() => {
-        const draft = loadDraftFromStorage()
-        if (draft && draft.title) {
-            setTitle(draft.title)
-            setContent(draft.content)
-            // Ideally we would load custom fields from draft as well, but keeping simple for demo
+        if (!nodeId) return
+        const load = async () => {
+            const { data } = await supabase
+                .from('nodes')
+                .select('title, content, status')
+                .eq('id', nodeId)
+                .single()
+            if (data) {
+                setTitle(data.title || 'untitled node')
+                setContent(data.content || '')
+                setNodeStatus((data.status as 'draft' | 'published') || 'draft')
+            }
         }
-    }, [])
+        load()
+    }, [nodeId])
 
-    const handleSave = () => {
-        saveDraftToStorage({
-            title,
-            content,
-            excerpt: '',
-            category: 'Node',
-            imageUrl: coverImage || '',
-            slug: 'node-' + Date.now(),
-        })
-        setSaved(true)
-        setTimeout(() => setSaved(false), 2000)
+    const handleSave = async (publishStatus: 'draft' | 'published' = 'draft') => {
+        if (!nodeId) {
+            addToast('no node id — open from corpus to edit', 'error')
+            return
+        }
+        if (!profile?.id) {
+            addToast('you must be logged in to save', 'error')
+            return
+        }
+        setSaving(true)
+        const { error } = await supabase
+            .from('nodes')
+            .update({ title, content, status: publishStatus, updated_at: new Date().toISOString() })
+            .eq('id', nodeId)
+        if (error) {
+            addToast('failed to save: ' + error.message, 'error')
+        } else {
+            setNodeStatus(publishStatus)
+            setSaved(true)
+            addToast(publishStatus === 'published' ? 'node published!' : 'draft saved', 'success')
+            setTimeout(() => setSaved(false), 2500)
+        }
+        setSaving(false)
     }
 
     const themeClasses = {
@@ -256,9 +283,8 @@ function WriteRouteView() {
     }
 
     const statusConfig = {
-        'todo': { label: 'todo', icon: <Circle className="size-3" />, color: 'text-primary' },
-        'in-progress': { label: 'in progress', icon: <Clock className="size-3" />, color: 'text-amber-500' },
-        'done': { label: 'done', icon: <CheckCircle className="size-3" />, color: 'text-emerald-500' },
+        'draft': { label: 'draft', icon: <PenTool className="size-3" />, color: 'text-primary' },
+        'published': { label: 'published', icon: <CheckCircle className="size-3" />, color: 'text-emerald-500' },
     }
 
     const typeConfig = {
@@ -309,8 +335,8 @@ function WriteRouteView() {
                                     trigger={
                                         <OSButton size="md">
                                             <div className="flex items-center gap-1.5 lowercase">
-                                                {statusConfig[status].icon}
-                                                <span className="hidden md:inline">{statusConfig[status].label}</span>
+                                                {statusConfig[nodeStatus].icon}
+                                                <span className="hidden md:inline">{statusConfig[nodeStatus].label}</span>
                                                 <ChevronDown className="size-3 opacity-50 hidden md:block" />
                                             </div>
                                         </OSButton>
@@ -320,7 +346,7 @@ function WriteRouteView() {
                                 >
                                     <div className="flex flex-col gap-0.5">
                                         {(Object.keys(statusConfig) as Array<keyof typeof statusConfig>).map(s => (
-                                            <button key={s} onClick={() => setStatus(s as keyof typeof statusConfig)} className={`text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 ${statusConfig[s as keyof typeof statusConfig].color}`}>
+                                            <button key={s} onClick={() => setNodeStatus(s as keyof typeof statusConfig)} className={`text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 ${statusConfig[s as keyof typeof statusConfig].color}`}>
                                                 {statusConfig[s as keyof typeof statusConfig].icon} {statusConfig[s as keyof typeof statusConfig].label}
                                             </button>
                                         ))}
@@ -402,15 +428,24 @@ function WriteRouteView() {
                             ),
                         },
 
-                        /* Publish — far right via ml-auto container */
+                        /* Save/Publish — far right via ml-auto container */
                         {
                             type: 'container' as const,
                             className: 'ml-auto flex items-center gap-2',
                             children: (
                                 <>
                                     {saved && <span className="text-[10px] font-bold tracking-widest text-green-600 uppercase transition-opacity duration-300 hidden sm:inline">saved</span>}
-                                    <OSButton variant="primary" size="md" onClick={handleSave} icon={<Save className="size-4" />}>
-                                        <span className="hidden md:inline font-semibold lowercase">publish</span>
+                                    <OSButton size="md" onClick={() => handleSave('draft')} disabled={saving}>
+                                        <div className="flex items-center gap-1.5 lowercase">
+                                            <Save className="size-4" />
+                                            <span className="hidden md:inline font-semibold">save draft</span>
+                                        </div>
+                                    </OSButton>
+                                    <OSButton variant="primary" size="md" onClick={() => handleSave('published')} disabled={saving}>
+                                        <div className="flex items-center gap-1.5 lowercase">
+                                            <CheckCircle className="size-4" />
+                                            <span className="hidden md:inline font-semibold">publish</span>
+                                        </div>
                                     </OSButton>
                                 </>
                             ),

@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import { useToast } from 'context/ToastContext'
-import OSButton from 'components/OSButton'
-import { IconThumbsUp, IconThumbsDown } from '@posthog/icons'
+import VotePicker from 'components/VotePicker'
 import { Share2 } from 'lucide-react'
 
 interface ArticleActionsProps {
@@ -14,8 +13,8 @@ export default function ArticleActions({ slug }: ArticleActionsProps) {
     const { addToast } = useToast()
 
     // Deterministic random generator based on slug
-    const { initialUpvotes, initialDownvotes } = useMemo(() => {
-        if (!slug) return { initialUpvotes: 12, initialDownvotes: 0 }
+    const { initialUpvotes } = useMemo(() => {
+        if (!slug) return { initialUpvotes: 12 }
 
         // Simple string hash
         let hash = 0
@@ -26,18 +25,13 @@ export default function ArticleActions({ slug }: ArticleActionsProps) {
         }
 
         const absHash = Math.abs(hash)
-        // Let's give it a baseline between 10 and 150 upvotes
         const baseUp = (absHash % 140) + 10
-        // Very few downvotes
-        const baseDown = (absHash % 3)
 
-        return { initialUpvotes: baseUp, initialDownvotes: baseDown }
+        return { initialUpvotes: baseUp }
     }, [slug])
 
     const [upvoted, setUpvoted] = useState(false)
-    const [downvoted, setDownvoted] = useState(false)
     const [tempUp, setTempUp] = useState(0)
-    const [tempDown, setTempDown] = useState(0)
 
     // Load saved vote state off localStorage
     useEffect(() => {
@@ -46,15 +40,11 @@ export default function ArticleActions({ slug }: ArticleActionsProps) {
         if (savedVote === 'up') {
             setUpvoted(true)
             setTempUp(1)
-        } else if (savedVote === 'down') {
-            setDownvoted(true)
-            setTempDown(1)
         }
     }, [slug])
 
     const handleUpvote = () => {
         if (!slug) return
-
         if (upvoted) {
             setTempUp(0)
             setUpvoted(false)
@@ -63,30 +53,6 @@ export default function ArticleActions({ slug }: ArticleActionsProps) {
             setTempUp(1)
             setUpvoted(true)
             localStorage.setItem(`article_vote_${slug}`, 'up')
-
-            if (downvoted) {
-                setTempDown(0)
-                setDownvoted(false)
-            }
-        }
-    }
-
-    const handleDownvote = () => {
-        if (!slug) return
-
-        if (downvoted) {
-            setTempDown(0)
-            setDownvoted(false)
-            localStorage.removeItem(`article_vote_${slug}`)
-        } else {
-            setTempDown(1)
-            setDownvoted(true)
-            localStorage.setItem(`article_vote_${slug}`, 'down')
-
-            if (upvoted) {
-                setTempUp(0)
-                setUpvoted(false)
-            }
         }
     }
 
@@ -124,36 +90,27 @@ export default function ArticleActions({ slug }: ArticleActionsProps) {
     }
 
     const displayUpvotes = initialUpvotes + tempUp
-    const displayDownvotes = initialDownvotes + tempDown
 
     return (
         <div className="flex justify-between items-center mb-6 pt-4 border-t border-black/10 dark:border-white/10 pb-4">
-            <div className="flex items-center gap-1">
-                <OSButton
-                    onClick={handleUpvote}
-                    size="md"
-                    className={upvoted ? '!bg-green !text-primary !border-green' : ''}
-                    icon={<IconThumbsUp className={upvoted ? '!text-primary' : ''} />}
-                >
-                    <strong>{displayUpvotes}</strong>
-                </OSButton>
-                <OSButton
-                    onClick={handleDownvote}
-                    size="md"
-                    className={downvoted ? '!bg-red !text-primary !border-red' : ''}
-                    icon={<IconThumbsDown className={downvoted ? '!text-primary' : ''} />}
-                >
-                    <strong>{displayDownvotes}</strong>
-                </OSButton>
+            <div className="flex items-center gap-2">
+                <VotePicker
+                    count={displayUpvotes}
+                    active={upvoted}
+                    onDecrement={() => { if (upvoted) handleUpvote() }}
+                    onIncrement={() => { if (!upvoted) handleUpvote() }}
+                />
             </div>
 
-            <OSButton
+            <button
+                type="button"
                 onClick={handleShare}
-                size="md"
-                icon={<Share2 className="size-4" />}
+                className="vote-picker"
+                style={{ paddingInline: '0.75rem', gap: '0.4rem', cursor: 'pointer' }}
             >
-                <strong className="lowercase">share</strong>
-            </OSButton>
+                <Share2 style={{ width: 13, height: 13, flexShrink: 0 }} />
+                <strong style={{ fontSize: '0.8125rem', letterSpacing: '-0.01em' }} className="lowercase">share</strong>
+            </button>
         </div>
     )
 }

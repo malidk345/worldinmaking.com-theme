@@ -6,7 +6,8 @@ import ForumMarkdown from './ForumMarkdown'
 import { ForumReply } from './types'
 import ForumAvatar from './ForumAvatar'
 import OSButton from 'components/OSButton'
-import { IconThumbsUp, IconThumbsDown, IconPencil } from '@posthog/icons'
+import VotePicker from 'components/VotePicker'
+import { IconThumbsUp, IconPencil } from '@posthog/icons'
 import Link from 'components/Link'
 
 interface ForumReplyCardProps {
@@ -17,9 +18,7 @@ interface ForumReplyCardProps {
 
 export default function ForumReplyCard({ reply, isInForum = false, questionAuthorId }: ForumReplyCardProps) {
     const [upvoted, setUpvoted] = useState(false)
-    const [downvoted, setDownvoted] = useState(false)
     const [upvotes, setUpvotes] = useState(reply.upvotes || 0)
-    const [downvotes, setDownvotes] = useState(reply.downvotes || 0)
 
     const handleUpvote = () => {
         if (upvoted) {
@@ -28,24 +27,6 @@ export default function ForumReplyCard({ reply, isInForum = false, questionAutho
         } else {
             setUpvotes(v => v + 1)
             setUpvoted(true)
-            if (downvoted) {
-                setDownvotes(v => v - 1)
-                setDownvoted(false)
-            }
-        }
-    }
-
-    const handleDownvote = () => {
-        if (downvoted) {
-            setDownvotes(v => v - 1)
-            setDownvoted(false)
-        } else {
-            setDownvotes(v => v + 1)
-            setDownvoted(true)
-            if (upvoted) {
-                setUpvotes(v => v - 1)
-                setUpvoted(false)
-            }
         }
     }
 
@@ -99,22 +80,12 @@ export default function ForumReplyCard({ reply, isInForum = false, questionAutho
                 </div>
 
                 <div className="flex items-center gap-1 mt-4">
-                    <OSButton
-                        onClick={handleUpvote}
-                        size="md"
-                        className={upvoted ? '!bg-green !text-primary !border-green' : ''}
-                        icon={<IconThumbsUp className={upvoted ? '!text-primary' : ''} />}
-                    >
-                        <strong>{upvotes}</strong>
-                    </OSButton>
-                    <OSButton
-                        onClick={handleDownvote}
-                        size="md"
-                        className={downvoted ? '!bg-red !text-primary !border-red' : ''}
-                        icon={<IconThumbsDown className={downvoted ? '!text-primary' : ''} />}
-                    >
-                        <strong>{downvotes}</strong>
-                    </OSButton>
+                    <VotePicker
+                        count={upvotes}
+                        active={upvoted}
+                        onDecrement={() => { if (upvoted) handleUpvote() }}
+                        onIncrement={() => { if (!upvoted) handleUpvote() }}
+                    />
                 </div>
             </div>
         </div>

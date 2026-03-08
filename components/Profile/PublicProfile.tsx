@@ -1,16 +1,28 @@
-﻿"use client"
+"use client"
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from 'lib/supabase'
 import { useAuth } from 'context/AuthContext'
 import { useApp } from 'context/App'
 import { useWindow } from 'context/Window'
+import { useToast } from 'context/ToastContext'
 import OSButton from 'components/OSButton'
 import Tooltip from 'components/RadixUI/Tooltip'
 import {
-    Globe, Github, MapPin, BookOpen, PenLine, Star,
-    Layers, Linkedin, Twitter, FileText, RefreshCw,
-    Share, Users, ExternalLink
+    Globe,
+    Github,
+    MapPin,
+    BookOpen,
+    PenLine,
+    Linkedin,
+    Twitter,
+    FileText,
+    RefreshCw,
+    Share,
+    Users,
+    ExternalLink,
+    PanelsTopLeft,
+    ArrowUpRight,
 } from 'lucide-react'
 import {
     IconUser,
@@ -45,6 +57,16 @@ interface NodeDoc {
     preview: string
 }
 
+interface PostItem {
+    id: string
+    title: string
+    slug: string
+    excerpt?: string
+    image_url?: string
+    created_at: string
+    published: boolean
+}
+
 function relativeTime(iso: string): string {
     const diff = Date.now() - new Date(iso).getTime()
     const mins = Math.floor(diff / 60_000)
@@ -61,9 +83,18 @@ function relativeTime(iso: string): string {
     return `${Math.floor(months / 12)}y ago`
 }
 
+function toPostPath(slug: string) {
+    const normalized = (slug || '').trim().replace(/\/+$/, '')
+    if (!normalized) return '/posts'
+    if (normalized.startsWith('/posts/') || normalized.startsWith('/blog/')) return normalized
+    if (normalized.startsWith('/')) return `/posts${normalized}`.replace(/\/+/g, '/')
+    return `/posts/${normalized}`
+}
+
 export default function PublicProfile({ username }: PublicProfileProps) {
     const { profile: authProfile } = useAuth()
     const { addWindow } = useApp()
+    const { addToast } = useToast()
     const windowCtx = useWindow()
     const goBack = windowCtx?.goBack
     const goForward = windowCtx?.goForward
@@ -71,58 +102,182 @@ export default function PublicProfile({ username }: PublicProfileProps) {
     const canGoForward = windowCtx?.canGoForward || false
 
     const [loading, setLoading] = useState(true)
+    const [refreshing, setRefreshing] = useState(false)
     const [profile, setProfile] = useState<ProfileData | null>(null)
     const [nodes, setNodes] = useState<NodeDoc[]>([])
+    const [posts, setPosts] = useState<PostItem[]>([])
     const [nodesLoading, setNodesLoading] = useState(false)
+    const [postsLoading, setPostsLoading] = useState(false)
 
     const normalizedUsername = useMemo(() => decodeURIComponent(username || '').trim(), [username])
+    const isOwner = !!authProfile?.username && authProfile.username.toLowerCase() === normalizedUsername.toLowerCase()
+    const displayName = profile?.username || normalizedUsername
+    const publicProfilePath = normalizedUsername ? `/profile/${encodeURIComponent(normalizedUsername)}` : '/profile'
+    const corpusPath = normalizedUsername ? `/u/${encodeURIComponent(normalizedUsername)}` : '/'
 
-    const isOwner = !!authProfile?.username &&
-        authProfile.username.toLowerCase() === normalizedUsername.toLowerCase()
+    const copyLink = useCallback(async (path: string, label: string) => {
+        if (typeof window === 'undefined') return
+
+        const url = `${window.location.origin}${path}`
+
+        try {
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(url)
+            } else {
+                const textArea = document.createElement('textarea')
+                textArea.value = url
+                textArea.style.position = 'fixed'
+                textArea.style.left = '-999999px'
+                document.body.appendChild(textArea)
+                textArea.focus()
+                textArea.select()
+                document.execCommand('copy')
+                document.body.removeChild(textArea)
+            }
+
+            addToast(`${label} link copied`, 'success')
+        } catch {
+            addToast(`failed to copy ${label} link`, 'error')
+        }
+    }, [addToast])
+
+    const openCorpus = useCallback(() => {
+        if (!normalizedUsername) return
+        addWindow({
+            key: `corpus-${normalizedUsername}`,
+            path: corpusPath,
+            title: `${displayName}'s corpus`,
+        })
+    }, [addWindow, corpusPath, displayName, normalizedUsername])
+
+    const openPost = useCallback((post: PostItem) => {
+        addWindow({
+            key: `post-${post.slug}`,
+            path: toPostPath(post.slug),
+            title: post.title,
+        })
+    }, [addWindow])
+
+    const openNodeEditor = useCallback((node: NodeDoc) => {
+        if (!isOwner) return
+        addWindow({
+            key: `node-${node.id}`,
+            title: node.title || 'Untitled Node',
+            path: '/write',
+            icon: <FileText className="size-4" />,
+            props: { nodeId: node.id, isCanvas: true },
+        })
+    }, [addWindow, isOwner])
+
+    const loadProfile = useCallback(async () => {
+        if (!normalizedUsername) {
+            setProfile(null)
+            return
+        }
+
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('id, username, avatar_url, cover_url, bio, website, github, linkedin, twitter, pronouns, location, role')
+            .ilike('username', normalizedUsername)
+            .maybeSingle()
+
+        if (!error && data) {
+            setProfile(data as ProfileData)
+        } else {
+            setProfile(null)
+        }
+    }, [normalizedUsername])
+
+    const loadNodes = useCallback(async (profileId: string) => {
+        setNodesLoading(true)
+
+        const { data, error } = await supabase
+            .from('nodes')
+            .select('id, title, content, updated_at')
+            .eq('author_id', profileId)
+            .eq('status', 'published')
+            .order('updated_at', { ascending: false })
+
+        if (!error && data) {
+            setNodes(data.map((row) => ({
+                id: row.id as string,
+                title: row.title || 'Untitled',
+                updated: relativeTime(row.updated_at),
+                preview: (row.content || '').slice(0, 400),
+            })))
+        } else {
+            setNodes([])
+        }
+
+        setNodesLoading(false)
+    }, [])
+
+    const loadPosts = useCallback(async () => {
+        if (!normalizedUsername) {
+            setPosts([])
+            return
+        }
+
+        setPostsLoading(true)
+
+        const { data, error } = await supabase
+            .from('posts')
+            .select('id, title, slug, excerpt, image_url, created_at, published')
+            .ilike('author', normalizedUsername)
+            .eq('published', true)
+            .order('created_at', { ascending: false })
+
+        if (!error && data) {
+            setPosts(data as PostItem[])
+        } else {
+            setPosts([])
+        }
+
+        setPostsLoading(false)
+    }, [normalizedUsername])
+
+    const refreshAll = useCallback(async () => {
+        setRefreshing(true)
+        setLoading(true)
+        await loadProfile()
+        setRefreshing(false)
+        setLoading(false)
+    }, [loadProfile])
 
     useEffect(() => {
-        const load = async () => {
-            if (!normalizedUsername) { setLoading(false); return }
+        let mounted = true
+
+        const run = async () => {
             setLoading(true)
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('id, username, avatar_url, cover_url, bio, website, github, linkedin, twitter, pronouns, location, role')
-                .ilike('username', normalizedUsername)
-                .maybeSingle()
-            if (!error && data) {
-                setProfile(data as ProfileData)
-            } else {
-                setProfile(null)
-            }
-            setLoading(false)
+            await loadProfile()
+            if (mounted) setLoading(false)
         }
-        load()
-    }, [normalizedUsername])
+
+        run()
+
+        return () => {
+            mounted = false
+        }
+    }, [loadProfile])
 
     useEffect(() => {
         if (!profile?.id) return
-        const loadNodes = async () => {
-            setNodesLoading(true)
-            const { data, error } = await supabase
-                .from('nodes')
-                .select('id, title, content, updated_at')
-                .eq('author_id', profile.id)
-                .eq('status', 'published')
-                .order('updated_at', { ascending: false })
-            if (!error && data) {
-                setNodes(data.map(row => ({
-                    id: row.id as string,
-                    title: row.title || 'Untitled',
-                    updated: relativeTime(row.updated_at),
-                    preview: (row.content || '').slice(0, 400)
-                })))
-            }
-            setNodesLoading(false)
-        }
-        loadNodes()
-    }, [profile?.id])
+        loadNodes(profile.id)
+    }, [loadNodes, profile?.id])
 
-    const displayName = profile?.username || normalizedUsername
+    useEffect(() => {
+        loadPosts()
+    }, [loadPosts])
+
+    const linkCount = [profile?.website, profile?.github, profile?.linkedin, profile?.twitter].filter(Boolean).length
+    const tableRows = [
+        { field: 'name', value: displayName },
+        { field: 'username', value: `@${displayName}` },
+        { field: 'role', value: profile?.role || 'member' },
+        { field: 'location', value: profile?.location || profile?.pronouns || 'not set' },
+        { field: 'posts', value: `${posts.length} published` },
+        { field: 'nodes', value: `${nodes.length} published` },
+    ]
 
     if (loading) {
         return (
@@ -144,12 +299,10 @@ export default function PublicProfile({ username }: PublicProfileProps) {
 
     return (
         <div className="corpus-root flex flex-col size-full bg-primary text-primary font-sans overflow-hidden">
-            {/* Top Bar */}
             <div
                 data-scheme="tertiary"
-                className="flex w-full items-center px-1.5 py-0.5 select-none gap-2 justify-between bg-primary border-b border-primary shrink-0 z-10 h-10"
+                className="flex w-full items-center px-1.5 py-0.5 select-none gap-2 justify-between bg-primary border-b border-primary shrink-0 z-10 h-10 overflow-x-auto custom-scrollbar no-scrollbar-on-mobile"
             >
-                {/* LEFT */}
                 <div className="flex items-center gap-1 flex-shrink-0">
                     <div className="hidden sm:flex items-center gap-0.5">
                         <OSButton size="sm" onClick={goBack} disabled={!canGoBack} className="p-1 h-8 w-8 !rounded-md">
@@ -160,11 +313,11 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                         </OSButton>
                     </div>
                     <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
-                    <div className="flex items-center gap-1.5 ml-1">
+                    <div className="flex items-center gap-1.5 ml-1 min-w-0">
                         {profile.avatar_url ? (
-                            <img src={profile.avatar_url} alt={displayName} className="size-5 rounded-full object-cover border border-primary/20" />
+                            <img src={profile.avatar_url} alt={displayName} className="size-5 rounded-full object-cover border border-primary/20 shrink-0" />
                         ) : (
-                            <div className="size-5 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+                            <div className="size-5 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 shrink-0">
                                 <span className="text-[9px] font-black text-primary/60">{displayName.charAt(0).toUpperCase()}</span>
                             </div>
                         )}
@@ -175,137 +328,95 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                     </div>
                 </div>
 
-                {/* RIGHT */}
                 <div className="flex items-center gap-1 justify-end flex-shrink-0">
                     {isOwner && (
-                        <OSButton
-                            size="sm"
-                            className="!px-2 h-8 !rounded flex items-center gap-1.5 flex-shrink-0"
-                            onClick={() => addWindow({
-                                key: `corpus-${normalizedUsername}`,
-                                path: `/u/${normalizedUsername}`,
-                                title: displayName + `'s corpus`
-                            })}
-                        >
+                        <OSButton size="sm" className="!px-2 h-8 !rounded flex items-center gap-1.5 flex-shrink-0" onClick={openCorpus}>
                             <PenLine className="size-[14px] opacity-70" />
-                            <span className="hidden md:inline text-[12px] font-semibold">my corpus</span>
+                            <span className="hidden md:inline text-[12px] font-semibold">edit corpus</span>
                         </OSButton>
                     )}
                     <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
-                    <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded"><Share className="size-[16px] opacity-70" /></OSButton>} side="bottom">share profile</Tooltip>
+                    <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded" onClick={refreshAll}><RefreshCw className={`size-[16px] opacity-70 ${refreshing ? 'animate-spin' : ''}`} /></OSButton>} side="bottom">refresh profile</Tooltip>
+                    <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded" onClick={() => copyLink(publicProfilePath, 'profile')}><Share className="size-[16px] opacity-70" /></OSButton>} side="bottom">share profile</Tooltip>
+                    <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded" onClick={openCorpus}><PanelsTopLeft className="size-[16px] opacity-70" /></OSButton>} side="bottom">open corpus</Tooltip>
                     {profile.website && (
-                        <Tooltip trigger={
-                            <a href={profile.website} target="_blank" rel="noopener noreferrer">
-                                <OSButton size="sm" className="p-1.5 h-8 w-8 !rounded"><ExternalLink className="size-[16px] opacity-70" /></OSButton>
-                            </a>
-                        } side="bottom">website</Tooltip>
+                        <Tooltip trigger={<a href={profile.website} target="_blank" rel="noopener noreferrer"><OSButton size="sm" className="p-1.5 h-8 w-8 !rounded"><ExternalLink className="size-[16px] opacity-70" /></OSButton></a>} side="bottom">website</Tooltip>
                     )}
                 </div>
             </div>
 
-            {/* Content */}
             <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#fafcfc] dark:bg-primary">
-                {/* Profile Section */}
-                <main className="corpus-main">
-                    <div className="corpus-shadow corpus-shadow--main"><div /></div>
-                    <section className="corpus-layer">
-                        <div className="corpus-mover">
-                            <div className="corpus-shadow corpus-shadow--main"><div /></div>
-                            <div className="corpus-content--main">
-                                <p className="corpus-heading">
-                                    <IconUser className="size-4" />
-                                    <span className="lowercase">{displayName}&apos;s profile</span>
-                                    <span className="corpus-badge ml-auto">
-                                        <Globe className="size-3" />
-                                        <span>public</span>
-                                    </span>
-                                </p>
-                                <div className="corpus-profile-slot">
-                                    {/* Cover */}
-                                    <div className="h-24 w-full relative overflow-hidden rounded-t-lg">
-                                        {profile.cover_url
-                                            ? <img src={profile.cover_url} alt="cover" className="size-full object-cover" />
-                                            : <div className="size-full bg-gradient-to-br from-primary/10 via-primary/5 to-accent"><div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, var(--color-primary) 0%, transparent 60%), radial-gradient(circle at 80% 20%, var(--color-primary) 0%, transparent 50%)' }} /></div>
-                                        }
+                <div className="corpus-nodes-wrapper" style={{ marginTop: 'clamp(0.5rem, 2vw, 1.5rem)' }}>
+                    <div className="corpus-profile-slot">
+                        <div className="corpus-profile-stack">
+                            <div className="corpus-profile-visual corpus-profile-cardShadow">
+                                <div className="corpus-profile-cover">
+                                    {profile.cover_url ? (
+                                        <img src={profile.cover_url} alt="cover" />
+                                    ) : (
+                                        <div className="corpus-profile-coverEmpty" />
+                                    )}
+                                </div>
+                                <div className="corpus-profile-avatar">
+                                    {profile.avatar_url ? <img src={profile.avatar_url} alt={displayName} /> : <IconUser className="size-5 text-primary/30" />}
+                                </div>
+                            </div>
+
+                            <div className="corpus-profile-layerStack">
+                                <div className="corpus-profile-tableCard corpus-profile-cardShadow">
+                                    <div className="corpus-profile-cardHeading">
+                                        <Users className="size-4" />
+                                        <span>profile database</span>
+                                        <span className="corpus-badge" style={{ marginLeft: 'auto' }}>
+                                            <PanelsTopLeft className="size-3" />
+                                            <span>database</span>
+                                        </span>
                                     </div>
-                                    {/* Avatar + name row */}
-                                    <div className="px-4 pt-0 pb-3">
-                                        <div className="flex items-end gap-3 -mt-8 mb-3">
-                                            <div className="size-14 rounded-xl border-2 border-white dark:border-black/40 bg-accent overflow-hidden shrink-0 flex items-center justify-center shadow-sm">
-                                                {profile.avatar_url ? <img src={profile.avatar_url} alt={displayName} className="size-full object-cover" /> : <IconUser className="size-5 text-primary/30" />}
-                                            </div>
-                                            <div className="flex-1 min-w-0 pb-1">
-                                                <h2 className="text-sm font-black lowercase tracking-tight text-primary m-0 leading-tight">{displayName}</h2>
-                                            </div>
-                                        </div>
-                                        {/* Social links */}
-                                        {(isOwner || profile.website || profile.github || profile.linkedin || profile.twitter) && (
-                                            <div className="flex items-center gap-1.5 flex-wrap">
-                                                {isOwner && (
-                                                    <OSButton size="sm" className="h-6 px-2 !rounded text-[9px] font-bold lowercase flex items-center gap-1"
-                                                        onClick={() => addWindow({ key: `corpus-${normalizedUsername}`, path: `/u/${normalizedUsername}`, title: displayName + `'s corpus` })}>
-                                                        <PenLine className="size-2.5" />edit
-                                                    </OSButton>
-                                                )}
-                                                {profile.website && <Tooltip trigger={<a href={profile.website} target="_blank" rel="noopener noreferrer"><OSButton size="sm" className="h-6 w-6 !rounded"><Globe className="size-2.5" /></OSButton></a>} side="bottom">website</Tooltip>}
-                                                {profile.github && <Tooltip trigger={<a href={profile.github} target="_blank" rel="noopener noreferrer"><OSButton size="sm" className="h-6 w-6 !rounded"><Github className="size-2.5" /></OSButton></a>} side="bottom">github</Tooltip>}
-                                                {profile.linkedin && <Tooltip trigger={<a href={profile.linkedin} target="_blank" rel="noopener noreferrer"><OSButton size="sm" className="h-6 w-6 !rounded"><Linkedin className="size-2.5" /></OSButton></a>} side="bottom">linkedin</Tooltip>}
-                                                {profile.twitter && <Tooltip trigger={<a href={profile.twitter} target="_blank" rel="noopener noreferrer"><OSButton size="sm" className="h-6 w-6 !rounded"><Twitter className="size-2.5" /></OSButton></a>} side="bottom">twitter</Tooltip>}
-                                            </div>
-                                        )}
+
+                                    <div className="corpus-profile-tableScroll custom-scrollbar">
+                                        <table className="corpus-profile-table">
+                                            <thead>
+                                                <tr>
+                                                    <td>field</td>
+                                                    <td>value</td>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {tableRows.map((row) => (
+                                                    <tr key={row.field}>
+                                                        <td>{row.field}</td>
+                                                        <td>{row.value}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div className="corpus-profile-meta">
+                                        <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.6, padding: '0.75rem' }}>
+                                            {profile.bio
+                                                ? <span style={{ opacity: 0.8 }}>{profile.bio}</span>
+                                                : <span style={{ opacity: 0.35, fontStyle: 'italic' }}>no bio yet</span>
+                                            }
+                                        </p>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </section>
-                </main>
-
-                {/* Info + Stats Cards */}
-                <div className="corpus-nodes-wrapper">
-                    <div className="corpus-nodes-card">
-                        <div className="corpus-table-heading">
-                            <IconUser className="size-3.5" style={{ color: 'var(--corpus-accent)' }} />
-                            <span>profile</span>
-                            <span className="corpus-badge"><Globe className="size-3" /><span>info</span></span>
-                        </div>
-                        <dl className="corpus-status-dl">
-                            {profile.role && (<><dt><Star className="size-3.5" /><span>role</span></dt><dd>{profile.role}</dd></>)}
-                            {profile.bio && (<><dt><PenLine className="size-3.5" /><span>bio</span></dt><dd className="corpus-info-bio">{profile.bio}</dd></>)}
-                            {profile.pronouns && (<><dt><Star className="size-3.5" /><span>pronouns</span></dt><dd>{profile.pronouns}</dd></>)}
-                            {profile.location && (<><dt><MapPin className="size-3.5" /><span>location</span></dt><dd>{profile.location}</dd></>)}
-                            {profile.website && (<><dt><Globe className="size-3.5" /><span>website</span></dt><dd><a href={profile.website} target="_blank" rel="noopener noreferrer" className="corpus-link">{profile.website.replace(/^https?:\/\//, '')}</a></dd></>)}
-                            {profile.github && (<><dt><Github className="size-3.5" /><span>github</span></dt><dd><a href={profile.github} target="_blank" rel="noopener noreferrer" className="corpus-link">{profile.github.replace(/^https?:\/\/(www\.)?github\.com\//, '')}</a></dd></>)}
-                            {profile.linkedin && (<><dt><Linkedin className="size-3.5" /><span>linkedin</span></dt><dd><a href={profile.linkedin} target="_blank" rel="noopener noreferrer" className="corpus-link">linkedin</a></dd></>)}
-                            {profile.twitter && (<><dt><Twitter className="size-3.5" /><span>twitter</span></dt><dd><a href={profile.twitter} target="_blank" rel="noopener noreferrer" className="corpus-link">{profile.twitter.replace(/^https?:\/\/(www\.)?(twitter|x)\.com\//, '')}</a></dd></>)}
-                            {!profile.role && !profile.bio && !profile.pronouns && !profile.location && !profile.website && !profile.github && !profile.linkedin && !profile.twitter && (<><dt><PenLine className="size-3.5" /><span>bio</span></dt><dd className="corpus-info-bio">—</dd></>)}
-                        </dl>
-                    </div>
-                    <div className="corpus-stats-card">
-                        <div className="corpus-table-heading">
-                            <Layers className="size-3.5" style={{ color: 'var(--corpus-accent)' }} />
-                            <span>corpus</span>
-                            <span className="corpus-badge"><BookOpen className="size-3" /><span>stats</span></span>
-                        </div>
-                        <dl className="corpus-status-dl">
-                            <dt><BookOpen className="size-3.5" /><span>published</span></dt><dd>{nodes.length}</dd>
-                            <dt><Users className="size-3.5" /><span>visibility</span></dt><dd>public</dd>
-                            <dt><Layers className="size-3.5" /><span>total nodes</span></dt><dd className="corpus-highlight">{nodes.length}</dd>
-                        </dl>
                     </div>
                 </div>
 
-                {/* Published Nodes Grid */}
                 <div className="corpus-doc-grid-wrapper">
                     <div className="corpus-doc-tabs">
-                        <button className="corpus-doc-tab corpus-doc-tab--active">published <span>{nodes.length}</span></button>
+                        <button className="corpus-doc-tab corpus-doc-tab--active">published nodes <span>{nodes.length}</span></button>
                     </div>
                     {nodesLoading && (
                         <div className="corpus-doc-empty"><RefreshCw className="size-6 animate-spin" style={{ opacity: 0.3 }} /><p>loading nodes...</p></div>
                     )}
                     {!nodesLoading && (
                         <div className="corpus-doc-grid">
-                            {nodes.map(node => (
-                                <article key={node.id} className="corpus-doc-card">
+                            {nodes.map((node) => (
+                                <article key={node.id} className={`corpus-doc-card ${isOwner ? 'cursor-pointer' : ''}`} onClick={isOwner ? () => openNodeEditor(node) : undefined}>
                                     <div className="corpus-doc-media">
                                         <div className="corpus-doc-preview-text">{node.preview}</div>
                                         <div className="corpus-doc-media-fade" />
@@ -314,7 +425,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                     <div className="corpus-doc-info">
                                         <div><FileText className="size-3.5" /><span>{node.updated}</span></div>
                                         <h3>{node.title}</h3>
-                                        <p>published</p>
+                                        <p>{isOwner ? 'click to edit' : 'published node'}</p>
                                     </div>
                                 </article>
                             ))}
@@ -322,6 +433,36 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                     )}
                     {!nodesLoading && nodes.length === 0 && (
                         <div className="corpus-doc-empty"><BookOpen className="size-8" style={{ opacity: 0.2 }} /><p>no published nodes yet</p></div>
+                    )}
+                </div>
+
+                <div className="corpus-doc-grid-wrapper">
+                    <div className="corpus-doc-tabs">
+                        <button className="corpus-doc-tab corpus-doc-tab--active">published posts <span>{posts.length}</span></button>
+                    </div>
+                    {postsLoading && (
+                        <div className="corpus-doc-empty"><RefreshCw className="size-6 animate-spin" style={{ opacity: 0.3 }} /><p>loading posts...</p></div>
+                    )}
+                    {!postsLoading && (
+                        <div className="corpus-doc-grid">
+                            {posts.map((post) => (
+                                <article key={post.id} className="corpus-doc-card cursor-pointer" onClick={() => openPost(post)}>
+                                    <div className="corpus-doc-media">
+                                        {post.image_url ? <img src={post.image_url} alt={post.title} className="size-full object-cover" /> : <div className="corpus-doc-preview-text">{post.excerpt || 'open the full post to read more'}</div>}
+                                        <div className="corpus-doc-media-fade" />
+                                        <div className="corpus-doc-badge"><ArrowUpRight className="size-3" /><span>post</span></div>
+                                    </div>
+                                    <div className="corpus-doc-info">
+                                        <div><BookOpen className="size-3.5" /><span>{relativeTime(post.created_at)}</span></div>
+                                        <h3>{post.title}</h3>
+                                        <p>open post</p>
+                                    </div>
+                                </article>
+                            ))}
+                        </div>
+                    )}
+                    {!postsLoading && posts.length === 0 && (
+                        <div className="corpus-doc-empty"><BookOpen className="size-8" style={{ opacity: 0.2 }} /><p>no published posts yet</p></div>
                     )}
                 </div>
             </div>

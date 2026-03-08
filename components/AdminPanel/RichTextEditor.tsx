@@ -188,7 +188,7 @@ const EditorMenuBar = ({ editor }: { editor: Editor | null }) => {
             <TB active={editor.isActive('blockquote')} onClick={() => editor.chain().focus().toggleBlockquote().run()} title="Quote">
                 <Quote className="size-3.5" />
             </TB>
-            <TB active={editor.isActive('callout')} onClick={() => editor.chain().focus().setCallout().run()} title="Callout (Info Box)">
+            <TB active={editor.isActive('callout')} onClick={() => (editor.chain().focus() as any).setCallout().run()} title="Callout (Info Box)">
                 <MessageSquareWarning className="size-3.5" />
             </TB>
             <TB active={editor.isActive('codeBlock')} onClick={() => editor.chain().focus().toggleCodeBlock().run()} title="Code Block">
@@ -275,7 +275,7 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
             TableRow,
             TableHeader,
             TableCell,
-            CalloutNode,
+            CalloutNode as any,
         ],
         content: content,
         onUpdate: ({ editor }) => {

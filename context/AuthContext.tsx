@@ -29,6 +29,29 @@ interface AuthContextType {
     isAdmin: boolean;
 }
 
+const trimValue = (value?: string | null) => value?.trim() || '';
+
+const normalizeExternalUrl = (value?: string | null) => {
+    const trimmed = trimValue(value);
+    if (!trimmed) return '';
+    if (/^(https?:)?\/\//i.test(trimmed) || trimmed.startsWith('mailto:')) return trimmed;
+    return `https://${trimmed}`;
+};
+
+const sanitizeProfileUpdates = (updates: Partial<Profile>) => ({
+    ...('username' in updates ? { username: trimValue(updates.username) } : {}),
+    ...('avatar_url' in updates ? { avatar_url: normalizeExternalUrl(updates.avatar_url) } : {}),
+    ...('cover_url' in updates ? { cover_url: normalizeExternalUrl(updates.cover_url) } : {}),
+    ...('role' in updates ? { role: trimValue(updates.role) } : {}),
+    ...('bio' in updates ? { bio: trimValue(updates.bio) } : {}),
+    ...('website' in updates ? { website: normalizeExternalUrl(updates.website) } : {}),
+    ...('github' in updates ? { github: normalizeExternalUrl(updates.github) } : {}),
+    ...('linkedin' in updates ? { linkedin: normalizeExternalUrl(updates.linkedin) } : {}),
+    ...('twitter' in updates ? { twitter: normalizeExternalUrl(updates.twitter) } : {}),
+    ...('pronouns' in updates ? { pronouns: trimValue(updates.pronouns) } : {}),
+    ...('location' in updates ? { location: trimValue(updates.location) } : {}),
+});
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -146,14 +169,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const updateProfile = async (updates: Partial<Profile>) => {
         if (!user) return false;
 
+        const sanitizedUpdates = sanitizeProfileUpdates(updates);
+
         const safeUpdates = hasExtendedProfileFields
-            ? updates
+            ? sanitizedUpdates
             : {
-                username: updates.username,
-                avatar_url: updates.avatar_url,
+                username: sanitizedUpdates.username,
+                avatar_url: sanitizedUpdates.avatar_url,
             };
 
         if (!Object.values(safeUpdates).some((value) => value !== undefined)) return false;
+
+        if ('username' in safeUpdates) {
+            const nextUsername = trimValue(safeUpdates.username);
+
+            if (!nextUsername) {
+                logger.warn('[Auth] Refusing to save blank username');
+                return false;
+            }
+
+            const { data: conflictingProfiles, error: usernameError } = await supabase
+                .from('profiles')
+                .select('id')
+                .ilike('username', nextUsername)
+                .neq('id', user.id)
+                .limit(1);
+
+            if (usernameError) {
+                logger.error('[Auth] Error checking username uniqueness:', usernameError);
+                return false;
+            }
+
+            if (conflictingProfiles && conflictingProfiles.length > 0) {
+                logger.warn('[Auth] Username already taken:', nextUsername);
+                return false;
+            }
+        }
 
         const { error } = await supabase
             .from('profiles')
@@ -165,7 +216,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             return false;
         }
 
-        setProfile(prev => prev ? { ...prev, ...safeUpdates } : null);
+        await fetchProfile(user.id);
         return true;
     };
 
