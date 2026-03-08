@@ -221,6 +221,36 @@ export default function CorpusView({ username }: { username: string }) {
         })
     }
 
+    const handleAddPost = () => {
+        if (!isOwner) return
+        app?.addWindow({
+            key: `post-new-${Date.now()}`,
+            title: 'Untitled Post',
+            path: '/write-post',
+            icon: <BookOpen className="size-4" />,
+        })
+    }
+
+    const handleOpenPost = (post: PostItem) => {
+        if (isOwner) {
+            app?.addWindow({
+                key: `post-editor-${post.id}`,
+                title: post.title || 'Untitled Post',
+                path: '/write-post',
+                icon: <BookOpen className="size-4" />,
+                props: { postId: post.id }
+            })
+            return
+        }
+
+        app?.addWindow({
+            key: `post-${post.slug}`,
+            title: post.title,
+            path: `/posts/${post.slug}`,
+            icon: <BookOpen className="size-4" />,
+        })
+    }
+
     const filteredDocs = docs.filter(doc => {
         if (activeTab === 'published') return doc.status === 'published'
         if (activeTab === 'drafts') return doc.status === 'draft'
@@ -230,6 +260,8 @@ export default function CorpusView({ username }: { username: string }) {
     const displayName = profile?.username || decodeURIComponent(username)
     const publishedCount = docs.filter(d => d.status === 'published').length
     const draftCount = docs.filter(d => d.status === 'draft').length
+    const publishedPostCount = posts.filter(post => post.published).length
+    const draftPostCount = posts.filter(post => !post.published).length
     const hasProfileChanges =
         (form.avatar_url || '') !== (profile?.avatar_url || '') ||
         (form.cover_url || '') !== (profile?.cover_url || '') ||
@@ -280,10 +312,16 @@ export default function CorpusView({ username }: { username: string }) {
                 {/* RIGHT */}
                 <div className="flex items-center gap-1 justify-end flex-shrink-0">
                     {isOwner && (
-                        <OSButton size="sm" onClick={handleAddNode} className="!px-2 h-8 !rounded flex items-center gap-1.5 flex-shrink-0">
-                            <IconPlus className="size-[15px] opacity-70" />
-                            <span className="hidden lg:inline text-[12px] font-semibold">add node</span>
-                        </OSButton>
+                        <>
+                            <OSButton size="sm" onClick={handleAddNode} className="!px-2 h-8 !rounded flex items-center gap-1.5 flex-shrink-0">
+                                <IconPlus className="size-[15px] opacity-70" />
+                                <span className="hidden lg:inline text-[12px] font-semibold">new node</span>
+                            </OSButton>
+                            <OSButton size="sm" onClick={handleAddPost} className="!px-2 h-8 !rounded flex items-center gap-1.5 flex-shrink-0">
+                                <BookOpen className="size-[15px] opacity-70" />
+                                <span className="hidden lg:inline text-[12px] font-semibold">new post</span>
+                            </OSButton>
+                        </>
                     )}
 
                     <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
@@ -610,6 +648,16 @@ export default function CorpusView({ username }: { username: string }) {
                                         posts
                                         <span>{posts.length}</span>
                                     </div>
+                                    {isOwner && (
+                                        <div className="corpus-doc-tab" style={{ cursor: 'default' }}>
+                                            published <span>{publishedPostCount}</span>
+                                        </div>
+                                    )}
+                                    {isOwner && (
+                                        <div className="corpus-doc-tab" style={{ cursor: 'default' }}>
+                                            drafts <span>{draftPostCount}</span>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {postsLoading && (
@@ -623,13 +671,8 @@ export default function CorpusView({ username }: { username: string }) {
                                     {posts.map(post => (
                                         <article
                                             key={post.id}
-                                            className="corpus-doc-card"
-                                            onClick={() => app?.addWindow({
-                                                key: `post-${post.slug}`,
-                                                title: post.title,
-                                                path: `/posts/${post.slug}`,
-                                                icon: <BookOpen className="size-4" />,
-                                            })}
+                                            className={`corpus-doc-card ${isOwner ? 'cursor-pointer' : ''}`}
+                                            onClick={() => handleOpenPost(post)}
                                         >
                                             <div className="corpus-doc-media">
                                                 {post.image_url
@@ -638,7 +681,7 @@ export default function CorpusView({ username }: { username: string }) {
                                                 }
                                                 <div className="corpus-doc-media-fade" />
                                                 <div className="corpus-doc-badge">
-                                                    <BookOpen className="size-3" /><span>post</span>
+                                                    <BookOpen className="size-3" /><span>{post.published ? 'post' : 'draft'}</span>
                                                 </div>
                                             </div>
                                             <div className="corpus-doc-info">
@@ -647,7 +690,7 @@ export default function CorpusView({ username }: { username: string }) {
                                                     <span>{relativeTime(post.created_at)}</span>
                                                 </div>
                                                 <h3>{post.title}</h3>
-                                                <p>{post.published ? 'published' : 'draft'}</p>
+                                                <p>{isOwner ? 'click to edit' : (post.published ? 'published' : 'draft')}</p>
                                             </div>
                                         </article>
                                     ))}

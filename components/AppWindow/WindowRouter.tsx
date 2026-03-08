@@ -20,6 +20,7 @@ import { Save, Image as ImageIcon, Palette, Hash, CheckCircle, ChevronDown, File
 import OSButton from 'components/OSButton'
 import { Popover } from 'components/RadixUI/Popover'
 import { Toolbar } from 'components/RadixUI/Toolbar'
+import { toSlug } from '../../utils/security'
 
 const adaptPost = (p: { id: number | string; title: string; content?: string; created_at: string; author_id?: string | number; profiles?: { username?: string; avatar_url?: string } | { username?: string; avatar_url?: string }[] }) => {
     const profile = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles
@@ -106,6 +107,11 @@ export default function WindowRouter({ item }: { item: AppWindow }) {
     // /write (New Node / Canvas Experience)
     if (path === '/write') {
         return <WriteRouteView nodeId={item.props?.nodeId as string | undefined} />
+    }
+
+    // /write-post (User Post Editor)
+    if (path === '/write-post') {
+        return <WritePostRouteView postId={item.props?.postId as string | undefined} />
     }
 
     // Fallback for any other path
@@ -517,6 +523,228 @@ function WriteRouteView({ nodeId }: { nodeId?: string }) {
                             content={content}
                             onChange={setContent}
                         />
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+function WritePostRouteView({ postId }: { postId?: string }) {
+    const { user, profile } = useAuth()
+    const { addToast } = useToast()
+    const [currentPostId, setCurrentPostId] = useState<string | undefined>(postId)
+    const [title, setTitle] = useState('untitled post')
+    const [slug, setSlug] = useState('')
+    const [excerpt, setExcerpt] = useState('')
+    const [content, setContent] = useState('')
+    const [imageUrl, setImageUrl] = useState('')
+    const [published, setPublished] = useState(false)
+    const [saving, setSaving] = useState(false)
+    const [saved, setSaved] = useState(false)
+
+    useEffect(() => {
+        if (!currentPostId) return
+        const load = async () => {
+            const { data } = await supabase
+                .from('posts')
+                .select('id, title, slug, excerpt, content, image_url, published')
+                .eq('id', currentPostId)
+                .single()
+
+            if (data) {
+                setTitle(data.title || 'untitled post')
+                setSlug(data.slug || '')
+                setExcerpt(data.excerpt || '')
+                setContent(data.content || '')
+                setImageUrl(data.image_url || '')
+                setPublished(Boolean(data.published))
+            }
+        }
+        load()
+    }, [currentPostId])
+
+    const handleSavePost = async (nextPublished: boolean) => {
+        if (!user || !profile?.username) {
+            addToast('you must be logged in to save posts', 'error')
+            return
+        }
+
+        const finalTitle = title.trim() || 'untitled post'
+        const finalSlug = toSlug(slug || finalTitle)
+        const finalExcerpt = (excerpt || content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 150)).trim()
+
+        setSaving(true)
+
+        const postPayload = {
+            title: finalTitle,
+            slug: finalSlug,
+            content,
+            excerpt: finalExcerpt || null,
+            image_url: imageUrl || null,
+            published: nextPublished,
+            author: profile.username,
+            author_avatar: profile.avatar_url || '',
+        }
+
+        if (currentPostId) {
+            const { error } = await supabase
+                .from('posts')
+                .update(postPayload)
+                .eq('id', currentPostId)
+
+            if (error) {
+                addToast(`failed to save post: ${error.message}`, 'error')
+                setSaving(false)
+                return
+            }
+        } else {
+            const { data, error } = await supabase
+                .from('posts')
+                .insert(postPayload)
+                .select('id')
+                .single()
+
+            if (error || !data) {
+                addToast(`failed to create post: ${error?.message || 'unknown error'}`, 'error')
+                setSaving(false)
+                return
+            }
+
+            setCurrentPostId(data.id as string)
+        }
+
+        setPublished(nextPublished)
+        setSaved(true)
+        addToast(nextPublished ? 'post published!' : 'post saved as draft', 'success')
+        setTimeout(() => setSaved(false), 2500)
+        setSaving(false)
+    }
+
+    return (
+        <div className="flex flex-col size-full overflow-y-auto overflow-x-hidden text-black bg-[#fafcfc] dark:bg-primary/5 transition-colors duration-500">
+            <aside data-scheme="secondary" className="bg-primary p-2 border-b border-primary sticky top-0 z-50">
+                <Toolbar
+                    elements={[
+                        {
+                            type: 'button' as const,
+                            label: 'cover',
+                            icon: <ImageIcon className="size-4" />,
+                            onClick: () => {
+                                const url = window.prompt('enter post cover image url', imageUrl || '')
+                                if (url !== null) setImageUrl(url.trim())
+                            },
+                            size: 'md' as const,
+                            hideLabel: true,
+                            className: 'md:!px-2',
+                        },
+                        { type: 'separator' as const },
+                        {
+                            type: 'container' as const,
+                            children: (
+                                <Popover
+                                    trigger={
+                                        <OSButton size="md">
+                                            <div className="flex items-center gap-1.5 lowercase">
+                                                {published ? <CheckCircle className="size-4 text-emerald-500" /> : <PenTool className="size-4" />}
+                                                <span className="hidden md:inline">{published ? 'published' : 'draft'}</span>
+                                                <ChevronDown className="size-3 opacity-50 hidden md:block" />
+                                            </div>
+                                        </OSButton>
+                                    }
+                                    dataScheme="primary"
+                                    contentClassName="w-40 p-1 border border-primary bg-bg"
+                                >
+                                    <div className="flex flex-col gap-0.5">
+                                        <button onClick={() => setPublished(false)} className="text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-primary">
+                                            <PenTool className="size-3" /> draft
+                                        </button>
+                                        <button onClick={() => setPublished(true)} className="text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-emerald-600">
+                                            <CheckCircle className="size-3" /> published
+                                        </button>
+                                    </div>
+                                </Popover>
+                            ),
+                        },
+                        {
+                            type: 'container' as const,
+                            className: 'ml-auto flex items-center gap-2',
+                            children: (
+                                <>
+                                    {saved && <span className="text-[10px] font-bold tracking-widest text-green-600 uppercase transition-opacity duration-300 hidden sm:inline">saved</span>}
+                                    <OSButton size="md" onClick={() => handleSavePost(false)} disabled={saving}>
+                                        <div className="flex items-center gap-1.5 lowercase">
+                                            <Save className="size-4" />
+                                            <span className="hidden md:inline font-semibold">save draft</span>
+                                        </div>
+                                    </OSButton>
+                                    <OSButton variant="primary" size="md" onClick={() => handleSavePost(true)} disabled={saving}>
+                                        <div className="flex items-center gap-1.5 lowercase">
+                                            <CheckCircle className="size-4" />
+                                            <span className="hidden md:inline font-semibold">publish</span>
+                                        </div>
+                                    </OSButton>
+                                </>
+                            ),
+                        },
+                    ]}
+                />
+            </aside>
+
+            <div className="flex-col relative w-full flex-1 flex min-h-0">
+                {imageUrl && (
+                    <div className="relative w-full h-48 sm:h-64 group bg-black/5 shrink-0">
+                        <img src={imageUrl} alt={title || 'post cover'} className="w-full h-full object-cover" />
+                        <button
+                            onClick={() => setImageUrl('')}
+                            className="absolute top-4 right-4 bg-black/60 text-white text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-md font-bold lowercase"
+                        >
+                            remove cover
+                        </button>
+                    </div>
+                )}
+
+                <div className={`w-full max-w-4xl mx-auto px-4 sm:px-6 pb-20 flex-1 flex flex-col min-h-0 ${imageUrl ? 'pt-8' : 'pt-12'}`}>
+                    <div className="relative flex flex-col mb-8 shrink-0 gap-3">
+                        <div className="rounded border border-primary bg-primary p-3">
+                            <input
+                                type="text"
+                                value={title}
+                                onChange={(e) => {
+                                    setTitle(e.target.value)
+                                    if (!currentPostId) setSlug(toSlug(e.target.value))
+                                }}
+                                placeholder="untitled post"
+                                className="bg-transparent border-none text-3xl sm:text-5xl font-black tracking-tight text-primary outline-none placeholder:text-primary/20 w-full transition-all leading-tight lowercase"
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="rounded border border-primary bg-primary p-3">
+                                <div className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-2">slug</div>
+                                <input
+                                    type="text"
+                                    value={slug}
+                                    onChange={(e) => setSlug(toSlug(e.target.value))}
+                                    placeholder="post-slug"
+                                    className="bg-transparent border-none outline-none text-sm text-primary placeholder:text-primary/30 w-full"
+                                />
+                            </div>
+                            <div className="rounded border border-primary bg-primary p-3">
+                                <div className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-2">excerpt</div>
+                                <input
+                                    type="text"
+                                    value={excerpt}
+                                    onChange={(e) => setExcerpt(e.target.value)}
+                                    placeholder="short summary for cards and previews"
+                                    className="bg-transparent border-none outline-none text-sm text-primary placeholder:text-primary/30 w-full"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="w-full flex-1 min-h-[400px]">
+                        <RichTextEditor content={content} onChange={setContent} />
                     </div>
                 </div>
             </div>

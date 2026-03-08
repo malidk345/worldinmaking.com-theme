@@ -208,6 +208,24 @@ DO $$ BEGIN
     END IF;
 END $$;
 
+-- Authors can view their own posts (including drafts)
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='posts' AND policyname='Authors can view own posts') THEN
+        CREATE POLICY "Authors can view own posts" ON posts FOR SELECT USING (
+            author = (SELECT username FROM profiles WHERE profiles.id = auth.uid())
+        );
+    END IF;
+END $$;
+
+-- Authors can create their own posts
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='posts' AND policyname='Authors can create own posts') THEN
+        CREATE POLICY "Authors can create own posts" ON posts FOR INSERT WITH CHECK (
+            author = (SELECT username FROM profiles WHERE profiles.id = auth.uid())
+        );
+    END IF;
+END $$;
+
 -- Admins can update posts
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='posts' AND policyname='Admins can update posts') THEN
@@ -217,11 +235,31 @@ DO $$ BEGIN
     END IF;
 END $$;
 
+-- Authors can update their own posts
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='posts' AND policyname='Authors can update own posts') THEN
+        CREATE POLICY "Authors can update own posts" ON posts FOR UPDATE USING (
+            author = (SELECT username FROM profiles WHERE profiles.id = auth.uid())
+        ) WITH CHECK (
+            author = (SELECT username FROM profiles WHERE profiles.id = auth.uid())
+        );
+    END IF;
+END $$;
+
 -- Admins can delete posts
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='posts' AND policyname='Admins can delete posts') THEN
         CREATE POLICY "Admins can delete posts" ON posts FOR DELETE USING (
             EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
+        );
+    END IF;
+END $$;
+
+-- Authors can delete their own posts
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='posts' AND policyname='Authors can delete own posts') THEN
+        CREATE POLICY "Authors can delete own posts" ON posts FOR DELETE USING (
+            author = (SELECT username FROM profiles WHERE profiles.id = auth.uid())
         );
     END IF;
 END $$;
