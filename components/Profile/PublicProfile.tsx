@@ -414,8 +414,6 @@ export default function PublicProfile({ username }: PublicProfileProps) {
         { field: 'nodes', value: `${isOwner ? nodes.length : publishedNodeCount} ${isOwner ? 'total' : 'published'}` },
     ]
 
-    const toolbarTitle = isOwner ? 'my profile' : `${displayName}'s profile`
-
     const showNodesSection = !isEditingProfile && (!isOwner || activeSection === 'overview' || activeSection.startsWith('nodes-'))
     const showPostsSection = !isEditingProfile && (!isOwner || activeSection === 'overview' || activeSection.startsWith('posts-'))
     const nodeSectionLabel = !isOwner
@@ -482,17 +480,19 @@ export default function PublicProfile({ username }: PublicProfileProps) {
 
                     <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
 
-                    <div className="flex items-center gap-1.5 ml-1 min-w-0">
-                        {profile.avatar_url ? (
-                            <img src={profile.avatar_url} alt={displayName} className="size-5 rounded-full object-cover border border-primary/20 shrink-0" />
-                        ) : (
-                            <div className="size-5 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 shrink-0">
-                                <span className="text-[9px] font-black text-primary/60">{displayName.charAt(0).toUpperCase()}</span>
-                            </div>
-                        )}
-                        <h1 className="text-[13px] font-bold tracking-tight text-primary leading-none m-0 whitespace-nowrap">{toolbarTitle}</h1>
-                        {!isOwner && <span className="text-[10px] font-black uppercase tracking-widest text-primary/30 border border-primary/15 px-1.5 py-0.5 rounded hidden sm:inline">public</span>}
-                    </div>
+                    {!isOwner && (
+                        <div className="flex items-center gap-1.5 ml-1 min-w-0">
+                            {profile.avatar_url ? (
+                                <img src={profile.avatar_url} alt={displayName} className="size-5 rounded-full object-cover border border-primary/20 shrink-0" />
+                            ) : (
+                                <div className="size-5 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 shrink-0">
+                                    <span className="text-[9px] font-black text-primary/60">{displayName.charAt(0).toUpperCase()}</span>
+                                </div>
+                            )}
+                            <h1 className="text-[13px] font-bold tracking-tight text-primary leading-none m-0 whitespace-nowrap">{displayName}&apos;s profile</h1>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-primary/30 border border-primary/15 px-1.5 py-0.5 rounded hidden sm:inline">public</span>
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex items-center gap-1 justify-end flex-shrink-0">
@@ -577,100 +577,80 @@ export default function PublicProfile({ username }: PublicProfileProps) {
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#fafcfc] dark:bg-primary">
                     <div className="corpus-nodes-wrapper" style={{ marginTop: 'clamp(0.5rem, 2vw, 1.5rem)' }}>
-                        {!isOwner && (
-                            <div className="corpus-profile-slot">
-                                <div className="corpus-profile-stack">
-                                    <div className="corpus-profile-visual corpus-profile-cardShadow">
-                                        <div className="corpus-profile-cover">
-                                            {profile.cover_url ? <img src={profile.cover_url} alt="cover" /> : <div className="corpus-profile-coverEmpty" />}
-                                        </div>
-                                        <div className="corpus-profile-avatar">
-                                            {profile.avatar_url ? <img src={profile.avatar_url} alt={displayName} /> : <IconUser className="size-5 text-primary/30" />}
-                                        </div>
+                        <div className="corpus-profile-slot">
+                            <div className="corpus-profile-stack">
+                                <div className="corpus-profile-visual corpus-profile-cardShadow">
+                                    <div className="corpus-profile-cover">
+                                        {(isEditingProfile ? form.cover_url : profile.cover_url) ? <img src={(isEditingProfile ? form.cover_url : profile.cover_url) || ''} alt="cover" /> : <div className="corpus-profile-coverEmpty" />}
                                     </div>
+                                    <div className="corpus-profile-avatar">
+                                        {(isEditingProfile ? form.avatar_url : profile.avatar_url) ? <img src={(isEditingProfile ? form.avatar_url : profile.avatar_url) || ''} alt={displayName} /> : <IconUser className="size-5 text-primary/30" />}
+                                    </div>
+                                </div>
 
-                                    <div className="corpus-profile-layerStack">
-                                        <div className="corpus-profile-tableCard corpus-profile-cardShadow">
-                                            <div className="corpus-profile-cardHeading">
-                                                <PanelsTopLeft className="size-4" />
-                                                <span>profile</span>
-                                                <span className="corpus-badge" style={{ marginLeft: 'auto' }}><span>public</span></span>
-                                            </div>
+                                <div className="corpus-profile-layerStack">
+                                    <div className="corpus-profile-tableCard corpus-profile-cardShadow">
+                                        <div className="corpus-profile-cardHeading">
+                                            {isEditingProfile ? <PenLine className="size-4" /> : <PanelsTopLeft className="size-4" />}
+                                            <span>{isEditingProfile ? 'profile editor' : 'profile'}</span>
+                                            <span className="corpus-badge" style={{ marginLeft: 'auto' }}>
+                                                <span>{isEditingProfile ? (hasProfileChanges ? 'unsaved' : 'synced') : 'public'}</span>
+                                            </span>
+                                        </div>
 
-                                            <div className="corpus-profile-tableScroll custom-scrollbar">
-                                                <table className="corpus-profile-table">
-                                                    <thead>
-                                                        <tr>
-                                                            <td>field</td>
-                                                            <td>value</td>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {tableRows.map((row) => (
+                                        <div className="corpus-profile-tableScroll custom-scrollbar">
+                                            <table className="corpus-profile-table">
+                                                <thead>
+                                                    <tr>
+                                                        <td>field</td>
+                                                        <td>value</td>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {isEditingProfile ? (
+                                                        <>
+                                                            <tr><td>username</td><td><span style={{ opacity: 0.55 }}>@{profile.username || 'anonymous'}</span></td></tr>
+                                                            <tr><td>pronouns</td><td><input type="text" value={form.pronouns || ''} onChange={(e) => setForm({ ...form, pronouns: e.target.value })} placeholder="she/her" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
+                                                            <tr><td>location</td><td><input type="text" value={form.location || ''} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="istanbul, TR" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
+                                                            <tr><td>website</td><td><input type="text" value={form.website || ''} onChange={(e) => setForm({ ...form, website: e.target.value })} placeholder="https://your-site.com" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
+                                                            <tr><td>github</td><td><input type="text" value={form.github || ''} onChange={(e) => setForm({ ...form, github: e.target.value })} placeholder="https://github.com/username" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
+                                                            <tr><td>linkedin</td><td><input type="text" value={form.linkedin || ''} onChange={(e) => setForm({ ...form, linkedin: e.target.value })} placeholder="https://linkedin.com/in/username" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
+                                                            <tr><td>twitter</td><td><input type="text" value={form.twitter || ''} onChange={(e) => setForm({ ...form, twitter: e.target.value })} placeholder="https://x.com/username" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
+                                                            <tr><td>avatar</td><td><input type="text" value={form.avatar_url || ''} onChange={(e) => setForm({ ...form, avatar_url: e.target.value })} placeholder="https://example.com/photo.png" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
+                                                            <tr><td>cover</td><td><input type="text" value={form.cover_url || ''} onChange={(e) => setForm({ ...form, cover_url: e.target.value })} placeholder="https://example.com/cover.jpg" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
+                                                        </>
+                                                    ) : (
+                                                        tableRows.map((row) => (
                                                             <tr key={row.field}>
                                                                 <td>{row.field}</td>
                                                                 <td>{row.value}</td>
                                                             </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
+                                                        ))
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
 
-                                            <div className="corpus-profile-meta">
+                                        <div className="corpus-profile-meta">
+                                            {isEditingProfile ? (
+                                                <textarea
+                                                    value={form.bio || ''}
+                                                    onChange={(e) => setForm({ ...form, bio: e.target.value })}
+                                                    placeholder="tell people what you build, write, or care about"
+                                                    rows={4}
+                                                    className="w-full resize-none bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30"
+                                                    style={{ margin: 0, lineHeight: 1.6, padding: '0.75rem' }}
+                                                />
+                                            ) : (
                                                 <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.6, padding: '0.75rem' }}>
                                                     {profile.bio ? <span style={{ opacity: 0.8 }}>{profile.bio}</span> : <span style={{ opacity: 0.35, fontStyle: 'italic' }}>no bio yet</span>}
                                                 </p>
-                                            </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        )}
-
-                        {isOwner && isEditingProfile && (
-                            <div className="mx-auto w-full max-w-4xl px-2 sm:px-4 pb-4">
-                                <div className="corpus-profile-tableCard corpus-profile-cardShadow">
-                                    <div className="corpus-profile-cardHeading">
-                                        <PenLine className="size-4" />
-                                        <span>profile editor</span>
-                                        <span className="corpus-badge" style={{ marginLeft: 'auto' }}><span>{hasProfileChanges ? 'unsaved' : 'synced'}</span></span>
-                                    </div>
-
-                                    <div className="corpus-profile-tableScroll custom-scrollbar">
-                                        <table className="corpus-profile-table">
-                                            <thead>
-                                                <tr>
-                                                    <td>field</td>
-                                                    <td>value</td>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr><td>username</td><td><span style={{ opacity: 0.55 }}>@{profile.username || 'anonymous'}</span></td></tr>
-                                                <tr><td>pronouns</td><td><input type="text" value={form.pronouns || ''} onChange={(e) => setForm({ ...form, pronouns: e.target.value })} placeholder="she/her" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
-                                                <tr><td>location</td><td><input type="text" value={form.location || ''} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="istanbul, TR" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
-                                                <tr><td>website</td><td><input type="text" value={form.website || ''} onChange={(e) => setForm({ ...form, website: e.target.value })} placeholder="https://your-site.com" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
-                                                <tr><td>github</td><td><input type="text" value={form.github || ''} onChange={(e) => setForm({ ...form, github: e.target.value })} placeholder="https://github.com/username" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
-                                                <tr><td>linkedin</td><td><input type="text" value={form.linkedin || ''} onChange={(e) => setForm({ ...form, linkedin: e.target.value })} placeholder="https://linkedin.com/in/username" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
-                                                <tr><td>twitter</td><td><input type="text" value={form.twitter || ''} onChange={(e) => setForm({ ...form, twitter: e.target.value })} placeholder="https://x.com/username" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
-                                                <tr><td>avatar</td><td><input type="text" value={form.avatar_url || ''} onChange={(e) => setForm({ ...form, avatar_url: e.target.value })} placeholder="https://example.com/photo.png" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
-                                                <tr><td>cover</td><td><input type="text" value={form.cover_url || ''} onChange={(e) => setForm({ ...form, cover_url: e.target.value })} placeholder="https://example.com/cover.jpg" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    <div className="corpus-profile-meta">
-                                        <textarea
-                                            value={form.bio || ''}
-                                            onChange={(e) => setForm({ ...form, bio: e.target.value })}
-                                            placeholder="tell people what you build, write, or care about"
-                                            rows={4}
-                                            className="w-full resize-none bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30"
-                                            style={{ margin: 0, lineHeight: 1.6, padding: '0.75rem' }}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                        </div>
 
                         {showNodesSection && (
                             <div className="corpus-doc-grid-wrapper">
