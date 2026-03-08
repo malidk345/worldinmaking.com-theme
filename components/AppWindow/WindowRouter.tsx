@@ -218,7 +218,7 @@ function BlogRouteView({ slug }: { slug: string }) {
 
 /** New Canvas/Write View for Corpus documents */
 function WriteRouteView({ nodeId }: { nodeId?: string }) {
-    const { profile } = useAuth()
+    const { user } = useAuth()
     const { addToast } = useToast()
     const [title, setTitle] = useState('untitled node')
     const [content, setContent] = useState('')
@@ -255,7 +255,7 @@ function WriteRouteView({ nodeId }: { nodeId?: string }) {
             addToast('no node id — open from corpus to edit', 'error')
             return
         }
-        if (!profile?.id) {
+        if (!user) {
             addToast('you must be logged in to save', 'error')
             return
         }
