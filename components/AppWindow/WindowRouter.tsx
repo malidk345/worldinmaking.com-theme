@@ -311,8 +311,8 @@ function WriteRouteView({ nodeId, readOnly = false }: { nodeId?: string; readOnl
     if (readOnly) {
         return (
             <div className={`flex flex-col size-full overflow-y-auto overflow-x-hidden text-black transition-colors duration-500 ${themeClasses[theme]}`}>
-                <aside data-scheme="secondary" className="bg-primary p-2 border-b border-primary sticky top-0 z-50">
-                    <div className="flex items-center justify-between gap-3 px-2 py-1">
+                <aside className="sticky top-0 z-50 shrink-0">
+                    <div data-scheme="tertiary" className="mx-1 mt-1 flex items-center justify-between gap-3 rounded-md border border-primary bg-primary px-3 py-1.5">
                         <div className="flex items-center gap-2 lowercase text-primary/70 text-sm font-semibold">
                             {statusConfig[nodeStatus].icon}
                             <span>{statusConfig[nodeStatus].label} node</span>
@@ -365,9 +365,10 @@ function WriteRouteView({ nodeId, readOnly = false }: { nodeId?: string; readOnl
     return (
         <div className={`flex flex-col size-full overflow-y-auto overflow-x-hidden text-black transition-colors duration-500 ${themeClasses[theme]}`}>
             {/* Header Toolbar — same pattern as Editor/index.tsx */}
-            <aside data-scheme="secondary" className="bg-primary p-2 border-b border-primary sticky top-0 z-50">
-                <Toolbar
-                    elements={[
+            <aside className="sticky top-0 z-50 shrink-0">
+                <div data-scheme="tertiary" className="mx-1 mt-1 rounded-md border border-primary bg-primary px-1.5 py-1">
+                    <Toolbar
+                        elements={[
                         /* Cover — prompts for URL */
                         ...(!coverImage ? [{
                             type: 'button' as const,
@@ -508,8 +509,9 @@ function WriteRouteView({ nodeId, readOnly = false }: { nodeId?: string; readOnl
                                 </>
                             ),
                         },
-                    ]}
-                />
+                        ]}
+                    />
+                </div>
             </aside>
 
             {/* Scrollable Document Area Container */}
@@ -676,9 +678,10 @@ function WritePostRouteView({ postId }: { postId?: string }) {
 
     return (
         <div className="flex flex-col size-full overflow-y-auto overflow-x-hidden text-black bg-[#fafcfc] dark:bg-primary/5 transition-colors duration-500">
-            <aside data-scheme="secondary" className="bg-primary p-2 border-b border-primary sticky top-0 z-50">
-                <Toolbar
-                    elements={[
+            <aside className="sticky top-0 z-50 shrink-0">
+                <div data-scheme="tertiary" className="mx-1 mt-1 rounded-md border border-primary bg-primary px-1.5 py-1">
+                    <Toolbar
+                        elements={[
                         {
                             type: 'button' as const,
                             label: 'cover',
@@ -740,8 +743,9 @@ function WritePostRouteView({ postId }: { postId?: string }) {
                                 </>
                             ),
                         },
-                    ]}
-                />
+                        ]}
+                    />
+                </div>
             </aside>
 
             <div className="flex-col relative w-full flex-1 flex min-h-0">
