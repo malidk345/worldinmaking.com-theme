@@ -6,7 +6,7 @@ import './styles.css'
 import {
     FileText,
     ChevronDown, RefreshCw, Share, MoreHorizontal,
-    BookOpen, PenLine, Layers, Users, PanelsTopLeft,
+    BookOpen, PenLine, Layers, Users, PanelsTopLeft, Trash2,
     LogOut
 } from 'lucide-react'
 import {
@@ -212,6 +212,7 @@ export default function CorpusView({ username }: { username: string }) {
     }
 
     const handleOpenNode = (doc: NodeDoc) => {
+        if (!isOwner) return
         app?.addWindow({
             key: `node-${doc.id}`,
             title: doc.title || 'Untitled Node',
@@ -219,6 +220,24 @@ export default function CorpusView({ username }: { username: string }) {
             icon: <FileText className="size-4" />,
             props: { nodeId: doc.id, isCanvas: true }
         })
+    }
+
+    const handleDeleteNode = async (doc: NodeDoc) => {
+        if (!isOwner) return
+        if (!window.confirm(`delete node "${doc.title || 'untitled node'}"?`)) return
+
+        const { error } = await supabase
+            .from('nodes')
+            .delete()
+            .eq('id', doc.id)
+
+        if (error) {
+            addToast(`failed to delete node: ${error.message}`, 'error')
+            return
+        }
+
+        setDocs(prev => prev.filter(item => item.id !== doc.id))
+        addToast('node deleted', 'success')
     }
 
     const handleAddPost = () => {
@@ -249,6 +268,24 @@ export default function CorpusView({ username }: { username: string }) {
             path: `/posts/${post.slug}`,
             icon: <BookOpen className="size-4" />,
         })
+    }
+
+    const handleDeletePost = async (post: PostItem) => {
+        if (!isOwner) return
+        if (!window.confirm(`delete post "${post.title || 'untitled post'}"?`)) return
+
+        const { error } = await supabase
+            .from('posts')
+            .delete()
+            .eq('id', post.id)
+
+        if (error) {
+            addToast(`failed to delete post: ${error.message}`, 'error')
+            return
+        }
+
+        setPosts(prev => prev.filter(item => item.id !== post.id))
+        addToast('post deleted', 'success')
     }
 
     const filteredDocs = docs.filter(doc => {
@@ -608,9 +645,23 @@ export default function CorpusView({ username }: { username: string }) {
                                     {filteredDocs.map(doc => (
                                         <article
                                             key={doc.id}
-                                            className="corpus-doc-card"
+                                            className={`corpus-doc-card relative ${isOwner ? 'cursor-pointer' : ''}`}
                                             onClick={() => handleOpenNode(doc)}
                                         >
+                                            {isOwner && (
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        void handleDeleteNode(doc)
+                                                    }}
+                                                    className="absolute right-2 top-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded-md border border-primary/10 bg-white/80 text-primary/60 backdrop-blur hover:text-red-600"
+                                                    aria-label={`delete ${doc.title}`}
+                                                    title="delete node"
+                                                >
+                                                    <Trash2 className="size-3.5" />
+                                                </button>
+                                            )}
                                             <div className="corpus-doc-media">
                                                 <div className="corpus-doc-preview-text">{doc.preview}</div>
                                                 <div className="corpus-doc-media-fade" />
@@ -627,7 +678,7 @@ export default function CorpusView({ username }: { username: string }) {
                                                     <span>{doc.updated}</span>
                                                 </div>
                                                 <h3>{doc.title}</h3>
-                                                <p>{doc.status}</p>
+                                                <p>{isOwner ? `click to edit • ${doc.status}` : doc.status}</p>
                                             </div>
                                         </article>
                                     ))}
@@ -671,9 +722,23 @@ export default function CorpusView({ username }: { username: string }) {
                                     {posts.map(post => (
                                         <article
                                             key={post.id}
-                                            className={`corpus-doc-card ${isOwner ? 'cursor-pointer' : ''}`}
+                                            className={`corpus-doc-card relative ${isOwner ? 'cursor-pointer' : ''}`}
                                             onClick={() => handleOpenPost(post)}
                                         >
+                                            {isOwner && (
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        void handleDeletePost(post)
+                                                    }}
+                                                    className="absolute right-2 top-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded-md border border-primary/10 bg-white/80 text-primary/60 backdrop-blur hover:text-red-600"
+                                                    aria-label={`delete ${post.title}`}
+                                                    title="delete post"
+                                                >
+                                                    <Trash2 className="size-3.5" />
+                                                </button>
+                                            )}
                                             <div className="corpus-doc-media">
                                                 {post.image_url
                                                     ? <img src={post.image_url} alt={post.title} className="w-full h-full object-cover" />
