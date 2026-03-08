@@ -332,7 +332,9 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                     <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
                     <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded" onClick={refreshAll}><RefreshCw className={`size-[16px] opacity-70 ${refreshing ? 'animate-spin' : ''}`} /></OSButton>} side="bottom">refresh profile</Tooltip>
                     <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded" onClick={() => copyLink(publicProfilePath, 'profile')}><Share className="size-[16px] opacity-70" /></OSButton>} side="bottom">share profile</Tooltip>
-                    <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded" onClick={openCorpus}><PanelsTopLeft className="size-[16px] opacity-70" /></OSButton>} side="bottom">open corpus</Tooltip>
+                    {isOwner && (
+                        <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded" onClick={openCorpus}><PanelsTopLeft className="size-[16px] opacity-70" /></OSButton>} side="bottom">open corpus</Tooltip>
+                    )}
                     {profile.website && (
                         <Tooltip trigger={<a href={profile.website} target="_blank" rel="noopener noreferrer"><OSButton size="sm" className="p-1.5 h-8 w-8 !rounded"><ExternalLink className="size-[16px] opacity-70" /></OSButton></a>} side="bottom">website</Tooltip>
                     )}
