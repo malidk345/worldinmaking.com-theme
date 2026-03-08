@@ -179,22 +179,12 @@ export default function PublicProfile({ username }: PublicProfileProps) {
     }, [addWindow])
 
     const openNodeEditor = useCallback((node: NodeDoc) => {
-        if (!isOwner) {
-            addWindow({
-                key: `node-view-${node.id}`,
-                title: node.title || 'Untitled Node',
-                path: '/write',
-                icon: <FileText className="size-4" />,
-                props: { nodeId: node.id, isCanvas: true, readOnly: true },
-            })
-            return
-        }
         addWindow({
             key: `node-${node.id}`,
             title: node.title || 'Untitled Node',
             path: '/write',
             icon: <FileText className="size-4" />,
-            props: { nodeId: node.id, isCanvas: true },
+            props: { nodeId: node.id, isCanvas: true, readOnly: !isOwner },
         })
     }, [addWindow, isOwner])
 
@@ -543,22 +533,6 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                 </div>
 
                 <div className="flex items-center gap-1 justify-end flex-shrink-0">
-                    {isOwner && !isEditingProfile && (
-                        <>
-                            <OSButton size="sm" className="!px-2 h-8 !rounded flex items-center gap-1.5 flex-shrink-0" onClick={handleAddNode}>
-                                <IconPlus className="size-[14px] opacity-70" />
-                                <span className="hidden md:inline text-[12px] font-semibold">new node</span>
-                            </OSButton>
-                            <OSButton size="sm" className="!px-2 h-8 !rounded flex items-center gap-1.5 flex-shrink-0" onClick={handleAddPost}>
-                                <BookOpen className="size-[14px] opacity-70" />
-                                <span className="hidden md:inline text-[12px] font-semibold">new post</span>
-                            </OSButton>
-                            <OSButton size="sm" className="!px-2 h-8 !rounded flex items-center gap-1.5 flex-shrink-0" onClick={openProfileEditor}>
-                                <PenLine className="size-[14px] opacity-70" />
-                                <span className="hidden md:inline text-[12px] font-semibold">edit profile</span>
-                            </OSButton>
-                        </>
-                    )}
                     <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
                     <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded" onClick={refreshAll}><RefreshCw className={`size-[16px] opacity-70 ${refreshing ? 'animate-spin' : ''}`} /></OSButton>} side="bottom">refresh profile</Tooltip>
                     <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded" onClick={() => copyLink(publicProfilePath, 'profile')}><Share className="size-[16px] opacity-70" /></OSButton>} side="bottom">share profile</Tooltip>
