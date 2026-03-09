@@ -490,6 +490,20 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION get_com_post_total_votes(post_id_input INT)
+RETURNS INT AS $$
+BEGIN
+    RETURN (SELECT COALESCE(SUM(vote), 0) FROM community_post_votes WHERE post_id = post_id_input);
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION get_com_reply_total_votes(reply_id_input INT)
+RETURNS INT AS $$
+BEGIN
+    RETURN (SELECT COALESCE(SUM(vote), 0) FROM community_reply_votes WHERE reply_id = reply_id_input);
+END;
+$$ LANGUAGE plpgsql;
+
 -- Views for easier fetching
 CREATE OR REPLACE VIEW community_posts_with_stats AS
 SELECT 
@@ -588,7 +602,9 @@ CREATE INDEX IF NOT EXISTS idx_saved_posts_slug ON user_saved_posts(post_slug);
 -- ─────────────────────────────────────────────────────────────
 DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE community_posts;  EXCEPTION WHEN OTHERS THEN NULL; END $$;
 DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE community_replies; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE community_likes;   EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE post_votes;         EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE community_post_votes; EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE community_reply_votes; EXCEPTION WHEN OTHERS THEN NULL; END $$;
 DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE nodes;             EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 -- ─────────────────────────────────────────────────────────────
@@ -600,5 +616,5 @@ WHERE post_slug IS NULL
   AND title ~ '^comment_.+_\d+$';
 
 -- ============================================================
---  Done! All 9 tables are ready with full RLS.
+--  Done! All tables are ready with full RLS.
 -- ============================================================
