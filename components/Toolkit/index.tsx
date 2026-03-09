@@ -9,7 +9,7 @@ interface ToolkitProps {
     windowKey?: string
 }
 
-export function Toolkit({ children, windowKey }: ToolkitProps): React.ReactNode {
+export function Toolkit({ children, windowKey }: ToolkitProps): any {
     const { focusedWindow } = useApp()
     const targetKey = windowKey || focusedWindow?.key
 
