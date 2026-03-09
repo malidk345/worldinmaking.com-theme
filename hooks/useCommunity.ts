@@ -54,8 +54,11 @@ interface DBCommunityPost {
     created_at: string;
     post_slug?: string | null;
     profiles: Profile | Profile[];
-    total_votes: number;
-    reply_count: number;
+    total_votes?: number;
+    reply_count?: number;
+    // Fallback fields for when view doesn't exist
+    community_replies?: { count: number }[];
+    community_likes?: { count: number }[];
 }
 
 interface DBCommunityReply {
@@ -65,7 +68,7 @@ interface DBCommunityReply {
     content: string;
     created_at: string;
     profiles: Profile | Profile[];
-    total_votes: number;
+    total_votes?: number;
 }
 
 export const useCommunity = () => {
@@ -86,33 +89,41 @@ export const useCommunity = () => {
         if (!channelId && !slug && !postId) return [];
 
         try {
-            let query = supabase
-                .from('community_posts_with_stats')
-                .select('*, profiles(id, username, avatar_url)')
+            // First try fetching from the stats view (ideal for new vote system)
+            let { data, error } = await (async () => {
+                let q = supabase.from('community_posts_with_stats').select('*, profiles(id, username, avatar_url)')
+                if (postId) q = q.eq('id', Number(postId))
+                else if (slug) q = q.or(`post_slug.eq.${slug},title.ilike.comment_${slug}_%`)
+                else if (channelId) {
+                    q = q.eq('channel_id', channelId).is('post_slug', null).not('title', 'ilike', 'comment_%')
+                }
+                return q.order('created_at', { ascending: false });
+            })();
 
-            if (postId) {
-                query = query.eq('id', Number(postId))
-            } else if (slug) {
-                query = query.or(`post_slug.eq.${slug},title.ilike.comment_${slug}_%`)
-            } else if (channelId) {
-                query = query.eq('channel_id', channelId)
-                query = query.is('post_slug', null).not('title', 'ilike', 'comment_%')
+            // Fallback to direct table if view doesn't exist yet
+            if (error) {
+                logger.warn('[useCommunity] Stats view not found, falling back to direct table:', error.message);
+                let q = supabase.from('community_posts').select('*, profiles(id, username, avatar_url), community_replies(count), community_likes(count)')
+                if (postId) q = q.eq('id', Number(postId))
+                else if (slug) q = q.or(`post_slug.eq.${slug},title.ilike.comment_${slug}_%`)
+                else if (channelId) {
+                    q = q.eq('channel_id', channelId).is('post_slug', null).not('title', 'ilike', 'comment_%')
+                }
+                const fallback = await q.order('created_at', { ascending: false });
+                if (fallback.error) throw fallback.error;
+                data = fallback.data;
             }
-
-            const { data, error } = await query.order('created_at', { ascending: false });
-
-            if (error) throw error;
 
             return ((data || []) as unknown as DBCommunityPost[]).map((p) => ({
                 ...p,
                 profiles: Array.isArray(p.profiles) ? p.profiles[0] : p.profiles,
                 _count: {
-                    replies: p.reply_count || 0,
-                    likes: p.total_votes || 0
+                    replies: p.reply_count ?? p.community_replies?.[0]?.count ?? 0,
+                    likes: p.total_votes ?? p.community_likes?.[0]?.count ?? 0
                 }
             })) as unknown as CommunityPost[];
-        } catch (e: unknown) {
-            logger.error('[useCommunity] postsFetcher error:', e);
+        } catch (e: any) {
+            logger.error('[useCommunity] postsFetcher absolute error:', e.message || e);
             return [];
         }
     };
@@ -120,19 +131,30 @@ export const useCommunity = () => {
     const repliesFetcher = async (postId: number | string) => {
         if (!postId) return [];
         try {
-            const { data, error } = await supabase
+            let { data, error } = await supabase
                 .from('community_replies_with_stats')
                 .select('*, profiles(id, username, avatar_url)')
                 .eq('post_id', postId)
                 .order('created_at', { ascending: true });
-            if (error) return [];
+
+            if (error) {
+                // Fallback for replies if view doesn't exist
+                const fallback = await supabase
+                    .from('community_replies')
+                    .select('*, profiles(id, username, avatar_url)')
+                    .eq('post_id', postId)
+                    .order('created_at', { ascending: true });
+                if (fallback.error) throw fallback.error;
+                data = fallback.data;
+            }
+
             return ((data || []) as unknown as DBCommunityReply[]).map((r) => ({
                 ...r,
                 profiles: Array.isArray(r.profiles) ? r.profiles[0] : r.profiles,
                 upvotes: r.total_votes || 0
             })) as unknown as CommunityReply[];
-        } catch (e: unknown) {
-            logger.error('[useCommunity] repliesFetcher exception:', e);
+        } catch (e: any) {
+            logger.error('[useCommunity] repliesFetcher exception:', e.message || e);
             return [];
         }
     };
@@ -200,7 +222,6 @@ export const useCommunity = () => {
 
             const userId = userData.user.id;
 
-            // Get current vote
             const { data: existing } = await supabase
                 .from('community_post_votes')
                 .select('vote')
@@ -232,8 +253,8 @@ export const useCommunity = () => {
             if (activePostSlug) mutate(['community_posts_slug', activePostSlug]);
             if (activePostLookupId) mutate(['community_post_id', activePostLookupId]);
             return true;
-        } catch (e: unknown) {
-            logger.error('[useCommunity] handleVote error:', e);
+        } catch (e: any) {
+            logger.error('[useCommunity] handleVote error:', e.message || e);
             return false;
         }
     }, [activeChannelId, activePostSlug, activePostLookupId, addToast, mutate]);
