@@ -384,9 +384,9 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                 )}
 
                 {/* Main Node Content Area */}
-                <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 pb-20 flex-1 flex flex-col min-h-0 pt-6 gap-2">
-                    {/* Title Input — compact, lowercase */}
-                    <div className="shrink-0">
+                <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 pb-20 flex-1 flex flex-col min-h-0 pt-6 gap-3">
+                    {/* Title Input — framed, lowercase */}
+                    <div className="shrink-0 rounded-md border border-primary bg-primary/5 p-3">
                         <input
                             type="text"
                             value={title}
@@ -621,9 +621,9 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
             </aside>
 
             <div className="flex-col relative w-full flex-1 flex min-h-0">
-                <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 pb-20 flex-1 flex flex-col min-h-0 pt-6 gap-2">
-                    {/* Title Input — compact, lowercase */}
-                    <div className="shrink-0">
+                <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 pb-20 flex-1 flex flex-col min-h-0 pt-6 gap-3">
+                    {/* Title Input — framed, lowercase */}
+                    <div className="shrink-0 rounded-md border border-primary bg-primary/5 p-3">
                         <input
                             type="text"
                             value={title}
