@@ -67,6 +67,7 @@ interface PostItem {
     image_url?: string
     created_at: string
     published: boolean
+    is_approved: boolean
 }
 
 interface SavedPostItem {
@@ -319,7 +320,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
 
         const { data, error } = await supabase
             .from('posts')
-            .select('id, title, slug, excerpt, image_url, created_at, published')
+            .select('id, title, slug, excerpt, image_url, created_at, published, is_approved')
             .ilike('author', normalizedUsername)
             .order('created_at', { ascending: false })
 
@@ -489,63 +490,63 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                 data-scheme="tertiary"
                 className="flex w-auto mx-1 mt-1 items-center px-1.5 py-0.5 select-none gap-2 justify-between bg-primary border border-primary rounded-md shrink-0 z-10 h-10 overflow-x-auto custom-scrollbar no-scrollbar-on-mobile"
             >
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                        {isOwner && (
-                            <Tooltip
-                                trigger={
-                                    <OSButton size="sm" onClick={() => setSidebarOpen((prev) => !prev)} active={sidebarOpen} className="p-1 h-8 w-8 !rounded-md">
-                                        {sidebarOpen ? <IconSidebarOpen className="size-[18px]" /> : <IconSidebarClose className="size-[18px]" />}
-                                    </OSButton>
-                                }
-                                side="bottom"
-                            >
-                                {sidebarOpen ? 'hide' : 'show'} sidebar
-                            </Tooltip>
-                        )}
+                <div className="flex items-center gap-1 flex-shrink-0">
+                    {isOwner && (
+                        <Tooltip
+                            trigger={
+                                <OSButton size="sm" onClick={() => setSidebarOpen((prev) => !prev)} active={sidebarOpen} className="p-1 h-8 w-8 !rounded-md">
+                                    {sidebarOpen ? <IconSidebarOpen className="size-[18px]" /> : <IconSidebarClose className="size-[18px]" />}
+                                </OSButton>
+                            }
+                            side="bottom"
+                        >
+                            {sidebarOpen ? 'hide' : 'show'} sidebar
+                        </Tooltip>
+                    )}
 
-                        <div className="hidden sm:flex items-center gap-0.5">
-                            <OSButton size="sm" onClick={goBack} disabled={!canGoBack} className="p-1 h-8 w-8 !rounded-md">
-                                <IconChevronLeft className={`size-[18px] ${canGoBack ? 'opacity-100' : 'opacity-30'}`} />
-                            </OSButton>
-                            <OSButton size="sm" onClick={goForward} disabled={!canGoForward} className="p-1 h-8 w-8 !rounded-md">
-                                <IconChevronRight className={`size-[18px] ${canGoForward ? 'opacity-100' : 'opacity-30'}`} />
-                            </OSButton>
+                    <div className="hidden sm:flex items-center gap-0.5">
+                        <OSButton size="sm" onClick={goBack} disabled={!canGoBack} className="p-1 h-8 w-8 !rounded-md">
+                            <IconChevronLeft className={`size-[18px] ${canGoBack ? 'opacity-100' : 'opacity-30'}`} />
+                        </OSButton>
+                        <OSButton size="sm" onClick={goForward} disabled={!canGoForward} className="p-1 h-8 w-8 !rounded-md">
+                            <IconChevronRight className={`size-[18px] ${canGoForward ? 'opacity-100' : 'opacity-30'}`} />
+                        </OSButton>
+                    </div>
+
+                    <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
+
+                    {!isOwner && (
+                        <div className="flex items-center gap-1.5 ml-1 min-w-0">
+                            {profile.avatar_url ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={profile.avatar_url} alt={displayName} className="size-5 rounded-full object-cover border border-primary/20 shrink-0" />
+                            ) : (
+                                <div className="size-5 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 shrink-0">
+                                    <span className="text-[9px] font-black text-primary/60">{displayName.charAt(0).toUpperCase()}</span>
+                                </div>
+                            )}
+                            <h1 className="text-[13px] font-bold tracking-tight text-primary leading-none m-0 whitespace-nowrap">{displayName}&apos;s profile</h1>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-primary/30 border border-primary/15 px-1.5 py-0.5 rounded hidden sm:inline">public</span>
                         </div>
+                    )}
+                </div>
 
-                        <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
-
-                        {!isOwner && (
-                            <div className="flex items-center gap-1.5 ml-1 min-w-0">
-                                {profile.avatar_url ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
-                                    <img src={profile.avatar_url} alt={displayName} className="size-5 rounded-full object-cover border border-primary/20 shrink-0" />
-                                ) : (
-                                    <div className="size-5 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 shrink-0">
-                                        <span className="text-[9px] font-black text-primary/60">{displayName.charAt(0).toUpperCase()}</span>
-                                    </div>
-                                )}
-                                <h1 className="text-[13px] font-bold tracking-tight text-primary leading-none m-0 whitespace-nowrap">{displayName}&apos;s profile</h1>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-primary/30 border border-primary/15 px-1.5 py-0.5 rounded hidden sm:inline">public</span>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="flex items-center gap-1 justify-end flex-shrink-0">
-                        {isOwner && !isEditingProfile && (
-                            <>
-                                <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
-                                <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-md flex items-center gap-1.5" onClick={handleAddNode}><IconPlus className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">new node</span></OSButton>} side="bottom">new node</Tooltip>
-                                <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-md flex items-center gap-1.5" onClick={handleAddPost}><BookOpen className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">new post</span></OSButton>} side="bottom">new post</Tooltip>
-                                <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-md flex items-center gap-1.5" onClick={openProfileEditor}><PenLine className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">edit profile</span></OSButton>} side="bottom">edit profile</Tooltip>
-                            </>
-                        )}
-                        <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
-                        <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded" onClick={refreshAll}><RefreshCw className={`size-[16px] opacity-70 ${refreshing ? 'animate-spin' : ''}`} /></OSButton>} side="bottom">refresh profile</Tooltip>
-                        <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded" onClick={() => copyLink(publicProfilePath, 'profile')}><Share className="size-[16px] opacity-70" /></OSButton>} side="bottom">share profile</Tooltip>
-                        {profile.website && (
-                            <Tooltip trigger={<a href={profile.website} target="_blank" rel="noopener noreferrer"><OSButton size="sm" className="p-1.5 h-8 w-8 !rounded"><ExternalLink className="size-[16px] opacity-70" /></OSButton></a>} side="bottom">website</Tooltip>
-                        )}
-                    </div>
+                <div className="flex items-center gap-1 justify-end flex-shrink-0">
+                    {isOwner && !isEditingProfile && (
+                        <>
+                            <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
+                            <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-md flex items-center gap-1.5" onClick={handleAddNode}><IconPlus className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">new node</span></OSButton>} side="bottom">new node</Tooltip>
+                            <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-md flex items-center gap-1.5" onClick={handleAddPost}><BookOpen className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">new post</span></OSButton>} side="bottom">new post</Tooltip>
+                            <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-md flex items-center gap-1.5" onClick={openProfileEditor}><PenLine className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">edit profile</span></OSButton>} side="bottom">edit profile</Tooltip>
+                        </>
+                    )}
+                    <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
+                    <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded" onClick={refreshAll}><RefreshCw className={`size-[16px] opacity-70 ${refreshing ? 'animate-spin' : ''}`} /></OSButton>} side="bottom">refresh profile</Tooltip>
+                    <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded" onClick={() => copyLink(publicProfilePath, 'profile')}><Share className="size-[16px] opacity-70" /></OSButton>} side="bottom">share profile</Tooltip>
+                    {profile.website && (
+                        <Tooltip trigger={<a href={profile.website} target="_blank" rel="noopener noreferrer"><OSButton size="sm" className="p-1.5 h-8 w-8 !rounded"><ExternalLink className="size-[16px] opacity-70" /></OSButton></a>} side="bottom">website</Tooltip>
+                    )}
+                </div>
             </div>
 
             <div className="flex flex-1 min-h-0 overflow-hidden relative bg-[#fafcfc] dark:bg-primary">
@@ -801,7 +802,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                                     {post.image_url ? <img src={post.image_url} alt={post.title} className="size-full object-cover" /> : <div className="corpus-doc-preview-text">{post.excerpt || 'open the full post to read more'}</div>}
                                                     <div className="corpus-doc-media-fade" />
-                                                    <div className="corpus-doc-badge"><ArrowUpRight className="size-3" /><span>{post.published ? 'post' : 'draft'}</span></div>
+                                                    <div className="corpus-doc-badge"><ArrowUpRight className="size-3" /><span>{post.published ? (post.is_approved ? 'post' : 'pending') : 'draft'}</span></div>
                                                 </div>
                                                 <div className="corpus-doc-info">
                                                     <div><BookOpen className="size-3.5" /><span>{relativeTime(post.created_at)}</span></div>
@@ -830,7 +831,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                             <article
                                                 key={`${savedPost.post_slug}-${savedPost.saved_at}`}
                                                 className="corpus-doc-card cursor-pointer"
-                                                onClick={() => openPost({ id: savedPost.post_slug, title: savedPost.post_title || savedPost.post_slug, slug: savedPost.post_slug, created_at: savedPost.saved_at, published: true })}
+                                                onClick={() => openPost({ id: savedPost.post_slug, title: savedPost.post_title || savedPost.post_slug, slug: savedPost.post_slug, created_at: savedPost.saved_at, published: true, is_approved: true })}
                                             >
                                                 <div className="corpus-doc-media">
                                                     <div className="corpus-doc-preview-text">{savedPost.post_title || savedPost.post_slug}</div>

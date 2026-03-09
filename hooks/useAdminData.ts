@@ -5,8 +5,6 @@ import { supabase } from '../lib/supabase';
 import { useToast } from '../context/ToastContext';
 import logger from '../utils/logger';
 
-
-
 export interface AdminPost {
     id: string;
     title: string;
@@ -22,6 +20,7 @@ export interface AdminPost {
     isLocal?: boolean;
     translations?: Record<string, { title: string, content: string, excerpt?: string }>;
     language?: string;
+    is_approved: boolean;
 }
 
 export interface WriterApplication {
@@ -168,6 +167,33 @@ export const useAdminData = () => {
         }
     }, [addToast]);
 
+    const approvePost = useCallback(async (id: string, approved: boolean = true) => {
+        try {
+            const { data, error: updateError } = await supabase
+                .from('posts')
+                .update({ is_approved: approved })
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (updateError) {
+                logger.error('[useAdminData] approvePost error:', updateError);
+                addToast(updateError.message || 'failed to update approval status', 'error');
+                return null;
+            }
+
+            addToast(approved ? 'post approved' : 'approval revoked', 'success');
+            if (data) {
+                setPosts(prev => prev.map(p => p.id === id ? (data as AdminPost) : p));
+            }
+            return data as AdminPost;
+        } catch (e: unknown) {
+            logger.error('[useAdminData] approvePost exception:', e);
+            addToast('failed to update approval status', 'error');
+            return null;
+        }
+    }, [addToast]);
+
     const fetchWriterApplications = useCallback(async () => {
         try {
             setWriterApplicationsLoading(true);
@@ -219,8 +245,6 @@ export const useAdminData = () => {
         }
     }, [addToast]);
 
-    // ─── Community Comments Management ───────────────────────────
-
     const fetchCommunityPosts = useCallback(async () => {
         try {
             setCommunityLoading(true);
@@ -259,12 +283,10 @@ export const useAdminData = () => {
             }
 
             if (count === 0) {
-                // RLS policy likely blocked the update (admin can't edit others' comments)
                 addToast('update blocked — only the comment author or a service-role admin can edit', 'warning');
                 return null;
             }
 
-            // Fetch the updated post with profile data
             const { data: refreshed } = await supabase
                 .from('community_posts')
                 .select('*, profiles(id, username, avatar_url)')
@@ -275,7 +297,6 @@ export const useAdminData = () => {
             if (refreshed) {
                 setCommunityPosts(prev => prev.map(p => p.id === id ? (refreshed as AdminCommunityPost) : p));
             } else {
-                // Even if we can't re-fetch, update the local state optimistically
                 setCommunityPosts(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
             }
             return refreshed;
@@ -288,9 +309,7 @@ export const useAdminData = () => {
 
     const deleteCommunityPost = useCallback(async (id: number) => {
         try {
-            // First delete all replies for this post
             await supabase.from('community_replies').delete().eq('post_id', id);
-            // Then delete the post itself
             const { error: deleteError } = await supabase
                 .from('community_posts')
                 .delete()
@@ -358,7 +377,6 @@ export const useAdminData = () => {
                 return null;
             }
 
-            // Fetch the updated reply with profile data
             const { data: refreshed } = await supabase
                 .from('community_replies')
                 .select('*, profiles(id, username, avatar_url)')
@@ -441,5 +459,6 @@ export const useAdminData = () => {
         updateCommunityReply,
         deleteCommunityReply,
         fetchTotalUsers,
+        approvePost,
     };
 };

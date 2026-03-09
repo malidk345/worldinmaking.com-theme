@@ -170,6 +170,7 @@ CREATE TABLE IF NOT EXISTS posts (
     ribbon        TEXT DEFAULT '#3546AB',
     translations  JSONB DEFAULT '{}',
     language      TEXT DEFAULT 'en',
+    is_approved   BOOLEAN DEFAULT false,
     created_at    TIMESTAMPTZ DEFAULT now()
 );
 
@@ -267,6 +268,7 @@ END $$;
 CREATE INDEX IF NOT EXISTS idx_posts_slug ON posts(slug);
 CREATE INDEX IF NOT EXISTS idx_posts_published ON posts(published);
 CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_posts_is_approved ON posts(is_approved);
 
 -- ─────────────────────────────────────────────────────────────
 -- 4. COMMUNITY CHANNELS

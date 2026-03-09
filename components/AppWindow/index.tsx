@@ -127,14 +127,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
 
     const onAnimationComplete = () => {
         setAnimating(false)
-        if (animationStartTimeRef.current) {
-            const actualDuration = performance.now() - animationStartTimeRef.current
-            // If animation takes significantly longer than expected (> 700ms), warn user
-            if (actualDuration > 700 && !siteSettings.performanceBoost) {
-                addToast("Animations are running slow. Consider enabling performance boost in system settings.", 'warning', "Performance Note")
-            }
-            animationStartTimeRef.current = null
-        }
+        animationStartTimeRef.current = null
         if (minimizing) {
             setMinimizing(false)
             setAnimating(true)

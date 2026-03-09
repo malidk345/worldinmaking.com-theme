@@ -24,6 +24,7 @@ export interface Post {
     ribbon?: string;
     translations?: Record<string, { title: string, content: string, excerpt?: string }>;
     language?: string;
+    is_approved: boolean;
     authors?: { name: string, avatar: string, username?: string }[];
     tags?: string[];
 }
@@ -44,6 +45,7 @@ interface DBPost {
     ribbon?: string;
     translations?: Record<string, { title: string, content: string, excerpt?: string }>;
     language?: string;
+    is_approved?: boolean;
 }
 
 
@@ -128,6 +130,7 @@ const adaptPost = (p: DBPost): Post | null => {
         ribbon: p.ribbon || '#3546AB',
         translations: p.translations || {},
         language: p.language || 'en',
+        is_approved: Boolean(p.is_approved),
         authors: [{ name: p.author || 'Unknown', avatar: p.author_avatar || '', username: p.author || 'Unknown' }]
     };
 };
@@ -139,6 +142,7 @@ const postsFetcher = async () => {
             .from('posts')
             .select('*')
             .eq('published', true)
+            .eq('is_approved', true)
             .order('created_at', { ascending: false });
 
         if (error) {

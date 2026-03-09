@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { IconNewspaper, IconUser, IconActivity, IconTerminal, IconMessage } from '@posthog/icons'
 import OSButton from 'components/OSButton'
-import { Edit, Save, Settings, Trash2, Plus, ArrowLeft, MessageSquare, ChevronDown, ChevronUp, Search } from 'lucide-react'
+import { Edit, Save, Settings, Trash2, Plus, ArrowLeft, MessageSquare, ChevronDown, ChevronUp, Search, Hash } from 'lucide-react'
 import RichTextEditor, { saveDraftToStorage, loadDraftFromStorage, clearDraftFromStorage } from './RichTextEditor'
 import { useAdminData, AdminPost } from '../../hooks/useAdminData'
 import { useAuth } from '../../context/AuthContext'
@@ -112,7 +112,11 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
         fetchCommunityReplies,
         updateCommunityReply,
         deleteCommunityReply,
+        approvePost,
     } = useAdminData()
+
+    // Content management filter
+    const [contentFilter, setContentFilter] = useState<'all' | 'published' | 'draft' | 'pending'>('all')
 
     // Comments tab state
     const [commentFilter, setCommentFilter] = useState<'posts' | 'replies'>('posts')
@@ -306,7 +310,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                             <StatCard title="total views" value="---" change="0%" />
                             <StatCard title="active users" value={totalUsers.toString()} change="---" />
-                            <StatCard title="total posts" value={posts.length.toString()} change={(posts.length > 0 ? "+" + posts.length : "0")} />
+                            <StatCard title="pending approvals" value={posts.filter(p => !p.is_approved && p.published).length.toString()} change={posts.filter(p => !p.is_approved && p.published).length > 0 ? "action" : "clear"} />
                             <StatCard title="transmissions" value={(communityPosts.length + communityReplies.length).toString()} change="0" />
                         </div>
 
@@ -568,12 +572,25 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                 <h2 className="text-xs font-black uppercase tracking-widest text-black/30">publishing console</h2>
                                 <p className="text-[10px] text-black/20 lowercase">manage and curate your nodes</p>
                             </div>
-                            <OSButton size="sm" onClick={() => setIsCreating(true)} className="!bg-black !text-white hover:!bg-black/90 shadow-lg shadow-black/10">
-                                <div className="flex items-center gap-1.5 px-1 py-0.5">
-                                    <Plus className="size-3.5" />
-                                    <span className="text-xs font-bold lowercase">new node</span>
+                            <div className="flex items-center gap-2">
+                                <div className="hidden sm:flex items-center bg-black/5 p-0.5 rounded-sm">
+                                    {(['all', 'published', 'draft', 'pending'] as const).map((f) => (
+                                        <button
+                                            key={f}
+                                            onClick={() => setContentFilter(f)}
+                                            className={`px-2 py-1 text-[9px] font-black uppercase tracking-wider rounded-sm transition-all ${contentFilter === f ? 'bg-white text-black shadow-sm' : 'text-black/30 hover:text-black/60'}`}
+                                        >
+                                            {f}
+                                        </button>
+                                    ))}
                                 </div>
-                            </OSButton>
+                                <OSButton size="sm" onClick={() => setIsCreating(true)} className="!bg-black !text-white hover:!bg-black/90 shadow-lg shadow-black/10">
+                                    <div className="flex items-center gap-1.5 px-1 py-0.5">
+                                        <Plus className="size-3.5" />
+                                        <span className="text-xs font-bold lowercase">new node</span>
+                                    </div>
+                                </OSButton>
+                            </div>
                         </div>
 
                         <div className="flex-grow overflow-auto custom-scrollbar bg-white/50 border border-black/5 rounded-sm shadow-inner min-h-0">
@@ -598,40 +615,75 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
 
                             {!loading && posts.length > 0 && (
                                 <div className="grid grid-cols-1 gap-px bg-black/5">
-                                    {posts.map(post => (
-                                        <div key={post.id} className="bg-white px-4 py-3 flex items-center justify-between hover:bg-neutral-50 group transition-all cursor-default">
-                                            <div className="flex flex-col gap-1 min-w-0 pr-4">
-                                                <div className="flex items-center gap-2 flex-wrap">
-                                                    <span className="text-[13px] font-bold text-black/90 lowercase group-hover:text-black transition-colors">{post.title}</span>
-                                                    <div className="flex gap-1">
-                                                        {!post.published && (
-                                                            <span className="bg-amber-50 text-amber-700 text-[8px] px-1.5 py-0.5 rounded-full font-black border border-amber-200/50 lowercase tracking-wider">draft</span>
-                                                        )}
-                                                        {post.isLocal && (
-                                                            <span className="bg-neutral-100 text-black/40 text-[8px] px-1.5 py-0.5 rounded-full font-black border border-black/10 lowercase tracking-wider">local</span>
+                                    {posts
+                                        .filter(p => {
+                                            if (contentFilter === 'published') return p.published
+                                            if (contentFilter === 'draft') return !p.published
+                                            if (contentFilter === 'pending') return p.published && !p.is_approved
+                                            return true
+                                        })
+                                        .map(post => (
+                                            <div key={post.id} className="bg-white px-4 py-3 flex items-center justify-between hover:bg-neutral-50 group transition-all cursor-default text-black">
+                                                <div className="flex flex-col gap-1 min-w-0 pr-4">
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <span className="text-[13px] font-bold text-black/90 lowercase group-hover:text-black transition-colors">{post.title}</span>
+                                                        <div className="flex gap-1 items-center">
+                                                            {!post.published && (
+                                                                <span className="bg-amber-50 text-amber-700 text-[8px] px-1.5 py-0.5 rounded-full font-black border border-amber-200/50 lowercase tracking-wider">draft</span>
+                                                            )}
+                                                            {post.published && !post.is_approved && (
+                                                                <span className="bg-purple-50 text-purple-700 text-[8px] px-1.5 py-0.5 rounded-full font-black border border-purple-200/50 lowercase tracking-wider animate-pulse">awaiting approval</span>
+                                                            )}
+                                                            {post.published && post.is_approved && (
+                                                                <span className="bg-emerald-50 text-emerald-700 text-[8px] px-1.5 py-0.5 rounded-full font-black border border-emerald-200/50 lowercase tracking-wider">live</span>
+                                                            )}
+                                                            {post.isLocal && (
+                                                                <span className="bg-neutral-100 text-black/40 text-[8px] px-1.5 py-0.5 rounded-full font-black border border-black/10 lowercase tracking-wider">local</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 text-[10px] text-black/25 lowercase font-medium">
+                                                        <span className="flex items-center gap-1"><IconActivity className="size-3" /> {dayjs(post.created_at).format('MMM D, YYYY')}</span>
+                                                        <span>·</span>
+                                                        <span className="opacity-60 truncate">/{post.slug}</span>
+                                                        {post.author && (
+                                                            <>
+                                                                <span>·</span>
+                                                                <span className="font-bold text-black/40">by {post.author}</span>
+                                                            </>
                                                         )}
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center gap-2 text-[10px] text-black/25 lowercase font-medium">
-                                                    <span className="flex items-center gap-1"><IconActivity className="size-3" /> {dayjs(post.created_at).format('MMM D, YYYY')}</span>
-                                                    <span>·</span>
-                                                    <span className="opacity-60 truncate">/{post.slug}</span>
+                                                <div className={`flex items-center gap-1 flex-shrink-0 transition-all duration-300 ${isMobile ? 'opacity-100' : 'opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0'}`}>
+                                                    {post.published && (
+                                                        <OSButton
+                                                            size="xs"
+                                                            variant="secondary"
+                                                            onClick={() => approvePost(post.id, !post.is_approved)}
+                                                            className={post.is_approved ? 'hover:!bg-amber-50 hover:!text-amber-600' : 'hover:!bg-emerald-50 hover:!text-emerald-600 !border-emerald-200 !text-emerald-700 !bg-emerald-50/30'}
+                                                            title={post.is_approved ? 'revoke approval' : 'approve publication'}
+                                                        >
+                                                            {post.is_approved ? 'unapprove' : (
+                                                                <div className="flex items-center gap-1">
+                                                                    <Hash className="size-3" />
+                                                                    <span>approve</span>
+                                                                </div>
+                                                            )}
+                                                        </OSButton>
+                                                    )}
+                                                    <OSButton size="xs" variant="secondary" onClick={() => handleEditClick(post)} className="hover:!bg-black hover:!text-white">
+                                                        <Edit className="size-3" />
+                                                    </OSButton>
+                                                    {!post.isLocal && (
+                                                        <OSButton size="xs" variant="secondary" onClick={() => {
+                                                            if (window.confirm('permanently delete this node?')) deletePost(post.id)
+                                                        }} className="hover:!bg-rose-50 hover:!text-rose-600">
+                                                            <Trash2 className="size-3" />
+                                                        </OSButton>
+                                                    )}
                                                 </div>
                                             </div>
-                                            <div className={`flex items-center gap-1 flex-shrink-0 transition-all duration-300 ${isMobile ? 'opacity-100' : 'opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0'}`}>
-                                                <OSButton size="xs" variant="secondary" onClick={() => handleEditClick(post)} className="hover:!bg-black hover:!text-white">
-                                                    <Edit className="size-3" />
-                                                </OSButton>
-                                                {!post.isLocal && (
-                                                    <OSButton size="xs" variant="secondary" onClick={() => {
-                                                        if (window.confirm('permanently delete this node?')) deletePost(post.id)
-                                                    }} className="hover:!bg-rose-50 hover:!text-rose-600">
-                                                        <Trash2 className="size-3" />
-                                                    </OSButton>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
+                                        ))}
                                 </div>
                             )}
                         </div>

@@ -524,7 +524,7 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
 }
 
 function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow }) {
-    const { user, profile } = useAuth()
+    const { user, profile, isAdmin } = useAuth()
     const { addToast } = useToast()
     const [currentPostId, setCurrentPostId] = useState<string | undefined>(postId)
     const [title, setTitle] = useState('untitled post')
@@ -578,6 +578,7 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
             published: nextPublished,
             author: profile.username,
             author_avatar: profile.avatar_url || '',
+            is_approved: isAdmin,
         }
 
         if (currentPostId) {
