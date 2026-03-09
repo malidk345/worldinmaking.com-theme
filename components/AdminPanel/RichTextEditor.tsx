@@ -19,7 +19,7 @@ import 'highlight.js/styles/github.css' // Light mode theme to prevent white tex
 import {
     Bold, Italic, List, ListOrdered, Quote, Heading2, Heading3,
     Link as LinkIcon, Image as ImageIcon, Undo, Redo, Code,
-    Maximize2, Minimize2, Eye, EyeOff, Save,
+    Maximize2, Minimize2, Save,
     Underline as UnderlineIcon, Highlighter,
     Terminal, Table as TableIcon, MessageSquareWarning, BookMarked,
     Plus
@@ -115,52 +115,6 @@ export const ReferencesNode = Node.create({
     },
 })
 
-// --- Auto-Save Helpers ---
-const DRAFT_STORAGE_KEY = 'wim_admin_draft'
-
-interface DraftData {
-    title: string
-    content: string
-    excerpt: string
-    category: string
-    imageUrl: string
-    slug: string
-    savedAt: string
-}
-
-export function saveDraftToStorage(data: Omit<DraftData, 'savedAt'>) {
-    try {
-        const draft: DraftData = { ...data, savedAt: new Date().toISOString() }
-        localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft))
-    } catch { /* quota exceeded or private mode */ }
-}
-
-export function loadDraftFromStorage(): DraftData | null {
-    try {
-        const raw = localStorage.getItem(DRAFT_STORAGE_KEY)
-        if (!raw) return null
-        return JSON.parse(raw) as DraftData
-    } catch { return null }
-}
-
-export function clearDraftFromStorage() {
-    try { localStorage.removeItem(DRAFT_STORAGE_KEY) } catch { /* noop */ }
-}
-
-// --- Draft Helpers ---
-
-// --- Word Count ---
-function getWordCount(html: string): number {
-    const text = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
-    if (!text) return 0
-    return text.split(' ').length
-}
-
-function getReadingTime(wordCount: number): string {
-    const minutes = Math.ceil(wordCount / 200)
-    return `${minutes} min`
-}
-
 // --- Main Editor ---
 interface RichTextEditorProps {
     content: string
@@ -172,9 +126,7 @@ interface RichTextEditorProps {
 
 const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMode, actions }: RichTextEditorProps) => {
     const { focusedWindow } = useApp()
-    const [showPreview, setShowPreview] = useState(false)
-    const [lastSaved, setLastSaved] = useState<string | null>(null)
-    const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const [lastSaved] = useState<string | null>(null)
 
     const editor = useEditor({
         immediatelyRender: false,
@@ -211,11 +163,6 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
         onUpdate: ({ editor }) => {
             const html = editor.getHTML()
             onChange(html)
-
-            if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
-            autoSaveTimerRef.current = setTimeout(() => {
-                setLastSaved(new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }))
-            }, 2000)
         },
         editorProps: {
             attributes: {
@@ -385,13 +332,15 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
                             {focusMode ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
                         </button>
                     )}
-                    <button
-                        onClick={() => setShowPreview(!showPreview)}
-                        className={`p-1.5 rounded transition-colors ${showPreview ? 'bg-black text-white' : 'text-black/40 hover:bg-black/10 hover:text-black'}`}
-                        title={showPreview ? 'Hide Preview' : 'Show Preview'}
-                    >
-                        {showPreview ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                    </button>
+                    {onToggleFocusMode && (
+                        <button
+                            onClick={onToggleFocusMode}
+                            className={`p-1.5 rounded transition-colors ${focusMode ? 'bg-black text-white' : 'text-black/40 hover:bg-black/10 hover:text-black'}`}
+                            title={focusMode ? 'Exit Focus' : 'Focus Mode'}
+                        >
+                            {focusMode ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
+                        </button>
+                    )}
                 </>
             ),
         }
@@ -403,13 +352,6 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
             editor.commands.setContent(content)
         }
     }, [content, editor])
-
-    // Cleanup timer on unmount
-    useEffect(() => {
-        return () => {
-            if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
-        }
-    }, [])
 
     // Keyboard shortcut: Ctrl+Shift+F for focus mode
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -423,11 +365,6 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [handleKeyDown])
-
-    const wordCount = getWordCount(content)
-
-    // On mobile, disable split preview
-    const canShowPreview = showPreview
 
     return (
         <div className={`border border-[#1E2F46]/15 rounded-sm bg-white overflow-hidden flex flex-col ${focusMode ? 'h-screen fixed inset-0 z-[100]' : 'h-full'}`}>
@@ -443,38 +380,9 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
                 )}
             </Toolkit>
 
-            {/* Editor + Preview */}
-            <div className={`order-1 flex-1 flex ${canShowPreview ? 'flex-row' : 'flex-col'} min-h-0 overflow-hidden`}>
-                {/* Editor */}
-                <div className={`${canShowPreview ? 'w-1/2 border-r border-[#1E2F46]/10' : 'w-full'} overflow-auto bg-white`}>
-                    <EditorContent editor={editor} />
-                </div>
-
-                {/* Live Preview */}
-                {canShowPreview && (
-                    <div className="w-1/2 overflow-auto bg-[#f8f9fb] border-l border-[#1E2F46]/10 px-5 py-4">
-                        <div className="text-[9px] font-black uppercase tracking-widest text-black/30 mb-4 select-none">canlı önizleme</div>
-                        <div
-                            className="prose prose-sm max-w-none prose-stone text-black prose-headings:text-black prose-p:text-black prose-strong:text-black prose-a:text-primary prose-a:font-medium prose-a:no-underline hover:prose-a:underline prose-code:text-black prose-code:bg-black/5 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none prose-pre:bg-black/5 prose-pre:text-black prose-pre:border prose-pre:border-black/10 prose-blockquote:text-black/80 prose-blockquote:border-black/20 prose-blockquote:font-normal prose-blockquote:not-italic prose-li:text-black prose-td:border-black/10 prose-th:border-black/10 prose-th:text-black prose-hr:border-black/10"
-                            dangerouslySetInnerHTML={{ __html: content }}
-                        />
-                    </div>
-                )}
-            </div>
-
-            {/* Status Bar */}
-            <div className="order-3 flex items-center justify-between px-2.5 py-1 border-t border-black/[0.08] bg-[#f8f9fb] text-[10px] lowercase text-black/40">
-                <div className="flex items-center gap-2">
-                    <span className="font-medium bg-black/5 px-1.5 rounded-sm">{wordCount} words</span>
-                    <span>·</span>
-                    <span>{getReadingTime(wordCount)}</span>
-                </div>
-                {lastSaved && (
-                    <span className="flex items-center gap-1 opacity-60">
-                        <Save className="size-2.5" />
-                        saved {lastSaved}
-                    </span>
-                )}
+            {/* Editor */}
+            <div className="flex-1 overflow-auto bg-white min-h-0">
+                <EditorContent editor={editor} />
             </div>
         </div>
     )
