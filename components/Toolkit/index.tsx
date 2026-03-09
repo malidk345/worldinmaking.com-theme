@@ -9,6 +9,7 @@ interface ToolkitProps {
     windowKey?: string
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function Toolkit({ children, windowKey }: ToolkitProps): any {
     const { focusedWindow } = useApp()
     const targetKey = windowKey || focusedWindow?.key
