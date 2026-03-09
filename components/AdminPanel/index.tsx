@@ -589,7 +589,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                         <IconNewspaper className="size-8 text-black/10" />
                                     </div>
                                     <p className="text-xs font-bold text-black/40 lowercase mb-1">no articles found in the database</p>
-                                    <p className="text-[10px] text-black/20 lowercase mb-6">your thinking hasn't been archived yet</p>
+                                    <p className="text-[10px] text-black/20 lowercase mb-6">your thinking hasn&apos;t been archived yet</p>
                                     <OSButton size="sm" onClick={() => setIsCreating(true)}>
                                         <span className="lowercase font-bold px-2">create first node</span>
                                     </OSButton>
@@ -815,6 +815,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                 <div className="p-3 flex items-start justify-between gap-2 border-b border-black/[0.02]">
                                                     <div className="flex items-center gap-3 flex-1 min-w-0">
                                                         <div className="size-8 rounded-full border border-black/5 bg-black/5 flex-shrink-0 overflow-hidden">
+                                                            {/* eslint-disable-next-line @next/next/no-img-element */}
                                                             <img
                                                                 src={getProfile(cp.profiles)?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${getProfile(cp.profiles)?.username}`}
                                                                 alt=""
@@ -891,6 +892,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                                 <div key={reply.id} className="p-3 pl-14 flex items-start justify-between group bg-white/50">
                                                                     <div className="flex gap-3">
                                                                         <div className="size-6 rounded-full border border-black/5 bg-black/5 flex-shrink-0 overflow-hidden">
+                                                                            {/* eslint-disable-next-line @next/next/no-img-element */}
                                                                             <img
                                                                                 src={getProfile(reply.profiles)?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${getProfile(reply.profiles)?.username}`}
                                                                                 alt=""
@@ -934,6 +936,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                 <div key={reply.id} className="bg-white border border-black/5 rounded-sm p-3 flex items-start justify-between gap-3 shadow-[0_1px_2px_rgba(0,0,0,0.01)] hover:shadow-md transition-shadow">
                                                     <div className="flex items-start gap-4 flex-1">
                                                         <div className="size-8 rounded-full border border-black/5 bg-black/5 flex-shrink-0 overflow-hidden">
+                                                            {/* eslint-disable-next-line @next/next/no-img-element */}
                                                             <img
                                                                 src={getProfile(reply.profiles)?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${getProfile(reply.profiles)?.username}`}
                                                                 alt=""
