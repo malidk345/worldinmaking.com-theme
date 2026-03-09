@@ -579,10 +579,10 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                 <div className="flex items-center gap-1.5 flex-wrap">
                                                     <span className="text-xs font-black text-black lowercase truncate">{post.title}</span>
                                                     {!post.published && (
-                                                        <span className="bg-neutral-100 text-black/40 text-[9px] px-1 py-px rounded-sm font-black border border-black/10 uppercase tracking-wider shrink-0">draft</span>
+                                                        <span className="bg-neutral-100 text-black/40 text-[9px] px-1 py-px rounded-sm font-black border border-black/10 lowercase tracking-wider shrink-0">draft</span>
                                                     )}
                                                     {post.isLocal && (
-                                                        <span className="bg-neutral-100 text-black/40 text-[9px] px-1 py-px rounded-sm font-black border border-black/10 uppercase tracking-wider shrink-0">local</span>
+                                                        <span className="bg-neutral-100 text-black/40 text-[9px] px-1 py-px rounded-sm font-black border border-black/10 lowercase tracking-wider shrink-0">local</span>
                                                     )}
                                                 </div>
                                                 <div className="flex items-center gap-1.5 text-[9px] text-black/30 lowercase">
@@ -943,7 +943,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
             case 'settings': {
                 return (
                     <div className="p-4 h-full flex flex-col text-primary">
-                        <h2 className="text-sm font-bold mb-4">system settings</h2>
+                        <h2 className="text-sm font-bold mb-4 lowercase">system settings</h2>
                         <div className="border border-primary rounded flex-1 bg-accent/5 flex items-center justify-center">
                             <div className="text-center p-4">
                                 <Settings className="size-8 text-primary/20 mx-auto mb-2" />

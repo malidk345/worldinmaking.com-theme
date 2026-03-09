@@ -309,7 +309,7 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
 
     if (readOnly) {
         return (
-            <div className={`flex flex-col size-full overflow-y-auto overflow-x-hidden text-black transition-colors duration-500 ${themeClasses[theme]}`}>
+            <div className={`flex flex-col size-full overflow-hidden text-black transition-colors duration-500 ${themeClasses[theme]}`}>
                 <aside className="sticky top-0 z-50 shrink-0">
                     <div data-scheme="tertiary" className="mx-1 mt-1 flex items-center justify-between gap-3 rounded-md border border-primary bg-primary px-3 py-1.5">
                         <div className="flex items-center gap-2 lowercase text-primary/70 text-sm font-semibold">
@@ -362,7 +362,7 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
     }
 
     return (
-        <div className={`flex flex-col size-full overflow-y-auto overflow-x-hidden text-black transition-colors duration-500 ${themeClasses[theme]}`}>
+        <div className={`flex flex-col size-full overflow-hidden text-black transition-colors duration-500 ${themeClasses[theme]}`}>
             <aside className="sticky top-0 z-50 shrink-0">
                 <div id={`window-inner-header-${item.key}`} className="pointer-events-auto" />
             </aside>
@@ -615,7 +615,7 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
     }
 
     return (
-        <div className="flex flex-col size-full overflow-y-auto overflow-x-hidden text-black bg-[#fafcfc] dark:bg-primary/5 transition-colors duration-500">
+        <div className="flex flex-col size-full overflow-hidden text-black bg-[#fafcfc] dark:bg-primary/5 transition-colors duration-500">
             <aside className="sticky top-0 z-50 shrink-0">
                 <div id={`window-inner-header-${item.key}`} className="pointer-events-auto" />
             </aside>

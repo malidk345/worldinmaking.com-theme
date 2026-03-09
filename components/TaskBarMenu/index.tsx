@@ -315,6 +315,7 @@ export default function TaskBarMenu() {
                         </div>
                     </Tooltip>
 
+                    <div className="h-4 w-px bg-primary/20 mx-1.5" />
                     <MenuBar
                         menus={accountMenu}
                         triggerAsChild={true}
