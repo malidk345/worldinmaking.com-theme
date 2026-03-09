@@ -20,7 +20,7 @@ export function Toolkit({ children, windowKey }: ToolkitProps): any {
     React.useEffect(() => {
         setMounted(true)
         if (targetKey) {
-            const el = document.getElementById(`window-footer-${targetKey}`)
+            const el = document.getElementById(`window-inner-footer-${targetKey}`)
             setTargetElement(el)
         }
     }, [targetKey])

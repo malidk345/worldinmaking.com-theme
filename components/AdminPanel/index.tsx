@@ -19,8 +19,9 @@ const getProfile = (profiles: unknown) => {
 }
 
 import Loading from 'components/Loading'
+import { AppWindow } from '../../context/Window'
 
-const AdminPanel = () => {
+const AdminPanel = ({ item }: { item?: AppWindow }) => {
     const [activeTab, setActiveTab] = useState<'overview' | 'content' | 'comments' | 'writerApplications' | 'users' | 'settings'>('overview')
     const [isCreating, setIsCreating] = useState(false)
     const [editingPost, setEditingPost] = useState<AdminPost | null>(null)
@@ -993,8 +994,14 @@ const AdminPanel = () => {
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 overflow-auto bg-primary/20 h-full relative">
-                {renderContent()}
+            <div className="flex-1 overflow-auto bg-primary/20 h-full relative flex flex-col">
+                <div className="flex-1 overflow-auto">
+                    {renderContent()}
+                </div>
+                {/* Inner Window Footer Target - specific for Admin Window */}
+                <div className="sticky bottom-0 z-50 w-full pointer-events-none pb-1 mt-auto px-1">
+                    <div id={`window-inner-footer-${item?.key || app?.focusedWindow?.key}`} className="pointer-events-auto" />
+                </div>
             </div>
         </div>
     )

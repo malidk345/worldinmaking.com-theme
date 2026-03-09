@@ -99,17 +99,17 @@ export default function WindowRouter({ item }: { item: AppWindow }) {
 
     // /admin
     if (path === '/admin') {
-        return <AdminPanel />
+        return <AdminPanel item={item} />
     }
 
     // /write (New Node / Canvas Experience)
     if (path === '/write') {
-        return <WriteRouteView nodeId={item.props?.nodeId as string | undefined} readOnly={Boolean(item.props?.readOnly)} />
+        return <WriteRouteView nodeId={item.props?.nodeId as string | undefined} item={item} readOnly={Boolean(item.props?.readOnly)} />
     }
 
     // /write-post (User Post Editor)
     if (path === '/write-post') {
-        return <WritePostRouteView postId={item.props?.postId as string | undefined} />
+        return <WritePostRouteView postId={item.props?.postId as string | undefined} item={item} />
     }
 
     // Fallback for any other path
@@ -221,7 +221,7 @@ function BlogRouteView({ slug }: { slug: string }) {
 }
 
 /** Node editor route view */
-function WriteRouteView({ nodeId, readOnly = false }: { nodeId?: string; readOnly?: boolean }) {
+function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; item: AppWindow; readOnly?: boolean }) {
     const { user } = useAuth()
     const { addToast } = useToast()
     const [title, setTitle] = useState('untitled node')
@@ -581,12 +581,17 @@ function WriteRouteView({ nodeId, readOnly = false }: { nodeId?: string; readOnl
                         />
                     </div>
                 </div>
+
+                {/* Inner Window Footer Target - inside the route content for 4px inset */}
+                <div className="sticky bottom-0 z-50 w-full pointer-events-none pb-1 mt-auto">
+                    <div id={`window-inner-footer-${item.key}`} className="pointer-events-auto" />
+                </div>
             </div>
         </div>
     )
 }
 
-function WritePostRouteView({ postId }: { postId?: string }) {
+function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow }) {
     const { user, profile } = useAuth()
     const { addToast } = useToast()
     const [currentPostId, setCurrentPostId] = useState<string | undefined>(postId)
@@ -806,6 +811,11 @@ function WritePostRouteView({ postId }: { postId?: string }) {
                     <div className="w-full flex-1 min-h-[400px]">
                         <RichTextEditor content={content} onChange={setContent} />
                     </div>
+                </div>
+
+                {/* Inner Window Footer Target - inside the route content for 4px inset */}
+                <div className="sticky bottom-0 z-50 w-full pointer-events-none pb-1 mt-auto">
+                    <div id={`window-inner-footer-${item.key}`} className="pointer-events-auto" />
                 </div>
             </div>
         </div>
