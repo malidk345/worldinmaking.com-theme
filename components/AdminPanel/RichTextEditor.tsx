@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useEffect, useCallback } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
@@ -22,11 +22,11 @@ import {
     Maximize2, Minimize2,
     Underline as UnderlineIcon, Highlighter,
     Terminal, Table as TableIcon, MessageSquareWarning, BookMarked,
-    Save, CheckCircle, ChevronDown, PenTool, Loader2
+    Save, CheckCircle, Loader2
 } from 'lucide-react'
 
 import { Toolbar, ToolbarElement } from 'components/RadixUI/Toolbar'
-import { Toolkit, ToolkitSection } from '../Toolkit'
+import { Toolkit } from '../Toolkit'
 import { useApp } from '../../context/App'
 import OSButton from 'components/OSButton'
 
@@ -159,7 +159,6 @@ interface RichTextEditorProps {
     isSaving?: boolean
     isPublished?: boolean
     isSaved?: boolean
-    actions?: React.ReactNode
     extraElements?: ToolbarElement[]
     toolkitPosition?: 'header' | 'footer'
     windowKey?: string
@@ -175,7 +174,6 @@ const RichTextEditor = ({
     isSaving = false,
     isPublished = false,
     isSaved = false,
-    actions,
     extraElements = [],
     toolkitPosition = 'footer',
     windowKey
@@ -325,7 +323,7 @@ const RichTextEditor = ({
             icon: <MessageSquareWarning className="size-4 text-black" />,
             hideLabel: true,
             active: editor.isActive('callout'),
-            onClick: () => (editor.chain().focus() as any).setCallout().run(),
+            onClick: () => (editor.chain().focus() as unknown as { setCallout: () => { run: () => void } }).setCallout().run(),
         },
         {
             type: 'button',
@@ -333,7 +331,7 @@ const RichTextEditor = ({
             icon: <BookMarked className="size-4 text-black" />,
             hideLabel: true,
             active: editor.isActive('references'),
-            onClick: () => (editor.chain().focus() as any).insertReferences().run(),
+            onClick: () => (editor.chain().focus() as unknown as { insertReferences: () => { run: () => void } }).insertReferences().run(),
         },
         {
             type: 'button',

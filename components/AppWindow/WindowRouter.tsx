@@ -15,10 +15,9 @@ import { AppWindow } from '../../context/Window'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { supabase } from '../../lib/supabase'
-import { Save, Share, Image as ImageIcon, Palette, Hash, CheckCircle, ChevronDown, FileText, Flame, Rocket, Lightbulb, PenTool, Brain, Wrench, Sparkles, LayoutTemplate, Database, CalendarHeart } from 'lucide-react'
+import { Share, Image as ImageIcon, Palette, Hash, CheckCircle, ChevronDown, FileText, Flame, Rocket, Lightbulb, PenTool, Brain, Wrench, Sparkles, LayoutTemplate, Database, CalendarHeart } from 'lucide-react'
 import OSButton from 'components/OSButton'
 import { Popover } from 'components/RadixUI/Popover'
-import { Toolbar } from 'components/RadixUI/Toolbar'
 import { sanitizeHtml, toSlug } from '../../utils/security'
 
 const adaptPost = (p: { id: number | string; title: string; content?: string; created_at: string; author_id?: string | number; profiles?: { username?: string; avatar_url?: string } | { username?: string; avatar_url?: string }[] }) => {
