@@ -20,7 +20,18 @@ import OSButton from 'components/OSButton'
 import { Popover } from 'components/RadixUI/Popover'
 import { sanitizeHtml, toSlug } from '../../utils/security'
 
-const adaptPost = (p: any) => {
+interface AdaptablePost {
+    id: number | string
+    title: string
+    content?: string
+    created_at: string
+    author_id?: string | number
+    profiles?: { username?: string; avatar_url?: string } | { username?: string; avatar_url?: string }[]
+    _count?: { likes?: number }
+    total_votes?: number
+}
+
+const adaptPost = (p: AdaptablePost) => {
     const profile = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles
     return {
         id: p.id,
@@ -39,7 +50,7 @@ const adaptPost = (p: any) => {
         pinnedTopics: [],
         resolved: false,
         archived: false,
-        upvotes: p._count?.likes || 0,
+        upvotes: p.total_votes ?? p._count?.likes ?? 0,
         userVote: 0,
     }
 }

@@ -80,7 +80,6 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
     const [minimizing, setMinimizing] = useState(false)
     const [animating, setAnimating] = useState(true)
     const animationStartTimeRef = useRef<number | null>(null)
-    const { addToast } = useToast()
     const hasMobileAdjusted = useRef(false)
 
     useEffect(() => {
@@ -201,7 +200,6 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
             const bounds = constraintsRef.current?.getBoundingClientRect()
             if (!bounds) return
 
-            const inset = 0
             const rawX = position.x + (info?.offset?.x || 0)
             const rawY = position.y + (info?.offset?.y || 0)
 

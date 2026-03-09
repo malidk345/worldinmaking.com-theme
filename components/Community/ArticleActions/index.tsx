@@ -123,7 +123,7 @@ export default function ArticleActions({ slug }: ArticleActionsProps) {
                 addToast('link copied to clipboard!', 'success')
                 document.body.removeChild(textArea)
             }
-        } catch (err) {
+        } catch {
             addToast('failed to copy link', 'error')
         }
     }

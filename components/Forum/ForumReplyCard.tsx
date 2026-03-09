@@ -22,7 +22,6 @@ export default function ForumReplyCard({ reply, isInForum = false, questionAutho
     const { addToast } = useToast()
     const [userVote, setUserVote] = useState(0)
     const [totalVotes, setTotalVotes] = useState(reply.upvotes || 0)
-    const [loading, setLoading] = useState(false)
 
     // Load saved vote state from Supabase
     useEffect(() => {
