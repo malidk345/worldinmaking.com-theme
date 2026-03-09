@@ -46,11 +46,11 @@ export function sanitizeHtml(html: string | null | undefined, options = {}): str
         // which already securely allows table, hr, img, a, br, p, em, strong, etc.
         ADD_TAGS: [
             'iframe', // If you plan to embed youtube later
-            'mark', 'u', 'sub', 'sup', 'div', 'span'
+            'mark', 'u', 'sub', 'sup', 'div', 'span', 'details', 'summary'
         ],
         // ADD_ATTR prevents DOMPurify from clearing structural attributes like
         // Tiptap's table colwidths, html spans, target="_blank", or callout nodes' data-type.
-        ADD_ATTR: ['target', 'data-type', 'class', 'style', 'colspan', 'rowspan', 'colwidth', 'width', 'height'],
+        ADD_ATTR: ['target', 'data-type', 'class', 'style', 'colspan', 'rowspan', 'colwidth', 'width', 'height', 'open'],
         ALLOW_DATA_ATTR: true,
         ...options
     });

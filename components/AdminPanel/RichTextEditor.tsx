@@ -26,7 +26,7 @@ import {
     Underline as UnderlineIcon, Highlighter,
     AlignLeft, AlignCenter, AlignRight, AlignJustify,
     Superscript as SuperscriptIcon, Subscript as SubscriptIcon,
-    Terminal, Table as TableIcon, MessageSquareWarning
+    Terminal, Table as TableIcon, MessageSquareWarning, BookMarked
 } from 'lucide-react'
 
 // Initialize lowlight for code blocks
@@ -38,6 +38,9 @@ declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         callout: {
             setCallout: () => ReturnType
+        }
+        references: {
+            insertReferences: () => ReturnType
         }
     }
 }
@@ -59,6 +62,54 @@ export const CalloutNode = Node.create({
             }
         }
     }
+})
+
+export const ReferencesNode = Node.create({
+    name: 'references',
+    group: 'block',
+    content: 'block+',
+    defining: true,
+    parseHTML() {
+        return [{ tag: 'details[data-type="references"]' }]
+    },
+    renderHTML({ HTMLAttributes }) {
+        return [
+            'details',
+            mergeAttributes(HTMLAttributes, {
+                'data-type': 'references',
+                class: 'references-block group my-6 rounded-xl border border-primary/20 bg-primary/5 text-[13px] leading-relaxed text-primary/80 overflow-hidden',
+            }),
+            [
+                'summary',
+                {
+                    class: 'cursor-pointer list-none select-none px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-primary/65 marker:hidden',
+                },
+                'sources & references',
+            ],
+            [
+                'div',
+                {
+                    class: 'border-t border-primary/10 px-4 py-3 text-[13px] leading-relaxed [&_ol]:my-0 [&_ol]:pl-5 [&_ul]:my-0 [&_ul]:pl-5 [&_p]:my-2 [&_li]:my-1 [&_a]:break-words [&_a]:text-primary [&_a]:underline-offset-2 hover:[&_a]:underline',
+                },
+                0,
+            ],
+        ]
+    },
+    addCommands() {
+        return {
+            insertReferences: () => ({ commands }) => {
+                return commands.insertContent({
+                    type: this.name,
+                    content: [
+                        {
+                            type: 'paragraph',
+                            content: [{ type: 'text', text: 'Add source links, citations, or supporting notes here.' }],
+                        },
+                    ],
+                })
+            },
+        }
+    },
 })
 
 // --- Auto-Save Helpers ---
@@ -191,6 +242,9 @@ const EditorMenuBar = ({ editor }: { editor: Editor | null }) => {
             <TB active={editor.isActive('callout')} onClick={() => (editor.chain().focus() as unknown as { setCallout: () => { run: () => void } }).setCallout().run()} title="Callout (Info Box)">
                 <MessageSquareWarning className="size-3.5" />
             </TB>
+            <TB active={editor.isActive('references')} onClick={() => (editor.chain().focus() as unknown as { insertReferences: () => { run: () => void } }).insertReferences().run()} title="Sources & References">
+                <BookMarked className="size-3.5" />
+            </TB>
             <TB active={editor.isActive('codeBlock')} onClick={() => editor.chain().focus().toggleCodeBlock().run()} title="Code Block">
                 <Terminal className="size-3.5" />
             </TB>
@@ -277,6 +331,8 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
             TableCell,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             CalloutNode as any,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            ReferencesNode as any,
         ],
         content: content,
         onUpdate: ({ editor }) => {
