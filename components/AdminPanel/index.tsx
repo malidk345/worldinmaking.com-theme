@@ -532,6 +532,22 @@ const AdminPanel = () => {
                                     onChange={setNewPostContent}
                                     focusMode={focusMode}
                                     onToggleFocusMode={() => setFocusMode(prev => !prev)}
+                                    actions={
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => { setEditingPost(null); setIsCreating(false); setFocusMode(false); }}
+                                                className="flex items-center gap-1.5 text-[10px] font-bold text-black/60 hover:text-black transition-colors lowercase px-2"
+                                            >
+                                                <ArrowLeft className="size-3.5" /> back
+                                            </button>
+                                            <OSButton size="sm" variant="primary" onClick={handleSavePost}>
+                                                <div className="flex items-center gap-1">
+                                                    <Save className="size-3.5" />
+                                                    <span className="lowercase text-[10px] font-bold">{editingPost ? (editingPost.isLocal ? 'publish' : 'update') : 'save'}</span>
+                                                </div>
+                                            </OSButton>
+                                        </div>
+                                    }
                                 />
                             </div>
                         </div >

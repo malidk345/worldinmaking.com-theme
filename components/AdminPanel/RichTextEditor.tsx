@@ -26,6 +26,8 @@ import {
 } from 'lucide-react'
 
 import { Toolbar, ToolbarElement } from 'components/RadixUI/Toolbar'
+import { Toolkit, ToolkitSection } from 'components/Toolkit'
+import { useApp } from 'context/App'
 
 // Initialize lowlight for code blocks
 const lowlight = createLowlight(common)
@@ -165,9 +167,11 @@ interface RichTextEditorProps {
     onChange: (content: string) => void
     focusMode?: boolean
     onToggleFocusMode?: () => void
+    actions?: React.ReactNode
 }
 
-const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMode }: RichTextEditorProps) => {
+const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMode, actions }: RichTextEditorProps) => {
+    const { focusedWindow } = useApp()
     const [showPreview, setShowPreview] = useState(false)
     const [lastSaved, setLastSaved] = useState<string | null>(null)
     const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -427,10 +431,17 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
 
     return (
         <div className={`border border-[#1E2F46]/15 rounded-sm bg-white overflow-hidden flex flex-col ${focusMode ? 'h-screen fixed inset-0 z-[100]' : 'h-full'}`}>
-            {/* PostHog Style Footer Toolbar */}
-            <div className="order-2 border-t border-black/[0.08] bg-[#f8f9fb] p-1.5 overflow-x-auto custom-scrollbar">
-                <Toolbar elements={toolbarElements} className="min-w-max !bg-transparent !border-none" />
-            </div>
+            {/* Toolkit - injected into Window Footer via portal */}
+            <Toolkit windowKey={focusedWindow?.key}>
+                <ToolkitSection className="flex-1 min-w-0">
+                    <Toolbar elements={toolbarElements} className="min-w-max !bg-transparent !border-none" />
+                </ToolkitSection>
+                {actions && (
+                    <ToolkitSection showSeparator className="shrink-0 bg-white/40 backdrop-blur-sm">
+                        {actions}
+                    </ToolkitSection>
+                )}
+            </Toolkit>
 
             {/* Editor + Preview */}
             <div className={`order-1 flex-1 flex ${canShowPreview ? 'flex-row' : 'flex-col'} min-h-0 overflow-hidden`}>
