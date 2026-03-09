@@ -12,7 +12,7 @@ import {
 import { Settings, Info, FileText, BookOpen, Newspaper, MessageSquare, RotateCw, LogOut, LogIn } from 'lucide-react'
 import { useApp } from '../../context/App'
 import { useAuth } from '../../context/AuthContext'
-import MenuBar, { MenuItemType, MenuType } from 'components/RadixUI/MenuBar'
+import MenuBar, { MenuItemType } from 'components/RadixUI/MenuBar'
 import OSButton from 'components/OSButton'
 import AdminPanel from 'components/AdminPanel'
 import LoginContent from 'components/Login/LoginContent'
@@ -28,8 +28,7 @@ export default function TaskBarMenu() {
         openSearch,
         setIsActiveWindowsPanelOpen,
         taskbarRef,
-        addWindow,
-        isMobile
+        addWindow
     } = useApp()
     const { user, profile, isAdmin, signOut } = useAuth()
 
@@ -61,15 +60,18 @@ export default function TaskBarMenu() {
         setIsActiveWindowsPanelOpen(true)
     }, [setIsActiveWindowsPanelOpen])
 
-    const accountMenuItems: MenuItemType[] = [
+    const accountMenuItems: MenuItemType[] = React.useMemo(() => [
         // User/Profile section
         ...(user ? [
             {
                 type: 'item' as const,
-                label: `signed in as ${profile?.username || user.email}`,
-                disabled: true,
-                className: 'text-[10px] uppercase font-black opacity-40 px-3 py-1 tracked-widest'
-            } as any,
+                node: (
+                    <div className="text-[10px] uppercase font-black opacity-40 px-3 py-1 tracked-widest select-none">
+                        signed in as {profile?.username || user.email}
+                    </div>
+                ),
+                disabled: true
+            },
             {
                 type: 'item' as const,
                 label: 'My profile',
@@ -205,13 +207,14 @@ export default function TaskBarMenu() {
                 })
             }
         ])
-    ]
+    ], [user, profile, isAdmin, addWindow, signOut])
 
     const accountMenu = React.useMemo(() => [
         {
             trigger: (
                 <OSButton size="sm" className="px-1 overflow-hidden">
                     {profile?.avatar_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
                         <img
                             src={profile.avatar_url}
                             alt={profile.username || 'User'}
