@@ -18,7 +18,6 @@ import { supabase } from '../../lib/supabase'
 import { Save, Share, Image as ImageIcon, Palette, Hash, CheckCircle, ChevronDown, FileText, Flame, Rocket, Lightbulb, PenTool, Brain, Wrench, Sparkles, LayoutTemplate, Database, CalendarHeart } from 'lucide-react'
 import OSButton from 'components/OSButton'
 import { Popover } from 'components/RadixUI/Popover'
-import { Toolbar } from 'components/RadixUI/Toolbar'
 import { sanitizeHtml, toSlug } from '../../utils/security'
 import Loading from 'components/Loading'
 
@@ -177,8 +176,6 @@ function WriteRouteView({ nodeId, readOnly = false }: { nodeId?: string; readOnl
 
     const [coverImage, setCoverImage] = useState<string | null>(null)
     const [iconIndex, setIconIndex] = useState<number>(0)
-    const [theme, setTheme] = useState<'default' | 'yellow' | 'green' | 'blue'>('default')
-    const [nodeType, setNodeType] = useState<'canvas' | 'list' | 'journal'>('canvas')
     const [tags, setTags] = useState<string[]>([])
 
     useEffect(() => {
@@ -223,22 +220,9 @@ function WriteRouteView({ nodeId, readOnly = false }: { nodeId?: string; readOnl
         setSaving(false)
     }
 
-    const themeClasses = {
-        'default': 'bg-[#fafcfc] dark:bg-primary/5',
-        'yellow': 'bg-amber-50 dark:bg-amber-950/20',
-        'green': 'bg-emerald-50 dark:bg-emerald-950/20',
-        'blue': 'bg-sky-50 dark:bg-sky-950/20',
-    }
-
     const statusConfig = {
         'draft': { label: 'draft', icon: <PenTool className="size-3" />, color: 'text-primary' },
         'published': { label: 'published', icon: <CheckCircle className="size-3" />, color: 'text-emerald-500' },
-    }
-
-    const typeConfig = {
-        'canvas': { label: 'canvas', icon: <LayoutTemplate className="size-3.5 text-blue-500" /> },
-        'list': { label: 'data list', icon: <Database className="size-3.5 text-purple-500" /> },
-        'journal': { label: 'journal', icon: <CalendarHeart className="size-3.5 text-rose-500" /> },
     }
 
     const ICONS = [
@@ -254,7 +238,7 @@ function WriteRouteView({ nodeId, readOnly = false }: { nodeId?: string; readOnl
 
     if (readOnly) {
         return (
-            <div className={`flex flex-col size-full overflow-y-auto overflow-x-hidden text-black transition-colors duration-500 ${themeClasses[theme]}`}>
+            <div className="flex flex-col size-full overflow-y-auto overflow-x-hidden text-black transition-colors duration-500 bg-[#fafcfc] dark:bg-primary/5">
                 <div className="flex-col relative w-full flex-1 flex min-h-0">
                     {coverImage && (
                         <div className="relative w-full h-48 sm:h-64 group bg-black/5 shrink-0">
@@ -287,7 +271,7 @@ function WriteRouteView({ nodeId, readOnly = false }: { nodeId?: string; readOnl
     }
 
     return (
-        <div className={`flex flex-col size-full overflow-y-auto overflow-x-hidden text-black transition-colors duration-500 ${themeClasses[theme]}`}>
+        <div className="flex flex-col size-full overflow-y-auto overflow-x-hidden text-black transition-colors duration-500 bg-[#fafcfc] dark:bg-primary/5">
             <div className="flex-col relative w-full flex-1 flex min-h-0">
                 {coverImage && (
                     <div className="relative w-full h-48 sm:h-64 group bg-black/5 shrink-0">

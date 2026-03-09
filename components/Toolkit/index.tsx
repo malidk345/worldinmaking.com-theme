@@ -9,7 +9,7 @@ interface ToolkitProps {
     windowKey?: string
 }
 
-export const Toolkit = ({ children, windowKey }: ToolkitProps) => {
+export function Toolkit({ children, windowKey }: ToolkitProps): React.ReactNode {
     const { focusedWindow } = useApp()
     const targetKey = windowKey || focusedWindow?.key
 
@@ -40,14 +40,12 @@ interface ToolkitSectionProps {
     showSeparator?: boolean
 }
 
-export const ToolkitSection = ({ children, className = '', showSeparator = false }: ToolkitSectionProps) => {
+export function ToolkitSection({ children, className = '', showSeparator = false }: ToolkitSectionProps) {
     return (
         <div className={`flex items-center gap-1.5 ${showSeparator ? 'border-l border-black/[0.05] pl-1.5' : ''} ${className}`}>
             {children}
         </div>
     )
 }
-
-Toolkit.Section = ToolkitSection
 
 export default Toolkit
