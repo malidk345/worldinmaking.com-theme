@@ -9,10 +9,11 @@ interface ToolkitProps {
     windowKey?: string
     position?: 'header' | 'footer'
     portal?: boolean
+    className?: string
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function Toolkit({ children, windowKey, position = 'footer', portal = true }: ToolkitProps): any {
+export function Toolkit({ children, windowKey, position = 'footer', portal = true, className = '' }: ToolkitProps): any {
     const { focusedWindow } = useApp()
     const targetKey = windowKey || focusedWindow?.key
 
@@ -30,7 +31,7 @@ export function Toolkit({ children, windowKey, position = 'footer', portal = tru
     const content = (
         <div
             data-scheme="tertiary"
-            className={`mx-1 ${position === 'header' ? 'mt-1' : 'my-1'} rounded-md border border-primary bg-primary px-1.5 ${position === 'header' ? 'py-1' : 'py-0.5'} flex items-center justify-between min-h-[36px] select-none overflow-x-auto custom-scrollbar scrollbar-hide`}
+            className={`mx-1 ${position === 'header' ? 'mt-1' : 'my-1'} rounded-md border border-primary bg-primary px-1.5 ${position === 'header' ? 'py-1' : 'py-0.5'} flex items-center justify-between min-h-[36px] select-none overflow-x-auto custom-scrollbar scrollbar-hide ${className}`}
         >
             <div className="flex flex-wrap items-center w-full gap-0.5">
                 {children}

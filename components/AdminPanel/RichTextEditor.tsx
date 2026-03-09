@@ -453,7 +453,11 @@ const RichTextEditor = ({
     return (
         <div className={`border border-[#1E2F46]/15 rounded-sm bg-white overflow-hidden flex flex-col ${focusMode ? 'h-screen fixed inset-0 z-[100]' : 'h-full'}`}>
             {/* Toolkit - injected into Window Footer or Header via portal */}
-            <Toolkit windowKey={windowKey || targetKey} position={toolkitPosition}>
+            <Toolkit
+                windowKey={windowKey || targetKey}
+                position={toolkitPosition}
+                className={`transition-opacity duration-300 ${editor?.isFocused ? 'opacity-100' : 'opacity-40 hover:opacity-100 focus-within:opacity-100'}`}
+            >
                 <Toolbar
                     elements={toolbarElements}
                     className="!bg-transparent !border-none !p-0 !rounded-none flex-wrap w-full"
