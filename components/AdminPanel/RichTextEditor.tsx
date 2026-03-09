@@ -7,10 +7,7 @@ import Placeholder from '@tiptap/extension-placeholder'
 import Link from '@tiptap/extension-link'
 import Image from '@tiptap/extension-image'
 import Highlight from '@tiptap/extension-highlight'
-import TextAlign from '@tiptap/extension-text-align'
 import Underline from '@tiptap/extension-underline'
-import Subscript from '@tiptap/extension-subscript'
-import Superscript from '@tiptap/extension-superscript'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import { Table } from '@tiptap/extension-table'
 import { TableRow } from '@tiptap/extension-table-row'
@@ -24,10 +21,11 @@ import {
     Link as LinkIcon, Image as ImageIcon, Undo, Redo, Code,
     Maximize2, Minimize2, Eye, EyeOff, Save,
     Underline as UnderlineIcon, Highlighter,
-    AlignLeft, AlignCenter, AlignRight, AlignJustify,
-    Superscript as SuperscriptIcon, Subscript as SubscriptIcon,
-    Terminal, Table as TableIcon, MessageSquareWarning, BookMarked
+    Terminal, Table as TableIcon, MessageSquareWarning, BookMarked,
+    Plus
 } from 'lucide-react'
+
+import { Toolbar, ToolbarElement } from 'components/RadixUI/Toolbar'
 
 // Initialize lowlight for code blocks
 const lowlight = createLowlight(common)
@@ -147,114 +145,7 @@ export function clearDraftFromStorage() {
     try { localStorage.removeItem(DRAFT_STORAGE_KEY) } catch { /* noop */ }
 }
 
-// --- Toolbar Button ---
-interface TBProps {
-    active?: boolean
-    onClick: () => void
-    title?: string
-    children: React.ReactNode
-}
-const TB = ({ active, onClick, title, children }: TBProps) => (
-    <button
-        type="button"
-        onClick={onClick}
-        title={title}
-        className={`p-1.5 rounded-md transition-all active:scale-95 ${active ? 'bg-black text-white shadow-sm' : 'text-black/60 hover:bg-black/10 hover:text-black'}`}
-    >
-        {children}
-    </button>
-)
-
-// --- Toolbar ---
-const EditorMenuBar = ({ editor }: { editor: Editor | null }) => {
-    if (!editor) return null
-
-    const addLink = () => {
-        const url = window.prompt('URL')
-        if (url) {
-            editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
-        }
-    }
-
-    const addImage = () => {
-        const url = window.prompt('Image URL')
-        if (url) {
-            editor.chain().focus().setImage({ src: url }).run()
-        }
-    }
-
-    return (
-        <div className="flex flex-wrap items-center gap-1 p-2 border-b border-black/[0.06] bg-white/80 backdrop-blur-sm sticky top-0 z-10 sm:gap-1.5">
-            <TB active={editor.isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()} title="Bold">
-                <Bold className="size-4" />
-            </TB>
-            <TB active={editor.isActive('italic')} onClick={() => editor.chain().focus().toggleItalic().run()} title="Italic">
-                <Italic className="size-4" />
-            </TB>
-            <TB active={editor.isActive('underline')} onClick={() => editor.chain().focus().toggleUnderline().run()} title="Underline">
-                <UnderlineIcon className="size-4" />
-            </TB>
-            <TB active={editor.isActive('highlight')} onClick={() => editor.chain().focus().toggleHighlight().run()} title="Highlight text">
-                <Highlighter className="size-4" />
-            </TB>
-            <TB active={editor.isActive('code')} onClick={() => editor.chain().focus().toggleCode().run()} title="Inline Code">
-                <Code className="size-4" />
-            </TB>
-
-            <div className="w-px h-5 bg-black/[0.08] mx-0.5 sm:mx-1" />
-
-            <TB active={editor.isActive('heading', { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} title="Heading 2">
-                <Heading2 className="size-4" />
-            </TB>
-            <TB active={editor.isActive('heading', { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} title="Heading 3">
-                <Heading3 className="size-4" />
-            </TB>
-
-            <div className="w-px h-5 bg-black/[0.08] mx-0.5 sm:mx-1" />
-
-            <TB active={editor.isActive('bulletList')} onClick={() => editor.chain().focus().toggleBulletList().run()} title="Bullet List">
-                <List className="size-4" />
-            </TB>
-            <TB active={editor.isActive('orderedList')} onClick={() => editor.chain().focus().toggleOrderedList().run()} title="Ordered List">
-                <ListOrdered className="size-4" />
-            </TB>
-            <TB active={editor.isActive('blockquote')} onClick={() => editor.chain().focus().toggleBlockquote().run()} title="Quote">
-                <Quote className="size-4" />
-            </TB>
-            <TB active={editor.isActive('callout')} onClick={() => (editor.chain().focus() as any).setCallout().run()} title="Callout (Info Box)">
-                <MessageSquareWarning className="size-4" />
-            </TB>
-            <TB active={editor.isActive('references')} onClick={() => (editor.chain().focus() as any).insertReferences().run()} title="Sources & References">
-                <BookMarked className="size-4" />
-            </TB>
-            <TB active={editor.isActive('codeBlock')} onClick={() => editor.chain().focus().toggleCodeBlock().run()} title="Code Block">
-                <Terminal className="size-4" />
-            </TB>
-            <TB active={editor.isActive('table')} onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} title="Insert Table">
-                <TableIcon className="size-4" />
-            </TB>
-
-            <div className="w-px h-5 bg-black/[0.08] mx-0.5 sm:mx-1" />
-
-            <TB active={editor.isActive('link')} onClick={addLink} title="Link">
-                <LinkIcon className="size-4" />
-            </TB>
-            <TB onClick={addImage} title="Image">
-                <ImageIcon className="size-4" />
-            </TB>
-
-            <div className="hidden md:flex items-center">
-                <div className="w-px h-5 bg-black/[0.08] mx-1" />
-                <TB onClick={() => editor.chain().focus().undo().run()} title="Undo">
-                    <Undo className="size-4" />
-                </TB>
-                <TB onClick={() => editor.chain().focus().redo().run()} title="Redo">
-                    <Redo className="size-4" />
-                </TB>
-            </div>
-        </div>
-    )
-}
+// --- Draft Helpers ---
 
 // --- Word Count ---
 function getWordCount(html: string): number {
@@ -300,11 +191,6 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
                 },
             }),
             Underline,
-            Subscript,
-            Superscript,
-            TextAlign.configure({
-                types: ['heading', 'paragraph'],
-            }),
             CodeBlockLowlight.configure({
                 lowlight,
             }),
@@ -333,6 +219,179 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
             },
         },
     })
+
+    const toolbarElements: ToolbarElement[] = editor ? [
+        {
+            type: 'button',
+            label: 'Undo',
+            icon: <Undo className="size-4" />,
+            hideLabel: true,
+            onClick: () => editor.chain().focus().undo().run(),
+            disabled: !editor.can().undo(),
+        },
+        {
+            type: 'button',
+            label: 'Redo',
+            icon: <Redo className="size-4" />,
+            hideLabel: true,
+            onClick: () => editor.chain().focus().redo().run(),
+            disabled: !editor.can().redo(),
+        },
+        { type: 'separator' },
+        {
+            type: 'button',
+            label: 'Bold',
+            icon: <Bold className="size-4 text-black" />,
+            hideLabel: true,
+            active: editor.isActive('bold'),
+            onClick: () => editor.chain().focus().toggleBold().run(),
+        },
+        {
+            type: 'button',
+            label: 'Italic',
+            icon: <Italic className="size-4 text-black" />,
+            hideLabel: true,
+            active: editor.isActive('italic'),
+            onClick: () => editor.chain().focus().toggleItalic().run(),
+        },
+        {
+            type: 'button',
+            label: 'Underline',
+            icon: <UnderlineIcon className="size-4 text-black" />,
+            hideLabel: true,
+            active: editor.isActive('underline'),
+            onClick: () => editor.chain().focus().toggleUnderline().run(),
+        },
+        {
+            type: 'button',
+            label: 'Highlight',
+            icon: <Highlighter className="size-4 text-black" />,
+            hideLabel: true,
+            active: editor.isActive('highlight'),
+            onClick: () => editor.chain().focus().toggleHighlight().run(),
+        },
+        { type: 'separator' },
+        {
+            type: 'button',
+            label: 'H2',
+            icon: <Heading2 className="size-4 text-black" />,
+            hideLabel: true,
+            active: editor.isActive('heading', { level: 2 }),
+            onClick: () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
+        },
+        {
+            type: 'button',
+            label: 'H3',
+            icon: <Heading3 className="size-4 text-black" />,
+            hideLabel: true,
+            active: editor.isActive('heading', { level: 3 }),
+            onClick: () => editor.chain().focus().toggleHeading({ level: 3 }).run(),
+        },
+        { type: 'separator' },
+        {
+            type: 'button',
+            label: 'Bullet List',
+            icon: <List className="size-4 text-black" />,
+            hideLabel: true,
+            active: editor.isActive('bulletList'),
+            onClick: () => editor.chain().focus().toggleBulletList().run(),
+        },
+        {
+            type: 'button',
+            label: 'Ordered List',
+            icon: <ListOrdered className="size-4 text-black" />,
+            hideLabel: true,
+            active: editor.isActive('orderedList'),
+            onClick: () => editor.chain().focus().toggleOrderedList().run(),
+        },
+        {
+            type: 'button',
+            label: 'Quote',
+            icon: <Quote className="size-4 text-black" />,
+            hideLabel: true,
+            active: editor.isActive('blockquote'),
+            onClick: () => editor.chain().focus().toggleBlockquote().run(),
+        },
+        { type: 'separator' },
+        {
+            type: 'button',
+            label: 'Callout',
+            icon: <MessageSquareWarning className="size-4 text-black" />,
+            hideLabel: true,
+            active: editor.isActive('callout'),
+            onClick: () => (editor.chain().focus() as unknown as { setCallout: () => { run: () => void } }).setCallout().run(),
+        },
+        {
+            type: 'button',
+            label: 'References',
+            icon: <BookMarked className="size-4 text-black" />,
+            hideLabel: true,
+            active: editor.isActive('references'),
+            onClick: () => (editor.chain().focus() as unknown as { insertReferences: () => { run: () => void } }).insertReferences().run(),
+        },
+        {
+            type: 'button',
+            label: 'Code Block',
+            icon: <Terminal className="size-4 text-black" />,
+            hideLabel: true,
+            active: editor.isActive('codeBlock'),
+            onClick: () => editor.chain().focus().toggleCodeBlock().run(),
+        },
+        {
+            type: 'button',
+            label: 'Table',
+            icon: <TableIcon className="size-4 text-black" />,
+            hideLabel: true,
+            active: editor.isActive('table'),
+            onClick: () => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(),
+        },
+        { type: 'separator' },
+        {
+            type: 'button',
+            label: 'Link',
+            icon: <LinkIcon className="size-4 text-black" />,
+            hideLabel: true,
+            active: editor.isActive('link'),
+            onClick: () => {
+                const url = window.prompt('URL')
+                if (url) editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+            },
+        },
+        {
+            type: 'button',
+            label: 'Image',
+            icon: <ImageIcon className="size-4 text-black" />,
+            hideLabel: true,
+            onClick: () => {
+                const url = window.prompt('Image URL')
+                if (url) editor.chain().focus().setImage({ src: url }).run()
+            },
+        },
+        {
+            type: 'container',
+            className: 'ml-auto flex items-center gap-1',
+            children: (
+                <>
+                    {onToggleFocusMode && (
+                        <button
+                            onClick={onToggleFocusMode}
+                            className={`p-1.5 rounded transition-colors ${focusMode ? 'bg-black text-white' : 'text-black/40 hover:bg-black/10 hover:text-black'}`}
+                            title={focusMode ? 'Exit Focus' : 'Focus Mode'}
+                        >
+                            {focusMode ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
+                        </button>
+                    )}
+                    <button
+                        onClick={() => setShowPreview(!showPreview)}
+                        className={`p-1.5 rounded transition-colors ${showPreview ? 'bg-black text-white' : 'text-black/40 hover:bg-black/10 hover:text-black'}`}
+                        title={showPreview ? 'Hide Preview' : 'Show Preview'}
+                    >
+                        {showPreview ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </button>
+                </>
+            ),
+        }
+    ] : []
 
     // Sync content from parent
     useEffect(() => {
@@ -367,35 +426,14 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
     const canShowPreview = showPreview
 
     return (
-        <div className={`border border-[#1E2F46]/15 rounded-sm bg-white overflow-hidden flex flex-col ${focusMode ? 'h-full' : 'h-full'}`}>
-            {/* Toolbar Row */}
-            <div className="flex items-center justify-between border-b border-[#1E2F46]/10 bg-[#f8f9fb]">
-                <EditorMenuBar editor={editor} />
-                <div className="flex items-center gap-0.5 pr-1.5">
-                    {/* Preview Toggle - hidden on small screens */}
-                    <button
-                        onClick={() => setShowPreview(!showPreview)}
-                        className={`hidden sm:flex p-1.5 rounded transition-colors ${showPreview ? 'bg-[#1E2F46] text-white' : 'text-[#1E2F46]/50 hover:bg-[#1E2F46]/10 hover:text-[#1E2F46]'}`}
-                        title={showPreview ? 'Hide Preview' : 'Show Preview'}
-                    >
-                        {showPreview ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
-                    </button>
-
-                    {/* Focus Mode Toggle */}
-                    {onToggleFocusMode && (
-                        <button
-                            onClick={onToggleFocusMode}
-                            className={`p-1.5 rounded transition-colors ${focusMode ? 'bg-[#1E2F46] text-white' : 'text-[#1E2F46]/50 hover:bg-[#1E2F46]/10 hover:text-[#1E2F46]'}`}
-                            title={focusMode ? 'Exit Focus (Ctrl+Shift+F)' : 'Focus Mode (Ctrl+Shift+F)'}
-                        >
-                            {focusMode ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
-                        </button>
-                    )}
-                </div>
+        <div className={`border border-[#1E2F46]/15 rounded-sm bg-white overflow-hidden flex flex-col ${focusMode ? 'h-screen fixed inset-0 z-[100]' : 'h-full'}`}>
+            {/* PostHog Style Footer Toolbar */}
+            <div className="order-2 border-t border-black/[0.08] bg-[#f8f9fb] p-1.5 overflow-x-auto custom-scrollbar">
+                <Toolbar elements={toolbarElements} className="min-w-max !bg-transparent !border-none" />
             </div>
 
             {/* Editor + Preview */}
-            <div className={`flex-1 flex ${canShowPreview ? 'flex-row' : 'flex-col'} min-h-0 overflow-hidden`}>
+            <div className={`order-1 flex-1 flex ${canShowPreview ? 'flex-row' : 'flex-col'} min-h-0 overflow-hidden`}>
                 {/* Editor */}
                 <div className={`${canShowPreview ? 'w-1/2 border-r border-[#1E2F46]/10' : 'w-full'} overflow-auto bg-white`}>
                     <EditorContent editor={editor} />
@@ -414,15 +452,15 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
             </div>
 
             {/* Status Bar */}
-            <div className="flex items-center justify-between px-2.5 py-1 border-t border-[#1E2F46]/10 bg-[#f8f9fb] text-[9px] font-bold tracking-wide lowercase text-[#1E2F46]/35">
+            <div className="order-3 flex items-center justify-between px-2.5 py-1 border-t border-black/[0.08] bg-[#f8f9fb] text-[10px] lowercase text-black/40">
                 <div className="flex items-center gap-2">
-                    <span>{wordCount} words</span>
+                    <span className="font-medium bg-black/5 px-1.5 rounded-sm">{wordCount} words</span>
                     <span>·</span>
                     <span>{getReadingTime(wordCount)}</span>
                 </div>
                 {lastSaved && (
-                    <span className="flex items-center gap-1 text-[#1E2F46]/45">
-                        <Save className="size-2" />
+                    <span className="flex items-center gap-1 opacity-60">
+                        <Save className="size-2.5" />
                         saved {lastSaved}
                     </span>
                 )}
