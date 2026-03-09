@@ -15,6 +15,7 @@ import {
 } from '@posthog/icons'
 import { ContextMenu } from 'radix-ui'
 import { useApp } from '../../context/App'
+import { useToast } from '../../context/ToastContext'
 import type { AppWindow as AppWindowType } from '../../context/Window'
 import { WindowProvider } from '../../context/Window'
 import { IMenu } from 'components/PostLayout/types'
@@ -78,6 +79,8 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
     const [leftDragResizing, setLeftDragResizing] = useState(false)
     const [minimizing, setMinimizing] = useState(false)
     const [animating, setAnimating] = useState(true)
+    const animationStartTimeRef = useRef<number | null>(null)
+    const { addToast } = useToast()
     const hasMobileAdjusted = useRef(false)
 
     useEffect(() => {
@@ -118,17 +121,39 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
         }
     }
 
+    const onAnimationStart = () => {
+        animationStartTimeRef.current = performance.now()
+    }
+
+    const onAnimationComplete = () => {
+        setAnimating(false)
+        if (animationStartTimeRef.current) {
+            const actualDuration = performance.now() - animationStartTimeRef.current
+            // If animation takes significantly longer than expected (> 700ms), warn user
+            if (actualDuration > 700 && !siteSettings.performanceBoost) {
+                addToast("Animations are running slow. Consider enabling performance boost in system settings.", 'warning', "Performance Note")
+            }
+            animationStartTimeRef.current = null
+        }
+        if (minimizing) {
+            setMinimizing(false)
+            setAnimating(true)
+        }
+    }
+
     const handleDoubleClick = () => {
         if (!constraintsRef.current) return
         const bounds = constraintsRef.current.getBoundingClientRect()
         const inset = 0
         const maxWidth = bounds.width - inset * 2
         const maxHeight = bounds.height - inset * 2
+
         const isMaximized =
-            size.width >= maxWidth - 2 &&
-            size.height >= maxHeight - 2 &&
-            Math.abs(position.x - inset) <= 2 &&
-            Math.abs(position.y - inset) <= 2
+            size.width >= maxWidth - 5 &&
+            size.height >= maxHeight - 5 &&
+            Math.abs(position.x - inset) <= 5 &&
+            Math.abs(position.y - inset) <= 5
+
         const newSize = isMaximized ? sizeConstraints.min : { width: maxWidth, height: maxHeight }
         updateWindow(item, {
             size: newSize,
@@ -399,26 +424,26 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                 }
                             }}
                             transition={{
-                                duration: 0.2,
+                                duration: siteSettings.performanceBoost ? 0 : 0.2,
                                 scale: {
-                                    duration: 0.2,
-                                    delay: 0.2,
+                                    duration: siteSettings.performanceBoost ? 0 : 0.2,
+                                    delay: siteSettings.performanceBoost ? 0 : 0.1,
                                     ease: [0.2, 0.2, 0.8, 1],
                                 },
                                 width: {
-                                    duration: dragging ? 0 : 0.18,
+                                    duration: (dragging || siteSettings.performanceBoost) ? 0 : 0.18,
                                     ease: [0.2, 0.2, 0.8, 1],
                                 },
                                 height: {
-                                    duration: dragging ? 0 : 0.18,
+                                    duration: (dragging || siteSettings.performanceBoost) ? 0 : 0.18,
                                     ease: [0.2, 0.2, 0.8, 1],
                                 },
                                 x: {
-                                    duration: dragging ? 0 : 0.18,
+                                    duration: (dragging || siteSettings.performanceBoost) ? 0 : 0.18,
                                     ease: [0.2, 0.2, 0.8, 1],
                                 },
                                 y: {
-                                    duration: dragging ? 0 : 0.18,
+                                    duration: (dragging || siteSettings.performanceBoost) ? 0 : 0.18,
                                     ease: [0.2, 0.2, 0.8, 1],
                                 },
                             }}
@@ -427,16 +452,11 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             dragControls={controls}
                             dragListener={false}
                             dragMomentum={false}
-                            dragConstraints={false} // Disable default so we can use our manual Safe Zone clamping in handleDragEnd
+                            dragConstraints={false}
                             onDrag={handleDrag}
                             onDragEnd={handleDragEnd}
-                            onAnimationComplete={() => {
-                                setAnimating(false)
-                                if (minimizing) {
-                                    setMinimizing(false)
-                                    setAnimating(true)
-                                }
-                            }}
+                            onAnimationStart={onAnimationStart}
+                            onAnimationComplete={onAnimationComplete}
                         >
                             {chrome && (
                                 <div
@@ -489,7 +509,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                         ) : item.props?.menu && (item.props.menu as IMenu[]).length > 0 ? (
                                             <Popover
                                                 trigger={
-                                                    <button className="text-primary hover:text-primary dark:text-primary-dark dark:hover:text-primary-dark text-left items-center justify-center text-sm font-semibold flex select-none">
+                                                    <button className="text-primary hover:text-primary dark:text-primary-dark dark:hover:text-primary-dark text-left items-center justify-center text-sm font-semibold flex select-none cq-text">
                                                         {(item.meta?.title && item.meta.title) || item.title || (item.key === 'home' ? 'home' : item.key)}
                                                         <IconChevronDown className="size-6 -m-1" />
                                                     </button>
@@ -501,7 +521,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                                 <FileMenu menu={item.props.menu as IMenu[]} />
                                             </Popover>
                                         ) : (
-                                            <div className="text-primary hover:text-primary dark:text-primary-dark dark:hover:text-primary-dark text-left items-center justify-center text-sm font-semibold flex select-none">
+                                            <div className="text-primary hover:text-primary dark:text-primary-dark dark:hover:text-primary-dark text-left items-center justify-center text-sm font-semibold flex select-none cq-text">
                                                 {(item.meta?.title && item.meta.title) || item.title || (item.key === 'home' ? 'Home' : item.key)}
                                             </div>
                                         )}
@@ -571,7 +591,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                                                 />
                                                             </div>
                                                         </ContextMenu.Item>
-                                                        <ContextMenu.Separator className="m-[5px] h-px bg-border" />
+                                                        <ContextMenu.Separator className="blueprint-divider" />
                                                         <ContextMenu.Label className="px-2.5 text-[13px] leading-[25px] text-muted">
                                                             resize
                                                         </ContextMenu.Label>

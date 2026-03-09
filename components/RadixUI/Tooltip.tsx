@@ -38,9 +38,7 @@ const Tooltip = ({
                 >
                     {children}
                     <RadixTooltip.Arrow asChild>
-                        <div className="w-5 h-2.5 overflow-hidden">
-                            <div className="w-3 h-3 border-r border-b border-primary bg-accent rotate-45 rounded-xs relative left-[3px] top-[-7px]" />
-                        </div>
+                        <div className={`tooltip-arrow ${side}`} />
                     </RadixTooltip.Arrow>
                 </RadixTooltip.Content>
             </RadixTooltip.Portal>

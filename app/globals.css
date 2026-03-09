@@ -27,6 +27,11 @@ body {
 
 ::-webkit-scrollbar-track {
   background: transparent;
+  box-shadow: inset 1px 0 0 rgba(var(--primary-rgb), 0.05);
+}
+
+.dark ::-webkit-scrollbar-track {
+  box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.05);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -149,12 +154,30 @@ mark {
     font-size: clamp(0.6rem, 2cqw, 0.8rem);
   }
 
-  /* Safari-Safe Advanced Blur */
-  /* PostHog uses RGB + Alpha to prevent Safari's backdrop-blur whitening bug */
-  .backdrop-blur-3xl-safe {
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
-    background-color: rgba(var(--bg-rgb), 0.6);
+  /* Performance Boost: Disables heavy blurs and transitions */
+  .performance-boost * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    transition-duration: 0.05s !important;
+    animation-duration: 0.05s !important;
+  }
+
+  /* Infinite Feature Ticker Engine */
+  @keyframes features-ticker {
+    0% {
+      transform: translate3d(0, 0, 0);
+    }
+
+    100% {
+      transform: translate3d(-2700px, 0, 0);
+    }
+  }
+
+  .infinite-ticker {
+    display: flex;
+    white-space: nowrap;
+    animation: features-ticker 80s linear infinite;
+    width: max-content;
   }
 }
 
@@ -604,6 +627,13 @@ mark {
     --secondary-rgb: 157 160 167;
     --accent-rgb: 45 46 55;
     --bg-rgb: 30 31 35;
+
+    .hover-invert:hover,
+    .hover-invert[data-state='open'] {
+      --bg: var(--text-primary);
+      --text-primary: var(--bg);
+      --accent: var(--text-muted);
+    }
   }
 
   .dark [data-scheme='secondary'] {
@@ -716,8 +746,14 @@ mark {
   h5,
   h6 {
     @apply font-bold;
-    letter-spacing: -0.015em;
+    letter-spacing: -0.015rem;
+    font-variation-settings: 'wght' 800;
     font-family: 'IBM Plex Sans Variable', 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui', 'helvetica neue', helvetica, Ubuntu, roboto, noto, arial, sans-serif !important;
+  }
+
+  a:hover,
+  button:hover {
+    font-variation-settings: 'wght' 600;
   }
 
   [data-app="AppWindow"] header {
@@ -780,11 +816,80 @@ mark {
   /* ... existing components ... */
 
   .squeak-left-border {
-    @apply relative before:border-l before:border-b before:border-solid before:border-black before:rounded-bl-md before:h-[20px] before:top-0 before:absolute before:w-[30px] before:left-0;
+    @apply before:border-l before:border-b before:border-solid before:border-black before:rounded-bl-md before:h-[20px] before:top-0 before:absolute before:w-[30px] before:left-0;
+  }
+
+  /* PostHog Active Glow Indicator */
+  .active-sidebar-item {
+    @apply relative font-bold opacity-100 text-primary;
+
+    &:before {
+      content: '';
+      @apply absolute -left-2 top-1 bottom-1 w-1 bg-red-500 rounded-lg shadow-[0_0_8px_rgba(239, 68, 68, 0.5)];
+    }
+  }
+
+  /* Blueprint / Technical Separator */
+  .blueprint-divider {
+    @apply border-t border-dashed border-primary/20 my-4;
+  }
+
+  /* Pixel-Perfect Clip-Path Tooltips */
+  .tooltip-arrow {
+    width: 10px;
+    height: 5px;
+    background-color: rgb(var(--bg));
+
+    &.top {
+      clip-path: polygon(50% 100%, 0 0, 100% 0);
+    }
+
+    &.bottom {
+      clip-path: polygon(50% 0, 0 100%, 100% 100%);
+    }
+
+    &.left {
+      clip-path: polygon(100% 50%, 0 0, 0 100%);
+      width: 5px;
+      height: 10px;
+    }
+
+    &.right {
+      clip-path: polygon(0 50%, 100% 0, 100% 100%);
+      width: 5px;
+      height: 10px;
+    }
   }
 
   li.squeak-left-border {
     @apply before:h-[14px];
+  }
+
+  details {
+    @apply bg-primary/40 border border-primary/20 rounded-sm mb-4;
+    transition: all 0.2s ease;
+
+    summary {
+      @apply cursor-pointer font-semibold list-none py-2 px-4 relative flex items-center gap-2;
+      font-variation-settings: 'wght' 700;
+
+      &::-webkit-details-marker {
+        display: none;
+      }
+
+      &:before {
+        content: '→';
+        @apply transform transition-transform duration-200 text-primary/60;
+      }
+    }
+
+    &[open] {
+      @apply bg-primary/60;
+
+      summary:before {
+        @apply rotate-90;
+      }
+    }
   }
 
   .community-post-markdown {

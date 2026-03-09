@@ -62,6 +62,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         performanceBoost: false
     })
 
+    const [lastClickedElementRect, setLastClickedElementRect] = useState<{ x: number; y: number } | null>(null)
+
+    const wallpapers = ['keyboard-garden', 'hogzilla', 'startup-monopoly', 'office-party', '2001-bliss', 'parade', 'coding-at-night']
+
     // Handle Theme/Color Mode Synchronization
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -145,6 +149,17 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         const potentialX = previousWindow.position.x + 10
         const potentialY = previousWindow.position.y + 10
 
+        // PostHog "2/3 Check" Algorithm:
+        // Prevent windows from escaping to the right by checking if 2/3 of the window would cross the midpoint
+        const screenMidpoint = window.innerWidth / 2
+        const windowRightEdge = potentialX + size.width
+        const amountOnRight = Math.max(0, windowRightEdge - screenMidpoint)
+        const proportionOnRight = amountOnRight / size.width
+
+        if (proportionOnRight > 2 / 3) {
+            return getDesktopCenterPosition(size)
+        }
+
         const bounds = constraintsRef.current?.getBoundingClientRect()
         const maxX = bounds ? bounds.width - size.width - inset : window.innerWidth - size.width - inset
         const maxY = bounds ? bounds.height - size.height - inset : window.innerHeight - 44 - size.height - inset
@@ -199,10 +214,19 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
                 return newWindows
             }
 
-            let size = item.size
+            // Centralized Window Settings
+            const WINDOW_SETTINGS: Record<string, any> = {
+                '/posts': { width: 1000, height: 800, title: 'Latest Editions' },
+                '/search': { width: 600, height: 400, title: 'Search', topCenter: true },
+                'posts-newspaper': { width: 1000, height: 800, title: 'Latest Editions' }
+            }
+
+            const settings = WINDOW_SETTINGS[item.key] || WINDOW_SETTINGS[item.path] || {}
+
+            let size = item.size || (settings.width ? { width: settings.width, height: settings.height } : undefined)
+
             if (!size) {
                 if (typeof window !== 'undefined') {
-                    // Start with 90% of screen size, cap at maximum reasonable bounds (e.g., 2000x2000)
                     size = {
                         width: Math.min(window.innerWidth * 0.9, 2000),
                         height: Math.min((window.innerHeight - 44) * 0.9, 2000)
@@ -212,10 +236,18 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
                 }
             }
 
-            const position = item.position || getPositionDefaults(size, prev)
+            let position = item.position
+            if (!position) {
+                if (settings.topCenter && typeof window !== 'undefined') {
+                    position = { x: (window.innerWidth - size.width) / 2, y: 100 }
+                } else {
+                    position = getPositionDefaults(size, prev)
+                }
+            }
 
-            const newWindow = {
+            const newWindow: AppWindow = {
                 ...item,
+                title: item.title || settings.title || getTitleFromPath(item.path),
                 size,
                 position,
                 previousSize: size,
@@ -224,13 +256,17 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
                 minimized: false,
                 sizeConstraints: item.sizeConstraints || { min: MIN_SIZE, max: { width: 2000, height: 2000 } },
                 fixedSize: item.fixedSize || false,
-                minimal: item.minimal || false
+                minimal: item.minimal || false,
+                fromOrigin: lastClickedElementRect ? {
+                    x: lastClickedElementRect.x - size.width / 2,
+                    y: lastClickedElementRect.y - size.height / 2
+                } : undefined
             }
 
             setFocusedWindow(newWindow)
             return [...prev, newWindow]
         })
-    }, [getPositionDefaults])
+    }, [getPositionDefaults, getTitleFromPath, lastClickedElementRect])
 
     const closeWindow = useCallback((itemOrKey: string | AppWindow) => {
         const key = typeof itemOrKey === 'string' ? itemOrKey : itemOrKey.key
@@ -426,10 +462,54 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
             setIsMobile(window.innerWidth < 768)
             setCompact(window.innerWidth < 1024)
         }
+
+        const handleClick = (e: MouseEvent) => {
+            const target = e.target as HTMLElement
+            const rect = target.getBoundingClientRect()
+            setLastClickedElementRect({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 })
+        }
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const target = e.target as HTMLElement
+            if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
+
+            // Search: /
+            if (e.key === '/' && !e.ctrlKey && !e.metaKey) {
+                e.preventDefault()
+                openSearch()
+            }
+
+            // Theme: \
+            if (e.key === '\\') {
+                e.preventDefault()
+                setSiteSettings(prev => ({
+                    ...prev,
+                    colorMode: prev.colorMode === 'light' ? 'dark' : 'light'
+                }))
+            }
+
+            // Wallpaper: |
+            if (e.key === '|') {
+                e.preventDefault()
+                setSiteSettings(prev => {
+                    const currentIndex = wallpapers.indexOf(prev.wallpaper)
+                    const nextIndex = (currentIndex + 1) % wallpapers.length
+                    return { ...prev, wallpaper: wallpapers[nextIndex] }
+                })
+            }
+        }
+
         handleResize()
         window.addEventListener('resize', handleResize)
-        return () => window.removeEventListener('resize', handleResize)
-    }, [])
+        window.addEventListener('click', handleClick)
+        window.addEventListener('keydown', handleKeyDown)
+
+        return () => {
+            window.removeEventListener('resize', handleResize)
+            window.removeEventListener('click', handleClick)
+            window.removeEventListener('keydown', handleKeyDown)
+        }
+    }, [openSearch])
 
     // URL Sync - Updates the browser address bar to match the focused window's path
     // We use replaceState instead of pushState to avoid polluting history with every focus change,
@@ -479,9 +559,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
     return (
         <Context.Provider value={value}>
-            <RadixTooltip.Provider delayDuration={500}>
-                {children}
-            </RadixTooltip.Provider>
+            <div className={siteSettings.performanceBoost ? 'performance-boost' : ''}>
+                <RadixTooltip.Provider delayDuration={500}>
+                    {children}
+                </RadixTooltip.Provider>
+            </div>
         </Context.Provider>
     )
 }
