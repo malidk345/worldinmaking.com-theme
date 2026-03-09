@@ -430,38 +430,79 @@ CREATE INDEX IF NOT EXISTS idx_community_replies_post   ON community_replies(pos
 CREATE INDEX IF NOT EXISTS idx_community_replies_author ON community_replies(author_id);
 
 -- ─────────────────────────────────────────────────────────────
--- 7. COMMUNITY LIKES
--- ─────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS community_likes (
+-- 7. VOTING SYSTEM (Multi-vote logic: -5 to +5)
+
+-- Blog Post Votes (Main Articles)
+CREATE TABLE IF NOT EXISTS post_votes (
+    id          SERIAL PRIMARY KEY,
+    post_slug   TEXT NOT NULL,
+    user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    vote        INT NOT NULL DEFAULT 0 CHECK (vote >= -5 AND vote <= 5),
+    created_at  TIMESTAMPTZ DEFAULT now(),
+    updated_at  TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(post_slug, user_id)
+);
+
+ALTER TABLE post_votes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Votes are viewable by everyone" ON post_votes FOR SELECT USING (true);
+CREATE POLICY "Authenticated users can vote on posts" ON post_votes FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+-- Community Post Votes (Forum Questions/Comments)
+CREATE TABLE IF NOT EXISTS community_post_votes (
     id          SERIAL PRIMARY KEY,
     post_id     INT NOT NULL REFERENCES community_posts(id) ON DELETE CASCADE,
     user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    vote        INT NOT NULL DEFAULT 0 CHECK (vote >= -5 AND vote <= 5),
     created_at  TIMESTAMPTZ DEFAULT now(),
+    updated_at  TIMESTAMPTZ DEFAULT now(),
     UNIQUE(post_id, user_id)
 );
 
-ALTER TABLE community_likes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE community_post_votes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Community post votes are viewable by everyone" ON community_post_votes FOR SELECT USING (true);
+CREATE POLICY "Authenticated users can vote on community posts" ON community_post_votes FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='community_likes' AND policyname='Likes are viewable by everyone') THEN
-        CREATE POLICY "Likes are viewable by everyone" ON community_likes FOR SELECT USING (true);
-    END IF;
-END $$;
+-- Community Reply Votes (Forum Replies)
+CREATE TABLE IF NOT EXISTS community_reply_votes (
+    id          SERIAL PRIMARY KEY,
+    reply_id    INT NOT NULL REFERENCES community_replies(id) ON DELETE CASCADE,
+    user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    vote        INT NOT NULL DEFAULT 0 CHECK (vote >= -5 AND vote <= 5),
+    created_at  TIMESTAMPTZ DEFAULT now(),
+    updated_at  TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(reply_id, user_id)
+);
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='community_likes' AND policyname='Users can like posts') THEN
-        CREATE POLICY "Users can like posts" ON community_likes FOR INSERT WITH CHECK (auth.uid() = user_id);
-    END IF;
-END $$;
+ALTER TABLE community_reply_votes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Reply votes are viewable by everyone" ON community_reply_votes FOR SELECT USING (true);
+CREATE POLICY "Authenticated users can vote on replies" ON community_reply_votes FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='community_likes' AND policyname='Users can unlike posts') THEN
-        CREATE POLICY "Users can unlike posts" ON community_likes FOR DELETE USING (auth.uid() = user_id);
-    END IF;
-END $$;
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_post_votes_slug ON post_votes(post_slug);
+CREATE INDEX IF NOT EXISTS idx_com_post_votes_id ON community_post_votes(post_id);
+CREATE INDEX IF NOT EXISTS idx_com_reply_votes_id ON community_reply_votes(reply_id);
 
-CREATE INDEX IF NOT EXISTS idx_community_likes_post ON community_likes(post_id);
-CREATE INDEX IF NOT EXISTS idx_community_likes_user ON community_likes(user_id);
+-- Aggregate Functions
+CREATE OR REPLACE FUNCTION get_post_total_votes(post_slug_input TEXT)
+RETURNS INT AS $$
+BEGIN
+    RETURN (SELECT COALESCE(SUM(vote), 0) FROM post_votes WHERE post_slug = post_slug_input);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Views for easier fetching
+CREATE OR REPLACE VIEW community_posts_with_stats AS
+SELECT 
+    p.*,
+    (SELECT COALESCE(SUM(v.vote), 0) FROM community_post_votes v WHERE v.post_id = p.id) as total_votes,
+    (SELECT COUNT(*) FROM community_replies r WHERE r.post_id = p.id) as reply_count
+FROM community_posts p;
+
+CREATE OR REPLACE VIEW community_replies_with_stats AS
+SELECT 
+    r.*,
+    (SELECT COALESCE(SUM(v.vote), 0) FROM community_reply_votes v WHERE v.reply_id = r.id) as total_votes
+FROM community_replies r;
 
 -- ─────────────────────────────────────────────────────────────
 -- 8. WRITER APPLICATIONS

@@ -54,6 +54,7 @@ export default function CommentSection({
         pinnedTopics: [],
         resolved: false,
         archived: false,
+        upvotes: p._count.likes || 0,
     }))
 
     return (

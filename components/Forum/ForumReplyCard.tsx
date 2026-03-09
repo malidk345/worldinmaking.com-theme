@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import ForumDays from './ForumDays'
 import ForumMarkdown from './ForumMarkdown'
 import { ForumReply } from './types'
@@ -9,6 +9,8 @@ import OSButton from 'components/OSButton'
 import VotePicker from 'components/VotePicker'
 import { IconPencil } from '@posthog/icons'
 import Link from 'components/Link'
+import { supabase } from 'lib/supabase'
+import { useToast } from 'context/ToastContext'
 
 interface ForumReplyCardProps {
     reply: ForumReply
@@ -17,16 +19,66 @@ interface ForumReplyCardProps {
 }
 
 export default function ForumReplyCard({ reply, isInForum = false, questionAuthorId }: ForumReplyCardProps) {
-    const [upvoted, setUpvoted] = useState(false)
-    const [upvotes, setUpvotes] = useState(reply.upvotes || 0)
+    const { addToast } = useToast()
+    const [userVote, setUserVote] = useState(0)
+    const [totalVotes, setTotalVotes] = useState(reply.upvotes || 0)
+    const [loading, setLoading] = useState(false)
 
-    const handleUpvote = () => {
-        if (upvoted) {
-            setUpvotes(v => v - 1)
-            setUpvoted(false)
-        } else {
-            setUpvotes(v => v + 1)
-            setUpvoted(true)
+    // Load saved vote state from Supabase
+    useEffect(() => {
+        const loadUserVote = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) return
+
+            const { data } = await supabase
+                .from('community_reply_votes')
+                .select('vote')
+                .eq('reply_id', reply.id)
+                .eq('user_id', user.id)
+                .maybeSingle()
+
+            if (data) setUserVote(data.vote)
+
+            // Also refresh total votes for accuracy
+            const { data: aggregate } = await supabase.rpc('get_com_reply_total_votes', { reply_id_input: reply.id })
+            if (aggregate !== null) setTotalVotes(aggregate)
+        }
+        loadUserVote()
+    }, [reply.id])
+
+    const handleVoteChange = async (direction: 'up' | 'down') => {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+            addToast('please log in to vote', 'error')
+            return
+        }
+
+        const delta = direction === 'up' ? 1 : -1
+        const nextVote = userVote + delta
+
+        if (nextVote > 5 || nextVote < -5) {
+            addToast(`limit reached`, 'warning')
+            return
+        }
+
+        // Optimistic update
+        const prevUserVote = userVote
+        setUserVote(nextVote)
+        setTotalVotes(prev => prev + delta)
+
+        const { error } = await supabase
+            .from('community_reply_votes')
+            .upsert({
+                reply_id: reply.id,
+                user_id: user.id,
+                vote: nextVote,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'reply_id,user_id' })
+
+        if (error) {
+            setUserVote(prevUserVote)
+            setTotalVotes(prev => prev - delta)
+            addToast('failed to save vote', 'error')
         }
     }
 
@@ -81,10 +133,10 @@ export default function ForumReplyCard({ reply, isInForum = false, questionAutho
 
                 <div className="flex items-center gap-1 mt-4">
                     <VotePicker
-                        count={upvotes}
-                        active={upvoted}
-                        onDecrement={() => { if (upvoted) handleUpvote() }}
-                        onIncrement={() => { if (!upvoted) handleUpvote() }}
+                        count={totalVotes}
+                        active={userVote !== 0}
+                        onDecrement={() => handleVoteChange('down')}
+                        onIncrement={() => handleVoteChange('up')}
                     />
                 </div>
             </div>

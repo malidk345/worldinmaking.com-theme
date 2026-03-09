@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { useToast } from 'context/ToastContext'
 import VotePicker from 'components/VotePicker'
 import { Share2 } from 'lucide-react'
+import { supabase } from 'lib/supabase'
 
 interface ArticleActionsProps {
     slug?: string
@@ -11,60 +12,106 @@ interface ArticleActionsProps {
 
 export default function ArticleActions({ slug }: ArticleActionsProps) {
     const { addToast } = useToast()
+    const [userVote, setUserVote] = useState(0)
+    const [totalVotes, setTotalVotes] = useState(0)
+    const [loading, setLoading] = useState(true)
 
-    // Deterministic random generator based on slug
-    const { initialUpvotes } = useMemo(() => {
-        if (!slug) return { initialUpvotes: 12 }
-
-        // Simple string hash
+    // Deterministic base upvotes (as fallback/starting point)
+    const initialUpvotes = useMemo(() => {
+        if (!slug) return 12
         let hash = 0
         for (let i = 0; i < slug.length; i++) {
             const char = slug.charCodeAt(i)
             hash = ((hash << 5) - hash) + char
-            hash = hash & hash // Convert to 32bit integer
+            hash = hash & hash
         }
-
-        const absHash = Math.abs(hash)
-        const baseUp = (absHash % 140) + 10
-
-        return { initialUpvotes: baseUp }
+        return (Math.abs(hash) % 140) + 10
     }, [slug])
 
-    const [upvoted, setUpvoted] = useState(false)
-    const [tempUp, setTempUp] = useState(0)
-
-    // Load saved vote state off localStorage
+    // Load votes from Supabase
     useEffect(() => {
         if (!slug) return
-        const savedVote = localStorage.getItem(`article_vote_${slug}`)
-        if (savedVote === 'up') {
-            setUpvoted(true)
-            setTempUp(1)
+
+        const loadVotes = async () => {
+            setLoading(true)
+            try {
+                // Get aggregate total weight for this slug
+                const { data: aggregate } = await supabase
+                    .rpc('get_post_total_votes', { post_slug_input: slug });
+
+                if (aggregate !== null) {
+                    setTotalVotes(aggregate)
+                }
+
+                // Get current user's vote
+                const { data: { user } } = await supabase.auth.getUser()
+                if (user) {
+                    const { data } = await supabase
+                        .from('post_votes')
+                        .select('vote')
+                        .eq('post_slug', slug)
+                        .eq('user_id', user.id)
+                        .maybeSingle()
+
+                    if (data) setUserVote(data.vote)
+                }
+            } catch (err) {
+                console.error('Error loading votes:', err)
+            } finally {
+                setLoading(false)
+            }
         }
+
+        loadVotes()
     }, [slug])
 
-    const handleUpvote = () => {
+    const handleVoteChange = async (direction: 'up' | 'down') => {
         if (!slug) return
-        if (upvoted) {
-            setTempUp(0)
-            setUpvoted(false)
-            localStorage.removeItem(`article_vote_${slug}`)
-        } else {
-            setTempUp(1)
-            setUpvoted(true)
-            localStorage.setItem(`article_vote_${slug}`, 'up')
+
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+            addToast('please log in to vote', 'error')
+            return
+        }
+
+        const delta = direction === 'up' ? 1 : -1
+        const nextVote = userVote + delta
+
+        if (nextVote > 5 || nextVote < -5) {
+            addToast(`you have reached the ${direction === 'up' ? 'maximum' : 'minimum'} vote limit`, 'warning')
+            return
+        }
+
+        // Optimistic update
+        const prevUserVote = userVote
+        setUserVote(nextVote)
+        setTotalVotes(prev => prev + delta)
+
+        const { error } = await supabase
+            .from('post_votes')
+            .upsert({
+                post_slug: slug,
+                user_id: user.id,
+                vote: nextVote,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'post_slug,user_id' })
+
+        if (error) {
+            console.error('Vote error:', error)
+            addToast('failed to save vote', 'error')
+            // Rollback
+            setUserVote(prevUserVote)
+            setTotalVotes(prev => prev - delta)
         }
     }
 
     const handleShare = async () => {
         if (typeof window === 'undefined') return
-
         try {
             if (navigator.clipboard && window.isSecureContext) {
                 await navigator.clipboard.writeText(window.location.href)
                 addToast('link copied to clipboard!', 'success')
             } else {
-                // Fallback for non-secure contexts (like plain http localhost)
                 const textArea = document.createElement("textarea")
                 textArea.value = window.location.href
                 textArea.style.position = "fixed"
@@ -72,33 +119,26 @@ export default function ArticleActions({ slug }: ArticleActionsProps) {
                 document.body.appendChild(textArea)
                 textArea.focus()
                 textArea.select()
-
-                try {
-                    document.execCommand('copy')
-                    addToast('link copied to clipboard!', 'success')
-                } catch (err) {
-                    console.error('Fallback copy failed', err)
-                    addToast('Failed to copy link', 'error')
-                }
-
+                document.execCommand('copy')
+                addToast('link copied to clipboard!', 'success')
                 document.body.removeChild(textArea)
             }
         } catch (err) {
-            console.error('Share failed', err)
-            addToast('Failed to copy link', 'error')
+            addToast('failed to copy link', 'error')
         }
     }
 
-    const displayUpvotes = initialUpvotes + tempUp
+    const displayCount = initialUpvotes + totalVotes
 
     return (
         <div className="flex justify-between items-center mb-6 pt-4 border-t border-black/10 dark:border-white/10 pb-4">
             <div className="flex items-center gap-2">
                 <VotePicker
-                    count={displayUpvotes}
-                    active={upvoted}
-                    onDecrement={() => { if (upvoted) handleUpvote() }}
-                    onIncrement={() => { if (!upvoted) handleUpvote() }}
+                    count={displayCount}
+                    active={userVote !== 0}
+                    onDecrement={() => handleVoteChange('down')}
+                    onIncrement={() => handleVoteChange('up')}
+                    disabled={!slug || loading}
                 />
             </div>
 

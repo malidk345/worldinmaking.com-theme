@@ -45,6 +45,9 @@ export interface ForumQuestion {
     resolved: boolean
     resolvedBy?: number
     archived: boolean
+    upvotes: number
+    idLiked?: boolean // preserved for legacy UI if needed
+    userVote?: number
     slug?: string
     edits?: { id: number; date: string; by: ForumProfile }[]
 }

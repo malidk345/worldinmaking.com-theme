@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import ForumProfileBadge from './ForumProfileBadge'
 import ForumDays from './ForumDays'
 import ForumMarkdown from './ForumMarkdown'
@@ -10,6 +10,8 @@ import { ForumQuestion, ForumReply } from './types'
 import Link from 'components/Link'
 import OSButton from 'components/OSButton'
 import { IconPencil, IconArchive, IconUndo } from '@posthog/icons'
+import VotePicker from 'components/VotePicker'
+import { supabase } from 'lib/supabase'
 
 import { useCommunity } from 'hooks/useCommunity'
 
@@ -27,14 +29,43 @@ export default function ForumQuestionCard({
     isComment = false,
 }: ForumQuestionCardProps) {
     const [expanded, setExpanded] = useState(initialExpanded)
-    const { replies, fetchReplies, createReply } = useCommunity()
+    const { replies, fetchReplies, createReply, handleVote } = useCommunity()
     const [isEditing, setIsEditing] = useState(false)
+    const [userVote, setUserVote] = useState(0)
+    const [totalVotes, setTotalVotes] = useState(question.upvotes || 0)
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (expanded) {
             fetchReplies(question.id)
         }
     }, [expanded, question.id, fetchReplies])
+
+    // Load user vote from Supabase
+    useEffect(() => {
+        const loadUserVote = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) return
+
+            const { data } = await supabase
+                .from('community_post_votes')
+                .select('vote')
+                .eq('post_id', question.id)
+                .eq('user_id', user.id)
+                .maybeSingle()
+
+            if (data) setUserVote(data.vote)
+        }
+        loadUserVote()
+    }, [question.id])
+
+    const handleVoteChange = async (direction: 'up' | 'down') => {
+        const success = await handleVote(question.id, direction)
+        if (success) {
+            const delta = direction === 'up' ? 1 : -1
+            setUserVote(prev => prev + delta)
+            setTotalVotes(prev => prev + delta)
+        }
+    }
 
     const handleReplySubmit = async (content: string) => {
         await createReply(question.id, content)
@@ -51,7 +82,7 @@ export default function ForumQuestionCard({
             lastName: '',
             avatar: r.profiles?.avatar_url || null
         },
-        upvotes: 0,
+        upvotes: r.upvotes || 0,
         downvotes: 0
     }))
 
@@ -116,6 +147,15 @@ export default function ForumQuestionCard({
 
                     <div className="question-content">
                         <ForumMarkdown>{question.body}</ForumMarkdown>
+                    </div>
+
+                    <div className="flex items-center gap-1 mt-4">
+                        <VotePicker
+                            count={totalVotes}
+                            active={userVote !== 0}
+                            onDecrement={() => handleVoteChange('down')}
+                            onIncrement={() => handleVoteChange('up')}
+                        />
                     </div>
                 </div>
 
