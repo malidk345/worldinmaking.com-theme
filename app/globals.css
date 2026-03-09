@@ -154,6 +154,22 @@ mark {
     font-size: clamp(0.6rem, 2cqw, 0.8rem);
   }
 
+  /* Safari-Safe Advanced Blur */
+  /* PostHog uses RGB + Alpha to prevent Safari's backdrop-blur whitening bug */
+  .backdrop-blur-3xl-safe {
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    background-color: rgba(var(--bg-rgb), 0.65);
+  }
+
+  .glass-card {
+    background: rgba(var(--bg-rgb), 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(var(--primary-rgb), 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+  }
+
   /* Performance Boost: Disables heavy blurs and transitions */
   .performance-boost * {
     backdrop-filter: none !important;

@@ -509,7 +509,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                         ) : item.props?.menu && (item.props.menu as IMenu[]).length > 0 ? (
                                             <Popover
                                                 trigger={
-                                                    <button className="text-primary hover:text-primary dark:text-primary-dark dark:hover:text-primary-dark text-left items-center justify-center text-sm font-semibold flex select-none cq-text">
+                                                    <button className="text-primary hover:text-primary dark:text-primary-dark dark:hover:text-primary-dark text-left items-center justify-center text-sm font-bold lowercase tracking-tight flex select-none">
                                                         {(item.meta?.title && item.meta.title) || item.title || (item.key === 'home' ? 'home' : item.key)}
                                                         <IconChevronDown className="size-6 -m-1" />
                                                     </button>
@@ -521,8 +521,8 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                                 <FileMenu menu={item.props.menu as IMenu[]} />
                                             </Popover>
                                         ) : (
-                                            <div className="text-primary hover:text-primary dark:text-primary-dark dark:hover:text-primary-dark text-left items-center justify-center text-sm font-semibold flex select-none cq-text">
-                                                {(item.meta?.title && item.meta.title) || item.title || (item.key === 'home' ? 'Home' : item.key)}
+                                            <div className="text-primary hover:text-primary dark:text-primary-dark dark:hover:text-primary-dark text-left items-center justify-center text-sm font-bold lowercase tracking-tight flex select-none">
+                                                {(item.meta?.title && item.meta.title) || item.title || (item.key === 'home' ? 'home' : item.key)}
                                             </div>
                                         )}
                                     </div>

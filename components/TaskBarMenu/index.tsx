@@ -64,11 +64,12 @@ export default function TaskBarMenu() {
     const menuData: MenuType[] = React.useMemo(() => [
         {
             trigger: (
-                <div className="flex items-center gap-1.5 px-1">
+                <div className="flex items-center gap-1.5 px-1 group">
                     <svg viewBox="0 0 32 32" className="size-5 fill-current">
                         <path d="M16 0C7.163 0 0 7.163 0 16s7.163 16 16 16 16-7.163 16-16S24.837 0 16 0zm-4.138 23.362l-2.012-2.012 2.012-2.013 2.013 2.013-2.013 2.012zm4.138-4.138l-2.013-2.012 2.013-2.013 2.012 2.013-2.012 2.012zm0-8.275l-2.013-2.013 2.013-2.012 2.012 2.012-2.012 2.013zm4.138 4.138l-2.013-2.013 2.012-2.012 2.013 2.012-2.012 2.013z" />
                     </svg>
-                    <IconChevronDown className="size-3 opacity-50" />
+                    <span className="text-[15px] font-bold tracking-tight lowercase">wim</span>
+                    <IconChevronDown className="size-3 opacity-50 group-hover:opacity-100 transition-opacity" />
                 </div>
             ),
             items: [
