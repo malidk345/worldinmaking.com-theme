@@ -49,11 +49,13 @@ export const CalloutNode = Node.create({
     name: 'callout',
     group: 'block',
     content: 'inline*',
+    selectable: true,
+    draggable: true,
     parseHTML() {
         return [{ tag: 'div[data-type="callout"]' }]
     },
     renderHTML({ HTMLAttributes }) {
-        return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'callout', class: 'p-5 my-6 bg-[#1E2F46]/[0.04] border-l-[3px] border-[#1E2F46]/40 rounded-r-lg font-medium text-[#1E2F46]/85 leading-relaxed text-[13.5px]' }), 0]
+        return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'callout', class: 'p-6 my-8 bg-black/[0.03] border-l-[4px] border-black/40 rounded-r-xl font-normal text-black leading-relaxed text-[15px]' }), 0]
     },
     addCommands() {
         return {
@@ -70,6 +72,8 @@ export const ReferencesNode = Node.create({
     content: 'block+',
     defining: true,
     isolating: true,
+    selectable: true,
+    draggable: true,
     parseHTML() {
         return [
             { tag: 'details[data-type="references"]' },
@@ -155,7 +159,7 @@ const TB = ({ active, onClick, title, children }: TBProps) => (
         type="button"
         onClick={onClick}
         title={title}
-        className={`p-1 rounded transition-colors ${active ? 'bg-[#1E2F46] text-white' : 'text-[#1E2F46]/60 hover:bg-[#1E2F46]/10 hover:text-[#1E2F46]'}`}
+        className={`p-1.5 rounded-md transition-all active:scale-95 ${active ? 'bg-black text-white shadow-sm' : 'text-black/60 hover:bg-black/10 hover:text-black'}`}
     >
         {children}
     </button>
@@ -180,94 +184,72 @@ const EditorMenuBar = ({ editor }: { editor: Editor | null }) => {
     }
 
     return (
-        <div className="flex flex-wrap gap-0.5 p-1.5 border-b border-[#1E2F46]/5 bg-white">
+        <div className="flex flex-wrap items-center gap-1 p-2 border-b border-black/[0.06] bg-white/80 backdrop-blur-sm sticky top-0 z-10 sm:gap-1.5">
             <TB active={editor.isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()} title="Bold">
-                <Bold className="size-3.5" />
+                <Bold className="size-4" />
             </TB>
             <TB active={editor.isActive('italic')} onClick={() => editor.chain().focus().toggleItalic().run()} title="Italic">
-                <Italic className="size-3.5" />
+                <Italic className="size-4" />
             </TB>
             <TB active={editor.isActive('underline')} onClick={() => editor.chain().focus().toggleUnderline().run()} title="Underline">
-                <UnderlineIcon className="size-3.5" />
+                <UnderlineIcon className="size-4" />
             </TB>
             <TB active={editor.isActive('highlight')} onClick={() => editor.chain().focus().toggleHighlight().run()} title="Highlight text">
-                <Highlighter className="size-3.5" />
-            </TB>
-            <TB active={editor.isActive('subscript')} onClick={() => editor.chain().focus().toggleSubscript().run()} title="Subscript">
-                <SubscriptIcon className="size-3.5" />
-            </TB>
-            <TB active={editor.isActive('superscript')} onClick={() => editor.chain().focus().toggleSuperscript().run()} title="Superscript">
-                <SuperscriptIcon className="size-3.5" />
+                <Highlighter className="size-4" />
             </TB>
             <TB active={editor.isActive('code')} onClick={() => editor.chain().focus().toggleCode().run()} title="Inline Code">
-                <Code className="size-3.5" />
+                <Code className="size-4" />
             </TB>
 
-            <div className="w-px bg-[#1E2F46]/10 mx-1 self-stretch" />
-
-            <TB active={editor.isActive({ textAlign: 'left' })} onClick={() => editor.chain().focus().setTextAlign('left').run()} title="Align Left">
-                <AlignLeft className="size-3.5" />
-            </TB>
-            <TB active={editor.isActive({ textAlign: 'center' })} onClick={() => editor.chain().focus().setTextAlign('center').run()} title="Align Center">
-                <AlignCenter className="size-3.5" />
-            </TB>
-            <TB active={editor.isActive({ textAlign: 'right' })} onClick={() => editor.chain().focus().setTextAlign('right').run()} title="Align Right">
-                <AlignRight className="size-3.5" />
-            </TB>
-            <TB active={editor.isActive({ textAlign: 'justify' })} onClick={() => editor.chain().focus().setTextAlign('justify').run()} title="Justify">
-                <AlignJustify className="size-3.5" />
-            </TB>
-
-            <div className="w-px bg-[#1E2F46]/10 mx-1 self-stretch" />
+            <div className="w-px h-5 bg-black/[0.08] mx-0.5 sm:mx-1" />
 
             <TB active={editor.isActive('heading', { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} title="Heading 2">
-                <Heading2 className="size-3.5" />
+                <Heading2 className="size-4" />
             </TB>
             <TB active={editor.isActive('heading', { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} title="Heading 3">
-                <Heading3 className="size-3.5" />
+                <Heading3 className="size-4" />
             </TB>
 
-            <div className="w-px bg-[#1E2F46]/10 mx-1 self-stretch" />
+            <div className="w-px h-5 bg-black/[0.08] mx-0.5 sm:mx-1" />
 
             <TB active={editor.isActive('bulletList')} onClick={() => editor.chain().focus().toggleBulletList().run()} title="Bullet List">
-                <List className="size-3.5" />
+                <List className="size-4" />
             </TB>
             <TB active={editor.isActive('orderedList')} onClick={() => editor.chain().focus().toggleOrderedList().run()} title="Ordered List">
-                <ListOrdered className="size-3.5" />
+                <ListOrdered className="size-4" />
             </TB>
             <TB active={editor.isActive('blockquote')} onClick={() => editor.chain().focus().toggleBlockquote().run()} title="Quote">
-                <Quote className="size-3.5" />
+                <Quote className="size-4" />
             </TB>
-            <TB active={editor.isActive('callout')} onClick={() => (editor.chain().focus() as unknown as { setCallout: () => { run: () => void } }).setCallout().run()} title="Callout (Info Box)">
-                <MessageSquareWarning className="size-3.5" />
+            <TB active={editor.isActive('callout')} onClick={() => (editor.chain().focus() as any).setCallout().run()} title="Callout (Info Box)">
+                <MessageSquareWarning className="size-4" />
             </TB>
-            <TB active={editor.isActive('references')} onClick={() => (editor.chain().focus() as unknown as { insertReferences: () => { run: () => void } }).insertReferences().run()} title="Sources & References">
-                <BookMarked className="size-3.5" />
+            <TB active={editor.isActive('references')} onClick={() => (editor.chain().focus() as any).insertReferences().run()} title="Sources & References">
+                <BookMarked className="size-4" />
             </TB>
             <TB active={editor.isActive('codeBlock')} onClick={() => editor.chain().focus().toggleCodeBlock().run()} title="Code Block">
-                <Terminal className="size-3.5" />
+                <Terminal className="size-4" />
             </TB>
             <TB active={editor.isActive('table')} onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} title="Insert Table">
-                <TableIcon className="size-3.5" />
+                <TableIcon className="size-4" />
             </TB>
 
-            <div className="w-px bg-[#1E2F46]/10 mx-1 self-stretch" />
+            <div className="w-px h-5 bg-black/[0.08] mx-0.5 sm:mx-1" />
 
             <TB active={editor.isActive('link')} onClick={addLink} title="Link">
-                <LinkIcon className="size-3.5" />
+                <LinkIcon className="size-4" />
             </TB>
             <TB onClick={addImage} title="Image">
-                <ImageIcon className="size-3.5" />
+                <ImageIcon className="size-4" />
             </TB>
 
-            {/* Hide undo/redo on very small screens */}
-            <div className="hidden sm:flex items-center">
-                <div className="w-px bg-[#1E2F46]/10 mx-1 self-stretch" />
+            <div className="hidden md:flex items-center">
+                <div className="w-px h-5 bg-black/[0.08] mx-1" />
                 <TB onClick={() => editor.chain().focus().undo().run()} title="Undo">
-                    <Undo className="size-3.5" />
+                    <Undo className="size-4" />
                 </TB>
                 <TB onClick={() => editor.chain().focus().redo().run()} title="Redo">
-                    <Redo className="size-3.5" />
+                    <Redo className="size-4" />
                 </TB>
             </div>
         </div>
@@ -303,7 +285,7 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
         immediatelyRender: false,
         extensions: [
             StarterKit.configure({
-                codeBlock: false, // Turn off so we can use Lowlight codeBlock
+                codeBlock: false,
             }),
             Placeholder.configure({
                 placeholder: 'yazmaya başlayın...',
@@ -314,7 +296,7 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
             Image,
             Highlight.configure({
                 HTMLAttributes: {
-                    style: 'background-color: rgba(30, 47, 70, 0.15); color: #1E2F46; border-radius: 4px; padding: 2px 4px; border-bottom: 2px solid rgba(30, 47, 70, 0.35);',
+                    style: 'background-color: rgba(0, 0, 0, 0.08); color: black; border-radius: 4px; padding: 2px 4px;',
                 },
             }),
             Underline,
@@ -332,10 +314,8 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
             TableRow,
             TableHeader,
             TableCell,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            CalloutNode as any,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            ReferencesNode as any,
+            CalloutNode,
+            ReferencesNode,
         ],
         content: content,
         onUpdate: ({ editor }) => {
@@ -349,7 +329,7 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
         },
         editorProps: {
             attributes: {
-                class: `prose prose-sm max-w-none focus:outline-none px-4 py-3 font-sans ${focusMode ? 'min-h-[70vh] text-base' : 'min-h-[300px]'} text-[#1E2F46] prose-headings:text-[#1E2F46] prose-p:text-[#1E2F46] prose-strong:text-[#1E2F46] prose-a:text-primary prose-a:font-medium prose-a:no-underline hover:prose-a:underline prose-code:text-[#1E2F46] prose-code:bg-[#1E2F46]/5 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none prose-pre:bg-[#1E2F46]/5 prose-pre:text-[#1E2F46] prose-pre:border prose-pre:border-[#1E2F46]/10 prose-blockquote:text-[#1E2F46]/90 prose-blockquote:border-[#1E2F46]/30 prose-blockquote:bg-[#1E2F46]/5 prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-md prose-blockquote:font-normal prose-blockquote:not-italic prose-li:text-[#1E2F46] prose-td:border-[#1E2F46]/10 prose-th:border-[#1E2F46]/10 prose-th:text-[#1E2F46] prose-hr:border-[#1E2F46]/10 transition-all`,
+                class: `prose prose-sm max-w-none focus:outline-none px-6 py-8 font-sans ${focusMode ? 'min-h-[80vh] text-lg' : 'min-h-[400px] text-base'} text-black leading-relaxed prose-headings:text-black prose-headings:font-normal prose-headings:tracking-tight prose-p:text-black prose-p:leading-relaxed prose-strong:text-black prose-strong:font-semibold prose-a:text-black prose-a:underline prose-a:underline-offset-4 prose-a:decoration-black/20 hover:prose-a:decoration-black prose-code:text-black prose-code:bg-black/5 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-pre:bg-black/[0.03] prose-pre:text-black prose-pre:border prose-pre:border-black/10 prose-blockquote:text-black/70 prose-blockquote:border-black/10 prose-blockquote:bg-black/[0.02] prose-blockquote:py-2 prose-blockquote:px-6 prose-blockquote:rounded-lg prose-blockquote:font-normal prose-blockquote:not-italic prose-li:text-black prose-td:border-black/10 prose-th:border-black/10 prose-th:text-black prose-th:font-normal prose-hr:border-black/10 transition-all select-all`,
             },
         },
     })

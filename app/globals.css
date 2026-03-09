@@ -879,8 +879,8 @@ details:not([data-type="references"]) ol {
 details[data-type="references"] {
   background-color: rgb(var(--primary)) !important;
   border: 1px solid rgb(var(--primary)) !important;
-  border-radius: 4px !important;
-  margin: 1.5rem 0 !important;
+  border-radius: 8px !important;
+  margin: 2.5rem 0 !important;
   overflow: hidden !important;
 }
 
@@ -888,16 +888,17 @@ details[data-type="references"]>summary {
   cursor: pointer !important;
   background-color: rgb(var(--accent)) !important;
   list-style: none !important;
-  padding: 8px 16px !important;
-  padding-right: 40px !important;
+  padding: 14px 24px !important;
+  padding-right: 52px !important;
   position: relative !important;
   font-weight: 400 !important;
   /* Normal weight as requested */
   color: #000000 !important;
-  /* Black as requested */
+  /* Pure Black */
   border: none !important;
-  font-size: 14px !important;
+  font-size: 15px !important;
   appearance: none !important;
+  outline: none !important;
 }
 
 /* Kill global left arrow and icons */
@@ -920,15 +921,15 @@ details[data-type="references"]>summary:before {
 details[data-type="references"]>summary::after {
   content: '' !important;
   position: absolute !important;
-  right: 14px !important;
+  right: 20px !important;
   top: 50% !important;
-  width: 12px !important;
-  height: 12px !important;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231E2F46' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+  width: 14px !important;
+  height: 14px !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
   background-repeat: no-repeat !important;
   background-size: contain !important;
   transform: translateY(-50%) rotate(0deg) !important;
-  transition: transform 0.2s ease !important;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 details[data-type="references"][open]>summary::after {
@@ -937,50 +938,76 @@ details[data-type="references"][open]>summary::after {
 
 /* Simple internal content area */
 details[data-type="references"] .references-body {
-  padding: 1.25rem !important;
-  font-size: 13.5px !important;
-  line-height: 1.6 !important;
-  color: #1E2F46 !important;
+  padding: 1.75rem 2rem !important;
+  font-size: 14.5px !important;
+  line-height: 1.75 !important;
+  color: #000000 !important;
+  /* Pure Black */
+  background-color: #ffffff !important;
 }
 
 details[data-type="references"] .references-body p {
   margin: 0 !important;
-  padding: 4px 0 !important;
+  padding: 8px 0 !important;
 }
 
 details[data-type="references"] .references-body a {
-  color: rgb(var(--primary)) !important;
+  color: #000000 !important;
   text-decoration: underline !important;
   text-underline-offset: 4px !important;
-  text-decoration-color: rgba(var(--primary), 0.3) !important;
+  text-decoration-color: rgba(0, 0, 0, 0.25) !important;
   transition: all 0.2s !important;
 }
 
 details[data-type="references"] .references-body a:hover {
-  text-decoration-color: rgb(var(--primary)) !important;
+  text-decoration-color: #000000 !important;
+  background-color: rgba(0, 0, 0, 0.03) !important;
 }
 
 details[data-type="references"] .references-body ul,
 details[data-type="references"] .references-body ol {
-  padding-left: 1.5rem !important;
-  margin: 0.5rem 0 !important;
+  padding-left: 1.75rem !important;
+  margin: 1rem 0 !important;
 }
 
 details[data-type="references"] .references-body li {
-  margin-bottom: 4px !important;
+  margin-bottom: 8px !important;
 }
 
 /* ── Callout Block ────────────────────────────────────────────── */
 [data-type="callout"] {
-  padding: 1.25rem;
-  margin: 1.5rem 0;
-  background: rgba(30, 47, 70, 0.04);
-  border-left: 3px solid rgba(30, 47, 70, 0.4);
-  border-radius: 0 0.5rem 0.5rem 0;
-  font-weight: 500;
-  color: rgba(30, 47, 70, 0.85);
-  line-height: 1.625;
-  font-size: 13.5px;
+  padding: 1.75rem 2.25rem;
+  margin: 2.5rem 0;
+  background: rgba(0, 0, 0, 0.02);
+  border-left: 5px solid rgba(0, 0, 0, 0.5);
+  border-radius: 0 0.85rem 0.85rem 0;
+  font-weight: 400;
+  /* Normal weight */
+  color: #000000;
+  /* Pure Black */
+  line-height: 1.75;
+  font-size: 15px;
+  transition: all 0.2s ease;
+}
+
+[data-type="callout"]:hover {
+  background: rgba(0, 0, 0, 0.03);
+  border-left-color: #000000;
+}
+
+/* ── Mobile Friendly Editor Toolbar ──────────────────────────── */
+@media (max-width: 640px) {
+  .flex.flex-wrap.items-center.gap-1.p-2.border-b {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding: 0.5rem 0.75rem !important;
+    gap: 0.25rem !important;
+  }
+
+  .flex.flex-wrap.items-center.gap-1.p-2.border-b::-webkit-scrollbar {
+    display: none !important;
+  }
 }
 
 /* Custom Scrollbar Utility */
