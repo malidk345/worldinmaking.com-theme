@@ -1,7 +1,7 @@
 "use client"
 
-import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { useEditor, EditorContent, Editor } from '@tiptap/react'
+import React, { useState, useEffect, useCallback } from 'react'
+import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import Link from '@tiptap/extension-link'
@@ -18,11 +18,10 @@ import 'highlight.js/styles/github.css' // Light mode theme to prevent white tex
 
 import {
     Bold, Italic, List, ListOrdered, Quote, Heading2, Heading3,
-    Link as LinkIcon, Image as ImageIcon, Undo, Redo, Code,
-    Maximize2, Minimize2, Save,
+    Link as LinkIcon, Image as ImageIcon, Undo, Redo,
+    Maximize2, Minimize2,
     Underline as UnderlineIcon, Highlighter,
-    Terminal, Table as TableIcon, MessageSquareWarning, BookMarked,
-    Plus
+    Terminal, Table as TableIcon, MessageSquareWarning, BookMarked
 } from 'lucide-react'
 
 import { Toolbar, ToolbarElement } from 'components/RadixUI/Toolbar'
@@ -115,6 +114,38 @@ export const ReferencesNode = Node.create({
     },
 })
 
+// --- Auto-Save Helpers ---
+const DRAFT_STORAGE_KEY = 'wim_admin_draft'
+
+interface DraftData {
+    title: string
+    content: string
+    excerpt: string
+    category: string
+    imageUrl: string
+    slug: string
+    savedAt: string
+}
+
+export function saveDraftToStorage(data: Omit<DraftData, 'savedAt'>) {
+    try {
+        const draft: DraftData = { ...data, savedAt: new Date().toISOString() }
+        localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft))
+    } catch { /* quota exceeded or private mode */ }
+}
+
+export function loadDraftFromStorage(): DraftData | null {
+    try {
+        const raw = localStorage.getItem(DRAFT_STORAGE_KEY)
+        if (!raw) return null
+        return JSON.parse(raw) as DraftData
+    } catch { return null }
+}
+
+export function clearDraftFromStorage() {
+    try { localStorage.removeItem(DRAFT_STORAGE_KEY) } catch { /* noop */ }
+}
+
 // --- Main Editor ---
 interface RichTextEditorProps {
     content: string
@@ -126,7 +157,6 @@ interface RichTextEditorProps {
 
 const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMode, actions }: RichTextEditorProps) => {
     const { focusedWindow } = useApp()
-    const [lastSaved] = useState<string | null>(null)
 
     const editor = useEditor({
         immediatelyRender: false,
