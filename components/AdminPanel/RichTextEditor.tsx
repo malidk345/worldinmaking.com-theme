@@ -21,12 +21,14 @@ import {
     Link as LinkIcon, Image as ImageIcon, Undo, Redo,
     Maximize2, Minimize2,
     Underline as UnderlineIcon, Highlighter,
-    Terminal, Table as TableIcon, MessageSquareWarning, BookMarked
+    Terminal, Table as TableIcon, MessageSquareWarning, BookMarked,
+    Save, CheckCircle, ChevronDown, PenTool, Loader2
 } from 'lucide-react'
 
 import { Toolbar, ToolbarElement } from 'components/RadixUI/Toolbar'
 import { Toolkit, ToolkitSection } from '../Toolkit'
 import { useApp } from '../../context/App'
+import OSButton from 'components/OSButton'
 
 // Initialize lowlight for code blocks
 const lowlight = createLowlight(common)
@@ -152,12 +154,34 @@ interface RichTextEditorProps {
     onChange: (content: string) => void
     focusMode?: boolean
     onToggleFocusMode?: () => void
+    onSaveDraft?: () => void
+    onPublish?: () => void
+    isSaving?: boolean
+    isPublished?: boolean
+    isSaved?: boolean
     actions?: React.ReactNode
+    extraElements?: ToolbarElement[]
     toolkitPosition?: 'header' | 'footer'
+    windowKey?: string
 }
 
-const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMode, actions, toolkitPosition = 'footer' }: RichTextEditorProps) => {
+const RichTextEditor = ({
+    content,
+    onChange,
+    focusMode = false,
+    onToggleFocusMode,
+    onSaveDraft,
+    onPublish,
+    isSaving = false,
+    isPublished = false,
+    isSaved = false,
+    actions,
+    extraElements = [],
+    toolkitPosition = 'footer',
+    windowKey
+}: RichTextEditorProps) => {
     const { focusedWindow } = useApp()
+    const targetKey = windowKey || focusedWindow?.key
 
     const editor = useEditor({
         immediatelyRender: false,
@@ -301,7 +325,7 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
             icon: <MessageSquareWarning className="size-4 text-black" />,
             hideLabel: true,
             active: editor.isActive('callout'),
-            onClick: () => (editor.chain().focus() as unknown as { setCallout: () => { run: () => void } }).setCallout().run(),
+            onClick: () => (editor.chain().focus() as any).setCallout().run(),
         },
         {
             type: 'button',
@@ -309,7 +333,7 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
             icon: <BookMarked className="size-4 text-black" />,
             hideLabel: true,
             active: editor.isActive('references'),
-            onClick: () => (editor.chain().focus() as unknown as { insertReferences: () => { run: () => void } }).insertReferences().run(),
+            onClick: () => (editor.chain().focus() as any).insertReferences().run(),
         },
         {
             type: 'button',
@@ -351,19 +375,55 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
         },
         {
             type: 'container',
-            className: 'ml-auto flex items-center gap-1',
+            className: 'ml-auto flex items-center gap-1.5',
             children: (
-                <>
-                    {onToggleFocusMode && (
-                        <button
-                            onClick={onToggleFocusMode}
-                            className={`p-1.5 rounded transition-colors ${focusMode ? 'bg-black text-white' : 'text-black/40 hover:bg-black/10 hover:text-black'}`}
-                            title={focusMode ? 'Exit Focus' : 'Focus Mode'}
-                        >
-                            {focusMode ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
-                        </button>
+                <div className="flex items-center gap-1.5">
+                    {/* Extra Elements from Parent */}
+                    <Toolbar elements={extraElements} className="!bg-transparent !border-none !p-0 !rounded-none !static" />
+
+                    {(onSaveDraft || onPublish) && <div className="h-4 w-[1px] bg-primary/10 mx-1" />}
+
+                    {isSaved && (
+                        <span className="text-[10px] font-bold tracking-widest text-green-600 uppercase transition-opacity duration-300 hidden lg:inline mr-1">
+                            saved
+                        </span>
                     )}
-                </>
+
+                    {onSaveDraft && (
+                        <OSButton size="sm" onClick={onSaveDraft} disabled={isSaving}>
+                            <div className="flex items-center gap-1.5 lowercase px-1 font-bold">
+                                {isSaving ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
+                                <span className="hidden md:inline px-0.5">save</span>
+                            </div>
+                        </OSButton>
+                    )}
+
+                    {onPublish && (
+                        <OSButton
+                            size="sm"
+                            onClick={onPublish}
+                            disabled={isSaving}
+                            className="!bg-primary !text-white hover:!bg-primary/90"
+                        >
+                            <div className="flex items-center gap-1.5 lowercase px-1 font-bold">
+                                <CheckCircle className="size-3.5" />
+                                <span className="hidden md:inline px-0.5">{isPublished ? 'update' : 'publish'}</span>
+                            </div>
+                        </OSButton>
+                    )}
+
+                    {onToggleFocusMode && (
+                        <div className="flex items-center ml-1 border-l border-primary/10 pl-1.5">
+                            <button
+                                onClick={onToggleFocusMode}
+                                className={`p-1.5 rounded transition-colors ${focusMode ? 'bg-black text-white' : 'text-black/40 hover:bg-black/10 hover:text-black'}`}
+                                title={focusMode ? 'Exit Focus' : 'Focus Mode'}
+                            >
+                                {focusMode ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
+                            </button>
+                        </div>
+                    )}
+                </div>
             ),
         }
     ] : []
@@ -391,15 +451,11 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
     return (
         <div className={`border border-[#1E2F46]/15 rounded-sm bg-white overflow-hidden flex flex-col ${focusMode ? 'h-screen fixed inset-0 z-[100]' : 'h-full'}`}>
             {/* Toolkit - injected into Window Footer or Header via portal */}
-            <Toolkit windowKey={focusedWindow?.key} position={toolkitPosition}>
-                <ToolkitSection className="flex-1 min-w-0">
-                    <Toolbar elements={toolbarElements} className="!bg-transparent !border-none !p-0 !rounded-none flex-wrap" />
-                </ToolkitSection>
-                {actions && (
-                    <ToolkitSection showSeparator className="shrink-0">
-                        {actions}
-                    </ToolkitSection>
-                )}
+            <Toolkit windowKey={windowKey || targetKey} position={toolkitPosition}>
+                <Toolbar
+                    elements={toolbarElements}
+                    className="!bg-transparent !border-none !p-0 !rounded-none flex-wrap w-full"
+                />
             </Toolkit>
 
             {/* Editor */}

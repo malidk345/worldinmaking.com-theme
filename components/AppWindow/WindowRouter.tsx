@@ -432,124 +432,107 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                             content={content}
                             onChange={setContent}
                             toolkitPosition="header"
-                            actions={
-                                <div className="flex items-center gap-1">
-                                    <OSButton
-                                        size="sm"
-                                        title="add cover"
-                                        onClick={() => {
-                                            const url = window.prompt('enter cover image url')
-                                            if (url && url.trim()) setCoverImage(url.trim())
-                                        }}
-                                    >
-                                        <ImageIcon className="size-3.5" />
-                                    </OSButton>
-
-                                    <div className="h-4 w-[1px] bg-primary/10 mx-1" />
-
-                                    <Popover
-                                        trigger={
-                                            <OSButton size="sm">
-                                                <div className="flex items-center gap-1.5 lowercase">
-                                                    {statusConfig[nodeStatus].icon}
-                                                    <span className="hidden md:inline font-bold">{statusConfig[nodeStatus].label}</span>
-                                                    <ChevronDown className="size-3 opacity-50 hidden md:block" />
+                            windowKey={item.key}
+                            onSaveDraft={() => handleSave('draft')}
+                            onPublish={() => handleSave('published')}
+                            isSaving={saving}
+                            isPublished={nodeStatus === 'published'}
+                            isSaved={saved}
+                            extraElements={[
+                                {
+                                    type: 'button',
+                                    label: 'cover',
+                                    icon: <ImageIcon className="size-3.5" />,
+                                    onClick: () => {
+                                        const url = window.prompt('enter cover image url')
+                                        if (url && url.trim()) setCoverImage(url.trim())
+                                    },
+                                    hideLabel: true,
+                                },
+                                {
+                                    type: 'container',
+                                    children: (
+                                        <div className="flex items-center gap-1">
+                                            <Popover
+                                                trigger={
+                                                    <OSButton size="sm">
+                                                        <div className="flex items-center gap-1.5 lowercase">
+                                                            {statusConfig[nodeStatus].icon}
+                                                            <span className="hidden md:inline font-bold">{statusConfig[nodeStatus].label}</span>
+                                                            <ChevronDown className="size-3 opacity-50 hidden md:block" />
+                                                        </div>
+                                                    </OSButton>
+                                                }
+                                                dataScheme="primary"
+                                                contentClassName="w-40 p-1 border border-primary bg-bg"
+                                            >
+                                                <div className="flex flex-col gap-0.5">
+                                                    {(Object.keys(statusConfig) as Array<keyof typeof statusConfig>).map(s => (
+                                                        <button key={s} onClick={() => setNodeStatus(s as keyof typeof statusConfig)} className={`text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 ${statusConfig[s as keyof typeof statusConfig].color}`}>
+                                                            {statusConfig[s as keyof typeof statusConfig].icon} {statusConfig[s as keyof typeof statusConfig].label}
+                                                        </button>
+                                                    ))}
                                                 </div>
-                                            </OSButton>
-                                        }
-                                        dataScheme="primary"
-                                        contentClassName="w-40 p-1 border border-primary bg-bg"
-                                    >
-                                        <div className="flex flex-col gap-0.5">
-                                            {(Object.keys(statusConfig) as Array<keyof typeof statusConfig>).map(s => (
-                                                <button key={s} onClick={() => setNodeStatus(s as keyof typeof statusConfig)} className={`text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 ${statusConfig[s as keyof typeof statusConfig].color}`}>
-                                                    {statusConfig[s as keyof typeof statusConfig].icon} {statusConfig[s as keyof typeof statusConfig].label}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </Popover>
+                                            </Popover>
 
-                                    <Popover
-                                        trigger={
-                                            <OSButton size="sm">
-                                                <div className="flex items-center gap-1.5 lowercase">
-                                                    {typeConfig[nodeType].icon}
-                                                    <span className="hidden md:inline font-bold">{typeConfig[nodeType].label}</span>
-                                                    <ChevronDown className="size-3 opacity-50 hidden md:block" />
+                                            <Popover
+                                                trigger={
+                                                    <OSButton size="sm">
+                                                        <div className="flex items-center gap-1.5 lowercase">
+                                                            {typeConfig[nodeType].icon}
+                                                            <span className="hidden md:inline font-bold">{typeConfig[nodeType].label}</span>
+                                                            <ChevronDown className="size-3 opacity-50 hidden md:block" />
+                                                        </div>
+                                                    </OSButton>
+                                                }
+                                                dataScheme="primary"
+                                                contentClassName="w-40 p-1 border border-primary bg-bg"
+                                            >
+                                                <div className="flex flex-col gap-0.5">
+                                                    {(Object.keys(typeConfig) as Array<keyof typeof typeConfig>).map(t => (
+                                                        <button key={t} onClick={() => setNodeType(t as keyof typeof typeConfig)} className="text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-primary">
+                                                            {typeConfig[t as keyof typeof typeConfig].icon} {typeConfig[t as keyof typeof typeConfig].label}
+                                                        </button>
+                                                    ))}
                                                 </div>
-                                            </OSButton>
-                                        }
-                                        dataScheme="primary"
-                                        contentClassName="w-40 p-1 border border-primary bg-bg"
-                                    >
-                                        <div className="flex flex-col gap-0.5">
-                                            {(Object.keys(typeConfig) as Array<keyof typeof typeConfig>).map(t => (
-                                                <button key={t} onClick={() => setNodeType(t as keyof typeof typeConfig)} className="text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-primary">
-                                                    {typeConfig[t as keyof typeof typeConfig].icon} {typeConfig[t as keyof typeof typeConfig].label}
-                                                </button>
-                                            ))}
+                                            </Popover>
                                         </div>
-                                    </Popover>
-
-                                    <div className="h-4 w-[1px] bg-primary/10 mx-1" />
-
-                                    <OSButton
-                                        size="sm"
-                                        title="add tag"
-                                        onClick={() => {
-                                            const t = window.prompt('add a new tag')
-                                            if (t && t.trim()) setTags(prev => [...prev, t.trim().toLowerCase()])
-                                        }}
-                                    >
-                                        <Hash className="size-3.5" />
-                                    </OSButton>
-
-                                    <Popover
-                                        trigger={
-                                            <OSButton size="sm" title="theme">
-                                                <Palette className="size-3.5" />
-                                            </OSButton>
-                                        }
-                                        dataScheme="primary"
-                                        contentClassName="w-48 p-2 border border-primary bg-bg"
-                                    >
-                                        <div className="flex flex-col gap-1">
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-primary/40 px-2 py-1">node theme</span>
-                                            {(Object.keys(themeClasses) as Array<keyof typeof themeClasses>).map(t => (
-                                                <button key={t} onClick={() => setTheme(t as keyof typeof themeClasses)} className="text-left px-2 py-1.5 text-xs font-bold hover:bg-black/5 rounded-md lowercase">
-                                                    {t} canvas
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </Popover>
-
-                                    <div className="h-4 w-[1px] bg-primary/10 mx-1" />
-
-                                    {saved && <span className="text-[10px] font-bold tracking-widest text-green-600 uppercase transition-opacity duration-300 hidden lg:inline mr-1">saved</span>}
-
-                                    <OSButton
-                                        size="sm"
-                                        onClick={() => handleSave('draft')}
-                                        disabled={saving}
-                                    >
-                                        <div className="flex items-center gap-1.5 lowercase px-1 font-bold">
-                                            {saving ? <div className="size-3.5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /> : <Save className="size-3.5" />}
-                                            <span className="hidden md:inline px-0.5">save</span>
-                                        </div>
-                                    </OSButton>
-
-                                    <OSButton
-                                        size="sm"
-                                        onClick={() => handleSave('published')}
-                                        disabled={saving}
-                                        className="!bg-primary !text-white hover:!bg-primary/90"
-                                    >
-                                        <div className="flex items-center gap-1.5 lowercase px-1 font-bold">
-                                            publish
-                                        </div>
-                                    </OSButton>
-                                </div>
-                            }
+                                    ),
+                                },
+                                {
+                                    type: 'button',
+                                    label: 'tag',
+                                    icon: <Hash className="size-3.5" />,
+                                    onClick: () => {
+                                        const t = window.prompt('add a new tag')
+                                        if (t && t.trim()) setTags(prev => [...prev, t.trim().toLowerCase()])
+                                    },
+                                    hideLabel: true,
+                                },
+                                {
+                                    type: 'container',
+                                    children: (
+                                        <Popover
+                                            trigger={
+                                                <OSButton size="sm" title="theme">
+                                                    <Palette className="size-3.5" />
+                                                </OSButton>
+                                            }
+                                            dataScheme="primary"
+                                            contentClassName="w-48 p-2 border border-primary bg-bg"
+                                        >
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-primary/40 px-2 py-1">node theme</span>
+                                                {(Object.keys(themeClasses) as Array<keyof typeof themeClasses>).map(t => (
+                                                    <button key={t} onClick={() => setTheme(t as keyof typeof themeClasses)} className="text-left px-2 py-1.5 text-xs font-bold hover:bg-black/5 rounded-md lowercase">
+                                                        {t} canvas
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </Popover>
+                                    ),
+                                }
+                            ]}
                         />
                     </div>
                 </div>
@@ -713,67 +696,51 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
                             content={content}
                             onChange={setContent}
                             toolkitPosition="header"
-                            actions={
-                                <div className="flex items-center gap-1">
-                                    <OSButton
-                                        size="sm"
-                                        title="add cover"
-                                        onClick={() => {
-                                            const url = window.prompt('enter post cover image url', imageUrl || '')
-                                            if (url !== null) setImageUrl(url.trim())
-                                        }}
-                                    >
-                                        <ImageIcon className="size-3.5" />
-                                    </OSButton>
-
-                                    <div className="h-4 w-[1px] bg-primary/10 mx-1" />
-
-                                    <Popover
-                                        trigger={
-                                            <OSButton size="sm">
-                                                <div className="flex items-center gap-1.5 lowercase">
-                                                    {published ? <CheckCircle className="size-3.5 text-emerald-500" /> : <PenTool className="size-3.5" />}
-                                                    <span className="hidden md:inline font-bold">{published ? 'published' : 'draft'}</span>
-                                                    <ChevronDown className="size-3 opacity-50 hidden md:block" />
-                                                </div>
-                                            </OSButton>
-                                        }
-                                        dataScheme="primary"
-                                        contentClassName="w-40 p-1 border border-primary bg-bg"
-                                    >
-                                        <div className="flex flex-col gap-0.5">
-                                            <button onClick={() => setPublished(false)} className="text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-primary">
-                                                <PenTool className="size-3" /> draft
-                                            </button>
-                                            <button onClick={() => setPublished(true)} className="text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-emerald-600">
-                                                <CheckCircle className="size-3" /> published
-                                            </button>
-                                        </div>
-                                    </Popover>
-
-                                    <div className="h-4 w-[1px] bg-primary/10 mx-1" />
-
-                                    {saved && <span className="text-[10px] font-bold tracking-widest text-green-600 uppercase transition-opacity duration-300 hidden lg:inline mr-1">saved</span>}
-
-                                    <OSButton size="sm" onClick={() => handleSavePost(false)} disabled={saving}>
-                                        <div className="flex items-center gap-1.5 lowercase px-1">
-                                            {saving ? <div className="size-3.5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /> : <Save className="size-3.5" />}
-                                            <span className="hidden md:inline font-bold px-0.5">save</span>
-                                        </div>
-                                    </OSButton>
-
-                                    <OSButton
-                                        size="sm"
-                                        onClick={() => handleSavePost(true)}
-                                        disabled={saving}
-                                        className="!bg-primary !text-white hover:!bg-primary/90"
-                                    >
-                                        <div className="flex items-center gap-1.5 lowercase px-1 font-bold">
-                                            {published ? 'update' : 'publish'}
-                                        </div>
-                                    </OSButton>
-                                </div>
-                            }
+                            windowKey={item.key}
+                            onSaveDraft={() => handleSavePost(false)}
+                            onPublish={() => handleSavePost(true)}
+                            isSaving={saving}
+                            isPublished={published}
+                            isSaved={saved}
+                            extraElements={[
+                                {
+                                    type: 'button',
+                                    label: 'cover',
+                                    icon: <ImageIcon className="size-3.5" />,
+                                    onClick: () => {
+                                        const url = window.prompt('enter post cover image url', imageUrl || '')
+                                        if (url !== null) setImageUrl(url.trim())
+                                    },
+                                    hideLabel: true,
+                                },
+                                {
+                                    type: 'container',
+                                    children: (
+                                        <Popover
+                                            trigger={
+                                                <OSButton size="sm">
+                                                    <div className="flex items-center gap-1.5 lowercase">
+                                                        {published ? <CheckCircle className="size-3.5 text-emerald-500" /> : <PenTool className="size-3.5" />}
+                                                        <span className="hidden md:inline font-bold">{published ? 'published' : 'draft'}</span>
+                                                        <ChevronDown className="size-3 opacity-50 hidden md:block" />
+                                                    </div>
+                                                </OSButton>
+                                            }
+                                            dataScheme="primary"
+                                            contentClassName="w-40 p-1 border border-primary bg-bg"
+                                        >
+                                            <div className="flex flex-col gap-0.5">
+                                                <button onClick={() => setPublished(false)} className="text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-primary">
+                                                    <PenTool className="size-3" /> draft
+                                                </button>
+                                                <button onClick={() => setPublished(true)} className="text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-emerald-600">
+                                                    <CheckCircle className="size-3" /> published
+                                                </button>
+                                            </div>
+                                        </Popover>
+                                    ),
+                                }
+                            ]}
                         />
                     </div>
                 </div>
