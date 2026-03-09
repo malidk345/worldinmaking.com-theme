@@ -213,19 +213,19 @@ export default function TaskBarMenu() {
         {
             trigger: (
                 <OSButton size="sm" className="px-1 overflow-hidden">
-                    {profile?.avatar_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                            src={profile.avatar_url}
-                            alt={profile.username || 'User'}
-                            className="size-5 rounded-full object-cover border border-black/10 transition-transform group-hover:scale-110"
-                        />
-                    ) : (
-                        <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5">
+                        {profile?.avatar_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                                src={profile.avatar_url}
+                                alt={profile.username || 'User'}
+                                className="size-5 rounded-full object-cover border border-black/10 transition-transform group-hover:scale-110"
+                            />
+                        ) : (
                             <IconUser className="size-5 text-black" />
-                            <IconChevronDown className="size-3 text-black opacity-30" />
-                        </div>
-                    )}
+                        )}
+                        <IconChevronDown className="size-3 text-black opacity-30" />
+                    </div>
                 </OSButton>
             ),
             items: accountMenuItems

@@ -634,8 +634,8 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                     </div>
                                 </div>
                             )}
-                            <div className="w-full flex-1 flex flex-col bg-transparent min-h-0 relative pt-1 px-1.5 has-[+div:empty]:pb-1.5">
-                                <div className="w-full h-full bg-primary flex-1 overflow-hidden relative shadow-[0_0_0_1px_rgba(0,0,0,0.05)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.05)] border border-black/10 dark:border-white/10 rounded-sm shadow-inner">
+                            <div className="w-full flex-1 flex flex-col bg-transparent min-h-0 relative px-1.5 has-[+div:empty]:pb-1.5">
+                                <div className="w-full h-full bg-primary flex-1 overflow-hidden relative shadow-[0_0_0_1px_rgba(0,0,0,0.05)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.05)] border border-black/10 dark:border-white/10 rounded-b-sm shadow-inner">
                                     {(!animating || rendered) && (
                                         item.key === 'home' ? <HomeControl /> : <WindowRouter item={item} />
                                     )}
