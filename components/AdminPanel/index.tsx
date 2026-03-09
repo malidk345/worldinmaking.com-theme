@@ -302,28 +302,50 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
         switch (activeTab) {
             case 'overview': {
                 return (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 text-primary">
-                        <StatCard title="total views" value="---" change="0%" />
-                        <StatCard title="active users" value={totalUsers.toString()} change="---" />
-                        <StatCard title="total posts" value={posts.length.toString()} change={(posts.length > 0 ? "+" + posts.length : "0")} />
-                        <StatCard title="community messages" value={(communityPosts.length + communityReplies.length).toString()} change="0" />
+                    <div className="flex flex-col gap-6 p-4 md:p-6 text-black min-h-0 overflow-auto custom-scrollbar">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                            <StatCard title="total views" value="---" change="0%" />
+                            <StatCard title="active users" value={totalUsers.toString()} change="---" />
+                            <StatCard title="total posts" value={posts.length.toString()} change={(posts.length > 0 ? "+" + posts.length : "0")} />
+                            <StatCard title="transmissions" value={(communityPosts.length + communityReplies.length).toString()} change="0" />
+                        </div>
 
-                        <div className="col-span-full mt-4 p-4 border border-primary rounded bg-accent/5">
-                            <h3 className="text-sm font-bold mb-2 flex items-center gap-2 lowercase">
-                                <IconTerminal className="size-4" /> system status
-                            </h3>
-                            <div className="space-y-2 text-xs font-mono lowercase">
-                                <div className="flex justify-between">
-                                    <span className="opacity-40">database:</span>
-                                    <span className="text-green-500">connected</span>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            <div className="p-4 border border-black/10 rounded-sm bg-white/50 backdrop-blur-sm flex flex-col gap-4">
+                                <h3 className="text-[11px] font-black tracking-widest text-black/40 flex items-center gap-2 lowercase">
+                                    <IconTerminal className="size-3.5" /> system environment
+                                </h3>
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between text-xs">
+                                        <span className="text-black/40 lowercase">database state</span>
+                                        <span className="flex items-center gap-1.5 font-bold text-emerald-600">
+                                            <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                            connected
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-xs">
+                                        <span className="text-black/40 lowercase">auth backend</span>
+                                        <span className="font-bold lowercase">active</span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-xs">
+                                        <span className="text-black/40 lowercase">access level</span>
+                                        <span className="font-bold lowercase bg-neutral-100 px-1.5 py-0.5 rounded-sm">{profile?.role || 'authorized'}</span>
+                                    </div>
                                 </div>
-                                <div className="flex justify-between">
-                                    <span className="opacity-40">auth backend:</span>
-                                    <span className="text-green-500">active</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="opacity-40">admin role:</span>
-                                    <span>{profile?.role || 'authorized'}</span>
+                            </div>
+
+                            <div className="p-4 border border-black/10 rounded-sm bg-white/50 backdrop-blur-sm flex flex-col gap-4">
+                                <h3 className="text-[11px] font-black tracking-widest text-black/40 flex items-center gap-2 lowercase">
+                                    <IconActivity className="size-3.5" /> recently active
+                                </h3>
+                                <div className="space-y-3">
+                                    {posts.slice(0, 3).map(post => (
+                                        <div key={post.id} className="flex items-center justify-between text-xs group cursor-pointer" onClick={() => handleEditClick(post)}>
+                                            <span className="truncate max-w-[150px] font-medium group-hover:underline lowercase">{post.title}</span>
+                                            <span className="text-black/30 text-[10px] lowercase">{dayjs(post.created_at).format('MMM D')}</span>
+                                        </div>
+                                    ))}
+                                    {posts.length === 0 && <span className="text-xs text-black/20 lowercase italic">no recent activity</span>}
                                 </div>
                             </div>
                         </div>
@@ -540,64 +562,71 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                 }
 
                 return (
-                    <div className="p-3 sm:p-4 h-full flex flex-col text-black">
-                        <div className="flex justify-between items-center mb-3">
-                            <h2 className="text-xs font-black uppercase tracking-wider text-black/50">manage content</h2>
-                            <OSButton size="sm" variant="primary" onClick={() => setIsCreating(true)}>
-                                <div className="flex items-center gap-1">
-                                    <Plus className="size-3" />
-                                    <span className="text-xs">new post</span>
+                    <div className="p-4 md:p-6 h-full flex flex-col text-black min-h-0">
+                        <div className="flex justify-between items-center mb-6">
+                            <div className="flex flex-col">
+                                <h2 className="text-xs font-black uppercase tracking-widest text-black/30">publishing console</h2>
+                                <p className="text-[10px] text-black/20 lowercase">manage and curate your nodes</p>
+                            </div>
+                            <OSButton size="sm" onClick={() => setIsCreating(true)} className="!bg-black !text-white hover:!bg-black/90 shadow-lg shadow-black/10">
+                                <div className="flex items-center gap-1.5 px-1 py-0.5">
+                                    <Plus className="size-3.5" />
+                                    <span className="text-xs font-bold lowercase">new node</span>
                                 </div>
                             </OSButton>
                         </div>
 
-                        <div className="flex-grow overflow-y-auto custom-scrollbar border border-black/10 rounded-sm bg-white">
+                        <div className="flex-grow overflow-auto custom-scrollbar bg-white/50 border border-black/5 rounded-sm shadow-inner min-h-0">
                             {loading && (
-                                <Loading label="indexing content" />
+                                <div className="h-48 flex items-center justify-center">
+                                    <Loading label="indexing your world" />
+                                </div>
                             )}
 
                             {!loading && posts.length === 0 && (
-                                <div className="text-center p-6 sm:p-8">
-                                    <IconNewspaper className="size-6 text-black/15 mx-auto mb-2" />
-                                    <div className="text-black/30 text-xs font-bold lowercase">
-                                        no articles found
+                                <div className="text-center py-20 px-6">
+                                    <div className="size-16 rounded-full bg-black/5 flex items-center justify-center mx-auto mb-4">
+                                        <IconNewspaper className="size-8 text-black/10" />
                                     </div>
-                                    <button
-                                        onClick={() => setIsCreating(true)}
-                                        className="mt-3 text-[11px] font-bold text-black/50 hover:text-black hover:underline lowercase"
-                                    >
-                                        + create your first post
-                                    </button>
+                                    <p className="text-xs font-bold text-black/40 lowercase mb-1">no articles found in the database</p>
+                                    <p className="text-[10px] text-black/20 lowercase mb-6">your thinking hasn't been archived yet</p>
+                                    <OSButton size="sm" onClick={() => setIsCreating(true)}>
+                                        <span className="lowercase font-bold px-2">create first node</span>
+                                    </OSButton>
                                 </div>
                             )}
 
                             {!loading && posts.length > 0 && (
-                                <div className="divide-y divide-black/5">
+                                <div className="grid grid-cols-1 gap-px bg-black/5">
                                     {posts.map(post => (
-                                        <div key={post.id} className="px-3 py-2.5 flex items-center justify-between hover:bg-neutral-50 group transition-colors">
-                                            <div className="flex flex-col gap-0.5 min-w-0 flex-1 mr-2">
-                                                <div className="flex items-center gap-1.5 flex-wrap">
-                                                    <span className="text-xs font-black text-black lowercase truncate">{post.title}</span>
-                                                    {!post.published && (
-                                                        <span className="bg-neutral-100 text-black/40 text-[9px] px-1 py-px rounded-sm font-black border border-black/10 lowercase tracking-wider shrink-0">draft</span>
-                                                    )}
-                                                    {post.isLocal && (
-                                                        <span className="bg-neutral-100 text-black/40 text-[9px] px-1 py-px rounded-sm font-black border border-black/10 lowercase tracking-wider shrink-0">local</span>
-                                                    )}
+                                        <div key={post.id} className="bg-white px-4 py-3 flex items-center justify-between hover:bg-neutral-50 group transition-all cursor-default">
+                                            <div className="flex flex-col gap-1 min-w-0 pr-4">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <span className="text-[13px] font-bold text-black/90 lowercase group-hover:text-black transition-colors">{post.title}</span>
+                                                    <div className="flex gap-1">
+                                                        {!post.published && (
+                                                            <span className="bg-amber-50 text-amber-700 text-[8px] px-1.5 py-0.5 rounded-full font-black border border-amber-200/50 lowercase tracking-wider">draft</span>
+                                                        )}
+                                                        {post.isLocal && (
+                                                            <span className="bg-neutral-100 text-black/40 text-[8px] px-1.5 py-0.5 rounded-full font-black border border-black/10 lowercase tracking-wider">local</span>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                                <div className="flex items-center gap-1.5 text-[9px] text-black/30 lowercase">
-                                                    <span>{dayjs(post.created_at).format('MMM D, YYYY')}</span>
+                                                <div className="flex items-center gap-2 text-[10px] text-black/25 lowercase font-medium">
+                                                    <span className="flex items-center gap-1"><IconActivity className="size-3" /> {dayjs(post.created_at).format('MMM D, YYYY')}</span>
                                                     <span>·</span>
-                                                    <span className="truncate">/{post.slug}</span>
+                                                    <span className="opacity-60 truncate">/{post.slug}</span>
                                                 </div>
                                             </div>
-                                            <div className={`flex items-center gap-1 transition-opacity shrink-0 ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                                <OSButton size="xs" variant="secondary" onClick={() => handleEditClick(post)}>
-                                                    <Edit className="size-3 text-black/60" />
+                                            <div className={`flex items-center gap-1 flex-shrink-0 transition-all duration-300 ${isMobile ? 'opacity-100' : 'opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0'}`}>
+                                                <OSButton size="xs" variant="secondary" onClick={() => handleEditClick(post)} className="hover:!bg-black hover:!text-white">
+                                                    <Edit className="size-3" />
                                                 </OSButton>
                                                 {!post.isLocal && (
-                                                    <OSButton size="xs" variant="secondary" onClick={() => deletePost(post.id)}>
-                                                        <Trash2 className="size-3 text-black/40" />
+                                                    <OSButton size="xs" variant="secondary" onClick={() => {
+                                                        if (window.confirm('permanently delete this node?')) deletePost(post.id)
+                                                    }} className="hover:!bg-rose-50 hover:!text-rose-600">
+                                                        <Trash2 className="size-3" />
                                                     </OSButton>
                                                 )}
                                             </div>
@@ -611,13 +640,16 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
             }
             case 'users': {
                 return (
-                    <div className="p-4 h-full flex flex-col text-primary">
-                        <h2 className="text-sm font-bold mb-4 lowercase">manage users</h2>
-                        <div className="border border-primary rounded flex-1 bg-primary/40 flex items-center justify-center">
-                            <div className="text-center p-4">
-                                <IconUser className="size-8 text-primary/20 mx-auto mb-2" />
-                                <div className="text-primary/40 italic text-sm font-medium">
-                                    user management module
+                    <div className="p-4 md:p-6 h-full flex flex-col text-black min-h-0">
+                        <div className="flex flex-col mb-6">
+                            <h2 className="text-xs font-black uppercase tracking-widest text-black/30">user directory</h2>
+                            <p className="text-[10px] text-black/20 lowercase">manage platform access & roles</p>
+                        </div>
+                        <div className="border border-black/5 rounded-sm flex-1 bg-white/50 shadow-inner flex items-center justify-center">
+                            <div className="text-center p-8">
+                                <IconUser className="size-10 text-black/5 mx-auto mb-4" />
+                                <div className="text-black/30 text-xs font-bold lowercase">
+                                    user management matrix coming soon
                                 </div>
                             </div>
                         </div>
@@ -626,46 +658,49 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
             }
             case 'writerApplications': {
                 return (
-                    <div className="p-4 h-full flex flex-col text-primary">
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-sm font-bold lowercase">wim writer applications</h2>
-                            <span className="text-[10px] tracking-widest font-bold text-primary/50 uppercase">
-                                {writerApplications.length} messages
+                    <div className="p-4 md:p-6 h-full flex flex-col text-black min-h-0">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex flex-col">
+                                <h2 className="text-xs font-black uppercase tracking-widest text-black/30">writer transmissions</h2>
+                                <p className="text-[10px] text-black/20 lowercase">review applications & messages</p>
+                            </div>
+                            <span className="text-[10px] font-black text-black/20 uppercase tracking-[0.1em]">
+                                {writerApplications.length} total
                             </span>
                         </div>
 
-                        <div className="flex-grow overflow-y-auto custom-scrollbar border border-primary rounded bg-primary/40">
+                        <div className="flex-grow overflow-auto custom-scrollbar border border-black/5 rounded-sm bg-white/50 shadow-inner min-h-0">
                             {writerApplicationsLoading && (
-                                <Loading label="retrieving transmissions" />
+                                <div className="h-48 flex items-center justify-center">
+                                    <Loading label="connecting to orbital comms" />
+                                </div>
                             )}
 
                             {!writerApplicationsLoading && writerApplications.length === 0 && (
-                                <div className="text-center p-8">
-                                    <MessageSquare className="size-8 text-primary/20 mx-auto mb-2" />
-                                    <div className="text-primary/40 italic text-sm font-medium lowercase">
-                                        no transmissions found
-                                    </div>
+                                <div className="text-center py-20">
+                                    <MessageSquare className="size-12 text-black/5 mx-auto mb-4" />
+                                    <p className="text-xs font-bold text-black/40 lowercase italic">no active transmissions</p>
                                 </div>
                             )}
 
                             {!writerApplicationsLoading && writerApplications.length > 0 && (
-                                <div className="divide-y divide-primary/10">
+                                <div className="divide-y divide-black/5">
                                     {writerApplications.map(application => (
-                                        <div key={application.id} className="p-4 hover:bg-primary/[0.03] transition-colors space-y-3">
-                                            <div className="flex items-start justify-between">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="p-2 border border-primary/20 rounded-sm bg-accent/5">
-                                                        <MessageSquare className="size-4" />
+                                        <div key={application.id} className="p-5 hover:bg-neutral-50 transition-all group border-l-2 border-transparent hover:border-black">
+                                            <div className="flex items-start justify-between mb-3">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="size-10 rounded-full border border-black/10 bg-black/5 flex items-center justify-center flex-shrink-0">
+                                                        <span className="text-xs font-black lowercase">{application.name.charAt(0)}</span>
                                                     </div>
                                                     <div>
-                                                        <h3 className="text-xs font-black lowercase">{application.name}</h3>
-                                                        <p className="text-[10px] opacity-40 lowercase">{application.email}</p>
+                                                        <h3 className="text-xs font-black text-black lowercase">{application.name}</h3>
+                                                        <p className="text-[10px] text-black/30 lowercase font-medium">{application.email}</p>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center gap-2">
-                                                    <span className={`text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-sm border ${application.status === 'new'
-                                                        ? 'bg-blue-500/10 border-blue-500/20 text-blue-500'
-                                                        : 'bg-green-500/10 border-green-500/20 text-green-500 opacity-60'
+                                                <div className="flex items-center gap-3">
+                                                    <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border transition-all ${application.status === 'new'
+                                                        ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                                        : 'bg-neutral-100 border-neutral-200 text-black/40'
                                                         }`}>
                                                         {application.status}
                                                     </span>
@@ -674,16 +709,19 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                             size="xs"
                                                             variant="secondary"
                                                             onClick={() => updateWriterApplicationStatus(application.id, 'reviewed')}
+                                                            className="hover:!bg-black hover:!text-white"
                                                         >
-                                                            mark reviewed
+                                                            <span className="text-[10px] lowercase px-1">mark read</span>
                                                         </OSButton>
                                                     )}
                                                 </div>
                                             </div>
 
-                                            <p className="text-sm leading-relaxed text-primary/80 whitespace-pre-wrap">
-                                                {application.message}
-                                            </p>
+                                            <div className="ml-14 p-4 rounded-sm bg-black/[0.02] border border-black/[0.03]">
+                                                <p className="text-xs leading-relaxed text-black/70 whitespace-pre-wrap font-sans">
+                                                    {application.message}
+                                                </p>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -714,13 +752,16 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                 })
 
                 return (
-                    <div className="p-4 h-full flex flex-col text-primary overflow-hidden">
+                    <div className="p-4 md:p-6 h-full flex flex-col text-black min-h-0">
                         {/* Header */}
-                        <div className="flex items-center justify-between mb-4 flex-shrink-0">
-                            <h2 className="text-sm font-bold lowercase">community comments</h2>
-                            <div className="flex items-center gap-2 text-xs text-muted">
+                        <div className="flex items-center justify-between mb-6 flex-shrink-0">
+                            <div className="flex flex-col">
+                                <h2 className="text-xs font-black uppercase tracking-widest text-black/30">community moderation</h2>
+                                <p className="text-[10px] text-black/20 lowercase">moderate discussions & responses</p>
+                            </div>
+                            <div className="flex items-center gap-3 text-[10px] font-bold text-black/20 uppercase tracking-wider">
                                 <span>{communityPosts.length} posts</span>
-                                <span>·</span>
+                                <span className="opacity-50">·</span>
                                 <span>{communityReplies.length} replies</span>
                             </div>
                         </div>
@@ -728,25 +769,25 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                         {/* Search + Filter Bar */}
                         <div className="flex gap-2 mb-4 flex-shrink-0">
                             <div className="flex-1 relative">
-                                <Search className="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted" />
+                                <Search className="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-black/30" />
                                 <input
                                     type="text"
                                     value={commentSearchQuery}
                                     onChange={(e) => setCommentSearchQuery(e.target.value)}
-                                    placeholder="search comments..."
-                                    className="w-full pl-8 pr-3 py-1.5 text-sm border border-primary rounded bg-primary text-primary placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-primary/30"
+                                    placeholder="search transmissions..."
+                                    className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-black/5 rounded-sm text-black placeholder:text-black/20 focus:outline-none focus:border-black/20 transition-all font-sans"
                                 />
                             </div>
-                            <div className="flex border border-primary rounded overflow-hidden">
+                            <div className="flex bg-white border border-black/5 rounded-sm p-0.5 shadow-sm">
                                 <button
                                     onClick={() => setCommentFilter('posts')}
-                                    className={`px-3 py-1.5 text-xs font-bold transition-colors ${commentFilter === 'posts' ? 'bg-accent/40 text-primary shadow-inner ring-1 ring-primary/10' : 'bg-primary text-primary/60 hover:bg-accent/10 hover:text-primary'}`}
+                                    className={`px-3 py-1 text-[10px] font-black uppercase tracking-wider transition-all rounded-[1px] ${commentFilter === 'posts' ? 'bg-black text-white shadow-sm' : 'text-black/30 hover:text-black/60'}`}
                                 >
                                     posts
                                 </button>
                                 <button
                                     onClick={() => setCommentFilter('replies')}
-                                    className={`px-3 py-1.5 text-xs font-bold transition-colors border-l border-primary ${commentFilter === 'replies' ? 'bg-accent/40 text-primary shadow-inner ring-1 ring-primary/10' : 'bg-primary text-primary/60 hover:bg-accent/10 hover:text-primary'}`}
+                                    className={`px-3 py-1 text-[10px] font-black uppercase tracking-wider transition-all rounded-[1px] ${commentFilter === 'replies' ? 'bg-black text-white shadow-sm' : 'text-black/30 hover:text-black/60'}`}
                                 >
                                     replies
                                 </button>
@@ -754,12 +795,14 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                         </div>
 
                         {/* Content */}
-                        <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2">
+                        <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 bg-white/30 border border-black/5 rounded-sm shadow-inner p-2">
                             {communityLoading ? (
-                                <Loading label="scanning discussions" />
+                                <div className="h-48 flex items-center justify-center">
+                                    <Loading label="scanning neural networks" />
+                                </div>
                             ) : commentFilter === 'posts' ? (
                                 filteredCommunityPosts.length === 0 ? (
-                                    <div className="text-center text-muted text-sm py-12 italic">no community posts found</div>
+                                    <div className="text-center text-black/20 text-xs py-12 italic lowercase font-medium">no community posts indexed</div>
                                 ) : (
                                     filteredCommunityPosts.map(cp => {
                                         const isEditing = editingCommentId === cp.id && commentFilter === 'posts'
@@ -767,30 +810,29 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                         const isExpanded = expandedPostId === cp.id
 
                                         return (
-                                            <div key={cp.id} className="border border-primary rounded bg-primary/40">
+                                            <div key={cp.id} className="border border-black/5 rounded-sm bg-white overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
                                                 {/* Post Header */}
-                                                <div className="p-3 flex items-start justify-between gap-2">
-                                                    <div className="flex items-start gap-3 flex-1 min-w-0">
-                                                        <div className="size-8 rounded border border-primary/20 bg-accent/5 flex-shrink-0 overflow-hidden">
-                                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <div className="p-3 flex items-start justify-between gap-2 border-b border-black/[0.02]">
+                                                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                        <div className="size-8 rounded-full border border-black/5 bg-black/5 flex-shrink-0 overflow-hidden">
                                                             <img
                                                                 src={getProfile(cp.profiles)?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${getProfile(cp.profiles)?.username}`}
                                                                 alt=""
-                                                                className="size-full object-cover grayscale"
+                                                                className="size-full object-cover grayscale opacity-80"
                                                             />
                                                         </div>
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-center gap-2">
-                                                                <span className="text-xs font-black">{getProfile(cp.profiles)?.username}</span>
-                                                                <span className="text-[10px] opacity-40">{dayjs(cp.created_at).format('MMM D, h:mm a')}</span>
+                                                                <span className="text-[11px] font-black text-black/80 lowercase">{getProfile(cp.profiles)?.username}</span>
+                                                                <span className="text-[9px] text-black/20 font-medium">{dayjs(cp.created_at).format('MMM D, h:ma')}</span>
                                                             </div>
-                                                            <h3 className="text-xs font-bold text-primary/90 truncate">{cp.title}</h3>
+                                                            <h3 className="text-[11px] font-bold text-black/60 truncate lowercase">{cp.title}</h3>
                                                         </div>
                                                     </div>
-                                                    <div className="flex items-center gap-1 flex-shrink-0">
+                                                    <div className="flex items-center gap-1.5 flex-shrink-0">
                                                         <button
                                                             onClick={() => setExpandedPostId(isExpanded ? null : cp.id)}
-                                                            className="flex items-center gap-1 text-[10px] font-bold text-muted hover:text-primary transition-colors px-1.5 py-0.5"
+                                                            className={`flex items-center gap-1.5 text-[10px] font-black px-2 py-1 rounded-full transition-all ${isExpanded ? 'bg-black text-white' : 'bg-neutral-50 text-black/40 hover:bg-neutral-100'}`}
                                                         >
                                                             <MessageSquare className="size-3" />
                                                             {postReplies.length}
@@ -803,68 +845,71 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                         }}>
                                                             <Edit className="size-3" />
                                                         </OSButton>
-                                                        <OSButton size="xs" variant="secondary" onClick={() => deleteCommunityPost(cp.id)}>
-                                                            <Trash2 className="size-3 text-red-500" />
+                                                        <OSButton size="xs" variant="secondary" onClick={() => {
+                                                            if (window.confirm('delete this community post?')) deleteCommunityPost(cp.id)
+                                                        }}>
+                                                            <Trash2 className="size-3 text-rose-500/50 hover:text-rose-500" />
                                                         </OSButton>
                                                     </div>
                                                 </div>
 
                                                 {/* Post Content */}
-                                                <div className="px-3 pb-3 pl-14">
+                                                <div className="px-4 py-3 ml-11">
                                                     {isEditing ? (
-                                                        <div className="space-y-2">
+                                                        <div className="space-y-3">
                                                             <input
                                                                 type="text"
                                                                 value={editingCommentTitle}
                                                                 onChange={(e) => setEditingCommentTitle(e.target.value)}
-                                                                className="w-full bg-primary border border-primary/30 rounded px-2 py-1 text-xs focus:outline-none"
+                                                                className="w-full bg-neutral-50 border border-black/5 rounded-sm px-3 py-2 text-xs focus:outline-none font-bold"
                                                             />
                                                             <textarea
                                                                 value={editingCommentContent}
                                                                 onChange={(e) => setEditingCommentContent(e.target.value)}
-                                                                className="w-full bg-primary border border-primary/30 rounded p-2 text-xs h-24 focus:outline-none resize-none"
+                                                                className="w-full bg-neutral-50 border border-black/5 rounded-sm p-3 text-xs h-24 focus:outline-none resize-none font-sans"
                                                             />
                                                             <div className="flex justify-end gap-2">
                                                                 <OSButton size="xs" variant="secondary" onClick={() => setEditingCommentId(null)}>cancel</OSButton>
-                                                                <OSButton size="xs" variant="primary" onClick={async () => {
+                                                                <OSButton size="xs" onClick={async () => {
                                                                     const res = await updateCommunityPost(cp.id, { title: editingCommentTitle, content: editingCommentContent })
                                                                     if (res) setEditingCommentId(null)
-                                                                }}>save</OSButton>
+                                                                }} className="!bg-black !text-white">save changes</OSButton>
                                                             </div>
                                                         </div>
                                                     ) : (
-                                                        <p className="text-sm text-primary/80 line-clamp-3">{cp.content}</p>
+                                                        <p className="text-xs text-black/60 font-sans leading-relaxed line-clamp-3">{cp.content}</p>
                                                     )}
                                                 </div>
 
                                                 {/* Expanded Replies */}
                                                 {isExpanded && (
-                                                    <div className="border-t border-primary/10 bg-black/5 divide-y divide-primary/5">
+                                                    <div className="bg-neutral-50 border-t border-black/[0.03] divide-y divide-black/[0.03]">
                                                         {postReplies.length === 0 ? (
-                                                            <div className="p-4 text-center text-[10px] italic text-muted">no replies yet</div>
+                                                            <div className="p-4 text-center text-[9px] font-black uppercase tracking-widest text-black/15">no transmissions found</div>
                                                         ) : (
                                                             postReplies.map(reply => (
-                                                                <div key={reply.id} className="p-3 pl-14 flex items-start justify-between group">
+                                                                <div key={reply.id} className="p-3 pl-14 flex items-start justify-between group bg-white/50">
                                                                     <div className="flex gap-3">
-                                                                        <div className="size-6 rounded-sm border border-primary/20 bg-accent/5 flex-shrink-0 overflow-hidden">
-                                                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                                        <div className="size-6 rounded-full border border-black/5 bg-black/5 flex-shrink-0 overflow-hidden">
                                                                             <img
                                                                                 src={getProfile(reply.profiles)?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${getProfile(reply.profiles)?.username}`}
                                                                                 alt=""
-                                                                                className="size-full object-cover grayscale"
+                                                                                className="size-full object-cover grayscale opacity-70"
                                                                             />
                                                                         </div>
                                                                         <div className="flex-1">
                                                                             <div className="flex items-center gap-2">
-                                                                                <span className="text-[10px] font-black">{getProfile(reply.profiles)?.username}</span>
-                                                                                <span className="text-[9px] opacity-40">{dayjs(reply.created_at).format('MMM D, h:mm a')}</span>
+                                                                                <span className="text-[10px] font-black text-black/70 lowercase">{getProfile(reply.profiles)?.username}</span>
+                                                                                <span className="text-[8px] text-black/20 font-medium">{dayjs(reply.created_at).format('MMM D, h:ma')}</span>
                                                                             </div>
-                                                                            <p className="text-xs text-primary/80">{reply.content}</p>
+                                                                            <p className="text-[11px] text-black/50 font-sans leading-relaxed">{reply.content}</p>
                                                                         </div>
                                                                     </div>
-                                                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                        <OSButton size="xs" variant="secondary" onClick={() => deleteCommunityReply(reply.id)}>
-                                                                            <Trash2 className="size-2.5 text-red-500" />
+                                                                    <div className="opacity-0 group-hover:opacity-100 transition-all duration-300">
+                                                                        <OSButton size="xs" variant="secondary" onClick={() => {
+                                                                            if (window.confirm('delete this reply?')) deleteCommunityReply(reply.id)
+                                                                        }}>
+                                                                            <Trash2 className="size-2.5 text-rose-400" />
                                                                         </OSButton>
                                                                     </div>
                                                                 </div>
@@ -877,63 +922,66 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                     })
                                 )
                             ) : (
-                                /* Replies Tab */
+                                /* Replies Tab Styling - Concise */
                                 filteredCommunityReplies.length === 0 ? (
-                                    <div className="text-center text-muted text-sm py-12 italic">no community replies found</div>
+                                    <div className="text-center text-black/20 text-xs py-12 italic lowercase font-medium">no community replies found</div>
                                 ) : (
-                                    filteredCommunityReplies.map(reply => {
-                                        const isEditing = editingCommentId === reply.id && commentFilter === 'replies'
+                                    <div className="space-y-2">
+                                        {filteredCommunityReplies.map(reply => {
+                                            const isEditing = editingCommentId === reply.id && commentFilter === 'replies'
 
-                                        return (
-                                            <div key={reply.id} className="border border-primary rounded bg-primary/40 p-3 flex items-start justify-between gap-3">
-                                                <div className="flex items-start gap-3 flex-1">
-                                                    <div className="size-8 rounded border border-primary/20 bg-accent/5 flex-shrink-0 overflow-hidden">
-                                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                        <img
-                                                            src={getProfile(reply.profiles)?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${getProfile(reply.profiles)?.username}`}
-                                                            alt=""
-                                                            className="size-full object-cover grayscale"
-                                                        />
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-xs font-black">{getProfile(reply.profiles)?.username}</span>
-                                                            <span className="text-[10px] opacity-40">{dayjs(reply.created_at).format('MMM D, h:mm a')}</span>
+                                            return (
+                                                <div key={reply.id} className="bg-white border border-black/5 rounded-sm p-3 flex items-start justify-between gap-3 shadow-[0_1px_2px_rgba(0,0,0,0.01)] hover:shadow-md transition-shadow">
+                                                    <div className="flex items-start gap-4 flex-1">
+                                                        <div className="size-8 rounded-full border border-black/5 bg-black/5 flex-shrink-0 overflow-hidden">
+                                                            <img
+                                                                src={getProfile(reply.profiles)?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${getProfile(reply.profiles)?.username}`}
+                                                                alt=""
+                                                                className="size-full object-cover grayscale opacity-70"
+                                                            />
                                                         </div>
-                                                        {isEditing ? (
-                                                            <div className="mt-2 space-y-2">
-                                                                <textarea
-                                                                    value={editingCommentContent}
-                                                                    onChange={(e) => setEditingCommentContent(e.target.value)}
-                                                                    className="w-full bg-primary border border-primary/30 rounded p-2 text-xs h-24 focus:outline-none resize-none"
-                                                                />
-                                                                <div className="flex justify-end gap-2">
-                                                                    <OSButton size="xs" variant="secondary" onClick={() => setEditingCommentId(null)}>cancel</OSButton>
-                                                                    <OSButton size="xs" variant="primary" onClick={async () => {
-                                                                        const res = await updateCommunityReply(reply.id, editingCommentContent)
-                                                                        if (res) setEditingCommentId(null)
-                                                                    }}>save</OSButton>
-                                                                </div>
+                                                        <div className="flex-1">
+                                                            <div className="flex items-center gap-2 mb-0.5">
+                                                                <span className="text-[11px] font-black text-black/80 lowercase">{getProfile(reply.profiles)?.username}</span>
+                                                                <span className="text-[9px] text-black/20 font-medium">{dayjs(reply.created_at).format('MMM D, h:ma')}</span>
                                                             </div>
-                                                        ) : (
-                                                            <p className="text-sm text-primary/80">{reply.content}</p>
-                                                        )}
+                                                            {isEditing ? (
+                                                                <div className="mt-2 space-y-2">
+                                                                    <textarea
+                                                                        value={editingCommentContent}
+                                                                        onChange={(e) => setEditingCommentContent(e.target.value)}
+                                                                        className="w-full bg-neutral-50 border border-black/5 rounded-sm p-3 text-xs h-24 focus:outline-none resize-none font-sans"
+                                                                    />
+                                                                    <div className="flex justify-end gap-2">
+                                                                        <OSButton size="xs" variant="secondary" onClick={() => setEditingCommentId(null)}>cancel</OSButton>
+                                                                        <OSButton size="xs" onClick={async () => {
+                                                                            const res = await updateCommunityReply(reply.id, editingCommentContent)
+                                                                            if (res) setEditingCommentId(null)
+                                                                        }} className="!bg-black !text-white">save changes</OSButton>
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <p className="text-[11px] text-black/60 font-sans leading-relaxed">{reply.content}</p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5 self-start pt-1">
+                                                        <OSButton size="xs" variant="secondary" onClick={() => {
+                                                            setEditingCommentId(reply.id)
+                                                            setEditingCommentContent(reply.content)
+                                                        }}>
+                                                            <Edit className="size-3" />
+                                                        </OSButton>
+                                                        <OSButton size="xs" variant="secondary" onClick={() => {
+                                                            if (window.confirm('permanently delete this reply?')) deleteCommunityReply(reply.id)
+                                                        }}>
+                                                            <Trash2 className="size-3 text-rose-500/50 hover:text-rose-500" />
+                                                        </OSButton>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center gap-1">
-                                                    <OSButton size="xs" variant="secondary" onClick={() => {
-                                                        setEditingCommentId(reply.id)
-                                                        setEditingCommentContent(reply.content)
-                                                    }}>
-                                                        <Edit className="size-3" />
-                                                    </OSButton>
-                                                    <OSButton size="xs" variant="secondary" onClick={() => deleteCommunityReply(reply.id)}>
-                                                        <Trash2 className="size-3 text-red-500" />
-                                                    </OSButton>
-                                                </div>
-                                            </div>
-                                        )
-                                    })
+                                            )
+                                        })}
+                                    </div>
                                 )
                             )}
                         </div>
@@ -942,13 +990,16 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
             }
             case 'settings': {
                 return (
-                    <div className="p-4 h-full flex flex-col text-primary">
-                        <h2 className="text-sm font-bold mb-4 lowercase">system settings</h2>
-                        <div className="border border-primary rounded flex-1 bg-accent/5 flex items-center justify-center">
-                            <div className="text-center p-4">
-                                <Settings className="size-8 text-primary/20 mx-auto mb-2" />
-                                <div className="text-primary/40 italic text-sm font-medium">
-                                    configuration panel
+                    <div className="p-4 md:p-6 h-full flex flex-col text-black min-h-0">
+                        <div className="flex flex-col mb-6">
+                            <h2 className="text-xs font-black uppercase tracking-widest text-black/30">console configuration</h2>
+                            <p className="text-[10px] text-black/20 lowercase">adjust system level parameters</p>
+                        </div>
+                        <div className="border border-black/5 rounded-sm flex-1 bg-white/50 shadow-inner flex items-center justify-center">
+                            <div className="text-center p-8">
+                                <Settings className="size-10 text-black/5 mx-auto mb-4" />
+                                <div className="text-black/30 text-xs font-bold lowercase">
+                                    system preferences coming in orbital update
                                 </div>
                             </div>
                         </div>
@@ -961,45 +1012,49 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
     }
 
     return (
-        <div className="flex h-full w-full bg-primary text-primary overflow-hidden">
+        <div className="flex h-full w-full bg-[#f8fafb] text-black overflow-hidden font-sans">
             {/* Sidebar */}
-            <div className={`flex-shrink-0 border-r border-primary bg-accent/10 flex flex-col ${isMobile ? 'w-12 items-center py-2' : 'w-48 py-4'}`}>
+            <div className={`flex-shrink-0 border-r border-black/5 bg-white/50 backdrop-blur-md flex flex-col ${isMobile ? 'w-12 items-center py-4' : 'w-44 py-6'}`}>
                 {!isMobile && (
-                    <div className="px-4 mb-6">
-                        <h1 className="font-bold text-sm tracking-wide opacity-50">admin</h1>
+                    <div className="px-5 mb-8">
+                        <div className="flex items-center gap-2">
+                            <div className="size-2 rounded-full bg-black/80" />
+                            <h1 className="font-black text-[13px] tracking-tight text-black lowercase">wim console</h1>
+                        </div>
                     </div>
                 )}
 
-                <div className="flex flex-col gap-1 px-2 w-full">
+                <div className="flex flex-col gap-0.5 px-2 w-full">
                     {TABS.map((tab) => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                            className={`flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors text-left w-full
+                            className={`flex items-center gap-2.5 px-3 py-2 rounded-sm text-[12px] transition-all text-left w-full
                                 ${activeTab === tab.id
-                                    ? 'bg-accent/20 text-primary font-bold shadow-sm ring-1 ring-primary/10'
-                                    : 'text-muted hover:bg-accent/10 hover:text-primary'}
-                                ${isMobile ? 'justify-center' : ''}
+                                    ? 'bg-black text-white font-bold shadow-md shadow-black/10'
+                                    : 'text-black/40 hover:bg-black/5 hover:text-black/80'}
+                                ${isMobile ? 'justify-center px-0' : ''}
                             `}
                         >
-                            <tab.icon className="size-4 flex-shrink-0" />
-                            {!isMobile && <span>{tab.label}</span>}
+                            <tab.icon className={`size-4 flex-shrink-0 ${activeTab === tab.id ? 'opacity-100' : 'opacity-60'}`} />
+                            {!isMobile && <span className="lowercase">{tab.label}</span>}
                         </button>
                     ))}
                 </div>
 
-                <div className="mt-auto p-2">
-                    <div className="text-[10px] text-center text-muted opacity-50">v1.2.0</div>
+                <div className="mt-auto px-4">
+                    <div className="text-[9px] font-black text-black/15 uppercase tracking-[0.2em]">system v1.2.5</div>
                 </div>
             </div>
 
-            {/* Main Content */}
-            <div className="flex-1 overflow-auto bg-primary/20 h-full relative flex flex-col">
-                <div className="flex-1 overflow-auto">
+            {/* Main Content Area */}
+            <div className="flex-1 flex flex-col min-w-0 bg-[#f8fafb] overflow-hidden">
+                <main className="flex-1 overflow-hidden flex flex-col min-h-0">
                     {renderContent()}
-                </div>
-                {/* Inner Window Footer Target - specific for Admin Window */}
-                <div className="sticky bottom-0 z-50 w-full pointer-events-none pb-1 mt-auto px-1">
+                </main>
+
+                {/* Global Inner Footer - for RichTextEditor toolkit etc */}
+                <div className="sticky bottom-0 z-50 w-full pointer-events-none pb-1 mt-auto px-1.5">
                     <div id={`window-inner-footer-${item?.key || app?.focusedWindow?.key}`} className="pointer-events-auto" />
                 </div>
             </div>
@@ -1010,11 +1065,15 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
 const StatCard = ({ title, value, change }: { title: string, value: string, change: string }) => {
     const isPositive = change.startsWith('+')
     return (
-        <div className="p-3 border border-primary rounded bg-accent/10 shadow-sm hover:shadow-md transition-shadow">
-            <h4 className="text-xs text-muted mb-1">{title}</h4>
-            <div className="flex items-end justify-between">
-                <span className="text-xl font-black tracking-tight">{value}</span>
-                <span className={`text-xs font-bold ${isPositive ? 'text-green-600' : 'text-red-500'}`}>
+        <div className="p-4 border border-black/10 rounded-sm bg-white shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:shadow-lg hover:shadow-black/5 transition-all group">
+            <h4 className="text-[10px] font-black text-black/30 mb-2 uppercase tracking-wider group-hover:text-black/50 transition-colors">{title}</h4>
+            <div className="flex items-baseline justify-between">
+                <span className="text-2xl font-black tracking-tight text-black">{value}</span>
+                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full border ${isPositive
+                    ? 'text-emerald-600 bg-emerald-50 border-emerald-100'
+                    : change === '---' || change === '0%'
+                        ? 'text-neutral-400 bg-neutral-50 border-neutral-100'
+                        : 'text-rose-600 bg-rose-50 border-rose-100'}`}>
                     {change}
                 </span>
             </div>
