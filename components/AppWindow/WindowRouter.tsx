@@ -364,155 +364,8 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
 
     return (
         <div className={`flex flex-col size-full overflow-y-auto overflow-x-hidden text-black transition-colors duration-500 ${themeClasses[theme]}`}>
-            {/* Header Toolbar — same pattern as Editor/index.tsx */}
             <aside className="sticky top-0 z-50 shrink-0">
-                <div data-scheme="tertiary" className="mx-1 mt-1 rounded-md border border-primary bg-primary px-1.5 py-1">
-                    <Toolbar
-                        className="rounded-none border-0 bg-transparent p-0"
-                        elements={[
-                            /* Cover — prompts for URL */
-                            ...(!coverImage ? [{
-                                type: 'button' as const,
-                                label: 'cover',
-                                icon: <ImageIcon className="size-4" />,
-                                onClick: () => {
-                                    const url = window.prompt('enter cover image url')
-                                    if (url && url.trim()) setCoverImage(url.trim())
-                                },
-                                size: 'md' as const,
-                                hideLabel: true,
-                                className: 'md:!px-2',
-                            }] : []),
-
-                            /* Separator */
-                            { type: 'separator' as const },
-
-                            /* Status Popover */
-                            {
-                                type: 'container' as const,
-                                children: (
-                                    <Popover
-                                        trigger={
-                                            <OSButton size="md">
-                                                <div className="flex items-center gap-1.5 lowercase">
-                                                    {statusConfig[nodeStatus].icon}
-                                                    <span className="hidden md:inline">{statusConfig[nodeStatus].label}</span>
-                                                    <ChevronDown className="size-3 opacity-50 hidden md:block" />
-                                                </div>
-                                            </OSButton>
-                                        }
-                                        dataScheme="primary"
-                                        contentClassName="w-40 p-1 border border-primary bg-bg"
-                                    >
-                                        <div className="flex flex-col gap-0.5">
-                                            {(Object.keys(statusConfig) as Array<keyof typeof statusConfig>).map(s => (
-                                                <button key={s} onClick={() => setNodeStatus(s as keyof typeof statusConfig)} className={`text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 ${statusConfig[s as keyof typeof statusConfig].color}`}>
-                                                    {statusConfig[s as keyof typeof statusConfig].icon} {statusConfig[s as keyof typeof statusConfig].label}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </Popover>
-                                ),
-                            },
-
-                            /* Node Type Popover */
-                            {
-                                type: 'container' as const,
-                                children: (
-                                    <Popover
-                                        trigger={
-                                            <OSButton size="md">
-                                                <div className="flex items-center gap-1.5 lowercase">
-                                                    {typeConfig[nodeType].icon}
-                                                    <span className="hidden md:inline">{typeConfig[nodeType].label}</span>
-                                                    <ChevronDown className="size-3 opacity-50 hidden md:block" />
-                                                </div>
-                                            </OSButton>
-                                        }
-                                        dataScheme="primary"
-                                        contentClassName="w-40 p-1 border border-primary bg-bg"
-                                    >
-                                        <div className="flex flex-col gap-0.5">
-                                            {(Object.keys(typeConfig) as Array<keyof typeof typeConfig>).map(t => (
-                                                <button key={t} onClick={() => setNodeType(t as keyof typeof typeConfig)} className="text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-primary">
-                                                    {typeConfig[t as keyof typeof typeConfig].icon} {typeConfig[t as keyof typeof typeConfig].label}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </Popover>
-                                ),
-                            },
-
-                            /* Separator */
-                            { type: 'separator' as const },
-
-                            /* Add Tag */
-                            {
-                                type: 'button' as const,
-                                label: 'tag',
-                                icon: <Hash className="size-4" />,
-                                onClick: () => {
-                                    const t = window.prompt('add a new tag')
-                                    if (t && t.trim()) setTags(prev => [...prev, t.trim().toLowerCase()])
-                                },
-                                size: 'md' as const,
-                                hideLabel: true,
-                            },
-
-                            /* Theme Popover */
-                            {
-                                type: 'container' as const,
-                                children: (
-                                    <Popover
-                                        trigger={
-                                            <OSButton size="md">
-                                                <div className="flex items-center gap-1.5 lowercase">
-                                                    <Palette className="size-4" />
-                                                    <span className="hidden md:inline">theme</span>
-                                                    <ChevronDown className="size-3 opacity-50 hidden md:block" />
-                                                </div>
-                                            </OSButton>
-                                        }
-                                        dataScheme="primary"
-                                        contentClassName="w-48 p-2 border border-primary bg-bg"
-                                    >
-                                        <div className="flex flex-col gap-1">
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-primary/40 px-2 py-1">node theme</span>
-                                            {(Object.keys(themeClasses) as Array<keyof typeof themeClasses>).map(t => (
-                                                <button key={t} onClick={() => setTheme(t as keyof typeof themeClasses)} className="text-left px-2 py-1.5 text-xs font-bold hover:bg-black/5 rounded-md lowercase">
-                                                    {t} canvas
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </Popover>
-                                ),
-                            },
-
-                            /* Save/Publish — far right via ml-auto container */
-                            {
-                                type: 'container' as const,
-                                className: 'ml-auto flex items-center gap-2',
-                                children: (
-                                    <>
-                                        {saved && <span className="text-[10px] font-bold tracking-widest text-green-600 uppercase transition-opacity duration-300 hidden sm:inline">saved</span>}
-                                        <OSButton size="md" onClick={() => handleSave('draft')} disabled={saving}>
-                                            <div className="flex items-center gap-1.5 lowercase">
-                                                <Save className="size-4" />
-                                                <span className="hidden md:inline font-semibold">save draft</span>
-                                            </div>
-                                        </OSButton>
-                                        <OSButton variant="primary" size="md" onClick={() => handleSave('published')} disabled={saving}>
-                                            <div className="flex items-center gap-1.5 lowercase">
-                                                <CheckCircle className="size-4" />
-                                                <span className="hidden md:inline font-semibold">publish</span>
-                                            </div>
-                                        </OSButton>
-                                    </>
-                                ),
-                            },
-                        ]}
-                    />
-                </div>
+                <div id={`window-inner-header-${item.key}`} className="pointer-events-auto" />
             </aside>
 
             {/* Scrollable Document Area Container */}
@@ -578,13 +431,127 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                         <RichTextEditor
                             content={content}
                             onChange={setContent}
+                            toolkitPosition="header"
+                            actions={
+                                <div className="flex items-center gap-1">
+                                    <OSButton
+                                        size="sm"
+                                        title="add cover"
+                                        onClick={() => {
+                                            const url = window.prompt('enter cover image url')
+                                            if (url && url.trim()) setCoverImage(url.trim())
+                                        }}
+                                    >
+                                        <ImageIcon className="size-3.5" />
+                                    </OSButton>
+
+                                    <div className="h-4 w-[1px] bg-primary/10 mx-1" />
+
+                                    <Popover
+                                        trigger={
+                                            <OSButton size="sm">
+                                                <div className="flex items-center gap-1.5 lowercase">
+                                                    {statusConfig[nodeStatus].icon}
+                                                    <span className="hidden md:inline font-bold">{statusConfig[nodeStatus].label}</span>
+                                                    <ChevronDown className="size-3 opacity-50 hidden md:block" />
+                                                </div>
+                                            </OSButton>
+                                        }
+                                        dataScheme="primary"
+                                        contentClassName="w-40 p-1 border border-primary bg-bg"
+                                    >
+                                        <div className="flex flex-col gap-0.5">
+                                            {(Object.keys(statusConfig) as Array<keyof typeof statusConfig>).map(s => (
+                                                <button key={s} onClick={() => setNodeStatus(s as keyof typeof statusConfig)} className={`text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 ${statusConfig[s as keyof typeof statusConfig].color}`}>
+                                                    {statusConfig[s as keyof typeof statusConfig].icon} {statusConfig[s as keyof typeof statusConfig].label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </Popover>
+
+                                    <Popover
+                                        trigger={
+                                            <OSButton size="sm">
+                                                <div className="flex items-center gap-1.5 lowercase">
+                                                    {typeConfig[nodeType].icon}
+                                                    <span className="hidden md:inline font-bold">{typeConfig[nodeType].label}</span>
+                                                    <ChevronDown className="size-3 opacity-50 hidden md:block" />
+                                                </div>
+                                            </OSButton>
+                                        }
+                                        dataScheme="primary"
+                                        contentClassName="w-40 p-1 border border-primary bg-bg"
+                                    >
+                                        <div className="flex flex-col gap-0.5">
+                                            {(Object.keys(typeConfig) as Array<keyof typeof typeConfig>).map(t => (
+                                                <button key={t} onClick={() => setNodeType(t as keyof typeof typeConfig)} className="text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-primary">
+                                                    {typeConfig[t as keyof typeof typeConfig].icon} {typeConfig[t as keyof typeof typeConfig].label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </Popover>
+
+                                    <div className="h-4 w-[1px] bg-primary/10 mx-1" />
+
+                                    <OSButton
+                                        size="sm"
+                                        title="add tag"
+                                        onClick={() => {
+                                            const t = window.prompt('add a new tag')
+                                            if (t && t.trim()) setTags(prev => [...prev, t.trim().toLowerCase()])
+                                        }}
+                                    >
+                                        <Hash className="size-3.5" />
+                                    </OSButton>
+
+                                    <Popover
+                                        trigger={
+                                            <OSButton size="sm" title="theme">
+                                                <Palette className="size-3.5" />
+                                            </OSButton>
+                                        }
+                                        dataScheme="primary"
+                                        contentClassName="w-48 p-2 border border-primary bg-bg"
+                                    >
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-primary/40 px-2 py-1">node theme</span>
+                                            {(Object.keys(themeClasses) as Array<keyof typeof themeClasses>).map(t => (
+                                                <button key={t} onClick={() => setTheme(t as keyof typeof themeClasses)} className="text-left px-2 py-1.5 text-xs font-bold hover:bg-black/5 rounded-md lowercase">
+                                                    {t} canvas
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </Popover>
+
+                                    <div className="h-4 w-[1px] bg-primary/10 mx-1" />
+
+                                    {saved && <span className="text-[10px] font-bold tracking-widest text-green-600 uppercase transition-opacity duration-300 hidden lg:inline mr-1">saved</span>}
+
+                                    <OSButton
+                                        size="sm"
+                                        onClick={() => handleSave('draft')}
+                                        disabled={saving}
+                                    >
+                                        <div className="flex items-center gap-1.5 lowercase px-1 font-bold">
+                                            {saving ? <div className="size-3.5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /> : <Save className="size-3.5" />}
+                                            <span className="hidden md:inline px-0.5">save</span>
+                                        </div>
+                                    </OSButton>
+
+                                    <OSButton
+                                        size="sm"
+                                        onClick={() => handleSave('published')}
+                                        disabled={saving}
+                                        className="!bg-primary !text-white hover:!bg-primary/90"
+                                    >
+                                        <div className="flex items-center gap-1.5 lowercase px-1 font-bold">
+                                            publish
+                                        </div>
+                                    </OSButton>
+                                </div>
+                            }
                         />
                     </div>
-                </div>
-
-                {/* Inner Window Footer Target - inside the route content for 4px inset */}
-                <div className="sticky bottom-0 z-50 w-full pointer-events-none pb-1 mt-auto">
-                    <div id={`window-inner-footer-${item.key}`} className="pointer-events-auto" />
                 </div>
             </div>
         </div>
@@ -685,74 +652,7 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
     return (
         <div className="flex flex-col size-full overflow-y-auto overflow-x-hidden text-black bg-[#fafcfc] dark:bg-primary/5 transition-colors duration-500">
             <aside className="sticky top-0 z-50 shrink-0">
-                <div data-scheme="tertiary" className="mx-1 mt-1 rounded-md border border-primary bg-primary px-1.5 py-1">
-                    <Toolbar
-                        className="rounded-none border-0 bg-transparent p-0"
-                        elements={[
-                            {
-                                type: 'button' as const,
-                                label: 'cover',
-                                icon: <ImageIcon className="size-4" />,
-                                onClick: () => {
-                                    const url = window.prompt('enter post cover image url', imageUrl || '')
-                                    if (url !== null) setImageUrl(url.trim())
-                                },
-                                size: 'md' as const,
-                                hideLabel: true,
-                                className: 'md:!px-2',
-                            },
-                            { type: 'separator' as const },
-                            {
-                                type: 'container' as const,
-                                children: (
-                                    <Popover
-                                        trigger={
-                                            <OSButton size="md">
-                                                <div className="flex items-center gap-1.5 lowercase">
-                                                    {published ? <CheckCircle className="size-4 text-emerald-500" /> : <PenTool className="size-4" />}
-                                                    <span className="hidden md:inline">{published ? 'published' : 'draft'}</span>
-                                                    <ChevronDown className="size-3 opacity-50 hidden md:block" />
-                                                </div>
-                                            </OSButton>
-                                        }
-                                        dataScheme="primary"
-                                        contentClassName="w-40 p-1 border border-primary bg-bg"
-                                    >
-                                        <div className="flex flex-col gap-0.5">
-                                            <button onClick={() => setPublished(false)} className="text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-primary">
-                                                <PenTool className="size-3" /> draft
-                                            </button>
-                                            <button onClick={() => setPublished(true)} className="text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-emerald-600">
-                                                <CheckCircle className="size-3" /> published
-                                            </button>
-                                        </div>
-                                    </Popover>
-                                ),
-                            },
-                            {
-                                type: 'container' as const,
-                                className: 'ml-auto flex items-center gap-2',
-                                children: (
-                                    <>
-                                        {saved && <span className="text-[10px] font-bold tracking-widest text-green-600 uppercase transition-opacity duration-300 hidden sm:inline">saved</span>}
-                                        <OSButton size="md" onClick={() => handleSavePost(false)} disabled={saving}>
-                                            <div className="flex items-center gap-1.5 lowercase">
-                                                <Save className="size-4" />
-                                                <span className="hidden md:inline font-semibold">save draft</span>
-                                            </div>
-                                        </OSButton>
-                                        <OSButton variant="primary" size="md" onClick={() => handleSavePost(true)} disabled={saving}>
-                                            <div className="flex items-center gap-1.5 lowercase">
-                                                <CheckCircle className="size-4" />
-                                                <span className="hidden md:inline font-semibold">publish</span>
-                                            </div>
-                                        </OSButton>
-                                    </>
-                                ),
-                            },
-                        ]}
-                    />
-                </div>
+                <div id={`window-inner-header-${item.key}`} className="pointer-events-auto" />
             </aside>
 
             <div className="flex-col relative w-full flex-1 flex min-h-0">
@@ -809,13 +709,73 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
                     </div>
 
                     <div className="w-full flex-1 min-h-[400px]">
-                        <RichTextEditor content={content} onChange={setContent} />
-                    </div>
-                </div>
+                        <RichTextEditor
+                            content={content}
+                            onChange={setContent}
+                            toolkitPosition="header"
+                            actions={
+                                <div className="flex items-center gap-1">
+                                    <OSButton
+                                        size="sm"
+                                        title="add cover"
+                                        onClick={() => {
+                                            const url = window.prompt('enter post cover image url', imageUrl || '')
+                                            if (url !== null) setImageUrl(url.trim())
+                                        }}
+                                    >
+                                        <ImageIcon className="size-3.5" />
+                                    </OSButton>
 
-                {/* Inner Window Footer Target - inside the route content for 4px inset */}
-                <div className="sticky bottom-0 z-50 w-full pointer-events-none pb-1 mt-auto">
-                    <div id={`window-inner-footer-${item.key}`} className="pointer-events-auto" />
+                                    <div className="h-4 w-[1px] bg-primary/10 mx-1" />
+
+                                    <Popover
+                                        trigger={
+                                            <OSButton size="sm">
+                                                <div className="flex items-center gap-1.5 lowercase">
+                                                    {published ? <CheckCircle className="size-3.5 text-emerald-500" /> : <PenTool className="size-3.5" />}
+                                                    <span className="hidden md:inline font-bold">{published ? 'published' : 'draft'}</span>
+                                                    <ChevronDown className="size-3 opacity-50 hidden md:block" />
+                                                </div>
+                                            </OSButton>
+                                        }
+                                        dataScheme="primary"
+                                        contentClassName="w-40 p-1 border border-primary bg-bg"
+                                    >
+                                        <div className="flex flex-col gap-0.5">
+                                            <button onClick={() => setPublished(false)} className="text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-primary">
+                                                <PenTool className="size-3" /> draft
+                                            </button>
+                                            <button onClick={() => setPublished(true)} className="text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-emerald-600">
+                                                <CheckCircle className="size-3" /> published
+                                            </button>
+                                        </div>
+                                    </Popover>
+
+                                    <div className="h-4 w-[1px] bg-primary/10 mx-1" />
+
+                                    {saved && <span className="text-[10px] font-bold tracking-widest text-green-600 uppercase transition-opacity duration-300 hidden lg:inline mr-1">saved</span>}
+
+                                    <OSButton size="sm" onClick={() => handleSavePost(false)} disabled={saving}>
+                                        <div className="flex items-center gap-1.5 lowercase px-1">
+                                            {saving ? <div className="size-3.5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /> : <Save className="size-3.5" />}
+                                            <span className="hidden md:inline font-bold px-0.5">save</span>
+                                        </div>
+                                    </OSButton>
+
+                                    <OSButton
+                                        size="sm"
+                                        onClick={() => handleSavePost(true)}
+                                        disabled={saving}
+                                        className="!bg-primary !text-white hover:!bg-primary/90"
+                                    >
+                                        <div className="flex items-center gap-1.5 lowercase px-1 font-bold">
+                                            {published ? 'update' : 'publish'}
+                                        </div>
+                                    </OSButton>
+                                </div>
+                            }
+                        />
+                    </div>
                 </div>
             </div>
         </div>

@@ -7,10 +7,12 @@ import { useApp } from '../../context/App'
 interface ToolkitProps {
     children: React.ReactNode
     windowKey?: string
+    position?: 'header' | 'footer'
+    portal?: boolean
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function Toolkit({ children, windowKey }: ToolkitProps): any {
+export function Toolkit({ children, windowKey, position = 'footer', portal = true }: ToolkitProps): any {
     const { focusedWindow } = useApp()
     const targetKey = windowKey || focusedWindow?.key
 
@@ -19,22 +21,27 @@ export function Toolkit({ children, windowKey }: ToolkitProps): any {
 
     React.useEffect(() => {
         setMounted(true)
-        if (targetKey) {
-            const el = document.getElementById(`window-inner-footer-${targetKey}`)
+        if (portal && targetKey) {
+            const el = document.getElementById(`window-inner-${position}-${targetKey}`)
             setTargetElement(el)
         }
-    }, [targetKey])
+    }, [targetKey, position, portal])
 
-    if (!mounted || !targetElement) return null
-
-    return createPortal(
-        <div data-scheme="tertiary" className="mx-1 mb-1 rounded-md border border-primary bg-primary px-1.5 py-0.5 flex items-center justify-between min-h-[36px] select-none overflow-x-auto custom-scrollbar scrollbar-hide">
+    const content = (
+        <div
+            data-scheme="tertiary"
+            className={`mx-1 ${position === 'header' ? 'mt-1' : 'my-1'} rounded-md border border-primary bg-primary px-1.5 ${position === 'header' ? 'py-1' : 'py-0.5'} flex items-center justify-between min-h-[36px] select-none overflow-x-auto custom-scrollbar scrollbar-hide`}
+        >
             <div className="flex flex-wrap items-center w-full gap-0.5">
                 {children}
             </div>
-        </div>,
-        targetElement
+        </div>
     )
+
+    if (!portal) return content
+    if (!mounted || !targetElement) return null
+
+    return createPortal(content, targetElement)
 }
 
 interface ToolkitSectionProps {

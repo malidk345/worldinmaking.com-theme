@@ -153,9 +153,10 @@ interface RichTextEditorProps {
     focusMode?: boolean
     onToggleFocusMode?: () => void
     actions?: React.ReactNode
+    toolkitPosition?: 'header' | 'footer'
 }
 
-const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMode, actions }: RichTextEditorProps) => {
+const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMode, actions, toolkitPosition = 'footer' }: RichTextEditorProps) => {
     const { focusedWindow } = useApp()
 
     const editor = useEditor({
@@ -362,15 +363,6 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
                             {focusMode ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
                         </button>
                     )}
-                    {onToggleFocusMode && (
-                        <button
-                            onClick={onToggleFocusMode}
-                            className={`p-1.5 rounded transition-colors ${focusMode ? 'bg-black text-white' : 'text-black/40 hover:bg-black/10 hover:text-black'}`}
-                            title={focusMode ? 'Exit Focus' : 'Focus Mode'}
-                        >
-                            {focusMode ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
-                        </button>
-                    )}
                 </>
             ),
         }
@@ -398,8 +390,8 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
 
     return (
         <div className={`border border-[#1E2F46]/15 rounded-sm bg-white overflow-hidden flex flex-col ${focusMode ? 'h-screen fixed inset-0 z-[100]' : 'h-full'}`}>
-            {/* Toolkit - injected into Window Footer via portal */}
-            <Toolkit windowKey={focusedWindow?.key}>
+            {/* Toolkit - injected into Window Footer or Header via portal */}
+            <Toolkit windowKey={focusedWindow?.key} position={toolkitPosition}>
                 <ToolkitSection className="flex-1 min-w-0">
                     <Toolbar elements={toolbarElements} className="!bg-transparent !border-none !p-0 !rounded-none flex-wrap" />
                 </ToolkitSection>
