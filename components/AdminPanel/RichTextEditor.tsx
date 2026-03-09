@@ -22,13 +22,14 @@ import {
     Maximize2, Minimize2,
     Underline as UnderlineIcon, Highlighter,
     Terminal, Table as TableIcon, MessageSquareWarning, BookMarked,
-    Save, CheckCircle, Loader2
+    Save, CheckCircle, Loader2, MoreHorizontal, Settings
 } from 'lucide-react'
 
 import { Toolbar, ToolbarElement } from 'components/RadixUI/Toolbar'
 import { Toolkit } from '../Toolkit'
 import { useApp } from '../../context/App'
 import OSButton from 'components/OSButton'
+import { Popover } from 'components/RadixUI/Popover'
 
 // Initialize lowlight for code blocks
 const lowlight = createLowlight(common)
@@ -180,7 +181,7 @@ const RichTextEditor = ({
     toolkitPosition = 'footer',
     windowKey
 }: RichTextEditorProps) => {
-    const { focusedWindow } = useApp()
+    const { focusedWindow, isMobile } = useApp()
     const targetKey = windowKey || focusedWindow?.key
 
     const editor = useEditor({
@@ -338,50 +339,115 @@ const RichTextEditor = ({
             onClick: () => (editor.chain().focus() as unknown as { insertReferences: () => { run: () => void } }).insertReferences().run(),
         },
         {
-            type: 'button',
-            label: 'Code Block',
-            icon: <Terminal className="size-4 text-black" />,
-            hideLabel: true,
-            active: editor.isActive('codeBlock'),
-            onClick: () => editor.chain().focus().toggleCodeBlock().run(),
+            type: 'container' as const,
+            className: isMobile ? 'hidden' : 'flex items-center gap-0.5',
+            children: (
+                <div className="flex items-center gap-0.5">
+                    <Toolbar
+                        elements={[
+                            {
+                                type: 'button',
+                                label: 'Link',
+                                icon: <LinkIcon className="size-4 text-black" />,
+                                hideLabel: true,
+                                active: editor.isActive('link'),
+                                onClick: () => {
+                                    const url = window.prompt('URL')
+                                    if (url) editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+                                },
+                            },
+                            {
+                                type: 'button',
+                                label: 'Image',
+                                icon: <ImageIcon className="size-4 text-black" />,
+                                hideLabel: true,
+                                onClick: () => {
+                                    const url = window.prompt('Image URL')
+                                    if (url) editor.chain().focus().setImage({ src: url }).run()
+                                },
+                            },
+                        ]}
+                        className="!bg-transparent !border-none !p-0"
+                    />
+                </div>
+            )
         },
+        ...(isMobile ? [
+            {
+                type: 'container' as const,
+                children: (
+                    <Popover
+                        trigger={
+                            <OSButton size="sm">
+                                <MoreHorizontal className="size-4" />
+                            </OSButton>
+                        }
+                        dataScheme="primary"
+                        contentClassName="w-48 p-1 border border-primary bg-bg"
+                    >
+                        <div className="flex flex-col gap-0.5">
+                            <button
+                                onClick={() => {
+                                    const url = window.prompt('URL')
+                                    if (url) editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+                                }}
+                                className={`text-left px-2 py-2 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 ${editor.isActive('link') ? 'bg-black/5' : ''}`}
+                            >
+                                <LinkIcon className="size-4" /> add link
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const url = window.prompt('Image URL')
+                                    if (url) editor.chain().focus().setImage({ src: url }).run()
+                                }}
+                                className="text-left px-2 py-2 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5"
+                            >
+                                <ImageIcon className="size-4" /> add image
+                            </button>
+                            <div className="h-px bg-primary/10 my-0.5" />
+                            <button
+                                onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+                                className={`text-left px-2 py-2 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 ${editor.isActive('codeBlock') ? 'bg-black/5' : ''}`}
+                            >
+                                <Terminal className="size-4" /> code block
+                            </button>
+                            <button
+                                onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
+                                className="text-left px-2 py-2 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5"
+                            >
+                                <TableIcon className="size-4" /> insert table
+                            </button>
+                        </div>
+                    </Popover>
+                )
+            }
+        ] : []),
         {
-            type: 'button',
-            label: 'Table',
-            icon: <TableIcon className="size-4 text-black" />,
-            hideLabel: true,
-            active: editor.isActive('table'),
-            onClick: () => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(),
-        },
-        { type: 'separator' },
-        {
-            type: 'button',
-            label: 'Link',
-            icon: <LinkIcon className="size-4 text-black" />,
-            hideLabel: true,
-            active: editor.isActive('link'),
-            onClick: () => {
-                const url = window.prompt('URL')
-                if (url) editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
-            },
-        },
-        {
-            type: 'button',
-            label: 'Image',
-            icon: <ImageIcon className="size-4 text-black" />,
-            hideLabel: true,
-            onClick: () => {
-                const url = window.prompt('Image URL')
-                if (url) editor.chain().focus().setImage({ src: url }).run()
-            },
-        },
-        {
-            type: 'container',
+            type: 'container' as const,
             className: 'ml-auto flex items-center gap-1.5',
             children: (
                 <div className="flex items-center gap-1.5">
-                    {/* Extra Elements from Parent */}
-                    <Toolbar elements={extraElements} className="!bg-transparent !border-none !p-0 !rounded-none !static" />
+                    {/* Extra Elements from Parent - Grids on mobile */}
+                    {isMobile ? (
+                        <Popover
+                            trigger={
+                                <OSButton size="sm">
+                                    <Settings className="size-4" />
+                                </OSButton>
+                            }
+                            dataScheme="primary"
+                            contentClassName="w-56 p-2 border border-primary bg-bg"
+                        >
+                            <div className="flex flex-col gap-3">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-primary/40 px-1">node settings</span>
+                                <div className="flex flex-wrap gap-2">
+                                    <Toolbar elements={extraElements} className="!bg-transparent !border-none !p-0 !static flex-wrap gap-2" />
+                                </div>
+                            </div>
+                        </Popover>
+                    ) : (
+                        <Toolbar elements={extraElements} className="!bg-transparent !border-none !p-0 !rounded-none !static" />
+                    )}
 
                     {(onSaveDraft || onPublish) && <div className="h-4 w-[1px] bg-primary/10 mx-1" />}
 
