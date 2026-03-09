@@ -186,8 +186,12 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
             const inset = 0
             const rawX = position.x + (info?.offset?.x || 0)
             const rawY = position.y + (info?.offset?.y || 0)
-            const newX = Math.max(inset, Math.min(rawX, bounds.width - size.width - inset))
-            const newY = Math.max(inset, Math.min(rawY, bounds.height - size.height - inset))
+
+            // Safe Zone: Keep at least 100px width and the title bar (40px) reachable
+            const minVisibleWidth = 100
+            const minVisibleHeight = 40
+            const newX = Math.max(-size.width + minVisibleWidth, Math.min(rawX, bounds.width - minVisibleWidth))
+            const newY = Math.max(0, Math.min(rawY, bounds.height - minVisibleHeight))
 
             updateWindow(item, {
                 position: { x: newX, y: newY },
@@ -423,7 +427,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             dragControls={controls}
                             dragListener={false}
                             dragMomentum={false}
-                            dragConstraints={constraintsRef}
+                            dragConstraints={false} // Disable default so we can use our manual Safe Zone clamping in handleDragEnd
                             onDrag={handleDrag}
                             onDragEnd={handleDragEnd}
                             onAnimationComplete={() => {
