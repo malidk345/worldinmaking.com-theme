@@ -367,7 +367,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             ref={windowRef}
                             data-app="AppWindow"
                             data-scheme="tertiary"
-                            className={`@container absolute flex flex-col bg-white/25 dark:bg-black/30 backdrop-blur-xl border ${isFocused ? 'shadow-2xl border-primary ring-1 ring-primary/10' : 'shadow-lg border-primary/30 opacity-95'
+                            className={`@container absolute flex flex-col backdrop-blur-3xl-safe border ${isFocused ? 'shadow-2xl border-primary ring-1 ring-primary/10' : 'shadow-lg border-primary/30 opacity-95'
                                 } ${dragging ? 'select-none' : ''} ${isMaximized ? 'rounded-none' : 'rounded-sm'} ${chrome ? 'overflow-hidden' : ''}`}
                             style={{ zIndex: item.zIndex }}
                             initial={{
@@ -438,7 +438,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                 <div
                                     data-scheme="tertiary"
                                     onDoubleClick={handleDoubleClick}
-                                    className={`flex-shrink-0 w-full flex @md:grid grid-cols-[minmax(100px,auto)_1fr_minmax(100px,auto)] gap-1 items-center py-0.5 pl-1.5 pr-0.5 bg-transparent ${siteSettings.experience === 'boring' ? '' : 'cursor-move'
+                                    className={`flex-shrink-0 w-full flex @md:grid grid-cols-[minmax(100px,auto)_1fr_minmax(100px,auto)] gap-1 items-center py-0.5 pl-1.5 pr-0.5 bg-primary/20 backdrop-blur-3xl-safe ${siteSettings.experience === 'boring' ? '' : 'cursor-move'
                                         }`}
                                     onPointerDown={(e) => controls.start(e)}
                                 >

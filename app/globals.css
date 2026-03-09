@@ -13,6 +13,37 @@ body {
   overscroll-behavior: none;
   height: 100%;
   height: 100dvh;
+  /* Font stabilization: prevents jumping characters on some browsers */
+  font-variant-ligatures: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbar — PostHog inspired, minimalist and non-intrusive */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(var(--color-primary-rgb), 0.1);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--color-primary-rgb), 0.2);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 body {
@@ -116,6 +147,14 @@ mark {
 
   .cq-label {
     font-size: clamp(0.6rem, 2cqw, 0.8rem);
+  }
+
+  /* Safari-Safe Advanced Blur */
+  /* PostHog uses RGB + Alpha to prevent Safari's backdrop-blur whitening bug */
+  .backdrop-blur-3xl-safe {
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    background-color: rgba(var(--bg-rgb), 0.6);
   }
 }
 
