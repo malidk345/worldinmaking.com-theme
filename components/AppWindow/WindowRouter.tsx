@@ -384,50 +384,22 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                 )}
 
                 {/* Main Node Content Area */}
-                <div className={`w-full max-w-4xl mx-auto px-4 sm:px-6 pb-20 flex-1 flex flex-col min-h-0 ${coverImage ? 'pt-8' : 'pt-12'}`}>
-
-                    {/* Header (Icon + Title) */}
-                    <div className="relative flex flex-col mb-8 shrink-0">
-                        <div className={`relative ${coverImage ? '-mt-16 sm:-mt-20 mb-4' : 'mb-2'}`}>
-                            <button
-                                onClick={() => setIconIndex(Math.floor(Math.random() * ICONS.length))}
-                                className={`hover:bg-black/5 rounded-lg transition-colors p-3 -ml-3 block w-fit ${coverImage ? 'bg-white/10 backdrop-blur-xl shadow-lg border border-white/20 z-10' : ''}`}
-                            >
-                                {React.createElement(ICONS[iconIndex].IconNode, { className: `size-12 sm:size-16 ${ICONS[iconIndex].color}` })}
-                            </button>
-                        </div>
-
-                        {/* Title Input — framed like the toolbar */}
-                        <div className="rounded border border-primary bg-primary p-3 mb-3">
-                            <input
-                                type="text"
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                placeholder="untitled node"
-                                className="bg-transparent border-none text-3xl sm:text-5xl font-black tracking-tight text-primary outline-none placeholder:text-primary/20 w-full transition-all leading-tight lowercase"
-                            />
-                        </div>
-
-                        {/* Tags — display only, add via toolbar */}
-                        {tags.length > 0 && (
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                                {tags.map(tag => (
-                                    <button
-                                        key={tag}
-                                        onClick={() => setTags(prev => prev.filter(t => t !== tag))}
-                                        className="px-1.5 py-0.5 bg-primary/10 text-primary font-bold text-[10px] rounded uppercase tracking-wider hover:bg-red-100 hover:text-red-600 transition-colors"
-                                        title="click to remove"
-                                    >
-                                        {tag} ×
-                                    </button>
-                                ))}
-                            </div>
-                        )}
+                <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 pb-20 flex-1 flex flex-col min-h-0 pt-6 gap-2">
+                    {/* Title Input — compact, lowercase */}
+                    <div className="shrink-0">
+                        <input
+                            type="text"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder="untitled node"
+                            className="bg-transparent border-none text-2xl sm:text-4xl font-extrabold tracking-tight text-primary outline-none placeholder:text-primary/10 w-full transition-all leading-tight lowercase px-0"
+                        />
                     </div>
 
-                    {/* Rich Text Editor - Normal State */}
+                    {/* Rich Text Editor */}
                     <div className="w-full flex-1 min-h-[400px]">
                         <RichTextEditor
+                            placeholder="type here..."
                             content={content}
                             onChange={setContent}
                             toolkitPosition="header"
@@ -532,7 +504,7 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                                             contentClassName="w-48 p-2 border border-primary bg-bg"
                                         >
                                             <div className="flex flex-col gap-1">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-primary/40 px-2 py-1">node theme</span>
+                                                <span className="text-[10px] font-black lowercase tracking-widest text-primary/40 px-2 py-1">node theme</span>
                                                 {(Object.keys(themeClasses) as Array<keyof typeof themeClasses>).map(t => (
                                                     <button key={t} onClick={() => setTheme(t as keyof typeof themeClasses)} className="text-left px-2 py-1.5 text-xs font-bold hover:bg-black/5 rounded-md lowercase">
                                                         {t} canvas
@@ -649,60 +621,24 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
             </aside>
 
             <div className="flex-col relative w-full flex-1 flex min-h-0">
-                {imageUrl && (
-                    <div className="relative w-full h-48 sm:h-64 group bg-black/5 shrink-0">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={imageUrl} alt={title || 'post cover'} className="w-full h-full object-cover" />
-                        <button
-                            onClick={() => setImageUrl('')}
-                            className="absolute top-4 right-4 bg-black/60 text-white text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-md font-bold lowercase"
-                        >
-                            remove cover
-                        </button>
-                    </div>
-                )}
-
-                <div className={`w-full max-w-4xl mx-auto px-4 sm:px-6 pb-20 flex-1 flex flex-col min-h-0 ${imageUrl ? 'pt-8' : 'pt-12'}`}>
-                    <div className="relative flex flex-col mb-8 shrink-0 gap-3">
-                        <div className="rounded border border-primary bg-primary p-3">
-                            <input
-                                type="text"
-                                value={title}
-                                onChange={(e) => {
-                                    setTitle(e.target.value)
-                                    if (!currentPostId) setSlug(toSlug(e.target.value))
-                                }}
-                                placeholder="untitled post"
-                                className="bg-transparent border-none text-3xl sm:text-5xl font-black tracking-tight text-primary outline-none placeholder:text-primary/20 w-full transition-all leading-tight lowercase"
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div className="rounded border border-primary bg-primary p-3">
-                                <div className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-2">slug</div>
-                                <input
-                                    type="text"
-                                    value={slug}
-                                    onChange={(e) => setSlug(toSlug(e.target.value))}
-                                    placeholder="post-slug"
-                                    className="bg-transparent border-none outline-none text-sm text-primary placeholder:text-primary/30 w-full"
-                                />
-                            </div>
-                            <div className="rounded border border-primary bg-primary p-3">
-                                <div className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-2">excerpt</div>
-                                <input
-                                    type="text"
-                                    value={excerpt}
-                                    onChange={(e) => setExcerpt(e.target.value)}
-                                    placeholder="short summary for cards and previews"
-                                    className="bg-transparent border-none outline-none text-sm text-primary placeholder:text-primary/30 w-full"
-                                />
-                            </div>
-                        </div>
+                <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 pb-20 flex-1 flex flex-col min-h-0 pt-6 gap-2">
+                    {/* Title Input — compact, lowercase */}
+                    <div className="shrink-0">
+                        <input
+                            type="text"
+                            value={title}
+                            onChange={(e) => {
+                                setTitle(e.target.value)
+                                if (!currentPostId) setSlug(toSlug(e.target.value))
+                            }}
+                            placeholder="untitled post"
+                            className="bg-transparent border-none text-2xl sm:text-4xl font-extrabold tracking-tight text-primary outline-none placeholder:text-primary/10 w-full transition-all leading-tight lowercase px-0"
+                        />
                     </div>
 
                     <div className="w-full flex-1 min-h-[400px]">
                         <RichTextEditor
+                            placeholder="type here..."
                             content={content}
                             onChange={setContent}
                             toolkitPosition="header"

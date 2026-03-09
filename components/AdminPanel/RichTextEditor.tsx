@@ -164,6 +164,7 @@ interface RichTextEditorProps {
     extraElements?: ToolbarElement[]
     toolkitPosition?: 'header' | 'footer'
     windowKey?: string
+    placeholder?: string
 }
 
 const RichTextEditor = ({
@@ -179,7 +180,8 @@ const RichTextEditor = ({
     leftElements = [],
     extraElements = [],
     toolkitPosition = 'footer',
-    windowKey
+    windowKey,
+    placeholder
 }: RichTextEditorProps) => {
     const { focusedWindow, isMobile } = useApp()
     const targetKey = windowKey || focusedWindow?.key
@@ -191,7 +193,7 @@ const RichTextEditor = ({
                 codeBlock: false,
             }),
             Placeholder.configure({
-                placeholder: 'yazmaya başlayın...',
+                placeholder: placeholder || 'type here...',
             }),
             Link.configure({
                 openOnClick: false,
@@ -222,7 +224,7 @@ const RichTextEditor = ({
         },
         editorProps: {
             attributes: {
-                class: `prose prose-sm max-w-none focus:outline-none px-6 py-8 font-sans ${focusMode ? 'min-h-[80vh] text-lg' : 'min-h-[400px] text-base'} text-black leading-relaxed prose-headings:text-black prose-headings:font-normal prose-headings:tracking-tight prose-p:text-black prose-p:leading-relaxed prose-strong:text-black prose-strong:font-semibold prose-a:text-black prose-a:underline prose-a:underline-offset-4 prose-a:decoration-black/20 hover:prose-a:decoration-black prose-code:text-black prose-code:bg-black/5 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-pre:bg-black/[0.03] prose-pre:text-black prose-pre:border prose-pre:border-black/10 prose-blockquote:text-black/70 prose-blockquote:border-black/10 prose-blockquote:bg-black/[0.02] prose-blockquote:py-2 prose-blockquote:px-6 prose-blockquote:rounded-lg prose-blockquote:font-normal prose-blockquote:not-italic prose-li:text-black prose-td:border-black/10 prose-th:border-black/10 prose-th:text-black prose-th:font-normal prose-hr:border-black/10 transition-all`,
+                class: `prose prose-sm max-w-none focus:outline-none px-0 py-4 font-sans ${focusMode ? 'min-h-[80vh] text-lg' : 'min-h-[300px] text-base'} text-black leading-relaxed prose-headings:text-black prose-headings:font-normal prose-headings:tracking-tight prose-p:text-black prose-p:leading-relaxed prose-strong:text-black prose-strong:font-semibold prose-a:text-black prose-a:underline prose-a:underline-offset-4 prose-a:decoration-black/20 hover:prose-a:decoration-black prose-code:text-black prose-code:bg-black/5 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-pre:bg-black/[0.03] prose-pre:text-black prose-pre:border prose-pre:border-black/10 prose-blockquote:text-black/70 prose-blockquote:border-black/10 prose-blockquote:bg-black/[0.02] prose-blockquote:py-2 prose-blockquote:px-6 prose-blockquote:rounded-lg prose-blockquote:font-normal prose-blockquote:not-italic prose-li:text-black prose-td:border-black/10 prose-th:border-black/10 prose-th:text-black prose-th:font-normal prose-hr:border-black/10 transition-all`,
             },
         },
     })
@@ -232,7 +234,7 @@ const RichTextEditor = ({
         ...(leftElements.length > 0 ? [{ type: 'separator' } as ToolbarElement] : []),
         {
             type: 'button',
-            label: 'Undo',
+            label: 'undo',
             icon: <Undo className="size-4" />,
             hideLabel: true,
             onClick: () => editor.chain().focus().undo().run(),
@@ -240,7 +242,7 @@ const RichTextEditor = ({
         },
         {
             type: 'button',
-            label: 'Redo',
+            label: 'redo',
             icon: <Redo className="size-4" />,
             hideLabel: true,
             onClick: () => editor.chain().focus().redo().run(),
@@ -249,7 +251,7 @@ const RichTextEditor = ({
         { type: 'separator' },
         {
             type: 'button',
-            label: 'Bold',
+            label: 'bold',
             icon: <Bold className="size-4 text-black" />,
             hideLabel: true,
             active: editor.isActive('bold'),
@@ -257,7 +259,7 @@ const RichTextEditor = ({
         },
         {
             type: 'button',
-            label: 'Italic',
+            label: 'italic',
             icon: <Italic className="size-4 text-black" />,
             hideLabel: true,
             active: editor.isActive('italic'),
@@ -265,7 +267,7 @@ const RichTextEditor = ({
         },
         {
             type: 'button',
-            label: 'Underline',
+            label: 'underline',
             icon: <UnderlineIcon className="size-4 text-black" />,
             hideLabel: true,
             active: editor.isActive('underline'),
@@ -273,7 +275,7 @@ const RichTextEditor = ({
         },
         {
             type: 'button',
-            label: 'Highlight',
+            label: 'highlight',
             icon: <Highlighter className="size-4 text-black" />,
             hideLabel: true,
             active: editor.isActive('highlight'),
@@ -439,7 +441,7 @@ const RichTextEditor = ({
                             contentClassName="w-56 p-2 border border-primary bg-bg"
                         >
                             <div className="flex flex-col gap-3">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-primary/40 px-1">node settings</span>
+                                <span className="text-[10px] font-black lowercase tracking-widest text-primary/40 px-1">node settings</span>
                                 <div className="flex flex-wrap gap-2">
                                     <Toolbar elements={extraElements} className="!bg-transparent !border-none !p-0 !static flex-wrap gap-2" />
                                 </div>
@@ -452,7 +454,7 @@ const RichTextEditor = ({
                     {(onSaveDraft || onPublish) && <div className="h-4 w-[1px] bg-primary/10 mx-1" />}
 
                     {isSaved && (
-                        <span className="text-[10px] font-bold tracking-widest text-green-600 uppercase transition-opacity duration-300 hidden lg:inline mr-1">
+                        <span className="text-[10px] font-bold tracking-widest text-green-600 lowercase transition-opacity duration-300 hidden lg:inline mr-1">
                             saved
                         </span>
                     )}
