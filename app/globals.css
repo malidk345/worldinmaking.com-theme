@@ -55,11 +55,11 @@ blockquote {
 }
 
 mark {
-  background-color: #fef08a;
-  /* Yellow-200 from Tailwind */
-  color: #000;
+  background-color: rgba(30, 47, 70, 0.15);
+  color: #1E2F46;
   border-radius: 4px;
   padding: 2px 4px;
+  border-bottom: 2px solid rgba(30, 47, 70, 0.35);
 }
 
 @font-face {
@@ -846,31 +846,141 @@ details[open]>summary:before {
   transition: all 0.25s ease-out;
 }
 
-details h2 {
+details:not([data-type="references"]) h2 {
   @apply mt-2 px-8;
 }
 
-details h3,
-details h4,
-details h5,
-details h6 {
+details:not([data-type="references"]) h3,
+details:not([data-type="references"]) h4,
+details:not([data-type="references"]) h5,
+details:not([data-type="references"]) h6 {
   @apply px-8;
 }
 
-details p {
+details:not([data-type="references"]) p {
   @apply pt-0 pb-2 px-8 m-0;
 }
 
-details>div {
+details:not([data-type="references"])>div {
   @apply ml-2 mr-2 mt-2 rounded;
 }
 
-details ul {
+details:not([data-type="references"]) ul {
   @apply pl-12 pr-4 mt-0 mb-4;
 }
 
-details ol {
+details:not([data-type="references"]) ol {
   @apply pl-12 pr-4 mt-0 mb-4;
+}
+
+/* ── References Block (Flat Site Style) ────────────────────── */
+/* Simple, flat styling that perfectly follows the site's global details pattern. */
+
+details[data-type="references"] {
+  background-color: rgb(var(--primary)) !important;
+  border: 1px solid rgb(var(--primary)) !important;
+  border-radius: 4px !important;
+  margin: 1.5rem 0 !important;
+  overflow: hidden !important;
+}
+
+details[data-type="references"]>summary {
+  cursor: pointer !important;
+  background-color: rgb(var(--accent)) !important;
+  list-style: none !important;
+  padding: 8px 16px !important;
+  padding-right: 40px !important;
+  position: relative !important;
+  font-weight: 400 !important;
+  /* Normal weight as requested */
+  color: #000000 !important;
+  /* Black as requested */
+  border: none !important;
+  font-size: 14px !important;
+  appearance: none !important;
+}
+
+/* Kill global left arrow and icons */
+details[data-type="references"]>summary::-webkit-details-marker {
+  display: none !important;
+}
+
+details[data-type="references"]>summary::marker {
+  display: none !important;
+  content: "" !important;
+}
+
+details[data-type="references"]>summary::before,
+details[data-type="references"]>summary:before {
+  display: none !important;
+  content: none !important;
+}
+
+/* Moving the indicator to the RIGHT */
+details[data-type="references"]>summary::after {
+  content: '' !important;
+  position: absolute !important;
+  right: 14px !important;
+  top: 50% !important;
+  width: 12px !important;
+  height: 12px !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231E2F46' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-size: contain !important;
+  transform: translateY(-50%) rotate(0deg) !important;
+  transition: transform 0.2s ease !important;
+}
+
+details[data-type="references"][open]>summary::after {
+  transform: translateY(-50%) rotate(180deg) !important;
+}
+
+/* Simple internal content area */
+details[data-type="references"] .references-body {
+  padding: 1.25rem !important;
+  font-size: 13.5px !important;
+  line-height: 1.6 !important;
+  color: #1E2F46 !important;
+}
+
+details[data-type="references"] .references-body p {
+  margin: 0 !important;
+  padding: 4px 0 !important;
+}
+
+details[data-type="references"] .references-body a {
+  color: rgb(var(--primary)) !important;
+  text-decoration: underline !important;
+  text-underline-offset: 4px !important;
+  text-decoration-color: rgba(var(--primary), 0.3) !important;
+  transition: all 0.2s !important;
+}
+
+details[data-type="references"] .references-body a:hover {
+  text-decoration-color: rgb(var(--primary)) !important;
+}
+
+details[data-type="references"] .references-body ul,
+details[data-type="references"] .references-body ol {
+  padding-left: 1.5rem !important;
+  margin: 0.5rem 0 !important;
+}
+
+details[data-type="references"] .references-body li {
+  margin-bottom: 4px !important;
+}
+
+/* ── Callout Block ────────────────────────────────────────────── */
+[data-type="callout"] {
+  padding: 1.25rem;
+  margin: 1.5rem 0;
+  background: rgba(30, 47, 70, 0.04);
+  border-left: 3px solid rgba(30, 47, 70, 0.4);
+  border-radius: 0 0.5rem 0.5rem 0;
+  font-weight: 500;
+  color: rgba(30, 47, 70, 0.85);
+  line-height: 1.625;
+  font-size: 13.5px;
 }
 
 /* Custom Scrollbar Utility */

@@ -53,7 +53,7 @@ export const CalloutNode = Node.create({
         return [{ tag: 'div[data-type="callout"]' }]
     },
     renderHTML({ HTMLAttributes }) {
-        return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'callout', class: 'p-5 my-6 bg-primary/5 border-l-4 border-primary/50 rounded-r-xl font-medium text-primary/90 shadow-sm leading-relaxed' }), 0]
+        return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'callout', class: 'p-5 my-6 bg-[#1E2F46]/[0.04] border-l-[3px] border-[#1E2F46]/40 rounded-r-lg font-medium text-[#1E2F46]/85 leading-relaxed text-[13.5px]' }), 0]
     },
     addCommands() {
         return {
@@ -71,29 +71,25 @@ export const ReferencesNode = Node.create({
     defining: true,
     isolating: true,
     parseHTML() {
-        return [{ tag: 'details[data-type="references"]' }]
+        return [
+            { tag: 'details[data-type="references"]' },
+            { tag: 'div[data-type="references"]' },
+        ]
     },
     renderHTML({ HTMLAttributes }) {
         return [
             'details',
             mergeAttributes(HTMLAttributes, {
                 'data-type': 'references',
-                open: 'open',
-                class: 'references-block group my-6 rounded-xl border border-primary/20 bg-primary/5 text-[13px] leading-relaxed text-primary/80 overflow-hidden shadow-sm',
             }),
             [
                 'summary',
-                {
-                    class: 'flex items-center gap-2 cursor-pointer list-none select-none px-4 py-3 text-[11px] font-black tracking-[0.16em] text-primary/70 marker:hidden lowercase',
-                },
-                ['span', { class: 'inline-flex size-5 items-center justify-center rounded-full border border-primary/15 bg-white text-[10px] text-primary/70 shadow-sm' }, '↗'],
-                ['span', { class: 'leading-none' }, 'references'],
+                {},
+                'references',
             ],
             [
                 'div',
-                {
-                    class: 'min-h-[120px] border-t border-primary/10 bg-white px-4 py-4 text-[13px] leading-6 text-primary/80 [&_ol]:my-0 [&_ol]:pl-5 [&_ul]:my-0 [&_ul]:pl-5 [&_p]:my-2 [&_li]:my-1.5 [&_a]:break-words [&_a]:text-primary [&_a]:underline-offset-2 hover:[&_a]:underline',
-                },
+                { class: 'references-body' },
                 0,
             ],
         ]
@@ -159,7 +155,7 @@ const TB = ({ active, onClick, title, children }: TBProps) => (
         type="button"
         onClick={onClick}
         title={title}
-        className={`p-1 rounded transition-colors ${active ? 'bg-black text-white' : 'text-black/70 hover:bg-black/10 hover:text-black'}`}
+        className={`p-1 rounded transition-colors ${active ? 'bg-[#1E2F46] text-white' : 'text-[#1E2F46]/60 hover:bg-[#1E2F46]/10 hover:text-[#1E2F46]'}`}
     >
         {children}
     </button>
@@ -184,7 +180,7 @@ const EditorMenuBar = ({ editor }: { editor: Editor | null }) => {
     }
 
     return (
-        <div className="flex flex-wrap gap-0.5 p-1.5 border-b border-black/5 bg-white">
+        <div className="flex flex-wrap gap-0.5 p-1.5 border-b border-[#1E2F46]/5 bg-white">
             <TB active={editor.isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()} title="Bold">
                 <Bold className="size-3.5" />
             </TB>
@@ -207,7 +203,7 @@ const EditorMenuBar = ({ editor }: { editor: Editor | null }) => {
                 <Code className="size-3.5" />
             </TB>
 
-            <div className="w-px bg-black/10 mx-1 self-stretch" />
+            <div className="w-px bg-[#1E2F46]/10 mx-1 self-stretch" />
 
             <TB active={editor.isActive({ textAlign: 'left' })} onClick={() => editor.chain().focus().setTextAlign('left').run()} title="Align Left">
                 <AlignLeft className="size-3.5" />
@@ -222,7 +218,7 @@ const EditorMenuBar = ({ editor }: { editor: Editor | null }) => {
                 <AlignJustify className="size-3.5" />
             </TB>
 
-            <div className="w-px bg-black/10 mx-1 self-stretch" />
+            <div className="w-px bg-[#1E2F46]/10 mx-1 self-stretch" />
 
             <TB active={editor.isActive('heading', { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} title="Heading 2">
                 <Heading2 className="size-3.5" />
@@ -231,7 +227,7 @@ const EditorMenuBar = ({ editor }: { editor: Editor | null }) => {
                 <Heading3 className="size-3.5" />
             </TB>
 
-            <div className="w-px bg-black/10 mx-1 self-stretch" />
+            <div className="w-px bg-[#1E2F46]/10 mx-1 self-stretch" />
 
             <TB active={editor.isActive('bulletList')} onClick={() => editor.chain().focus().toggleBulletList().run()} title="Bullet List">
                 <List className="size-3.5" />
@@ -255,7 +251,7 @@ const EditorMenuBar = ({ editor }: { editor: Editor | null }) => {
                 <TableIcon className="size-3.5" />
             </TB>
 
-            <div className="w-px bg-black/10 mx-1 self-stretch" />
+            <div className="w-px bg-[#1E2F46]/10 mx-1 self-stretch" />
 
             <TB active={editor.isActive('link')} onClick={addLink} title="Link">
                 <LinkIcon className="size-3.5" />
@@ -266,7 +262,7 @@ const EditorMenuBar = ({ editor }: { editor: Editor | null }) => {
 
             {/* Hide undo/redo on very small screens */}
             <div className="hidden sm:flex items-center">
-                <div className="w-px bg-black/10 mx-1 self-stretch" />
+                <div className="w-px bg-[#1E2F46]/10 mx-1 self-stretch" />
                 <TB onClick={() => editor.chain().focus().undo().run()} title="Undo">
                     <Undo className="size-3.5" />
                 </TB>
@@ -316,7 +312,11 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
                 openOnClick: false,
             }),
             Image,
-            Highlight,
+            Highlight.configure({
+                HTMLAttributes: {
+                    style: 'background-color: rgba(30, 47, 70, 0.15); color: #1E2F46; border-radius: 4px; padding: 2px 4px; border-bottom: 2px solid rgba(30, 47, 70, 0.35);',
+                },
+            }),
             Underline,
             Subscript,
             Superscript,
@@ -349,7 +349,7 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
         },
         editorProps: {
             attributes: {
-                class: `prose prose-sm max-w-none focus:outline-none px-4 py-3 ${focusMode ? 'min-h-[70vh] text-base' : 'min-h-[300px]'} prose-stone text-black prose-headings:text-black prose-p:text-black prose-strong:text-black prose-a:text-primary prose-a:font-medium prose-a:no-underline hover:prose-a:underline prose-code:text-black prose-code:bg-black/5 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none prose-pre:bg-black/5 prose-pre:text-black prose-pre:border prose-pre:border-black/10 prose-blockquote:text-black/80 prose-blockquote:border-black/20 prose-blockquote:font-normal prose-blockquote:not-italic prose-li:text-black prose-td:border-black/10 prose-th:border-black/10 prose-th:text-black prose-hr:border-black/10 transition-all`,
+                class: `prose prose-sm max-w-none focus:outline-none px-4 py-3 font-sans ${focusMode ? 'min-h-[70vh] text-base' : 'min-h-[300px]'} text-[#1E2F46] prose-headings:text-[#1E2F46] prose-p:text-[#1E2F46] prose-strong:text-[#1E2F46] prose-a:text-primary prose-a:font-medium prose-a:no-underline hover:prose-a:underline prose-code:text-[#1E2F46] prose-code:bg-[#1E2F46]/5 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none prose-pre:bg-[#1E2F46]/5 prose-pre:text-[#1E2F46] prose-pre:border prose-pre:border-[#1E2F46]/10 prose-blockquote:text-[#1E2F46]/90 prose-blockquote:border-[#1E2F46]/30 prose-blockquote:bg-[#1E2F46]/5 prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-md prose-blockquote:font-normal prose-blockquote:not-italic prose-li:text-[#1E2F46] prose-td:border-[#1E2F46]/10 prose-th:border-[#1E2F46]/10 prose-th:text-[#1E2F46] prose-hr:border-[#1E2F46]/10 transition-all`,
             },
         },
     })
@@ -387,15 +387,15 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
     const canShowPreview = showPreview
 
     return (
-        <div className={`border border-black/20 rounded-sm bg-white overflow-hidden flex flex-col ${focusMode ? 'h-full' : 'h-full'}`}>
+        <div className={`border border-[#1E2F46]/15 rounded-sm bg-white overflow-hidden flex flex-col ${focusMode ? 'h-full' : 'h-full'}`}>
             {/* Toolbar Row */}
-            <div className="flex items-center justify-between border-b border-black/10 bg-neutral-50">
+            <div className="flex items-center justify-between border-b border-[#1E2F46]/10 bg-[#f8f9fb]">
                 <EditorMenuBar editor={editor} />
                 <div className="flex items-center gap-0.5 pr-1.5">
                     {/* Preview Toggle - hidden on small screens */}
                     <button
                         onClick={() => setShowPreview(!showPreview)}
-                        className={`hidden sm:flex p-1.5 rounded transition-colors ${showPreview ? 'bg-black text-white' : 'text-black/50 hover:bg-black/10 hover:text-black'}`}
+                        className={`hidden sm:flex p-1.5 rounded transition-colors ${showPreview ? 'bg-[#1E2F46] text-white' : 'text-[#1E2F46]/50 hover:bg-[#1E2F46]/10 hover:text-[#1E2F46]'}`}
                         title={showPreview ? 'Hide Preview' : 'Show Preview'}
                     >
                         {showPreview ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
@@ -405,7 +405,7 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
                     {onToggleFocusMode && (
                         <button
                             onClick={onToggleFocusMode}
-                            className={`p-1.5 rounded transition-colors ${focusMode ? 'bg-black text-white' : 'text-black/50 hover:bg-black/10 hover:text-black'}`}
+                            className={`p-1.5 rounded transition-colors ${focusMode ? 'bg-[#1E2F46] text-white' : 'text-[#1E2F46]/50 hover:bg-[#1E2F46]/10 hover:text-[#1E2F46]'}`}
                             title={focusMode ? 'Exit Focus (Ctrl+Shift+F)' : 'Focus Mode (Ctrl+Shift+F)'}
                         >
                             {focusMode ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
@@ -417,14 +417,14 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
             {/* Editor + Preview */}
             <div className={`flex-1 flex ${canShowPreview ? 'flex-row' : 'flex-col'} min-h-0 overflow-hidden`}>
                 {/* Editor */}
-                <div className={`${canShowPreview ? 'w-1/2 border-r border-black/10' : 'w-full'} overflow-auto bg-white`}>
+                <div className={`${canShowPreview ? 'w-1/2 border-r border-[#1E2F46]/10' : 'w-full'} overflow-auto bg-white`}>
                     <EditorContent editor={editor} />
                 </div>
 
                 {/* Live Preview */}
                 {canShowPreview && (
-                    <div className="w-1/2 overflow-auto bg-neutral-50 border-l border-black/10 px-5 py-4">
-                        <div className="text-[9px] font-black uppercase tracking-widest text-black/30 mb-4 select-none">Canlı Önizleme</div>
+                    <div className="w-1/2 overflow-auto bg-[#f8f9fb] border-l border-[#1E2F46]/10 px-5 py-4">
+                        <div className="text-[9px] font-black uppercase tracking-widest text-black/30 mb-4 select-none">canlı önizleme</div>
                         <div
                             className="prose prose-sm max-w-none prose-stone text-black prose-headings:text-black prose-p:text-black prose-strong:text-black prose-a:text-primary prose-a:font-medium prose-a:no-underline hover:prose-a:underline prose-code:text-black prose-code:bg-black/5 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none prose-pre:bg-black/5 prose-pre:text-black prose-pre:border prose-pre:border-black/10 prose-blockquote:text-black/80 prose-blockquote:border-black/20 prose-blockquote:font-normal prose-blockquote:not-italic prose-li:text-black prose-td:border-black/10 prose-th:border-black/10 prose-th:text-black prose-hr:border-black/10"
                             dangerouslySetInnerHTML={{ __html: content }}
@@ -434,14 +434,14 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
             </div>
 
             {/* Status Bar */}
-            <div className="flex items-center justify-between px-2.5 py-1 border-t border-black/10 bg-neutral-50 text-[9px] font-bold tracking-wide lowercase text-black/40">
+            <div className="flex items-center justify-between px-2.5 py-1 border-t border-[#1E2F46]/10 bg-[#f8f9fb] text-[9px] font-bold tracking-wide lowercase text-[#1E2F46]/35">
                 <div className="flex items-center gap-2">
                     <span>{wordCount} words</span>
                     <span>·</span>
                     <span>{getReadingTime(wordCount)}</span>
                 </div>
                 {lastSaved && (
-                    <span className="flex items-center gap-1 text-black/50">
+                    <span className="flex items-center gap-1 text-[#1E2F46]/45">
                         <Save className="size-2" />
                         saved {lastSaved}
                     </span>
