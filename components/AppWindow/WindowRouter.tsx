@@ -392,7 +392,7 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder="untitled node"
-                            className="bg-transparent border-none text-2xl sm:text-4xl font-extrabold tracking-tight text-primary outline-none placeholder:text-primary/10 w-full transition-all leading-tight lowercase px-0"
+                            className="bg-transparent border-none cq-title font-extrabold tracking-tight text-primary outline-none placeholder:text-primary/10 w-full transition-all lowercase px-0"
                         />
                     </div>
 
@@ -632,7 +632,7 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
                                 if (!currentPostId) setSlug(toSlug(e.target.value))
                             }}
                             placeholder="untitled post"
-                            className="bg-transparent border-none text-2xl sm:text-4xl font-extrabold tracking-tight text-primary outline-none placeholder:text-primary/10 w-full transition-all leading-tight lowercase px-0"
+                            className="bg-transparent border-none cq-title font-extrabold tracking-tight text-primary outline-none placeholder:text-primary/10 w-full transition-all lowercase px-0"
                         />
                     </div>
 

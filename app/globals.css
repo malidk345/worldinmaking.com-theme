@@ -100,6 +100,25 @@ mark {
   font-display: swap;
 }
 
+@layer utilities {
+
+  /* PostHog-inspired Container Query Font Scaling */
+  /* These scale based on the WINDOW size, not the SCREEN size */
+  .cq-title {
+    font-size: clamp(1.2rem, 6cqw, 2.8rem);
+    line-height: 1.1;
+  }
+
+  .cq-text {
+    font-size: clamp(0.75rem, 2.5cqw, 0.95rem);
+    line-height: 1.5;
+  }
+
+  .cq-label {
+    font-size: clamp(0.6rem, 2cqw, 0.8rem);
+  }
+}
+
 @theme {
   --font-fairytale-title: "Fairytale", sans-serif;
   --font-fairytale: "Computer Modern", sans-serif;
