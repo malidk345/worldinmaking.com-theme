@@ -825,7 +825,14 @@ mark {
 
     &:before {
       content: '';
-      @apply absolute -left-2 top-1 bottom-1 w-1 bg-red-500 rounded-lg shadow-[0_0_8px_rgba(239, 68, 68, 0.5)];
+      position: absolute;
+      left: -0.5rem;
+      top: 0.25rem;
+      bottom: 0.25rem;
+      width: 0.25rem;
+      background-color: #ef4444;
+      border-radius: 0.5rem;
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
     }
   }
 
