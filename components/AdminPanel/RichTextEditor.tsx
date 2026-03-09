@@ -434,10 +434,10 @@ const RichTextEditor = ({ content, onChange, focusMode = false, onToggleFocusMod
             {/* Toolkit - injected into Window Footer via portal */}
             <Toolkit windowKey={focusedWindow?.key}>
                 <ToolkitSection className="flex-1 min-w-0">
-                    <Toolbar elements={toolbarElements} className="min-w-max !bg-transparent !border-none" />
+                    <Toolbar elements={toolbarElements} className="!bg-transparent !border-none !p-0 !rounded-none flex-wrap" />
                 </ToolkitSection>
                 {actions && (
-                    <ToolkitSection showSeparator className="shrink-0 bg-white/40 backdrop-blur-sm">
+                    <ToolkitSection showSeparator className="shrink-0">
                         {actions}
                     </ToolkitSection>
                 )}

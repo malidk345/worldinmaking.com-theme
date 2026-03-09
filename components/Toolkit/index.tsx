@@ -28,8 +28,10 @@ export function Toolkit({ children, windowKey }: ToolkitProps): any {
     if (!mounted || !targetElement) return null
 
     return createPortal(
-        <div className="flex items-center justify-between w-full h-full border-t border-black/[0.08] bg-[#f8f9fb]/80 backdrop-blur-md px-1.5 py-1 min-h-[40px] select-none">
-            {children}
+        <div data-scheme="tertiary" className="mx-1 mb-1 rounded-md border border-primary bg-primary px-1.5 py-0.5 flex items-center justify-between min-h-[36px] select-none overflow-x-auto custom-scrollbar scrollbar-hide">
+            <div className="flex flex-wrap items-center w-full gap-0.5">
+                {children}
+            </div>
         </div>,
         targetElement
     )
