@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { useEditor, EditorContent } from '@tiptap/react'
+import { useEditor, EditorContent, Editor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import Link from '@tiptap/extension-link'
@@ -18,15 +18,16 @@ import 'highlight.js/styles/github.css' // Light mode theme to prevent white tex
 
 import {
     Bold, Italic, List, ListOrdered, Quote, Heading2, Heading3,
-    Link as LinkIcon, Image as ImageIcon, Undo, Redo,
+    Link as LinkIcon, Image as ImageIcon, Undo, Redo, Code,
     Maximize2, Minimize2, Eye, EyeOff, Save,
     Underline as UnderlineIcon, Highlighter,
-    Terminal, Table as TableIcon, MessageSquareWarning, BookMarked
+    Terminal, Table as TableIcon, MessageSquareWarning, BookMarked,
+    Plus
 } from 'lucide-react'
 
 import { Toolbar, ToolbarElement } from 'components/RadixUI/Toolbar'
-import { Toolkit, ToolkitSection } from 'components/Toolkit'
-import { useApp } from 'context/App'
+import { Toolkit, ToolkitSection } from '../Toolkit'
+import { useApp } from '../../context/App'
 
 // Initialize lowlight for code blocks
 const lowlight = createLowlight(common)

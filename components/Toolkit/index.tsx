@@ -28,7 +28,7 @@ export function Toolkit({ children, windowKey }: ToolkitProps): any {
     if (!mounted || !targetElement) return null
 
     return createPortal(
-        <div className="flex items-center justify-between w-full h-full border-t border-black/[0.08] bg-[#f8f9fb] px-1.5 py-1 min-h-[40px] select-none">
+        <div className="flex items-center justify-between w-full h-full border-t border-black/[0.08] bg-[#f8f9fb]/80 backdrop-blur-md px-1.5 py-1 min-h-[40px] select-none">
             {children}
         </div>,
         targetElement

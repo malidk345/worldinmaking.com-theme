@@ -15,11 +15,11 @@ import { AppWindow } from '../../context/Window'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { supabase } from '../../lib/supabase'
-import { Image as ImageIcon, CheckCircle, FileText, Flame, Rocket, Lightbulb, PenTool, Brain, Wrench, Sparkles } from 'lucide-react'
+import { Save, Share, Image as ImageIcon, Palette, Hash, CheckCircle, ChevronDown, FileText, Flame, Rocket, Lightbulb, PenTool, Brain, Wrench, Sparkles, LayoutTemplate, Database, CalendarHeart } from 'lucide-react'
 import OSButton from 'components/OSButton'
 import { Popover } from 'components/RadixUI/Popover'
+import { Toolbar } from 'components/RadixUI/Toolbar'
 import { sanitizeHtml, toSlug } from '../../utils/security'
-import Loading from 'components/Loading'
 
 const adaptPost = (p: { id: number | string; title: string; content?: string; created_at: string; author_id?: string | number; profiles?: { username?: string; avatar_url?: string } | { username?: string; avatar_url?: string }[] }) => {
     const profile = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles
@@ -43,44 +43,76 @@ const adaptPost = (p: { id: number | string; title: string; content?: string; cr
     }
 }
 
+/**
+ * Routes window content based on item.path.
+ * This replaces item.element so every window gets proper React content.
+ */
 export default function WindowRouter({ item }: { item: AppWindow }) {
     const rawPath: string = item.path || ''
     const path: string = rawPath.replace(/\/+$/, '') || '/'
 
+    // /questions/topic/:slug
     const topicMatch = path.match(/^\/questions\/topic\/([^/]+)/)
-    if (topicMatch) return <CommunityTopicRouteView slug={topicMatch[1]} />
+    if (topicMatch) {
+        return <CommunityTopicRouteView slug={topicMatch[1]} />
+    }
 
+    // /questions/:permalink
     const permalinkMatch = path.match(/^\/questions\/([^/]+)/)
-    if (permalinkMatch) return <CommunityQuestionRouteView permalink={permalinkMatch[1]} />
+    if (permalinkMatch) {
+        return <CommunityQuestionRouteView permalink={permalinkMatch[1]} />
+    }
+    // /questions
+    if (path === '/questions') {
+        return <CommunityMainRouteView />
+    }
 
-    if (path === '/questions') return <CommunityMainRouteView />
-
+    // /u/:username (legacy alias for profile)
     const corpusMatch = path.match(/^\/u\/([^/]+)/)
-    if (corpusMatch) return <PublicProfile username={corpusMatch[1]} />
+    if (corpusMatch) {
+        return <PublicProfile username={corpusMatch[1]} />
+    }
 
-    if (path === '/posts' || path === '/blog') return <PostsView />
+    // /posts or /blog
+    if (path === '/posts' || path === '/blog') {
+        return <PostsView />
+    }
 
+    // /posts/:slug or /blog/:slug — fetch from Supabase via usePosts
+    // Supporting both /posts/ and /blog/ for backward compatibility/flexibility
     const blogMatch = path.match(/^\/(blog|posts)\/([^/]+)/)
-    if (blogMatch) return <BlogRouteView slug={blogMatch[2]} />
+    if (blogMatch) {
+        return <BlogRouteView slug={blogMatch[2]} />
+    }
 
+    // /search
     if (path === '/search') {
         const initialFilter = item.props?.initialFilter as string | undefined
         return <WindowSearchUI initialFilter={initialFilter} />
     }
 
+    // /profile/:username
     const profileMatch = path.match(/^\/profile\/([^/]+)/)
-    if (profileMatch) return <PublicProfile username={profileMatch[1]} />
+    if (profileMatch) {
+        return <PublicProfile username={profileMatch[1]} />
+    }
 
-    if (path === '/admin') return <AdminPanel />
+    // /admin
+    if (path === '/admin') {
+        return <AdminPanel />
+    }
 
+    // /write (New Node / Canvas Experience)
     if (path === '/write') {
         return <WriteRouteView nodeId={item.props?.nodeId as string | undefined} readOnly={Boolean(item.props?.readOnly)} />
     }
 
+    // /write-post (User Post Editor)
     if (path === '/write-post') {
         return <WritePostRouteView postId={item.props?.postId as string | undefined} />
     }
 
+    // Fallback for any other path
     if (item.element && typeof item.element === 'object' && React.isValidElement(item.element)) {
         return <>{item.element}</>
     }
@@ -99,7 +131,9 @@ function CommunityMainRouteView() {
     }, [channels, selectedChannelId])
 
     useEffect(() => {
-        if (selectedChannelId) fetchPosts(selectedChannelId)
+        if (selectedChannelId) {
+            fetchPosts(selectedChannelId)
+        }
     }, [selectedChannelId, fetchPosts])
 
     const handleCreatePost = (data: { subject: string; body: string }) => {
@@ -119,21 +153,35 @@ function CommunityMainRouteView() {
 
 function CommunityTopicRouteView({ slug }: { slug: string }) {
     const { posts, loading, fetchPosts } = useCommunity()
+
     useEffect(() => {
         if (slug) fetchPosts(undefined, slug)
     }, [slug, fetchPosts])
 
-    return <ForumPageLayout questions={posts.map(adaptPost)} loading={loading} />
+    return (
+        <ForumPageLayout
+            questions={posts.map(adaptPost)}
+            loading={loading}
+        />
+    )
 }
+
+import Loading from 'components/Loading'
 
 function CommunityQuestionRouteView({ permalink }: { permalink: string }) {
     const { posts, loading, fetchPosts } = useCommunity()
+
     useEffect(() => {
-        if (permalink) fetchPosts(undefined, undefined, permalink)
+        if (permalink) {
+            fetchPosts(undefined, undefined, permalink)
+        }
     }, [fetchPosts, permalink])
 
     const post = posts.find((p) => p.id.toString() === permalink)
-    if (loading && !post) return <Loading label="syncing discussion" />
+
+    if (loading && !post) {
+        return <Loading label="syncing discussion" />
+    }
 
     if (!post) {
         return (
@@ -147,11 +195,14 @@ function CommunityQuestionRouteView({ permalink }: { permalink: string }) {
     return <ForumQuestionDetail question={adaptPost(post)} />
 }
 
+/** Separate component so usePosts hook can be called within the router */
 function BlogRouteView({ slug }: { slug: string }) {
     const { posts, loading } = usePosts()
     const post = posts.find((p) => p.slug === slug || p.slug === `/blog/${slug}`)
 
-    if (loading && posts.length === 0) return <Loading fullScreen label="fetching node" />
+    if (loading && posts.length === 0) {
+        return <Loading fullScreen label="fetching node" />
+    }
 
     if (!post) {
         return (
@@ -162,9 +213,14 @@ function BlogRouteView({ slug }: { slug: string }) {
         )
     }
 
-    return <BlogPostView post={post} />
+    return (
+        <BlogPostView
+            post={post}
+        />
+    )
 }
 
+/** Node editor route view */
 function WriteRouteView({ nodeId, readOnly = false }: { nodeId?: string; readOnly?: boolean }) {
     const { user } = useAuth()
     const { addToast } = useToast()
@@ -176,8 +232,11 @@ function WriteRouteView({ nodeId, readOnly = false }: { nodeId?: string; readOnl
 
     const [coverImage, setCoverImage] = useState<string | null>(null)
     const [iconIndex, setIconIndex] = useState<number>(0)
+    const [theme, setTheme] = useState<'default' | 'yellow' | 'green' | 'blue'>('default')
+    const [nodeType, setNodeType] = useState<'canvas' | 'list' | 'journal'>('canvas')
     const [tags, setTags] = useState<string[]>([])
 
+    // Load existing node from Supabase when nodeId is provided
     useEffect(() => {
         if (!nodeId) return
         const load = async () => {
@@ -220,9 +279,22 @@ function WriteRouteView({ nodeId, readOnly = false }: { nodeId?: string; readOnl
         setSaving(false)
     }
 
+    const themeClasses = {
+        'default': 'bg-[#fafcfc] dark:bg-primary/5',
+        'yellow': 'bg-amber-50 dark:bg-amber-950/20',
+        'green': 'bg-emerald-50 dark:bg-emerald-950/20',
+        'blue': 'bg-sky-50 dark:bg-sky-950/20',
+    }
+
     const statusConfig = {
         'draft': { label: 'draft', icon: <PenTool className="size-3" />, color: 'text-primary' },
         'published': { label: 'published', icon: <CheckCircle className="size-3" />, color: 'text-emerald-500' },
+    }
+
+    const typeConfig = {
+        'canvas': { label: 'canvas', icon: <LayoutTemplate className="size-3.5 text-blue-500" /> },
+        'list': { label: 'data list', icon: <Database className="size-3.5 text-purple-500" /> },
+        'journal': { label: 'journal', icon: <CalendarHeart className="size-3.5 text-rose-500" /> },
     }
 
     const ICONS = [
@@ -238,7 +310,24 @@ function WriteRouteView({ nodeId, readOnly = false }: { nodeId?: string; readOnl
 
     if (readOnly) {
         return (
-            <div className="flex flex-col size-full overflow-y-auto overflow-x-hidden text-black transition-colors duration-500 bg-[#fafcfc] dark:bg-primary/5">
+            <div className={`flex flex-col size-full overflow-y-auto overflow-x-hidden text-black transition-colors duration-500 ${themeClasses[theme]}`}>
+                <aside className="sticky top-0 z-50 shrink-0">
+                    <div data-scheme="tertiary" className="mx-1 mt-1 flex items-center justify-between gap-3 rounded-md border border-primary bg-primary px-3 py-1.5">
+                        <div className="flex items-center gap-2 lowercase text-primary/70 text-sm font-semibold">
+                            {statusConfig[nodeStatus].icon}
+                            <span>{statusConfig[nodeStatus].label} node</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <OSButton size="sm" onClick={() => navigator.clipboard.writeText(window.location.href).then(() => addToast('node link copied', 'success')).catch(() => addToast('failed to copy node link', 'error'))}>
+                                <div className="flex items-center gap-1.5 lowercase">
+                                    <Share className="size-4" />
+                                    <span className="hidden md:inline font-semibold">share</span>
+                                </div>
+                            </OSButton>
+                        </div>
+                    </div>
+                </aside>
+
                 <div className="flex-col relative w-full flex-1 flex min-h-0">
                     {coverImage && (
                         <div className="relative w-full h-48 sm:h-64 group bg-black/5 shrink-0">
@@ -246,6 +335,7 @@ function WriteRouteView({ nodeId, readOnly = false }: { nodeId?: string; readOnl
                             <img src={coverImage} alt="Cover" className="w-full h-full object-cover" />
                         </div>
                     )}
+
                     <div className={`w-full max-w-4xl mx-auto px-4 sm:px-6 pb-20 flex-1 flex flex-col min-h-0 ${coverImage ? 'pt-8' : 'pt-12'}`}>
                         <div className="relative flex flex-col mb-8 shrink-0">
                             <div className={`relative ${coverImage ? '-mt-16 sm:-mt-20 mb-4' : 'mb-2'}`}>
@@ -253,10 +343,12 @@ function WriteRouteView({ nodeId, readOnly = false }: { nodeId?: string; readOnl
                                     {React.createElement(ICONS[iconIndex].IconNode, { className: `size-12 sm:size-16 ${ICONS[iconIndex].color}` })}
                                 </div>
                             </div>
+
                             <div className="rounded border border-primary bg-primary p-3 mb-3">
                                 <h1 className="m-0 text-3xl sm:text-5xl font-black tracking-tight text-primary leading-tight lowercase">{title}</h1>
                             </div>
                         </div>
+
                         <div className="w-full flex-1 min-h-[400px] rounded border border-primary bg-primary p-4 sm:p-6 overflow-auto">
                             {content ? (
                                 <div className="prose prose-sm sm:prose-base max-w-none text-primary dark:prose-invert" dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }} />
@@ -271,8 +363,161 @@ function WriteRouteView({ nodeId, readOnly = false }: { nodeId?: string; readOnl
     }
 
     return (
-        <div className="flex flex-col size-full overflow-y-auto overflow-x-hidden text-black transition-colors duration-500 bg-[#fafcfc] dark:bg-primary/5">
+        <div className={`flex flex-col size-full overflow-y-auto overflow-x-hidden text-black transition-colors duration-500 ${themeClasses[theme]}`}>
+            {/* Header Toolbar — same pattern as Editor/index.tsx */}
+            <aside className="sticky top-0 z-50 shrink-0">
+                <div data-scheme="tertiary" className="mx-1 mt-1 rounded-md border border-primary bg-primary px-1.5 py-1">
+                    <Toolbar
+                        className="rounded-none border-0 bg-transparent p-0"
+                        elements={[
+                            /* Cover — prompts for URL */
+                            ...(!coverImage ? [{
+                                type: 'button' as const,
+                                label: 'cover',
+                                icon: <ImageIcon className="size-4" />,
+                                onClick: () => {
+                                    const url = window.prompt('enter cover image url')
+                                    if (url && url.trim()) setCoverImage(url.trim())
+                                },
+                                size: 'md' as const,
+                                hideLabel: true,
+                                className: 'md:!px-2',
+                            }] : []),
+
+                            /* Separator */
+                            { type: 'separator' as const },
+
+                            /* Status Popover */
+                            {
+                                type: 'container' as const,
+                                children: (
+                                    <Popover
+                                        trigger={
+                                            <OSButton size="md">
+                                                <div className="flex items-center gap-1.5 lowercase">
+                                                    {statusConfig[nodeStatus].icon}
+                                                    <span className="hidden md:inline">{statusConfig[nodeStatus].label}</span>
+                                                    <ChevronDown className="size-3 opacity-50 hidden md:block" />
+                                                </div>
+                                            </OSButton>
+                                        }
+                                        dataScheme="primary"
+                                        contentClassName="w-40 p-1 border border-primary bg-bg"
+                                    >
+                                        <div className="flex flex-col gap-0.5">
+                                            {(Object.keys(statusConfig) as Array<keyof typeof statusConfig>).map(s => (
+                                                <button key={s} onClick={() => setNodeStatus(s as keyof typeof statusConfig)} className={`text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 ${statusConfig[s as keyof typeof statusConfig].color}`}>
+                                                    {statusConfig[s as keyof typeof statusConfig].icon} {statusConfig[s as keyof typeof statusConfig].label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </Popover>
+                                ),
+                            },
+
+                            /* Node Type Popover */
+                            {
+                                type: 'container' as const,
+                                children: (
+                                    <Popover
+                                        trigger={
+                                            <OSButton size="md">
+                                                <div className="flex items-center gap-1.5 lowercase">
+                                                    {typeConfig[nodeType].icon}
+                                                    <span className="hidden md:inline">{typeConfig[nodeType].label}</span>
+                                                    <ChevronDown className="size-3 opacity-50 hidden md:block" />
+                                                </div>
+                                            </OSButton>
+                                        }
+                                        dataScheme="primary"
+                                        contentClassName="w-40 p-1 border border-primary bg-bg"
+                                    >
+                                        <div className="flex flex-col gap-0.5">
+                                            {(Object.keys(typeConfig) as Array<keyof typeof typeConfig>).map(t => (
+                                                <button key={t} onClick={() => setNodeType(t as keyof typeof typeConfig)} className="text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-primary">
+                                                    {typeConfig[t as keyof typeof typeConfig].icon} {typeConfig[t as keyof typeof typeConfig].label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </Popover>
+                                ),
+                            },
+
+                            /* Separator */
+                            { type: 'separator' as const },
+
+                            /* Add Tag */
+                            {
+                                type: 'button' as const,
+                                label: 'tag',
+                                icon: <Hash className="size-4" />,
+                                onClick: () => {
+                                    const t = window.prompt('add a new tag')
+                                    if (t && t.trim()) setTags(prev => [...prev, t.trim().toLowerCase()])
+                                },
+                                size: 'md' as const,
+                                hideLabel: true,
+                            },
+
+                            /* Theme Popover */
+                            {
+                                type: 'container' as const,
+                                children: (
+                                    <Popover
+                                        trigger={
+                                            <OSButton size="md">
+                                                <div className="flex items-center gap-1.5 lowercase">
+                                                    <Palette className="size-4" />
+                                                    <span className="hidden md:inline">theme</span>
+                                                    <ChevronDown className="size-3 opacity-50 hidden md:block" />
+                                                </div>
+                                            </OSButton>
+                                        }
+                                        dataScheme="primary"
+                                        contentClassName="w-48 p-2 border border-primary bg-bg"
+                                    >
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-primary/40 px-2 py-1">node theme</span>
+                                            {(Object.keys(themeClasses) as Array<keyof typeof themeClasses>).map(t => (
+                                                <button key={t} onClick={() => setTheme(t as keyof typeof themeClasses)} className="text-left px-2 py-1.5 text-xs font-bold hover:bg-black/5 rounded-md lowercase">
+                                                    {t} canvas
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </Popover>
+                                ),
+                            },
+
+                            /* Save/Publish — far right via ml-auto container */
+                            {
+                                type: 'container' as const,
+                                className: 'ml-auto flex items-center gap-2',
+                                children: (
+                                    <>
+                                        {saved && <span className="text-[10px] font-bold tracking-widest text-green-600 uppercase transition-opacity duration-300 hidden sm:inline">saved</span>}
+                                        <OSButton size="md" onClick={() => handleSave('draft')} disabled={saving}>
+                                            <div className="flex items-center gap-1.5 lowercase">
+                                                <Save className="size-4" />
+                                                <span className="hidden md:inline font-semibold">save draft</span>
+                                            </div>
+                                        </OSButton>
+                                        <OSButton variant="primary" size="md" onClick={() => handleSave('published')} disabled={saving}>
+                                            <div className="flex items-center gap-1.5 lowercase">
+                                                <CheckCircle className="size-4" />
+                                                <span className="hidden md:inline font-semibold">publish</span>
+                                            </div>
+                                        </OSButton>
+                                    </>
+                                ),
+                            },
+                        ]}
+                    />
+                </div>
+            </aside>
+
+            {/* Scrollable Document Area Container */}
             <div className="flex-col relative w-full flex-1 flex min-h-0">
+                {/* Cover Image */}
                 {coverImage && (
                     <div className="relative w-full h-48 sm:h-64 group bg-black/5 shrink-0">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -286,7 +531,9 @@ function WriteRouteView({ nodeId, readOnly = false }: { nodeId?: string; readOnl
                     </div>
                 )}
 
+                {/* Main Node Content Area */}
                 <div className={`w-full max-w-4xl mx-auto px-4 sm:px-6 pb-20 flex-1 flex flex-col min-h-0 ${coverImage ? 'pt-8' : 'pt-12'}`}>
+
                     {/* Header (Icon + Title) */}
                     <div className="relative flex flex-col mb-8 shrink-0">
                         <div className={`relative ${coverImage ? '-mt-16 sm:-mt-20 mb-4' : 'mb-2'}`}>
@@ -298,7 +545,7 @@ function WriteRouteView({ nodeId, readOnly = false }: { nodeId?: string; readOnl
                             </button>
                         </div>
 
-                        {/* Title Input */}
+                        {/* Title Input — framed like the toolbar */}
                         <div className="rounded border border-primary bg-primary p-3 mb-3">
                             <input
                                 type="text"
@@ -309,7 +556,7 @@ function WriteRouteView({ nodeId, readOnly = false }: { nodeId?: string; readOnl
                             />
                         </div>
 
-                        {/* Tags */}
+                        {/* Tags — display only, add via toolbar */}
                         {tags.length > 0 && (
                             <div className="flex items-center gap-1.5 flex-wrap">
                                 {tags.map(tag => (
@@ -326,57 +573,11 @@ function WriteRouteView({ nodeId, readOnly = false }: { nodeId?: string; readOnl
                         )}
                     </div>
 
-                    {/* Rich Text Editor */}
+                    {/* Rich Text Editor - Normal State */}
                     <div className="w-full flex-1 min-h-[400px]">
                         <RichTextEditor
                             content={content}
                             onChange={setContent}
-                            actions={
-                                <div className="flex items-center gap-1.5">
-                                    <OSButton
-                                        size="sm"
-                                        onClick={() => {
-                                            const url = window.prompt('enter cover image url', coverImage || '')
-                                            if (url !== null) setCoverImage(url.trim())
-                                        }}
-                                        tooltip="cover"
-                                    >
-                                        <ImageIcon className="size-3.5" />
-                                    </OSButton>
-
-                                    <Popover
-                                        trigger={
-                                            <OSButton size="sm">
-                                                <div className="flex items-center gap-1 lowercase text-[10px] font-bold">
-                                                    {statusConfig[nodeStatus].icon} {statusConfig[nodeStatus].label}
-                                                </div>
-                                            </OSButton>
-                                        }
-                                        dataScheme="primary"
-                                        contentClassName="w-32 p-1 border border-primary bg-bg"
-                                    >
-                                        <div className="flex flex-col gap-0.5">
-                                            {(Object.keys(statusConfig) as Array<keyof typeof statusConfig>).map(s => (
-                                                <button key={s} onClick={() => setNodeStatus(s as keyof typeof statusConfig)} className="text-left px-2 py-1 text-[10px] font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-primary">
-                                                    {statusConfig[s as keyof typeof statusConfig].icon} {statusConfig[s as keyof typeof statusConfig].label}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </Popover>
-
-                                    <div className="h-4 w-px bg-black/[0.05] mx-0.5" />
-
-                                    <div className="flex items-center gap-2 ml-2">
-                                        {saved && <span className="text-[9px] font-bold tracking-widest text-green-600 uppercase">saved</span>}
-                                        <OSButton size="sm" onClick={() => handleSave('draft')} disabled={saving}>
-                                            <span className="font-bold text-[10px] tracking-tight">save</span>
-                                        </OSButton>
-                                        <OSButton variant="primary" size="sm" onClick={() => handleSave('published')} disabled={saving}>
-                                            <span className="font-bold text-[10px] tracking-tight">publish</span>
-                                        </OSButton>
-                                    </div>
-                                </div>
-                            }
                         />
                     </div>
                 </div>
@@ -478,6 +679,77 @@ function WritePostRouteView({ postId }: { postId?: string }) {
 
     return (
         <div className="flex flex-col size-full overflow-y-auto overflow-x-hidden text-black bg-[#fafcfc] dark:bg-primary/5 transition-colors duration-500">
+            <aside className="sticky top-0 z-50 shrink-0">
+                <div data-scheme="tertiary" className="mx-1 mt-1 rounded-md border border-primary bg-primary px-1.5 py-1">
+                    <Toolbar
+                        className="rounded-none border-0 bg-transparent p-0"
+                        elements={[
+                            {
+                                type: 'button' as const,
+                                label: 'cover',
+                                icon: <ImageIcon className="size-4" />,
+                                onClick: () => {
+                                    const url = window.prompt('enter post cover image url', imageUrl || '')
+                                    if (url !== null) setImageUrl(url.trim())
+                                },
+                                size: 'md' as const,
+                                hideLabel: true,
+                                className: 'md:!px-2',
+                            },
+                            { type: 'separator' as const },
+                            {
+                                type: 'container' as const,
+                                children: (
+                                    <Popover
+                                        trigger={
+                                            <OSButton size="md">
+                                                <div className="flex items-center gap-1.5 lowercase">
+                                                    {published ? <CheckCircle className="size-4 text-emerald-500" /> : <PenTool className="size-4" />}
+                                                    <span className="hidden md:inline">{published ? 'published' : 'draft'}</span>
+                                                    <ChevronDown className="size-3 opacity-50 hidden md:block" />
+                                                </div>
+                                            </OSButton>
+                                        }
+                                        dataScheme="primary"
+                                        contentClassName="w-40 p-1 border border-primary bg-bg"
+                                    >
+                                        <div className="flex flex-col gap-0.5">
+                                            <button onClick={() => setPublished(false)} className="text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-primary">
+                                                <PenTool className="size-3" /> draft
+                                            </button>
+                                            <button onClick={() => setPublished(true)} className="text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-emerald-600">
+                                                <CheckCircle className="size-3" /> published
+                                            </button>
+                                        </div>
+                                    </Popover>
+                                ),
+                            },
+                            {
+                                type: 'container' as const,
+                                className: 'ml-auto flex items-center gap-2',
+                                children: (
+                                    <>
+                                        {saved && <span className="text-[10px] font-bold tracking-widest text-green-600 uppercase transition-opacity duration-300 hidden sm:inline">saved</span>}
+                                        <OSButton size="md" onClick={() => handleSavePost(false)} disabled={saving}>
+                                            <div className="flex items-center gap-1.5 lowercase">
+                                                <Save className="size-4" />
+                                                <span className="hidden md:inline font-semibold">save draft</span>
+                                            </div>
+                                        </OSButton>
+                                        <OSButton variant="primary" size="md" onClick={() => handleSavePost(true)} disabled={saving}>
+                                            <div className="flex items-center gap-1.5 lowercase">
+                                                <CheckCircle className="size-4" />
+                                                <span className="hidden md:inline font-semibold">publish</span>
+                                            </div>
+                                        </OSButton>
+                                    </>
+                                ),
+                            },
+                        ]}
+                    />
+                </div>
+            </aside>
+
             <div className="flex-col relative w-full flex-1 flex min-h-0">
                 {imageUrl && (
                     <div className="relative w-full h-48 sm:h-64 group bg-black/5 shrink-0">
@@ -532,58 +804,7 @@ function WritePostRouteView({ postId }: { postId?: string }) {
                     </div>
 
                     <div className="w-full flex-1 min-h-[400px]">
-                        <RichTextEditor
-                            content={content}
-                            onChange={setContent}
-                            actions={
-                                <div className="flex items-center gap-1.5">
-                                    <OSButton
-                                        size="sm"
-                                        onClick={() => {
-                                            const url = window.prompt('enter post cover image url', imageUrl || '')
-                                            if (url !== null) setImageUrl(url.trim())
-                                        }}
-                                        tooltip="cover image"
-                                    >
-                                        <ImageIcon className="size-3.5" />
-                                    </OSButton>
-
-                                    <Popover
-                                        trigger={
-                                            <OSButton size="sm">
-                                                <div className="flex items-center gap-1 lowercase text-[10px] font-bold">
-                                                    {published ? <CheckCircle className="size-3 text-emerald-500" /> : <PenTool className="size-3" />}
-                                                    <span>{published ? 'published' : 'draft'}</span>
-                                                </div>
-                                            </OSButton>
-                                        }
-                                        dataScheme="primary"
-                                        contentClassName="w-32 p-1 border border-primary bg-bg"
-                                    >
-                                        <div className="flex flex-col gap-0.5">
-                                            <button onClick={() => setPublished(false)} className="text-left px-2 py-1 text-[10px] font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-primary">
-                                                <PenTool className="size-3" /> draft
-                                            </button>
-                                            <button onClick={() => setPublished(true)} className="text-left px-2 py-1 text-[10px] font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-emerald-600">
-                                                <CheckCircle className="size-3" /> published
-                                            </button>
-                                        </div>
-                                    </Popover>
-
-                                    <div className="h-4 w-px bg-black/[0.05] mx-0.5" />
-
-                                    <div className="flex items-center gap-2 ml-2">
-                                        {saved && <span className="text-[9px] font-bold tracking-widest text-green-600 uppercase">saved</span>}
-                                        <OSButton size="sm" onClick={() => handleSavePost(false)} disabled={saving}>
-                                            <span className="font-bold text-[10px] tracking-tight">save</span>
-                                        </OSButton>
-                                        <OSButton variant="primary" size="sm" onClick={() => handleSavePost(true)} disabled={saving}>
-                                            <span className="font-bold text-[10px] tracking-tight">publish</span>
-                                        </OSButton>
-                                    </div>
-                                </div>
-                            }
-                        />
+                        <RichTextEditor content={content} onChange={setContent} />
                     </div>
                 </div>
             </div>
