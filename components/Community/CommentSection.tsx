@@ -55,6 +55,7 @@ export default function CommentSection({
         resolved: false,
         archived: false,
         upvotes: p._count.likes || 0,
+        userVote: 0,
     }))
 
     return (

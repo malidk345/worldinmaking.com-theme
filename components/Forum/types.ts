@@ -29,6 +29,7 @@ export interface ForumReply {
     helpful?: boolean | null
     upvotes: number
     downvotes: number
+    userVote?: number
     edits?: { id: number; date: string; by: ForumProfile }[]
 }
 
