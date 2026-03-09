@@ -437,6 +437,17 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                             isSaving={saving}
                             isPublished={nodeStatus === 'published'}
                             isSaved={saved}
+                            leftElements={[
+                                {
+                                    type: 'container',
+                                    children: (
+                                        <div className="flex items-center gap-2 pl-1 pr-2 lowercase text-primary/70 text-[11px] font-bold">
+                                            {statusConfig[nodeStatus].icon}
+                                            <span className="hidden xs:inline">{statusConfig[nodeStatus].label} {nodeType} node</span>
+                                        </div>
+                                    )
+                                }
+                            ]}
                             extraElements={[
                                 {
                                     type: 'button',
@@ -701,6 +712,17 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
                             isSaving={saving}
                             isPublished={published}
                             isSaved={saved}
+                            leftElements={[
+                                {
+                                    type: 'container',
+                                    children: (
+                                        <div className="flex items-center gap-2 pl-1 pr-2 lowercase text-primary/70 text-[11px] font-bold">
+                                            {published ? <CheckCircle className="size-3.5 text-emerald-500" /> : <PenTool className="size-3.5" />}
+                                            <span className="hidden xs:inline">{published ? 'published' : 'draft'} post</span>
+                                        </div>
+                                    )
+                                }
+                            ]}
                             extraElements={[
                                 {
                                     type: 'button',

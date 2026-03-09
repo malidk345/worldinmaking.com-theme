@@ -159,6 +159,7 @@ interface RichTextEditorProps {
     isSaving?: boolean
     isPublished?: boolean
     isSaved?: boolean
+    leftElements?: ToolbarElement[]
     extraElements?: ToolbarElement[]
     toolkitPosition?: 'header' | 'footer'
     windowKey?: string
@@ -174,6 +175,7 @@ const RichTextEditor = ({
     isSaving = false,
     isPublished = false,
     isSaved = false,
+    leftElements = [],
     extraElements = [],
     toolkitPosition = 'footer',
     windowKey
@@ -225,6 +227,8 @@ const RichTextEditor = ({
     })
 
     const toolbarElements: ToolbarElement[] = editor ? [
+        ...leftElements,
+        ...(leftElements.length > 0 ? [{ type: 'separator' } as ToolbarElement] : []),
         {
             type: 'button',
             label: 'Undo',
