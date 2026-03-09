@@ -69,6 +69,7 @@ export const ReferencesNode = Node.create({
     group: 'block',
     content: 'block+',
     defining: true,
+    isolating: true,
     parseHTML() {
         return [{ tag: 'details[data-type="references"]' }]
     },
@@ -77,19 +78,21 @@ export const ReferencesNode = Node.create({
             'details',
             mergeAttributes(HTMLAttributes, {
                 'data-type': 'references',
-                class: 'references-block group my-6 rounded-xl border border-primary/20 bg-primary/5 text-[13px] leading-relaxed text-primary/80 overflow-hidden',
+                open: 'open',
+                class: 'references-block group my-6 rounded-xl border border-primary/20 bg-primary/5 text-[13px] leading-relaxed text-primary/80 overflow-hidden shadow-sm',
             }),
             [
                 'summary',
                 {
-                    class: 'cursor-pointer list-none select-none px-4 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-primary/65 marker:hidden',
+                    class: 'flex items-center gap-2 cursor-pointer list-none select-none px-4 py-3 text-[11px] font-black tracking-[0.16em] text-primary/70 marker:hidden lowercase',
                 },
-                'sources & references',
+                ['span', { class: 'inline-flex size-5 items-center justify-center rounded-full border border-primary/15 bg-white text-[10px] text-primary/70 shadow-sm' }, '↗'],
+                ['span', { class: 'leading-none' }, 'references'],
             ],
             [
                 'div',
                 {
-                    class: 'border-t border-primary/10 px-4 py-3 text-[13px] leading-relaxed [&_ol]:my-0 [&_ol]:pl-5 [&_ul]:my-0 [&_ul]:pl-5 [&_p]:my-2 [&_li]:my-1 [&_a]:break-words [&_a]:text-primary [&_a]:underline-offset-2 hover:[&_a]:underline',
+                    class: 'min-h-[120px] border-t border-primary/10 bg-white px-4 py-4 text-[13px] leading-6 text-primary/80 [&_ol]:my-0 [&_ol]:pl-5 [&_ul]:my-0 [&_ul]:pl-5 [&_p]:my-2 [&_li]:my-1.5 [&_a]:break-words [&_a]:text-primary [&_a]:underline-offset-2 hover:[&_a]:underline',
                 },
                 0,
             ],
@@ -103,7 +106,7 @@ export const ReferencesNode = Node.create({
                     content: [
                         {
                             type: 'paragraph',
-                            content: [{ type: 'text', text: 'Add source links, citations, or supporting notes here.' }],
+                            content: [{ type: 'text', text: 'add source links, citations, or supporting notes here.' }],
                         },
                     ],
                 })
