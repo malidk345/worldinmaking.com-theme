@@ -1,23 +1,25 @@
--- ============================================================
---  worldinmaking.com — Complete Supabase Schema
---  Run this ONCE in Supabase Dashboard → SQL Editor
---  Safe to re-run: every statement is idempotent (IF NOT EXISTS)
--- ============================================================
+-- =============================================================
+-- THE ULTIMATE WORLD IN MAKING SCHEMA (Production-Proof)
+-- =============================================================
 
--- ─────────────────────────────────────────────────────────────
--- 0. Extensions
--- ─────────────────────────────────────────────────────────────
+-- 1. EXTENSIONS & UTILS
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- ─────────────────────────────────────────────────────────────
--- 1. PROFILES  (extends Supabase auth.users)
--- ─────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS profiles (
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- 2. ENHANCED PROFILES
+CREATE TABLE IF NOT EXISTS public.profiles (
     id          UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-    username    TEXT,
+    username    TEXT UNIQUE NOT NULL,
+    email       TEXT,
     avatar_url  TEXT,
     cover_url   TEXT,
-    role        TEXT DEFAULT 'member',
     bio         TEXT,
     website     TEXT,
     github      TEXT,
@@ -25,596 +27,154 @@ CREATE TABLE IF NOT EXISTS profiles (
     twitter     TEXT,
     pronouns    TEXT,
     location    TEXT,
-    created_at  TIMESTAMPTZ DEFAULT now()
+    role        TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('admin', 'member')),
+    created_at  TIMESTAMPTZ DEFAULT now(),
+    updated_at  TIMESTAMPTZ DEFAULT now()
 );
 
--- Add columns that might be missing on an existing table
-DO $$ BEGIN
-    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS bio TEXT;
-    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS website TEXT;
-    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS github TEXT;
-    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS linkedin TEXT;
-    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS twitter TEXT;
-    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS pronouns TEXT;
-    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS location TEXT;
-    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'member';
-    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS cover_url TEXT;
-END $$;
-
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-
--- Everyone can read profiles
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='profiles' AND policyname='Profiles are viewable by everyone') THEN
-        CREATE POLICY "Profiles are viewable by everyone" ON profiles FOR SELECT USING (true);
-    END IF;
-END $$;
-
--- Users can insert their own profile
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='profiles' AND policyname='Users can insert own profile') THEN
-        CREATE POLICY "Users can insert own profile" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
-    END IF;
-END $$;
-
--- Users can update their own profile
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='profiles' AND policyname='Users can update own profile') THEN
-        CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
-    END IF;
-END $$;
-
--- Auto-create profile on signup
-CREATE OR REPLACE FUNCTION handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-    INSERT INTO public.profiles (id, username, avatar_url, role)
-    VALUES (
-        NEW.id,
-        COALESCE(NEW.raw_user_meta_data->>'username', split_part(NEW.email, '@', 1)),
-        COALESCE(NEW.raw_user_meta_data->>'avatar_url', ''),
-        'member'
-    )
-    ON CONFLICT (id) DO NOTHING;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-    AFTER INSERT ON auth.users
-    FOR EACH ROW EXECUTE FUNCTION handle_new_user();
-
--- ─────────────────────────────────────────────────────────────
--- 2. NODES  (user corpus documents)
--- ─────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS nodes (
+-- 3. NODES (The Corpus System)
+CREATE TABLE IF NOT EXISTS public.nodes (
     id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    author_id   UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    title       TEXT NOT NULL DEFAULT 'Untitled',
-    content     TEXT DEFAULT '',
-    status      TEXT DEFAULT 'draft' CHECK (status IN ('published', 'draft')),
-    updated_at  TIMESTAMPTZ DEFAULT now(),
-    created_at  TIMESTAMPTZ DEFAULT now()
+    author_id   UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    title       TEXT DEFAULT 'Untitled Node',
+    content     TEXT,
+    status      TEXT DEFAULT 'draft' CHECK (status IN ('draft', 'published')),
+    created_at  TIMESTAMPTZ DEFAULT now(),
+    updated_at  TIMESTAMPTZ DEFAULT now()
 );
 
-ALTER TABLE nodes ENABLE ROW LEVEL SECURITY;
-
--- Published nodes are readable by everyone
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='nodes' AND policyname='Published nodes are viewable by everyone') THEN
-        CREATE POLICY "Published nodes are viewable by everyone" ON nodes FOR SELECT USING (status = 'published');
-    END IF;
-END $$;
-
--- Authors can see all their own nodes (including drafts)
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='nodes' AND policyname='Authors can view own nodes') THEN
-        CREATE POLICY "Authors can view own nodes" ON nodes FOR SELECT USING (auth.uid() = author_id);
-    END IF;
-END $$;
-
--- Authors can create nodes
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='nodes' AND policyname='Authors can create nodes') THEN
-        CREATE POLICY "Authors can create nodes" ON nodes FOR INSERT WITH CHECK (auth.uid() = author_id);
-    END IF;
-END $$;
-
--- Authors can update their own nodes
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='nodes' AND policyname='Authors can update own nodes') THEN
-        CREATE POLICY "Authors can update own nodes" ON nodes FOR UPDATE USING (auth.uid() = author_id);
-    END IF;
-END $$;
-
--- Authors can delete their own nodes
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='nodes' AND policyname='Authors can delete own nodes') THEN
-        CREATE POLICY "Authors can delete own nodes" ON nodes FOR DELETE USING (auth.uid() = author_id);
-    END IF;
-END $$;
-
--- Auto-update updated_at on row change
-CREATE OR REPLACE FUNCTION update_nodes_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = now();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS nodes_updated_at ON nodes;
-CREATE TRIGGER nodes_updated_at
-    BEFORE UPDATE ON nodes
-    FOR EACH ROW EXECUTE FUNCTION update_nodes_updated_at();
-
-CREATE INDEX IF NOT EXISTS idx_nodes_author    ON nodes(author_id);
-CREATE INDEX IF NOT EXISTS idx_nodes_status    ON nodes(status);
-CREATE INDEX IF NOT EXISTS idx_nodes_updated   ON nodes(updated_at DESC);
-
--- ─────────────────────────────────────────────────────────────
--- 3. POSTS  (blog posts)
--- ─────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS posts (
-    id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    title         TEXT NOT NULL,
-    slug          TEXT UNIQUE NOT NULL,
-    content       TEXT DEFAULT '',
-    excerpt       TEXT,
-    published     BOOLEAN DEFAULT false,
-    category      TEXT DEFAULT 'General',
-    image_url     TEXT,
-    author        TEXT,
-    author_avatar TEXT,
-    ribbon        TEXT DEFAULT '#3546AB',
-    translations  JSONB DEFAULT '{}',
-    language      TEXT DEFAULT 'en',
-    is_approved   BOOLEAN DEFAULT false,
-    created_at    TIMESTAMPTZ DEFAULT now()
-);
-
--- Add columns that might be missing
-DO $$ BEGIN
-    ALTER TABLE posts ADD COLUMN IF NOT EXISTS excerpt TEXT;
-    ALTER TABLE posts ADD COLUMN IF NOT EXISTS ribbon TEXT DEFAULT '#3546AB';
-    ALTER TABLE posts ADD COLUMN IF NOT EXISTS translations JSONB DEFAULT '{}';
-    ALTER TABLE posts ADD COLUMN IF NOT EXISTS language TEXT DEFAULT 'en';
-END $$;
-
-ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
-
--- Published posts are readable by everyone
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='posts' AND policyname='Published posts are viewable by everyone') THEN
-        CREATE POLICY "Published posts are viewable by everyone" ON posts FOR SELECT USING (published = true);
-    END IF;
-END $$;
-
--- Admins can see all posts (including unpublished)
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='posts' AND policyname='Admins can view all posts') THEN
-        CREATE POLICY "Admins can view all posts" ON posts FOR SELECT USING (
-            EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
-        );
-    END IF;
-END $$;
-
--- Admins can create posts
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='posts' AND policyname='Admins can create posts') THEN
-        CREATE POLICY "Admins can create posts" ON posts FOR INSERT WITH CHECK (
-            EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
-        );
-    END IF;
-END $$;
-
--- Authors can view their own posts (including drafts)
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='posts' AND policyname='Authors can view own posts') THEN
-        CREATE POLICY "Authors can view own posts" ON posts FOR SELECT USING (
-            author = (SELECT username FROM profiles WHERE profiles.id = auth.uid())
-        );
-    END IF;
-END $$;
-
--- Authors can create their own posts
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='posts' AND policyname='Authors can create own posts') THEN
-        CREATE POLICY "Authors can create own posts" ON posts FOR INSERT WITH CHECK (
-            author = (SELECT username FROM profiles WHERE profiles.id = auth.uid())
-        );
-    END IF;
-END $$;
-
--- Admins can update posts
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='posts' AND policyname='Admins can update posts') THEN
-        CREATE POLICY "Admins can update posts" ON posts FOR UPDATE USING (
-            EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
-        );
-    END IF;
-END $$;
-
--- Authors can update their own posts
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='posts' AND policyname='Authors can update own posts') THEN
-        CREATE POLICY "Authors can update own posts" ON posts FOR UPDATE USING (
-            author = (SELECT username FROM profiles WHERE profiles.id = auth.uid())
-        ) WITH CHECK (
-            author = (SELECT username FROM profiles WHERE profiles.id = auth.uid())
-        );
-    END IF;
-END $$;
-
--- Admins can delete posts
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='posts' AND policyname='Admins can delete posts') THEN
-        CREATE POLICY "Admins can delete posts" ON posts FOR DELETE USING (
-            EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
-        );
-    END IF;
-END $$;
-
--- Authors can delete their own posts
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='posts' AND policyname='Authors can delete own posts') THEN
-        CREATE POLICY "Authors can delete own posts" ON posts FOR DELETE USING (
-            author = (SELECT username FROM profiles WHERE profiles.id = auth.uid())
-        );
-    END IF;
-END $$;
-
-CREATE INDEX IF NOT EXISTS idx_posts_slug ON posts(slug);
-CREATE INDEX IF NOT EXISTS idx_posts_published ON posts(published);
-CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_posts_is_approved ON posts(is_approved);
-
--- ─────────────────────────────────────────────────────────────
--- 4. COMMUNITY CHANNELS
--- ─────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS community_channels (
+-- 4. FORUM INFRASTRUCTURE
+CREATE TABLE IF NOT EXISTS public.community_channels (
     id          SERIAL PRIMARY KEY,
-    slug        TEXT UNIQUE NOT NULL,
     name        TEXT NOT NULL,
-    description TEXT DEFAULT '',
+    slug        TEXT UNIQUE NOT NULL,
+    description TEXT,
     created_at  TIMESTAMPTZ DEFAULT now()
 );
 
-ALTER TABLE community_channels ENABLE ROW LEVEL SECURITY;
-
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='community_channels' AND policyname='Channels are viewable by everyone') THEN
-        CREATE POLICY "Channels are viewable by everyone" ON community_channels FOR SELECT USING (true);
-    END IF;
-END $$;
-
--- Seed default channels (skip if already exist)
-INSERT INTO community_channels (slug, name, description) VALUES
-    ('general',  'General',  'Anything goes — intros, questions, random thoughts'),
-    ('feedback', 'Feedback', 'Suggestions and bug reports'),
-    ('showcase', 'Showcase', 'Show off what you built'),
-    ('ideas',    'Ideas',    'Feature requests and brainstorming')
-ON CONFLICT (slug) DO NOTHING;
-
--- ─────────────────────────────────────────────────────────────
--- 5. COMMUNITY POSTS  (forum threads & blog comments)
--- ─────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS community_posts (
+CREATE TABLE IF NOT EXISTS public.community_posts (
     id          SERIAL PRIMARY KEY,
-    channel_id  INT NOT NULL DEFAULT 1 REFERENCES community_channels(id) ON DELETE CASCADE,
-    author_id   UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    channel_id  INT REFERENCES public.community_channels(id) ON DELETE SET NULL,
+    author_id   UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     title       TEXT NOT NULL,
     content     TEXT NOT NULL,
-    post_slug   TEXT,          -- links comment to a blog post slug (nullable for forum posts)
     image_url   TEXT,
-    created_at  TIMESTAMPTZ DEFAULT now()
+    post_slug   TEXT UNIQUE,
+    created_at  TIMESTAMPTZ DEFAULT now(),
+    updated_at  TIMESTAMPTZ DEFAULT now()
 );
 
--- Ensure columns exist and defaults are right
-DO $$ BEGIN
-    ALTER TABLE community_posts ADD COLUMN IF NOT EXISTS post_slug TEXT;
-    ALTER TABLE community_posts ADD COLUMN IF NOT EXISTS image_url TEXT;
-    ALTER TABLE community_posts ALTER COLUMN channel_id SET DEFAULT 1;
-END $$;
-
-ALTER TABLE community_posts ENABLE ROW LEVEL SECURITY;
-
--- Everyone can read
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='community_posts' AND policyname='Community posts are viewable by everyone') THEN
-        CREATE POLICY "Community posts are viewable by everyone" ON community_posts FOR SELECT USING (true);
-    END IF;
-END $$;
-
--- Authenticated users can create
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='community_posts' AND policyname='Authenticated users can create community posts') THEN
-        CREATE POLICY "Authenticated users can create community posts" ON community_posts FOR INSERT WITH CHECK (auth.uid() = author_id);
-    END IF;
-END $$;
-
--- Authors can update their own posts
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='community_posts' AND policyname='Authors can update own community posts') THEN
-        CREATE POLICY "Authors can update own community posts" ON community_posts FOR UPDATE USING (auth.uid() = author_id);
-    END IF;
-END $$;
-
--- Authors can delete their own posts
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='community_posts' AND policyname='Authors can delete own community posts') THEN
-        CREATE POLICY "Authors can delete own community posts" ON community_posts FOR DELETE USING (auth.uid() = author_id);
-    END IF;
-END $$;
-
--- Admins can update ALL community posts
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='community_posts' AND policyname='Admins can update all community_posts') THEN
-        CREATE POLICY "Admins can update all community_posts" ON community_posts FOR UPDATE USING (
-            EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
-        );
-    END IF;
-END $$;
-
--- Admins can delete ALL community posts
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='community_posts' AND policyname='Admins can delete all community_posts') THEN
-        CREATE POLICY "Admins can delete all community_posts" ON community_posts FOR DELETE USING (
-            EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
-        );
-    END IF;
-END $$;
-
-CREATE INDEX IF NOT EXISTS idx_community_posts_channel   ON community_posts(channel_id);
-CREATE INDEX IF NOT EXISTS idx_community_posts_author    ON community_posts(author_id);
-CREATE INDEX IF NOT EXISTS idx_community_posts_slug      ON community_posts(post_slug);
-CREATE INDEX IF NOT EXISTS idx_community_posts_created   ON community_posts(created_at DESC);
-
--- ─────────────────────────────────────────────────────────────
--- 6. COMMUNITY REPLIES
--- ─────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS community_replies (
+CREATE TABLE IF NOT EXISTS public.community_replies (
     id          SERIAL PRIMARY KEY,
-    post_id     INT NOT NULL REFERENCES community_posts(id) ON DELETE CASCADE,
-    author_id   UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    post_id     INT NOT NULL REFERENCES public.community_posts(id) ON DELETE CASCADE,
+    author_id   UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     content     TEXT NOT NULL,
-    created_at  TIMESTAMPTZ DEFAULT now()
+    created_at  TIMESTAMPTZ DEFAULT now(),
+    updated_at  TIMESTAMPTZ DEFAULT now()
 );
 
-ALTER TABLE community_replies ENABLE ROW LEVEL SECURITY;
+-- 5. THE BLOG SYSTEM (Added all missing frontend fields: ribbon, excerpt, etc.)
+CREATE TABLE IF NOT EXISTS public.posts (
+    id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    slug        TEXT UNIQUE NOT NULL,
+    title       TEXT NOT NULL,
+    content     TEXT NOT NULL,
+    excerpt     TEXT,
+    description TEXT, -- Added for frontend compatibility
+    category    TEXT DEFAULT 'General',
+    image_url   TEXT,
+    image       TEXT, -- Duplicate for frontend image vs image_url mismatch
+    ribbon      TEXT DEFAULT '#1E2F46', -- The ribbon color from usePosts.ts
+    author      TEXT, -- Name of the author
+    author_avatar TEXT, -- Avatar of the author
+    author_id   UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+    is_approved BOOLEAN DEFAULT false,
+    published   BOOLEAN DEFAULT false,
+    language    TEXT DEFAULT 'en',
+    translations JSONB DEFAULT '{}',
+    created_at  TIMESTAMPTZ DEFAULT now(),
+    updated_at  TIMESTAMPTZ DEFAULT now()
+);
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='community_replies' AND policyname='Replies are viewable by everyone') THEN
-        CREATE POLICY "Replies are viewable by everyone" ON community_replies FOR SELECT USING (true);
-    END IF;
-END $$;
-
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='community_replies' AND policyname='Authenticated users can create replies') THEN
-        CREATE POLICY "Authenticated users can create replies" ON community_replies FOR INSERT WITH CHECK (auth.uid() = author_id);
-    END IF;
-END $$;
-
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='community_replies' AND policyname='Authors can update own replies') THEN
-        CREATE POLICY "Authors can update own replies" ON community_replies FOR UPDATE USING (auth.uid() = author_id);
-    END IF;
-END $$;
-
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='community_replies' AND policyname='Authors can delete own replies') THEN
-        CREATE POLICY "Authors can delete own replies" ON community_replies FOR DELETE USING (auth.uid() = author_id);
-    END IF;
-END $$;
-
--- Admins can update ALL replies
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='community_replies' AND policyname='Admins can update all community_replies') THEN
-        CREATE POLICY "Admins can update all community_replies" ON community_replies FOR UPDATE USING (
-            EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
-        );
-    END IF;
-END $$;
-
--- Admins can delete ALL replies
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='community_replies' AND policyname='Admins can delete all community_replies') THEN
-        CREATE POLICY "Admins can delete all community_replies" ON community_replies FOR DELETE USING (
-            EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
-        );
-    END IF;
-END $$;
-
-CREATE INDEX IF NOT EXISTS idx_community_replies_post   ON community_replies(post_id);
-CREATE INDEX IF NOT EXISTS idx_community_replies_author ON community_replies(author_id);
-
--- ─────────────────────────────────────────────────────────────
--- 7. VOTING SYSTEM (Multi-vote logic: -5 to +5)
-
--- Blog Post Votes (Main Articles)
-CREATE TABLE IF NOT EXISTS post_votes (
+-- 6. VOTING & SOCIAL
+CREATE TABLE IF NOT EXISTS public.post_votes (
     id          SERIAL PRIMARY KEY,
     post_slug   TEXT NOT NULL,
     user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    vote        INT NOT NULL DEFAULT 0 CHECK (vote >= -5 AND vote <= 5),
-    created_at  TIMESTAMPTZ DEFAULT now(),
-    updated_at  TIMESTAMPTZ DEFAULT now(),
+    vote        INT NOT NULL CHECK (vote IN (-1, 0, 1)),
     UNIQUE(post_slug, user_id)
 );
 
-ALTER TABLE post_votes ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Votes are viewable by everyone" ON post_votes FOR SELECT USING (true);
-CREATE POLICY "Authenticated users can vote on posts" ON post_votes FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-
--- Community Post Votes (Forum Questions/Comments)
-CREATE TABLE IF NOT EXISTS community_post_votes (
+CREATE TABLE IF NOT EXISTS public.community_post_votes (
     id          SERIAL PRIMARY KEY,
-    post_id     INT NOT NULL REFERENCES community_posts(id) ON DELETE CASCADE,
+    post_id     INT NOT NULL REFERENCES public.community_posts(id) ON DELETE CASCADE,
     user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    vote        INT NOT NULL DEFAULT 0 CHECK (vote >= -5 AND vote <= 5),
-    created_at  TIMESTAMPTZ DEFAULT now(),
-    updated_at  TIMESTAMPTZ DEFAULT now(),
+    vote        INT NOT NULL CHECK (vote IN (-1, 0, 1)),
     UNIQUE(post_id, user_id)
 );
 
-ALTER TABLE community_post_votes ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Community post votes are viewable by everyone" ON community_post_votes FOR SELECT USING (true);
-CREATE POLICY "Authenticated users can vote on community posts" ON community_post_votes FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-
--- Community Reply Votes (Forum Replies)
-CREATE TABLE IF NOT EXISTS community_reply_votes (
+CREATE TABLE IF NOT EXISTS public.community_reply_votes (
     id          SERIAL PRIMARY KEY,
-    reply_id    INT NOT NULL REFERENCES community_replies(id) ON DELETE CASCADE,
+    reply_id    INT NOT NULL REFERENCES public.community_replies(id) ON DELETE CASCADE,
     user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    vote        INT NOT NULL DEFAULT 0 CHECK (vote >= -5 AND vote <= 5),
-    created_at  TIMESTAMPTZ DEFAULT now(),
-    updated_at  TIMESTAMPTZ DEFAULT now(),
+    vote        INT NOT NULL CHECK (vote IN (-1, 0, 1)),
     UNIQUE(reply_id, user_id)
 );
 
-ALTER TABLE community_reply_votes ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Reply votes are viewable by everyone" ON community_reply_votes FOR SELECT USING (true);
-CREATE POLICY "Authenticated users can vote on replies" ON community_reply_votes FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-
--- Indexes
-CREATE INDEX IF NOT EXISTS idx_post_votes_slug ON post_votes(post_slug);
-CREATE INDEX IF NOT EXISTS idx_com_post_votes_id ON community_post_votes(post_id);
-CREATE INDEX IF NOT EXISTS idx_com_reply_votes_id ON community_reply_votes(reply_id);
-
--- Aggregate Functions
-CREATE OR REPLACE FUNCTION get_post_total_votes(post_slug_input TEXT)
-RETURNS INT AS $$
-BEGIN
-    RETURN (SELECT COALESCE(SUM(vote), 0) FROM post_votes WHERE post_slug = post_slug_input);
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION get_com_post_total_votes(post_id_input INT)
-RETURNS INT AS $$
-BEGIN
-    RETURN (SELECT COALESCE(SUM(vote), 0) FROM community_post_votes WHERE post_id = post_id_input);
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION get_com_reply_total_votes(reply_id_input INT)
-RETURNS INT AS $$
-BEGIN
-    RETURN (SELECT COALESCE(SUM(vote), 0) FROM community_reply_votes WHERE reply_id = reply_id_input);
-END;
-$$ LANGUAGE plpgsql;
-
--- Views for easier fetching
-CREATE OR REPLACE VIEW community_posts_with_stats AS
-SELECT 
-    p.*,
-    (SELECT COALESCE(SUM(v.vote), 0) FROM community_post_votes v WHERE v.post_id = p.id) as total_votes,
-    (SELECT COUNT(*) FROM community_replies r WHERE r.post_id = p.id) as reply_count
-FROM community_posts p;
-
-CREATE OR REPLACE VIEW community_replies_with_stats AS
-SELECT 
-    r.*,
-    (SELECT COALESCE(SUM(v.vote), 0) FROM community_reply_votes v WHERE v.reply_id = r.id) as total_votes
-FROM community_replies r;
-
--- ─────────────────────────────────────────────────────────────
--- 8. WRITER APPLICATIONS
--- ─────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS writer_applications (
-    id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name        TEXT NOT NULL,
-    email       TEXT NOT NULL,
-    message     TEXT NOT NULL,
-    source      TEXT DEFAULT 'write_for_wim',
-    status      TEXT DEFAULT 'new',
-    created_at  TIMESTAMPTZ DEFAULT now()
-);
-
-ALTER TABLE writer_applications ENABLE ROW LEVEL SECURITY;
-
--- Anyone can submit an application (even unauthenticated via anon key)
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='writer_applications' AND policyname='Anyone can submit writer applications') THEN
-        CREATE POLICY "Anyone can submit writer applications" ON writer_applications FOR INSERT WITH CHECK (true);
-    END IF;
-END $$;
-
--- Only admins can view applications
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='writer_applications' AND policyname='Admins can view writer applications') THEN
-        CREATE POLICY "Admins can view writer applications" ON writer_applications FOR SELECT USING (
-            EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
-        );
-    END IF;
-END $$;
-
--- Only admins can update applications
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='writer_applications' AND policyname='Admins can update writer applications') THEN
-        CREATE POLICY "Admins can update writer applications" ON writer_applications FOR UPDATE USING (
-            EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
-        );
-    END IF;
-END $$;
-
--- ─────────────────────────────────────────────────────────────
--- 9. USER SAVED POSTS  (bookmarks)
--- ─────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS user_saved_posts (
-    id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+-- 7. SAVED POSTS & APPLICATIONS
+CREATE TABLE IF NOT EXISTS public.user_saved_posts (
+    id          SERIAL PRIMARY KEY,
     user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    post_id     UUID REFERENCES posts(id) ON DELETE CASCADE,
     post_slug   TEXT NOT NULL,
     post_title  TEXT,
     saved_at    TIMESTAMPTZ DEFAULT now(),
     UNIQUE(user_id, post_slug)
 );
 
-ALTER TABLE user_saved_posts ENABLE ROW LEVEL SECURITY;
+CREATE TABLE IF NOT EXISTS public.writer_applications (
+    id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name        TEXT NOT NULL,
+    email       TEXT NOT NULL,
+    message     TEXT NOT NULL,
+    status      TEXT DEFAULT 'new' CHECK (status IN ('new', 'reviewed')),
+    source      TEXT,
+    created_at  TIMESTAMPTZ DEFAULT now()
+);
 
--- Users can see their own saved posts
+-- 8. COMPATIBILITY VIEWS (This fixes "relation not found" in code)
+CREATE OR REPLACE VIEW community_posts_with_stats WITH (security_invoker = true) AS
+SELECT p.*, 
+    (SELECT COALESCE(SUM(v.vote), 0) FROM community_post_votes v WHERE v.post_id = p.id) as total_votes,
+    (SELECT COUNT(*) FROM community_replies r WHERE r.post_id = p.id) as reply_count
+FROM community_posts p;
+
+-- 9. SECURITY (RLS)
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.nodes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.community_posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_saved_posts ENABLE ROW LEVEL SECURITY;
+
 DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='user_saved_posts' AND policyname='Users can view own saved posts') THEN
-        CREATE POLICY "Users can view own saved posts" ON user_saved_posts FOR SELECT USING (auth.uid() = user_id);
-    END IF;
-END $$;
+    CREATE POLICY "profiles_read" ON public.profiles FOR SELECT USING (true);
+    CREATE POLICY "profiles_self_update" ON public.profiles FOR UPDATE USING (auth.uid() = id);
+    CREATE POLICY "nodes_owner" ON public.nodes FOR ALL USING (auth.uid() = author_id);
+    CREATE POLICY "posts_universal_read" ON public.posts FOR SELECT USING (published = true OR auth.uid() = author_id OR EXISTS(SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+    CREATE POLICY "saved_posts_owner" ON public.user_saved_posts FOR ALL USING (auth.uid() = user_id);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
--- Users can save posts
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='user_saved_posts' AND policyname='Users can save posts') THEN
-        CREATE POLICY "Users can save posts" ON user_saved_posts FOR INSERT WITH CHECK (auth.uid() = user_id);
-    END IF;
-END $$;
+-- 10. NEW USER AUTOMATION
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.profiles (id, username, email, avatar_url, role)
+  VALUES (new.id, COALESCE(new.raw_user_meta_data->>'username', new.email), new.email, new.raw_user_meta_data->>'avatar_url', 'member');
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Users can unsave posts
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='user_saved_posts' AND policyname='Users can unsave posts') THEN
-        CREATE POLICY "Users can unsave posts" ON user_saved_posts FOR DELETE USING (auth.uid() = user_id);
-    END IF;
-END $$;
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
-CREATE INDEX IF NOT EXISTS idx_saved_posts_user ON user_saved_posts(user_id);
-CREATE INDEX IF NOT EXISTS idx_saved_posts_slug ON user_saved_posts(post_slug);
-
--- ─────────────────────────────────────────────────────────────
--- 10. REALTIME  — enable for live updates
--- ─────────────────────────────────────────────────────────────
-DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE community_posts;  EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE community_replies; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE post_votes;         EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE community_post_votes; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE community_reply_votes; EXCEPTION WHEN OTHERS THEN NULL; END $$;
-DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE nodes;             EXCEPTION WHEN OTHERS THEN NULL; END $$;
-
--- ─────────────────────────────────────────────────────────────
--- 11. DATA FIX — backfill post_slug for legacy comments
--- ─────────────────────────────────────────────────────────────
-UPDATE community_posts
-SET post_slug = substring(title from 'comment_(.+)_\d+$')
-WHERE post_slug IS NULL
-  AND title ~ '^comment_.+_\d+$';
-
--- ============================================================
---  Done! All tables are ready with full RLS.
--- ============================================================
+-- FINAL STEP: SETUP YOUR ADMIN
+UPDATE public.profiles SET role = 'admin' WHERE id IN (SELECT id FROM auth.users WHERE email = 'dursunkayamustafa@gmail.com');

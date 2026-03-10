@@ -230,13 +230,11 @@ export const useCommunity = () => {
                 .maybeSingle();
 
             const currentVoteValue = existing?.vote || 0;
-            const delta = direction === 'up' ? 1 : -1;
-            const nextVote = currentVoteValue + delta;
-
-            if (nextVote > 5 || nextVote < -5) {
-                addToast('vote limit reached', 'warning');
-                return false;
-            }
+            const directionValue = direction === 'up' ? 1 : -1;
+            
+            // Toggle logic: If user clicks the same direction again, reset to 0 (remove vote)
+            // Otherwise, set to the new direction (1 or -1)
+            const nextVote = currentVoteValue === directionValue ? 0 : directionValue;
 
             const { error } = await supabase
                 .from('community_post_votes')
