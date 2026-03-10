@@ -1,5 +1,5 @@
 -- =============================================================
--- THE ULTIMATE WORLD IN MAKING SCHEMA (Production-Proof)
+-- THE KUSURSUZ (FLAWLESS) MASTER SCHEMA & VOTING SYSTEM
 -- =============================================================
 
 -- 1. EXTENSIONS & UTILS
@@ -73,20 +73,20 @@ CREATE TABLE IF NOT EXISTS public.community_replies (
     updated_at  TIMESTAMPTZ DEFAULT now()
 );
 
--- 5. THE BLOG SYSTEM (Added all missing frontend fields: ribbon, excerpt, etc.)
+-- 5. THE BLOG SYSTEM (All missing frontend fields included)
 CREATE TABLE IF NOT EXISTS public.posts (
     id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     slug        TEXT UNIQUE NOT NULL,
     title       TEXT NOT NULL,
     content     TEXT NOT NULL,
     excerpt     TEXT,
-    description TEXT, -- Added for frontend compatibility
+    description TEXT,
     category    TEXT DEFAULT 'General',
     image_url   TEXT,
-    image       TEXT, -- Duplicate for frontend image vs image_url mismatch
-    ribbon      TEXT DEFAULT '#1E2F46', -- The ribbon color from usePosts.ts
-    author      TEXT, -- Name of the author
-    author_avatar TEXT, -- Avatar of the author
+    image       TEXT,
+    ribbon      TEXT DEFAULT '#1E2F46',
+    author      TEXT,
+    author_avatar TEXT,
     author_id   UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
     is_approved BOOLEAN DEFAULT false,
     published   BOOLEAN DEFAULT false,
@@ -96,12 +96,12 @@ CREATE TABLE IF NOT EXISTS public.posts (
     updated_at  TIMESTAMPTZ DEFAULT now()
 );
 
--- 6. VOTING & SOCIAL
+-- 6. VOTING & SOCIAL (Synchronized with Frontend ArticleActions: Range -5 to +5)
 CREATE TABLE IF NOT EXISTS public.post_votes (
     id          SERIAL PRIMARY KEY,
     post_slug   TEXT NOT NULL,
     user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    vote        INT NOT NULL CHECK (vote IN (-1, 0, 1)),
+    vote        INT NOT NULL CHECK (vote >= -5 AND vote <= 5),
     UNIQUE(post_slug, user_id)
 );
 
@@ -138,32 +138,62 @@ CREATE TABLE IF NOT EXISTS public.writer_applications (
     message     TEXT NOT NULL,
     status      TEXT DEFAULT 'new' CHECK (status IN ('new', 'reviewed')),
     source      TEXT,
+    portfolio_url TEXT,
+    social_handle TEXT,
     created_at  TIMESTAMPTZ DEFAULT now()
 );
 
--- 8. COMPATIBILITY VIEWS (This fixes "relation not found" in code)
+-- 8. COMPATIBILITY VIEWS (Alias support for frontend)
 CREATE OR REPLACE VIEW community_posts_with_stats WITH (security_invoker = true) AS
 SELECT p.*, 
     (SELECT COALESCE(SUM(v.vote), 0) FROM community_post_votes v WHERE v.post_id = p.id) as total_votes,
     (SELECT COUNT(*) FROM community_replies r WHERE r.post_id = p.id) as reply_count
 FROM community_posts p;
 
--- 9. SECURITY (RLS)
+CREATE OR REPLACE VIEW community_likes WITH (security_invoker = true) AS
+SELECT post_id as id, count(*) as count
+FROM community_post_votes
+WHERE vote > 0
+GROUP BY post_id;
+
+-- 9. PERFORMANCE INDEXES
+CREATE INDEX IF NOT EXISTS idx_post_votes_slug ON post_votes(post_slug);
+CREATE INDEX IF NOT EXISTS idx_com_post_votes_id ON community_post_votes(post_id);
+CREATE INDEX IF NOT EXISTS idx_nodes_status ON public.nodes(status);
+CREATE INDEX IF NOT EXISTS idx_posts_slug ON public.posts(slug);
+CREATE INDEX IF NOT EXISTS idx_profiles_username_lower ON public.profiles (lower(username));
+
+-- 10. RPC FUNCTIONS (For high performance voting lookups)
+CREATE OR REPLACE FUNCTION get_post_total_votes(post_slug_input TEXT)
+RETURNS INT AS $$
+    SELECT COALESCE(SUM(vote), 0)::INT FROM post_votes WHERE post_slug = post_slug_input;
+$$ LANGUAGE sql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION get_com_post_total_votes(post_id_input INT)
+RETURNS INT AS $$
+    SELECT COALESCE(SUM(vote), 0)::INT FROM community_post_votes WHERE post_id = post_id_input;
+$$ LANGUAGE sql SECURITY DEFINER;
+
+-- 11. SECURITY (RLS)
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.nodes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.community_posts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_saved_posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.post_votes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.community_post_votes ENABLE ROW LEVEL SECURITY;
 
 DO $$ BEGIN
     CREATE POLICY "profiles_read" ON public.profiles FOR SELECT USING (true);
     CREATE POLICY "profiles_self_update" ON public.profiles FOR UPDATE USING (auth.uid() = id);
     CREATE POLICY "nodes_owner" ON public.nodes FOR ALL USING (auth.uid() = author_id);
-    CREATE POLICY "posts_universal_read" ON public.posts FOR SELECT USING (published = true OR auth.uid() = author_id OR EXISTS(SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+    CREATE POLICY "posts_read" ON public.posts FOR SELECT USING (published = true OR auth.uid() = author_id OR EXISTS(SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
     CREATE POLICY "saved_posts_owner" ON public.user_saved_posts FOR ALL USING (auth.uid() = user_id);
+    CREATE POLICY "manage_own_post_votes" ON post_votes FOR ALL USING (auth.uid() = user_id);
+    CREATE POLICY "view_all_votes" ON post_votes FOR SELECT USING (true);
 EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
--- 10. NEW USER AUTOMATION
+-- 12. AUTOMATION
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
@@ -176,5 +206,5 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
--- FINAL STEP: SETUP YOUR ADMIN
+-- FINAL STEP: ADMIN SETUP
 UPDATE public.profiles SET role = 'admin' WHERE id IN (SELECT id FROM auth.users WHERE email = 'dursunkayamustafa@gmail.com');

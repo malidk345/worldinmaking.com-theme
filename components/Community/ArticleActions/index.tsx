@@ -16,18 +16,6 @@ export default function ArticleActions({ slug }: ArticleActionsProps) {
     const [totalVotes, setTotalVotes] = useState(0)
     const [loading, setLoading] = useState(true)
 
-    // Deterministic base upvotes (as fallback/starting point)
-    const initialUpvotes = useMemo(() => {
-        if (!slug) return 12
-        let hash = 0
-        for (let i = 0; i < slug.length; i++) {
-            const char = slug.charCodeAt(i)
-            hash = ((hash << 5) - hash) + char
-            hash = hash & hash
-        }
-        return (Math.abs(hash) % 140) + 10
-    }, [slug])
-
     // Load votes from Supabase
     useEffect(() => {
         if (!slug) return
@@ -128,7 +116,7 @@ export default function ArticleActions({ slug }: ArticleActionsProps) {
         }
     }
 
-    const displayCount = initialUpvotes + totalVotes
+    const displayCount = totalVotes
 
     return (
         <div className="flex justify-between items-center mb-6 pt-4 border-t border-black/10 dark:border-white/10 pb-4">
