@@ -96,12 +96,13 @@ CREATE TABLE IF NOT EXISTS public.posts (
     updated_at  TIMESTAMPTZ DEFAULT now()
 );
 
--- 6. VOTING & SOCIAL (Synchronized with Frontend ArticleActions: Range -5 to +5)
+-- 6. VOTING SYSTEM (Matching frontend requirements: ArticleActions (-5 to +5) and useCommunity (+1/-1))
 CREATE TABLE IF NOT EXISTS public.post_votes (
     id          SERIAL PRIMARY KEY,
     post_slug   TEXT NOT NULL,
     user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     vote        INT NOT NULL CHECK (vote >= -5 AND vote <= 5),
+    updated_at  TIMESTAMPTZ DEFAULT now(),
     UNIQUE(post_slug, user_id)
 );
 
@@ -110,6 +111,7 @@ CREATE TABLE IF NOT EXISTS public.community_post_votes (
     post_id     INT NOT NULL REFERENCES public.community_posts(id) ON DELETE CASCADE,
     user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     vote        INT NOT NULL CHECK (vote IN (-1, 0, 1)),
+    updated_at  TIMESTAMPTZ DEFAULT now(),
     UNIQUE(post_id, user_id)
 );
 
@@ -118,6 +120,7 @@ CREATE TABLE IF NOT EXISTS public.community_reply_votes (
     reply_id    INT NOT NULL REFERENCES public.community_replies(id) ON DELETE CASCADE,
     user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     vote        INT NOT NULL CHECK (vote IN (-1, 0, 1)),
+    updated_at  TIMESTAMPTZ DEFAULT now(),
     UNIQUE(reply_id, user_id)
 );
 
@@ -144,15 +147,23 @@ CREATE TABLE IF NOT EXISTS public.writer_applications (
 );
 
 -- 8. COMPATIBILITY VIEWS (Alias support for frontend)
-CREATE OR REPLACE VIEW community_posts_with_stats WITH (security_invoker = true) AS
+DROP VIEW IF EXISTS public.community_posts_with_stats CASCADE;
+CREATE OR REPLACE VIEW public.community_posts_with_stats WITH (security_invoker = true) AS
 SELECT p.*, 
     (SELECT COALESCE(SUM(v.vote), 0) FROM community_post_votes v WHERE v.post_id = p.id) as total_votes,
     (SELECT COUNT(*) FROM community_replies r WHERE r.post_id = p.id) as reply_count
-FROM community_posts p;
+FROM public.community_posts p;
 
-CREATE OR REPLACE VIEW community_likes WITH (security_invoker = true) AS
+DROP VIEW IF EXISTS public.community_replies_with_stats CASCADE;
+CREATE OR REPLACE VIEW public.community_replies_with_stats WITH (security_invoker = true) AS
+SELECT r.*, 
+    (SELECT COALESCE(SUM(v.vote), 0) FROM community_reply_votes v WHERE v.reply_id = r.id) as total_votes
+FROM public.community_replies r;
+
+DROP VIEW IF EXISTS public.community_likes CASCADE;
+CREATE OR REPLACE VIEW public.community_likes WITH (security_invoker = true) AS
 SELECT post_id as id, count(*) as count
-FROM community_post_votes
+FROM public.community_post_votes
 WHERE vote > 0
 GROUP BY post_id;
 
@@ -184,13 +195,30 @@ ALTER TABLE public.post_votes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.community_post_votes ENABLE ROW LEVEL SECURITY;
 
 DO $$ BEGIN
+    -- Drop old policies to avoid duplicates
+    DROP POLICY IF EXISTS "profiles_read" ON public.profiles;
+    DROP POLICY IF EXISTS "profiles_self_update" ON public.profiles;
     CREATE POLICY "profiles_read" ON public.profiles FOR SELECT USING (true);
     CREATE POLICY "profiles_self_update" ON public.profiles FOR UPDATE USING (auth.uid() = id);
+
+    DROP POLICY IF EXISTS "nodes_owner" ON public.nodes;
     CREATE POLICY "nodes_owner" ON public.nodes FOR ALL USING (auth.uid() = author_id);
+
+    DROP POLICY IF EXISTS "posts_read" ON public.posts;
     CREATE POLICY "posts_read" ON public.posts FOR SELECT USING (published = true OR auth.uid() = author_id OR EXISTS(SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+
+    DROP POLICY IF EXISTS "saved_posts_owner" ON public.user_saved_posts;
     CREATE POLICY "saved_posts_owner" ON public.user_saved_posts FOR ALL USING (auth.uid() = user_id);
+
+    DROP POLICY IF EXISTS "manage_own_post_votes" ON post_votes;
+    DROP POLICY IF EXISTS "view_all_votes" ON post_votes;
     CREATE POLICY "manage_own_post_votes" ON post_votes FOR ALL USING (auth.uid() = user_id);
     CREATE POLICY "view_all_votes" ON post_votes FOR SELECT USING (true);
+
+    DROP POLICY IF EXISTS "view_com_post_votes" ON community_post_votes;
+    DROP POLICY IF EXISTS "manage_own_com_post_votes" ON community_post_votes;
+    CREATE POLICY "view_com_post_votes" ON community_post_votes FOR SELECT USING (true);
+    CREATE POLICY "manage_own_com_post_votes" ON community_post_votes FOR ALL USING (auth.uid() = user_id);
 EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 -- 12. AUTOMATION
