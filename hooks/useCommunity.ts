@@ -90,7 +90,7 @@ export const useCommunity = () => {
 
         try {
             // First try fetching from the stats view (ideal for new vote system)
-            let { data, error } = await (async () => {
+            const response = await (async () => {
                 let q = supabase.from('community_posts_with_stats').select('*, profiles(id, username, avatar_url)')
                 if (postId) q = q.eq('id', Number(postId))
                 else if (slug) q = q.or(`post_slug.eq.${slug},title.ilike.comment_${slug}_%`)
@@ -99,6 +99,9 @@ export const useCommunity = () => {
                 }
                 return q.order('created_at', { ascending: false });
             })();
+            
+            let data = response.data;
+            const error = response.error;
 
             // Fallback to direct table if view doesn't exist yet
             if (error) {
@@ -122,8 +125,8 @@ export const useCommunity = () => {
                     likes: p.total_votes ?? p.community_likes?.[0]?.count ?? 0
                 }
             })) as unknown as CommunityPost[];
-        } catch (e: any) {
-            logger.error('[useCommunity] postsFetcher absolute error:', e.message || e);
+        } catch (e: unknown) {
+            logger.error('[useCommunity] postsFetcher absolute error:', e instanceof Error ? e.message : String(e));
             return [];
         }
     };
@@ -131,11 +134,14 @@ export const useCommunity = () => {
     const repliesFetcher = async (postId: number | string) => {
         if (!postId) return [];
         try {
-            let { data, error } = await supabase
+            const response = await supabase
                 .from('community_replies_with_stats')
                 .select('*, profiles(id, username, avatar_url)')
                 .eq('post_id', postId)
                 .order('created_at', { ascending: true });
+            
+            let data = response.data;
+            const error = response.error;
 
             if (error) {
                 // Fallback for replies if view doesn't exist
@@ -153,8 +159,8 @@ export const useCommunity = () => {
                 profiles: Array.isArray(r.profiles) ? r.profiles[0] : r.profiles,
                 upvotes: r.total_votes || 0
             })) as unknown as CommunityReply[];
-        } catch (e: any) {
-            logger.error('[useCommunity] repliesFetcher exception:', e.message || e);
+        } catch (e: unknown) {
+            logger.error('[useCommunity] repliesFetcher exception:', e instanceof Error ? e.message : String(e));
             return [];
         }
     };
@@ -251,8 +257,8 @@ export const useCommunity = () => {
             if (activePostSlug) mutate(['community_posts_slug', activePostSlug]);
             if (activePostLookupId) mutate(['community_post_id', activePostLookupId]);
             return true;
-        } catch (e: any) {
-            logger.error('[useCommunity] handleVote error:', e.message || e);
+        } catch (e: unknown) {
+            logger.error('[useCommunity] handleVote error:', e instanceof Error ? e.message : String(e));
             return false;
         }
     }, [activeChannelId, activePostSlug, activePostLookupId, addToast, mutate]);

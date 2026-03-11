@@ -1,0 +1,18 @@
+﻿
+> posthog-nextjs@0.1.0 lint
+> eslint
+
+
+D:\all works\worldinmaking.com-theme\context\App.tsx
+  318:37  warning  '_filter' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\all works\worldinmaking.com-theme\context\Window.tsx
+  80:24  warning  '_newWindow' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\all works\worldinmaking.com-theme\hooks\useCommunity.ts
+   93:17  error  'response' is never reassigned. Use 'const' instead  prefer-const
+  137:17  error  'response' is never reassigned. Use 'const' instead  prefer-const
+
+Ô£û 4 problems (2 errors, 2 warnings)
+  2 errors and 0 warnings potentially fixable with the `--fix` option.
+

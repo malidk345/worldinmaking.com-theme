@@ -166,7 +166,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return () => subscription.unsubscribe();
     }, [fetchProfile]);
 
-    const updateProfile = async (updates: Partial<Profile>) => {
+    const updateProfile = React.useCallback(async (updates: Partial<Profile>) => {
         if (!user) return false;
 
         const sanitizedUpdates = sanitizeProfileUpdates(updates);
@@ -218,9 +218,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         await fetchProfile(user.id);
         return true;
-    };
+    }, [user, fetchProfile, hasExtendedProfileFields]);
 
-    const signInWithEmail = async (email: string) => {
+    const signInWithEmail = React.useCallback(async (email: string) => {
         try {
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             const trimmedEmail = email?.trim();
@@ -248,11 +248,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             logger.error('[Auth] signInWithOtp exception:', e);
             return { error: { message: (e as Error)?.message || 'Unknown error' } };
         }
-    };
+    }, []);
 
-    const signOut = async () => {
+    const signOut = React.useCallback(async () => {
         await supabase.auth.signOut();
-    };
+    }, []);
 
     const isRoleAdmin = profile?.role?.toLowerCase() === 'admin';
     const isEmailAdmin = !!user?.email && adminEmailAllowlist.includes(user.email.toLowerCase());

@@ -1,0 +1,43 @@
+﻿
+> posthog-nextjs@0.1.0 lint
+> eslint
+
+
+D:\all works\worldinmaking.com-theme\context\App.tsx
+  218:51  error    Unexpected any. Specify a different type                                                                                  @typescript-eslint/no-explicit-any
+  269:8   warning  React Hook useCallback has a missing dependency: 'setFocusedWindowKey'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  318:37  warning  'filter' is defined but never used                                                                                        @typescript-eslint/no-unused-vars
+  390:8   warning  React Hook useEffect has a missing dependency: 'normalizePath'. Either include it or remove the dependency array          react-hooks/exhaustive-deps
+  512:8   warning  React Hook useEffect has a missing dependency: 'wallpapers'. Either include it or remove the dependency array             react-hooks/exhaustive-deps
+
+D:\all works\worldinmaking.com-theme\context\AuthContext.tsx
+  169:11  warning  The 'updateProfile' function makes the dependencies of useMemo Hook (at line 269) change on every render. Move it inside the useMemo callback. Alternatively, wrap the definition of 'updateProfile' in its own useCallback() Hook      react-hooks/exhaustive-deps
+  223:11  warning  The 'signInWithEmail' function makes the dependencies of useMemo Hook (at line 269) change on every render. Move it inside the useMemo callback. Alternatively, wrap the definition of 'signInWithEmail' in its own useCallback() Hook  react-hooks/exhaustive-deps
+  253:11  warning  The 'signOut' function makes the dependencies of useMemo Hook (at line 269) change on every render. Move it inside the useMemo callback. Alternatively, wrap the definition of 'signOut' in its own useCallback() Hook                  react-hooks/exhaustive-deps
+
+D:\all works\worldinmaking.com-theme\context\Window.tsx
+  80:24  warning  'newWindow' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\all works\worldinmaking.com-theme\hooks\useCommunity.ts
+   93:25  error  'error' is never reassigned. Use 'const' instead  prefer-const
+  125:21  error  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  134:25  error  'error' is never reassigned. Use 'const' instead  prefer-const
+  156:21  error  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  254:21  error  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+
+D:\all works\worldinmaking.com-theme\hooks\usePostHog.ts
+  3:22  warning  '_args' is defined but never used  @typescript-eslint/no-unused-vars
+  4:28  warning  '_args' is defined but never used  @typescript-eslint/no-unused-vars
+  5:23  warning  '_args' is defined but never used  @typescript-eslint/no-unused-vars
+  6:20  warning  '_args' is defined but never used  @typescript-eslint/no-unused-vars
+  9:22  warning  '_args' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\all works\worldinmaking.com-theme\hooks\usePosts.ts
+  5:25  warning  'getExcerpt' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\all works\worldinmaking.com-theme\hooks\useTheme.tsx
+  1:10  warning  'useState' is defined but never used   @typescript-eslint/no-unused-vars
+  1:20  warning  'useEffect' is defined but never used  @typescript-eslint/no-unused-vars
+
+Ô£û 22 problems (6 errors, 16 warnings)
+

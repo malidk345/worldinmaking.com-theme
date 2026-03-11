@@ -215,7 +215,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
             }
 
             // Centralized Window Settings
-            const WINDOW_SETTINGS: Record<string, any> = {
+            const WINDOW_SETTINGS: Record<string, { width?: number; height?: number; title?: string; topCenter?: boolean }> = {
                 '/posts': { width: 1000, height: 800, title: 'Latest Editions' },
                 '/search': { width: 600, height: 400, title: 'Search', topCenter: true },
                 'posts-newspaper': { width: 1000, height: 800, title: 'Latest Editions' }
@@ -223,7 +223,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
             const settings = WINDOW_SETTINGS[item.key] || WINDOW_SETTINGS[item.path] || {}
 
-            let size = item.size || (settings.width ? { width: settings.width, height: settings.height } : undefined)
+            let size = item.size || ((settings.width && settings.height) ? { width: settings.width, height: settings.height } : undefined)
 
             if (!size) {
                 if (typeof window !== 'undefined') {
@@ -266,7 +266,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
             setFocusedWindow(newWindow)
             return [...prev, newWindow]
         })
-    }, [getPositionDefaults, getTitleFromPath, lastClickedElementRect])
+    }, [getPositionDefaults, getTitleFromPath, lastClickedElementRect, setFocusedWindowKey])
 
     const closeWindow = useCallback((itemOrKey: string | AppWindow) => {
         const key = typeof itemOrKey === 'string' ? itemOrKey : itemOrKey.key
@@ -315,7 +315,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         setWindows((prev) => prev.map(w => w.key === key ? { ...w, ref } : w))
     }, [])
 
-    const openSearch = useCallback((filter?: string) => {
+    const openSearch = useCallback((_filter?: string) => {
         const size = isMobile
             ? { width: typeof window !== 'undefined' ? Math.min(window.innerWidth - 32, 500) : 400, height: 320 }
             : { width: 600, height: 400 }
@@ -387,7 +387,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         }
 
         initializedRef.current = true
-    }, [addWindow, getTitleFromPath])
+    }, [addWindow, getTitleFromPath, normalizePath])
 
     // Listen for browser navigation (back/forward buttons)
     useEffect(() => {
@@ -509,6 +509,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
             window.removeEventListener('click', handleClick)
             window.removeEventListener('keydown', handleKeyDown)
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [openSearch])
 
     // URL Sync - Updates the browser address bar to match the focused window's path

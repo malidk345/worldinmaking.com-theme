@@ -2,7 +2,7 @@
 import React from 'react';
 
 import { supabase } from '../lib/supabase';
-import { stripMarkdown, getExcerpt } from '../lib/markdown';
+import { stripMarkdown } from '../lib/markdown';
 import useSWR from 'swr';
 import logger from '../utils/logger';
 

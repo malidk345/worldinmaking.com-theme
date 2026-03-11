@@ -77,7 +77,7 @@ export const WindowProvider = ({
     children: React.ReactNode
     value?: Partial<WindowContextType>
 }) => {
-    const addWindow = (newWindow: Omit<AppWindow, 'zIndex' | 'minimized' | 'sizeConstraints' | 'size' | 'previousSize' | 'position' | 'previousPosition' | 'fixedSize' | 'minimal'>) => {
+    const addWindow = (_newWindow: Omit<AppWindow, 'zIndex' | 'minimized' | 'sizeConstraints' | 'size' | 'previousSize' | 'position' | 'previousPosition' | 'fixedSize' | 'minimal'>) => {
     };
 
     const mergedValue: WindowContextType = {
