@@ -265,7 +265,7 @@ function NodePublishedRouteView({ nodeId }: { nodeId: string }) {
                 setTitle(data.title || 'untitled node')
                 setContent(data.content || '')
                 setDate(data.updated_at)
-                const profiles = data.profiles as any
+                const profiles = data.profiles as { username: string; avatar_url: string } | { username: string; avatar_url: string }[] | null
                 if (profiles && !Array.isArray(profiles)) {
                     setAuthor(profiles)
                 } else if (Array.isArray(profiles)) {
