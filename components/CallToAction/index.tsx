@@ -260,10 +260,7 @@ export const CallToAction = ({
     )
 }
 
-export const TrackedCTA = ({
-    event: { name: eventName, ...event },
-    ...props
-}: TrackedCTAPropsType) => {
+export const TrackedCTA = (props: TrackedCTAPropsType) => {
     return (
         <CallToAction
             {...props}

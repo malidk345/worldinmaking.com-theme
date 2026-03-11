@@ -357,4 +357,6 @@ const MenuBar: React.FC<MenuBarProps> = React.memo(({ menus, className, triggerA
     )
 })
 
+MenuBar.displayName = 'MenuBar'
+
 export default MenuBar

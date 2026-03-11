@@ -96,7 +96,6 @@ export default function SearchResults(props: SearchResultsProps) {
     const { items, refine } = useRefinementList({ attribute: 'type', sortBy: ['name:asc'] })
     const { close } = useSearch()
 
-    const { query } = useSearchBox()
     const onSelect = (result: Result | null) => {
         if (!result) return
 
@@ -285,7 +284,6 @@ const Hits: React.FC<HitsProps> = ({ activeOption, close }) => {
     const [initialLoad, setInitialLoad] = React.useState(false)
     const { hits } = useHits<Result>()
     const { status } = useInstantSearch()
-    const { query } = useSearchBox()
 
     useEffect(() => {
         if (!initialLoad && hits.length > 0) {
@@ -293,7 +291,7 @@ const Hits: React.FC<HitsProps> = ({ activeOption, close }) => {
         }
     }, [initialLoad, hits])
 
-    const onSelectHeading = (heading: { value: string; depth: number; fragment: string }) => {
+    const onSelectHeading = () => {
         close()
     }
 
