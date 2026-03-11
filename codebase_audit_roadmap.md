@@ -6,16 +6,16 @@ This document outlines our step-by-step plan to thoroughly scan, clean, and opti
 
 ## Phase 1: Static Analysis & TypeScript/ESLint Cleanup
 *Target: Identify and fix easily recognizable code defects.*
-- [ ] Run a comprehensive Next.js build / ESLint scan.
-- [ ] Resolve all `unused-vars`, `no-explicit-any`, and `ts-expect-error` issues.
-- [ ] Remove unused `import` statements across all components and pages.
-- [ ] Consolidate duplicated types and interfaces into dedicated definition files.
+- [x] Run a comprehensive Next.js build / ESLint scan.
+- [x] Resolve all `unused-vars`, `no-explicit-any`, and `ts-expect-error` issues.
+- [x] Remove unused `import` statements across all components and pages.
+- [x] Consolidate duplicated types and interfaces into dedicated definition files.
 
 ## Phase 2: Dead Code & Unused File Elimination
 *Target: Reduce bundle size and developer cognitive load by removing ghost code.*
-- [ ] Scan for components and utility functions that are defined but never used.
-- [ ] Delete orphaned files, obsolete components, and legacy scripts that are no longer part of the routing or UI hierarchy.
-- [ ] Detect and remove redundant CSS variables or styles that aren't tied to any frontend class.
+- [x] Scan for components and utility functions that are defined but never used.
+- [x] Delete orphaned files, obsolete components, and legacy scripts that are no longer part of the routing or UI hierarchy.
+- [x] Detect and remove redundant CSS variables or styles that aren't tied to any frontend class.
 
 ## Phase 3: Backend & Data-Fetching Optimization (Supabase)
 *Target: Improve query performance, eliminate redundant backend calls, and secure data flow.*

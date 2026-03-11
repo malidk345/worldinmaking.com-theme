@@ -1,0 +1,161 @@
+﻿[93m[4mUnused files[24m[39m (4)
+components/Corpus/index.tsx        
+components/Login/ProfileContent.tsx
+components/OSForm/textarea.tsx     
+components/WriteForWIM/index.tsx   
+[93m[4mUnused dependencies[24m[39m (13)
+@radix-ui/react-context-menu   package.json:23:6
+@radix-ui/react-tabs           package.json:28:6
+@supabase/auth-helpers-nextjs  package.json:30:6
+@tiptap/extension-subscript    package.json:43:6
+@tiptap/extension-superscript  package.json:44:6
+@tiptap/extension-text-align   package.json:49:6
+@types/dompurify               package.json:54:6
+clsx                           package.json:57:6
+react-intersection-observer    package.json:75:6
+react-scroll                   package.json:78:6
+react-scrollspy                package.json:79:6
+slugify                        package.json:84:6
+tailwind-merge                 package.json:86:6
+[93m[4mUnused devDependencies[24m[39m (4)
+@types/react-scroll     package.json:97:6 
+@types/react-scrollspy  package.json:98:6 
+eslint-config-next      package.json:101:6
+supabase                package.json:104:6
+[93m[4mUnlisted dependencies[24m[39m (1)
+postcss  postcss.config.mjs
+[93m[4mUnlisted binaries[24m[39m (1)
+powershell  package.json
+[93m[4mUnused exports[24m[39m (97)
+Context                                     context/App.tsx:43:14                         
+PROSE_CORE                                  constants/index.ts:1:14                       
+Context                                     context/Window.tsx:57:14                      
+isSupabaseConfigured                        lib/supabase.ts:80:14                         
+getExcerpt                        function  lib/markdown.ts:49:17                         
+getPostBySlug                               hooks/usePosts.ts:179:14                      
+getPostById                                 hooks/usePosts.ts:200:14                      
+themeOptions                                hooks/useTheme.tsx:15:14                      
+getWallpaperClasses                         hooks/useTheme.tsx:98:14                      
+getThemeSpecificBackgroundColors            hooks/useTheme.tsx:102:14                     
+CalloutNode                                 components/AdminPanel/RichTextEditor.tsx:50:14
+ReferencesNode                              components/AdminPanel/RichTextEditor.tsx:71:14
+default                                     components/RadixUI/Toolbar.tsx:80:16          
+ToolkitSection                    function  components/Toolkit/index.tsx:54:17            
+default                                     components/Toolkit/index.tsx:62:16            
+default                                     components/RadixUI/FileMenu.tsx:179:16        
+SearchUI                                    components/Search/SearchUI.tsx:161:14         
+container                                   components/CallToAction/index.tsx:144:14      
+child                                       components/CallToAction/index.tsx:157:14      
+button                                      components/CallToAction/index.tsx:172:14      
+TrackedCTA                                  components/CallToAction/index.tsx:263:14      
+ForumAvatar                                 components/Forum/ForumAvatar.tsx:42:14        
+isAppIconName                               components/OSIcons/AppIcon.tsx:199:14         
+IconImage                                   components/OSIcons/AppIcon.tsx:211:14         
+default                                     components/Search/InPageSearchBar.tsx:170:16  
+IconAndroid                                 components/OSIcons/Icons.tsx:27:14            
+IconAnthropic                               components/OSIcons/Icons.tsx:36:14            
+IconApple                                   components/OSIcons/Icons.tsx:45:14            
+IconBold                                    components/OSIcons/Icons.tsx:54:14            
+IconBrain                                   components/OSIcons/Icons.tsx:64:14            
+IconBrush                                   components/OSIcons/Icons.tsx:70:14            
+IconClosedCaptions                          components/OSIcons/Icons.tsx:76:14            
+IconClosedCaptionsFilled                    components/OSIcons/Icons.tsx:87:14            
+IconController                              components/OSIcons/Icons.tsx:97:14            
+IconCouch                                   components/OSIcons/Icons.tsx:103:14           
+IconDemoThumb                               components/OSIcons/Icons.tsx:110:14           
+IconChangelogThumb                          components/OSIcons/Icons.tsx:125:14           
+IconSparksJoy                               components/OSIcons/Icons.tsx:140:14           
+IconDice                                    components/OSIcons/Icons.tsx:151:14           
+IconDictator                                components/OSIcons/Icons.tsx:158:14           
+IconEnvelope                                components/OSIcons/Icons.tsx:169:14           
+IconFlutter                                 components/OSIcons/Icons.tsx:175:14           
+IconFullScreen                              components/OSIcons/Icons.tsx:208:14           
+IconGemini                                  components/OSIcons/Icons.tsx:218:14           
+IconGrid                                    components/OSIcons/Icons.tsx:279:14           
+IconHelicone                                components/OSIcons/Icons.tsx:285:14           
+IconJavaScript                              components/OSIcons/Icons.tsx:307:14           
+IconKeywordsAI                              components/OSIcons/Icons.tsx:317:14           
+IconLangChain                               components/OSIcons/Icons.tsx:328:14           
+IconLangfuse                                components/OSIcons/Icons.tsx:343:14           
+IconLink                                    components/OSIcons/Icons.tsx:362:14           
+IconListSquare                              components/OSIcons/Icons.tsx:377:14           
+IconMessages                                components/OSIcons/Icons.tsx:383:14           
+IconMusicEighthNote                         components/OSIcons/Icons.tsx:389:14           
+IconMug                                     components/OSIcons/Icons.tsx:396:14           
+IconNoEntry                                 components/OSIcons/Icons.tsx:402:14           
+IconOpenAI                                  components/OSIcons/Icons.tsx:408:14           
+IconOpenRouter                              components/OSIcons/Icons.tsx:414:14           
+IconPDF                                     components/OSIcons/Icons.tsx:420:14           
+IconPlayhead                                components/OSIcons/Icons.tsx:427:14           
+IconPopout                                  components/OSIcons/Icons.tsx:436:14           
+IconPresentation                            components/OSIcons/Icons.tsx:442:14           
+IconReactNative                             components/OSIcons/Icons.tsx:473:14           
+IconShirt                                   components/OSIcons/Icons.tsx:483:14           
+IconShop                                    components/OSIcons/Icons.tsx:489:14           
+IconSticker                                 components/OSIcons/Icons.tsx:496:14           
+IconStrapi                                  components/OSIcons/Icons.tsx:507:14           
+IconTag                                     components/OSIcons/Icons.tsx:527:14           
+IconTraceloop                               components/OSIcons/Icons.tsx:534:14           
+IconVercel                                  components/OSIcons/Icons.tsx:575:14           
+IconVolumeFull                              components/OSIcons/Icons.tsx:581:14           
+IconVolumeHalf                              components/OSIcons/Icons.tsx:587:14           
+IconVolumeMuted                             components/OSIcons/Icons.tsx:593:14           
+IconLinkedIn                                components/OSIcons/Icons.tsx:599:14           
+IconSubstack                                components/OSIcons/Icons.tsx:608:14           
+IconYouTube                                 components/OSIcons/Icons.tsx:617:14           
+IconInstagram                               components/OSIcons/Icons.tsx:627:14           
+IconGithub                                  components/OSIcons/Icons.tsx:691:14           
+IconXNotTwitter                             components/OSIcons/Icons.tsx:702:14           
+Digit0                                      components/OSIcons/Icons.tsx:711:14           
+Digit1                                      components/OSIcons/Icons.tsx:717:14           
+Digit2                                      components/OSIcons/Icons.tsx:723:14           
+Digit3                                      components/OSIcons/Icons.tsx:729:14           
+Digit4                                      components/OSIcons/Icons.tsx:735:14           
+Digit5                                      components/OSIcons/Icons.tsx:741:14           
+Digit6                                      components/OSIcons/Icons.tsx:747:14           
+Digit7                                      components/OSIcons/Icons.tsx:753:14           
+Digit8                                      components/OSIcons/Icons.tsx:759:14           
+Digit9                                      components/OSIcons/Icons.tsx:765:14           
+DigitDash                                   components/OSIcons/Icons.tsx:771:14           
+DigitComma                                  components/OSIcons/Icons.tsx:777:14           
+Edit                                        components/OSIcons/Icons.tsx:783:14           
+Issue                                       components/OSIcons/Icons.tsx:789:14           
+ExpandDocument                              components/OSIcons/Icons.tsx:800:14           
+Chevron                                     components/OSIcons/Icons.tsx:832:14           
+RightArrow                                  components/OSIcons/Icons.tsx:838:14           
+SearchProvider                              components/Search/SearchContext.tsx:40:14     
+[93m[4mUnused exported types[24m[39m (28)
+MenuType             type       components/RadixUI/MenuBar.tsx:25:13     
+MenuBarProps         interface  components/RadixUI/MenuBar.tsx:286:18    
+ImageData            interface  components/PostLayout/types.ts:5:18      
+ITopic               interface  components/PostLayout/types.ts:12:18     
+IContributor         interface  components/PostLayout/types.ts:18:18     
+ICrumb               interface  components/PostLayout/types.ts:57:18     
+ISidebarAction       interface  components/PostLayout/types.ts:62:18     
+INextPost            interface  components/PostLayout/types.ts:71:18     
+TableOfContents      interface  components/PostLayout/types.ts:82:18     
+IProps               interface  components/PostLayout/types.ts:88:18     
+WriterApplication    interface  hooks/useAdminData.ts:26:18              
+AdminCommunityPost   interface  hooks/useAdminData.ts:36:18              
+AdminCommunityReply  interface  hooks/useAdminData.ts:48:18              
+Profile              interface  hooks/useCommunity.ts:10:18              
+CommunityPost        interface  hooks/useCommunity.ts:16:18              
+CommunityReply       interface  hooks/useCommunity.ts:31:18              
+CommunityChannel     interface  hooks/useCommunity.ts:41:18              
+ThemeOption          interface  hooks/useTheme.tsx:3:18                  
+TooltipProps         interface  components/RadixUI/Tooltip.tsx:6:18      
+ToggleOption         interface  components/RadixUI/ToggleGroup.tsx:7:18  
+ToggleGroupProps     interface  components/RadixUI/ToggleGroup.tsx:14:18 
+Props                interface  components/Link/index.tsx:13:18          
+CTAPropsType         type       components/CallToAction/index.tsx:189:13 
+TrackedCTAPropsType  interface  components/CallToAction/index.tsx:207:18 
+AppIconProps         interface  components/OSIcons/AppIcon.tsx:201:18    
+IconImageProps       interface  components/OSIcons/AppIcon.tsx:206:18    
+ForumTopicGroup      interface  components/Forum/types.ts:18:18          
+SearchLocation       type       components/Search/SearchContext.tsx:13:13
+[93m[4mDuplicate exports[24m[39m (5)
+Toolbar|default          components/RadixUI/Toolbar.tsx       
+Toolkit|default          components/Toolkit/index.tsx         
+FileMenu|default         components/RadixUI/FileMenu.tsx      
+ForumAvatar|default      components/Forum/ForumAvatar.tsx     
+InPageSearchBar|default  components/Search/InPageSearchBar.tsx

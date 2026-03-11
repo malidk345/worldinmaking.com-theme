@@ -30,7 +30,6 @@ import {
     IconPlus,
     IconBookmark,
 } from '@posthog/icons'
-import '../Corpus/styles.css'
 
 interface PublicProfileProps {
     username: string

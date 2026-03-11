@@ -76,5 +76,3 @@ export const Toolbar = ({ elements, className, 'aria-label': ariaLabel }: Toolba
         </div>
     )
 }
-
-export default Toolbar
