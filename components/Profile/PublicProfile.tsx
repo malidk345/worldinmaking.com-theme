@@ -238,19 +238,29 @@ export default function PublicProfile({ username }: PublicProfileProps) {
     }, [addWindow, isOwner])
 
     const handleOpenPost = useCallback((post: PostItem) => {
-        if (isOwner) {
-            addWindow({
-                key: `post-editor-${post.id}`,
-                title: post.title || 'Untitled Post',
-                path: '/write-post',
-                icon: <BookOpen className="size-4" />,
-                props: { postId: post.id },
-            })
-            return
-        }
-
         openPost(post)
-    }, [addWindow, isOwner, openPost])
+    }, [openPost])
+
+    const handleEditPost = useCallback((post: PostItem) => {
+        if (!isOwner) return
+        addWindow({
+            key: `post-editor-${post.id}`,
+            title: post.title || 'Untitled Post',
+            path: '/write-post',
+            icon: <BookOpen className="size-4" />,
+            props: { postId: post.id },
+        })
+    }, [addWindow, isOwner])
+
+    const openNodeView = useCallback((node: NodeDoc) => {
+        addWindow({
+            key: `node-view-${node.id}`,
+            title: node.title || 'Untitled Node',
+            path: `/node/${node.id}`,
+            icon: <FileText className="size-4" />,
+            props: { nodeId: node.id, readOnly: true },
+        })
+    }, [addWindow])
 
     const handleDeletePost = useCallback(async (post: PostItem) => {
         if (!isOwner) return
@@ -711,7 +721,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                 ) : filteredNodes.length > 0 ? (
                                     <div className="corpus-doc-grid">
                                         {filteredNodes.map((node) => (
-                                            <article key={node.id} className="corpus-doc-card relative cursor-pointer" onClick={() => openNodeEditor(node)}>
+                                            <article key={node.id} className="corpus-doc-card relative cursor-pointer" onClick={() => openNodeView(node)}>
                                                 {isOwner && (
                                                     <div className="absolute right-2 top-2 z-10 flex items-center gap-1">
                                                         <button
@@ -776,7 +786,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                             type="button"
                                                             onClick={(e) => {
                                                                 e.stopPropagation()
-                                                                handleOpenPost(post)
+                                                                handleEditPost(post)
                                                             }}
                                                             className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-primary/10 bg-white/80 text-primary/60 backdrop-blur hover:text-primary"
                                                             aria-label={`edit ${post.title}`}

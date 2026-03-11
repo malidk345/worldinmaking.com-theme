@@ -8,6 +8,7 @@ import { WindowSearchUI } from 'components/Search/SearchUI'
 import { usePosts } from '../../hooks/usePosts'
 import { useCommunity } from '../../hooks/useCommunity'
 import BlogPostView from 'components/ReaderView/BlogPostView'
+import ReaderView from 'components/ReaderView'
 import PublicProfile from 'components/Profile/PublicProfile'
 import PostsView from 'components/Posts'
 import RichTextEditor from 'components/AdminPanel/RichTextEditor'
@@ -112,6 +113,12 @@ export default function WindowRouter({ item }: { item: AppWindow }) {
     // /admin
     if (path === '/admin') {
         return <AdminPanel item={item} />
+    }
+
+    // /node/:id (Published Read-Only Node View)
+    const nodeMatch = path.match(/^\/node\/([^/]+)/)
+    if (nodeMatch) {
+         return <NodePublishedRouteView nodeId={nodeMatch[1]} item={item} />
     }
 
     // /write (New Node / Canvas Experience)
@@ -229,6 +236,81 @@ function BlogRouteView({ slug }: { slug: string }) {
         <BlogPostView
             post={post}
         />
+    )
+}
+
+/** Node published route view */
+function NodePublishedRouteView({ nodeId, item }: { nodeId: string; item: AppWindow }) {
+    const [title, setTitle] = useState('fetching node...')
+    const [content, setContent] = useState('')
+    const [author, setAuthor] = useState<{username: string, avatar_url: string}|null>(null)
+    const [date, setDate] = useState('')
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        if (!nodeId) return
+        const load = async () => {
+            const { data } = await supabase
+                .from('nodes')
+                .select(`
+                    title, 
+                    content, 
+                    updated_at,
+                    profiles:author_id ( username, avatar_url )
+                `)
+                .eq('id', nodeId)
+                .single()
+            
+            if (data) {
+                setTitle(data.title || 'untitled node')
+                setContent(data.content || '')
+                setDate(data.updated_at)
+                // @ts-ignore
+                if (data.profiles && !Array.isArray(data.profiles)) {
+                    // @ts-ignore
+                    setAuthor(data.profiles)
+                } else if (Array.isArray(data.profiles)) {
+                    // @ts-ignore
+                    setAuthor(data.profiles[0])
+                }
+            } else {
+                setTitle('node not found')
+            }
+            setLoading(false)
+        }
+        load()
+    }, [nodeId])
+
+    if (loading) {
+        return <Loading fullScreen label="loading node..." />
+    }
+
+    const wordCount = content ? content.split(/\s+/).filter(Boolean).length : 0
+    const readTime = Math.max(1, Math.ceil(wordCount / 200))
+
+    const body = {
+        type: 'plain' as const,
+        content: content,
+        date: date,
+        contributors: author ? [{ 
+            name: author.username || 'anonymous', 
+            image: author.avatar_url, 
+            username: author.username 
+        }] : [],
+        tags: [{ label: 'node' }],
+        wordCount,
+        readTime
+    }
+
+    return (
+        <ReaderView
+            title={title}
+            body={body}
+            showQuestions={true}
+            commentThreadSlug={`node-${nodeId}`}
+        >
+            <div className="prose prose-sm sm:prose-base max-w-none text-primary dark:prose-invert node-canvas-preview" dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }} />
+        </ReaderView>
     )
 }
 
