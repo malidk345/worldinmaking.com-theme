@@ -807,5 +807,6 @@ const WindowRouter = React.memo(WindowRouterInner, (prev, next) => {
            JSON.stringify(prev.item.meta) === JSON.stringify(next.item.meta) &&
            JSON.stringify(prev.item.props) === JSON.stringify(next.item.props)
 })
+WindowRouter.displayName = 'WindowRouter'
 
 export default WindowRouter
