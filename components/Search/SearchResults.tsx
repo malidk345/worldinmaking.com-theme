@@ -443,7 +443,7 @@ const Hits: React.FC<HitsProps> = ({ activeOption, close }) => {
                                                 >
                                                     <Link
                                                         to={`/${activeOption.slug}#${heading.fragment}`}
-                                                        onClick={() => onSelectHeading(heading)}
+                                                        onClick={() => onSelectHeading()}
                                                         className="text-black/60 dark:text-white/60 group-hover:text-black/90 dark:group-hover:text-white/90"
                                                     >
                                                         {heading.value}
