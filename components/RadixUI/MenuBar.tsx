@@ -290,7 +290,7 @@ export interface MenuBarProps {
     triggerAsChild?: boolean
 }
 
-const MenuBar: React.FC<MenuBarProps> = ({ menus, className, triggerAsChild, customTriggerClasses }) => {
+const MenuBar: React.FC<MenuBarProps> = React.memo(({ menus, className, triggerAsChild, customTriggerClasses }) => {
     const { isMobile } = useApp()
 
     // Process menus for mobile if needed
@@ -355,6 +355,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ menus, className, triggerAsChild, cus
             })}
         </Menubar.Root>
     )
-}
+})
 
 export default MenuBar

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import ForumQuestionsTable from './ForumQuestionsTable'
 import ForumQuestionForm from './ForumQuestionForm'
 import ForumTopicSidebar from './ForumTopicSidebar'
@@ -24,24 +24,26 @@ export default function ForumPageLayout({
 }: ForumPageLayoutProps) {
     const [sortBy, setSortBy] = useState<'newest' | 'activity' | 'popular'>('newest')
 
-    const sortedQuestions = [...questions].sort((a, b) => {
-        if (sortBy === 'newest') {
-            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        }
-        if (sortBy === 'activity') {
-            const aLatest = a.replies.length > 0
-                ? new Date(a.replies[a.replies.length - 1].createdAt).getTime()
-                : new Date(a.createdAt).getTime()
-            const bLatest = b.replies.length > 0
-                ? new Date(b.replies[b.replies.length - 1].createdAt).getTime()
-                : new Date(b.createdAt).getTime()
-            return bLatest - aLatest
-        }
-        // popular
-        const aVotes = a.replies.reduce((sum, r) => sum + r.upvotes, 0)
-        const bVotes = b.replies.reduce((sum, r) => sum + r.upvotes, 0)
-        return bVotes - aVotes
-    })
+    const sortedQuestions = useMemo(() => {
+        return [...questions].sort((a, b) => {
+            if (sortBy === 'newest') {
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            }
+            if (sortBy === 'activity') {
+                const aLatest = a.replies.length > 0
+                    ? new Date(a.replies[a.replies.length - 1].createdAt).getTime()
+                    : new Date(a.createdAt).getTime()
+                const bLatest = b.replies.length > 0
+                    ? new Date(b.replies[b.replies.length - 1].createdAt).getTime()
+                    : new Date(b.createdAt).getTime()
+                return bLatest - aLatest
+            }
+            // popular
+            const aVotes = a.replies.reduce((sum, r) => sum + r.upvotes, 0)
+            const bVotes = b.replies.reduce((sum, r) => sum + r.upvotes, 0)
+            return bVotes - aVotes
+        })
+    }, [questions, sortBy])
 
     return (
         <div className="h-full overflow-y-auto custom-scrollbar bg-primary text-primary">

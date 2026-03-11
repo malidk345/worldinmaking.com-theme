@@ -81,13 +81,11 @@ export const useAdminData = () => {
                 addToast(`failed to fetch posts: ${fetchError.message}`, 'warning');
             }
 
-            const dbPosts = data || [];
-
-            setPosts(dbPosts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+            setPosts(data || []);
         } catch (e: unknown) {
             logger.error('[useAdminData] fetchPosts exception:', e);
             addToast('failed to fetch posts', 'error');
-            setError((e as Error).message);
+            if (e instanceof Error) setError(e.message);
         } finally {
             setLoading(false);
         }
@@ -269,12 +267,12 @@ export const useAdminData = () => {
 
     const updateCommunityPost = useCallback(async (id: number, updates: { title?: string; content?: string }) => {
         try {
-            const { error: updateError, count } = await supabase
+            const { data: refreshed, error: updateError } = await supabase
                 .from('community_posts')
                 .update(updates)
                 .eq('id', id)
-                .select('id')
-                .then(res => ({ error: res.error, count: res.data?.length || 0 }));
+                .select('*, profiles(id, username, avatar_url)')
+                .single();
 
             if (updateError) {
                 logger.error('[useAdminData] updateCommunityPost error:', updateError);
@@ -282,20 +280,9 @@ export const useAdminData = () => {
                 return null;
             }
 
-            if (count === 0) {
-                addToast('update blocked — only the comment author or a service-role admin can edit', 'warning');
-                return null;
-            }
-
-            const { data: refreshed } = await supabase
-                .from('community_posts')
-                .select('*, profiles(id, username, avatar_url)')
-                .eq('id', id)
-                .single();
-
             addToast('comment updated', 'success');
             if (refreshed) {
-                setCommunityPosts(prev => prev.map(p => p.id === id ? (refreshed as AdminCommunityPost) : p));
+                setCommunityPosts(prev => prev.map(p => p.id === id ? (refreshed as unknown as AdminCommunityPost) : p));
             } else {
                 setCommunityPosts(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
             }
@@ -359,12 +346,12 @@ export const useAdminData = () => {
 
     const updateCommunityReply = useCallback(async (id: number, content: string) => {
         try {
-            const { error: updateError, count } = await supabase
+            const { data: refreshed, error: updateError } = await supabase
                 .from('community_replies')
                 .update({ content })
                 .eq('id', id)
-                .select('id')
-                .then(res => ({ error: res.error, count: res.data?.length || 0 }));
+                .select('*, profiles(id, username, avatar_url)')
+                .single();
 
             if (updateError) {
                 logger.error('[useAdminData] updateCommunityReply error:', updateError);
@@ -372,20 +359,9 @@ export const useAdminData = () => {
                 return null;
             }
 
-            if (count === 0) {
-                addToast('update blocked — only the reply author or a service-role admin can edit', 'warning');
-                return null;
-            }
-
-            const { data: refreshed } = await supabase
-                .from('community_replies')
-                .select('*, profiles(id, username, avatar_url)')
-                .eq('id', id)
-                .single();
-
             addToast('reply updated', 'success');
             if (refreshed) {
-                setCommunityReplies(prev => prev.map(r => r.id === id ? (refreshed as AdminCommunityReply) : r));
+                setCommunityReplies(prev => prev.map(r => r.id === id ? (refreshed as unknown as AdminCommunityReply) : r));
             } else {
                 setCommunityReplies(prev => prev.map(r => r.id === id ? { ...r, content } : r));
             }

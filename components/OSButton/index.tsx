@@ -31,7 +31,7 @@ interface OSButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElemen
     zoomHover?: boolean | 'xs' | 'sm' | 'md' | 'lg'
 }
 
-const OSButton = React.forwardRef<HTMLButtonElement | HTMLAnchorElement, OSButtonProps>(
+const OSButton = React.memo(React.forwardRef<HTMLButtonElement | HTMLAnchorElement, OSButtonProps>(
     (
         {
             children,
@@ -168,7 +168,7 @@ const OSButton = React.forwardRef<HTMLButtonElement | HTMLAnchorElement, OSButto
         ) : (
             finalElement
         )
-    }
+    })
 )
 
 OSButton.displayName = 'OSButton'

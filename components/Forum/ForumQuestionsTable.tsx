@@ -49,7 +49,7 @@ const Status = ({ resolved }: { resolved: boolean }) => {
     )
 }
 
-const Row = ({
+const Row = React.memo(({
     question,
     sortBy,
     showBody,
@@ -120,14 +120,16 @@ const Row = ({
             </Link>
         </div>
     )
-}
+})
 
-export default function ForumQuestionsTable({
+Row.displayName = 'Row'
+
+const ForumQuestionsTable = React.memo(({
     questions,
     isLoading,
     sortBy = 'newest',
     showBody,
-}: ForumQuestionsTableProps) {
+}: ForumQuestionsTableProps) => {
     return (
         <ul className="m-0 p-0 list-none">
             <li className="grid grid-cols-12 pl-2 pr-3 py-1.5 items-center text-secondary !text-sm bg-accent rounded">
@@ -153,4 +155,8 @@ export default function ForumQuestionsTable({
             {isLoading && <Skeleton />}
         </ul>
     )
-}
+})
+
+ForumQuestionsTable.displayName = 'ForumQuestionsTable'
+
+export default ForumQuestionsTable

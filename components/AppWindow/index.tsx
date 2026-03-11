@@ -79,6 +79,9 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
     const [minimizing, setMinimizing] = useState(false)
     const [animating, setAnimating] = useState(true)
     const animationStartTimeRef = useRef<number | null>(null)
+    const [resizing, setResizing] = useState(false)
+    const [localSize, setLocalSize] = useState(item.size)
+    const [localPos, setLocalPos] = useState(item.position)
     const hasMobileAdjusted = useRef(false)
 
     useEffect(() => {
@@ -90,6 +93,13 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
     useEffect(() => {
         setRendered(true)
     }, [])
+
+    useEffect(() => {
+        if (!resizing && !dragging) {
+            setLocalSize(item.size)
+            setLocalPos(item.position)
+        }
+    }, [item.size, item.position, resizing, dragging])
 
     useEffect(() => {
         if (minimizing && !item.minimized) {
@@ -218,16 +228,20 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
         info: PanInfo,
         change: { x?: boolean; y?: boolean }
     ) => {
+        if (!resizing) setResizing(true)
         const bounds = constraintsRef.current?.getBoundingClientRect()
         const inset = 0
+        const currentSize = resizing ? localSize : size
+        const currentPos = resizing ? localPos : position
+        
         const update: { size: { height: number; width: number }; position?: { x: number } } = {
-            size: { ...size }
+            size: { ...currentSize }
         }
 
         if (change.y && bounds) {
-            const maxHeight = bounds.height - position.y - inset
+            const maxHeight = bounds.height - currentPos.y - inset
             update.size.height = Math.min(
-                Math.max(size.height + info.delta.y, sizeConstraints.min.height),
+                Math.max(currentSize.height + info.delta.y, sizeConstraints.min.height),
                 maxHeight
             )
         }
@@ -235,21 +249,26 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
         if (change.x && bounds) {
             const delta = leftDragResizing ? -info.delta.x : info.delta.x
             const maxWidth = leftDragResizing
-                ? position.x + size.width - inset
-                : bounds.width - position.x - inset
+                ? currentPos.x + currentSize.width - inset
+                : bounds.width - currentPos.x - inset
             update.size.width = Math.min(
-                Math.max(size.width + delta, sizeConstraints.min.width),
+                Math.max(currentSize.width + delta, sizeConstraints.min.width),
                 maxWidth
             )
             if (leftDragResizing) {
-                update.position = { x: Math.max(inset, position.x + size.width - update.size.width) }
+                update.position = { x: Math.max(inset, currentPos.x + currentSize.width - update.size.width) }
             }
         }
 
+        setLocalSize(update.size)
         if (update.position) {
-            update.position = { ...position, ...update.position }
+            setLocalPos({ ...currentPos, ...update.position })
         }
-        updateWindow(item, update as Partial<AppWindowType>)
+    }
+
+    const handleResizeEnd = () => {
+        setResizing(false)
+        updateWindow(item, { size: localSize, position: localPos })
     }
 
     const handleMouseDown = () => {
@@ -398,10 +417,10 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             }}
                             animate={{
                                 scale: 1,
-                                x: Math.round(position.x),
-                                y: Math.round(position.y),
-                                width: size.width,
-                                height: size.height,
+                                x: Math.round(resizing ? localPos.x : position.x),
+                                y: Math.round(resizing ? localPos.y : position.y),
+                                width: resizing ? localSize.width : size.width,
+                                height: resizing ? localSize.height : size.height,
                             }}
                             exit={{
                                 scale: 0.005,
@@ -642,6 +661,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                         dragMomentum={false}
                                         dragConstraints={{ left: 0, right: 0 }}
                                         onDrag={(_event, info) => handleDragResize(info, { x: true })}
+                                        onDragEnd={handleResizeEnd}
                                     >
                                         <div className="hidden group-hover:block absolute inset-y-0 right-0 w-[2px] bg-primary/30" />
                                     </motion.div>
@@ -653,7 +673,10 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                         dragConstraints={{ left: 0, right: 0 }}
                                         onDragStart={() => setLeftDragResizing(true)}
                                         onDrag={(_event, info) => handleDragResize(info, { x: true })}
-                                        onDragEnd={() => setLeftDragResizing(false)}
+                                        onDragEnd={() => {
+                                            setLeftDragResizing(false)
+                                            handleResizeEnd()
+                                        }}
                                     >
                                         <div className="hidden group-hover:block absolute inset-y-0 left-0 w-[2px] bg-primary/30" />
                                     </motion.div>
@@ -664,6 +687,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                         dragMomentum={false}
                                         dragConstraints={{ top: 0, bottom: 0 }}
                                         onDrag={(_event, info) => handleDragResize(info, { y: true })}
+                                        onDragEnd={handleResizeEnd}
                                     >
                                         <div className="hidden group-hover:block absolute inset-x-0 bottom-0 h-[2px] bg-primary/30" />
                                     </motion.div>
@@ -674,6 +698,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                         dragMomentum={false}
                                         dragConstraints={{ left: 0, top: 0, right: 0, bottom: 0 }}
                                         onDrag={(_event, info) => handleDragResize(info, { x: true, y: true })}
+                                        onDragEnd={handleResizeEnd}
                                     >
                                         <div className="hidden group-hover:block relative w-full h-full overflow-hidden rounded-bl">
                                             <div className="absolute -bottom-5 -right-5 w-8 h-8 bg-primary/10 border-t border-primary/30 -rotate-45" />

@@ -60,7 +60,7 @@ const adaptPost = (p: AdaptablePost) => {
  * Routes window content based on item.path.
  * This replaces item.element so every window gets proper React content.
  */
-export default function WindowRouter({ item }: { item: AppWindow }) {
+function WindowRouterInner({ item }: { item: AppWindow }) {
     const rawPath: string = item.path || ''
     const path: string = rawPath.replace(/\/+$/, '') || '/'
 
@@ -138,6 +138,7 @@ export default function WindowRouter({ item }: { item: AppWindow }) {
 
     return <div className="p-8 text-primary lowercase">content for {item.key}</div>
 }
+
 
 function CommunityMainRouteView() {
     const { channels, posts, loading, fetchPosts, createPost } = useCommunity()
@@ -799,3 +800,12 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
         </div>
     )
 }
+
+const WindowRouter = React.memo(WindowRouterInner, (prev, next) => {
+    return prev.item.path === next.item.path && 
+           prev.item.key === next.item.key &&
+           JSON.stringify(prev.item.meta) === JSON.stringify(next.item.meta) &&
+           JSON.stringify(prev.item.props) === JSON.stringify(next.item.props)
+})
+
+export default WindowRouter

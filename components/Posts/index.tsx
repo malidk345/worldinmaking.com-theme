@@ -22,7 +22,7 @@ const getPostHref = (slug?: string) => {
     return `/posts/${encodeURIComponent(slug)}`
 }
 
-export default function PostsView() {
+const PostsView = React.memo(() => {
     const { posts, loading } = usePosts()
     const { addWindow } = useApp()
 
@@ -115,4 +115,8 @@ export default function PostsView() {
             </div>
         </div>
     )
-}
+})
+
+PostsView.displayName = 'PostsView'
+
+export default PostsView
