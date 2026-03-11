@@ -118,7 +118,7 @@ export default function WindowRouter({ item }: { item: AppWindow }) {
     // /node/:id (Published Read-Only Node View)
     const nodeMatch = path.match(/^\/node\/([^/]+)/)
     if (nodeMatch) {
-         return <NodePublishedRouteView nodeId={nodeMatch[1]} item={item} />
+         return <NodePublishedRouteView nodeId={nodeMatch[1]} />
     }
 
     // /write (New Node / Canvas Experience)
@@ -240,7 +240,7 @@ function BlogRouteView({ slug }: { slug: string }) {
 }
 
 /** Node published route view */
-function NodePublishedRouteView({ nodeId, item }: { nodeId: string; item: AppWindow }) {
+function NodePublishedRouteView({ nodeId }: { nodeId: string }) {
     const [title, setTitle] = useState('fetching node...')
     const [content, setContent] = useState('')
     const [author, setAuthor] = useState<{username: string, avatar_url: string}|null>(null)
@@ -265,13 +265,11 @@ function NodePublishedRouteView({ nodeId, item }: { nodeId: string; item: AppWin
                 setTitle(data.title || 'untitled node')
                 setContent(data.content || '')
                 setDate(data.updated_at)
-                // @ts-ignore
-                if (data.profiles && !Array.isArray(data.profiles)) {
-                    // @ts-ignore
-                    setAuthor(data.profiles)
-                } else if (Array.isArray(data.profiles)) {
-                    // @ts-ignore
-                    setAuthor(data.profiles[0])
+                const profiles = data.profiles as any
+                if (profiles && !Array.isArray(profiles)) {
+                    setAuthor(profiles)
+                } else if (Array.isArray(profiles)) {
+                    setAuthor(profiles[0])
                 }
             } else {
                 setTitle('node not found')
@@ -325,10 +323,10 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
     const [nodeStatus, setNodeStatus] = useState<'draft' | 'published'>('draft')
 
     const [coverImage, setCoverImage] = useState<string | null>(null)
-    const [iconIndex, setIconIndex] = useState<number>(0)
+    const [iconIndex] = useState<number>(0)
     const [theme, setTheme] = useState<'default' | 'yellow' | 'green' | 'blue'>('default')
     const [nodeType, setNodeType] = useState<'canvas' | 'list' | 'journal'>('canvas')
-    const [tags, setTags] = useState<string[]>([])
+    const [, setTags] = useState<string[]>([])
 
     // Load existing node from Supabase when nodeId is provided
     useEffect(() => {

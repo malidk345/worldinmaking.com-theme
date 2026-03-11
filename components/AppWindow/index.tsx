@@ -15,7 +15,6 @@ import {
 } from '@posthog/icons'
 import { ContextMenu } from 'radix-ui'
 import { useApp } from '../../context/App'
-import { useToast } from '../../context/ToastContext'
 import type { AppWindow as AppWindowType } from '../../context/Window'
 import { WindowProvider } from '../../context/Window'
 import { IMenu } from 'components/PostLayout/types'

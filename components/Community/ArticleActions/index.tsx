@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useToast } from 'context/ToastContext'
 import VotePicker from 'components/VotePicker'
 import { Share2 } from 'lucide-react'
