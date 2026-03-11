@@ -3,7 +3,6 @@ import React, { Fragment } from 'react'
 import SearchResults from './SearchResults'
 import { InstantSearch } from 'react-instantsearch-hooks-web'
 import algoliasearch from 'algoliasearch/lite'
-import usePostHog from '../../hooks/usePostHog'
 
 type SearchContextValue = {
     isVisible: boolean
@@ -39,25 +38,18 @@ const SearchContext = React.createContext<SearchContextValue>({
 })
 
 export const SearchProvider = ({ children }: { children: React.ReactNode }) => {
-    const posthog = usePostHog()
     const [isVisible, setIsVisible] = React.useState<boolean>(false)
     const [initialFilter, setInitialFilter] = React.useState<SearchResultType | undefined>(undefined)
 
-    const open = React.useCallback((from: SearchLocation, filter?: SearchResultType) => {
-        posthog?.capture('web search opened', {
-            filter,
-            from,
-        })
-
+    const open = React.useCallback((_from: SearchLocation, filter?: SearchResultType) => {
         setInitialFilter(filter)
         setIsVisible(true)
-    }, [posthog])
+    }, [])
 
     const close = React.useCallback(() => {
-        posthog?.capture('web search closed')
         setIsVisible(false)
         setInitialFilter(undefined)
-    }, [posthog])
+    }, [])
 
     React.useEffect(() => {
         const handler = (event: KeyboardEvent) => {

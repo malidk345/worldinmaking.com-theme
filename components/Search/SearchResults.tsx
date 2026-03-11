@@ -9,9 +9,7 @@ import { useRouter } from 'next/navigation'
 import { Combobox, RadioGroup } from '@headlessui/react'
 import { RefinementListItem } from 'instantsearch.js/es/connectors/refinement-list/connectRefinementList'
 import { CallToAction } from 'components/CallToAction'
-import { IconSearch as Search } from '@posthog/icons'
-import usePostHog from '../../hooks/usePostHog'
-import { IconCheckCircle } from '@posthog/icons'
+import { IconCheckCircle, IconSearch as Search } from '@posthog/icons'
 import Tooltip from 'components/Tooltip'
 import ReactMarkdown from 'react-markdown'
 
@@ -99,18 +97,8 @@ export default function SearchResults(props: SearchResultsProps) {
     const { close } = useSearch()
 
     const { query } = useSearchBox()
-    const posthog = usePostHog()
-
     const onSelect = (result: Result | null) => {
         if (!result) return
-        posthog?.capture('web search result clicked', {
-            objectID: result.objectID,
-            title: result.title,
-            slug: result.slug,
-            category: category.type,
-            query,
-            type: result.type,
-        })
 
         close()
         router.push('/' + result.slug)
@@ -218,7 +206,6 @@ type RefinementListProps = {
 
 const RefinementList: React.FC<RefinementListProps> = ({ initialFilter, category, setCategory, items, refine }) => {
     const [selected, setSelected] = React.useState<Category>(category)
-    const posthog = usePostHog()
 
     useEffect(() => {
         if (initialFilter) {
@@ -235,13 +222,8 @@ const RefinementList: React.FC<RefinementListProps> = ({ initialFilter, category
             refine(category.type)
         }
 
-        posthog?.capture('web search category refine', {
-            previous: selected.type,
-            category: category.type,
-        })
-
         setSelected(category)
-    }, [category, refine, posthog, selected.type])
+    }, [category, refine, selected.type])
 
     return (
         <RadioGroup value={category} onChange={setCategory} className="bg-tan/25  -mt-[1px]">
@@ -303,7 +285,6 @@ const Hits: React.FC<HitsProps> = ({ activeOption, close }) => {
     const [initialLoad, setInitialLoad] = React.useState(false)
     const { hits } = useHits<Result>()
     const { status } = useInstantSearch()
-    const posthog = usePostHog()
     const { query } = useSearchBox()
 
     useEffect(() => {
@@ -313,15 +294,6 @@ const Hits: React.FC<HitsProps> = ({ activeOption, close }) => {
     }, [initialLoad, hits])
 
     const onSelectHeading = (heading: { value: string; depth: number; fragment: string }) => {
-        posthog?.capture('web search result heading clicked', {
-            objectID: activeOption?.objectID,
-            title: activeOption?.title,
-            slug: activeOption?.slug,
-            fragment: heading.fragment,
-            query,
-            heading: heading.value,
-            type: activeOption?.type,
-        })
         close()
     }
 

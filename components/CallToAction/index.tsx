@@ -1,7 +1,6 @@
 import cntl from 'cntl'
 import Link from 'components/Link'
 import React from 'react'
-import usePostHog from '../../hooks/usePostHog'
 
 const sizes = {
     xs: cntl`
@@ -231,9 +230,7 @@ export const CallToAction = ({
 }: CTAPropsType) => {
     const url = to || href || ''
 
-    const posthog = usePostHog()
     const wrappedOnClick = () => {
-        posthog?.createPersonProfile?.()
         if (onClick) onClick()
     }
     return (
@@ -267,13 +264,10 @@ export const TrackedCTA = ({
     event: { name: eventName, ...event },
     ...props
 }: TrackedCTAPropsType) => {
-    const posthog = usePostHog()
-
     return (
         <CallToAction
             {...props}
             onClick={() => {
-                posthog?.capture(eventName, event)
                 if (props.onClick) props.onClick()
             }}
         />
