@@ -65,7 +65,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .map((email) => email.trim().toLowerCase())
         .filter(Boolean);
 
-    const fetchProfile = useCallback(async (userId: string) => {
+    const fetchProfile = useCallback(async (userId: string, retryCount = 0) => {
         const fullSelect = 'username, avatar_url, cover_url, role, bio, website, github, linkedin, twitter, pronouns, location';
         const minimalSelect = 'username, avatar_url, role';
 
@@ -79,6 +79,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setHasExtendedProfileFields(true);
             setProfile(data as Profile);
             return;
+        }
+
+        // If profile doesn't exist (PGRST116 is code for "no rows found")
+        if (error && (error.code === 'PGRST116' || error.message?.includes('0 rows'))) {
+            // Only attempt to auto-create profile once
+            if (retryCount === 0) {
+                logger.warn('[Auth] Profile missing, attempting auto-creation for:', userId);
+                
+                const { data: userData } = await supabase.auth.getUser();
+                if (userData?.user) {
+                    const fallbackUsername = userData.user.email?.split('@')[0] || `user_${userId.slice(0, 5)}`;
+                    
+                    const { error: insertError } = await supabase
+                        .from('profiles')
+                        .insert({
+                            id: userId,
+                            username: fallbackUsername,
+                            email: userData.user.email,
+                            role: 'member'
+                        });
+
+                    if (!insertError) {
+                        // Retry fetching now that it's created
+                        return fetchProfile(userId, 1);
+                    } else {
+                        logger.error('[Auth] Profile auto-creation failed:', insertError);
+                    }
+                }
+            }
         }
 
         if (error) {
