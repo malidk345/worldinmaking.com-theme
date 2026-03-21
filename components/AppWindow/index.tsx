@@ -405,8 +405,8 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             ref={windowRef}
                             data-app="AppWindow"
                             data-scheme="tertiary"
-                            className={`@container absolute flex flex-col backdrop-blur-3xl-safe border ${isFocused ? 'shadow-2xl border-primary ring-1 ring-primary/10' : 'shadow-lg border-primary/30 opacity-95'
-                                } ${dragging ? 'select-none' : ''} ${isMaximized ? 'rounded-none' : 'rounded-sm'} ${chrome ? 'overflow-hidden' : ''}`}
+                            className={`@container absolute !select-auto flex flex-col bg-[rgba(var(--bg),0.65)] backdrop-blur-3xl ${isFocused ? 'shadow-2xl border-primary ring-[0.5px] ring-primary/10' : 'shadow-lg border-input'
+                                } ${dragging ? '[&_*]:select-none' : ''} ${item.minimal ? '!shadow-none' : (isMaximized ? 'rounded-none border-b border-primary' : 'border rounded')} ${chrome ? 'overflow-hidden' : ''}`}
                             style={{ zIndex: item.zIndex }}
                             initial={{
                                 scale: 0.08,
@@ -471,8 +471,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                 <div
                                     data-scheme="tertiary"
                                     onDoubleClick={handleDoubleClick}
-                                    className={`flex-shrink-0 w-full flex @md:grid grid-cols-[minmax(100px,auto)_1fr_minmax(100px,auto)] gap-1 items-center py-0.5 pl-1.5 pr-0.5 bg-primary/20 backdrop-blur-3xl-safe ${siteSettings.experience === 'boring' ? '' : 'cursor-move'
-                                        }`}
+                                    className={`flex-shrink-0 w-full flex @md:grid grid-cols-[minmax(100px,auto)_1fr_minmax(100px,auto)] gap-1 items-center py-0.5 pl-1.5 pr-0.5 bg-transparent ${siteSettings.experience === 'boring' ? '' : 'cursor-move'}`}
                                     onPointerDown={(e) => controls.start(e)}
                                 >
                                     <MenuBar
