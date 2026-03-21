@@ -22,8 +22,9 @@ export interface Post {
     headings: { id: string, text: string, level: number }[];
     image: string | null;
     ribbon?: string;
-    translations?: Record<string, { title: string, content: string, excerpt?: string }>;
+    translations?: Record<string, { title: string, content: string, excerpt?: string, slug?: string }>;
     language?: string;
+    originalLanguage?: string;
     is_approved: boolean;
     authors?: { name: string, avatar: string, username?: string }[];
     tags?: string[];
@@ -43,8 +44,9 @@ interface DBPost {
     image_url?: string;
     image?: string;
     ribbon?: string;
-    translations?: Record<string, { title: string, content: string, excerpt?: string }>;
+    translations?: Record<string, { title: string, content: string, excerpt?: string, slug?: string }>;
     language?: string;
+    originalLanguage?: string;
     is_approved?: boolean;
 }
 
@@ -130,6 +132,7 @@ const adaptPost = (p: DBPost): Post | null => {
         ribbon: p.ribbon || '#3546AB',
         translations: p.translations || {},
         language: p.language || 'en',
+        originalLanguage: p.originalLanguage,
         is_approved: Boolean(p.is_approved),
         authors: [{ name: p.author || 'Unknown', avatar: p.author_avatar || '', username: p.author || 'Unknown' }]
     };
@@ -200,6 +203,7 @@ export const getPostBySlug = async (slug: string): Promise<Post | null> => {
                         content: postData.translations[lang].content || postData.content,
                         excerpt: postData.translations[lang].excerpt || postData.excerpt,
                         language: lang,
+                        originalLanguage: postData.language,
                     };
                     break;
                 }

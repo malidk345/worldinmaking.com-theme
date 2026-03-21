@@ -218,13 +218,42 @@ function CommunityQuestionRouteView({ permalink }: { permalink: string }) {
 /** Separate component so usePosts hook can be called within the router */
 function BlogRouteView({ slug }: { slug: string }) {
     const { posts, loading } = usePosts()
-    const post = posts.find((p) => p.slug === slug || p.slug === `/blog/${slug}`)
+    
+    let adaptedPost = null;
+    const decodedSlug = decodeURIComponent(slug);
+    
+    for (const p of posts) {
+        // Compare with both decoded and original to be safe
+        if (p.slug === decodedSlug || p.slug === slug || p.slug === `/blog/${slug}` || p.slug === `/blog/${decodedSlug}`) {
+            adaptedPost = { ...p };
+            break;
+        }
+        if (p.translations) {
+            let found = false;
+            for (const lang of Object.keys(p.translations)) {
+                const transSlug = p.translations[lang]?.slug;
+                if (transSlug === decodedSlug || transSlug === slug) {
+                    adaptedPost = {
+                        ...p,
+                        title: p.translations[lang].title || p.title,
+                        content: p.translations[lang].content || p.content,
+                        excerpt: p.translations[lang].excerpt || p.excerpt,
+                        language: lang,
+                        originalLanguage: p.language,
+                    };
+                    found = true;
+                    break;
+                }
+            }
+            if (found) break;
+        }
+    }
 
     if (loading && posts.length === 0) {
         return <Loading fullScreen label="fetching node" />
     }
 
-    if (!post) {
+    if (!adaptedPost) {
         return (
             <div className="p-8 text-center">
                 <h2 className="text-lg font-bold text-primary">post not found</h2>
@@ -235,7 +264,7 @@ function BlogRouteView({ slug }: { slug: string }) {
 
     return (
         <BlogPostView
-            post={post}
+            post={adaptedPost}
         />
     )
 }

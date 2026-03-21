@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useMemo } from 'react'
+import React, { useMemo, useRef, useEffect } from 'react'
 import ReaderView from './index'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -24,8 +24,9 @@ interface BlogPostViewProps {
         content: string
         tags?: string[]
         headings: { id: string, text: string, level: number }[]
-        translations?: Record<string, { title: string, content: string, excerpt?: string }>
+        translations?: Record<string, { title: string, content: string, excerpt?: string, slug?: string }>
         language?: string
+        originalLanguage?: string
         description?: string
         slug?: string
     }
@@ -43,8 +44,35 @@ BlogPostView.displayName = 'BlogPostView'
 
 export default BlogPostView
 
+import { useApp } from 'context/App'
+
 const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
     const { currentLanguage } = useReaderView()
+    const { focusedWindow, updateWindow } = useApp()
+    const isFirstRender = useRef(true)
+
+    useEffect(() => {
+        if (isFirstRender.current) {
+            isFirstRender.current = false
+            return
+        }
+        
+        const rootLanguage = post.originalLanguage || post.language || 'en'
+        let targetSlug = post.slug
+        
+        if (currentLanguage !== rootLanguage) {
+            targetSlug = post.translations?.[currentLanguage]?.slug || post.slug
+        }
+
+        const newPath = `/posts/${targetSlug}`
+        
+        if (targetSlug && window.location.pathname !== newPath) {
+            window.history.pushState(null, '', newPath)
+            if (focusedWindow && focusedWindow.path !== newPath) {
+                updateWindow(focusedWindow, { path: newPath })
+            }
+        }
+    }, [currentLanguage, post, focusedWindow, updateWindow])
 
     // Get content based on current language
     const isOriginal = currentLanguage === (post.language || 'en')
@@ -131,7 +159,7 @@ const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
     const sanitizedProcessedContent = useMemo(() => sanitizeHtml(processedContent), [processedContent])
 
     const availableLanguages = useMemo(() => {
-        const langs = [post.language || 'en']
+        const langs = [post.originalLanguage || post.language || 'en']
         if (post.translations) {
             langs.push(...Object.keys(post.translations))
         }

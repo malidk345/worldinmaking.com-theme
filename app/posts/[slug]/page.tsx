@@ -38,6 +38,7 @@ async function getPost(slug: string) {
             content: postData.translations[lang].content || postData.content,
             excerpt: postData.translations[lang].excerpt || postData.excerpt,
             language: lang,
+            originalLanguage: postData.language,
           };
           break;
         }
