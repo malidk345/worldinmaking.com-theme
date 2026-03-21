@@ -38,7 +38,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
     const [newPostImageUrl, setNewPostImageUrl] = useState('')
     const [newPostSlug, setNewPostSlug] = useState('')
     const [newPostPublished, setNewPostPublished] = useState(true)
-    const [translations, setTranslations] = useState<Record<string, { title: string, content: string, excerpt?: string }>>({})
+    const [translations, setTranslations] = useState<Record<string, { title: string, content: string, excerpt?: string, slug?: string }>>({})
 
     // Auto-save: debounced draft persistence
     const autoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -189,7 +189,8 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
         const currentData = {
             title: newPostTitle,
             content: newPostContent,
-            excerpt: newPostExcerpt
+            excerpt: newPostExcerpt,
+            slug: newPostSlug
         }
 
         setTranslations(prev => ({
@@ -206,11 +207,13 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
             setNewPostTitle(nextData.title || '')
             setNewPostContent(nextData.content || '')
             setNewPostExcerpt(nextData.excerpt || '')
+            setNewPostSlug(nextData.slug || '')
         } else {
             // If new language, clear fields
             setNewPostTitle('')
             setNewPostContent('')
             setNewPostExcerpt('')
+            setNewPostSlug('')
         }
 
         setCurrentEditLanguage(newLang)
@@ -221,7 +224,8 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
         const currentData = {
             title: newPostTitle,
             content: newPostContent,
-            excerpt: newPostExcerpt
+            excerpt: newPostExcerpt,
+            slug: newPostSlug
         }
 
         const finalTranslations = {
@@ -241,6 +245,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
         const finalTitle = rootContent?.title || newPostTitle
         const finalContent = rootContent?.content || newPostContent
         const finalExcerpt = rootContent?.excerpt || newPostExcerpt
+        const finalSlug = rootContent?.slug || newPostSlug || toSlug(finalTitle)
 
         // 3. Remove the root language from the translations object to avoid redundancy
         // (Supabase stores root in columns, translations in JSONB)
@@ -250,7 +255,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
         const postData = {
             title: finalTitle,
             content: finalContent,
-            slug: newPostSlug || toSlug(finalTitle), // Preserve manual slug if entered
+            slug: finalSlug, // Preserve manual slug if entered
             author: profile?.username || user?.email?.split('@')[0] || 'unknown',
             author_avatar: profile?.avatar_url || '',
             published: newPostPublished,

@@ -181,8 +181,8 @@ export const getPostBySlug = async (slug: string): Promise<Post | null> => {
         const { data, error } = await supabase
             .from('posts')
             .select('*')
-            .eq('slug', slug)
             .eq('published', true)
+            .or(`slug.eq.${slug},translations->en->>slug.eq.${slug},translations->tr->>slug.eq.${slug},translations->de->>slug.eq.${slug},translations->es->>slug.eq.${slug}`)
             .single();
 
         if (error) {
@@ -190,7 +190,23 @@ export const getPostBySlug = async (slug: string): Promise<Post | null> => {
             return null;
         }
 
-        return adaptPost(data);
+        let postData = data;
+        if (postData && postData.slug !== slug && postData.translations) {
+            for (const lang of Object.keys(postData.translations)) {
+                if (postData.translations[lang]?.slug === slug) {
+                    postData = {
+                        ...postData,
+                        title: postData.translations[lang].title || postData.title,
+                        content: postData.translations[lang].content || postData.content,
+                        excerpt: postData.translations[lang].excerpt || postData.excerpt,
+                        language: lang,
+                    };
+                    break;
+                }
+            }
+        }
+
+        return adaptPost(postData);
     } catch (e: unknown) {
         logger.error('[getPostBySlug] Exception:', e);
         return null;

@@ -11,9 +11,9 @@ async function getPost(slug: string) {
   if (!supabaseUrl || !supabaseKey || !slug) return null;
 
   const url = new URL("/rest/v1/posts", supabaseUrl);
-  url.searchParams.set("select", "title,slug,excerpt,content,image_url,author,author_avatar,category,created_at,language");
-  url.searchParams.set("slug", `eq.${slug}`);
+  url.searchParams.set("select", "title,slug,excerpt,content,image_url,author,author_avatar,category,created_at,language,translations");
   url.searchParams.set("published", "eq.true");
+  url.searchParams.set("or", `(slug.eq.${slug},translations->en->>slug.eq.${slug},translations->tr->>slug.eq.${slug},translations->de->>slug.eq.${slug},translations->es->>slug.eq.${slug})`);
   url.searchParams.set("limit", "1");
 
   try {
@@ -27,7 +27,23 @@ async function getPost(slug: string) {
 
     if (!res.ok) return null;
     const data = await res.json();
-    return data?.[0] || null;
+    let postData = data?.[0] || null;
+
+    if (postData && postData.slug !== slug && postData.translations) {
+      for (const lang of Object.keys(postData.translations)) {
+        if (postData.translations[lang]?.slug === slug) {
+          postData = {
+            ...postData,
+            title: postData.translations[lang].title || postData.title,
+            content: postData.translations[lang].content || postData.content,
+            excerpt: postData.translations[lang].excerpt || postData.excerpt,
+            language: lang,
+          };
+          break;
+        }
+      }
+    }
+    return postData;
   } catch {
     return null;
   }

@@ -18,7 +18,7 @@ export interface AdminPost {
     author_avatar?: string;
     excerpt?: string;
     isLocal?: boolean;
-    translations?: Record<string, { title: string, content: string, excerpt?: string }>;
+    translations?: Record<string, { title: string, content: string, excerpt?: string, slug?: string }>;
     language?: string;
     is_approved: boolean;
 }
