@@ -307,6 +307,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
             }
             return w
         }))
+        // Keep focusedWindow in sync so URL Sync effect picks up path changes
+        if (updates.path) {
+            setFocusedWindow((prev) => prev?.key === key ? { ...prev, ...updates } : prev)
+        }
         return updated
     }, [])
 

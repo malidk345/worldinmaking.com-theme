@@ -4,6 +4,7 @@ import React from 'react'
 import CloudinaryImage from 'components/CloudinaryImage'
 import { IconUser } from '@posthog/icons'
 import { useApp } from 'context/App'
+import { useWindow } from 'context/Window'
 
 interface Contributor {
     name: string
@@ -13,7 +14,8 @@ interface Contributor {
 }
 
 export const ContributorsSmall = ({ contributors }: { contributors?: Contributor[] }) => {
-    const { addWindow } = useApp()
+    const { addWindow, isMobile } = useApp()
+    const windowCtx = useWindow()
 
     return contributors?.[0] ? (
         <div className="not-prose">
@@ -30,11 +32,15 @@ export const ContributorsSmall = ({ contributors }: { contributors?: Contributor
                                 onClick={(e) => {
                                     e.preventDefault()
                                     e.stopPropagation()
-                                    addWindow({
-                                        key: profileKey,
-                                        path: profilePath,
-                                        title: `${username || name} profile`
-                                    })
+                                    if (isMobile && windowCtx?.navigate) {
+                                        windowCtx.navigate(profilePath)
+                                    } else {
+                                        addWindow({
+                                            key: profileKey,
+                                            path: profilePath,
+                                            title: `${username || name} profile`
+                                        })
+                                    }
                                 }}
                                 className="flex items-center gap-2 hover:opacity-70 transition-opacity"
                             >

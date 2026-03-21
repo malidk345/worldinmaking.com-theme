@@ -48,14 +48,13 @@ import { useApp } from 'context/App'
 
 const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
     const { currentLanguage } = useReaderView()
-    const { focusedWindow, updateWindow } = useApp()
-    const isFirstRender = useRef(true)
+    const { updateWindow } = useApp()
+    const prevLanguageRef = useRef(currentLanguage)
 
     useEffect(() => {
-        if (isFirstRender.current) {
-            isFirstRender.current = false
-            return
-        }
+        // Only fire when language actually changes, not on other re-renders
+        if (prevLanguageRef.current === currentLanguage) return
+        prevLanguageRef.current = currentLanguage
         
         const rootLanguage = post.originalLanguage || post.language || 'en'
         let targetSlug = post.slug
@@ -67,12 +66,9 @@ const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
         const newPath = `/posts/${targetSlug}`
         
         if (targetSlug && window.location.pathname !== newPath) {
-            window.history.pushState(null, '', newPath)
-            if (focusedWindow && focusedWindow.path !== newPath) {
-                updateWindow(focusedWindow, { path: newPath })
-            }
+            window.history.replaceState(null, '', newPath)
         }
-    }, [currentLanguage, post, focusedWindow, updateWindow])
+    }, [currentLanguage, post])
 
     // Get content based on current language
     const isOriginal = currentLanguage === (post.language || 'en')

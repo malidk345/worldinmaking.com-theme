@@ -30,7 +30,7 @@ export default function Link({
     onClick,
     ...other
 }: Props) {
-    const { addWindow } = useApp()
+    const { addWindow, isMobile } = useApp()
     const { navigate, appWindow } = useWindow()
 
     // Strip non-DOM props so they don't get spread onto <a> / <NextLink>
@@ -52,12 +52,34 @@ export default function Link({
                 return
             }
 
-            // Case 2: If we are already inside a window, update THIS window's path
-            // unless it's explicitly forbidden or it's the home window
-            if (appWindow && navigate && appWindow.key !== 'home') {
-                e.preventDefault()
-                navigate(to)
-                return
+            // Case 2: Inside a window — decide between in-window nav or new window
+            if (appWindow && appWindow.key !== 'home') {
+                // On mobile: always navigate within current window (fullscreen)
+                if (isMobile && navigate) {
+                    e.preventDefault()
+                    navigate(to)
+                    return
+                }
+
+                // On desktop: cross-type links open new windows, same-type navigate in-place
+                const currentBase = (appWindow.path || '').split('/')[1] || ''
+                const targetBase = to.split('/')[1] || ''
+
+                if (currentBase !== targetBase) {
+                    e.preventDefault()
+                    addWindow({
+                        key: to,
+                        path: to,
+                        title: to.split('/').pop() || 'window'
+                    })
+                    return
+                }
+
+                if (navigate) {
+                    e.preventDefault()
+                    navigate(to)
+                    return
+                }
             }
         }
     }
