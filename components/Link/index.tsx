@@ -30,7 +30,7 @@ export default function Link({
     onClick,
     ...other
 }: Props) {
-    const { addWindow, isMobile } = useApp()
+    const { addWindow } = useApp()
     const { navigate, appWindow } = useWindow()
 
     // Strip non-DOM props so they don't get spread onto <a> / <NextLink>
@@ -53,15 +53,9 @@ export default function Link({
             }
 
             // Case 2: Inside a window — decide between in-window nav or new window
+            // Cross-type links (e.g. post → profile) open as new windows on everywhere.
+            // Same-type links (post → post) navigate within current window.
             if (appWindow && appWindow.key !== 'home') {
-                // On mobile: always navigate within current window (fullscreen)
-                if (isMobile && navigate) {
-                    e.preventDefault()
-                    navigate(to)
-                    return
-                }
-
-                // On desktop: cross-type links open new windows, same-type navigate in-place
                 const currentBase = (appWindow.path || '').split('/')[1] || ''
                 const targetBase = to.split('/')[1] || ''
 
