@@ -51,7 +51,7 @@ export function LanguageSelector({
                     >
                         <div className="p-2 border-b border-primary bg-accent/30 flex items-center gap-2">
                             <IconGlobe className="size-3.5 opacity-50" />
-                            <span className="text-[10px] font-black uppercase tracking-widest opacity-50 lowercase">select language</span>
+                            <span className="text-[10px] font-black tracking-widest opacity-50 lowercase">select language</span>
                         </div>
                         <div className="py-1">
                             {SUPPORTED_LANGUAGES.filter(lang => !availableLanguages || availableLanguages.includes(lang.code)).map((lang) => {
