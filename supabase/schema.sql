@@ -403,6 +403,49 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 DROP TRIGGER IF EXISTS trg_restrict_is_approved ON public.posts;
 CREATE TRIGGER trg_restrict_is_approved BEFORE UPDATE ON public.posts FOR EACH ROW EXECUTE PROCEDURE restrict_is_approved();
 
+-- SECURITY: Protect 'role' in profiles from Privilege Escalation
+CREATE OR REPLACE FUNCTION restrict_profile_role()
+RETURNS trigger AS $$
+BEGIN
+    IF NEW.role IS DISTINCT FROM OLD.role THEN
+        -- Only allow role changes if the user performing the change is ALREADY an admin
+        IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin') THEN
+            NEW.role = OLD.role;
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_restrict_profile_role ON public.profiles;
+CREATE TRIGGER trg_restrict_profile_role BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE PROCEDURE restrict_profile_role();
+
+-- SECURITY: Protect 'author_id' from being reassigned by malicious users (Post Hijacking)
+CREATE OR REPLACE FUNCTION restrict_author_id()
+RETURNS trigger AS $$
+BEGIN
+    IF NEW.author_id IS DISTINCT FROM OLD.author_id THEN
+        -- Users updating their own posts cannot transfer the authorship to someone else
+        IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin') THEN
+            NEW.author_id = OLD.author_id;
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_restrict_author_id_posts ON public.posts;
+CREATE TRIGGER trg_restrict_author_id_posts BEFORE UPDATE ON public.posts FOR EACH ROW EXECUTE PROCEDURE restrict_author_id();
+
+DROP TRIGGER IF EXISTS trg_restrict_author_id_nodes ON public.nodes;
+CREATE TRIGGER trg_restrict_author_id_nodes BEFORE UPDATE ON public.nodes FOR EACH ROW EXECUTE PROCEDURE restrict_author_id();
+
+DROP TRIGGER IF EXISTS trg_restrict_author_id_com_posts ON public.community_posts;
+CREATE TRIGGER trg_restrict_author_id_com_posts BEFORE UPDATE ON public.community_posts FOR EACH ROW EXECUTE PROCEDURE restrict_author_id();
+
+DROP TRIGGER IF EXISTS trg_restrict_author_id_com_replies ON public.community_replies;
+CREATE TRIGGER trg_restrict_author_id_com_replies BEFORE UPDATE ON public.community_replies FOR EACH ROW EXECUTE PROCEDURE restrict_author_id();
+
 -- FINAL STEP: ADMIN
 UPDATE public.profiles SET role = 'admin' WHERE id IN (SELECT id FROM auth.users WHERE email = 'dursunkayamustafa@gmail.com');
 
