@@ -70,9 +70,9 @@ export default function CommentSection({
             {loading && posts.length === 0 ? (
                 <Loading label="syncing discussion" />
             ) : posts.length > 0 ? (
-                <ul className="not-prose m-0 p-0 list-none mb-6 space-y-6">
+                <ul className="not-prose m-0 p-0 list-none mb-6 space-y-1">
                     {adaptedPosts.map((post) => (
-                        <li key={post.id} className="border-l-2 border-border pl-4">
+                        <li key={post.id} className="border-l border-black/10 dark:border-white/10 pl-3">
                             <ForumQuestionCard
                                 question={post}
                                 isComment={true}

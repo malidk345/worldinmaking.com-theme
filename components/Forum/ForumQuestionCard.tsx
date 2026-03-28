@@ -12,6 +12,7 @@ import OSButton from 'components/OSButton'
 import { IconPencil, IconArchive, IconUndo } from '@posthog/icons'
 import ViewCounter from 'components/ViewCounter'
 import VotePicker from 'components/VotePicker'
+import ForumAvatar from './ForumAvatar'
 import { supabase } from 'lib/supabase'
 
 import { useCommunity } from 'hooks/useCommunity'
@@ -122,11 +123,24 @@ export default function ForumQuestionCard({
                 </div>
             )}
 
-            <div className={`flex flex-wrap sm:flex-nowrap items-center space-x-2 w-full ${isInForum ? 'pt-3 sm:pt-5 pl-3 sm:pl-5 pr-3 sm:pr-8' : ''} ${!question.subject ? '-mb-2' : ''}`}>
-                <ForumProfileBadge
-                    profile={question.profile}
-                    className={question.archived ? 'opacity-50' : ''}
-                />
+            <div className={`flex flex-wrap sm:flex-nowrap items-center w-full ${isComment ? 'gap-1.5' : 'space-x-2'} ${isInForum ? 'pt-3 sm:pt-5 pl-3 sm:pl-5 pr-3 sm:pr-8' : ''} ${!question.subject ? (isComment ? '-mb-1' : '-mb-2') : ''}`}>
+                {isComment ? (
+                    <Link
+                        to={`/profile/${question.profile.firstName}`}
+                        className="flex items-center text-primary hover:!underline !no-underline gap-1.5 shrink-0"
+                    >
+                        <ForumAvatar
+                            className="size-[22px] rounded-full"
+                            image={question.profile.avatar}
+                        />
+                        <strong className="text-xs">{question.profile.firstName || 'anonymous'}</strong>
+                    </Link>
+                ) : (
+                    <ForumProfileBadge
+                        profile={question.profile}
+                        className={question.archived ? 'opacity-50' : ''}
+                    />
+                )}
                 <ForumDays
                     created={question.createdAt}
                     profile={question.profile}
@@ -153,11 +167,11 @@ export default function ForumQuestionCard({
 
             <div className={question.archived ? 'opacity-50' : ''}>
                 <div
-                    className={`pb-4 ${isComment ? '' : isInForum ? 'pl-3 sm:pl-[calc(2.5rem_+_30px)] pr-3 sm:pr-8 mt-2 sm:mt-0' : 'squeak-left-border ml-5 pl-[30px]'
+                    className={`${isComment ? 'pb-2' : 'pb-4'} ${isComment ? 'pl-[30px]' : isInForum ? 'pl-3 sm:pl-[calc(2.5rem_+_30px)] pr-3 sm:pr-8 mt-2 sm:mt-0' : 'squeak-left-border ml-5 pl-[30px]'
                         }`}
                 >
                     {question.subject && (
-                        <h3 className="text-base font-semibold !m-0 pb-1 leading-5">
+                        <h3 className={`font-semibold !m-0 pb-1 leading-5 ${isComment ? 'text-sm' : 'text-base'}`}>
                             <Link
                                 to={`/questions/${question.permalink}`}
                                 className="!no-underline hover:!underline font-semibold text-[#000080] dark:text-[#66b2ff]"
@@ -167,11 +181,11 @@ export default function ForumQuestionCard({
                         </h3>
                     )}
 
-                    <div className="question-content">
+                    <div className={`question-content ${isComment ? 'text-sm [&_p]:!my-1 [&_p]:!text-sm' : ''}`}>
                         <ForumMarkdown>{question.body}</ForumMarkdown>
                     </div>
 
-                    <div className="flex items-center gap-2 mt-4">
+                    <div className={`flex items-center gap-2 ${isComment ? 'mt-1.5' : 'mt-4'}`}>
                         <VotePicker
                             count={totalVotes}
                             active={userVote !== 0}
@@ -185,32 +199,68 @@ export default function ForumQuestionCard({
                                 views={question.views || 0} 
                             />
                         )}
+                        {isComment && (
+                            <button
+                                type="button"
+                                className="text-xs font-semibold text-muted hover:text-primary transition-colors lowercase"
+                                onClick={() => setExpanded(!expanded)}
+                            >
+                                reply
+                            </button>
+                        )}
                     </div>
                 </div>
 
+                {/* Replies section */}
                 {!isComment && (
-                    <>
-                        <ForumReplies
-                            replies={adaptedReplies}
-                            question={question}
-                            expanded={expanded}
-                            onToggleExpanded={setExpanded}
-                            isInForum={isInForum}
-                        />
+                    <ForumReplies
+                        replies={adaptedReplies}
+                        question={question}
+                        expanded={expanded}
+                        onToggleExpanded={setExpanded}
+                        isInForum={isInForum}
+                    />
+                )}
 
-                        <div
-                            className={`pb-1 relative w-full ${isInForum
+                {/* Comment-mode inline replies */}
+                {isComment && expanded && adaptedReplies.length > 0 && (
+                    <div className="pl-[30px] border-l border-black/10 dark:border-white/10 ml-[10px] mb-2">
+                        {adaptedReplies.map((reply) => (
+                            <div key={reply.id} className="flex flex-col py-1.5">
+                                <div className="flex items-center gap-1.5">
+                                    <Link
+                                        to={`/profile/${reply.profile.firstName}`}
+                                        className="flex items-center text-primary hover:!underline !no-underline gap-1 shrink-0"
+                                    >
+                                        <ForumAvatar className="size-[18px] rounded-full" image={reply.profile.avatar} />
+                                        <strong className="text-[11px]">{reply.profile.firstName || 'anonymous'}</strong>
+                                    </Link>
+                                    <ForumDays created={reply.createdAt} />
+                                </div>
+                                <div className="text-sm [&_p]:!my-0.5 [&_p]:!text-xs pl-[26px]">
+                                    <ForumMarkdown>{reply.body}</ForumMarkdown>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* Reply form */}
+                {(!isComment || expanded) && (
+                    <div
+                        className={`pb-1 relative w-full ${isComment
+                            ? 'pl-[30px] ml-[10px] border-l border-black/10 dark:border-white/10'
+                            : isInForum
                                 ? 'bg-primary border-t border-primary/20 pt-4 px-3 sm:px-4'
                                 : 'ml-5 pl-8 pr-5 squeak-left-border'
-                                } ${question.archived ? 'opacity-25 pointer-events-none' : ''}`}
-                        >
-                            <ForumReplyForm
-                                archived={question.archived}
-                                isInForum={isInForum}
-                                onSubmit={handleReplySubmit}
-                            />
-                        </div>
-                    </>
+                            } ${question.archived ? 'opacity-25 pointer-events-none' : ''}`}
+                    >
+                        <ForumReplyForm
+                            archived={question.archived}
+                            isInForum={isInForum}
+                            onSubmit={handleReplySubmit}
+                        />
+                    </div>
                 )}
             </div>
         </div>
