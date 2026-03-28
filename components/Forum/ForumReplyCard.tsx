@@ -84,7 +84,7 @@ export default function ForumReplyCard({ reply, isInForum = false, questionAutho
         } else {
             const insertRes = await supabase
                 .from('community_reply_votes')
-                .insert({ reply_id: reply.id, user_id: user.id, vote: nextVote })
+                .insert({ reply_id: reply.id, user_id: user.id, vote: nextVote, updated_at: new Date().toISOString() })
             error = insertRes.error
         }
 

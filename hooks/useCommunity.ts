@@ -258,7 +258,8 @@ export const useCommunity = () => {
                     .insert({
                         post_id: postId,
                         user_id: userId,
-                        vote: nextVote
+                        vote: nextVote,
+                        updated_at: new Date().toISOString()
                     });
                 if (error) throw error;
             }

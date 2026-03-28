@@ -94,7 +94,7 @@ export default function ArticleActions({ slug }: ArticleActionsProps) {
         } else {
             const { error: insertErr } = await supabase
                 .from('post_votes')
-                .insert({ post_slug: slug, user_id: user.id, vote: nextVote })
+                .insert({ post_slug: slug, user_id: user.id, vote: nextVote, updated_at: new Date().toISOString() })
             error = insertErr
         }
 
