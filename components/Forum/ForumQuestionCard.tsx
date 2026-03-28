@@ -55,6 +55,10 @@ export default function ForumQuestionCard({
                 .maybeSingle()
 
             if (data) setUserVote(data.vote)
+            
+            // Sync total votes from server
+            const { data: aggregate } = await supabase.rpc('get_com_post_total_votes', { post_id_input: question.id })
+            if (aggregate !== null) setTotalVotes(aggregate)
         }
         loadUserVote()
     }, [question.id])
@@ -78,6 +82,10 @@ export default function ForumQuestionCard({
             // Revert state if failed
             setUserVote(prevUserVote)
             setTotalVotes(prev => prev - voteDelta)
+        } else {
+            // After success, sync with server state to be sure
+            const { data: aggregate } = await supabase.rpc('get_com_post_total_votes', { post_id_input: question.id })
+            if (aggregate !== null) setTotalVotes(aggregate)
         }
     }
 
