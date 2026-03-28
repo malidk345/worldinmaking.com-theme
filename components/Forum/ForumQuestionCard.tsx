@@ -58,12 +58,25 @@ export default function ForumQuestionCard({
         loadUserVote()
     }, [question.id])
 
+    useEffect(() => {
+        setTotalVotes(question.upvotes || 0)
+    }, [question.upvotes])
+
     const handleVoteChange = async (direction: 'up' | 'down') => {
+        const directionValue = direction === 'up' ? 1 : -1
+        const nextVote = userVote === directionValue ? 0 : directionValue
+        const voteDelta = nextVote - userVote
+
+        // Optimistic update
+        const prevUserVote = userVote
+        setUserVote(nextVote)
+        setTotalVotes(prev => prev + voteDelta)
+
         const success = await handleVote(question.id, direction)
-        if (success) {
-            const delta = direction === 'up' ? 1 : -1
-            setUserVote(prev => prev + delta)
-            setTotalVotes(prev => prev + delta)
+        if (!success) {
+            // Revert state if failed
+            setUserVote(prevUserVote)
+            setTotalVotes(prev => prev - voteDelta)
         }
     }
 

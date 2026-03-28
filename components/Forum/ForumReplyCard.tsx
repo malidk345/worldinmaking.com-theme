@@ -45,6 +45,10 @@ export default function ForumReplyCard({ reply, isInForum = false, questionAutho
         loadUserVote()
     }, [reply.id])
 
+    useEffect(() => {
+        setTotalVotes(reply.upvotes || 0)
+    }, [reply.upvotes])
+
     const handleVoteChange = async (direction: 'up' | 'down') => {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) {
@@ -52,18 +56,14 @@ export default function ForumReplyCard({ reply, isInForum = false, questionAutho
             return
         }
 
-        const delta = direction === 'up' ? 1 : -1
-        const nextVote = userVote + delta
-
-        if (nextVote > 5 || nextVote < -5) {
-            addToast(`limit reached`, 'warning')
-            return
-        }
+        const directionValue = direction === 'up' ? 1 : -1
+        const nextVote = userVote === directionValue ? 0 : directionValue
+        const voteDelta = nextVote - userVote
 
         // Optimistic update
         const prevUserVote = userVote
         setUserVote(nextVote)
-        setTotalVotes(prev => prev + delta)
+        setTotalVotes(prev => prev + voteDelta)
 
         const { error } = await supabase
             .from('community_reply_votes')
@@ -76,7 +76,7 @@ export default function ForumReplyCard({ reply, isInForum = false, questionAutho
 
         if (error) {
             setUserVote(prevUserVote)
-            setTotalVotes(prev => prev - delta)
+            setTotalVotes(prev => prev - voteDelta)
             addToast('failed to save vote', 'error')
         }
     }
