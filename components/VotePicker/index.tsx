@@ -11,6 +11,8 @@ interface VotePickerProps {
     active?: boolean
     disabled?: boolean
     className?: string
+    /** 'sm' for compact usage in comments/community */
+    size?: 'sm' | 'default'
 }
 
 export default function VotePicker({
@@ -20,6 +22,7 @@ export default function VotePicker({
     active = false,
     disabled = false,
     className = '',
+    size = 'default',
 }: VotePickerProps) {
     // Track the previous count so we can animate direction
     const prevRef = useRef(count)
@@ -45,7 +48,7 @@ export default function VotePicker({
 
     return (
         <div
-            className={`vote-picker${active ? ' vote-picker--active' : ''}${className ? ' ' + className : ''}`}
+            className={`vote-picker${size === 'sm' ? ' vote-picker--sm' : ''}${active ? ' vote-picker--active' : ''}${className ? ' ' + className : ''}`}
             data-active={active || undefined}
         >
             {/* − button */}

@@ -191,6 +191,7 @@ export default function ForumQuestionCard({
                             active={userVote !== 0}
                             onDecrement={() => handleVoteChange('down')}
                             onIncrement={() => handleVoteChange('up')}
+                            size={isComment ? 'sm' : 'default'}
                         />
                         {!isComment && (
                             <ViewCounter 
