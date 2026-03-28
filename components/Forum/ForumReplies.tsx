@@ -86,7 +86,7 @@ export default function ForumReplies({
                         )}
                     </li>
                     <li className={`pr-[5px] !mb-0 relative ${isInForum ? '' : 'pl-[30px] border-l border-solid border-primary/20 squeak-left-border before:border-l-0'}`}>
-                        <ForumReplyCard reply={replies[replies.length - 1]} isInForum={isInForum} questionAuthorId={question.profile.id} />
+                        <ForumReplyCard reply={replies[replies.length - 1]} postId={question.id} isInForum={isInForum} questionAuthorId={question.profile.id} />
                     </li>
                 </>
             ) : (
@@ -98,7 +98,7 @@ export default function ForumReplies({
                             : 'border-l border-solid border-primary/20 squeak-left-border before:border-l-0 pl-[30px]'
                             }`}
                     >
-                        <ForumReplyCard reply={reply} isInForum={isInForum} questionAuthorId={question.profile.id} />
+                        <ForumReplyCard reply={reply} postId={question.id} isInForum={isInForum} questionAuthorId={question.profile.id} />
                     </li>
                 ))
             )}

@@ -16,14 +16,15 @@ import { useCommunity } from 'hooks/useCommunity'
 
 interface ForumReplyCardProps {
     reply: ForumReply
+    postId: number | string
     isInForum?: boolean
     questionAuthorId?: string | number
 }
 
-export default function ForumReplyCard({ reply, isInForum = false, questionAuthorId }: ForumReplyCardProps) {
+export default function ForumReplyCard({ reply, postId, isInForum = false, questionAuthorId }: ForumReplyCardProps) {
     const { addToast } = useToast()
     const { isAdmin } = useAuth()
-    const { deleteReply } = useCommunity()
+    const { handleReplyVote, deleteReply } = useCommunity()
     const [userVote, setUserVote] = useState(0)
     const [totalVotes, setTotalVotes] = useState(reply.upvotes || 0)
 
@@ -41,10 +42,6 @@ export default function ForumReplyCard({ reply, isInForum = false, questionAutho
                 .maybeSingle()
 
             if (data) setUserVote(data.vote)
-
-            // Also refresh total votes for accuracy
-            const { data: aggregate } = await supabase.rpc('get_com_reply_total_votes', { reply_id_input: reply.id })
-            if (aggregate !== null) setTotalVotes(aggregate)
         }
         loadUserVote()
     }, [reply.id])
@@ -54,12 +51,6 @@ export default function ForumReplyCard({ reply, isInForum = false, questionAutho
     }, [reply.upvotes])
 
     const handleVoteChange = async (direction: 'up' | 'down') => {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) {
-            addToast('please log in to vote', 'error')
-            return
-        }
-
         const directionValue = direction === 'up' ? 1 : -1
         const nextVote = userVote === directionValue ? 0 : directionValue
         const voteDelta = nextVote - userVote
@@ -69,33 +60,15 @@ export default function ForumReplyCard({ reply, isInForum = false, questionAutho
         setUserVote(nextVote)
         setTotalVotes(prev => prev + voteDelta)
 
-        // Check if row exists instead of relying on ON CONFLICT
-        const { data: existing } = await supabase
-            .from('community_reply_votes')
-            .select('vote')
-            .eq('reply_id', reply.id)
-            .eq('user_id', user.id)
-            .maybeSingle()
+        const success = await handleReplyVote(reply.id, postId, direction)
 
-        let error = null
-        if (existing) {
-            const updateRes = await supabase
-                .from('community_reply_votes')
-                .update({ vote: nextVote, updated_at: new Date().toISOString() })
-                .eq('reply_id', reply.id)
-                .eq('user_id', user.id)
-            error = updateRes.error
-        } else {
-            const insertRes = await supabase
-                .from('community_reply_votes')
-                .insert({ reply_id: reply.id, user_id: user.id, vote: nextVote, updated_at: new Date().toISOString() })
-            error = insertRes.error
-        }
-
-        if (error) {
+        if (!success) {
             setUserVote(prevUserVote)
             setTotalVotes(prev => prev - voteDelta)
-            addToast(`failed to save vote: ${error.message}`, 'error')
+        } else {
+            // After success, sync with server state to be sure
+            const { data: aggregate } = await supabase.rpc('get_com_reply_total_votes', { reply_id_input: reply.id })
+            if (aggregate !== null) setTotalVotes(aggregate)
         }
     }
 
@@ -146,7 +119,7 @@ export default function ForumReplyCard({ reply, isInForum = false, questionAutho
                             tooltip="delete reply"
                             onClick={() => {
                                 if (confirm('delete this reply?')) {
-                                    deleteReply(reply.id, reply.id)
+                                    deleteReply(reply.id, postId)
                                 }
                             }}
                             icon={<IconTrash />}

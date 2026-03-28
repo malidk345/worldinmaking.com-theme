@@ -215,6 +215,11 @@ RETURNS INT AS $$
     SELECT COALESCE(SUM(vote), 0)::INT FROM community_post_votes WHERE post_id = post_id_input;
 $$ LANGUAGE sql SECURITY DEFINER SET search_path = public;
 
+CREATE OR REPLACE FUNCTION get_com_reply_total_votes(reply_id_input INT)
+RETURNS INT AS $$
+    SELECT COALESCE(SUM(vote), 0)::INT FROM community_reply_votes WHERE reply_id = reply_id_input;
+$$ LANGUAGE sql SECURITY DEFINER SET search_path = public;
+
 -- View Count RPCs
 CREATE OR REPLACE FUNCTION increment_post_view(slug_input TEXT)
 RETURNS void

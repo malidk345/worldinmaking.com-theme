@@ -110,6 +110,10 @@ export default function ArticleActions({ slug, views = 0 }: ArticleActionsProps)
             // Rollback
             setUserVote(prevUserVote)
             setTotalVotes(prev => prev - delta)
+        } else {
+            // After success, sync with server state to be sure
+            const { data: aggregate } = await supabase.rpc('get_post_total_votes', { post_slug_input: slug });
+            if (aggregate !== null) setTotalVotes(aggregate)
         }
     }
 

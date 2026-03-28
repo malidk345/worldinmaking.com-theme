@@ -283,6 +283,66 @@ export const useCommunity = () => {
         }
     }, [activeChannelId, activePostSlug, activePostLookupId, addToast, mutate]);
 
+    const handleReplyVote = useCallback(async (replyId: number | string, postId: number | string, direction: 'up' | 'down') => {
+        try {
+            const { data: userData } = await supabase.auth.getUser();
+            if (!userData?.user) {
+                addToast('please log in to vote', 'error');
+                return false;
+            }
+
+            const userId = userData.user.id;
+            const numericReplyId = typeof replyId === 'string' ? parseInt(replyId, 10) : replyId;
+
+            if (isNaN(numericReplyId)) {
+                logger.error('[useCommunity] handleReplyVote: Invalid replyId', replyId);
+                return false;
+            }
+
+            const { data: existing } = await supabase
+                .from('community_reply_votes')
+                .select('vote')
+                .eq('reply_id', numericReplyId)
+                .eq('user_id', userId)
+                .maybeSingle();
+
+            const currentVoteValue = existing?.vote || 0;
+            const directionValue = direction === 'up' ? 1 : -1;
+            const nextVote = currentVoteValue === directionValue ? 0 : directionValue;
+
+            let error;
+            if (existing) {
+                const { error: updateError } = await supabase
+                    .from('community_reply_votes')
+                    .update({ vote: nextVote })
+                    .eq('reply_id', numericReplyId)
+                    .eq('user_id', userId);
+                error = updateError;
+            } else {
+                const { error: insertError } = await supabase
+                    .from('community_reply_votes')
+                    .insert({
+                        reply_id: numericReplyId,
+                        user_id: userId,
+                        vote: nextVote
+                    });
+                error = insertError;
+            }
+
+            if (error) {
+                addToast(`failed to save vote: ${error.message}`, 'error');
+                return false;
+            }
+
+            mutate(['community_replies', postId]);
+            return true;
+        } catch (e: unknown) {
+            logger.error('[useCommunity] handleReplyVote error:', e instanceof Error ? e.message : String(e));
+            addToast('an unexpected error occurred while voting', 'error');
+            return false;
+        }
+    }, [addToast, mutate]);
+
     const createReply = useCallback(async (postId: number | string, content: string) => {
         const { data: userData } = await supabase.auth.getUser();
         if (!userData?.user) return addToast('please log in to reply', 'error');
@@ -333,6 +393,7 @@ export const useCommunity = () => {
         if (activePostLookupId) mutate(['community_post_id', activePostLookupId]);
         return true;
     }, [addToast, mutate, activePostLookupId]);
+
     const deletePost = useCallback(async (postId: number | string) => {
         const { error } = await supabase.from('community_posts').delete().eq('id', Number(postId));
         if (error) {
@@ -371,6 +432,7 @@ export const useCommunity = () => {
         createPost,
         createReply,
         handleVote,
+        handleReplyVote,
         deletePost,
         deleteReply
     };
