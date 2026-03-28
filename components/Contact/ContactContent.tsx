@@ -1,7 +1,6 @@
 "use client"
 
 import React, { useState } from 'react'
-import { motion } from 'framer-motion'
 import OSButton from 'components/OSButton'
 import { supabase } from 'lib/supabase'
 import { useToast } from 'context/ToastContext'
@@ -40,9 +39,10 @@ export default function ContactContent() {
 
             setSent(true)
             addToast('message transmitted successfully', 'success')
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Contact error:', err)
-            addToast(`failed to send message: ${err.message || 'unknown error'}`, 'error')
+            const message = err instanceof Error ? err.message : 'unknown error'
+            addToast(`failed to send message: ${message}`, 'error')
         } finally {
             setLoading(false)
         }
