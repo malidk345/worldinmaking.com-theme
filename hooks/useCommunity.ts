@@ -230,41 +230,46 @@ export const useCommunity = () => {
             }
 
             const userId = userData.user.id;
+            const numericPostId = typeof postId === 'string' ? parseInt(postId, 10) : postId;
+
+            if (isNaN(numericPostId)) {
+                logger.error('[useCommunity] handleVote: Invalid postId', postId);
+                return false;
+            }
 
             const { data: existing } = await supabase
                 .from('community_post_votes')
                 .select('vote')
-                .eq('post_id', postId)
+                .eq('post_id', numericPostId)
                 .eq('user_id', userId)
                 .maybeSingle();
 
             const currentVoteValue = existing?.vote || 0;
             const directionValue = direction === 'up' ? 1 : -1;
-            
-            // Toggle logic: If user clicks the same direction again, reset to 0 (remove vote)
-            // Otherwise, set to the new direction (1 or -1)
             const nextVote = currentVoteValue === directionValue ? 0 : directionValue;
 
+            let error;
             if (existing) {
-                const { error } = await supabase
+                const { error: updateError } = await supabase
                     .from('community_post_votes')
-                    .update({
-                        vote: nextVote,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('post_id', postId)
+                    .update({ vote: nextVote })
+                    .eq('post_id', numericPostId)
                     .eq('user_id', userId);
-                if (error) throw error;
+                error = updateError;
             } else {
-                const { error } = await supabase
+                const { error: insertError } = await supabase
                     .from('community_post_votes')
                     .insert({
-                        post_id: postId,
+                        post_id: numericPostId,
                         user_id: userId,
-                        vote: nextVote,
-                        updated_at: new Date().toISOString()
+                        vote: nextVote
                     });
-                if (error) throw error;
+                error = insertError;
+            }
+
+            if (error) {
+                addToast(`failed to save vote: ${error.message}`, 'error');
+                return false;
             }
 
             if (activeChannelId) mutate(['community_posts', activeChannelId]);
@@ -273,6 +278,7 @@ export const useCommunity = () => {
             return true;
         } catch (e: unknown) {
             logger.error('[useCommunity] handleVote error:', e instanceof Error ? e.message : String(e));
+            addToast('an unexpected error occurred while voting', 'error');
             return false;
         }
     }, [activeChannelId, activePostSlug, activePostLookupId, addToast, mutate]);

@@ -218,6 +218,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
             const WINDOW_SETTINGS: Record<string, { width?: number; height?: number; title?: string; topCenter?: boolean }> = {
                 '/posts': { width: 1000, height: 800, title: 'Latest Editions' },
                 '/search': { width: 600, height: 400, title: 'Search', topCenter: true },
+                '/login': { width: 450, height: 500, title: 'Member Access', topCenter: true },
                 'posts-newspaper': { width: 1000, height: 800, title: 'Latest Editions' }
             }
 
@@ -375,12 +376,12 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
         // Always open the main Posts window as a base if we are at root or posts
         if (path === '/' || path === '/posts') {
-            addWindow({
+            /* addWindow({
                 key: 'posts-newspaper',
                 path: '/posts',
                 title: getTitleFromPath('/posts'),
                 element: <PostsView />
-            })
+            }) */
         } else {
             // If we're on a specific path, open that window
             addWindow({

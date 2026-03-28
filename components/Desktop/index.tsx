@@ -31,6 +31,15 @@ export default function Desktop() {
                 title: 'posts',
                 element: <PostsView />
             })
+        },
+        {
+            label: 'login',
+            Icon: <AppIcon name="contact" />,
+            onClick: () => addWindow({
+                key: 'login',
+                path: '/login',
+                title: 'login'
+            })
         }
     ], [addWindow])
 
@@ -114,20 +123,20 @@ export default function Desktop() {
             </div>
 
 
-            <nav className="flex flex-col items-center justify-center pointer-events-none">
+            <nav className="fixed top-24 left-10 pointer-events-none z-10">
                 <motion.ul
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: rendered ? 1 : 0, scale: rendered ? 1 : 0.9 }}
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: rendered ? 1 : 0, y: rendered ? 0 : -20 }}
                     transition={{ duration: 0.5, delay: 0.2 }}
-                    className="list-none m-0 p-0 flex gap-8 items-center justify-center pointer-events-auto"
+                    className="list-none m-0 p-0 flex flex-row gap-8 items-start pointer-events-auto"
                 >
                     {apps.map((app) => (
                         <DraggableDesktopIcon
                             key={app.label}
                             app={app}
-                            initialPosition={{ x: 0, y: 0 }} // Use relative positioning now
+                            initialPosition={{ x: 0, y: 0 }}
                             onPositionChange={() => { }}
-                            className="relative !transform-none" // Override absolute
+                            className="relative !transform-none"
                         />
                     ))}
                 </motion.ul>

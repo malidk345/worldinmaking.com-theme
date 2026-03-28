@@ -77,32 +77,35 @@ export default function ArticleActions({ slug, views = 0 }: ArticleActionsProps)
         setUserVote(nextVote)
         setTotalVotes(prev => prev + delta)
 
-        // Fallback constraint logic using separate UPDATE/INSERT
-        const { data: existing } = await supabase
-            .from('post_votes')
-            .select('vote')
-            .eq('post_slug', slug)
-            .eq('user_id', user.id)
-            .maybeSingle()
-
         let error = null
-        if (existing) {
-            const { error: updateErr } = await supabase
+        try {
+            const { data: existing } = await supabase
                 .from('post_votes')
-                .update({ vote: nextVote, updated_at: new Date().toISOString() })
+                .select('vote')
                 .eq('post_slug', slug)
                 .eq('user_id', user.id)
-            error = updateErr
-        } else {
-            const { error: insertErr } = await supabase
-                .from('post_votes')
-                .insert({ post_slug: slug, user_id: user.id, vote: nextVote, updated_at: new Date().toISOString() })
-            error = insertErr
+                .maybeSingle()
+
+            if (existing) {
+                const { error: updateErr } = await supabase
+                    .from('post_votes')
+                    .update({ vote: nextVote })
+                    .eq('post_slug', slug)
+                    .eq('user_id', user.id)
+                error = updateErr
+            } else {
+                const { error: insertErr } = await supabase
+                    .from('post_votes')
+                    .insert({ post_slug: slug, user_id: user.id, vote: nextVote })
+                error = insertErr
+            }
+        } catch (err: any) {
+            error = err
         }
 
         if (error) {
             console.error('Vote error:', error)
-            addToast(`failed to save vote: ${error.message}`, 'error')
+            addToast(`failed to save vote: ${error.message || 'unknown error'}`, 'error')
             // Rollback
             setUserVote(prevUserVote)
             setTotalVotes(prev => prev - delta)

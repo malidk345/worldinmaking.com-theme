@@ -11,6 +11,7 @@ import BlogPostView from 'components/ReaderView/BlogPostView'
 import ReaderView from 'components/ReaderView'
 import PublicProfile from 'components/Profile/PublicProfile'
 import PostsView from 'components/Posts'
+import LoginContent from 'components/Login/LoginContent'
 import RichTextEditor from 'components/AdminPanel/RichTextEditor'
 import { AppWindow } from '../../context/Window'
 import { useAuth } from '../../context/AuthContext'
@@ -103,6 +104,11 @@ function WindowRouterInner({ item }: { item: AppWindow }) {
     if (path === '/search') {
         const initialFilter = item.props?.initialFilter as string | undefined
         return <WindowSearchUI initialFilter={initialFilter} />
+    }
+
+    // /login
+    if (path === '/login') {
+        return <LoginContent />
     }
 
     // /profile/:username
