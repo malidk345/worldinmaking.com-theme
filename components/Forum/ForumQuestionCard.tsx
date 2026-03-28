@@ -199,15 +199,6 @@ export default function ForumQuestionCard({
                                 views={question.views || 0} 
                             />
                         )}
-                        {isComment && (
-                            <button
-                                type="button"
-                                className="text-xs font-semibold text-muted hover:text-primary transition-colors lowercase"
-                                onClick={() => setExpanded(!expanded)}
-                            >
-                                reply
-                            </button>
-                        )}
                     </div>
                 </div>
 
@@ -223,7 +214,7 @@ export default function ForumQuestionCard({
                 )}
 
                 {/* Comment-mode inline replies */}
-                {isComment && expanded && adaptedReplies.length > 0 && (
+                {isComment && adaptedReplies.length > 0 && (
                     <div className="pl-[30px] border-l border-black/10 dark:border-white/10 ml-[10px] mb-2">
                         {adaptedReplies.map((reply) => (
                             <div key={reply.id} className="flex flex-col py-1.5">
@@ -246,7 +237,7 @@ export default function ForumQuestionCard({
                 )}
 
                 {/* Reply form */}
-                {(!isComment || expanded) && (
+                {(
                     <div
                         className={`pb-1 relative w-full ${isComment
                             ? 'pl-[30px] ml-[10px] border-l border-black/10 dark:border-white/10'
