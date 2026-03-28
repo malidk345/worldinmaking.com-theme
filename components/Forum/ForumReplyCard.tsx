@@ -113,19 +113,6 @@ export default function ForumReplyCard({ reply, postId, isInForum = false, quest
                         icon={<IconPencil />}
                         className="!p-1"
                     />
-                    {isAdmin && (
-                        <OSButton
-                            size="sm"
-                            tooltip="delete reply"
-                            onClick={() => {
-                                if (confirm('delete this reply?')) {
-                                    deleteReply(reply.id, postId)
-                                }
-                            }}
-                            icon={<IconTrash />}
-                            className="!p-1 hover:text-red-500"
-                        />
-                    )}
                 </div>
             </div>
 
@@ -141,6 +128,19 @@ export default function ForumReplyCard({ reply, postId, isInForum = false, quest
                         onDecrement={() => handleVoteChange('down')}
                         onIncrement={() => handleVoteChange('up')}
                     />
+                    {isAdmin && (
+                        <OSButton
+                            size="sm"
+                            tooltip="delete reply"
+                            onClick={() => {
+                                if (confirm('delete this reply?')) {
+                                    deleteReply(reply.id, postId)
+                                }
+                            }}
+                            icon={<IconTrash />}
+                            className="!p-1 opacity-40 hover:opacity-100 hover:text-red-500"
+                        />
+                    )}
                 </div>
             </div>
         </div>

@@ -39,10 +39,10 @@ export default function ForumQuestionCard({
     const [totalVotes, setTotalVotes] = useState(question.upvotes || 0)
 
     useEffect(() => {
-        if (expanded) {
+        if (expanded || isComment) {
             fetchReplies(question.id)
         }
-    }, [expanded, question.id, fetchReplies])
+    }, [expanded, isComment, question.id, fetchReplies])
 
     // Load user vote from Supabase
     useEffect(() => {
