@@ -86,6 +86,17 @@ BEGIN
     END IF;
 EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
+-- 4. view_count kolonu (blog ve community posts için)
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='posts' AND column_name='view_count') THEN
+        ALTER TABLE public.posts ADD COLUMN view_count INT NOT NULL DEFAULT 0;
+    END IF;
+    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='community_posts' AND column_name='view_count') THEN
+        ALTER TABLE public.community_posts ADD COLUMN view_count INT NOT NULL DEFAULT 0;
+    END IF;
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
+
 -- 3. ENHANCED PROFILES
 CREATE TABLE IF NOT EXISTS public.profiles (
     id          UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -275,6 +286,21 @@ CREATE OR REPLACE FUNCTION get_com_post_total_votes(post_id_input INT)
 RETURNS INT AS $$
     SELECT COALESCE(SUM(vote), 0)::INT FROM community_post_votes WHERE post_id = post_id_input;
 $$ LANGUAGE sql SECURITY DEFINER;
+
+-- View Count Bumping RPCs
+CREATE OR REPLACE FUNCTION increment_post_view(slug_input TEXT)
+RETURNS void AS $$
+BEGIN
+    UPDATE public.posts SET view_count = view_count + 1 WHERE slug = slug_input;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION increment_com_post_view(id_input INT)
+RETURNS void AS $$
+BEGIN
+    UPDATE public.community_posts SET view_count = view_count + 1 WHERE id = id_input;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- 12. SECURITY (RLS)
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;

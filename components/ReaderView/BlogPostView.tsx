@@ -29,6 +29,7 @@ interface BlogPostViewProps {
         originalLanguage?: string
         description?: string
         slug?: string
+        views?: number
     }
 }
 
@@ -91,9 +92,10 @@ const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
             date: post.date,
             tags: post.tags?.map(t => ({ label: t })),
             wordCount,
-            readTime
+            readTime,
+            views: post.views || 0,
         };
-    }, [content, post.image, post.authors, post.date, post.tags]);
+    }, [content, post.image, post.authors, post.date, post.tags, post.views]);
 
     const tableOfContents = useMemo(() => post.headings?.map(h => ({
         url: `#${h.id}`,

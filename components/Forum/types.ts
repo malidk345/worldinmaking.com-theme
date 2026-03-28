@@ -50,5 +50,6 @@ export interface ForumQuestion {
     idLiked?: boolean // preserved for legacy UI if needed
     userVote?: number
     slug?: string
+    views?: number
     edits?: { id: number; date: string; by: ForumProfile }[]
 }

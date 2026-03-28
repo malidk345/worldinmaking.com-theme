@@ -28,7 +28,7 @@ interface AdaptablePost {
     created_at: string
     author_id?: string | number
     profiles?: { username?: string; avatar_url?: string } | { username?: string; avatar_url?: string }[]
-    _count?: { likes?: number }
+    _count?: { likes?: number, views?: number }
     total_votes?: number
 }
 
@@ -52,6 +52,7 @@ const adaptPost = (p: AdaptablePost) => {
         resolved: false,
         archived: false,
         upvotes: p.total_votes ?? p._count?.likes ?? 0,
+        views: p._count?.views ?? 0,
         userVote: 0,
     }
 }

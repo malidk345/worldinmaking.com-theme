@@ -32,6 +32,7 @@ interface BodyProps {
     tags?: { label: string; url?: string }[]
     wordCount?: number
     readTime?: number
+    views?: number
 }
 
 interface Contributor {
@@ -451,7 +452,7 @@ const ReaderViewContent = React.memo(({
                                 </div>
                                 {showQuestions && (
                                     <div id="comments" className="mt-12">
-                                        <CommentSection slug={commentThreadSlug || title} />
+                                        <CommentSection slug={commentThreadSlug || title} views={body.views} />
                                     </div>
                                 )}
                             </div>

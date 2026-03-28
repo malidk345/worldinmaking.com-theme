@@ -6,6 +6,7 @@ import { AppIcon } from 'components/OSIcons/AppIcon'
 import DraggableDesktopIcon from './DraggableDesktopIcon'
 import { motion } from 'framer-motion'
 import PostsView from 'components/Posts'
+import TrendingWidget from './TrendingWidget'
 
 export default function Desktop() {
     const { addWindow, siteSettings } = useApp()
@@ -131,6 +132,8 @@ export default function Desktop() {
                     ))}
                 </motion.ul>
             </nav>
+
+            <TrendingWidget />
         </div>
     )
 }

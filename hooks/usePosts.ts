@@ -28,6 +28,7 @@ export interface Post {
     is_approved: boolean;
     authors?: { name: string, avatar: string, username?: string }[];
     tags?: string[];
+    views?: number;
 }
 
 interface DBPost {
@@ -48,6 +49,7 @@ interface DBPost {
     language?: string;
     originalLanguage?: string;
     is_approved?: boolean;
+    view_count?: number;
 }
 
 
@@ -134,7 +136,8 @@ const adaptPost = (p: DBPost): Post | null => {
         language: p.language || 'en',
         originalLanguage: p.originalLanguage,
         is_approved: Boolean(p.is_approved),
-        authors: [{ name: p.author || 'Unknown', avatar: p.author_avatar || '', username: p.author || 'Unknown' }]
+        authors: [{ name: p.author || 'Unknown', avatar: p.author_avatar || '', username: p.author || 'Unknown' }],
+        views: p.view_count || 0
     };
 };
 

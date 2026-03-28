@@ -9,6 +9,7 @@ import ArticleActions from './ArticleActions'
 interface CommentSectionProps {
     slug?: string
     className?: string
+    views?: number
 }
 
 import Loading from '../Loading'
@@ -16,6 +17,7 @@ import Loading from '../Loading'
 export default function CommentSection({
     slug,
     className = '',
+    views = 0,
 }: CommentSectionProps) {
     const {
         posts,
@@ -55,12 +57,13 @@ export default function CommentSection({
         resolved: false,
         archived: false,
         upvotes: p._count.likes || 0,
+        views: p._count.views || 0,
         userVote: 0,
     }))
 
     return (
         <div className={`mt-12 community-section ${className}`}>
-            <ArticleActions slug={slug} />
+            <ArticleActions slug={slug} views={views} />
 
             <h3 id="community-questions" className="text-xl font-bold mb-6 text-primary lowercase">comments</h3>
 

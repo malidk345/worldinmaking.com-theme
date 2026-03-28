@@ -25,6 +25,7 @@ export interface CommunityPost {
     _count: {
         replies: number;
         likes: number;
+        views: number;
     };
 }
 
@@ -59,6 +60,7 @@ interface DBCommunityPost {
     // Fallback fields for when view doesn't exist
     community_replies?: { count: number }[];
     community_likes?: { count: number }[];
+    view_count?: number;
 }
 
 interface DBCommunityReply {
@@ -122,7 +124,8 @@ export const useCommunity = () => {
                 profiles: Array.isArray(p.profiles) ? p.profiles[0] : p.profiles,
                 _count: {
                     replies: p.reply_count ?? p.community_replies?.[0]?.count ?? 0,
-                    likes: p.total_votes ?? p.community_likes?.[0]?.count ?? 0
+                    likes: p.total_votes ?? p.community_likes?.[0]?.count ?? 0,
+                    views: p.view_count || 0
                 }
             })) as unknown as CommunityPost[];
         } catch (e: unknown) {

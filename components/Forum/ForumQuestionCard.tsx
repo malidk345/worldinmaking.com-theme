@@ -10,6 +10,7 @@ import { ForumQuestion, ForumReply } from './types'
 import Link from 'components/Link'
 import OSButton from 'components/OSButton'
 import { IconPencil, IconArchive, IconUndo } from '@posthog/icons'
+import ViewCounter from 'components/ViewCounter'
 import VotePicker from 'components/VotePicker'
 import { supabase } from 'lib/supabase'
 
@@ -162,13 +163,20 @@ export default function ForumQuestionCard({
                         <ForumMarkdown>{question.body}</ForumMarkdown>
                     </div>
 
-                    <div className="flex items-center gap-1 mt-4">
+                    <div className="flex items-center gap-2 mt-4">
                         <VotePicker
                             count={totalVotes}
                             active={userVote !== 0}
                             onDecrement={() => handleVoteChange('down')}
                             onIncrement={() => handleVoteChange('up')}
                         />
+                        {!isComment && (
+                            <ViewCounter 
+                                idOrSlug={question.id} 
+                                type="community" 
+                                views={question.views || 0} 
+                            />
+                        )}
                     </div>
                 </div>
 

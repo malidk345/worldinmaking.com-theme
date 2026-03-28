@@ -5,12 +5,14 @@ import { useToast } from 'context/ToastContext'
 import VotePicker from 'components/VotePicker'
 import { Share2 } from 'lucide-react'
 import { supabase } from 'lib/supabase'
+import ViewCounter from 'components/ViewCounter'
 
 interface ArticleActionsProps {
     slug?: string
+    views?: number
 }
 
-export default function ArticleActions({ slug }: ArticleActionsProps) {
+export default function ArticleActions({ slug, views = 0 }: ArticleActionsProps) {
     const { addToast } = useToast()
     const [userVote, setUserVote] = useState(0)
     const [totalVotes, setTotalVotes] = useState(0)
@@ -134,7 +136,7 @@ export default function ArticleActions({ slug }: ArticleActionsProps) {
 
     return (
         <div className="flex justify-between items-center mb-6 pt-4 border-t border-black/10 dark:border-white/10 pb-4">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
                 <VotePicker
                     count={displayCount}
                     active={userVote !== 0}
@@ -142,6 +144,13 @@ export default function ArticleActions({ slug }: ArticleActionsProps) {
                     onIncrement={() => handleVoteChange('up')}
                     disabled={!slug || loading}
                 />
+                {slug && (
+                    <ViewCounter 
+                        idOrSlug={slug} 
+                        type="blog" 
+                        views={views} 
+                    />
+                )}
             </div>
 
             <button
