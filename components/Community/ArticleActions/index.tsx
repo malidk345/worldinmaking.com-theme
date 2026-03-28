@@ -113,7 +113,11 @@ export default function ArticleActions({ slug, views = 0 }: ArticleActionsProps)
         }
     }
 
-    const handleShare = async () => {
+    const handleShare = async (e?: React.MouseEvent) => {
+        if (e) {
+            e.preventDefault()
+            e.stopPropagation()
+        }
         if (typeof window === 'undefined') return
         try {
             if (navigator.clipboard && window.isSecureContext) {
@@ -157,15 +161,16 @@ export default function ArticleActions({ slug, views = 0 }: ArticleActionsProps)
                 )}
             </div>
 
-            <button
-                type="button"
+            <div
+                role="button"
+                tabIndex={0}
                 onClick={handleShare}
-                className="vote-picker"
-                style={{ paddingInline: '0.75rem', gap: '0.4rem', cursor: 'pointer' }}
+                onKeyDown={(e) => e.key === 'Enter' && handleShare()}
+                className="vote-picker p-2 flex items-center justify-center cursor-pointer"
+                title="share link"
             >
-                <Share2 style={{ width: 13, height: 13, flexShrink: 0 }} />
-                <strong style={{ fontSize: '0.8125rem', letterSpacing: '-0.01em' }} className="lowercase">share</strong>
-            </button>
+                <Share2 className="size-3.5" />
+            </div>
         </div>
     )
 }

@@ -144,6 +144,7 @@ const OSButton = React.memo(React.forwardRef<HTMLButtonElement | HTMLAnchorEleme
             </Link>
         ) : (
             <button
+                type="button"
                 className={commonClasses}
                 onClick={onClick}
                 disabled={disabled}

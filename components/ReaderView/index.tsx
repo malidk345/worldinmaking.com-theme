@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 import ScrollArea from 'components/RadixUI/ScrollArea'
@@ -131,6 +131,34 @@ const ReaderViewContent = React.memo(({
         .replace(/^\/(posts|blog)\//, '')
         .replace(/^\/+/, '')
         .replace(/\/+$/, '')
+
+    // Scroll-preserving sidebar toggles: save position before state change,
+    // then restore it after React re-renders and Radix recalculates viewport
+    const scrollPreservingToggle = useCallback((toggleFn: () => void) => {
+        const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null
+        const savedScrollTop = viewport?.scrollTop ?? 0
+        toggleFn()
+        // Restore after React commit + Radix recalc
+        requestAnimationFrame(() => {
+            if (viewport) {
+                viewport.scrollTop = savedScrollTop
+            }
+            // Double-raf for browsers that need an extra frame
+            requestAnimationFrame(() => {
+                if (viewport) {
+                    viewport.scrollTop = savedScrollTop
+                }
+            })
+        })
+    }, [])
+
+    const handleToggleNav = useCallback(() => {
+        scrollPreservingToggle(toggleNav)
+    }, [scrollPreservingToggle, toggleNav])
+
+    const handleToggleToc = useCallback(() => {
+        scrollPreservingToggle(toggleToc)
+    }, [scrollPreservingToggle, toggleToc])
 
     const handleComment = () => {
         const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]')
@@ -316,7 +344,7 @@ const ReaderViewContent = React.memo(({
                                         animate={{ opacity: 1 }}
                                         exit={{ opacity: 0 }}
                                         className="absolute inset-0 bg-black/20 z-40 lg:hidden"
-                                        onClick={toggleNav}
+                                        onClick={handleToggleNav}
                                     />
                                     <motion.div
                                         initial={{ x: "-100%", opacity: 0 }}
@@ -484,7 +512,7 @@ const ReaderViewContent = React.memo(({
                                         animate={{ opacity: 1 }}
                                         exit={{ opacity: 0 }}
                                         className="absolute inset-0 bg-black/20 z-40 lg:hidden"
-                                        onClick={toggleToc}
+                                        onClick={handleToggleToc}
                                     />
                                     <motion.div
                                         initial={{ x: "100%", opacity: 0 }}
@@ -514,8 +542,8 @@ const ReaderViewContent = React.memo(({
             <FooterBar
                 isNavVisible={isNavVisible}
                 isTocVisible={isTocVisible}
-                onToggleNav={toggleNav}
-                onToggleToc={toggleToc}
+                onToggleNav={handleToggleNav}
+                onToggleToc={handleToggleToc}
                 showBack={true}
                 showForward={true}
                 showSearch

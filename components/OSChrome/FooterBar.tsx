@@ -134,7 +134,10 @@ export default function FooterBar({
                             trigger={
                                 <OSButton
                                     size="sm"
-                                    onClick={onToggleNav}
+                                    onClick={(e) => {
+                                        e.preventDefault()
+                                        onToggleNav?.()
+                                    }}
                                     active={isNavVisible}
                                     className={mainIconBtnClass}
                                 >
@@ -269,7 +272,10 @@ export default function FooterBar({
                             trigger={
                                 <OSButton
                                     size="sm"
-                                    onClick={onToggleToc}
+                                    onClick={(e) => {
+                                        e.preventDefault()
+                                        onToggleToc?.()
+                                    }}
                                     active={isTocVisible}
                                     className={`${mainIconBtnClass} ${!compact ? '!w-auto !px-2' : ''}`}
                                 >
