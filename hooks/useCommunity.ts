@@ -333,6 +333,31 @@ export const useCommunity = () => {
         if (activePostLookupId) mutate(['community_post_id', activePostLookupId]);
         return true;
     }, [addToast, mutate, activePostLookupId]);
+    const deletePost = useCallback(async (postId: number | string) => {
+        const { error } = await supabase.from('community_posts').delete().eq('id', Number(postId));
+        if (error) {
+            addToast(`failed to delete post: ${error.message}`, 'error');
+            return false;
+        }
+        addToast('post deleted', 'success');
+        if (activeChannelId) mutate(['community_posts', activeChannelId]);
+        if (activePostSlug) mutate(['community_posts_slug', activePostSlug]);
+        if (activePostLookupId) mutate(['community_post_id', activePostLookupId]);
+        return true;
+    }, [addToast, mutate, activeChannelId, activePostSlug, activePostLookupId]);
+
+    const deleteReply = useCallback(async (replyId: number | string, postId: number | string) => {
+        const { error } = await supabase.from('community_replies').delete().eq('id', Number(replyId));
+        if (error) {
+            addToast(`failed to delete reply: ${error.message}`, 'error');
+            return false;
+        }
+        addToast('reply deleted', 'success');
+        mutate(['community_replies', postId]);
+        if (activeChannelId) mutate(['community_posts', activeChannelId]);
+        if (activePostSlug) mutate(['community_posts_slug', activePostSlug]);
+        return true;
+    }, [addToast, mutate, activeChannelId, activePostSlug]);
 
     return {
         channels,
@@ -345,6 +370,8 @@ export const useCommunity = () => {
         fetchReplies,
         createPost,
         createReply,
-        handleVote
+        handleVote,
+        deletePost,
+        deleteReply
     };
 };

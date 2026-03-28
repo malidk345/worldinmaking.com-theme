@@ -7,10 +7,12 @@ import { ForumReply } from './types'
 import ForumAvatar from './ForumAvatar'
 import OSButton from 'components/OSButton'
 import VotePicker from 'components/VotePicker'
-import { IconPencil } from '@posthog/icons'
+import { IconPencil, IconTrash } from '@posthog/icons'
 import Link from 'components/Link'
 import { supabase } from 'lib/supabase'
 import { useToast } from 'context/ToastContext'
+import { useAuth } from 'context/AuthContext'
+import { useCommunity } from 'hooks/useCommunity'
 
 interface ForumReplyCardProps {
     reply: ForumReply
@@ -20,6 +22,8 @@ interface ForumReplyCardProps {
 
 export default function ForumReplyCard({ reply, isInForum = false, questionAuthorId }: ForumReplyCardProps) {
     const { addToast } = useToast()
+    const { isAdmin } = useAuth()
+    const { deleteReply } = useCommunity()
     const [userVote, setUserVote] = useState(0)
     const [totalVotes, setTotalVotes] = useState(reply.upvotes || 0)
 
@@ -136,6 +140,19 @@ export default function ForumReplyCard({ reply, isInForum = false, questionAutho
                         icon={<IconPencil />}
                         className="!p-1"
                     />
+                    {isAdmin && (
+                        <OSButton
+                            size="sm"
+                            tooltip="delete reply"
+                            onClick={() => {
+                                if (confirm('delete this reply?')) {
+                                    deleteReply(reply.id, reply.id)
+                                }
+                            }}
+                            icon={<IconTrash />}
+                            className="!p-1 hover:text-red-500"
+                        />
+                    )}
                 </div>
             </div>
 

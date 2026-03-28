@@ -9,11 +9,12 @@ import ForumReplyForm from './ForumReplyForm'
 import { ForumQuestion, ForumReply } from './types'
 import Link from 'components/Link'
 import OSButton from 'components/OSButton'
-import { IconPencil, IconArchive, IconUndo } from '@posthog/icons'
+import { IconPencil, IconArchive, IconUndo, IconTrash } from '@posthog/icons'
 import ViewCounter from 'components/ViewCounter'
 import VotePicker from 'components/VotePicker'
 import ForumAvatar from './ForumAvatar'
 import { supabase } from 'lib/supabase'
+import { useAuth } from 'context/AuthContext'
 
 import { useCommunity } from 'hooks/useCommunity'
 
@@ -31,7 +32,8 @@ export default function ForumQuestionCard({
     isComment = false,
 }: ForumQuestionCardProps) {
     const [expanded, setExpanded] = useState(initialExpanded)
-    const { replies, fetchReplies, createReply, handleVote } = useCommunity()
+    const { replies, fetchReplies, createReply, handleVote, deletePost, deleteReply } = useCommunity()
+    const { isAdmin } = useAuth()
     const [isEditing, setIsEditing] = useState(false)
     const [userVote, setUserVote] = useState(0)
     const [totalVotes, setTotalVotes] = useState(question.upvotes || 0)
@@ -200,6 +202,19 @@ export default function ForumQuestionCard({
                                 views={question.views || 0} 
                             />
                         )}
+                        {isAdmin && (
+                            <OSButton
+                                size="sm"
+                                onClick={() => {
+                                    if (confirm('are you sure you want to delete this?')) {
+                                        deletePost(question.id)
+                                    }
+                                }}
+                                icon={<IconTrash />}
+                                tooltip="delete"
+                                className="!p-1 opacity-40 hover:opacity-100 hover:text-red-500"
+                            />
+                        )}
                     </div>
                 </div>
 
@@ -228,6 +243,20 @@ export default function ForumQuestionCard({
                                         <strong className="text-[11px]">{reply.profile.firstName || 'anonymous'}</strong>
                                     </Link>
                                     <ForumDays created={reply.createdAt} />
+                                    {isAdmin && (
+                                        <button
+                                            type="button"
+                                            className="ml-auto text-muted hover:text-red-500 transition-colors"
+                                            title="delete reply"
+                                            onClick={() => {
+                                                if (confirm('delete this reply?')) {
+                                                    deleteReply(reply.id, question.id)
+                                                }
+                                            }}
+                                        >
+                                            <IconTrash className="size-3" />
+                                        </button>
+                                    )}
                                 </div>
                                 <div className="text-sm [&_p]:!my-0.5 [&_p]:!text-xs pl-[26px]">
                                     <ForumMarkdown>{reply.body}</ForumMarkdown>
