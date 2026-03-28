@@ -11,6 +11,7 @@ import BlogPostView from 'components/ReaderView/BlogPostView'
 import ReaderView from 'components/ReaderView'
 import PublicProfile from 'components/Profile/PublicProfile'
 import PostsView from 'components/Posts'
+import ContactContent from 'components/Contact/ContactContent'
 import LoginContent from 'components/Login/LoginContent'
 import RichTextEditor from 'components/AdminPanel/RichTextEditor'
 import { AppWindow } from '../../context/Window'
@@ -109,6 +110,11 @@ function WindowRouterInner({ item }: { item: AppWindow }) {
     // /login
     if (path === '/login') {
         return <LoginContent />
+    }
+
+    // /contact
+    if (path === '/contact') {
+        return <ContactContent />
     }
 
     // /profile/:username

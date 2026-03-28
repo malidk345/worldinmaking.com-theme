@@ -14,12 +14,12 @@ export default function Desktop() {
 
     const apps = useMemo(() => [
         {
-            label: 'home.mdx',
+            label: 'home',
             Icon: <AppIcon name="doc" />,
             onClick: () => addWindow({
                 key: 'home',
                 path: '/',
-                title: 'home.mdx'
+                title: 'home'
             })
         },
         {
@@ -39,6 +39,15 @@ export default function Desktop() {
                 key: 'login',
                 path: '/login',
                 title: 'login'
+            })
+        },
+        {
+            label: 'contact',
+            Icon: <AppIcon name="envelope" />,
+            onClick: () => addWindow({
+                key: 'contact',
+                path: '/contact',
+                title: 'contact'
             })
         }
     ], [addWindow])
