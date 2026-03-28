@@ -3,16 +3,16 @@
 .vote-picker {
   display: inline-flex;
   align-items: center;
-  height: 32px;
-  border-radius: 6px;
-  font-size: 0.8125rem;
+  height: 24px;
+  border-radius: 5px;
+  font-size: 0.6875rem;
   font-weight: 700;
   font-family: inherit;
   color: light-dark(hsl(0 0% 22%), hsl(0 0% 82%));
   user-select: none;
   background: light-dark(#fff, hsl(0 0% 11%));
   outline: 1px solid light-dark(hsl(0 0% 0% / 0.13), hsl(0 0% 100% / 0.13));
-  box-shadow: 0 2px 8px -2px hsl(0 0% 0% / 0.12);
+  box-shadow: 0 1px 4px -1px hsl(0 0% 0% / 0.1);
   transition: translate 0.12s ease-out;
 
   &:active {
@@ -22,7 +22,7 @@
   /* when the pill itself is the clickable element (e.g. share button) */
   &:is(button):hover {
     outline-color: light-dark(hsl(0 0% 0% / 0.25), hsl(0 0% 100% / 0.25));
-    box-shadow: 0 4px 12px -2px hsl(0 0% 0% / 0.16);
+    box-shadow: 0 2px 8px -2px hsl(0 0% 0% / 0.14);
   }
 
   &[data-active] {
@@ -35,8 +35,8 @@
 /* ── Buttons ── */
 .vote-picker__btn {
   flex-shrink: 0;
-  width: 30px;
-  height: 32px;
+  width: 22px;
+  height: 24px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -50,6 +50,8 @@
   svg {
     display: block;
     flex-shrink: 0;
+    width: 10px;
+    height: 10px;
   }
 
   &::after {
@@ -69,19 +71,19 @@
 }
 
 .vote-picker__btn--left {
-  border-radius: 6px 0 0 6px;
-  &::after { border-radius: 6px 0 0 6px; }
+  border-radius: 5px 0 0 5px;
+  &::after { border-radius: 5px 0 0 5px; }
 }
 
 .vote-picker__btn--right {
-  border-radius: 0 6px 6px 0;
-  &::after { border-radius: 0 6px 6px 0; }
+  border-radius: 0 5px 5px 0;
+  &::after { border-radius: 0 5px 5px 0; }
 }
 
 /* ── Animated number track ── */
 .vote-picker__track {
-  width: 2.4rem;
-  height: 32px;
+  width: 1.8rem;
+  height: 24px;
   overflow: hidden;
   position: relative;
   flex-shrink: 0;
