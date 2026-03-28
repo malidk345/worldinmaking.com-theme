@@ -242,16 +242,26 @@ export const useCommunity = () => {
             // Otherwise, set to the new direction (1 or -1)
             const nextVote = currentVoteValue === directionValue ? 0 : directionValue;
 
-            const { error } = await supabase
-                .from('community_post_votes')
-                .upsert({
-                    post_id: postId,
-                    user_id: userId,
-                    vote: nextVote,
-                    updated_at: new Date().toISOString()
-                }, { onConflict: 'post_id,user_id' });
-
-            if (error) throw error;
+            if (existing) {
+                const { error } = await supabase
+                    .from('community_post_votes')
+                    .update({
+                        vote: nextVote,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('post_id', postId)
+                    .eq('user_id', userId);
+                if (error) throw error;
+            } else {
+                const { error } = await supabase
+                    .from('community_post_votes')
+                    .insert({
+                        post_id: postId,
+                        user_id: userId,
+                        vote: nextVote
+                    });
+                if (error) throw error;
+            }
 
             if (activeChannelId) mutate(['community_posts', activeChannelId]);
             if (activePostSlug) mutate(['community_posts_slug', activePostSlug]);

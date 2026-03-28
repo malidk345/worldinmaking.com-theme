@@ -75,18 +75,32 @@ export default function ArticleActions({ slug }: ArticleActionsProps) {
         setUserVote(nextVote)
         setTotalVotes(prev => prev + delta)
 
-        const { error } = await supabase
+        // Fallback constraint logic using separate UPDATE/INSERT
+        const { data: existing } = await supabase
             .from('post_votes')
-            .upsert({
-                post_slug: slug,
-                user_id: user.id,
-                vote: nextVote,
-                updated_at: new Date().toISOString()
-            }, { onConflict: 'post_slug,user_id' })
+            .select('vote')
+            .eq('post_slug', slug)
+            .eq('user_id', user.id)
+            .maybeSingle()
+
+        let error = null
+        if (existing) {
+            const { error: updateErr } = await supabase
+                .from('post_votes')
+                .update({ vote: nextVote, updated_at: new Date().toISOString() })
+                .eq('post_slug', slug)
+                .eq('user_id', user.id)
+            error = updateErr
+        } else {
+            const { error: insertErr } = await supabase
+                .from('post_votes')
+                .insert({ post_slug: slug, user_id: user.id, vote: nextVote })
+            error = insertErr
+        }
 
         if (error) {
             console.error('Vote error:', error)
-            addToast('failed to save vote', 'error')
+            addToast(`failed to save vote: ${error.message}`, 'error')
             // Rollback
             setUserVote(prevUserVote)
             setTotalVotes(prev => prev - delta)

@@ -65,19 +65,33 @@ export default function ForumReplyCard({ reply, isInForum = false, questionAutho
         setUserVote(nextVote)
         setTotalVotes(prev => prev + voteDelta)
 
-        const { error } = await supabase
+        // Check if row exists instead of relying on ON CONFLICT
+        const { data: existing } = await supabase
             .from('community_reply_votes')
-            .upsert({
-                reply_id: reply.id,
-                user_id: user.id,
-                vote: nextVote,
-                updated_at: new Date().toISOString()
-            }, { onConflict: 'reply_id,user_id' })
+            .select('vote')
+            .eq('reply_id', reply.id)
+            .eq('user_id', user.id)
+            .maybeSingle()
+
+        let error = null
+        if (existing) {
+            const updateRes = await supabase
+                .from('community_reply_votes')
+                .update({ vote: nextVote, updated_at: new Date().toISOString() })
+                .eq('reply_id', reply.id)
+                .eq('user_id', user.id)
+            error = updateRes.error
+        } else {
+            const insertRes = await supabase
+                .from('community_reply_votes')
+                .insert({ reply_id: reply.id, user_id: user.id, vote: nextVote })
+            error = insertRes.error
+        }
 
         if (error) {
             setUserVote(prevUserVote)
             setTotalVotes(prev => prev - voteDelta)
-            addToast('failed to save vote', 'error')
+            addToast(`failed to save vote: ${error.message}`, 'error')
         }
     }
 
