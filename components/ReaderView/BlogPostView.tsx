@@ -45,11 +45,9 @@ BlogPostView.displayName = 'BlogPostView'
 
 export default BlogPostView
 
-import { useApp } from 'context/App'
 
 const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
     const { currentLanguage } = useReaderView()
-    const { updateWindow } = useApp()
     const prevLanguageRef = useRef(currentLanguage)
 
     useEffect(() => {

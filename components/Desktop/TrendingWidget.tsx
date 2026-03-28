@@ -4,9 +4,6 @@ import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
     RefreshCw,
-    X,
-    MoreVertical,
-    Star,
     ChevronLeft,
     ChevronRight,
     LayoutGrid,
@@ -14,7 +11,6 @@ import {
     FileText,
     MessageCircle,
     Bell,
-    TrendingUp
 } from 'lucide-react'
 import { supabase } from 'lib/supabase'
 import { useApp } from 'context/App'
@@ -80,26 +76,32 @@ export default function TrendingWidget() {
             setTotalPosts(pCount || 0)
             setTotalEntries(eCount || 0)
 
-            setBlogPosts(bData?.map(p => ({
-                id: p.id,
-                title: p.title,
-                slug: p.slug,
-                view_count: p.view_count,
-                author: (p.profiles as any)?.username || p.author || 'anonymous',
-                avatar_url: (p.profiles as any)?.avatar_url,
-                type: 'blog' as const,
-                time: new Date(p.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
-            })) || [])
+            setBlogPosts(bData?.map(p => {
+                const profiles = p.profiles as unknown as { username?: string; avatar_url?: string } | null
+                return {
+                    id: p.id,
+                    title: p.title,
+                    slug: p.slug,
+                    view_count: p.view_count,
+                    author: profiles?.username || p.author || 'anonymous',
+                    avatar_url: profiles?.avatar_url,
+                    type: 'blog' as const,
+                    time: new Date(p.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+                }
+            }) || [])
 
-            setComPosts(cData?.map(p => ({
-                id: p.id,
-                title: p.title,
-                view_count: p.view_count,
-                author: (p.profiles as any)?.username || 'anonymous',
-                avatar_url: (p.profiles as any)?.avatar_url,
-                type: 'community' as const,
-                time: new Date(p.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
-            })) || [])
+            setComPosts(cData?.map(p => {
+                const profiles = p.profiles as unknown as { username?: string; avatar_url?: string } | null
+                return {
+                    id: p.id,
+                    title: p.title,
+                    view_count: p.view_count,
+                    author: profiles?.username || 'anonymous',
+                    avatar_url: profiles?.avatar_url,
+                    type: 'community' as const,
+                    time: new Date(p.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+                }
+            }) || [])
 
         } catch (err) {
             console.error('Error fetching trending posts:', err)

@@ -45,7 +45,7 @@ export default function ArticleActions({ slug, views = 0 }: ArticleActionsProps)
 
                     if (data) setUserVote(data.vote)
                 }
-            } catch (err) {
+            } catch (err: unknown) {
                 console.error('Error loading votes:', err)
             } finally {
                 setLoading(false)
@@ -99,13 +99,14 @@ export default function ArticleActions({ slug, views = 0 }: ArticleActionsProps)
                     .insert({ post_slug: slug, user_id: user.id, vote: nextVote })
                 error = insertErr
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             error = err
         }
 
         if (error) {
             console.error('Vote error:', error)
-            addToast(`failed to save vote: ${error.message || 'unknown error'}`, 'error')
+            const errMsg = (error as { message?: string }).message?.toLowerCase() || 'unknown error'
+            addToast(`failed to save vote: ${errMsg}`, 'error')
             // Rollback
             setUserVote(prevUserVote)
             setTotalVotes(prev => prev - delta)
