@@ -179,7 +179,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
         { id: 'overview', label: 'overview', icon: IconActivity },
         { id: 'content', label: 'content', icon: IconNewspaper },
         { id: 'comments', label: 'comments', icon: IconMessage },
-        { id: 'writerApplications', label: 'wim writers', icon: MessageSquare },
+        { id: 'writerApplications', label: 'inbox', icon: MessageSquare },
         { id: 'users', label: 'users', icon: IconUser },
         { id: 'settings', label: 'settings', icon: Settings },
     ]
@@ -718,8 +718,8 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                     <div className="p-4 md:p-6 h-full flex flex-col text-black min-h-0">
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex flex-col">
-                                <h2 className="text-xs font-black uppercase tracking-widest text-black/30">writer transmissions</h2>
-                                <p className="text-[10px] text-black/20 lowercase">review applications & messages</p>
+                                <h2 className="text-xs font-black uppercase tracking-widest text-black/30">system inbox</h2>
+                                <p className="text-[10px] text-black/20 lowercase">review contact messages & applications</p>
                             </div>
                             <span className="text-[10px] font-black text-black/20 uppercase tracking-[0.1em]">
                                 {writerApplications.length} total
@@ -750,7 +750,12 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                         <span className="text-xs font-black lowercase">{application.name.charAt(0)}</span>
                                                     </div>
                                                     <div>
-                                                        <h3 className="text-xs font-black text-black lowercase">{application.name}</h3>
+                                                        <h3 className="text-xs font-black text-black lowercase flex items-center gap-2">
+                                                            {application.name}
+                                                            {application.source === 'contact_form' && (
+                                                                <span className="bg-blue-50 text-blue-700 text-[8px] px-1.5 py-0.5 rounded-full font-black border border-blue-200/50 lowercase tracking-wider">contact</span>
+                                                            )}
+                                                        </h3>
                                                         <p className="text-[10px] text-black/30 lowercase font-medium">{application.email}</p>
                                                     </div>
                                                 </div>
