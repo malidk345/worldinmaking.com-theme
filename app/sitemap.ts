@@ -89,7 +89,7 @@ async function getQuestionRoutes(): Promise<MetadataRoute.Sitemap> {
   const data = await fetchFromSupabase(
     "community_posts",
     "id,created_at",
-    {}
+    { "post_slug": "is.null" }
   ) as Array<{ id: number; created_at?: string }>;
 
   return data

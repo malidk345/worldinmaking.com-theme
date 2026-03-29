@@ -39,11 +39,11 @@ const PostsView = React.memo(() => {
         })
     }
 
-    if (loading) return <Loading fullScreen label="loading changelog..." />
+    if (loading) return <Loading fullScreen label="loading posts..." />
 
     return (
         <div className="absolute inset-0 flex flex-col text-primary bg-primary overflow-hidden">
-            <SEO title="changelog" />
+            <SEO title="posts" />
 
             {/* Community-style Post Rows */}
             <div className="flex-grow flex min-h-0 relative bg-primary">

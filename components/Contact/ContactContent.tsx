@@ -70,64 +70,64 @@ export default function ContactContent() {
     }
 
     return (
-        <div className="h-full flex flex-col lowercase font-mono">
-            <div className="p-6 border-b border-primary/10 bg-accent/50">
-                <div className="flex items-center gap-3 mb-2">
-                    <div className="size-10 bg-primary/10 border border-primary flex items-center justify-center">
-                        <Mail className="size-5" />
+        <div className="h-full flex flex-col lowercase font-sans">
+            <div className="p-6 border-b border-primary/10 bg-accent/40 backdrop-blur-md">
+                <div className="flex items-center gap-4 mb-3">
+                    <div className="size-12 rounded-lg bg-primary border border-border shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex items-center justify-center text-primary">
+                        <Mail className="size-6 opacity-80" />
                     </div>
                     <div>
-                        <h2 className="text-base font-black leading-none">contact</h2>
+                        <h2 className="text-xl font-bold tracking-tight text-primary leading-none">contact</h2>
                     </div>
                 </div>
-                <p className="text-xs opacity-60 leading-relaxed max-w-sm">
+                <p className="text-[14px] text-secondary leading-relaxed max-w-sm">
                     direct line for inquiries, collaborations, or system reports.
                 </p>
             </div>
 
             <form onSubmit={handleSubmit} className="flex-1 p-6 space-y-6 overflow-y-auto custom-scrollbar">
-                <div className="space-y-4">
+                <div className="space-y-4 pt-2">
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase opacity-30 tracking-widest pl-1">name</label>
+                        <label className="text-[13px] font-bold text-primary tracking-wide">name</label>
                         <div className="relative group">
-                            <User className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 opacity-20 group-focus-within:opacity-100 transition-opacity" />
+                            <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted group-focus-within:text-blue-primary transition-colors" />
                             <input
                                 type="text"
                                 required
                                 value={formData.name}
                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
                                 placeholder="your identity..."
-                                className="w-full bg-white dark:bg-zinc-800 border border-primary/20 focus:border-primary px-9 py-2.5 text-sm outline-none transition-all rounded-[1px] shadow-inner"
+                                className="w-full bg-primary border border-border rounded-md px-10 py-2.5 text-[15px] shadow-[0_2px_4px_rgba(0,0,0,0.02)] focus:border-blue-primary focus:ring-1 focus:ring-blue-primary transition-all text-primary placeholder:text-muted"
                             />
                         </div>
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase opacity-30 tracking-widest pl-1">return email</label>
+                        <label className="text-[13px] font-bold text-primary tracking-wide">return email</label>
                         <div className="relative group">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 opacity-20 group-focus-within:opacity-100 transition-opacity" />
+                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted group-focus-within:text-blue-primary transition-colors" />
                             <input
                                 type="email"
                                 required
                                 value={formData.email}
                                 onChange={e => setFormData({ ...formData, email: e.target.value })}
                                 placeholder="address@domain.com..."
-                                className="w-full bg-white dark:bg-zinc-800 border border-primary/20 focus:border-primary px-9 py-2.5 text-sm outline-none transition-all rounded-[1px] shadow-inner"
+                                className="w-full bg-primary border border-border rounded-md px-10 py-2.5 text-[15px] shadow-[0_2px_4px_rgba(0,0,0,0.02)] focus:border-blue-primary focus:ring-1 focus:ring-blue-primary transition-all text-primary placeholder:text-muted"
                             />
                         </div>
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase opacity-30 tracking-widest pl-1">message body</label>
+                        <label className="text-[13px] font-bold text-primary tracking-wide">message body</label>
                         <div className="relative group">
-                            <MessageSquare className="absolute left-3 top-3 size-3.5 opacity-20 group-focus-within:opacity-100 transition-opacity" />
+                            <MessageSquare className="absolute left-3 top-3.5 size-4 text-muted group-focus-within:text-blue-primary transition-colors" />
                             <textarea
                                 required
                                 rows={5}
                                 value={formData.message}
                                 onChange={e => setFormData({ ...formData, message: e.target.value })}
                                 placeholder="type your transmission here..."
-                                className="w-full bg-white dark:bg-zinc-800 border border-primary/20 focus:border-primary px-9 py-3 text-sm outline-none transition-all rounded-[1px] shadow-inner resize-none"
+                                className="w-full bg-primary border border-border rounded-md px-10 py-3 text-[15px] shadow-[0_2px_4px_rgba(0,0,0,0.02)] focus:border-blue-primary focus:ring-1 focus:ring-blue-primary transition-all resize-none text-primary placeholder:text-muted"
                             />
                         </div>
                     </div>
@@ -136,15 +136,14 @@ export default function ContactContent() {
                 <div className="pt-2 flex justify-end">
                     <OSButton 
                         type="submit" 
-                        variant="secondary"
+                        variant="primary"
                         disabled={loading}
-                        className="!opacity-100 lowercase !text-black"
                     >
                         <div className="flex items-center gap-2">
-                            <span className="font-bold">
+                            <span>
                                 {loading ? 'sending...' : 'send message'}
                             </span>
-                            {!loading && <Send className="size-3.5" />}
+                            {!loading && <Send className="size-4 relative -top-[0.5px]" />}
                         </div>
                     </OSButton>
                 </div>

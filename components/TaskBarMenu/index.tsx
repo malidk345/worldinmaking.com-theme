@@ -21,6 +21,8 @@ import KeyboardShortcut from 'components/KeyboardShortcut'
 import PostsView from 'components/Posts'
 import SystemSettings from 'components/Home/SystemSettings'
 import ScrollArea from 'components/RadixUI/ScrollArea'
+import AmbientPlayer from 'components/AmbientPlayer'
+import NotificationCenter from 'components/NotificationCenter'
 
 export default function TaskBarMenu() {
     const {
@@ -315,7 +317,12 @@ export default function TaskBarMenu() {
                         </div>
                     </Tooltip>
 
+                    <AmbientPlayer />
+
+                    <NotificationCenter />
+
                     <div className="h-4 w-px bg-primary/20 mx-1.5" />
+                    
                     <MenuBar
                         menus={accountMenu}
                         triggerAsChild={true}
