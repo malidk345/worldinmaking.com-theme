@@ -83,10 +83,10 @@ export default function AmbientPlayer() {
     // Mini EQ animation when playing
     const eqAnimation = (
         <div className="flex items-end gap-[1px] h-3 mr-1 opacity-80">
-            <span className="w-[2px] bg-primary rounded-t-sm animate-[eq_0.8s_ease-in-out_infinite_alternate]" style={{ height: '30%' }} />
-            <span className="w-[2px] bg-primary rounded-t-sm animate-[eq_0.5s_ease-in-out_infinite_alternate]" style={{ height: '60%' }} />
-            <span className="w-[2px] bg-primary rounded-t-sm animate-[eq_1.2s_ease-in-out_infinite_alternate]" style={{ height: '40%' }} />
-            <span className="w-[2px] bg-primary rounded-t-sm animate-[eq_0.9s_ease-in-out_infinite_alternate]" style={{ height: '80%' }} />
+            <span className="w-[2px] bg-black rounded-t-sm animate-[eq_0.8s_ease-in-out_infinite_alternate]" style={{ height: '30%' }} />
+            <span className="w-[2px] bg-black rounded-t-sm animate-[eq_0.5s_ease-in-out_infinite_alternate]" style={{ height: '60%' }} />
+            <span className="w-[2px] bg-black rounded-t-sm animate-[eq_1.2s_ease-in-out_infinite_alternate]" style={{ height: '40%' }} />
+            <span className="w-[2px] bg-black rounded-t-sm animate-[eq_0.9s_ease-in-out_infinite_alternate]" style={{ height: '80%' }} />
         </div>
     )
 
