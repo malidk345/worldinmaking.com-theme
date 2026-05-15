@@ -1,11 +1,36 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { ratelimit, authRatelimit } from './lib/ratelimit';
 
 /**
  * Middleware handles edge-level security.
  * It protects /admin specific routes by validating user roles in the database.
  */
 export async function middleware(request: NextRequest) {
+    // Rate limiting
+    if (ratelimit) {
+        // NextRequest no longer has .ip natively in edge functions unless passed from header
+        // For standard vercel edge, it might be in x-real-ip or x-forwarded-for
+        const ip = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for') || '127.0.0.1';
+
+        // Use authRatelimit for login and auth related routes, otherwise use general ratelimit
+        const isAuthRoute = request.nextUrl.pathname.startsWith('/login') ||
+                            request.nextUrl.pathname.startsWith('/api/auth');
+
+        const activeRatelimit = isAuthRoute && authRatelimit ? authRatelimit : ratelimit;
+
+        const { success } = await activeRatelimit.limit(ip);
+
+        if (!success) {
+            return new Response('Too Many Requests', {
+                status: 429,
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+        }
+    }
+
     let response = NextResponse.next({
         request: {
             headers: request.headers,

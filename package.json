@@ -46,14 +46,17 @@
     "@tiptap/react": "^3.19.0",
     "@tiptap/starter-kit": "^3.19.0",
     "@types/lodash": "^4.17.23",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.38.0",
     "algoliasearch": "^4.25.3",
     "cntl": "^1.0.0",
     "dayjs": "^1.11.19",
-    "dompurify": "^3.3.1",
+    "dompurify": "^3.4.3",
     "framer-motion": "^12.33.0",
     "hast-util-sanitize": "^5.0.2",
     "highlight.js": "^11.11.1",
     "instantsearch.js": "^4.60.0",
+    "isomorphic-dompurify": "^3.13.0",
     "lodash": "^4.17.23",
     "lowlight": "^3.3.0",
     "lucide-react": "^0.563.0",
@@ -71,7 +74,8 @@
     "rehype-slug": "^6.0.0",
     "remark-gfm": "^4.0.1",
     "swr": "^2.4.0",
-    "tailwindcss-animated": "^2.0.0"
+    "tailwindcss-animated": "^2.0.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@cloudflare/next-on-pages": "^1.13.16",
