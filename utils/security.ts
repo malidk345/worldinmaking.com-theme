@@ -3,7 +3,7 @@
  * Provides security-focused helper functions for user input
  */
 
-import DOMPurify from 'dompurify';
+import DOMPurify from 'isomorphic-dompurify';
 
 /**
  * Sanitize a string by removing potentially dangerous HTML/script content.
@@ -35,12 +35,6 @@ export function sanitizeString(input: string | null | undefined): string {
 export function sanitizeHtml(html: string | null | undefined, options = {}): string {
     if (typeof html !== 'string') return '';
 
-    // DOMPurify needs a window object. On the server, we fallback to a basic regex strip
-    // since Cloudflare edge / Next SSR doesn't provide a JSDOM environment natively.
-    if (typeof window === 'undefined') {
-        return sanitizeString(html);
-    }
-
     return DOMPurify.sanitize(html, {
         // By using ADD_TAGS instead of ALLOWED_TAGS, we let DOMPurify keep its default safe list
         // which already securely allows table, hr, img, a, br, p, em, strong, etc.
@@ -53,7 +47,7 @@ export function sanitizeHtml(html: string | null | undefined, options = {}): str
         ADD_ATTR: ['target', 'data-type', 'class', 'style', 'colspan', 'rowspan', 'colwidth', 'width', 'height', 'open'],
         ALLOW_DATA_ATTR: true,
         ...options
-    });
+    }) as string;
 }
 
 
