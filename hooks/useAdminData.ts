@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../context/ToastContext';
 import logger from '../utils/logger';
+import { postSchema } from '../lib/validations';
 
 export interface AdminPost {
     id: string;
@@ -116,9 +117,10 @@ export const useAdminData = () => {
 
     const createPost = useCallback(async (post: Partial<AdminPost>) => {
         try {
+            const parsedPost = postSchema.parse(post);
             const { data, error: createError } = await supabase
                 .from('posts')
-                .insert(post)
+                .insert(parsedPost)
                 .select()
                 .single();
 
@@ -140,9 +142,10 @@ export const useAdminData = () => {
 
     const updatePost = useCallback(async (id: string, updates: Partial<AdminPost>) => {
         try {
+            const parsedUpdates = postSchema.parse(updates);
             const { data, error: updateError } = await supabase
                 .from('posts')
-                .update(updates)
+                .update(parsedUpdates)
                 .eq('id', id)
                 .select()
                 .single();
@@ -267,9 +270,10 @@ export const useAdminData = () => {
 
     const updateCommunityPost = useCallback(async (id: number, updates: { title?: string; content?: string }) => {
         try {
+            const parsedUpdates = postSchema.parse(updates);
             const { data: refreshed, error: updateError } = await supabase
                 .from('community_posts')
-                .update(updates)
+                .update(parsedUpdates)
                 .eq('id', id)
                 .select('*, profiles(id, username, avatar_url)')
                 .single();
