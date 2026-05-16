@@ -1,5 +1,5 @@
 import { Ratelimit } from '@upstash/ratelimit'
-import { Redis } from '@upstash/redis'
+import { Redis } from '@upstash/redis/cloudflare'
 
 // Initialize Redis only if the environment variables are present
 // This ensures that the application won't break if Redis is not configured

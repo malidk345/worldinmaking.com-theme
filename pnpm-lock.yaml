@@ -24,8 +24,8 @@ importers:
         specifier: ^2.11.8
         version: 2.11.8
       '@posthog/icons':
-        specifier: ^0.36.5
-        version: 0.36.5(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+        specifier: ^0.37.0
+        version: 0.37.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@radix-ui/react-collapsible':
         specifier: ^1.1.12
         version: 1.1.12(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -1119,8 +1119,8 @@ packages:
   '@poppinss/exception@1.2.3':
     resolution: {integrity: sha512-dCED+QRChTVatE9ibtoaxc+WkdzOSjYTKi/+uacHWIsfodVfpsueo3+DKpgU5Px8qXjgmXkSvhXvSCz3fnP9lw==}
 
-  '@posthog/icons@0.36.5':
-    resolution: {integrity: sha512-grvGZyb4FznPnWv1ZcVc+SIrhkZhzKphKWFhwgFjdIBSkcwTVdmy3UBOTiIbmhomjpEjOJYK34bDCG238YZA5w==}
+  '@posthog/icons@0.37.0':
+    resolution: {integrity: sha512-YGjgDhIGVSOVspMH0AiacXanhrUOWi2BmQtEhMjjDoOQcCGsTW0+aVKwaySBupw6ZVMVQvxs9Rk/Cyz5SOU3kg==}
     peerDependencies:
       react: '>=16.14.0'
       react-dom: '>=16.14.0'
@@ -5555,7 +5555,7 @@ snapshots:
 
   '@poppinss/exception@1.2.3': {}
 
-  '@posthog/icons@0.36.5(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
+  '@posthog/icons@0.37.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
     dependencies:
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)

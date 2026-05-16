@@ -6,6 +6,7 @@ import { useToast } from '../context/ToastContext';
 import useSWR, { useSWRConfig } from 'swr';
 import { sanitizeString, sanitizePlainText, stripHtmlTags } from '../utils/security';
 import logger from '../utils/logger';
+import { createPostSchema, replySchema } from '../lib/validations';
 
 export interface Profile {
     id: string;
@@ -352,16 +353,23 @@ export const useCommunity = () => {
             return addToast('invalid reply content', 'error');
         }
 
-        const { error } = await supabase.from('community_replies').insert({
-            post_id: postId,
-            author_id: userData.user.id,
-            content: sanitizedContent
-        });
+        try {
+            const parsedPayload = replySchema.parse({ content: sanitizedContent });
+            const { error } = await supabase.from('community_replies').insert({
+                post_id: postId,
+                author_id: userData.user.id,
+                content: parsedPayload.content
+            });
 
-        if (error) return addToast(error.message, 'error');
-        addToast('reply sent', 'success');
-        mutate(['community_replies', postId]);
-        return true;
+            if (error) return addToast(error.message, 'error');
+            addToast('reply sent', 'success');
+            mutate(['community_replies', postId]);
+            return true;
+        } catch (e: unknown) {
+            logger.error('[useCommunity] validation error:', e);
+            addToast('invalid reply content', 'error');
+            return false;
+        }
     }, [addToast, mutate]);
 
     const createPost = useCallback(async (channelId: number | string | undefined, title: string, content: string, postSlug?: string, imageUrl?: string) => {
@@ -375,23 +383,30 @@ export const useCommunity = () => {
             return addToast('invalid post content', 'error');
         }
 
-        const insertPayload: Record<string, unknown> = {
-            author_id: userData.user.id,
-            title: sanitizedTitle,
-            content: sanitizedContent,
-            post_slug: postSlug || null,
-            channel_id: channelId || 1,
-        };
-        if (imageUrl) insertPayload.image_url = imageUrl;
+        try {
+            const parsedPayload = createPostSchema.parse({ title: sanitizedTitle, content: sanitizedContent });
+            const insertPayload: Record<string, unknown> = {
+                author_id: userData.user.id,
+                title: parsedPayload.title,
+                content: parsedPayload.content,
+                post_slug: postSlug || null,
+                channel_id: channelId || 1,
+            };
+            if (imageUrl) insertPayload.image_url = imageUrl;
 
-        const { error } = await supabase.from('community_posts').insert(insertPayload);
+            const { error } = await supabase.from('community_posts').insert(insertPayload);
 
-        if (error) return addToast(error.message, 'error');
-        addToast('discussion started', 'success');
-        if (postSlug) mutate(['community_posts_slug', postSlug]);
-        if (channelId) mutate(['community_posts', channelId]);
-        if (activePostLookupId) mutate(['community_post_id', activePostLookupId]);
-        return true;
+            if (error) return addToast(error.message, 'error');
+            addToast('discussion started', 'success');
+            if (postSlug) mutate(['community_posts_slug', postSlug]);
+            if (channelId) mutate(['community_posts', channelId]);
+            if (activePostLookupId) mutate(['community_post_id', activePostLookupId]);
+            return true;
+        } catch (e: unknown) {
+            logger.error('[useCommunity] validation error:', e);
+            addToast('invalid post content', 'error');
+            return false;
+        }
     }, [addToast, mutate, activePostLookupId]);
 
     const deletePost = useCallback(async (postId: number | string) => {
