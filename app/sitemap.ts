@@ -55,18 +55,35 @@ async function fetchFromSupabase(table: string, select: string, filters?: Record
 async function getPostRoutes(): Promise<MetadataRoute.Sitemap> {
   const data = await fetchFromSupabase(
     "posts",
-    "slug,created_at",
+    "slug,created_at,translations",
     { published: "eq.true" }
-  ) as Array<{ slug: string; created_at?: string }>;
+  ) as Array<{ slug: string; created_at?: string; translations?: Record<string, { slug?: string }> }>;
 
   return data
     .filter((item) => item.slug)
-    .map((item) => ({
-      url: `${siteUrl}/posts/${encodeURIComponent(item.slug)}`,
-      lastModified: item.created_at ? new Date(item.created_at) : new Date(),
-      changeFrequency: "weekly" as const,
-      priority: 0.7,
-    }));
+    .map((item) => {
+      const languages: Record<string, string> = {
+        en: `${siteUrl}/posts/${encodeURIComponent(item.slug)}`,
+      };
+
+      if (item.translations) {
+        Object.entries(item.translations).forEach(([lang, trans]) => {
+          if (trans.slug) {
+            languages[lang] = `${siteUrl}/posts/${encodeURIComponent(trans.slug)}`;
+          }
+        });
+      }
+
+      return {
+        url: `${siteUrl}/posts/${encodeURIComponent(item.slug)}`,
+        lastModified: item.created_at ? new Date(item.created_at) : new Date(),
+        changeFrequency: "weekly" as const,
+        priority: 0.7,
+        alternates: {
+          languages: Object.keys(languages).length > 1 ? languages : undefined,
+        },
+      };
+    });
 }
 
 async function getQuestionTopicRoutes(): Promise<MetadataRoute.Sitemap> {

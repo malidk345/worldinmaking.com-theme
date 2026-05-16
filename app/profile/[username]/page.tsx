@@ -60,4 +60,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
 }
 
-export { default } from "./page-client";
+import ProfilePageClient from "./page-client";
+import { ProfilePageJsonLd } from "components/SEO/JsonLd";
+
+export default async function ProfilePage({ params }: Props) {
+    const { username } = await params;
+    const decodedUsername = decodeURIComponent(username || "");
+    const profile = await getProfile(decodedUsername);
+
+    const title = profile?.username || decodedUsername;
+    const bio = profile?.bio || `View ${title}'s profile, posts, and contributions on World in Making.`;
+    const image = profile?.avatar_url || undefined;
+    const profileUrl = `/profile/${username}/`;
+
+    return (
+        <>
+            <ProfilePageJsonLd
+                name={title}
+                url={profileUrl}
+                description={bio}
+                image={image}
+            />
+            <ProfilePageClient />
+        </>
+    );
+}
