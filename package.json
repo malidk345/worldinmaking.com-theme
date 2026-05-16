@@ -18,7 +18,7 @@
     "@headlessui/tailwindcss": "^0.2.2",
     "@next/third-parties": "^16.1.6",
     "@popperjs/core": "^2.11.8",
-    "@posthog/icons": "^0.36.5",
+    "@posthog/icons": "^0.37.0",
     "@radix-ui/react-collapsible": "^1.1.12",
     "@radix-ui/react-menubar": "^1.1.16",
     "@radix-ui/react-popover": "^1.1.15",
