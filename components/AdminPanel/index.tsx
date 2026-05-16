@@ -367,22 +367,22 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                         <div className={`${focusMode ? 'fixed inset-0 z-[9999] bg-white' : 'p-3 sm:p-4 h-full'} flex flex-col text-black overflow-y-auto custom-scrollbar`}>
                             {/* Focus Mode Header */}
                             {focusMode && (
-                                <div className="flex items-center justify-between px-3 py-2 border-b border-black/10 bg-neutral-50 flex-shrink-0">
+                                <div className="flex flex-wrap sm:flex-nowrap items-center justify-between px-3 py-2 border-b border-black/10 bg-neutral-50 flex-shrink-0 gap-2">
                                     <button
                                         onClick={() => setFocusMode(false)}
-                                        className="flex items-center gap-1 text-[11px] font-bold text-black/60 hover:text-black transition-colors lowercase"
+                                        className="flex items-center gap-1 text-[11px] font-bold text-black/60 hover:text-black transition-colors lowercase whitespace-nowrap"
                                     >
                                         <ArrowLeft className="size-3" /> exit focus
                                     </button>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
                                         <input
                                             type="text"
                                             placeholder="post title..."
                                             value={newPostTitle}
                                             onChange={(e) => setNewPostTitle(e.target.value)}
-                                            className="bg-transparent border-b border-black/15 py-1 text-sm font-bold text-black focus:outline-none placeholder:text-black/25 w-36 sm:w-64"
+                                            className="bg-transparent border-b border-black/15 py-1 text-sm font-bold text-black focus:outline-none placeholder:text-black/25 w-full sm:w-64 max-w-[200px] sm:max-w-none"
                                         />
-                                        <OSButton size="sm" variant="primary" onClick={handleSavePost}>
+                                        <OSButton size="sm" variant="primary" onClick={handleSavePost} className="flex-shrink-0">
                                             <div className="flex items-center gap-1">
                                                 <Save className="size-3" />
                                                 <span className="lowercase text-xs">save</span>
@@ -453,7 +453,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                 })}
                                             </div>
                                             <select
-                                                className="bg-neutral-50 border border-black/10 rounded-sm text-[10px] font-bold text-black/50 px-2 py-1 outline-none flex-shrink-0"
+                                                className="bg-neutral-50 border border-black/10 rounded-sm text-[10px] font-bold text-black/50 px-2 py-1.5 sm:py-1 outline-none flex-shrink-0"
                                                 value=""
                                                 onChange={(e) => {
                                                     if (e.target.value) handleLanguageChange(e.target.value)
@@ -490,14 +490,14 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                 placeholder="my-post-url"
                                                 value={newPostSlug}
                                                 onChange={(e) => setNewPostSlug(e.target.value)}
-                                                className="w-full bg-neutral-50 border border-black/10 rounded-sm px-2 py-1 text-xs font-bold text-black focus:outline-none placeholder:text-black/20"
+                                                className="w-full bg-neutral-50 border border-black/10 rounded-sm px-2 py-1.5 sm:py-1 text-xs font-bold text-black focus:outline-none placeholder:text-black/20"
                                             />
                                         </div>
                                         <div>
                                             <label className="text-[9px] font-black uppercase text-black/30 mb-0.5 block tracking-wider">status</label>
                                             <button
                                                 onClick={() => setNewPostPublished(!newPostPublished)}
-                                                className={`w-full px-2 py-1 text-[10px] font-bold rounded-sm border transition-colors ${newPostPublished
+                                                className={`w-full px-2 py-1.5 sm:py-1 text-[10px] font-bold rounded-sm border transition-colors ${newPostPublished
                                                     ? 'bg-black text-white border-black'
                                                     : 'bg-neutral-100 text-black/50 border-black/10'
                                                     }`}
@@ -510,7 +510,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                             <select
                                                 value={originalLanguage}
                                                 onChange={(e) => setOriginalLanguage(e.target.value)}
-                                                className="w-full bg-neutral-50 border border-black/10 rounded-sm px-2 py-1 text-xs font-bold text-black outline-none"
+                                                className="w-full bg-neutral-50 border border-black/10 rounded-sm px-2 py-1.5 sm:py-1 text-xs font-bold text-black outline-none"
                                             >
                                                 {SUPPORTED_LANGS.map(l => (
                                                     <option key={l.code} value={l.code}>{l.label}</option>
@@ -526,7 +526,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                             placeholder="short description for seo..."
                                             value={newPostExcerpt}
                                             onChange={(e) => setNewPostExcerpt(e.target.value)}
-                                            className="w-full bg-neutral-50 border border-black/10 rounded-sm px-2 py-1 text-xs text-black focus:outline-none resize-none h-12 placeholder:text-black/20"
+                                            className="w-full bg-neutral-50 border border-black/10 rounded-sm px-2 py-1.5 sm:py-1 text-xs text-black focus:outline-none resize-none h-16 sm:h-12 placeholder:text-black/20"
                                         />
                                     </div>
 
@@ -539,7 +539,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                 placeholder="e.g. technology"
                                                 value={newPostCategory}
                                                 onChange={(e) => setNewPostCategory(e.target.value)}
-                                                className="w-full bg-neutral-50 border border-black/10 rounded-sm px-2 py-1 text-xs font-bold text-black focus:outline-none placeholder:text-black/20"
+                                                className="w-full bg-neutral-50 border border-black/10 rounded-sm px-2 py-1.5 sm:py-1 text-xs font-bold text-black focus:outline-none placeholder:text-black/20"
                                             />
                                         </div>
                                         <div>
@@ -549,7 +549,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                 placeholder="https://..."
                                                 value={newPostImageUrl}
                                                 onChange={(e) => setNewPostImageUrl(e.target.value)}
-                                                className="w-full bg-neutral-50 border border-black/10 rounded-sm px-2 py-1 text-xs font-bold text-black focus:outline-none placeholder:text-black/20"
+                                                className="w-full bg-neutral-50 border border-black/10 rounded-sm px-2 py-1.5 sm:py-1 text-xs font-bold text-black focus:outline-none placeholder:text-black/20"
                                             />
                                         </div>
                                     </div>
@@ -744,23 +744,23 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                 <div className="divide-y divide-black/5">
                                     {writerApplications.map(application => (
                                         <div key={application.id} className="p-5 hover:bg-neutral-50 transition-all group border-l-2 border-transparent hover:border-black">
-                                            <div className="flex items-start justify-between mb-3">
+                                            <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-3 gap-2">
                                                 <div className="flex items-center gap-4">
                                                     <div className="size-10 rounded-full border border-black/10 bg-black/5 flex items-center justify-center flex-shrink-0">
                                                         <span className="text-xs font-black lowercase">{application.name.charAt(0)}</span>
                                                     </div>
                                                     <div>
-                                                        <h3 className="text-xs font-black text-black lowercase flex items-center gap-2">
+                                                        <h3 className="text-xs font-black text-black lowercase flex items-center gap-2 flex-wrap">
                                                             {application.name}
                                                             {application.source === 'contact_form' && (
-                                                                <span className="bg-blue-50 text-blue-700 text-[8px] px-1.5 py-0.5 rounded-full font-black border border-blue-200/50 lowercase tracking-wider">contact</span>
+                                                                <span className="bg-blue-50 text-blue-700 text-[8px] px-1.5 py-0.5 rounded-full font-black border border-blue-200/50 lowercase tracking-wider whitespace-nowrap">contact</span>
                                                             )}
                                                         </h3>
                                                         <p className="text-[10px] text-black/30 lowercase font-medium">{application.email}</p>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center gap-3">
-                                                    <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border transition-all ${application.status === 'new'
+                                                <div className="flex items-center gap-3 pl-14 sm:pl-0">
+                                                    <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border transition-all whitespace-nowrap ${application.status === 'new'
                                                         ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
                                                         : 'bg-neutral-100 border-neutral-200 text-black/40'
                                                         }`}>
@@ -773,13 +773,13 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                             onClick={() => updateWriterApplicationStatus(application.id, 'reviewed')}
                                                             className="hover:!bg-black hover:!text-white"
                                                         >
-                                                            <span className="text-[10px] lowercase px-1">mark read</span>
+                                                            <span className="text-[10px] lowercase px-1 whitespace-nowrap">mark read</span>
                                                         </OSButton>
                                                     )}
                                                 </div>
                                             </div>
 
-                                            <div className="ml-14 p-4 rounded-sm bg-black/[0.02] border border-black/[0.03]">
+                                            <div className="ml-4 sm:ml-14 mt-2 sm:mt-0 p-4 rounded-sm bg-black/[0.02] border border-black/[0.03]">
                                                 <p className="text-xs leading-relaxed text-black/70 whitespace-pre-wrap font-sans">
                                                     {application.message}
                                                 </p>
@@ -917,7 +917,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                 </div>
 
                                                 {/* Post Content */}
-                                                <div className="px-4 py-3 ml-11">
+                                                <div className="px-4 py-3 ml-4 sm:ml-11">
                                                     {isEditing ? (
                                                         <div className="space-y-3">
                                                             <input
@@ -951,7 +951,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                             <div className="p-4 text-center text-[9px] font-black uppercase tracking-widest text-black/15">no transmissions found</div>
                                                         ) : (
                                                             postReplies.map(reply => (
-                                                                <div key={reply.id} className="p-3 pl-14 flex items-start justify-between group bg-white/50">
+                                                                <div key={reply.id} className="p-3 pl-4 sm:pl-14 flex items-start justify-between group bg-white/50">
                                                                     <div className="flex gap-3">
                                                                         <div className="size-6 rounded-full border border-black/5 bg-black/5 flex-shrink-0 overflow-hidden">
                                                                             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1077,37 +1077,35 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
     }
 
     return (
-        <div className="flex h-full w-full bg-[#f8fafb] text-black overflow-hidden font-sans">
+        <div className="flex flex-col md:flex-row w-full bg-[#f8fafb] text-black overflow-hidden font-sans h-full">
             {/* Sidebar */}
-            <div className={`flex-shrink-0 border-r border-black/5 bg-white/50 backdrop-blur-md flex flex-col ${isMobile ? 'w-12 items-center py-4' : 'w-44 py-6'}`}>
-                {!isMobile && (
-                    <div className="px-5 mb-8">
-                        <div className="flex items-center gap-2">
-                            <div className="size-2 rounded-full bg-black/80" />
-                            <h1 className="font-black text-[13px] tracking-tight text-black lowercase">wim console</h1>
-                        </div>
+            <div className="flex-shrink-0 border-b md:border-b-0 md:border-r border-black/5 bg-white/50 backdrop-blur-md flex flex-row md:flex-col overflow-x-auto md:overflow-visible py-2 px-2 md:py-6 md:px-0 md:w-44 no-scrollbar">
+                <div className="hidden md:block px-5 mb-8">
+                    <div className="flex items-center gap-2">
+                        <div className="size-2 rounded-full bg-black/80" />
+                        <h1 className="font-black text-[13px] tracking-tight text-black lowercase">wim console</h1>
                     </div>
-                )}
+                </div>
 
-                <div className="flex flex-col gap-0.5 px-2 w-full">
+                <div className="flex flex-row md:flex-col gap-2 md:gap-0.5 w-full justify-between md:justify-start px-1 md:px-2">
                     {TABS.map((tab) => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                            className={`flex items-center gap-2.5 px-3 py-2 rounded-sm text-[12px] transition-all text-left w-full
+                            className={`flex items-center gap-2.5 px-3 py-2 rounded-sm text-[12px] transition-all text-left
                                 ${activeTab === tab.id
                                     ? 'bg-black text-white font-bold shadow-md shadow-black/10'
                                     : 'text-black/40 hover:bg-black/5 hover:text-black/80'}
-                                ${isMobile ? 'justify-center px-0' : ''}
+                                justify-center md:justify-start flex-1 min-w-[3rem] md:w-full md:flex-none
                             `}
                         >
                             <tab.icon className={`size-4 flex-shrink-0 ${activeTab === tab.id ? 'opacity-100' : 'opacity-60'}`} />
-                            {!isMobile && <span className="lowercase">{tab.label}</span>}
+                            <span className="hidden md:inline lowercase">{tab.label}</span>
                         </button>
                     ))}
                 </div>
 
-                <div className="mt-auto px-4">
+                <div className="hidden md:block mt-auto px-4">
                     <div className="text-[9px] font-black text-black/15 uppercase tracking-[0.2em]">system v1.2.5</div>
                 </div>
             </div>
