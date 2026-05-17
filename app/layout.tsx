@@ -16,6 +16,7 @@ export const metadata: Metadata = {
         template: "%s | world in making",
     },
     description: "the world is not something we merely inhabit — it is something continuously being formed. world in making explores product, engineering, and community through the interrogation of constructed realities.",
+    keywords: ["product", "engineering", "community", "world in making", "technology", "design"],
     alternates: {
         canonical: "/",
     },
@@ -25,11 +26,20 @@ export const metadata: Metadata = {
         siteName: "world in making",
         title: "world in making",
         description: "the world is not something we merely inhabit — it is something continuously being formed. world in making explores product, engineering, and community through the interrogation of constructed realities.",
+        images: [
+            {
+                url: `${siteUrl}/og-image.jpg`,
+                width: 1200,
+                height: 630,
+                alt: "world in making",
+            },
+        ],
     },
     twitter: {
         card: "summary_large_image",
         title: "world in making",
         description: "the world is not something we merely inhabit — it is something continuously being formed. world in making explores product, engineering, and community through the interrogation of constructed realities.",
+        images: [`${siteUrl}/og-image.jpg`],
     },
     robots: {
         index: true,

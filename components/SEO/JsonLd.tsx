@@ -13,6 +13,7 @@ interface ArticleJsonLdProps {
     authorUrl?: string
     publisherName?: string
     publisherLogo?: string
+    keywords?: string[]
 }
 
 interface BreadcrumbJsonLdProps {
@@ -38,6 +39,7 @@ export function ArticleJsonLd({
     authorUrl,
     publisherName = "World in Making",
     publisherLogo,
+    keywords,
 }: ArticleJsonLdProps) {
     const absoluteUrl = url.startsWith('http') ? url : `${SITE_URL}${url}`
 
@@ -69,6 +71,38 @@ export function ArticleJsonLd({
             "@type": "WebPage",
             "@id": absoluteUrl,
         },
+        ...(keywords && keywords.length > 0 && { keywords: keywords.join(', ') }),
+    }
+
+    return (
+        <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        />
+    )
+}
+
+interface ProfilePageJsonLdProps {
+    name: string
+    url: string
+    description?: string
+    image?: string
+}
+
+export function ProfilePageJsonLd({ name, url, description, image }: ProfilePageJsonLdProps) {
+    const absoluteUrl = url.startsWith('http') ? url : `${SITE_URL}${url}`
+
+    const schema = {
+        "@context": "https://schema.org",
+        "@type": "ProfilePage",
+        dateCreated: new Date().toISOString(),
+        mainEntity: {
+            "@type": "Person",
+            name,
+            url: absoluteUrl,
+            ...(description && { description }),
+            ...(image && { image }),
+        }
     }
 
     return (

@@ -94,6 +94,12 @@ export default function SEO({
         // Canonical
         updateLink('canonical', finalCanonical)
 
+        return () => {
+            // Clean up when unmounting to prevent conflicting SEO if multiple windows opened/closed
+            // Usually not necessary on full page loads, but critical for floating windows
+            if (title) document.title = siteTitle;
+            // Optionally, remove injected meta tags, though keeping the last one is generally harmless if replaced.
+        }
     }, [title, description, image, url, article, noindex, canonicalUrl])
 
     return <></>

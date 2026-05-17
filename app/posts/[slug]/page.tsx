@@ -11,7 +11,7 @@ async function getPost(slug: string) {
   if (!supabaseUrl || !supabaseKey || !slug) return null;
 
   const url = new URL("/rest/v1/posts", supabaseUrl);
-  url.searchParams.set("select", "title,slug,excerpt,content,image_url,author,author_avatar,category,created_at,language,translations");
+  url.searchParams.set("select", "title,slug,excerpt,content,image_url,author,author_avatar,category,tags,created_at,updated_at,language,translations");
   url.searchParams.set("published", "eq.true");
   url.searchParams.set("or", `(slug.eq.${slug},translations->en->>slug.eq.${slug},translations->tr->>slug.eq.${slug},translations->de->>slug.eq.${slug},translations->es->>slug.eq.${slug})`);
   url.searchParams.set("limit", "1");
@@ -85,10 +85,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = getExcerpt(post);
   const postUrl = `${siteUrl}/posts/${slug}/`;
   const imageUrl = post.image_url || undefined;
+  const keywords = post.tags ? (Array.isArray(post.tags) ? post.tags : post.tags.split(",")) : [];
 
   return {
     title,
     description,
+    keywords,
     alternates: {
       canonical: postUrl,
     },
@@ -100,8 +102,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       siteName: "World in Making",
       ...(imageUrl && { images: [{ url: imageUrl, width: 1200, height: 630, alt: title }] }),
       publishedTime: post.created_at,
+      modifiedTime: post.updated_at || post.created_at,
       authors: post.author ? [post.author] : undefined,
       section: post.category || "General",
+      tags: keywords,
       locale: post.language || "en",
     },
     twitter: {
@@ -131,6 +135,7 @@ export default async function PostPage({ params }: Props) {
   const description = getExcerpt(post);
   const postUrl = `${siteUrl}/posts/${slug}/`;
   const authorName = post.author || "World in Making";
+  const keywords = post.tags ? (Array.isArray(post.tags) ? post.tags : post.tags.split(",")) : [];
 
   return (
     <>
@@ -140,7 +145,9 @@ export default async function PostPage({ params }: Props) {
         url={postUrl}
         image={post.image_url || undefined}
         datePublished={post.created_at || new Date().toISOString()}
+        dateModified={post.updated_at || post.created_at}
         authorName={authorName}
+        keywords={keywords}
       />
       <PostPageClient />
     </>
