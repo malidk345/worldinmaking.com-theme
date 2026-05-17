@@ -165,6 +165,8 @@ interface RichTextEditorProps {
     toolkitPosition?: 'header' | 'footer'
     windowKey?: string
     placeholder?: string
+    hideBorder?: boolean
+    expandHeight?: boolean
 }
 
 const RichTextEditor = ({
@@ -181,7 +183,9 @@ const RichTextEditor = ({
     extraElements = [],
     toolkitPosition = 'footer',
     windowKey,
-    placeholder
+    placeholder,
+    hideBorder = false,
+    expandHeight = false
 }: RichTextEditorProps) => {
     const { focusedWindow, isMobile } = useApp()
     const targetKey = windowKey || focusedWindow?.key
@@ -519,7 +523,7 @@ const RichTextEditor = ({
     }, [handleKeyDown])
 
     return (
-        <div className={`border border-[#1E2F46]/15 rounded-sm bg-white overflow-hidden flex flex-col ${focusMode ? 'h-screen fixed inset-0 z-[100]' : 'h-full'}`}>
+        <div className={`${hideBorder ? 'bg-transparent overflow-hidden flex flex-col' : `border border-[#1E2F46]/15 rounded-sm bg-white overflow-hidden flex flex-col`} ${focusMode ? 'h-screen fixed inset-0 z-[100]' : (expandHeight ? 'h-auto' : 'h-full')}`}>
             {/* Toolkit - injected into Window Footer or Header via portal */}
             <Toolkit
                 windowKey={windowKey || targetKey}
@@ -534,7 +538,7 @@ const RichTextEditor = ({
 
             {/* Editor */}
             <div
-                className="flex-1 overflow-auto bg-white min-h-0 cursor-text"
+                className={`${expandHeight ? 'bg-transparent cursor-text' : (hideBorder ? 'flex-1 overflow-auto bg-transparent min-h-0 cursor-text' : 'flex-1 overflow-auto bg-white min-h-0 cursor-text')}`}
                 onClick={() => editor?.chain().focus().run()}
             >
                 <EditorContent editor={editor} />

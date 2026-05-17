@@ -504,7 +504,7 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
             </aside>
 
             {/* Scrollable Document Area Container */}
-            <div className="flex-col relative w-full flex-1 flex min-h-0">
+            <div className="flex-col relative w-full flex-1 flex min-h-0 overflow-y-auto">
                 {/* Cover Image */}
                 {coverImage && (
                     <div className="relative w-full h-48 sm:h-64 group bg-black/5 shrink-0">
@@ -522,22 +522,24 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                 {/* Main Node Content Area */}
                 <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 pb-20 flex-1 flex flex-col min-h-0 pt-6 gap-3">
                     {/* Title Input — framed, lowercase */}
-                    <div className="shrink-0 rounded-md border border-primary bg-primary/5 p-3">
+                    <div>
                         <input
                             type="text"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder="untitled node"
-                            className="bg-transparent border-none cq-title font-extrabold tracking-tight text-primary outline-none placeholder:text-primary/10 w-full transition-all lowercase px-0"
+                            className="bg-transparent border-none font-black tracking-tight text-primary outline-none placeholder:text-primary/20 w-full transition-all lowercase px-0 text-4xl sm:text-5xl mt-6 mb-4"
                         />
                     </div>
 
                     {/* Rich Text Editor */}
-                    <div className="w-full flex-1 min-h-[400px]">
+                    <div className="w-full h-auto mb-32">
                         <RichTextEditor
                             placeholder="type here..."
                             content={content}
                             onChange={setContent}
+                            hideBorder={true}
+                            expandHeight={true}
                             toolkitPosition="header"
                             windowKey={item.key}
                             onSaveDraft={() => handleSave('draft')}
@@ -757,10 +759,10 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
                 <div id={`window-inner-header-${item.key}`} className="pointer-events-auto" />
             </aside>
 
-            <div className="flex-col relative w-full flex-1 flex min-h-0">
+            <div className="flex-col relative w-full flex-1 flex min-h-0 overflow-y-auto">
                 <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 pb-20 flex-1 flex flex-col min-h-0 pt-6 gap-3">
                     {/* Title Input — framed, lowercase */}
-                    <div className="shrink-0 rounded-md border border-primary bg-primary/5 p-3">
+                    <div>
                         <input
                             type="text"
                             value={title}
@@ -769,15 +771,24 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
                                 if (!currentPostId) setSlug(toSlug(e.target.value))
                             }}
                             placeholder="untitled post"
-                            className="bg-transparent border-none cq-title font-extrabold tracking-tight text-primary outline-none placeholder:text-primary/10 w-full transition-all lowercase px-0"
+                            className="bg-transparent border-none font-black tracking-tight text-primary outline-none placeholder:text-primary/20 w-full transition-all lowercase px-0 text-4xl sm:text-5xl mt-6 mb-4"
+                        />
+                        <textarea
+                            value={excerpt}
+                            onChange={(e) => setExcerpt(e.target.value)}
+                            placeholder="brief excerpt or subtitle..."
+                            className="bg-transparent border-none text-primary/60 outline-none w-full resize-none text-lg leading-relaxed mb-6 px-0"
+                            rows={2}
                         />
                     </div>
 
-                    <div className="w-full flex-1 min-h-[400px]">
+                    <div className="w-full h-auto mb-32">
                         <RichTextEditor
                             placeholder="type here..."
                             content={content}
                             onChange={setContent}
+                            hideBorder={true}
+                            expandHeight={true}
                             toolkitPosition="header"
                             windowKey={item.key}
                             onSaveDraft={() => handleSavePost(false)}
