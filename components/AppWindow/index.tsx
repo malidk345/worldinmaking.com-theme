@@ -202,6 +202,17 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
 
     const handleDragEnd = (_event: unknown, info: PanInfo) => {
         setDragging(false)
+
+        const isMobile = window.innerWidth <= 768
+
+        // Swipe-to-dismiss logic for mobile
+        if (isMobile) {
+            if (info.offset.y > 150 || (info.velocity.y > 500 && info.offset.y > 50)) {
+                closeWindow(item.key)
+                return
+            }
+        }
+
         if (!item.fixedSize && snapIndicator !== null) {
             handleSnapToSide(snapIndicator)
             setSnapIndicator(null)

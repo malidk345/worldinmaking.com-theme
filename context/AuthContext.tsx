@@ -27,6 +27,7 @@ interface AuthContextType {
     signOut: () => Promise<void>;
     updateProfile: (updates: Partial<Profile>) => Promise<boolean>;
     isAdmin: boolean;
+    isModerator: boolean;
 }
 
 const trimValue = (value?: string | null) => value?.trim() || '';
@@ -286,6 +287,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const isRoleAdmin = profile?.role?.toLowerCase() === 'admin';
     const isEmailAdmin = !!user?.email && adminEmailAllowlist.includes(user.email.toLowerCase());
     const isAdmin = isRoleAdmin || isEmailAdmin;
+    const isModerator = profile?.role?.toLowerCase() === 'moderator' || isAdmin;
 
     const value = React.useMemo(() => ({
         user,
@@ -294,8 +296,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         signInWithEmail,
         signOut,
         updateProfile,
-        isAdmin
-    }), [user, profile, loading, signInWithEmail, signOut, updateProfile, isAdmin]);
+        isAdmin,
+        isModerator
+    }), [user, profile, loading, signInWithEmail, signOut, updateProfile, isAdmin, isModerator]);
 
     return (
         <AuthContext.Provider value={value}>

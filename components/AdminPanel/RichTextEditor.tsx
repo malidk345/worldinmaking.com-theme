@@ -15,6 +15,10 @@ import { TableCell } from '@tiptap/extension-table-cell'
 import { TableHeader } from '@tiptap/extension-table-header'
 import { createLowlight, common } from 'lowlight'
 import 'highlight.js/styles/github.css' // Light mode theme to prevent white text
+import * as Y from 'yjs'
+import { WebrtcProvider } from 'y-webrtc'
+import Collaboration from '@tiptap/extension-collaboration'
+import CollaborationCursor from '@tiptap/extension-collaboration-cursor'
 
 import {
     Bold, Italic, List, ListOrdered, Quote, Heading2, Heading3,
@@ -167,6 +171,8 @@ interface RichTextEditorProps {
     placeholder?: string
     hideBorder?: boolean
     expandHeight?: boolean
+    collaborationId?: string
+    currentUser?: { name: string; color: string }
 }
 
 const RichTextEditor = ({
@@ -185,15 +191,33 @@ const RichTextEditor = ({
     windowKey,
     placeholder,
     hideBorder = false,
-    expandHeight = false
+    expandHeight = false,
+    collaborationId,
+    currentUser
 }: RichTextEditorProps) => {
     const { focusedWindow, isMobile } = useApp()
     const targetKey = windowKey || focusedWindow?.key
 
-    const editor = useEditor({
-        immediatelyRender: false,
-        extensions: [
-            StarterKit.configure({
+    const [provider, setProvider] = React.useState<WebrtcProvider | null>(null)
+    const [ydoc, setYdoc] = React.useState<Y.Doc | null>(null)
+
+    React.useEffect(() => {
+        if (collaborationId) {
+            const doc = new Y.Doc()
+            const webrtcProvider = new WebrtcProvider(`wim-collab-${collaborationId}`, doc)
+            setYdoc(doc)
+            setProvider(webrtcProvider)
+
+            return () => {
+                webrtcProvider.destroy()
+                doc.destroy()
+            }
+        }
+    }, [collaborationId])
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const extensions: any[] = [
+        StarterKit.configure({
                 codeBlock: false,
             }),
             Placeholder.configure({
@@ -220,8 +244,24 @@ const RichTextEditor = ({
             TableCell,
             CalloutNode,
             ReferencesNode,
-        ],
-        content: content,
+        ]
+
+    if (collaborationId && ydoc && provider) {
+        extensions.push(
+            Collaboration.configure({
+                document: ydoc,
+            }),
+            CollaborationCursor.configure({
+                provider: provider,
+                user: currentUser || { name: 'Anonymous', color: '#f783ac' },
+            })
+        )
+    }
+
+    const editor = useEditor({
+        immediatelyRender: false,
+        extensions: extensions,
+        content: collaborationId ? undefined : content,
         onUpdate: ({ editor }) => {
             const html = editor.getHTML()
             onChange(html)
@@ -541,7 +581,13 @@ const RichTextEditor = ({
                 className={`${expandHeight ? 'bg-transparent cursor-text' : (hideBorder ? 'flex-1 overflow-auto bg-transparent min-h-0 cursor-text' : 'flex-1 overflow-auto bg-white min-h-0 cursor-text')}`}
                 onClick={() => editor?.chain().focus().run()}
             >
-                <EditorContent editor={editor} />
+                {(!collaborationId || (ydoc && provider)) ? (
+                    <EditorContent editor={editor} />
+                ) : (
+                    <div className="flex items-center justify-center h-full text-black/40 text-sm lowercase font-bold">
+                        <Loader2 className="size-4 animate-spin mr-2" /> connecting to peers...
+                    </div>
+                )}
             </div>
         </div>
     )

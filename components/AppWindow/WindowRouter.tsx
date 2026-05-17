@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import ForumPageLayout from 'components/Forum/ForumPageLayout'
 import ForumQuestionDetail from 'components/Forum/ForumQuestionDetail'
 import AdminPanel from 'components/AdminPanel'
@@ -13,7 +13,9 @@ import PublicProfile from 'components/Profile/PublicProfile'
 import PostsView from 'components/Posts'
 import ContactContent from 'components/Contact/ContactContent'
 import LoginContent from 'components/Login/LoginContent'
-import RichTextEditor from 'components/AdminPanel/RichTextEditor'
+import dynamic from 'next/dynamic'
+import CloudinaryImage from 'components/CloudinaryImage'
+const RichTextEditor = dynamic(() => import('components/AdminPanel/RichTextEditor'), { ssr: false })
 import { AppWindow } from '../../context/Window'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
@@ -367,9 +369,13 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
 
     const [coverImage, setCoverImage] = useState<string | null>(null)
     const [iconIndex] = useState<number>(0)
-    const [theme, setTheme] = useState<'default' | 'yellow' | 'green' | 'blue'>('default')
+    const [theme, setTheme] = useState<'default' | 'yellow' | 'green' | 'blue' | 'pitch-black'>('default')
     const [nodeType, setNodeType] = useState<'canvas' | 'list' | 'journal'>('canvas')
     const [, setTags] = useState<string[]>([])
+
+    // Debounce state for auto-save
+    const hasMounted = useRef(false)
+    const saveTimeout = useRef<NodeJS.Timeout | null>(null)
 
     // Load existing node from Supabase when nodeId is provided
     useEffect(() => {
@@ -389,29 +395,56 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
         load()
     }, [nodeId])
 
-    const handleSave = async (publishStatus: 'draft' | 'published' = 'draft') => {
+    // Auto-save logic
+    useEffect(() => {
+        if (!hasMounted.current) {
+            hasMounted.current = true
+            return
+        }
+
+        if (nodeStatus === 'published') return // Do not auto-save if already published
+
+        if (saveTimeout.current) clearTimeout(saveTimeout.current)
+
+        saveTimeout.current = setTimeout(() => {
+            if (title !== 'untitled node' || content.length > 10) {
+                handleSave('draft', true) // Save as draft silently
+            }
+        }, 3000)
+
+        return () => {
+            if (saveTimeout.current) clearTimeout(saveTimeout.current)
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [title, content])
+
+    const handleSave = async (publishStatus: 'draft' | 'published' = 'draft', isSilentAutoSave: boolean = false) => {
         if (!nodeId) {
-            addToast('no node id — open from my profile to edit', 'error')
+            if (!isSilentAutoSave) addToast('no node id — open from my profile to edit', 'error')
             return
         }
         if (!user) {
-            addToast('you must be logged in to save', 'error')
+            if (!isSilentAutoSave) addToast('you must be logged in to save', 'error')
             return
         }
-        setSaving(true)
+        if (!isSilentAutoSave) setSaving(true)
+
         const { error } = await supabase
             .from('nodes')
             .update({ title, content, status: publishStatus, updated_at: new Date().toISOString() })
             .eq('id', nodeId)
+
         if (error) {
-            addToast('failed to save: ' + error.message, 'error')
+            if (!isSilentAutoSave) addToast('failed to save: ' + error.message, 'error')
         } else {
             setNodeStatus(publishStatus)
-            setSaved(true)
-            addToast(publishStatus === 'published' ? 'node published!' : 'draft saved', 'success')
-            setTimeout(() => setSaved(false), 2500)
+            if (!isSilentAutoSave) {
+                setSaved(true)
+                addToast(publishStatus === 'published' ? 'node published!' : 'draft saved', 'success')
+                setTimeout(() => setSaved(false), 2500)
+            }
         }
-        setSaving(false)
+        if (!isSilentAutoSave) setSaving(false)
     }
 
     const themeClasses = {
@@ -419,6 +452,7 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
         'yellow': 'bg-amber-50 dark:bg-amber-950/20',
         'green': 'bg-emerald-50 dark:bg-emerald-950/20',
         'blue': 'bg-sky-50 dark:bg-sky-950/20',
+        'pitch-black': 'bg-black text-white dark:bg-black',
     }
 
     const statusConfig = {
@@ -466,8 +500,7 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                 <div className="flex-col relative w-full flex-1 flex min-h-0">
                     {coverImage && (
                         <div className="relative w-full h-48 sm:h-64 group bg-black/5 shrink-0">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={coverImage} alt="Cover" className="w-full h-full object-cover" />
+                            <CloudinaryImage src={coverImage} alt="Cover" className="w-full h-full object-cover" width={1200} height={400} />
                         </div>
                     )}
 
@@ -508,8 +541,7 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                 {/* Cover Image */}
                 {coverImage && (
                     <div className="relative w-full h-48 sm:h-64 group bg-black/5 shrink-0">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={coverImage} alt="Cover" className="w-full h-full object-cover" />
+                        <CloudinaryImage src={coverImage} alt="Cover" className="w-full h-full object-cover" width={1200} height={400} />
                         <button
                             onClick={() => setCoverImage(null)}
                             className="absolute top-4 right-4 bg-black/60 text-white text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-md font-bold lowercase"
@@ -540,6 +572,8 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                             onChange={setContent}
                             hideBorder={true}
                             expandHeight={true}
+                            collaborationId={nodeId ? `node-${nodeId}` : undefined}
+                            currentUser={{ name: user?.email?.split('@')[0] || 'Guest', color: '#10b981' }}
                             toolkitPosition="header"
                             windowKey={item.key}
                             onSaveDraft={() => handleSave('draft')}
@@ -674,6 +708,10 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
     const [saving, setSaving] = useState(false)
     const [saved, setSaved] = useState(false)
 
+    // Debounce state for auto-save
+    const hasMounted = useRef(false)
+    const saveTimeout = useRef<NodeJS.Timeout | null>(null)
+
     useEffect(() => {
         if (!currentPostId) return
         const load = async () => {
@@ -695,9 +733,9 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
         load()
     }, [currentPostId])
 
-    const handleSavePost = async (nextPublished: boolean) => {
+    const handleSavePost = async (nextPublished: boolean, isSilentAutoSave: boolean = false) => {
         if (!user || !profile?.username) {
-            addToast('you must be logged in to save posts', 'error')
+            if (!isSilentAutoSave) addToast('you must be logged in to save posts', 'error')
             return
         }
 
@@ -705,7 +743,7 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
         const finalSlug = toSlug(slug || finalTitle)
         const finalExcerpt = (excerpt || content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 150)).trim()
 
-        setSaving(true)
+        if (!isSilentAutoSave) setSaving(true)
 
         const postPayload = {
             title: finalTitle,
@@ -726,8 +764,8 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
                 .eq('id', currentPostId)
 
             if (error) {
-                addToast(`failed to save post: ${error.message}`, 'error')
-                setSaving(false)
+                if (!isSilentAutoSave) addToast(`failed to save post: ${error.message}`, 'error')
+                if (!isSilentAutoSave) setSaving(false)
                 return
             }
         } else {
@@ -738,8 +776,8 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
                 .single()
 
             if (error || !data) {
-                addToast(`failed to create post: ${error?.message || 'unknown error'}`, 'error')
-                setSaving(false)
+                if (!isSilentAutoSave) addToast(`failed to create post: ${error?.message || 'unknown error'}`, 'error')
+                if (!isSilentAutoSave) setSaving(false)
                 return
             }
 
@@ -747,11 +785,38 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
         }
 
         setPublished(nextPublished)
-        setSaved(true)
-        addToast(nextPublished ? 'post published!' : 'post saved as draft', 'success')
-        setTimeout(() => setSaved(false), 2500)
-        setSaving(false)
+        if (!isSilentAutoSave) {
+            setSaved(true)
+            addToast(nextPublished ? 'post published!' : 'post saved as draft', 'success')
+            setTimeout(() => setSaved(false), 2500)
+            setSaving(false)
+        }
     }
+
+    // Auto-save logic
+    useEffect(() => {
+        if (!hasMounted.current) {
+            hasMounted.current = true
+            return
+        }
+
+        if (published) return // Do not auto-save if already published (prevent accidental overwrites on prod)
+
+        if (saveTimeout.current) clearTimeout(saveTimeout.current)
+
+        saveTimeout.current = setTimeout(() => {
+            // Only auto-save if there's actual content or title beyond default
+            if (title !== 'untitled post' || content.length > 10) {
+                handleSavePost(false, true) // Save as draft silently without toasts/loading spinners
+            }
+        }, 3000)
+
+        return () => {
+            if (saveTimeout.current) clearTimeout(saveTimeout.current)
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [title, content, excerpt])
+
 
     return (
         <div className="flex flex-col size-full overflow-hidden text-black bg-[#fafcfc] dark:bg-primary/5 transition-colors duration-500">
@@ -789,6 +854,8 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
                             onChange={setContent}
                             hideBorder={true}
                             expandHeight={true}
+                            collaborationId={currentPostId ? `post-${currentPostId}` : undefined}
+                            currentUser={{ name: profile?.username || 'Guest', color: '#3b82f6' }}
                             toolkitPosition="header"
                             windowKey={item.key}
                             onSaveDraft={() => handleSavePost(false)}

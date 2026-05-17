@@ -4,6 +4,7 @@ import React from 'react';
 import { supabase } from '../lib/supabase';
 import { stripMarkdown } from '../lib/markdown';
 import useSWR from 'swr';
+import useSWRInfinite from 'swr/infinite';
 import logger from '../utils/logger';
 
 export interface Post {
@@ -141,7 +142,11 @@ const adaptPost = (p: DBPost): Post | null => {
     };
 };
 
-const postsFetcher = async () => {
+const postsFetcher = async (key: string | unknown[]) => {
+    const args = (Array.isArray(key) ? key[1] : {}) as Record<string, unknown>;
+    const page = (args.page as number) || 0;
+    const limit = (args.limit as number) || 50;
+
     let dbData: DBPost[] = [];
     try {
         const { data, error } = await supabase
@@ -149,7 +154,8 @@ const postsFetcher = async () => {
             .select('*')
             .eq('published', true)
             .eq('is_approved', true)
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false })
+            .range(page * limit, (page + 1) * limit - 1);
 
         if (error) {
             logger.error('[postsFetcher] Supabase error:', error);
@@ -166,19 +172,32 @@ const postsFetcher = async () => {
     return adaptedDbPosts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 };
 
-export const usePosts = () => {
-    const { data, error, isLoading, mutate } = useSWR('posts', postsFetcher, {
+export const usePosts = (options: { limit?: number } = {}) => {
+    const limit = options.limit || 50;
+
+    const getKey = (pageIndex: number, previousPageData: Post[] | null) => {
+        if (previousPageData && !previousPageData.length) return null; // reached the end
+        return ['posts', { page: pageIndex, limit }];
+    };
+
+    const { data, error, isLoading, size, setSize, mutate } = useSWRInfinite(getKey, postsFetcher, {
         revalidateOnFocus: false,
         dedupingInterval: 60000,
     });
 
-    const posts = React.useMemo(() => data || [], [data]);
+    const posts = React.useMemo(() => (data ? data.flat() : []), [data]);
+    const isLoadingMore = isLoading || (size > 0 && data && typeof data[size - 1] === "undefined");
+    const isEmpty = data?.[0]?.length === 0;
+    const isReachingEnd = isEmpty || (data && data[data.length - 1]?.length < limit);
 
     return {
         posts,
         loading: isLoading,
         error: error?.message || null,
-        refetch: mutate
+        refetch: mutate,
+        fetchNextPage: () => setSize(size + 1),
+        isLoadingMore,
+        isReachingEnd
     };
 };
 

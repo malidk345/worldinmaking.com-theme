@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { supabase } from 'lib/supabase'
 import { useApp } from 'context/App'
+import CloudinaryImage from 'components/CloudinaryImage'
 
 interface TopPost {
     id: string | number
@@ -230,9 +231,11 @@ export default function TrendingWidget() {
                                     <Bell className="w-3 h-3 text-[#172b4d]" />
                                 </div>
                             ) : post.avatar_url ? (
-                                <img
+                                <CloudinaryImage
                                     src={post.avatar_url}
                                     alt={post.author}
+                                    width={20}
+                                    height={20}
                                     className="w-5 h-5 rounded-full object-cover border border-[#dadce0] dark:border-[#3c4043]"
                                 />
                             ) : (

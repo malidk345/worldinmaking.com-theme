@@ -23,7 +23,7 @@ const getPostHref = (slug?: string) => {
 }
 
 const PostsView = React.memo(() => {
-    const { posts, loading } = usePosts()
+    const { posts, loading, fetchNextPage, isLoadingMore, isReachingEnd } = usePosts({ limit: 20 })
     const { addWindow } = useApp()
 
     const sortedRoadmaps = useMemo(() => {
@@ -39,7 +39,7 @@ const PostsView = React.memo(() => {
         })
     }
 
-    if (loading) return <Loading fullScreen label="loading posts..." />
+    if (loading && posts.length === 0) return <Loading fullScreen label="loading posts..." />
 
     return (
         <div className="absolute inset-0 flex flex-col text-primary bg-primary overflow-hidden">
@@ -109,6 +109,19 @@ const PostsView = React.memo(() => {
                                     )
                                 })}
                             </ul>
+                        )}
+
+                        {/* Load More Button */}
+                        {!isReachingEnd && sortedRoadmaps.length > 0 && (
+                            <div className="py-8 flex justify-center">
+                                <button
+                                    onClick={fetchNextPage}
+                                    disabled={isLoadingMore}
+                                    className="px-4 py-2 border border-primary/20 rounded-md text-xs font-bold bg-primary/5 hover:bg-primary/10 disabled:opacity-50 transition-colors"
+                                >
+                                    {isLoadingMore ? 'loading...' : 'load older posts'}
+                                </button>
+                            </div>
                         )}
                     </div>
                 </ScrollArea>
