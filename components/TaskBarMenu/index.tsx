@@ -21,6 +21,10 @@ import KeyboardShortcut from 'components/KeyboardShortcut'
 import PostsView from 'components/Posts'
 import SystemSettings from 'components/Home/SystemSettings'
 import ScrollArea from 'components/RadixUI/ScrollArea'
+import Marginalia from 'components/Ideas/Marginalia'
+import CuratedDossiers from 'components/Ideas/CuratedDossiers'
+import AtmosphericStations from 'components/Ideas/AtmosphericStations'
+import EphemeralTransmissions from 'components/Ideas/EphemeralTransmissions'
 import AmbientPlayer from 'components/AmbientPlayer'
 import NotificationCenter from 'components/NotificationCenter'
 
@@ -146,6 +150,18 @@ export default function TaskBarMenu() {
             icon: <MessageSquare className="size-4 opacity-70" />,
             items: [
                 { type: 'item' as const, label: 'Forums', icon: <MessageSquare className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'questions', title: 'Questions', path: '/questions' }) },
+            ]
+        },
+
+        {
+            type: 'submenu' as const,
+            label: 'Ideas',
+            icon: <BookOpen className="size-4 opacity-70" />,
+            items: [
+                { type: 'item' as const, label: 'Marginalia', icon: <BookOpen className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'marginalia', path: '/ideas/marginalia', title: 'Marginalia Archive', element: <Marginalia /> }) },
+                { type: 'item' as const, label: 'Curated Dossiers', icon: <FileText className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'dossiers', path: '/ideas/dossiers', title: 'Curated Dossiers', element: <CuratedDossiers /> }) },
+                { type: 'item' as const, label: 'Atmospheric Stations', icon: <Settings className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'stations', path: '/ideas/stations', title: 'Atmospheric Stations', element: <AtmosphericStations /> }) },
+                { type: 'item' as const, label: 'Ephemeral Transmissions', icon: <MessageSquare className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'transmissions', path: '/ideas/transmissions', title: 'Ephemeral Transmissions', element: <EphemeralTransmissions /> }) },
             ]
         },
 
