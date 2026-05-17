@@ -87,12 +87,26 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const imageUrl = post.image_url || undefined;
   const keywords = post.tags ? (Array.isArray(post.tags) ? post.tags : post.tags.split(",")) : [];
 
+  const languages: Record<string, string> = {
+    en: `${siteUrl}/posts/${slug}/`,
+  };
+
+  if (post.translations) {
+    Object.entries(post.translations).forEach(([lang, value]) => {
+      const trans = value as Record<string, unknown>;
+      if (trans && typeof trans.slug === 'string') {
+        languages[lang] = `${siteUrl}/posts/${encodeURIComponent(trans.slug)}/`;
+      }
+    });
+  }
+
   return {
     title,
     description,
     keywords,
     alternates: {
       canonical: postUrl,
+      languages: Object.keys(languages).length > 1 ? languages : undefined,
     },
     openGraph: {
       type: "article",

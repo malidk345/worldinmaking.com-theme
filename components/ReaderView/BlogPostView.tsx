@@ -143,7 +143,12 @@ const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
                 const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, '') || ''
                 if (!baseUrl) return
 
-                image.setAttribute('src', `${baseUrl}${src}`)
+                const renderUrl = src.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
+                image.setAttribute('src', `${baseUrl}${renderUrl}?width=1200&quality=80&format=webp`);
+
+                if (!image.getAttribute('alt')) {
+                    image.setAttribute('alt', 'Blog post image');
+                }
             })
 
             return doc.body.innerHTML
@@ -211,13 +216,15 @@ const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
                                     let finalSrc = src || '';
                                     if (finalSrc.startsWith('/storage/v1/object/public/')) {
                                         const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, '') || '';
-                                        finalSrc = `${baseUrl}${finalSrc}`;
+                                        // Replace '/public/' with '/render/image/public/' and append transformation params
+                                        finalSrc = `${baseUrl}${finalSrc}`.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
+                                        finalSrc += '?width=1200&quality=80&format=webp';
                                     }
 
                                     return (
                                         <CloudinaryImage
                                             src={finalSrc}
-                                            alt={alt || ''}
+                                            alt={alt || 'Blog post image'}
                                             title={title}
                                             className="my-10 rounded-xl border border-primary shadow-lg overflow-hidden"
                                             imgClassName="object-contain w-full h-auto"
