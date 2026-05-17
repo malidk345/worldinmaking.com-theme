@@ -233,7 +233,7 @@ export default function TrendingWidget() {
                             ) : post.avatar_url ? (
                                 <CloudinaryImage
                                     src={post.avatar_url}
-                                    alt={post.author}
+                                    alt={post.author || 'Author'}
                                     width={20}
                                     height={20}
                                     className="w-5 h-5 rounded-full object-cover border border-[#dadce0] dark:border-[#3c4043]"

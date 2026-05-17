@@ -246,18 +246,6 @@ const RichTextEditor = ({
             ReferencesNode,
         ]
 
-    if (collaborationId && ydoc && provider) {
-        extensions.push(
-            Collaboration.configure({
-                document: ydoc,
-            }),
-            CollaborationCursor.configure({
-                provider: provider,
-                user: currentUser || { name: 'Anonymous', color: '#f783ac' },
-            })
-        )
-    }
-
     const editor = useEditor({
         immediatelyRender: false,
         extensions: extensions,
@@ -542,12 +530,29 @@ const RichTextEditor = ({
         }
     ] : []
 
+    // Handle Yjs Collaboration Extensions Dynamic Injection
+    useEffect(() => {
+        if (collaborationId && ydoc && provider && editor && !editor.isDestroyed) {
+            // Check if already registered
+            if (!editor.extensionManager.extensions.find(e => e.name === 'collaboration')) {
+                const collabExt = Collaboration.configure({ document: ydoc })
+                const cursorExt = CollaborationCursor.configure({
+                    provider: provider,
+                    user: currentUser || { name: 'Anonymous', color: '#f783ac' },
+                })
+                editor.extensionManager.extensions.push(collabExt, cursorExt)
+                editor.view.updateState(editor.state) // Force state rebuild
+            }
+        }
+    }, [collaborationId, ydoc, provider, editor, currentUser])
+
     // Sync content from parent
     useEffect(() => {
+        if (collaborationId) return // do not force sync if collaborative
         if (editor && content !== editor.getHTML()) {
             editor.commands.setContent(content)
         }
-    }, [content, editor])
+    }, [content, editor, collaborationId])
 
     // Keyboard shortcut: Ctrl+Shift+F for focus mode
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
