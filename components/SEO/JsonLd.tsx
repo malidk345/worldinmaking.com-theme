@@ -38,7 +38,7 @@ export function ArticleJsonLd({
     authorName,
     authorUrl,
     publisherName = "World in Making",
-    publisherLogo,
+    publisherLogo = `${SITE_URL}/logo.svg`,
     keywords,
 }: ArticleJsonLdProps) {
     const absoluteUrl = url.startsWith('http') ? url : `${SITE_URL}${url}`

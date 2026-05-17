@@ -60,18 +60,31 @@ export default function SEO({
             if (el) el.setAttribute('href', href)
         }
 
-        // Helper to ensure absolute URL
-        const getAbsoluteUrl = (pathOrUrl?: string) => {
+        // Helper to ensure absolute URL with trailing slash (matching next.config.ts)
+        const getAbsoluteUrl = (pathOrUrl?: string, isImage?: boolean) => {
             if (!pathOrUrl) return undefined
-            if (pathOrUrl.startsWith('http')) return pathOrUrl
-            const base = SITE_URL.endsWith('/') ? SITE_URL.slice(0, -1) : SITE_URL
-            const path = pathOrUrl.startsWith('/') ? pathOrUrl : `/${pathOrUrl}`
-            return `${base}${path}`
+
+            let finalUrl = ''
+            if (pathOrUrl.startsWith('http')) {
+                finalUrl = pathOrUrl
+            } else {
+                const base = SITE_URL.endsWith('/') ? SITE_URL.slice(0, -1) : SITE_URL
+                const path = pathOrUrl.startsWith('/') ? pathOrUrl : `/${pathOrUrl}`
+                finalUrl = `${base}${path}`
+            }
+
+            // Ensure trailing slash for non-image URLs if missing and no query params
+            if (!isImage && !finalUrl.includes('?') && !finalUrl.endsWith('/')) {
+                finalUrl += '/'
+            }
+
+            return finalUrl
         }
 
-        const finalUrl = getAbsoluteUrl(url) || (typeof window !== 'undefined' ? window.location.href : SITE_URL)
+        const currentUrl = typeof window !== 'undefined' ? window.location.href.split('?')[0] : SITE_URL
+        const finalUrl = getAbsoluteUrl(url) || (currentUrl.endsWith('/') ? currentUrl : `${currentUrl}/`)
         const finalCanonical = getAbsoluteUrl(canonicalUrl) || finalUrl
-        const finalImage = getAbsoluteUrl(image)
+        const finalImage = getAbsoluteUrl(image, true)
 
         // Basic Meta
         updateMeta('meta[name="description"]', 'content', description || defaultDescription)
