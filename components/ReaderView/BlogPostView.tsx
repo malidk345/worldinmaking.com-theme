@@ -22,9 +22,10 @@ interface BlogPostViewProps {
         authors?: { name: string, avatar: string, username?: string }[]
         image: string | null
         content: string
+        htmlContent?: string // Added for server-rendered HTML
         tags?: string[]
         headings: { id: string, text: string, level: number }[]
-        translations?: Record<string, { title: string, content: string, excerpt?: string, slug?: string }>
+        translations?: Record<string, { title: string, content: string, excerpt?: string, slug?: string, htmlContent?: string }>
         language?: string
         originalLanguage?: string
         description?: string
@@ -75,8 +76,10 @@ const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
 
     const title = (!isOriginal && translation?.title) ? translation.title : post.title
     const content = (!isOriginal && translation?.content) ? translation.content : post.content
+    const serverHtml = (!isOriginal && translation?.htmlContent) ? translation.htmlContent : (isOriginal ? post.htmlContent : null)
+    
     const description = (!isOriginal && translation?.excerpt) ? translation.excerpt : (post.description || post.content.slice(0, 160))
-    const isRichTextHtml = useMemo(() => /<\/?[a-z][\s\S]*>/i.test(content || ''), [content])
+    const isRichTextHtml = useMemo(() => serverHtml || /<\/?[a-z][\s\S]*>/i.test(content || ''), [content, serverHtml])
 
     const body = useMemo(() => {
         const wordCount = content ? content.split(/\s+/).filter(Boolean).length : 0;
@@ -103,11 +106,12 @@ const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
 
     // Normalize HTML content and inject IDs into headings for TOC linking
     const processedContent = useMemo(() => {
-        if (typeof window === 'undefined') return content;
+        const sourceContent = serverHtml || content;
+        if (typeof window === 'undefined') return sourceContent;
 
         try {
             const parser = new DOMParser()
-            const doc = parser.parseFromString(content, 'text/html')
+            const doc = parser.parseFromString(sourceContent, 'text/html')
 
             doc.querySelectorAll('h1, h2, h3, h4').forEach((heading) => {
                 if (heading.id) return
@@ -153,9 +157,9 @@ const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
 
             return doc.body.innerHTML
         } catch {
-            return content
+            return sourceContent
         }
-    }, [content]);
+    }, [content, serverHtml]);
 
     const sanitizedProcessedContent = useMemo(() => sanitizeHtml(processedContent), [processedContent])
 
