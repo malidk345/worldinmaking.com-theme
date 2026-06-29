@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import '@fontsource-variable/ibm-plex-sans';
+import { IBM_Plex_Sans } from 'next/font/google';
 import "./globals.css";
 import 'highlight.js/styles/github.css';
 import { WebSiteJsonLd } from "../components/SEO/JsonLd";
@@ -8,6 +8,13 @@ import { AuthProvider } from "../context/AuthContext";
 import { ToastProvider } from "../context/ToastContext";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://worldinmaking.com";
+
+const ibmPlexSans = IBM_Plex_Sans({
+    subsets: ['latin'],
+    weight: ['400', '500', '600', '700'],
+    variable: '--font-ibm-plex',
+    display: 'swap',
+});
 
 export const metadata: Metadata = {
     metadataBase: new URL(siteUrl),
@@ -72,7 +79,7 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="en">
+        <html lang="en" className={ibmPlexSans.variable}>
             <head>
                 <meta name="apple-mobile-web-app-capable" content="yes" />
                 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
