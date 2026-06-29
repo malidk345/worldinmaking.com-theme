@@ -22,6 +22,8 @@ import { Share, Image as ImageIcon, Palette, Hash, CheckCircle, ChevronDown, Fil
 import OSButton from 'components/OSButton'
 import { Popover } from 'components/RadixUI/Popover'
 import { sanitizeHtml, toSlug } from '../../utils/security'
+import BlueprintsExplorer from 'components/Blueprints/BlueprintsExplorer'
+import BlueprintPostView from 'components/Blueprints/BlueprintPostView'
 
 interface AdaptablePost {
     id: number | string
@@ -99,6 +101,17 @@ function WindowRouterInner({ item }: { item: AppWindow }) {
     const blogMatch = path.match(/^\/(blog|posts)\/([^/]+)/)
     if (blogMatch) {
         return <BlogRouteView slug={blogMatch[2]} />
+    }
+
+    // /blueprints
+    if (path === '/blueprints') {
+        return <BlueprintsExplorer />
+    }
+
+    // /blueprints/post/:slug
+    const blueprintMatch = path.match(/^\/blueprints\/post\/([^/]+)/)
+    if (blueprintMatch) {
+        return <BlueprintPostView slug={blueprintMatch[1]} />
     }
 
     // /search
