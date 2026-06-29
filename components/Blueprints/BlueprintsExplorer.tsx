@@ -10,7 +10,7 @@ import { ChevronRight, BookOpen, Layers } from 'lucide-react'
 export default function BlueprintsExplorer() {
     const { fetchHierarchy } = useBlueprints()
     const { addWindow } = useApp()
-    const [hierarchy, setHierarchy] = useState<any[]>([])
+    const [hierarchy, setHierarchy] = useState<unknown[]>([])
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -46,7 +46,7 @@ export default function BlueprintsExplorer() {
                     </header>
 
                     <div className="space-y-12">
-                        {hierarchy.map((category) => (
+                        {hierarchy.map((category: any) => (
                             <section key={category.id} className="blueprint-category">
                                 <h2 className="text-xs font-black tracking-widest uppercase opacity-30 mb-6 border-l-2 border-primary pl-4">
                                     {category.name}

@@ -7,12 +7,12 @@ import { sanitizeHtml } from 'utils/security'
 
 export default function BlueprintPostView({ slug }: { slug: string }) {
     const { getPostBySlug } = useBlueprints()
-    const [post, setPost] = useState<any>(null)
+    const [post, setPost] = useState<BlueprintPost | null>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         getPostBySlug(slug).then(data => {
-            setPost(data)
+            setPost(data as unknown as BlueprintPost)
             setLoading(false)
         })
     }, [slug, getPostBySlug])
