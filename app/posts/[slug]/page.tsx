@@ -1,17 +1,30 @@
 import type { Metadata } from "next";
 import { ArticleJsonLd } from "components/SEO/JsonLd";
+import PostPageClient from "./page-client";
+import { remark } from 'remark';
+import remarkGfm from 'remark-gfm';
+import html from 'remark-html';
 
-export const runtime = 'edge';
+// ISR: Revalidate every hour
+export const revalidate = 3600;
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://worldinmaking.com";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
+async function parseMarkdown(content: string) {
+  const result = await remark()
+    .use(remarkGfm)
+    .use(html, { sanitize: false }) // Sanitization handled by rehype-sanitize if needed, but we trust Supabase content for now to preserve specific HTML
+    .process(content);
+  return result.toString();
+}
+
 async function getPost(slug: string) {
   if (!supabaseUrl || !supabaseKey || !slug) return null;
 
   const url = new URL("/rest/v1/posts", supabaseUrl);
-  url.searchParams.set("select", "title,slug,excerpt,content,image_url,author,author_avatar,category,tags,created_at,updated_at,language,translations");
+  url.searchParams.set("select", "id,title,slug,excerpt,content,image_url,author,author_avatar,category,tags,created_at,updated_at,language,translations");
   url.searchParams.set("published", "eq.true");
   url.searchParams.set("or", `(slug.eq.${slug},translations->en->>slug.eq.${slug},translations->tr->>slug.eq.${slug},translations->de->>slug.eq.${slug},translations->es->>slug.eq.${slug})`);
   url.searchParams.set("limit", "1");
@@ -44,14 +57,41 @@ async function getPost(slug: string) {
         }
       }
     }
+    
+    if (postData?.content) {
+      // Pre-parse markdown on the server
+      postData.htmlContent = await parseMarkdown(postData.content);
+    }
+    
     return postData;
   } catch {
     return null;
   }
 }
 
-function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+export async function generateStaticParams() {
+  if (!supabaseUrl || !supabaseKey) return [];
+  
+  const url = new URL("/rest/v1/posts", supabaseUrl);
+  url.searchParams.set("select", "slug");
+  url.searchParams.set("published", "eq.true");
+  url.searchParams.set("limit", "100");
+  url.searchParams.set("order", "created_at.desc");
+
+  try {
+    const res = await fetch(url.toString(), {
+      headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
+    });
+    if (!res.ok) return [];
+    const posts = await res.json();
+    return posts.map((post: { slug: string }) => ({ slug: post.slug }));
+  } catch {
+    return [];
+  }
+}
+
+function stripHtml(htmlStr: string): string {
+  return htmlStr.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
 
 interface Post {
@@ -135,8 +175,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-import PostPageClient from "./page-client";
-
 export default async function PostPage({ params }: Props) {
   const { slug } = await params;
   const post = await getPost(slug);
@@ -151,6 +189,14 @@ export default async function PostPage({ params }: Props) {
   const authorName = post.author || "World in Making";
   const keywords = post.tags ? (Array.isArray(post.tags) ? post.tags : post.tags.split(",")) : [];
 
+  const adaptedPost = {
+    ...post,
+    date: post.created_at,
+    image: post.image_url,
+    authors: [{ name: authorName, avatar: post.author_avatar, username: authorName }],
+    headings: [],
+  };
+
   return (
     <>
       <ArticleJsonLd
@@ -163,7 +209,7 @@ export default async function PostPage({ params }: Props) {
         authorName={authorName}
         keywords={keywords}
       />
-      <PostPageClient />
+      <PostPageClient initialPost={adaptedPost} />
     </>
   );
 }
