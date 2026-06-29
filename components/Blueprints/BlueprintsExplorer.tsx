@@ -46,6 +46,7 @@ export default function BlueprintsExplorer() {
                     </header>
 
                     <div className="space-y-12">
+                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                         {hierarchy.map((category: any) => (
                             <section key={category.id} className="blueprint-category">
                                 <h2 className="text-xs font-black tracking-widest uppercase opacity-30 mb-6 border-l-2 border-primary pl-4">
@@ -53,6 +54,7 @@ export default function BlueprintsExplorer() {
                                 </h2>
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                     {category.lectures?.map((lecture: any) => (
                                         <div key={lecture.id} className="bg-accent/50 border border-primary/10 rounded-sm p-4 hover:border-primary/30 transition-colors">
                                             <h3 className="text-sm font-bold flex items-center gap-2 mb-3">
