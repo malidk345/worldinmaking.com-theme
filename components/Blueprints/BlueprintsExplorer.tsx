@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from 'react'
-import { useBlueprints, BlueprintCategory, BlueprintLecture, BlueprintPost } from 'hooks/useBlueprints'
+import { useBlueprints, BlueprintPost } from 'hooks/useBlueprints'
 import ScrollArea from 'components/RadixUI/ScrollArea'
 import Loading from 'components/Loading'
 import { useApp } from 'context/App'
@@ -14,10 +14,14 @@ export default function BlueprintsExplorer() {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
+        let mounted = true
         fetchHierarchy().then(data => {
-            setHierarchy(data || [])
-            setLoading(false)
+            if (mounted) {
+                setHierarchy(data || [])
+                setLoading(false)
+            }
         })
+        return () => { mounted = false }
     }, [fetchHierarchy])
 
     const handlePostClick = (post: BlueprintPost) => {
