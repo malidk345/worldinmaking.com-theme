@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { ArticleJsonLd } from "components/SEO/JsonLd";
 import PostPageClient from "./page-client";
+import { remark } from 'remark';
+import remarkGfm from 'remark-gfm';
+import html from 'remark-html';
 
 // ISR: Revalidate every hour
 export const revalidate = 3600;
@@ -8,6 +11,14 @@ export const revalidate = 3600;
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://worldinmaking.com";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+
+async function parseMarkdown(content: string) {
+  const result = await remark()
+    .use(remarkGfm)
+    .use(html, { sanitize: false }) // Sanitization handled by rehype-sanitize if needed, but we trust Supabase content for now to preserve specific HTML
+    .process(content);
+  return result.toString();
+}
 
 async function getPost(slug: string) {
   if (!supabaseUrl || !supabaseKey || !slug) return null;
@@ -24,7 +35,6 @@ async function getPost(slug: string) {
         apikey: supabaseKey,
         Authorization: `Bearer ${supabaseKey}`,
       },
-      // ISR handled at file level but kept here for safety
       next: { revalidate: 3600 },
     });
 
@@ -47,13 +57,18 @@ async function getPost(slug: string) {
         }
       }
     }
+    
+    if (postData?.content) {
+      // Pre-parse markdown on the server
+      postData.htmlContent = await parseMarkdown(postData.content);
+    }
+    
     return postData;
   } catch {
     return null;
   }
 }
 
-/** Pre-render popular/recent paths */
 export async function generateStaticParams() {
   if (!supabaseUrl || !supabaseKey) return [];
   
@@ -75,8 +90,8 @@ export async function generateStaticParams() {
   }
 }
 
-function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+function stripHtml(htmlStr: string): string {
+  return htmlStr.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
 
 interface Post {
@@ -174,13 +189,12 @@ export default async function PostPage({ params }: Props) {
   const authorName = post.author || "World in Making";
   const keywords = post.tags ? (Array.isArray(post.tags) ? post.tags : post.tags.split(",")) : [];
 
-  // Data for client-side to avoid another fetch
   const adaptedPost = {
     ...post,
     date: post.created_at,
     image: post.image_url,
     authors: [{ name: authorName, avatar: post.author_avatar, username: authorName }],
-    headings: [], // Headings will be calculated on client for TOC
+    headings: [],
   };
 
   return (
