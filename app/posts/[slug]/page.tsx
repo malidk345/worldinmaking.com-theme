@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { ArticleJsonLd } from "components/SEO/JsonLd";
+import PostPageClient from "./page-client";
 
-export const runtime = 'edge';
+// ISR: Revalidate every hour
+export const revalidate = 3600;
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://worldinmaking.com";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -11,7 +13,7 @@ async function getPost(slug: string) {
   if (!supabaseUrl || !supabaseKey || !slug) return null;
 
   const url = new URL("/rest/v1/posts", supabaseUrl);
-  url.searchParams.set("select", "title,slug,excerpt,content,image_url,author,author_avatar,category,tags,created_at,updated_at,language,translations");
+  url.searchParams.set("select", "id,title,slug,excerpt,content,image_url,author,author_avatar,category,tags,created_at,updated_at,language,translations");
   url.searchParams.set("published", "eq.true");
   url.searchParams.set("or", `(slug.eq.${slug},translations->en->>slug.eq.${slug},translations->tr->>slug.eq.${slug},translations->de->>slug.eq.${slug},translations->es->>slug.eq.${slug})`);
   url.searchParams.set("limit", "1");
@@ -22,6 +24,7 @@ async function getPost(slug: string) {
         apikey: supabaseKey,
         Authorization: `Bearer ${supabaseKey}`,
       },
+      // ISR handled at file level but kept here for safety
       next: { revalidate: 3600 },
     });
 
@@ -47,6 +50,28 @@ async function getPost(slug: string) {
     return postData;
   } catch {
     return null;
+  }
+}
+
+/** Pre-render popular/recent paths */
+export async function generateStaticParams() {
+  if (!supabaseUrl || !supabaseKey) return [];
+  
+  const url = new URL("/rest/v1/posts", supabaseUrl);
+  url.searchParams.set("select", "slug");
+  url.searchParams.set("published", "eq.true");
+  url.searchParams.set("limit", "100");
+  url.searchParams.set("order", "created_at.desc");
+
+  try {
+    const res = await fetch(url.toString(), {
+      headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
+    });
+    if (!res.ok) return [];
+    const posts = await res.json();
+    return posts.map((post: { slug: string }) => ({ slug: post.slug }));
+  } catch {
+    return [];
   }
 }
 
@@ -135,8 +160,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-import PostPageClient from "./page-client";
-
 export default async function PostPage({ params }: Props) {
   const { slug } = await params;
   const post = await getPost(slug);
@@ -151,6 +174,15 @@ export default async function PostPage({ params }: Props) {
   const authorName = post.author || "World in Making";
   const keywords = post.tags ? (Array.isArray(post.tags) ? post.tags : post.tags.split(",")) : [];
 
+  // Data for client-side to avoid another fetch
+  const adaptedPost = {
+    ...post,
+    date: post.created_at,
+    image: post.image_url,
+    authors: [{ name: authorName, avatar: post.author_avatar, username: authorName }],
+    headings: [], // Headings will be calculated on client for TOC
+  };
+
   return (
     <>
       <ArticleJsonLd
@@ -163,7 +195,7 @@ export default async function PostPage({ params }: Props) {
         authorName={authorName}
         keywords={keywords}
       />
-      <PostPageClient />
+      <PostPageClient initialPost={adaptedPost} />
     </>
   );
 }
