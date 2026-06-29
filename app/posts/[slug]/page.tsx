@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import { ArticleJsonLd } from "components/SEO/JsonLd";
 import PostPageClient from "./page-client";
 
-// ISR: Revalidate every hour
-export const revalidate = 3600;
+export const runtime = 'edge';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://worldinmaking.com";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -53,27 +52,6 @@ async function getPost(slug: string) {
     return postData;
   } catch {
     return null;
-  }
-}
-
-export async function generateStaticParams() {
-  if (!supabaseUrl || !supabaseKey) return [];
-  
-  const url = new URL("/rest/v1/posts", supabaseUrl);
-  url.searchParams.set("select", "slug");
-  url.searchParams.set("published", "eq.true");
-  url.searchParams.set("limit", "100");
-  url.searchParams.set("order", "created_at.desc");
-
-  try {
-    const res = await fetch(url.toString(), {
-      headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
-    });
-    if (!res.ok) return [];
-    const posts = await res.json();
-    return posts.map((post: { slug: string }) => ({ slug: post.slug }));
-  } catch {
-    return [];
   }
 }
 
