@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import { ArticleJsonLd } from "components/SEO/JsonLd";
 import PostPageClient from "./page-client";
-import { remark } from 'remark';
-import remarkGfm from 'remark-gfm';
-import html from 'remark-html';
 
 // ISR: Revalidate every hour
 export const revalidate = 3600;
@@ -11,14 +8,6 @@ export const revalidate = 3600;
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://worldinmaking.com";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-
-async function parseMarkdown(content: string) {
-  const result = await remark()
-    .use(remarkGfm)
-    .use(html, { sanitize: false }) // Sanitization handled by rehype-sanitize if needed, but we trust Supabase content for now to preserve specific HTML
-    .process(content);
-  return result.toString();
-}
 
 async function getPost(slug: string) {
   if (!supabaseUrl || !supabaseKey || !slug) return null;
@@ -58,10 +47,8 @@ async function getPost(slug: string) {
       }
     }
     
-    if (postData?.content) {
-      // Pre-parse markdown on the server
-      postData.htmlContent = await parseMarkdown(postData.content);
-    }
+    // Markdown parsing is handled client-side in ReaderView/BlogPostView components
+    // using the already-installed react-markdown library.
     
     return postData;
   } catch {
