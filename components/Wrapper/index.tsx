@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useApp } from '../../context/App'
 import Desktop from 'components/Desktop'
 import TaskBarMenu from 'components/TaskBarMenu'
@@ -16,6 +16,27 @@ export default function Wrapper() {
 
     const [shakeReady] = useState(false)
 
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            const x = e.clientX;
+            const y = e.clientY;
+
+            // Set global CSS variables for spotlight and parallax effects
+            document.documentElement.style.setProperty('--mouse-x', `${x}px`);
+            document.documentElement.style.setProperty('--mouse-y', `${y}px`);
+
+            // Calculate normalized values (-1 to 1) for parallax
+            const nx = (x / window.innerWidth) * 2 - 1;
+            const ny = (y / window.innerHeight) * 2 - 1;
+            document.documentElement.style.setProperty('--mouse-nx', nx.toString());
+            document.documentElement.style.setProperty('--mouse-ny', ny.toString());
+        };
+
+        window.addEventListener('mousemove', handleMouseMove);
+        return () => window.removeEventListener('mousemove', handleMouseMove);
+    }, []);
+
+
     return (
         <div className="fixed inset-0 size-full flex flex-col select-none overflow-hidden skin-classic:font-sans">
             <TaskBarMenu />
@@ -26,6 +47,12 @@ export default function Wrapper() {
                         return (
                             <motion.div
                                 key={item.key}
+                                initial={{
+                                    opacity: 0,
+                                    scale: 0.95,
+                                    y: 40,
+                                    z: -100 // Depth effect starting point
+                                }}
                                 animate={
                                     shakeReady
                                         ? {
@@ -37,14 +64,29 @@ export default function Wrapper() {
                                                 duration: 0.1,
                                             },
                                         }
-                                        : {}
+                                        : {
+                                            opacity: 1,
+                                            scale: 1,
+                                            y: 0,
+                                            z: 0,
+                                            transition: {
+                                                type: "spring",
+                                                stiffness: 300,
+                                                damping: 25,
+                                                mass: 1,
+                                                restDelta: 0.001
+                                            }
+                                        }
                                 }
                                 exit={{
                                     y: typeof window !== 'undefined' ? window.innerHeight + 200 : 800,
+                                    scale: 0.95,
                                     opacity: 0,
                                     transition: {
                                         delay: index * 0.05,
-                                        ease: 'easeInOut',
+                                        type: "spring",
+                                        stiffness: 300,
+                                        damping: 30,
                                         duration: 0.4
                                     },
                                 }}
