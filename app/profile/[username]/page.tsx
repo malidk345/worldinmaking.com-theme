@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     const title = profile?.username || decodedUsername;
     const bio = profile?.bio || `View ${title}'s profile, posts, and contributions on World in Making.`;
-    const image = profile?.avatar_url || undefined;
+    const image = profile?.avatar_url ? profile.avatar_url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + (profile.avatar_url.includes('?') ? '&' : '?') + 'width=1200&quality=80&format=webp' : undefined;
 
     return {
         title: `${title}'s Profile`,
@@ -51,7 +51,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             type: "profile",
             title: `${title} | World in Making`,
             description: bio,
-            ...(image && { images: [{ url: image }] }),
+            images: [{ url: image || `${process.env.NEXT_PUBLIC_SITE_URL || "https://worldinmaking.com"}/api/og?title=${encodeURIComponent(title + " | Profile")}`, width: 1200, height: 630, alt: title }],
         },
         robots: {
             index: true,
