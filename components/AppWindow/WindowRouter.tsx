@@ -428,7 +428,7 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
     }
 
     const themeClasses = {
-        'default': 'bg-[#fafcfc] dark:bg-primary/5',
+        'default': 'bg-white dark:bg-white',
         'yellow': 'bg-amber-50 dark:bg-amber-950/20',
         'green': 'bg-emerald-50 dark:bg-emerald-950/20',
         'blue': 'bg-sky-50 dark:bg-sky-950/20',
@@ -767,7 +767,7 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
     }
 
     return (
-        <div className="flex flex-col size-full overflow-hidden text-black bg-[#fafcfc] dark:bg-primary/5 transition-colors duration-500">
+        <div className="flex flex-col size-full overflow-hidden text-black bg-white dark:bg-white transition-colors duration-500">
             <aside className="sticky top-0 z-50 shrink-0">
                 <div id={`window-inner-header-${item.key}`} className="pointer-events-auto" />
             </aside>
