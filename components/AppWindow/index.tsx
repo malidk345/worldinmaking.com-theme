@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react'
-import { AnimatePresence, motion, PanInfo, useDragControls } from 'framer-motion'
+import {  AnimatePresence, motion, PanInfo, useDragControls , useMotionValue, useTransform, useVelocity, useSpring } from 'framer-motion'
 import {
     IconChevronDown,
     IconDocument,
@@ -39,6 +39,15 @@ function WindowContainer({ children, closing, onExit }: { children: React.ReactN
 }
 
 export default function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: boolean }) {
+    const motionX = useMotionValue(0);
+    const motionY = useMotionValue(0);
+    const xVelocity = useVelocity(motionX);
+    const yVelocity = useVelocity(motionY);
+    const smoothXVelocity = useSpring(xVelocity, { damping: 50, stiffness: 400 });
+    const smoothYVelocity = useSpring(yVelocity, { damping: 50, stiffness: 400 });
+    const tiltX = useTransform(smoothYVelocity, [-1000, 1000], [5, -5]); // Pitch
+    const tiltY = useTransform(smoothXVelocity, [-1000, 1000], [-5, 5]); // Yaw
+
     const {
         minimizeWindow,
         bringToFront,
@@ -405,9 +414,9 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             ref={windowRef}
                             data-app="AppWindow"
                             data-scheme="tertiary"
-                            className={`@container absolute !select-auto flex flex-col bg-[rgba(var(--bg),0.65)] backdrop-blur-3xl ${isFocused ? 'shadow-[0_20px_60px_-15px_rgba(0,0,0,0.2)] border-black/5 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/10' : 'shadow-lg border-input'
+                            className={`group @container absolute !select-auto flex flex-col bg-[rgba(var(--bg),0.65)] backdrop-blur-3xl ${isFocused ? 'shadow-[0_20px_60px_-15px_rgba(0,0,0,0.2)] border-black/5 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/10' : 'shadow-lg border-input'
                                 } ${dragging ? '[&_*]:select-none' : ''} ${item.minimal ? '!shadow-none' : (isMaximized ? 'rounded-none border-b border-primary' : 'border rounded-2xl')} ${chrome ? 'overflow-hidden' : ''}`}
-                            style={{ zIndex: item.zIndex }}
+                            style={{ zIndex: item.zIndex, rotateX: tiltX, rotateY: tiltY, transformPerspective: 1200 }}
                             initial={{
                                 scale: 0.08,
                                 x: item.fromOrigin?.x || windowPosition.x,
@@ -415,6 +424,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                 width: size.width,
                                 height: size.height
                             }}
+                            onUpdate={(latest) => { if (latest.x !== undefined) motionX.set(latest.x as number); if (latest.y !== undefined) motionY.set(latest.y as number); }}
                             animate={{
                                 scale: 1,
                                 x: Math.round(resizing ? localPos.x : position.x),
@@ -642,6 +652,14 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                     </div>
                                 </div>
                             )}
+
+                            {/* Spotlight effect layered over window */}
+                            <div className="pointer-events-none absolute inset-0 z-50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                                 style={{
+                                    background: `radial-gradient(800px circle at var(--mouse-x) var(--mouse-y), rgba(255,255,255,0.06), transparent 40%)`, backgroundAttachment: "fixed"
+                                 }}
+                            />
+
                             <div className="w-full flex-1 flex flex-col bg-transparent min-h-0 relative px-1.5 has-[+div:empty]:pb-1.5">
                                 <div className="w-full h-full bg-primary flex-1 overflow-hidden relative shadow-[0_0_0_1px_rgba(0,0,0,0.05)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.05)] border border-black/10 dark:border-white/10 rounded-xl">
                                     {(!animating || rendered) && (

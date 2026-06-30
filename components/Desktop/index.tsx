@@ -75,8 +75,9 @@ export default function Desktop() {
         >
             {isTechnical && (
                 <>
-                    {/* Intersection Plus Markers */}
-                    <div className="absolute inset-0 pointer-events-none opacity-[0.08]" style={{
+                    {/* Intersection Plus Markers with Parallax */}
+                    <div className="absolute inset-[-50px] pointer-events-none opacity-[0.08]" style={{
+                        transform: 'translate(calc(var(--mouse-nx, 0) * -10px), calc(var(--mouse-ny, 0) * -10px))',
                         backgroundImage: `
                             linear-gradient(to right, black 4px, transparent 4px),
                             linear-gradient(to bottom, black 4px, transparent 4px)
@@ -111,8 +112,10 @@ export default function Desktop() {
                 </>
             )}
 
-            {/* Keyboard Garden Pattern Only */}
-            <div className="absolute inset-0 select-none pointer-events-none">
+            {/* Keyboard Garden Pattern Only with Parallax */}
+            <div className="absolute inset-[-50px] select-none pointer-events-none" style={{
+                transform: 'translate(calc(var(--mouse-nx, 0) * -15px), calc(var(--mouse-ny, 0) * -15px))'
+            }}>
                 <div
                     className="absolute inset-0 opacity-40 dark:opacity-0"
                     style={{
