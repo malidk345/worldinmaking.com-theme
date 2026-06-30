@@ -6,7 +6,7 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
 const staticRoutes: MetadataRoute.Sitemap = [
   {
-    url: siteUrl,
+    url: `${siteUrl}/`,
     lastModified: new Date(),
     changeFrequency: "daily",
     priority: 1,

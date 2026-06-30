@@ -71,6 +71,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         openGraph: {
             type: "article",
             url: questionUrl,
+            images: [{ url: `${siteUrl}/api/og?title=${encodeURIComponent(title)}&author=${encodeURIComponent(authorName)}`, width: 1200, height: 630, alt: title }],
             title,
             description,
             siteName: "World in Making",
@@ -78,9 +79,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             section: "Community Questions",
         },
         twitter: {
-            card: "summary",
+            card: "summary_large_image",
             title,
             description,
+            images: [`${siteUrl}/api/og?title=${encodeURIComponent(title)}&author=${encodeURIComponent(authorName)}`],
         },
         robots: {
             index: true,

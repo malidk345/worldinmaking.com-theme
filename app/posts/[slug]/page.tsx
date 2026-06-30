@@ -89,7 +89,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = post.title || slug;
   const description = getExcerpt(post);
   const postUrl = `${siteUrl}/posts/${slug}/`;
-  const imageUrl = post.image_url || undefined;
+  const imageUrl = post.image_url ? post.image_url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + (post.image_url.includes('?') ? '&' : '?') + 'width=1200&quality=80&format=webp' : undefined;
   const keywords = post.tags ? (Array.isArray(post.tags) ? post.tags : post.tags.split(",")) : [];
 
   const languages: Record<string, string> = {
@@ -111,7 +111,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     keywords,
     alternates: {
       canonical: postUrl,
-      languages: Object.keys(languages).length > 1 ? languages : undefined,
+      languages: languages,
     },
     openGraph: {
       type: "article",
@@ -119,7 +119,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title,
       description,
       siteName: "World in Making",
-      ...(imageUrl && { images: [{ url: imageUrl, width: 1200, height: 630, alt: title }] }),
+      images: [{ url: imageUrl || `${siteUrl}/api/og?title=${encodeURIComponent(title)}&author=${encodeURIComponent(post.author || "World in Making")}`, width: 1200, height: 630, alt: title }],
       publishedTime: post.created_at,
       modifiedTime: post.updated_at || post.created_at,
       authors: post.author ? [post.author] : undefined,
@@ -131,7 +131,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       card: "summary_large_image",
       title,
       description,
-      ...(imageUrl && { images: [imageUrl] }),
+      images: [imageUrl || `${siteUrl}/api/og?title=${encodeURIComponent(title)}&author=${encodeURIComponent(post.author || "World in Making")}`],
     },
     robots: {
       index: true,
