@@ -114,7 +114,7 @@ export default function Desktop() {
             {/* Keyboard Garden Pattern Only */}
             <div className="absolute inset-0 select-none pointer-events-none">
                 <div
-                    className="absolute inset-0 opacity-100 dark:opacity-0"
+                    className="absolute inset-0 opacity-40 dark:opacity-0"
                     style={{
                         backgroundImage: "url('https://res.cloudinary.com/dmukukwp6/image/upload/keyboard_garden_bg_light_03a349af5c.png')",
                         backgroundSize: '100px 100px',
@@ -122,7 +122,7 @@ export default function Desktop() {
                     }}
                 />
                 <div
-                    className="absolute inset-0 opacity-0 dark:opacity-100"
+                    className="absolute inset-0 opacity-0 dark:opacity-40"
                     style={{
                         backgroundImage: "url('https://res.cloudinary.com/dmukukwp6/image/upload/keyboard_garden_bg_dark_9ab088797a.png')",
                         backgroundSize: '200px 200px',
