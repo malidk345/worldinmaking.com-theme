@@ -163,11 +163,11 @@ mark {
   }
 
   .glass-card {
-    background: rgba(var(--bg-rgb), 0.7);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(var(--primary-rgb), 0.1);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+    background: rgba(var(--bg-rgb), 0.5);
+    backdrop-filter: blur(40px) saturate(200%);
+    -webkit-backdrop-filter: blur(40px) saturate(200%);
+    border: 1px solid rgba(var(--primary-rgb), 0.05);
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.15);
   }
 
   /* Performance Boost: Disables heavy blurs and transitions */
@@ -583,8 +583,8 @@ mark {
   [data-scheme='primary'] {
     color-scheme: light;
     --bg: 255 255 255;
-    --accent: 245 245 245;
-    --border: 220 220 220;
+    --accent: 240 240 245;
+    --border: 220 220 225;
     --text-primary: 50 50 50;
     --text-secondary: 100 100 100;
     --text-muted: 150 150 150;
@@ -597,7 +597,7 @@ mark {
     /* RGB Utility Tokens */
     --primary-rgb: 50 50 50;
     --secondary-rgb: 100 100 100;
-    --accent-rgb: 245 245 245;
+    --accent-rgb: 240 240 245;
     --bg-rgb: 255 255 255;
   }
 
@@ -626,23 +626,23 @@ mark {
   .dark,
   .dark [data-scheme='primary'] {
     color-scheme: dark;
-    --bg: 30 31 35;
-    --accent: 45 46 55;
-    --border: 62 66 79;
+    --bg: 15 15 20;
+    --accent: 30 30 35;
+    --border: 45 45 50;
     --text-primary: 234 236 246;
     --text-secondary: 157 160 167;
     --text-muted: 111 113 119;
 
-    --input-bg: 30 31 35;
-    --input-bg-hover: 35 36 41;
-    --input-border: 62 66 79;
-    --input-border-hover: 81 85 99;
+    --input-bg: 15 15 20;
+    --input-bg-hover: 20 20 25;
+    --input-border: 45 45 50;
+    --input-border-hover: 65 65 70;
 
     /* RGB Utility Tokens (Dark) */
     --primary-rgb: 234 236 246;
     --secondary-rgb: 157 160 167;
-    --accent-rgb: 45 46 55;
-    --bg-rgb: 30 31 35;
+    --accent-rgb: 30 30 35;
+    --bg-rgb: 15 15 20;
 
     .hover-invert:hover,
     .hover-invert[data-state='open'] {
@@ -653,22 +653,22 @@ mark {
   }
 
   .dark [data-scheme='secondary'] {
-    --bg: 37 38 43;
-    --accent: 50 52 63;
-    --border: 74 78 92;
-    --input-bg: 30 31 36;
-    --input-border: 62 66 79;
+    --bg: 20 20 25;
+    --accent: 35 35 40;
+    --border: 50 50 55;
+    --input-bg: 20 20 25;
+    --input-border: 50 50 55;
     --text-primary: 237 238 244;
     --text-secondary: 176 180 196;
     --text-muted: 110 114 129;
   }
 
   .dark [data-scheme='tertiary'] {
-    --bg: 45 46 55;
-    --accent: 56 58 71;
-    --border: 98 102 116;
-    --input-bg: 30 31 35;
-    --input-border: 75 78 88;
+    --bg: 25 25 30;
+    --accent: 40 40 45;
+    --border: 55 55 60;
+    --input-bg: 25 25 30;
+    --input-border: 55 55 60;
     --text-primary: 237 238 244;
     --text-secondary: 176 180 196;
     --text-muted: 110 114 129;

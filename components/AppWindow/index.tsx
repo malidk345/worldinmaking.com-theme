@@ -405,8 +405,8 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             ref={windowRef}
                             data-app="AppWindow"
                             data-scheme="tertiary"
-                            className={`@container absolute !select-auto flex flex-col bg-[rgba(var(--bg),0.65)] backdrop-blur-3xl ${isFocused ? 'shadow-2xl border-primary ring-[0.5px] ring-primary/10' : 'shadow-lg border-input'
-                                } ${dragging ? '[&_*]:select-none' : ''} ${item.minimal ? '!shadow-none' : (isMaximized ? 'rounded-none border-b border-primary' : 'border rounded')} ${chrome ? 'overflow-hidden' : ''}`}
+                            className={`@container absolute !select-auto flex flex-col bg-[rgba(var(--bg),0.65)] backdrop-blur-3xl ${isFocused ? 'shadow-[0_20px_60px_-15px_rgba(0,0,0,0.2)] border-black/5 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/10' : 'shadow-lg border-input'
+                                } ${dragging ? '[&_*]:select-none' : ''} ${item.minimal ? '!shadow-none' : (isMaximized ? 'rounded-none border-b border-primary' : 'border rounded-2xl')} ${chrome ? 'overflow-hidden' : ''}`}
                             style={{ zIndex: item.zIndex }}
                             initial={{
                                 scale: 0.08,
@@ -643,7 +643,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                 </div>
                             )}
                             <div className="w-full flex-1 flex flex-col bg-transparent min-h-0 relative px-1.5 has-[+div:empty]:pb-1.5">
-                                <div className="w-full h-full bg-primary flex-1 overflow-hidden relative shadow-[0_0_0_1px_rgba(0,0,0,0.05)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.05)] border border-black/10 dark:border-white/10 rounded-sm shadow-inner">
+                                <div className="w-full h-full bg-primary flex-1 overflow-hidden relative shadow-[0_0_0_1px_rgba(0,0,0,0.05)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.05)] border border-black/10 dark:border-white/10 rounded-xl">
                                     {(!animating || rendered) && (
                                         item.key === 'home' ? <HomeControl /> : <WindowRouter item={item} />
                                     )}
