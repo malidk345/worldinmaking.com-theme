@@ -252,13 +252,14 @@ export default function TaskBarMenu() {
 
     return (
         <>
+            <div className="fixed top-3 left-0 right-0 z-[9999] flex justify-center pointer-events-none">
             <div
                 ref={taskbarRef}
                 id="taskbar"
                 data-scheme="primary"
-                className="w-full bg-accent/90 backdrop-blur-md border-b border-primary top-0 z-[9999] flex justify-between pl-0.5 pr-2 items-center"
+                className="bg-[rgba(var(--bg),0.65)] backdrop-blur-[60px] saturate-[200%] border border-black/5 dark:border-white/10 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.12)] flex justify-between px-2 items-center pointer-events-auto w-auto min-w-[300px]"
             >
-                <div className="flex items-center gap-2 px-3 py-1 pointer-events-none">
+                <div className="flex items-center gap-2 px-2 py-1 pointer-events-none">
                     <svg viewBox="0 0 32 32" className="size-5 fill-current text-black dark:text-white">
                         <path d="M16 0C7.163 0 0 7.163 0 16s7.163 16 16 16 16-7.163 16-16S24.837 0 16 0zm-4.138 23.362l-2.012-2.012 2.012-2.013 2.013 2.013-2.012 2.012zm4.138-4.138l-2.013-2.012 2.013-2.013 2.012 2.013-2.012 2.012zm0-8.275l-2.013-2.013 2.013-2.012 2.012 2.012-2.012 2.013zm4.138 4.138l-2.013-2.013 2.012-2.012 2.013 2.012-2.012 2.013z" />
                     </svg>
@@ -345,6 +346,7 @@ export default function TaskBarMenu() {
                         className="!inline-flex items-center !py-0 !h-auto !gap-0"
                     />
                 </aside>
+            </div>
             </div>
         </>
     )

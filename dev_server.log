@@ -20,3 +20,6 @@
 <w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (155kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
 <w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (133kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
  GET / 200 in 289ms
+ ✓ Compiled in 24.4s (4913 modules)
+[Supabase] Client initialized successfully
+ GET / 200 in 4084ms
