@@ -4,7 +4,8 @@ import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useWindow } from '../../context/Window'
 import { useApp } from '../../context/App'
 import { IconSearch } from '@posthog/icons'
-import { usePosts, Post } from '../../hooks/usePosts'
+import { usePosts } from '../../hooks/usePosts'
+import type { Post } from '../../types/database'
 
 // Simple local search function
 function searchPosts(allPosts: Post[], query: string) {
