@@ -477,10 +477,23 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
             setCompact(window.innerWidth < 1024)
         }
 
-        const handleMouseDown = (e: MouseEvent) => {
+        const handleMouseDown = (e: MouseEvent | PointerEvent | TouchEvent) => {
             const target = e.target as HTMLElement
             const rect = target.getBoundingClientRect()
-            lastClickedElementRect.current = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
+
+            let clientX, clientY;
+            if ('touches' in e && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else if ('clientX' in e && 'clientY' in e) {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            } else {
+                clientX = rect.left + rect.width / 2;
+                clientY = rect.top + rect.height / 2;
+            }
+
+            lastClickedElementRect.current = { x: clientX, y: clientY }
         }
 
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -515,12 +528,14 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
         handleResize()
         window.addEventListener('resize', handleResize)
-        window.addEventListener('mousedown', handleMouseDown, true)
+        window.addEventListener('pointerdown', handleMouseDown as EventListener, true)
+        window.addEventListener('touchstart', handleMouseDown as EventListener, { capture: true, passive: true })
         window.addEventListener('keydown', handleKeyDown)
 
         return () => {
             window.removeEventListener('resize', handleResize)
-            window.removeEventListener('mousedown', handleMouseDown, true)
+            window.removeEventListener('pointerdown', handleMouseDown as EventListener, true)
+            window.removeEventListener('touchstart', handleMouseDown as EventListener, { capture: true })
             window.removeEventListener('keydown', handleKeyDown)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
