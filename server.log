@@ -1,0 +1,24 @@
+
+> posthog-nextjs@0.1.0 dev:fast /app
+> cross-env NEXT_DISABLE_DEVTOOLS=1 NEXT_DIST_DIR=.next-dev next dev
+
+ ⚠ Port 3000 is in use by an unknown process, using available port 3002 instead.
+   ▲ Next.js 15.5.12
+   - Local:        http://localhost:3002
+   - Network:      http://192.168.0.2:3002
+
+ ✓ Starting...
+ ✓ Ready in 2.6s
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 581ms (219 modules)
+ ○ Compiling / ...
+ ✓ Compiled / in 19.6s (4916 modules)
+ ⨯ TypeError: Cannot read properties of undefined (reading 'ReactCurrentDispatcher')
+    at (ssr)/./node_modules/.pnpm/@posthog+icons@0.37.4_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/@posthog/icons/dist/posthog-icons.es.js (.next-dev/server/vendor-chunks/@posthog+icons@0.37.4_react-dom@19.0.0_react@19.0.0__react@19.0.0.js:20:1)
+    at eval (webpack-internal:///(ssr)/./components/Posts/index.tsx:15:72)
+    at (ssr)/./components/Posts/index.tsx (.next-dev/server/app/page.js:722:1)
+    at eval (webpack-internal:///(ssr)/./context/App.tsx:12:74)
+    at (ssr)/./context/App.tsx (.next-dev/server/app/page.js:1074:1) {
+  digest: '989140803'
+}
+ GET / 500 in 25219ms
