@@ -41,7 +41,17 @@ export default function Wrapper() {
         <div className="fixed inset-0 size-full flex flex-col select-none overflow-hidden skin-classic:font-sans">
             <TaskBarMenu />
             <div ref={constraintsRef} className="flex-grow relative overflow-hidden">
-                <Desktop />
+                <motion.div
+                    initial={false}
+                    animate={{
+                        filter: windows.length > 0 ? 'blur(8px)' : 'blur(0px)',
+                        scale: windows.length > 0 ? 0.98 : 1
+                    }}
+                    transition={{ duration: 0.4, ease: [0.2, 0.2, 0.8, 1] }}
+                    className="absolute inset-0 size-full"
+                >
+                    <Desktop />
+                </motion.div>
                 <AnimatePresence mode="popLayout">
                     {windows.map((item, index: number) => {
                         return (
