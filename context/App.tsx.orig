@@ -477,25 +477,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
             setCompact(window.innerWidth < 1024)
         }
 
-        const handleInteraction = (e: MouseEvent | TouchEvent) => {
+        const handleMouseDown = (e: MouseEvent) => {
             const target = e.target as HTMLElement
-            if (target && target.getBoundingClientRect) {
-                const rect = target.getBoundingClientRect()
-                // Update position using client coordinates from the event if possible for more accuracy,
-                // fallback to the center of the clicked element.
-                let x = rect.left + rect.width / 2
-                let y = rect.top + rect.height / 2
-
-                if (e.type === 'mousedown') {
-                    x = (e as MouseEvent).clientX
-                    y = (e as MouseEvent).clientY
-                } else if (e.type === 'touchstart' && (e as TouchEvent).touches && (e as TouchEvent).touches.length > 0) {
-                    x = (e as TouchEvent).touches[0].clientX
-                    y = (e as TouchEvent).touches[0].clientY
-                }
-
-                lastClickedElementRect.current = { x, y }
-            }
+            const rect = target.getBoundingClientRect()
+            lastClickedElementRect.current = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
         }
 
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -530,14 +515,12 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
         handleResize()
         window.addEventListener('resize', handleResize)
-        window.addEventListener('mousedown', handleInteraction, true)
-        window.addEventListener('touchstart', handleInteraction, true)
+        window.addEventListener('mousedown', handleMouseDown, true)
         window.addEventListener('keydown', handleKeyDown)
 
         return () => {
             window.removeEventListener('resize', handleResize)
-            window.removeEventListener('mousedown', handleInteraction, true)
-            window.removeEventListener('touchstart', handleInteraction, true)
+            window.removeEventListener('mousedown', handleMouseDown, true)
             window.removeEventListener('keydown', handleKeyDown)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps

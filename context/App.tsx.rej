@@ -1,0 +1,13 @@
+--- context/App.tsx
++++ context/App.tsx
+@@ -478,7 +478,7 @@
+             setCompact(window.innerWidth < 1024)
+         }
+
+-        const handleMouseDown = (e: MouseEvent) => {
++        const handleInteraction = (e: MouseEvent | TouchEvent) => {
+             const target = e.target as HTMLElement
+-            const rect = target.getBoundingClientRect()
+-            lastClickedElementRect.current = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
++            if (target && target.getBoundingClientRect) {
++                const rect = target.getBoundingClientRect()
