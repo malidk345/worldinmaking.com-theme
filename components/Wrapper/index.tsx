@@ -71,8 +71,8 @@ export default function Wrapper() {
                                             z: 0,
                                             transition: {
                                                 type: "spring",
-                                                stiffness: 300,
-                                                damping: 25,
+                                                stiffness: 200,
+                                                damping: 20,
                                                 mass: 1,
                                                 restDelta: 0.001
                                             }
@@ -85,8 +85,8 @@ export default function Wrapper() {
                                     transition: {
                                         delay: index * 0.05,
                                         type: "spring",
-                                        stiffness: 300,
-                                        damping: 30,
+                                        stiffness: 200,
+                                        damping: 25,
                                         duration: 0.4
                                     },
                                 }}
