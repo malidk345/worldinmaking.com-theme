@@ -5,54 +5,7 @@ import { supabase } from '../lib/supabase';
 import { stripMarkdown } from '../lib/markdown';
 import useSWR from 'swr';
 import logger from '../utils/logger';
-
-export interface Post {
-    id: string;
-    slug: string;
-    title: string;
-    date: string;
-    category: string;
-    description: string;
-    excerpt: string;
-    content: string;
-    author: string;
-    authorName: string;
-    authorAvatar?: string;
-    wordCount: number;
-    headings: { id: string, text: string, level: number }[];
-    image: string | null;
-    ribbon?: string;
-    translations?: Record<string, { title: string, content: string, excerpt?: string, slug?: string }>;
-    language?: string;
-    originalLanguage?: string;
-    is_approved: boolean;
-    authors?: { name: string, avatar: string, username?: string }[];
-    tags?: string[];
-    views?: number;
-}
-
-interface DBPost {
-    id: string;
-    slug: string;
-    title: string;
-    created_at?: string;
-    category?: string;
-    excerpt?: string;
-    description?: string;
-    content?: string;
-    author?: string;
-    author_avatar?: string;
-    image_url?: string;
-    image?: string;
-    ribbon?: string;
-    translations?: Record<string, { title: string, content: string, excerpt?: string, slug?: string }>;
-    language?: string;
-    originalLanguage?: string;
-    is_approved?: boolean;
-    view_count?: number;
-}
-
-
+import { Post, DBPost } from '../types/database';
 
 /** Generate a clean plain-text excerpt from content (handles both HTML and Markdown) */
 const generateExcerptFromContent = (content: string, wordLimit = 50): string => {
@@ -86,14 +39,12 @@ const adaptPost = (p: DBPost): Post | null => {
     });
 
     // Parse HTML headings: <h2>, <h3>, <h4>
-    // We search the whole content because HTML can span multiple lines sometimes
     const htmlHeadings = Array.from(rawContent.matchAll(/<h([234])[^>]*>(.*?)<\/h[234]>/gi)) as RegExpMatchArray[];
     htmlHeadings.forEach(match => {
         const level = parseInt(match[1]);
         const text = match[2].replace(/<[^>]*>/g, '').trim();
         if (text) {
             const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-            // Prevent duplicates if already found via MD (unlikely but safe)
             if (!headings.some(h => h.id === id)) {
                 headings.push({ id, text, level });
             }
@@ -114,9 +65,7 @@ const adaptPost = (p: DBPost): Post | null => {
         date: (() => {
             try {
                 const d = new Date(p.created_at || Date.now());
-                return isNaN(d.getTime())
-                    ? new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                    : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
             } catch {
                 return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
             }
@@ -154,9 +103,9 @@ const postsFetcher = async () => {
         if (error) {
             logger.error('[postsFetcher] Supabase error:', error);
         } else {
-            dbData = data || [];
+            dbData = (data as unknown as DBPost[]) || [];
         }
-    } catch (e: unknown) {
+    } catch (e) {
         logger.error('[postsFetcher] Supabase connection failed:', e);
     }
 
@@ -167,7 +116,7 @@ const postsFetcher = async () => {
 };
 
 export const usePosts = () => {
-    const { data, error, isLoading, mutate } = useSWR('posts', postsFetcher, {
+    const { data, error, isLoading, mutate } = useSWR<Post[]>('posts', postsFetcher, {
         revalidateOnFocus: false,
         dedupingInterval: 60000,
     });
@@ -196,7 +145,7 @@ export const getPostBySlug = async (slug: string): Promise<Post | null> => {
             return null;
         }
 
-        let postData = data;
+        let postData = data as unknown as DBPost;
         if (postData && postData.slug !== slug && postData.translations) {
             for (const lang of Object.keys(postData.translations)) {
                 if (postData.translations[lang]?.slug === slug) {
@@ -214,7 +163,7 @@ export const getPostBySlug = async (slug: string): Promise<Post | null> => {
         }
 
         return adaptPost(postData);
-    } catch (e: unknown) {
+    } catch (e) {
         logger.error('[getPostBySlug] Exception:', e);
         return null;
     }
@@ -233,8 +182,8 @@ export const getPostById = async (id: string): Promise<Post | null> => {
             return null;
         }
 
-        return adaptPost(data);
-    } catch (e: unknown) {
+        return adaptPost(data as unknown as DBPost);
+    } catch (e) {
         logger.error('[getPostById] Exception:', e);
         return null;
     }
