@@ -320,7 +320,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                            <div className="p-4 border border-black/10 rounded-sm bg-white/50 backdrop-blur-sm flex flex-col gap-4">
+                            <div className="p-4 border border-black/10 rounded-sm bg-white/50 supports-[backdrop-filter]:backdrop-blur-sm flex flex-col gap-4">
                                 <h3 className="text-[11px] font-black tracking-widest text-black/40 flex items-center gap-2 lowercase">
                                     <IconTerminal className="size-3.5" /> system environment
                                 </h3>
@@ -343,7 +343,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                 </div>
                             </div>
 
-                            <div className="p-4 border border-black/10 rounded-sm bg-white/50 backdrop-blur-sm flex flex-col gap-4">
+                            <div className="p-4 border border-black/10 rounded-sm bg-white/50 supports-[backdrop-filter]:backdrop-blur-sm flex flex-col gap-4">
                                 <h3 className="text-[11px] font-black tracking-widest text-black/40 flex items-center gap-2 lowercase">
                                     <IconActivity className="size-3.5" /> recently active
                                 </h3>
@@ -1079,7 +1079,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
     return (
         <div className="flex flex-col md:flex-row w-full bg-[#f8fafb] text-black overflow-hidden font-sans h-full">
             {/* Sidebar */}
-            <div className="flex-shrink-0 border-b md:border-b-0 md:border-r border-black/5 bg-white/50 backdrop-blur-md flex flex-row md:flex-col overflow-x-auto md:overflow-visible py-2 px-2 md:py-6 md:px-0 md:w-44 no-scrollbar">
+            <div className="flex-shrink-0 border-b md:border-b-0 md:border-r border-black/5 bg-white/50 supports-[backdrop-filter]:backdrop-blur-md flex flex-row md:flex-col overflow-x-auto md:overflow-visible py-2 px-2 md:py-6 md:px-0 md:w-44 no-scrollbar">
                 <div className="hidden md:block px-5 mb-8">
                     <div className="flex items-center gap-2">
                         <div className="size-2 rounded-full bg-black/80" />

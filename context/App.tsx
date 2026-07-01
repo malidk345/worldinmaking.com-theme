@@ -129,7 +129,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         if (typeof window === 'undefined') return { x: inset, y: inset }
         return {
             x: Math.max(inset, Math.round(window.innerWidth / 2 - size.width / 2)),
-            y: Math.max(inset, Math.round((window.innerHeight - 44) / 2 - size.height / 2)),
+            y: Math.max(inset, Math.round((window.innerHeight) / 2 - size.height / 2)),
         }
     }, [])
 
@@ -162,7 +162,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
         const bounds = constraintsRef.current?.getBoundingClientRect()
         const maxX = bounds ? bounds.width - size.width - inset : window.innerWidth - size.width - inset
-        const maxY = bounds ? bounds.height - size.height - inset : window.innerHeight - 44 - size.height - inset
+        const maxY = bounds ? bounds.height - size.height - inset : window.innerHeight - size.height - inset
 
         if (potentialX > maxX || potentialY > maxY) {
             return getDesktopCenterPosition(size)
@@ -228,9 +228,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
             if (!size) {
                 if (typeof window !== 'undefined') {
+                    const bounds = constraintsRef.current?.getBoundingClientRect()
                     size = {
-                        width: Math.min(window.innerWidth * 0.9, 2000),
-                        height: Math.min((window.innerHeight - 44) * 0.9, 2000)
+                        width: Math.min((bounds?.width || window.innerWidth) * 0.9, 2000),
+                        height: Math.min((bounds?.height || window.innerHeight) * 0.9, 2000)
                     }
                 } else {
                     size = DEFAULT_SIZE
@@ -241,9 +242,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
             if (!position) {
                 if (typeof window !== 'undefined' && window.innerWidth <= 768) {
                     const inset = 0
+                    const bounds = constraintsRef.current?.getBoundingClientRect()
                     size = {
                         width: window.innerWidth - inset * 2,
-                        height: window.innerHeight - inset * 2
+                        height: bounds ? bounds.height - inset * 2 : window.innerHeight - inset * 2
                     }
                     position = { x: inset, y: inset }
                 } else if (settings.topCenter && typeof window !== 'undefined') {
@@ -327,7 +329,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         setWindows((prev) => prev.map(w => w.key === key ? { ...w, ref } : w))
     }, [])
 
-    const openSearch = useCallback((_filter?: string) => {
+    const openSearch = useCallback(() => {
         const size = isMobile
             ? { width: typeof window !== 'undefined' ? Math.min(window.innerWidth - 32, 500) : 400, height: 320 }
             : { width: 600, height: 400 }

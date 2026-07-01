@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import ScrollArea from 'components/RadixUI/ScrollArea'
-import { Folder, FolderOpen, FileText, ChevronRight, Hash } from 'lucide-react'
+import { Folder, FolderOpen, FileText } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const MOCK_DOSSIERS = [

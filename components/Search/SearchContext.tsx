@@ -106,7 +106,7 @@ export const SearchProvider = ({ children }: { children: React.ReactNode }) => {
                                 leaveFrom="opacity-100 translate-y-0 sm:scale-100"
                                 leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                             >
-                                <Dialog.Panel className="w-full max-w-4xl md:mx-4 h-[90vh] md:h-[600px] z-[999998]">
+                                <Dialog.Panel className="w-full max-w-4xl md:mx-4 h-[90dvh] md:h-[600px] z-[999998]">
 
                                     {(() => {
                                         // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -187,7 +187,7 @@ const MenuItem: React.FC<{
                     )}
                     <Menubar.Portal>
                         <Menubar.SubContent className={ContentClasses} alignOffset={-5} data-scheme="primary">
-                            <ScrollArea className="max-h-screen !overflow-y-auto">
+                            <ScrollArea className="max-h-[100dvh] !overflow-y-auto">
                                 {item.items.map((subItem, subIndex) => (
                                     <MenuItem
                                         key={`${subItem.link}-${subIndex}`}

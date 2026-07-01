@@ -55,7 +55,7 @@ export default function ActiveWindowsPanel() {
             onClose={closeActiveWindowsPanel}
             title="active tasks"
             width="w-[340px] max-w-[calc(100vw-1rem)]"
-            panelClassName="h-[calc(100vh-44px-0.75rem)] max-h-[calc(100vh-44px-0.75rem)] sm:h-[calc(100vh-2rem-44px)] sm:max-h-[calc(100vh-2rem-44px)] !border-primary/30 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.2)] backdrop-blur-xl bg-white/90 dark:bg-zinc-900/90"
+            panelClassName="h-[calc(100dvh-44px-0.75rem)] max-h-[calc(100dvh-44px-0.75rem)] sm:h-[calc(100dvh-2rem-44px)] sm:max-h-[calc(100dvh-2rem-44px)] !border-primary/30 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.2)] supports-[backdrop-filter]:backdrop-blur-xl bg-white/90 dark:bg-zinc-900/90"
         >
             <div className="h-full flex flex-col font-mono">
                 <ScrollArea className="px-2 py-3 h-full">
@@ -118,7 +118,7 @@ export default function ActiveWindowsPanel() {
                 </ScrollArea>
 
                 {totalWindows > 0 && (
-                    <div className="p-3 mt-auto border-t border-primary/20 bg-primary/5 backdrop-blur-md">
+                    <div className="p-3 mt-auto border-t border-primary/20 bg-primary/5 supports-[backdrop-filter]:backdrop-blur-md">
                         <div className="flex items-center justify-between mb-2">
                             <h3 className="text-[10px] font-black opacity-50 tracking-widest uppercase m-0 leading-none">session</h3>
                             <span className="text-[10px] font-bold text-primary/70 tracking-widest">

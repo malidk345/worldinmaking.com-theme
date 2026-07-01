@@ -730,7 +730,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                                 e.stopPropagation()
                                                                 openNodeEditor(node)
                                                             }}
-                                                            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-primary/10 bg-white/80 text-primary/60 backdrop-blur hover:text-primary"
+                                                            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-primary/10 bg-white/80 text-primary/60 supports-[backdrop-filter]:backdrop-blur hover:text-primary"
                                                             aria-label={`edit ${node.title}`}
                                                             title="edit node"
                                                         >
@@ -742,7 +742,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                                 e.stopPropagation()
                                                                 void handleDeleteNode(node)
                                                             }}
-                                                            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-primary/10 bg-white/80 text-primary/60 backdrop-blur hover:text-red-600"
+                                                            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-primary/10 bg-white/80 text-primary/60 supports-[backdrop-filter]:backdrop-blur hover:text-red-600"
                                                             aria-label={`delete ${node.title}`}
                                                             title="delete node"
                                                         >
@@ -788,7 +788,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                                 e.stopPropagation()
                                                                 handleEditPost(post)
                                                             }}
-                                                            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-primary/10 bg-white/80 text-primary/60 backdrop-blur hover:text-primary"
+                                                            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-primary/10 bg-white/80 text-primary/60 supports-[backdrop-filter]:backdrop-blur hover:text-primary"
                                                             aria-label={`edit ${post.title}`}
                                                             title="edit post"
                                                         >
@@ -800,7 +800,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                                 e.stopPropagation()
                                                                 void handleDeletePost(post)
                                                             }}
-                                                            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-primary/10 bg-white/80 text-primary/60 backdrop-blur hover:text-red-600"
+                                                            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-primary/10 bg-white/80 text-primary/60 supports-[backdrop-filter]:backdrop-blur hover:text-red-600"
                                                             aria-label={`delete ${post.title}`}
                                                             title="delete post"
                                                         >
