@@ -251,12 +251,13 @@ export default function TaskBarMenu() {
     ], [profile, accountMenuItems])
 
     return (
-        <>
+        <div className="w-full px-2 sm:px-4 pt-2 sm:pt-3 pb-2 sm:pb-3 z-[9999] flex-shrink-0 bg-transparent pointer-events-none">
             <div
                 ref={taskbarRef}
                 id="taskbar"
                 data-scheme="primary"
-                className="w-full bg-accent/90 supports-[backdrop-filter]:backdrop-blur-md border-b border-primary top-0 z-[9999] flex justify-between pl-0.5 pr-2 items-center"
+                className="w-full bg-white/40 dark:bg-black/40 supports-[backdrop-filter]:backdrop-blur-3xl border border-black/10 dark:border-white/10 rounded-[24px] sm:rounded-[32px] flex justify-between pl-3 pr-2 py-1 items-center shadow-[0_8px_32px_rgba(0,0,0,0.12)] pointer-events-auto"
+                style={{ backdropFilter: 'blur(60px)', WebkitBackdropFilter: 'blur(60px)' }}
             >
                 <div className="flex items-center gap-2 px-3 py-1 pointer-events-none">
                     <svg viewBox="0 0 32 32" className="size-5 fill-current text-black dark:text-white">
@@ -346,6 +347,6 @@ export default function TaskBarMenu() {
                     />
                 </aside>
             </div>
-        </>
+        </div>
     )
 }
