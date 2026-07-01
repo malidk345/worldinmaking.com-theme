@@ -251,7 +251,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 options: {
                     data: {
                         username: trimmedEmail.split('@')[0],
-                    }
+                    },
+                    emailRedirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
                 },
             });
 
