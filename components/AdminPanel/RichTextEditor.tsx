@@ -523,7 +523,7 @@ const RichTextEditor = ({
     }, [handleKeyDown])
 
     return (
-        <div className={`${hideBorder ? 'bg-transparent overflow-hidden flex flex-col' : `border border-[#1E2F46]/15 rounded-sm bg-white overflow-hidden flex flex-col`} ${focusMode ? 'h-screen fixed inset-0 z-[100]' : (expandHeight ? 'h-auto' : 'h-full')}`}>
+        <div className={`${hideBorder ? 'bg-transparent overflow-hidden flex flex-col' : `border border-[#1E2F46]/15 rounded-sm bg-white overflow-hidden flex flex-col`} ${focusMode ? 'h-[100dvh] fixed inset-0 z-[100]' : (expandHeight ? 'h-auto' : 'h-full')}`}>
             {/* Toolkit - injected into Window Footer or Header via portal */}
             <Toolkit
                 windowKey={windowKey || targetKey}

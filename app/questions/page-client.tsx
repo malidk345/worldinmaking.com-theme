@@ -4,7 +4,7 @@ import Wrapper from 'components/Wrapper'
 
 export default function QuestionsPageClient() {
     return (
-        <main className="h-screen w-screen overflow-hidden bg-light dark:bg-dark">
+        <main className="h-[100dvh] w-screen overflow-hidden bg-light dark:bg-dark">
             <Wrapper />
         </main>
     )
