@@ -91,7 +91,6 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
     const [resizing, setResizing] = useState(false)
     const [localSize, setLocalSize] = useState(item.size)
     const [localPos, setLocalPos] = useState(item.position)
-    const hasMobileAdjusted = useRef(false)
 
     useEffect(() => {
         if (windowRef.current) {
@@ -316,26 +315,6 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
         }
     }, [item, history, activeHistoryIndex])
 
-    useEffect(() => {
-        if (typeof window === 'undefined') return
-        if (hasMobileAdjusted.current) return
-
-        const isMobile = window.innerWidth <= 768
-        if (!isMobile) return
-
-        if (!constraintsRef.current) return
-        const bounds = constraintsRef.current.getBoundingClientRect()
-        const inset = 0
-        const nextSize = {
-            width: bounds.width - inset * 2,
-            height: bounds.height - inset * 2,
-        }
-        const nextPosition = { x: inset, y: inset }
-
-        hasMobileAdjusted.current = true
-        updateWindow(item, { size: nextSize, position: nextPosition })
-    }, [item, constraintsRef, updateWindow])
-
     const isMaximized = useMemo(() => {
         if (!constraintsRef.current) return false
         const bounds = constraintsRef.current.getBoundingClientRect()
@@ -437,35 +416,55 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                 x: windowPosition.x,
                                 y: windowPosition.y,
                                 transition: {
-                                    scale: { duration: 0.23, ease: [0.2, 0.2, 0.8, 1] },
-                                    x: { duration: 0.23, ease: [0.2, 0.2, 0.8, 1] },
-                                    y: { duration: 0.23, ease: [0.2, 0.2, 0.8, 1] },
+                                    type: "spring",
+                                    stiffness: 350,
+                                    damping: 25,
+                                    mass: 0.8
                                 }
                             }}
-                            transition={{
-                                duration: siteSettings.performanceBoost ? 0 : 0.2,
-                                scale: {
-                                    duration: siteSettings.performanceBoost ? 0 : 0.2,
-                                    delay: siteSettings.performanceBoost ? 0 : 0.1,
-                                    ease: [0.2, 0.2, 0.8, 1],
-                                },
-                                width: {
-                                    duration: (dragging || siteSettings.performanceBoost) ? 0 : 0.18,
-                                    ease: [0.2, 0.2, 0.8, 1],
-                                },
-                                height: {
-                                    duration: (dragging || siteSettings.performanceBoost) ? 0 : 0.18,
-                                    ease: [0.2, 0.2, 0.8, 1],
-                                },
-                                x: {
-                                    duration: (dragging || siteSettings.performanceBoost) ? 0 : 0.18,
-                                    ease: [0.2, 0.2, 0.8, 1],
-                                },
-                                y: {
-                                    duration: (dragging || siteSettings.performanceBoost) ? 0 : 0.18,
-                                    ease: [0.2, 0.2, 0.8, 1],
-                                },
-                            }}
+                            transition={
+                                siteSettings.performanceBoost ? { duration: 0 } : {
+                                    type: "spring",
+                                    stiffness: 350,
+                                    damping: 25,
+                                    mass: 0.8,
+                                    scale: {
+                                        type: "spring",
+                                        stiffness: 350,
+                                        damping: 25,
+                                        mass: 0.8,
+                                        delay: 0.05
+                                    },
+                                    width: {
+                                        duration: dragging ? 0 : undefined,
+                                        type: dragging ? false : "spring",
+                                        stiffness: 350,
+                                        damping: 25,
+                                        mass: 0.8
+                                    },
+                                    height: {
+                                        duration: dragging ? 0 : undefined,
+                                        type: dragging ? false : "spring",
+                                        stiffness: 350,
+                                        damping: 25,
+                                        mass: 0.8
+                                    },
+                                    x: {
+                                        duration: dragging ? 0 : undefined,
+                                        type: dragging ? false : "spring",
+                                        stiffness: 350,
+                                        damping: 25,
+                                        mass: 0.8
+                                    },
+                                    y: {
+                                        duration: dragging ? 0 : undefined,
+                                        type: dragging ? false : "spring",
+                                        stiffness: 350,
+                                        damping: 25,
+                                        mass: 0.8
+                                    }
+                                }
+                            }
                             onMouseDown={handleMouseDown}
                             drag={!item.fixedSize}
                             dragControls={controls}

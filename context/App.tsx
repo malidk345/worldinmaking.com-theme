@@ -62,7 +62,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         performanceBoost: false
     })
 
-    const [lastClickedElementRect, setLastClickedElementRect] = useState<{ x: number; y: number } | null>(null)
+    const lastClickedElementRect = useRef<{ x: number; y: number } | null>(null)
 
     const wallpapers = ['keyboard-garden', 'hogzilla', 'startup-monopoly', 'office-party', '2001-bliss', 'parade', 'coding-at-night']
 
@@ -239,7 +239,14 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
             let position = item.position
             if (!position) {
-                if (settings.topCenter && typeof window !== 'undefined') {
+                if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+                    const inset = 0
+                    size = {
+                        width: window.innerWidth - inset * 2,
+                        height: window.innerHeight - inset * 2
+                    }
+                    position = { x: inset, y: inset }
+                } else if (settings.topCenter && typeof window !== 'undefined') {
                     position = { x: (window.innerWidth - size.width) / 2, y: 100 }
                 } else {
                     position = getPositionDefaults(size, prev)
@@ -258,16 +265,16 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
                 sizeConstraints: item.sizeConstraints || { min: MIN_SIZE, max: { width: 2000, height: 2000 } },
                 fixedSize: item.fixedSize || false,
                 minimal: item.minimal || false,
-                fromOrigin: lastClickedElementRect ? {
-                    x: lastClickedElementRect.x - size.width / 2,
-                    y: lastClickedElementRect.y - size.height / 2
+                fromOrigin: lastClickedElementRect.current ? {
+                    x: lastClickedElementRect.current.x - size.width / 2,
+                    y: lastClickedElementRect.current.y - size.height / 2
                 } : undefined
             }
 
             setFocusedWindow(newWindow)
             return [...prev, newWindow]
         })
-    }, [getPositionDefaults, getTitleFromPath, lastClickedElementRect, setFocusedWindowKey])
+    }, [getPositionDefaults, getTitleFromPath, setFocusedWindowKey])
 
     const closeWindow = useCallback((itemOrKey: string | AppWindow) => {
         const key = typeof itemOrKey === 'string' ? itemOrKey : itemOrKey.key
@@ -468,10 +475,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
             setCompact(window.innerWidth < 1024)
         }
 
-        const handleClick = (e: MouseEvent) => {
+        const handleMouseDown = (e: MouseEvent) => {
             const target = e.target as HTMLElement
             const rect = target.getBoundingClientRect()
-            setLastClickedElementRect({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 })
+            lastClickedElementRect.current = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
         }
 
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -506,12 +513,12 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
         handleResize()
         window.addEventListener('resize', handleResize)
-        window.addEventListener('click', handleClick)
+        window.addEventListener('mousedown', handleMouseDown, true)
         window.addEventListener('keydown', handleKeyDown)
 
         return () => {
             window.removeEventListener('resize', handleResize)
-            window.removeEventListener('click', handleClick)
+            window.removeEventListener('mousedown', handleMouseDown, true)
             window.removeEventListener('keydown', handleKeyDown)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
