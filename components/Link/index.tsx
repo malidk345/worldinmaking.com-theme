@@ -31,7 +31,7 @@ export default function Link({
     ...other
 }: Props) {
     const { addWindow } = useApp()
-    const { navigate, appWindow } = useWindow()
+    const { appWindow } = useWindow()
 
     // Strip non-DOM props so they don't get spread onto <a> / <NextLink>
     const { state, newWindow, ...domProps } = other
@@ -56,24 +56,13 @@ export default function Link({
             // Cross-type links (e.g. post → profile) open as new windows on everywhere.
             // Same-type links (post → post) navigate within current window.
             if (appWindow && appWindow.key !== 'home') {
-                const currentBase = (appWindow.path || '').split('/')[1] || ''
-                const targetBase = to.split('/')[1] || ''
-
-                if (currentBase !== targetBase) {
-                    e.preventDefault()
-                    addWindow({
-                        key: to,
-                        path: to,
-                        title: to.split('/').pop() || 'window'
-                    })
-                    return
-                }
-
-                if (navigate) {
-                    e.preventDefault()
-                    navigate(to)
-                    return
-                }
+                e.preventDefault()
+                addWindow({
+                    key: to,
+                    path: to,
+                    title: to.split('/').pop() || 'window'
+                })
+                return
             }
         }
     }
