@@ -66,16 +66,17 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
     const sizeConstraints = useMemo(() => {
         const base = item.sizeConstraints || { min: { width: 400, height: 300 }, max: { width: 2000, height: 2000 } }
         if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+            const bounds = constraintsRef.current?.getBoundingClientRect()
             return {
                 min: {
                     width: Math.min(base.min.width, window.innerWidth * 0.85),
-                    height: Math.min(base.min.height, (window.innerHeight - 80) * 0.7)
+                    height: Math.min(base.min.height, ((bounds?.height || window.innerHeight) - 80) * 0.7)
                 },
                 max: base.max
             }
         }
         return base
-    }, [item.sizeConstraints])
+    }, [item.sizeConstraints, constraintsRef])
 
     const size = item.size
     const position = item.position
