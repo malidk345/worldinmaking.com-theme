@@ -666,7 +666,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                     )}
                                 </div>
                             </div>
-                            <div id={`window-footer-${item.key}`} className="w-full bg-transparent empty:hidden flex-shrink-0 pb-0.5" />
+                            <div id={`window-footer-${item.key}`} className="w-full bg-transparent flex-shrink-0 pb-0.5" />
 
                             {!item.fixedSize && !item.minimal && (
                                 <>
