@@ -52,13 +52,13 @@ export default function SidePanel({
                     initial={{ x: '110%' }}
                     animate={{ x: 0 }}
                     exit={{ x: '110%' }}
-                    transition={{ duration: 0.3, type: 'tween', ease: 'easeOut' }}
-                    className={`fixed top-[calc(44px+0.5rem)] sm:top-[calc(44px+1rem)] right-2 sm:right-4 h-auto max-h-[90dvh] sm:h-[calc(100dvh-2rem-44px)] ${width} bg-white dark:bg-zinc-900 border border-primary rounded-md shadow-2xl z-[10000] flex flex-col text-primary overflow-hidden ${panelClassName}`}
+                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                    className={`fixed top-[calc(44px+0.5rem)] sm:top-[calc(44px+1rem)] right-2 sm:right-4 h-auto max-h-[90dvh] sm:h-[calc(100dvh-2rem-44px)] ${width} bg-white/80 dark:bg-black/80 border border-primary/20 rounded-[32px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] supports-[backdrop-filter]:backdrop-blur-[60px] z-[10000] flex flex-col text-primary overflow-hidden ${panelClassName}`}
                 >
                     <div className="h-full flex flex-col">
                         {(title || showCloseButton) && (
-                            <div className="flex items-center justify-between px-4 py-2 border-b border-primary bg-zinc-50 dark:bg-zinc-800/50">
-                                <h2 className="text-sm font-black m-0">{title}</h2>
+                            <div className="flex items-center justify-between px-5 py-3 border-b border-primary/20 bg-transparent">
+                                <h2 className="text-sm font-black tracking-tight m-0">{title}</h2>
                                 <div className="flex items-center gap-2">
                                     {headerAside && <div>{headerAside}</div>}
                                     {showCloseButton && (
