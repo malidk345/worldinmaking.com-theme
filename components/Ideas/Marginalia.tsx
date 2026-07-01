@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react'
 import ScrollArea from 'components/RadixUI/ScrollArea'
-import OSButton from 'components/OSButton'
 import { FileText, ExternalLink, Bookmark } from 'lucide-react'
 
 const MOCK_NOTES = [
