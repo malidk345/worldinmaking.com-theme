@@ -10,7 +10,6 @@ import VotePicker from 'components/VotePicker'
 import { IconPencil, IconTrash } from '@posthog/icons'
 import Link from 'components/Link'
 import { supabase } from 'lib/supabase'
-import { useToast } from 'context/ToastContext'
 import { useAuth } from 'context/AuthContext'
 import { useCommunity } from 'hooks/useCommunity'
 
@@ -22,7 +21,6 @@ interface ForumReplyCardProps {
 }
 
 export default function ForumReplyCard({ reply, postId, isInForum = false, questionAuthorId }: ForumReplyCardProps) {
-    const { addToast } = useToast()
     const { isAdmin } = useAuth()
     const { handleReplyVote, deleteReply } = useCommunity()
     const [userVote, setUserVote] = useState(0)

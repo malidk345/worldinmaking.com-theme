@@ -329,7 +329,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         setWindows((prev) => prev.map(w => w.key === key ? { ...w, ref } : w))
     }, [])
 
-    const openSearch = useCallback((_filter?: string) => {
+    const openSearch = useCallback(() => {
         const size = isMobile
             ? { width: typeof window !== 'undefined' ? Math.min(window.innerWidth - 32, 500) : 400, height: 320 }
             : { width: 600, height: 400 }

@@ -230,6 +230,7 @@ export default function TrendingWidget() {
                                     <Bell className="w-3 h-3 text-[#172b4d]" />
                                 </div>
                             ) : post.avatar_url ? (
+                                /* eslint-disable-next-line @next/next/no-img-element */
                                 <img
                                     src={post.avatar_url}
                                     alt={post.author}

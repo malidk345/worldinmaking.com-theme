@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Monitor, Moon, Sun, Terminal, BookOpen, Coffee, Zap } from 'lucide-react'
+import { Monitor, Moon, Terminal, BookOpen, Coffee, Zap } from 'lucide-react'
 import { useApp } from 'context/App'
 import ScrollArea from 'components/RadixUI/ScrollArea'
 import OSButton from 'components/OSButton'
