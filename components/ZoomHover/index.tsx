@@ -1,4 +1,5 @@
 import React from 'react'
+import { motion } from 'framer-motion'
 
 interface ZoomHoverProps {
     size?: 'xs' | 'sm' | 'md' | 'lg'
@@ -15,20 +16,20 @@ const ZoomHover: React.FC<ZoomHoverProps> = ({
     className = '',
     children,
 }) => {
-    const sizeClasses = {
-        // note: these are sorta backwards. choose a button based on your button's size.
-        // eg: if you have a extra large button, you want it to move less on hover/click so use 'lg'
-        xs: 'hover:top-[-.5px] active:top-[.5px]',
-        sm: 'hover:top-[-.5px] active:top-[.5px]',
-        md: 'hover:top-[-.5px] active:top-[.5px]',
-        lg: 'hover:-top-px active:top-[.5px]',
-    }
-
     const widthClass = width === 'auto' ? 'w-auto' : width === 'full' ? 'w-full' : width
     const displayClass = display || (width === 'full' ? 'block' : 'inline-flex')
-    const classes = `${widthClass} ${displayClass} relative ${sizeClasses[size]} ${className}`
+    const classes = `${widthClass} ${displayClass} relative ${className}`
 
-    return <div className={classes}>{children}</div>
+    return (
+        <motion.div
+            className={classes}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.96 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+        >
+            {children}
+        </motion.div>
+    )
 }
 
 export default ZoomHover
