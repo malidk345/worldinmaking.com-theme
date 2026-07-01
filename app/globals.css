@@ -773,8 +773,8 @@ mark {
   h5,
   h6 {
     @apply font-bold;
-    letter-spacing: -0.025em;
-    font-variation-settings: 'wght' 700;
+    letter-spacing: -0.015rem;
+    font-variation-settings: 'wght' 800;
     font-family: var(--font-ibm-plex), -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui', 'helvetica neue', helvetica, Ubuntu, roboto, noto, arial, sans-serif !important;
   }
 
