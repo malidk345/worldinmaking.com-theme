@@ -495,16 +495,16 @@ export default function PublicProfile({ username }: PublicProfileProps) {
     }
 
     return (
-        <div className="corpus-root flex flex-col size-full bg-[#fafcfc] dark:bg-primary text-primary font-sans overflow-hidden">
+        <div className="corpus-root flex flex-col size-full bg-white/80 dark:bg-black/80 backdrop-blur-[60px] text-primary font-sans overflow-hidden">
             <div
                 data-scheme="tertiary"
-                className="flex w-auto mx-1 mt-1 items-center px-1.5 py-0.5 select-none gap-2 justify-between bg-primary border border-primary rounded-md shrink-0 z-10 h-10 overflow-x-auto custom-scrollbar no-scrollbar-on-mobile"
+                className="flex w-auto mx-1 mt-1 items-center px-1.5 py-0.5 select-none gap-2 justify-between bg-primary border border-primary rounded-[24px] shrink-0 z-10 h-10 overflow-x-auto custom-scrollbar no-scrollbar-on-mobile"
             >
                 <div className="flex items-center gap-1 flex-shrink-0">
                     {isOwner && (
                         <Tooltip
                             trigger={
-                                <OSButton size="sm" onClick={() => setSidebarOpen((prev) => !prev)} active={sidebarOpen} className="p-1 h-8 w-8 !rounded-md">
+                                <OSButton size="sm" onClick={() => setSidebarOpen((prev) => !prev)} active={sidebarOpen} className="p-1 h-8 w-8 !rounded-full">
                                     {sidebarOpen ? <IconSidebarOpen className="size-[18px]" /> : <IconSidebarClose className="size-[18px]" />}
                                 </OSButton>
                             }
@@ -515,10 +515,10 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                     )}
 
                     <div className="hidden sm:flex items-center gap-0.5">
-                        <OSButton size="sm" onClick={goBack} disabled={!canGoBack} className="p-1 h-8 w-8 !rounded-md">
+                        <OSButton size="sm" onClick={goBack} disabled={!canGoBack} className="p-1 h-8 w-8 !rounded-full">
                             <IconChevronLeft className={`size-[18px] ${canGoBack ? 'opacity-100' : 'opacity-30'}`} />
                         </OSButton>
-                        <OSButton size="sm" onClick={goForward} disabled={!canGoForward} className="p-1 h-8 w-8 !rounded-md">
+                        <OSButton size="sm" onClick={goForward} disabled={!canGoForward} className="p-1 h-8 w-8 !rounded-full">
                             <IconChevronRight className={`size-[18px] ${canGoForward ? 'opacity-100' : 'opacity-30'}`} />
                         </OSButton>
                     </div>
@@ -545,25 +545,25 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                     {isOwner && !isEditingProfile && (
                         <>
                             <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
-                            <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-md flex items-center gap-1.5" onClick={handleAddNode}><IconPlus className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">new node</span></OSButton>} side="bottom">new node</Tooltip>
-                            <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-md flex items-center gap-1.5" onClick={handleAddPost}><BookOpen className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">new post</span></OSButton>} side="bottom">new post</Tooltip>
-                            <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-md flex items-center gap-1.5" onClick={openProfileEditor}><PenLine className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">edit profile</span></OSButton>} side="bottom">edit profile</Tooltip>
+                            <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-full flex items-center gap-1.5" onClick={handleAddNode}><IconPlus className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">new node</span></OSButton>} side="bottom">new node</Tooltip>
+                            <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-full flex items-center gap-1.5" onClick={handleAddPost}><BookOpen className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">new post</span></OSButton>} side="bottom">new post</Tooltip>
+                            <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-full flex items-center gap-1.5" onClick={openProfileEditor}><PenLine className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">edit profile</span></OSButton>} side="bottom">edit profile</Tooltip>
                         </>
                     )}
                     <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
-                    <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded" onClick={refreshAll}><RefreshCw className={`size-[16px] opacity-70 ${refreshing ? 'animate-spin' : ''}`} /></OSButton>} side="bottom">refresh profile</Tooltip>
-                    <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded" onClick={() => copyLink(publicProfilePath, 'profile')}><Share className="size-[16px] opacity-70" /></OSButton>} side="bottom">share profile</Tooltip>
+                    <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded-full" onClick={refreshAll}><RefreshCw className={`size-[16px] opacity-70 ${refreshing ? 'animate-spin' : ''}`} /></OSButton>} side="bottom">refresh profile</Tooltip>
+                    <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded-full" onClick={() => copyLink(publicProfilePath, 'profile')}><Share className="size-[16px] opacity-70" /></OSButton>} side="bottom">share profile</Tooltip>
                     {profile.website && (
-                        <Tooltip trigger={<a href={profile.website} target="_blank" rel="noopener noreferrer"><OSButton size="sm" className="p-1.5 h-8 w-8 !rounded"><ExternalLink className="size-[16px] opacity-70" /></OSButton></a>} side="bottom">website</Tooltip>
+                        <Tooltip trigger={<a href={profile.website} target="_blank" rel="noopener noreferrer"><OSButton size="sm" className="p-1.5 h-8 w-8 !rounded-full"><ExternalLink className="size-[16px] opacity-70" /></OSButton></a>} side="bottom">website</Tooltip>
                     )}
                 </div>
             </div>
 
-            <div className="flex flex-1 min-h-0 overflow-hidden relative bg-[#fafcfc] dark:bg-primary">
+            <div className="flex flex-1 min-h-0 overflow-hidden relative bg-white/80 dark:bg-black/80 backdrop-blur-[60px]">
                 {isOwner && (
-                    <div className={`shrink-0 flex flex-col border-r border-primary/5 bg-[#fafcfc] dark:bg-black/10 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${sidebarOpen ? 'w-64 opacity-100 translate-x-0' : 'w-0 opacity-0 -translate-x-full absolute h-full pointer-events-none'}`}>
+                    <div className={`shrink-0 flex flex-col border-r border-primary/5 bg-white/40 dark:bg-black/40 backdrop-blur-[60px] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${sidebarOpen ? 'w-64 opacity-100 translate-x-0' : 'w-0 opacity-0 -translate-x-full absolute h-full pointer-events-none'}`}>
                         <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-4 min-w-[256px]">
-                            <button className="flex items-center gap-2 w-full hover:bg-black/5 dark:hover:bg-white/5 p-1.5 rounded-lg transition-colors">
+                            <button className="flex items-center gap-2 w-full hover:bg-black/5 dark:hover:bg-white/5 p-1.5 rounded-[18px] transition-colors">
                                 <div className="size-6 overflow-hidden rounded bg-primary/10 flex items-center justify-center shrink-0 shadow-sm border border-primary/10">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     {profile.avatar_url ? <img src={profile.avatar_url} alt={displayName} className="size-full object-cover" /> : <span className="text-xs font-black text-primary">{displayName.charAt(0).toUpperCase()}</span>}
@@ -575,21 +575,21 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                             <div className="space-y-1">
                                 {!isEditingProfile ? (
                                     <>
-                                        <OSButton size="sm" className="w-full !h-9 !rounded-md !px-2.5 flex items-center justify-start gap-2" onClick={handleAddNode}>
+                                        <OSButton size="sm" className="w-full !h-9 !rounded-full !px-2.5 flex items-center justify-start gap-2" onClick={handleAddNode}>
                                             <IconPlus className="size-[14px] opacity-70" />
                                             <span className="text-[12px] font-semibold">new node</span>
                                         </OSButton>
-                                        <OSButton size="sm" className="w-full !h-9 !rounded-md !px-2.5 flex items-center justify-start gap-2" onClick={handleAddPost}>
+                                        <OSButton size="sm" className="w-full !h-9 !rounded-full !px-2.5 flex items-center justify-start gap-2" onClick={handleAddPost}>
                                             <BookOpen className="size-[14px] opacity-70" />
                                             <span className="text-[12px] font-semibold">new post</span>
                                         </OSButton>
-                                        <OSButton size="sm" className="w-full !h-9 !rounded-md !px-2.5 flex items-center justify-start gap-2" onClick={openProfileEditor}>
+                                        <OSButton size="sm" className="w-full !h-9 !rounded-full !px-2.5 flex items-center justify-start gap-2" onClick={openProfileEditor}>
                                             <PenLine className="size-[14px] opacity-70" />
                                             <span className="text-[12px] font-semibold">edit profile</span>
                                         </OSButton>
                                     </>
                                 ) : (
-                                    <div className="rounded-lg border border-primary/10 bg-black/5 dark:bg-white/5 px-2.5 py-2 text-[11px] font-bold lowercase text-primary/60">
+                                    <div className="rounded-[18px] border border-primary/10 bg-black/5 dark:bg-white/5 px-2.5 py-2 text-[11px] font-bold lowercase text-primary/60">
                                         editing profile… save and cancel are below
                                     </div>
                                 )}
@@ -612,7 +612,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                             setIsEditingProfile(false)
                                             setActiveSection(item.key as typeof activeSection)
                                         }}
-                                        className={`flex items-center gap-2.5 w-full p-1.5 px-2.5 rounded-lg transition-colors font-medium text-[13px] ${activeSection === item.key ? 'bg-black/5 dark:bg-white/10 text-primary font-bold' : 'hover:bg-black/5 dark:hover:bg-white/5 text-primary/70 hover:text-primary'}`}
+                                        className={`flex items-center gap-2.5 w-full p-1.5 px-2.5 rounded-[18px] transition-colors font-medium text-[13px] ${activeSection === item.key ? 'bg-black/5 dark:bg-white/10 text-primary font-bold' : 'hover:bg-black/5 dark:hover:bg-white/5 text-primary/70 hover:text-primary'}`}
                                     >
                                         {item.icon}
                                         <span>{item.label}</span>
@@ -624,7 +624,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                     </div>
                 )}
 
-                <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#fafcfc] dark:bg-primary">
+                <div className="flex-1 overflow-y-auto custom-scrollbar bg-white/80 dark:bg-black/80 backdrop-blur-[60px]">
                     <div className="corpus-nodes-wrapper" style={{ marginTop: 'clamp(0.5rem, 2vw, 1.5rem)' }}>
                         <div className="corpus-profile-slot">
                             <div className="corpus-profile-stack">
@@ -730,7 +730,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                                 e.stopPropagation()
                                                                 openNodeEditor(node)
                                                             }}
-                                                            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-primary/10 bg-white/80 text-primary/60 backdrop-blur hover:text-primary"
+                                                            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-primary/10 bg-white/80 text-primary/60 backdrop-blur hover:text-primary"
                                                             aria-label={`edit ${node.title}`}
                                                             title="edit node"
                                                         >
@@ -742,7 +742,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                                 e.stopPropagation()
                                                                 void handleDeleteNode(node)
                                                             }}
-                                                            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-primary/10 bg-white/80 text-primary/60 backdrop-blur hover:text-red-600"
+                                                            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-primary/10 bg-white/80 text-primary/60 backdrop-blur hover:text-red-600"
                                                             aria-label={`delete ${node.title}`}
                                                             title="delete node"
                                                         >
@@ -788,7 +788,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                                 e.stopPropagation()
                                                                 handleEditPost(post)
                                                             }}
-                                                            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-primary/10 bg-white/80 text-primary/60 backdrop-blur hover:text-primary"
+                                                            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-primary/10 bg-white/80 text-primary/60 backdrop-blur hover:text-primary"
                                                             aria-label={`edit ${post.title}`}
                                                             title="edit post"
                                                         >
@@ -800,7 +800,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                                 e.stopPropagation()
                                                                 void handleDeletePost(post)
                                                             }}
-                                                            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-primary/10 bg-white/80 text-primary/60 backdrop-blur hover:text-red-600"
+                                                            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-primary/10 bg-white/80 text-primary/60 backdrop-blur hover:text-red-600"
                                                             aria-label={`delete ${post.title}`}
                                                             title="delete post"
                                                         >
