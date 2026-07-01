@@ -327,12 +327,15 @@
   }
 
   .corpus-profile-slot {
-    background: color-mix(in hsl, canvas, canvasText 2%);
-    border: 1px solid color-mix(in hsl, canvas, canvasText 10%);
-    border-radius: 6px;
+    background: rgb(var(--bg-rgb) / 0.6);
+    backdrop-filter: blur(60px) saturate(200%);
+    -webkit-backdrop-filter: blur(60px) saturate(200%);
+    border: 1px solid rgb(var(--primary-rgb) / 0.05);
+    border-radius: 32px;
     overflow: hidden;
     margin: 0;
     padding: 1rem;
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
   }
 
   .corpus-profile-stack {
@@ -346,7 +349,7 @@
     position: relative;
     overflow: hidden;
     min-height: 136px;
-    border-radius: 6px;
+    border-radius: 24px;
     border: 1px solid color-mix(in hsl, canvas, canvasText 20%);
     background: color-mix(in hsl, canvas, canvasText 3%);
   }
@@ -401,7 +404,7 @@
     translate: 0 0;
     width: 64px;
     height: 64px;
-    border-radius: 12px;
+    border-radius: 50%;
     border: 2px solid light-dark(white, hsl(0 0% 0% / 0.4));
     background: color-mix(in hsl, canvas, canvasText 4%);
     overflow: hidden;
@@ -426,15 +429,15 @@
 
   .corpus-profile-tableCard,
   .corpus-profile-statusCard {
-    background: color-mix(in hsl, canvas, canvasText 2%);
-    border: 1px solid color-mix(in hsl, canvas, canvasText 18%);
-    border-radius: 6px;
+    background: rgb(var(--bg-rgb) / 0.4);
+    border: 1px solid rgb(var(--primary-rgb) / 0.05);
+    border-radius: 24px;
     overflow: hidden;
     position: relative;
   }
 
   .corpus-profile-cardShadow {
-    box-shadow: none;
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
   }
 
   .corpus-profile-cardHeading {
@@ -1190,9 +1193,9 @@
     display: grid;
     grid-template-rows: 1fr auto;
     padding: 0.375rem;
-    border: 1px solid color-mix(in hsl, canvas, canvasText 10%);
+    border: 1px solid rgb(var(--primary-rgb) / 0.05);
     border-radius: 24px;
-    background: color-mix(in hsl, canvas, canvasText 2%);
+    background: rgb(var(--bg-rgb) / 0.4);
     cursor: pointer;
     transition: border-color 0.2s, background 0.2s;
   }
