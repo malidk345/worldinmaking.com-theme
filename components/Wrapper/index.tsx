@@ -46,7 +46,7 @@ export default function Wrapper() {
                     {windows.map((item, index: number) => {
                         return (
                             <motion.div
-                                style={{ zIndex: item.zIndex, position: 'absolute', inset: 0, pointerEvents: 'none' }}
+                                style={{ zIndex: item.zIndex, position: 'absolute', inset: 0, pointerEvents: 'none', willChange: 'auto' }}
                                 key={item.key}
                                 initial={{
                                     opacity: 0,
