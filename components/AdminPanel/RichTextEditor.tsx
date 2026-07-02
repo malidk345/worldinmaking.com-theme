@@ -57,7 +57,7 @@ export const CalloutNode = Node.create({
         return [{ tag: 'div[data-type="callout"]' }]
     },
     renderHTML({ HTMLAttributes }) {
-        return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'callout', class: 'p-6 my-8 bg-black/[0.03] border-l-[4px] border-black/40 rounded-r-xl font-normal text-black leading-relaxed text-[15px]' }), 0]
+        return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'callout', class: 'p-6 my-8 bg-white/60 supports-[backdrop-filter]:backdrop-blur-[60px] border border-black/5 shadow-[0_8px_32px_rgba(0,0,0,0.04)] rounded-[24px] font-normal text-black leading-relaxed text-[15px] transition-all duration-300 hover:shadow-[0_12px_48px_rgba(0,0,0,0.06)] hover:-translate-y-0.5' }), 0]
     },
     addCommands() {
         return {
@@ -228,7 +228,7 @@ const RichTextEditor = ({
         },
         editorProps: {
             attributes: {
-                class: `prose prose-sm max-w-none focus:outline-none px-0 py-4 font-sans ${focusMode ? 'min-h-[80vh] text-lg' : 'min-h-[300px] text-base'} text-black leading-relaxed prose-headings:text-black prose-headings:font-normal prose-headings:tracking-tight prose-p:text-black prose-p:leading-relaxed prose-strong:text-black prose-strong:font-semibold prose-a:text-black prose-a:underline prose-a:underline-offset-4 prose-a:decoration-black/20 hover:prose-a:decoration-black prose-code:text-black prose-code:bg-black/5 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-[16px] prose-code:before:content-none prose-code:after:content-none prose-pre:bg-black/[0.03] prose-pre:text-black prose-pre:border prose-pre:border-black/10 prose-blockquote:text-black/70 prose-blockquote:border-black/10 prose-blockquote:bg-black/[0.02] prose-blockquote:py-2 prose-blockquote:px-6 prose-blockquote:rounded-lg prose-blockquote:font-normal prose-blockquote:not-italic prose-li:text-black prose-td:border-black/10 prose-th:border-black/10 prose-th:text-black prose-th:font-normal prose-hr:border-black/10 transition-all`,
+                class: `prose prose-sm max-w-none focus:outline-none px-6 py-8 font-sans ${focusMode ? 'min-h-[80vh] text-lg' : 'min-h-[300px] text-base'} text-black leading-relaxed prose-headings:text-black prose-headings:font-normal prose-headings:tracking-tight prose-p:text-black prose-p:leading-relaxed prose-strong:text-black prose-strong:font-semibold prose-a:text-black prose-a:underline prose-a:underline-offset-4 prose-a:decoration-black/20 hover:prose-a:decoration-black prose-code:text-black prose-code:bg-black/5 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-full prose-code:before:content-none prose-code:after:content-none prose-pre:bg-white/80 prose-pre:supports-[backdrop-filter]:backdrop-blur-[60px] prose-pre:text-black prose-pre:border prose-pre:border-black/5 prose-pre:rounded-[24px] prose-pre:shadow-[0_8px_32px_rgba(0,0,0,0.04)] prose-blockquote:text-black/70 prose-blockquote:border-none prose-blockquote:bg-white/50 prose-blockquote:supports-[backdrop-filter]:backdrop-blur-[40px] prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-[24px] prose-blockquote:shadow-[0_4px_24px_rgba(0,0,0,0.02)] prose-blockquote:font-normal prose-blockquote:not-italic prose-li:text-black prose-td:border-black/5 prose-th:border-black/5 prose-th:text-black prose-th:font-normal prose-hr:border-black/5 transition-all duration-300`,
             },
         },
     })
@@ -523,16 +523,16 @@ const RichTextEditor = ({
     }, [handleKeyDown])
 
     return (
-        <div className={`${hideBorder ? 'bg-transparent overflow-hidden flex flex-col' : `border border-[#1E2F46]/15 rounded-[24px] bg-white overflow-hidden flex flex-col`} ${focusMode ? 'h-[100dvh] fixed inset-0 z-[100]' : (expandHeight ? 'h-auto' : 'h-full')}`}>
+        <div className={`${hideBorder ? 'bg-transparent overflow-hidden flex flex-col' : `border border-black/5 rounded-[32px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_12px_48px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]`} ${focusMode ? 'h-[100dvh] fixed inset-0 z-[100] !rounded-none' : (expandHeight ? 'h-auto' : 'h-full')}`}>
             {/* Toolkit - injected into Window Footer or Header via portal */}
             <Toolkit
                 windowKey={windowKey || targetKey}
                 position={toolkitPosition}
-                className={`transition-opacity duration-300 ${editor?.isFocused ? 'opacity-100' : 'opacity-40 hover:opacity-100 focus-within:opacity-100'}`}
+                className={`transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${editor?.isFocused ? 'opacity-100 scale-100 translate-y-0' : 'opacity-40 hover:opacity-100 focus-within:opacity-100 hover:scale-[1.02] focus-within:scale-[1.02] translate-y-1'}`}
             >
                 <Toolbar
                     elements={toolbarElements}
-                    className="!bg-transparent !border-none !p-0 !rounded-none flex-wrap w-full"
+                    className="!bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] !border !border-black/5 !p-2 !rounded-full flex-wrap w-full shadow-[0_8px_32px_rgba(0,0,0,0.08)] gap-1"
                 />
             </Toolkit>
 

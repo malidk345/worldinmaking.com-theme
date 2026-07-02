@@ -380,7 +380,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                             placeholder="post title..."
                                             value={newPostTitle}
                                             onChange={(e) => setNewPostTitle(e.target.value)}
-                                            className="bg-transparent border-b border-black/15 py-1 text-sm font-bold text-black focus:outline-none placeholder:text-black/25 w-full sm:w-64 max-w-[200px] sm:max-w-none"
+                                            className="bg-white/60 supports-[backdrop-filter]:backdrop-blur-[60px] border border-black/5 rounded-[24px] px-4 py-2 text-sm font-bold text-black focus:outline-none placeholder:text-black/25 w-full sm:w-64 max-w-[200px] sm:max-w-none shadow-[inset_0_2px_12px_rgba(0,0,0,0.02)] transition-all duration-300 focus:shadow-[inset_0_2px_16px_rgba(0,0,0,0.04)]"
                                         />
                                         <OSButton className="rounded-full flex-shrink-0" size="sm" variant="primary" onClick={handleSavePost}>
                                             <div className="flex items-center gap-1">
@@ -441,10 +441,10 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                         <button
                                                             key={lang.code}
                                                             onClick={() => handleLanguageChange(lang.code)}
-                                                            className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-[24px] border transition-all flex-shrink-0
+                                                            className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-full border transition-all duration-300 flex-shrink-0
                                                                 ${isActive
-                                                                    ? 'bg-black text-white border-black'
-                                                                    : 'bg-neutral-50 border-black/10 text-black/40 hover:bg-black/5 hover:text-black/70'}
+                                                                    ? 'bg-black text-white border-black shadow-[0_4px_12px_rgba(0,0,0,0.1)]'
+                                                                    : 'bg-white/60 supports-[backdrop-filter]:backdrop-blur-[60px] border-black/5 text-black/40 hover:bg-white/80 hover:text-black hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] hover:-translate-y-0.5'}
                                                             `}
                                                         >
                                                             {lang.label} {isOriginal && '·'}
@@ -453,7 +453,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                 })}
                                             </div>
                                             <select
-                                                className="bg-neutral-50 border border-black/10 rounded-[18px] text-[10px] font-bold text-black/50 px-2 py-1.5 sm:py-1 outline-none flex-shrink-0"
+                                                className="bg-white/60 supports-[backdrop-filter]:backdrop-blur-[60px] border border-black/5 rounded-full text-[10px] font-bold text-black/50 px-3 py-1.5 outline-none flex-shrink-0 shadow-[0_4px_12px_rgba(0,0,0,0.04)] transition-all duration-300 hover:shadow-[0_6px_16px_rgba(0,0,0,0.06)]"
                                                 value=""
                                                 onChange={(e) => {
                                                     if (e.target.value) handleLanguageChange(e.target.value)
@@ -478,7 +478,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                 setNewPostSlug(toSlug(e.target.value))
                                             }
                                         }}
-                                        className="w-full bg-transparent border-b border-black/10 py-1.5 text-base sm:text-lg font-black text-black focus:outline-none placeholder:text-black/20 mb-2.5"
+                                        className="w-full bg-white/60 supports-[backdrop-filter]:backdrop-blur-[60px] border border-black/5 rounded-[32px] px-6 py-4 text-base sm:text-lg font-black text-black focus:outline-none placeholder:text-black/20 mb-4 shadow-[inset_0_2px_16px_rgba(0,0,0,0.02)] transition-all duration-300 focus:shadow-[inset_0_4px_24px_rgba(0,0,0,0.04)]"
                                     />
 
                                     {/* Compact Row: slug + status + language */}
@@ -490,16 +490,16 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                 placeholder="my-post-url"
                                                 value={newPostSlug}
                                                 onChange={(e) => setNewPostSlug(e.target.value)}
-                                                className="w-full bg-neutral-50 border border-black/10 rounded-[18px] px-2 py-1.5 sm:py-1 text-xs font-bold text-black focus:outline-none placeholder:text-black/20"
+                                                className="w-full bg-white/60 supports-[backdrop-filter]:backdrop-blur-[60px] border border-black/5 rounded-[24px] px-4 py-2.5 text-xs font-bold text-black focus:outline-none placeholder:text-black/20 shadow-[inset_0_2px_12px_rgba(0,0,0,0.02)] transition-all duration-300 focus:shadow-[inset_0_2px_16px_rgba(0,0,0,0.04)]"
                                             />
                                         </div>
                                         <div>
                                             <label className="text-[9px] font-black uppercase text-black/30 mb-0.5 block tracking-wider">status</label>
                                             <button
                                                 onClick={() => setNewPostPublished(!newPostPublished)}
-                                                className={`w-full px-2 py-1.5 sm:py-1 text-[10px] font-bold rounded-[24px] border transition-colors ${newPostPublished
-                                                    ? 'bg-black text-white border-black'
-                                                    : 'bg-neutral-100 text-black/50 border-black/10'
+                                                className={`w-full px-4 py-2.5 text-[10px] font-bold rounded-[24px] border transition-all duration-300 ${newPostPublished
+                                                    ? 'bg-black text-white border-black shadow-[0_4px_16px_rgba(0,0,0,0.2)]'
+                                                    : 'bg-white/60 supports-[backdrop-filter]:backdrop-blur-[60px] text-black/50 border-black/5 shadow-[0_4px_12px_rgba(0,0,0,0.04)] hover:bg-white/80'
                                                     }`}
                                             >
                                                 {newPostPublished ? '● published' : '○ draft'}
@@ -510,7 +510,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                             <select
                                                 value={originalLanguage}
                                                 onChange={(e) => setOriginalLanguage(e.target.value)}
-                                                className="w-full bg-neutral-50 border border-black/10 rounded-[18px] px-2 py-1.5 sm:py-1 text-xs font-bold text-black outline-none"
+                                                className="w-full bg-white/60 supports-[backdrop-filter]:backdrop-blur-[60px] border border-black/5 rounded-[24px] px-4 py-2.5 text-xs font-bold text-black outline-none shadow-[0_4px_12px_rgba(0,0,0,0.04)] transition-all duration-300 hover:shadow-[0_6px_16px_rgba(0,0,0,0.06)]"
                                             >
                                                 {SUPPORTED_LANGS.map(l => (
                                                     <option key={l.code} value={l.code}>{l.label}</option>
