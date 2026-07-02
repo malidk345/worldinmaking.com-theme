@@ -407,24 +407,28 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     useEffect(() => {
         if (typeof window === 'undefined') return
 
-        const handlePopState = () => {
+        const handlePopState = (e: PopStateEvent) => {
             const path = normalizePath(window.location.pathname)
 
-            // Check if we already have a window for this path
             let windowToFocus: AppWindow | null = null
 
             setWindows((currentWindows) => {
-                const existingWindow = currentWindows.find(w => w.path === path)
+                // Try to find by state key first if available, then fallback to path
+                const stateKey = e.state?.windowKey
+                const existingWindow = stateKey
+                    ? currentWindows.find(w => w.key === stateKey)
+                    : currentWindows.find(w => w.path === path)
 
                 if (existingWindow) {
-                    // If window exists, bring it to front
-                    windowToFocus = existingWindow
+                    // If the path changed within the same window (e.g. going back within a window's history)
+                    const updatedExistingWindow = { ...existingWindow, path }
+                    windowToFocus = updatedExistingWindow
 
                     // Calculate new z-index: bring to front (highest + 1), decrement others that were above it
                     const maxZIndex = Math.max(...currentWindows.map(w => w.zIndex), 0)
                     return currentWindows.map((el) => {
                         if (el.key === existingWindow.key) {
-                            return { ...el, zIndex: maxZIndex + 1, minimized: false }
+                            return { ...updatedExistingWindow, zIndex: maxZIndex + 1, minimized: false }
                         }
                         return {
                             ...el,
@@ -432,12 +436,12 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
                         }
                     })
                 } else {
-                    // If no window exists for this path, create one
+                    // If no window exists for this path/key, create one
                     const size = { width: 1000, height: 800 }
                     const position = getPositionDefaults(size, currentWindows)
 
                     const newWindow: AppWindow = {
-                        key: path === '/' || path === '/posts' ? 'posts-newspaper' : `window-${path}`,
+                        key: stateKey || (path === '/' || path === '/posts' ? 'posts-newspaper' : `window-${path}`),
                         path: path === '/' ? '/posts' : path,
                         title: getTitleFromPath(path === '/' ? '/posts' : path),
                         size,
@@ -544,19 +548,46 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     }, [openSearch])
 
     // URL Sync - Updates the browser address bar to match the focused window's path
-    // We use replaceState instead of pushState to avoid polluting history with every focus change,
-    // and to prevent Next.js from interpreting this as a full navigation which might unmount components.
+    // We use pushState for new windows and internal navigations to build native history,
+    // and replaceState for simple window focus switches to keep history clean.
+    const prevFocusedKey = useRef<string | null>(null)
+    const prevWindowsCount = useRef<number>(0)
+
     useEffect(() => {
         if (typeof window === 'undefined') return
 
         const currentPath = normalizePath(window.location.pathname)
         const targetPath = normalizePath(focusedWindow?.path || '/')
 
-        // Only sync if the path actually changed and it's an internal path
         if (currentPath !== targetPath && targetPath.startsWith('/')) {
-            window.history.replaceState(null, '', targetPath)
+            const isNewWindow = windows.length > prevWindowsCount.current
+            const isSameWindowNavigating = prevFocusedKey.current === focusedWindow?.key
+
+            // Respect trailingSlash: true from next.config.ts for the actual URL
+            let browserUrl = targetPath
+            if (browserUrl !== '/' && !browserUrl.endsWith('/')) {
+                browserUrl += '/'
+            }
+
+            const stateObj = { windowKey: focusedWindow?.key }
+
+            if (isNewWindow || isSameWindowNavigating) {
+                window.history.pushState(stateObj, '', browserUrl)
+            } else {
+                window.history.replaceState(stateObj, '', browserUrl)
+            }
+        } else if (focusedWindow?.key && (!window.history.state || window.history.state.windowKey !== focusedWindow.key)) {
+            // Even if path is same, make sure the current history state has the windowKey
+            let browserUrl = currentPath
+            if (browserUrl !== '/' && !browserUrl.endsWith('/')) {
+                browserUrl += '/'
+            }
+            window.history.replaceState({ windowKey: focusedWindow.key }, '', browserUrl)
         }
-    }, [focusedWindow, normalizePath])
+
+        prevFocusedKey.current = focusedWindow?.key || null
+        prevWindowsCount.current = windows.length
+    }, [focusedWindow, windows.length, normalizePath])
 
     const value = React.useMemo(() => ({
         windows,
