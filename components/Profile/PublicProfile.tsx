@@ -626,7 +626,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar bg-white/80 dark:bg-black/80 supports-[backdrop-filter]:backdrop-blur-[60px]">
                     <div className="corpus-nodes-wrapper" style={{ marginTop: 'clamp(0.5rem, 2vw, 1.5rem)' }}>
-                        <div className="corpus-profile-slot">
+                        <div className="corpus-profile-slot glass-card">
                             <div className="corpus-profile-stack">
                                 <div className="corpus-profile-visual corpus-profile-cardShadow">
                                     <div className="corpus-profile-cover">
@@ -640,7 +640,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                 </div>
 
                                 <div className="corpus-profile-layerStack">
-                                    <div className="corpus-profile-tableCard corpus-profile-cardShadow">
+                                    <div className="corpus-profile-tableCard corpus-profile-cardShadow glass-card">
                                         <div className="corpus-profile-cardHeading">
                                             {isEditingProfile ? <PenLine className="size-4" /> : <PanelsTopLeft className="size-4" />}
                                             <span>{isEditingProfile ? 'profile editor' : 'profile'}</span>
@@ -661,14 +661,14 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                     {isEditingProfile ? (
                                                         <>
                                                             <tr><td>username</td><td><span style={{ opacity: 0.55 }}>@{profile.username || 'anonymous'}</span></td></tr>
-                                                            <tr><td>pronouns</td><td><input type="text" value={form.pronouns || ''} onChange={(e) => setForm({ ...form, pronouns: e.target.value })} placeholder="she/her" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
-                                                            <tr><td>location</td><td><input type="text" value={form.location || ''} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="istanbul, TR" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
-                                                            <tr><td>website</td><td><input type="text" value={form.website || ''} onChange={(e) => setForm({ ...form, website: e.target.value })} placeholder="https://your-site.com" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
-                                                            <tr><td>github</td><td><input type="text" value={form.github || ''} onChange={(e) => setForm({ ...form, github: e.target.value })} placeholder="https://github.com/username" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
-                                                            <tr><td>linkedin</td><td><input type="text" value={form.linkedin || ''} onChange={(e) => setForm({ ...form, linkedin: e.target.value })} placeholder="https://linkedin.com/in/username" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
-                                                            <tr><td>twitter</td><td><input type="text" value={form.twitter || ''} onChange={(e) => setForm({ ...form, twitter: e.target.value })} placeholder="https://x.com/username" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
-                                                            <tr><td>avatar</td><td><input type="text" value={form.avatar_url || ''} onChange={(e) => setForm({ ...form, avatar_url: e.target.value })} placeholder="https://example.com/photo.png" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
-                                                            <tr><td>cover</td><td><input type="text" value={form.cover_url || ''} onChange={(e) => setForm({ ...form, cover_url: e.target.value })} placeholder="https://example.com/cover.jpg" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
+                                                            <tr><td>pronouns</td><td><input type="text" value={form.pronouns || ''} onChange={(e) => setForm({ ...form, pronouns: e.target.value })} placeholder="she/her" className="w-full bg-white/10 dark:bg-black/10 backdrop-blur-md rounded-full px-3 py-1.5 border border-primary/10 outline-none text-sm text-primary placeholder:opacity-30 transition-all focus:bg-white/20 dark:focus:bg-black/20 focus:border-primary/30" /></td></tr>
+                                                            <tr><td>location</td><td><input type="text" value={form.location || ''} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="istanbul, TR" className="w-full bg-white/10 dark:bg-black/10 backdrop-blur-md rounded-full px-3 py-1.5 border border-primary/10 outline-none text-sm text-primary placeholder:opacity-30 transition-all focus:bg-white/20 dark:focus:bg-black/20 focus:border-primary/30" /></td></tr>
+                                                            <tr><td>website</td><td><input type="text" value={form.website || ''} onChange={(e) => setForm({ ...form, website: e.target.value })} placeholder="https://your-site.com" className="w-full bg-white/10 dark:bg-black/10 backdrop-blur-md rounded-full px-3 py-1.5 border border-primary/10 outline-none text-sm text-primary placeholder:opacity-30 transition-all focus:bg-white/20 dark:focus:bg-black/20 focus:border-primary/30" /></td></tr>
+                                                            <tr><td>github</td><td><input type="text" value={form.github || ''} onChange={(e) => setForm({ ...form, github: e.target.value })} placeholder="https://github.com/username" className="w-full bg-white/10 dark:bg-black/10 backdrop-blur-md rounded-full px-3 py-1.5 border border-primary/10 outline-none text-sm text-primary placeholder:opacity-30 transition-all focus:bg-white/20 dark:focus:bg-black/20 focus:border-primary/30" /></td></tr>
+                                                            <tr><td>linkedin</td><td><input type="text" value={form.linkedin || ''} onChange={(e) => setForm({ ...form, linkedin: e.target.value })} placeholder="https://linkedin.com/in/username" className="w-full bg-white/10 dark:bg-black/10 backdrop-blur-md rounded-full px-3 py-1.5 border border-primary/10 outline-none text-sm text-primary placeholder:opacity-30 transition-all focus:bg-white/20 dark:focus:bg-black/20 focus:border-primary/30" /></td></tr>
+                                                            <tr><td>twitter</td><td><input type="text" value={form.twitter || ''} onChange={(e) => setForm({ ...form, twitter: e.target.value })} placeholder="https://x.com/username" className="w-full bg-white/10 dark:bg-black/10 backdrop-blur-md rounded-full px-3 py-1.5 border border-primary/10 outline-none text-sm text-primary placeholder:opacity-30 transition-all focus:bg-white/20 dark:focus:bg-black/20 focus:border-primary/30" /></td></tr>
+                                                            <tr><td>avatar</td><td><input type="text" value={form.avatar_url || ''} onChange={(e) => setForm({ ...form, avatar_url: e.target.value })} placeholder="https://example.com/photo.png" className="w-full bg-white/10 dark:bg-black/10 backdrop-blur-md rounded-full px-3 py-1.5 border border-primary/10 outline-none text-sm text-primary placeholder:opacity-30 transition-all focus:bg-white/20 dark:focus:bg-black/20 focus:border-primary/30" /></td></tr>
+                                                            <tr><td>cover</td><td><input type="text" value={form.cover_url || ''} onChange={(e) => setForm({ ...form, cover_url: e.target.value })} placeholder="https://example.com/cover.jpg" className="w-full bg-white/10 dark:bg-black/10 backdrop-blur-md rounded-full px-3 py-1.5 border border-primary/10 outline-none text-sm text-primary placeholder:opacity-30 transition-all focus:bg-white/20 dark:focus:bg-black/20 focus:border-primary/30" /></td></tr>
                                                         </>
                                                     ) : (
                                                         tableRows.map((row) => (
@@ -690,8 +690,8 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                         onChange={(e) => setForm({ ...form, bio: e.target.value })}
                                                         placeholder="tell people what you build, write, or care about"
                                                         rows={4}
-                                                        className="w-full resize-none bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30"
-                                                        style={{ margin: 0, lineHeight: 1.6, padding: '0.75rem' }}
+                                                        className="w-full resize-none bg-white/10 dark:bg-black/10 backdrop-blur-md rounded-2xl p-3 border border-primary/10 outline-none text-sm text-primary placeholder:opacity-30 transition-all focus:bg-white/20 dark:focus:bg-black/20 focus:border-primary/30"
+                                                        style={{ margin: 0, lineHeight: 1.6 }}
                                                     />
                                                     <div className="flex items-center justify-end gap-2 px-3 py-3 border-t border-primary/10">
                                                         <OSButton type="button" variant="underlineOnHover" size="sm" onClick={() => setIsEditingProfile(false)}>cancel</OSButton>
@@ -721,7 +721,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                 ) : filteredNodes.length > 0 ? (
                                     <div className="corpus-doc-grid">
                                         {filteredNodes.map((node) => (
-                                            <article key={node.id} className="corpus-doc-card relative cursor-pointer" onClick={() => openNodeView(node)}>
+                                            <article key={node.id} className="corpus-doc-card relative cursor-pointer glass-card" onClick={() => openNodeView(node)}>
                                                 {isOwner && (
                                                     <div className="absolute right-2 top-2 z-10 flex items-center gap-1">
                                                         <button
@@ -779,7 +779,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                 ) : filteredPosts.length > 0 ? (
                                     <div className="corpus-doc-grid">
                                         {filteredPosts.map((post) => (
-                                            <article key={post.id} className={`corpus-doc-card relative ${isOwner ? 'cursor-pointer' : ''}`} onClick={() => handleOpenPost(post)}>
+                                            <article key={post.id} className={`corpus-doc-card relative glass-card ${isOwner ? 'cursor-pointer' : ''}`} onClick={() => handleOpenPost(post)}>
                                                 {isOwner && (
                                                     <div className="absolute right-2 top-2 z-10 flex items-center gap-1">
                                                         <button
@@ -840,7 +840,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                         {savedPosts.map((savedPost) => (
                                             <article
                                                 key={`${savedPost.post_slug}-${savedPost.saved_at}`}
-                                                className="corpus-doc-card cursor-pointer"
+                                                className="corpus-doc-card cursor-pointer glass-card"
                                                 onClick={() => openPost({ id: savedPost.post_slug, title: savedPost.post_title || savedPost.post_slug, slug: savedPost.post_slug, created_at: savedPost.saved_at, published: true, is_approved: true })}
                                             >
                                                 <div className="corpus-doc-media">
