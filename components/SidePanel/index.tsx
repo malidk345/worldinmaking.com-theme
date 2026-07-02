@@ -52,18 +52,18 @@ export default function SidePanel({
                     initial={{ x: '110%' }}
                     animate={{ x: 0 }}
                     exit={{ x: '110%' }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                    className={`fixed top-[calc(44px+0.5rem)] sm:top-[calc(44px+1rem)] right-2 sm:right-4 h-auto max-h-[90dvh] sm:h-[calc(100dvh-2rem-44px)] ${width} bg-white/80 dark:bg-black/80 border border-primary/20 rounded-[32px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] supports-[backdrop-filter]:backdrop-blur-[60px] z-[10000] flex flex-col text-primary overflow-hidden ${panelClassName}`}
+                    transition={{ type: 'spring', stiffness: 400, damping: 35, mass: 1 }}
+                    className={`fixed top-[calc(44px+0.5rem)] sm:top-[calc(44px+1rem)] right-2 sm:right-4 h-auto max-h-[90dvh] sm:h-[calc(100dvh-2rem-44px)] ${width} bg-white/60 dark:bg-black/60 border border-white/20 dark:border-white/10 rounded-[32px] shadow-[0_8px_32px_rgba(0,0,0,0.12),0_1px_4px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.4)] supports-[backdrop-filter]:backdrop-blur-[80px] z-[10000] flex flex-col text-primary overflow-hidden ${panelClassName}`}
                 >
                     <div className="h-full flex flex-col">
                         {(title || showCloseButton) && (
-                            <div className="flex items-center justify-between px-5 py-3 border-b border-primary/20 bg-transparent">
-                                <h2 className="text-sm font-black tracking-tight m-0">{title}</h2>
+                            <div className="flex items-center justify-between px-5 py-4 border-b border-black/5 dark:border-white/10 bg-transparent">
+                                <h2 className="text-[15px] font-semibold tracking-tight m-0 capitalize">{title}</h2>
                                 <div className="flex items-center gap-2">
                                     {headerAside && <div>{headerAside}</div>}
                                     {showCloseButton && (
                                         <Tooltip trigger={
-                                            <OSButton onClick={onClose} size="sm" variant="ghost" className="px-1 shadow-none border-none">
+                                            <OSButton onClick={onClose} size="sm" variant="ghost" className="px-1 shadow-none border-none hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors">
                                                 <ChevronRight className="size-5" />
                                             </OSButton>
                                         }>
