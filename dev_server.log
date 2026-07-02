@@ -1,22 +1,39 @@
+
+> posthog-nextjs@0.1.0 dev:fast /app
+> cross-env NEXT_DISABLE_DEVTOOLS=1 NEXT_DIST_DIR=.next-dev next dev
+
    ▲ Next.js 15.5.12
    - Local:        http://localhost:3000
    - Network:      http://192.168.0.2:3000
 
  ✓ Starting...
- ✓ Ready in 2.1s
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+ ✓ Ready in 2.2s
  ○ Compiling /middleware ...
- ✓ Compiled /middleware in 1642ms (215 modules)
+ ✓ Compiled /middleware in 2.4s (219 modules)
  ○ Compiling / ...
 <w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (155kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
-<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (133kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
- ✓ Compiled / in 35.7s (4974 modules)
-[WARNING] Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
-[Supabase] Environment variables missing! Database features will be unavailable.
-   Reload env: .env.local
- ✓ Compiled in 23.4s (5189 modules)
-[Supabase] Client initialized successfully
- GET / 200 in 2938ms
- GET / 200 in 250ms
-<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (155kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
-<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (133kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
- GET / 200 in 289ms
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (106kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (250kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+ ✓ Compiled / in 48.5s (4991 modules)
+ ⨯ TypeError: Cannot read properties of undefined (reading 'ReactCurrentDispatcher')
+    at (ssr)/./node_modules/.pnpm/@posthog+icons@0.37.4_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/@posthog/icons/dist/posthog-icons.es.js (.next-dev/server/vendor-chunks/@posthog+icons@0.37.4_react-dom@19.0.0_react@19.0.0__react@19.0.0.js:20:1)
+    at eval (webpack-internal:///(ssr)/./components/Posts/index.tsx:15:72)
+    at (ssr)/./components/Posts/index.tsx (.next-dev/server/app/page.js:722:1)
+    at eval (webpack-internal:///(ssr)/./context/App.tsx:12:74)
+    at (ssr)/./context/App.tsx (.next-dev/server/app/page.js:1074:1) {
+  digest: '989140803'
+}
+ ⨯ TypeError: Cannot read properties of undefined (reading 'ReactCurrentDispatcher')
+    at (ssr)/./node_modules/.pnpm/@posthog+icons@0.37.4_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/@posthog/icons/dist/posthog-icons.es.js (.next-dev/server/vendor-chunks/@posthog+icons@0.37.4_react-dom@19.0.0_react@19.0.0__react@19.0.0.js:20:1)
+    at eval (webpack-internal:///(ssr)/./components/Posts/index.tsx:15:72)
+    at (ssr)/./components/Posts/index.tsx (.next-dev/server/app/page.js:722:1)
+    at eval (webpack-internal:///(ssr)/./context/App.tsx:12:74)
+    at (ssr)/./context/App.tsx (.next-dev/server/app/page.js:1074:1) {
+  digest: '989140803'
+}
+ GET / 500 in 734ms
