@@ -53,7 +53,7 @@ export default function SidePanel({
                     animate={{ x: 0 }}
                     exit={{ x: '110%' }}
                     transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                    className={`fixed top-[calc(44px+0.5rem)] sm:top-[calc(44px+1rem)] right-2 sm:right-4 h-auto max-h-[90dvh] sm:h-[calc(100dvh-2rem-44px)] ${width} bg-white/80 dark:bg-black/80 border border-primary/20 rounded-[32px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] supports-[backdrop-filter]:backdrop-blur-[60px] z-[10000] flex flex-col text-primary overflow-hidden ${panelClassName}`}
+                    className={`fixed top-[calc(44px+0.5rem)] sm:top-[calc(44px+1rem)] right-2 sm:right-4 h-auto max-h-[90dvh] sm:h-[calc(100dvh-2rem-44px)] ${width} bg-white/80 dark:bg-black/80 border border-primary/20 rounded-[24px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] supports-[backdrop-filter]:backdrop-blur-[60px] z-[10000] flex flex-col text-primary overflow-hidden ${panelClassName}`}
                 >
                     <div className="h-full flex flex-col">
                         {(title || showCloseButton) && (

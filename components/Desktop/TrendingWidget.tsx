@@ -134,7 +134,7 @@ export default function TrendingWidget() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className="fixed bottom-20 md:bottom-24 left-4 right-4 md:left-auto md:right-10 w-auto md:w-[700px] lg:w-[820px] bg-white/80 dark:bg-black/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1),_0_0_0_1px_rgba(255,255,255,0.2)_inset,0_0_0_1px_rgba(0,0,0,0.05)_inset] dark:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.5),_0_0_0_1px_rgba(255,255,255,0.05)_inset] z-50 font-sans border border-white/20 dark:border-white/10 rounded-[32px] overflow-hidden"
+            className="fixed bottom-20 md:bottom-24 left-4 right-4 md:left-auto md:right-10 w-auto md:w-[700px] lg:w-[820px] bg-white/80 dark:bg-black/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1),_0_0_0_1px_rgba(255,255,255,0.2)_inset,0_0_0_1px_rgba(0,0,0,0.05)_inset] dark:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.5),_0_0_0_1px_rgba(255,255,255,0.05)_inset] z-50 font-sans border border-white/20 dark:border-white/10 rounded-[24px] overflow-hidden"
         >
             {/* 1. Toolbar */}
             <div className="flex items-center justify-between px-2 md:px-4 py-2 border-b border-black/5 dark:border-white/5">
@@ -222,7 +222,7 @@ export default function TrendingWidget() {
                     <div
                         key={`${post.type}-${post.id}`}
                         onClick={() => activeTab !== 'updates' && handleOpen(post)}
-                        className={`group flex items-center px-3 md:px-4 py-2 border-b border-black/5 dark:border-white/5 transition-all ${activeTab === 'updates' ? 'cursor-default' : 'cursor-pointer hover:bg-black/5 dark:hover:bg-white/10 rounded-xl mx-2 my-1 hover:border-transparent dark:hover:border-transparent'} relative`}
+                        className={`group flex items-center px-3 md:px-4 py-2 border-b border-black/5 dark:border-white/5 transition-all ${activeTab === 'updates' ? 'cursor-default' : 'cursor-pointer hover:bg-black/5 dark:hover:bg-white/10 rounded-[24px] mx-2 my-1 hover:border-transparent dark:hover:border-transparent'} relative`}
                     >
                         {/* Author Avatar or System Icon */}
                         <div className="mr-3 flex-shrink-0">

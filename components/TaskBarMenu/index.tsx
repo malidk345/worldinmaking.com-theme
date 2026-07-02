@@ -256,7 +256,7 @@ export default function TaskBarMenu() {
                 ref={taskbarRef}
                 id="taskbar"
                 data-scheme="primary"
-                className="w-full bg-accent/90 supports-[backdrop-filter]:backdrop-blur-md border-b border-primary top-0 z-[9999] flex justify-between pl-0.5 pr-2 items-center"
+                className="w-full bg-accent/90 supports-[backdrop-filter]:backdrop-blur-[60px] border-b border-primary top-0 z-[9999] flex justify-between pl-0.5 pr-2 items-center"
             >
                 <div className="flex items-center gap-2 px-3 py-1 pointer-events-none">
                     <svg viewBox="0 0 32 32" className="size-5 fill-current text-black dark:text-white">

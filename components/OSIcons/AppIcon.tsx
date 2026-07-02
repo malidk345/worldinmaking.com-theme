@@ -385,7 +385,7 @@ export const AppLink = ({
         group-hover:bg-white/95 
         dark:bg-black/80 
         dark:group-hover:bg-black/95 
-        supports-[backdrop-filter]:backdrop-blur-md
+        supports-[backdrop-filter]:backdrop-blur-[60px]
     `
 
     const themeSpecificColors = getThemeSpecificBackgroundColors()
@@ -407,7 +407,7 @@ export const AppLink = ({
             >
                 <span className={`inline-block leading-snug`}>
                     <span
-                        className={`skin-classic:underline decoration-dotted decoration-primary underline-offset-[3px] wallpaper-parade:bg-white dark:wallpaper-parade:bg-black wallpaper-coding-at-night:text-white ${finalBackground}  rounded-full px-3 py-1`}
+                        className={` ${finalBackground}  rounded-full px-3 py-1`}
                     >
                         {label}
                         {extension && <span className="opacity-75">.{extension}</span>}

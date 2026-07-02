@@ -38,7 +38,7 @@ export default function Wrapper() {
 
 
     return (
-        <div className="fixed inset-0 size-full flex flex-col select-none overflow-hidden skin-classic:font-sans">
+        <div className="fixed inset-0 size-full flex flex-col select-none overflow-hidden ">
             <TaskBarMenu />
             <div ref={constraintsRef} className="flex-grow relative overflow-hidden">
                 <Desktop />

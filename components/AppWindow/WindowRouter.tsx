@@ -487,7 +487,7 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                     <div className={`w-full max-w-4xl mx-auto px-4 sm:px-6 pb-20 flex-1 flex flex-col min-h-0 ${coverImage ? 'pt-8' : 'pt-12'}`}>
                         <div className="relative flex flex-col mb-8 shrink-0">
                             <div className={`relative ${coverImage ? '-mt-16 sm:-mt-20 mb-4' : 'mb-2'}`}>
-                                <div className={`rounded-lg p-3 -ml-3 block w-fit ${coverImage ? 'bg-white/10 supports-[backdrop-filter]:backdrop-blur-xl shadow-lg border border-white/20 z-10' : ''}`}>
+                                <div className={`rounded-lg p-3 -ml-3 block w-fit ${coverImage ? 'bg-white/10 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-lg border border-white/20 z-10' : ''}`}>
                                     {React.createElement(ICONS[iconIndex].IconNode, { className: `size-12 sm:size-16 ${ICONS[iconIndex].color}` })}
                                 </div>
                             </div>
@@ -525,7 +525,7 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                         <img src={coverImage} alt="Cover" className="w-full h-full object-cover" />
                         <button
                             onClick={() => setCoverImage(null)}
-                            className="absolute top-4 right-4 bg-black/60 text-white text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity supports-[backdrop-filter]:backdrop-blur-md font-bold lowercase"
+                            className="absolute top-4 right-4 bg-black/60 text-white text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity supports-[backdrop-filter]:backdrop-blur-[60px] font-bold lowercase"
                         >
                             remove cover
                         </button>

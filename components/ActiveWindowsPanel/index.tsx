@@ -82,11 +82,11 @@ export default function ActiveWindowsPanel() {
                                             } ${w.minimized ? 'opacity-40 grayscale' : ''}`}>
                                             {w.icon || <LayoutGrid className={`size-3 ${focusedWindow?.key === w.key ? 'text-white/90' : 'text-primary'}`} />}
                                         </div>
-                                        <span className={`flex-1 text-left truncate tracking-wide lowercase ${w.minimized ? 'italic opacity-60' : ''}`}>
+                                        <span className={`flex-1 text-left truncate tracking-tight lowercase ${w.minimized ? 'italic opacity-60' : ''}`}>
                                             {w.title || 'untitled'}
                                         </span>
                                         {w.minimized && (
-                                            <span className={`text-[8px] uppercase tracking-widest opacity-60 font-black px-1 py-0.5 rounded-full mr-6 ${focusedWindow?.key === w.key ? 'bg-white/10 text-white' : 'bg-primary/10 text-primary'
+                                            <span className={`text-[8px] uppercase tracking-tight opacity-60 font-black px-1 py-0.5 rounded-full mr-6 ${focusedWindow?.key === w.key ? 'bg-white/10 text-white' : 'bg-primary/10 text-primary'
                                                 }`}>min</span>
                                         )}
                                     </button>
@@ -109,7 +109,7 @@ export default function ActiveWindowsPanel() {
                                     <MonitorDot className="size-6 opacity-40" />
                                 </div>
                                 <div>
-                                    <p className="font-mono text-xs font-black m-0 tracking-widest uppercase text-primary/60">no active tasks</p>
+                                    <p className="font-mono text-xs font-black m-0 tracking-tight uppercase text-primary/60">no active tasks</p>
                                     <p className="text-[10px] m-0 mt-1.5 max-w-[180px] mx-auto leading-relaxed lowercase">your workspace is clean and ready.</p>
                                 </div>
                             </div>
@@ -118,10 +118,10 @@ export default function ActiveWindowsPanel() {
                 </ScrollArea>
 
                 {totalWindows > 0 && (
-                    <div className="p-3 mt-auto border-t border-primary/20 bg-primary/5 supports-[backdrop-filter]:backdrop-blur-md">
+                    <div className="p-3 mt-auto border-t border-primary/20 bg-primary/5 supports-[backdrop-filter]:backdrop-blur-[60px]">
                         <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-[10px] font-black opacity-50 tracking-widest uppercase m-0 leading-none">session</h3>
-                            <span className="text-[10px] font-bold text-primary/70 tracking-widest">
+                            <h3 className="text-[10px] font-black opacity-50 tracking-tight uppercase m-0 leading-none">session</h3>
+                            <span className="text-[10px] font-bold text-primary/70 tracking-tight">
                                 {totalWindows} OPEN
                             </span>
                         </div>
@@ -129,7 +129,7 @@ export default function ActiveWindowsPanel() {
                             variant="secondary"
                             size="sm"
                             width="full"
-                            className="justify-center font-bold tracking-widest uppercase text-[10px] gap-2 !bg-primary/10 hover:!bg-red-500 hover:!text-white hover:!border-red-600 border-transparent transition-colors duration-200 group !rounded-full"
+                            className="justify-center font-bold tracking-tight uppercase text-[10px] gap-2 !bg-primary/10 hover:!bg-red-500 hover:!text-white hover:!border-red-600 border-transparent transition-colors duration-200 group !rounded-full"
                             onClick={() => {
                                 closeAllWindows()
                                 closeActiveWindowsPanel()
