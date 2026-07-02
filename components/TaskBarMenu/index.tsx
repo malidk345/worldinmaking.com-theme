@@ -230,7 +230,7 @@ export default function TaskBarMenu() {
     const accountMenu = React.useMemo(() => [
         {
             trigger: (
-                <OSButton size="sm" className="px-1 overflow-hidden">
+                <OSButton size="sm" variant="ghost" className="px-1 overflow-hidden">
                     <div className="flex items-center gap-1.5">
                         {profile?.avatar_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
@@ -240,9 +240,9 @@ export default function TaskBarMenu() {
                                 className="size-5 rounded-full object-cover border border-black/10 transition-transform group-hover:scale-110"
                             />
                         ) : (
-                            <IconUser className="size-5 text-black" />
+                            <IconUser className="size-5 text-black dark:text-white" />
                         )}
-                        <IconChevronDown className="size-3 text-black opacity-30" />
+                        <IconChevronDown className="size-3 text-black dark:text-white opacity-30" />
                     </div>
                 </OSButton>
             ),
@@ -256,14 +256,14 @@ export default function TaskBarMenu() {
                 ref={taskbarRef}
                 id="taskbar"
                 data-scheme="primary"
-                className="w-full bg-accent/90 supports-[backdrop-filter]:backdrop-blur-md border-b border-primary top-0 z-[9999] flex justify-between pl-0.5 pr-2 items-center"
+                className="w-full bg-white/70 dark:bg-black/70 supports-[backdrop-filter]:backdrop-blur-[60px] border-b border-black/5 dark:border-white/10 shadow-[0_2px_20px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_20px_rgba(0,0,0,0.2)] top-0 z-[9999] flex justify-between px-3 py-1 items-center transition-colors duration-300 relative"
             >
-                <div className="flex items-center gap-2 px-3 py-1 pointer-events-none">
+                <div className="flex items-center gap-2 px-1 py-1 pointer-events-none">
                     <svg viewBox="0 0 32 32" className="size-5 fill-current text-black dark:text-white">
                         <path d="M16 0C7.163 0 0 7.163 0 16s7.163 16 16 16 16-7.163 16-16S24.837 0 16 0zm-4.138 23.362l-2.012-2.012 2.012-2.013 2.013 2.013-2.012 2.012zm4.138-4.138l-2.013-2.012 2.013-2.013 2.012 2.013-2.012 2.012zm0-8.275l-2.013-2.013 2.013-2.012 2.012 2.012-2.012 2.013zm4.138 4.138l-2.013-2.013 2.012-2.012 2.013 2.012-2.012 2.013z" />
                     </svg>
                 </div>
-                <aside className="flex items-center gap-0 py-1">
+                <aside className="flex items-center gap-1.5 py-1">
 
                     <motion.div
                         className="flex items-center translate-y-[2px] -mr-1"
@@ -288,11 +288,12 @@ export default function TaskBarMenu() {
                                     disabled={totalWindows <= 0}
                                     data-active-windows
                                     size="sm"
-                                    className="!px-0.5 group/wm relative"
+                                    variant="ghost"
+                                    className="!px-1.5 group/wm relative"
                                 >
-                                    <div className="flex items-center gap-1">
-                                        <IconApps className="size-5 text-black transition-transform group-hover/wm:scale-110" />
-                                        <div className="bg-primary/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-primary/20 text-[11px] font-bold min-w-[1.25rem] text-center shadow-inner !text-black">
+                                    <div className="flex items-center gap-1.5">
+                                        <IconApps className="size-5 text-black dark:text-white transition-transform group-hover/wm:scale-110" />
+                                        <div className="bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded-full border border-black/5 dark:border-white/10 text-[11px] font-bold min-w-[1.25rem] text-center shadow-sm !text-black dark:!text-white">
                                             {totalWindows}
                                         </div>
                                     </div>
@@ -322,8 +323,8 @@ export default function TaskBarMenu() {
 
                     <Tooltip
                         trigger={
-                            <OSButton onClick={() => openSearch()} size="sm" className="px-1 translate-y-[2px]">
-                                <IconSearch className="size-5 text-black" />
+                            <OSButton onClick={() => openSearch()} size="sm" variant="ghost" className="px-2 translate-y-[2px]">
+                                <IconSearch className="size-5 text-black dark:text-white" />
                             </OSButton>
                         }
                     >
@@ -337,7 +338,7 @@ export default function TaskBarMenu() {
 
                     <NotificationCenter />
 
-                    <div className="h-4 w-px bg-primary/20 mx-1.5" />
+                    <div className="h-4 w-px bg-black/10 dark:bg-white/10 mx-1" />
                     
                     <MenuBar
                         menus={accountMenu}
