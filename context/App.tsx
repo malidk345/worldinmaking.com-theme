@@ -186,14 +186,14 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
             if (!existing) return prev
 
             // If already at front (highest zIndex) and not minimized, don't update zIndex
-            const maxZIndex = prev.length
+            const maxZIndex = Math.max(...prev.map(w => w.zIndex), 0)
             if (existing.zIndex === maxZIndex && !existing.minimized && focusedWindow?.key === key) {
                 return prev
             }
 
             return prev.map((el) => ({
                 ...el,
-                zIndex: el.key === key ? maxZIndex : el.zIndex > existing.zIndex ? el.zIndex - 1 : el.zIndex,
+                zIndex: el.key === key ? maxZIndex + 1 : el.zIndex > existing.zIndex ? el.zIndex - 1 : el.zIndex,
                 minimized: el.key === key ? false : el.minimized,
             }))
         })
@@ -205,9 +205,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
             const existing = prev.find(w => w.key === item.key)
             if (existing) {
                 // If window already exists, bring it to front and unminimize it
+                const maxZIndex = Math.max(...prev.map(w => w.zIndex), 0)
                 const newWindows = prev.map((el) => ({
                     ...el,
-                    zIndex: el.key === item.key ? prev.length : el.zIndex > existing.zIndex ? el.zIndex - 1 : el.zIndex,
+                    zIndex: el.key === item.key ? maxZIndex + 1 : el.zIndex > existing.zIndex ? el.zIndex - 1 : el.zIndex,
                     minimized: el.key === item.key ? false : el.minimized,
                 }))
                 setFocusedWindowKey(item.key)
@@ -255,6 +256,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
                 }
             }
 
+            const maxZIndex = Math.max(...prev.map(w => w.zIndex), 0)
+
             const newWindow: AppWindow = {
                 ...item,
                 title: item.title || settings.title || getTitleFromPath(item.path),
@@ -262,15 +265,15 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
                 position,
                 previousSize: size,
                 previousPosition: position,
-                zIndex: prev.length + 1,
+                zIndex: maxZIndex + 1,
                 minimized: false,
                 sizeConstraints: item.sizeConstraints || { min: MIN_SIZE, max: { width: 2000, height: 2000 } },
                 fixedSize: item.fixedSize || false,
                 minimal: item.minimal || false,
-                fromOrigin: lastClickedElementRect.current ? {
+                fromOrigin: item.fromOrigin || (lastClickedElementRect.current ? {
                     x: lastClickedElementRect.current.x - size.width / 2,
                     y: lastClickedElementRect.current.y - size.height / 2
-                } : undefined
+                } : undefined)
             }
 
             setFocusedWindow(newWindow)
@@ -444,7 +447,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
                         position,
                         previousSize: size,
                         previousPosition: position,
-                        zIndex: currentWindows.length + 1,
+                        zIndex: Math.max(...currentWindows.map(w => w.zIndex), 0) + 1,
                         minimized: false,
                         sizeConstraints: { min: { width: 350, height: 250 }, max: { width: 2000, height: 2000 } },
                         fixedSize: false,
