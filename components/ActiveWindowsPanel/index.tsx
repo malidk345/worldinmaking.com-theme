@@ -57,7 +57,7 @@ export default function ActiveWindowsPanel() {
             width="w-[340px] max-w-[calc(100vw-1rem)]"
             panelClassName="h-[calc(100dvh-44px-0.75rem)] max-h-[calc(100dvh-44px-0.75rem)] sm:h-[calc(100dvh-2rem-44px)] sm:max-h-[calc(100dvh-2rem-44px)] !border-primary/20"
         >
-            <div className="h-full flex flex-col font-mono">
+            <div className="h-full flex flex-col font-sans tracking-tight">
                 <ScrollArea className="px-2 py-3 h-full">
                     <div className="flex flex-col gap-1.5">
                         <AnimatePresence>
@@ -65,24 +65,24 @@ export default function ActiveWindowsPanel() {
                                 <motion.div
                                     key={w.key}
                                     layout
-                                    initial={{ opacity: 0, scale: 0.98, y: 5 }}
+                                    initial={{ opacity: 0, scale: 0.9, y: 10 }}
                                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                                    exit={{ opacity: 0, scale: 0.95, y: -5 }}
-                                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                                    exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                                    transition={{ type: "spring", stiffness: 500, damping: 25, mass: 1 }}
                                     className="relative group"
                                 >
                                     <button
                                         onClick={() => handleWindowClick(w)}
-                                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[20px] text-[11px] transition-all duration-200 border ${focusedWindow?.key === w.key
-                                            ? 'bg-zinc-900 text-white border-black shadow-md font-bold'
-                                            : 'bg-transparent text-primary hover:bg-zinc-800/10 hover:border-zinc-800/30 border-zinc-200 dark:border-zinc-800'
+                                        className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-[24px] text-[13px] transition-all duration-300 border ${focusedWindow?.key === w.key
+                                            ? 'bg-white/90 dark:bg-white/10 text-black dark:text-white border-black/10 dark:border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.12)] font-semibold supports-[backdrop-filter]:backdrop-blur-xl'
+                                            : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-primary/80 border-transparent hover:border-black/10 dark:hover:border-white/10'
                                             }`}
                                     >
                                         <div className={`size-5 rounded-full flex items-center justify-center shrink-0 ${focusedWindow?.key === w.key ? 'bg-white/10' : 'bg-primary/10'
                                             } ${w.minimized ? 'opacity-40 grayscale' : ''}`}>
-                                            {w.icon || <LayoutGrid className={`size-3 ${focusedWindow?.key === w.key ? 'text-white/90' : 'text-primary'}`} />}
+                                            {w.icon || <LayoutGrid className={`size-3.5 ${focusedWindow?.key === w.key ? 'text-black dark:text-white' : 'text-primary'}`} />}
                                         </div>
-                                        <span className={`flex-1 text-left truncate tracking-wide lowercase ${w.minimized ? 'italic opacity-60' : ''}`}>
+                                        <span className={`flex-1 text-left truncate tracking-tight ${w.minimized ? 'italic opacity-60' : ''}`}>
                                             {w.title || 'untitled'}
                                         </span>
                                         {w.minimized && (
