@@ -1,0 +1,6 @@
+The inner div `backdrop-blur-3xl-safe` inside the `AppWindow` has `backdrop-filter`. The outer `motion.div` has `glass-card` which also has `backdrop-filter: blur(60px)`. Both layers have backdrop blur.
+
+Wait, if the user said: "pencereler açılırken glassformism bir an saydamlaşıp eski haline dönüyor. glassformism ayarını hiç değiştirmeden bu sorunu çöz", and "hala devam ediyor sorun", it means `willChange: 'auto'` on the main `motion.div` wasn't enough. We also need to add it to the INNER div maybe?
+
+Or maybe the `willChange: auto` is on the outer div but `framer-motion` adds `will-change: transform` dynamically during the animation.
+Wait, let's check if there are other `motion.div` wrappers or inner divs.
