@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { IconNewspaper, IconUser, IconActivity, IconTerminal, IconMessage } from '@posthog/icons'
 import OSButton from 'components/OSButton'
 import { Edit, Save, Settings, Trash2, Plus, ArrowLeft, MessageSquare, ChevronDown, ChevronUp, Search, Hash } from 'lucide-react'
@@ -628,7 +629,14 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                             return true
                                         })
                                         .map(post => (
-                                            <div key={post.id} className="bg-white px-4 py-3 flex items-center justify-between hover:bg-neutral-50 group transition-all cursor-default text-black">
+                                            <motion.div
+                                                layout
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, scale: 0.95 }}
+                                                transition={{ type: 'spring', bounce: 0.2 }}
+                                                key={post.id} className="bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] px-4 py-3 flex items-center justify-between hover:bg-neutral-50 group transition-all cursor-default text-black"
+                                            >
                                                 <div className="flex flex-col gap-1 min-w-0 pr-4">
                                                     <div className="flex items-center gap-2 flex-wrap">
                                                         <span className="text-[13px] font-bold text-black/90 lowercase group-hover:text-black transition-colors">{post.title}</span>
@@ -685,7 +693,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                         </OSButton>
                                                     )}
                                                 </div>
-                                            </div>
+                                            </motion.div>
                                         ))}
                                 </div>
                             )}
@@ -1085,22 +1093,30 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                     </div>
                 </div>
 
-                <div className="flex flex-row md:flex-col gap-2 md:gap-0.5 w-full justify-between md:justify-start px-1 md:px-2">
-                    {TABS.map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                            className={`flex items-center gap-2.5 px-3 py-2 rounded-[24px] text-[12px] transition-all text-left
-                                ${activeTab === tab.id
-                                    ? 'bg-black text-white font-bold shadow-lg shadow-black/20 rounded-full'
-                                    : 'text-black/40 hover:bg-black/5 hover:text-black/80'}
-                                justify-center md:justify-start flex-1 min-w-[3rem] md:w-full md:flex-none
-                            `}
-                        >
-                            <tab.icon className={`size-4 flex-shrink-0 ${activeTab === tab.id ? 'opacity-100' : 'opacity-60'}`} />
-                            <span className="hidden md:inline lowercase">{tab.label}</span>
-                        </button>
-                    ))}
+                <div className="flex flex-row md:flex-col gap-2 md:gap-0.5 w-full justify-between md:justify-start px-1 md:px-2 relative">
+                    {TABS.map((tab) => {
+                        const isActive = activeTab === tab.id;
+                        return (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                                className={`relative flex items-center gap-2.5 px-3 py-2 rounded-[24px] text-[12px] transition-all text-left justify-center md:justify-start flex-1 min-w-[3rem] md:w-full md:flex-none ${isActive ? 'text-white font-bold' : 'text-black/40 hover:bg-black/5 hover:text-black/80'}`}
+                            >
+                                {isActive && (
+                                    <motion.div
+                                        layoutId="adminTabIndicator"
+                                        className="absolute inset-0 bg-black rounded-[24px] shadow-lg shadow-black/20"
+                                        initial={false}
+                                        transition={{ type: "spring", bounce: 0.25, duration: 0.5 }}
+                                    />
+                                )}
+                                <div className="relative z-10 flex items-center gap-2.5 w-full justify-center md:justify-start">
+                                    <tab.icon className={`size-4 flex-shrink-0 ${isActive ? 'opacity-100' : 'opacity-60'}`} />
+                                    <span className="hidden md:inline lowercase">{tab.label}</span>
+                                </div>
+                            </button>
+                        );
+                    })}
                 </div>
 
                 <div className="hidden md:block mt-auto px-4">
@@ -1110,8 +1126,19 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col min-w-0 bg-white/40 supports-[backdrop-filter]:backdrop-blur-[60px] overflow-hidden">
-                <main className="flex-1 overflow-hidden flex flex-col min-h-0">
-                    {renderContent()}
+                <main className="flex-1 overflow-hidden flex flex-col min-h-0 relative">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={activeTab}
+                            initial={{ opacity: 0, y: 10, filter: 'blur(8px)' }}
+                            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                            exit={{ opacity: 0, y: -10, filter: 'blur(8px)' }}
+                            transition={{ type: 'spring', bounce: 0.2, duration: 0.5 }}
+                            className="h-full"
+                        >
+                            {renderContent()}
+                        </motion.div>
+                    </AnimatePresence>
                 </main>
 
                 {/* Global Inner Footer - for RichTextEditor toolkit etc */}
@@ -1126,7 +1153,11 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
 const StatCard = ({ title, value, change }: { title: string, value: string, change: string }) => {
     const isPositive = change.startsWith('+')
     return (
-        <div className="p-4 border border-black/10 rounded-[24px] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:shadow-lg hover:shadow-black/5 transition-all group">
+        <motion.div
+            whileHover={{ scale: 1.02, y: -2 }}
+            whileTap={{ scale: 0.98 }}
+            className="p-4 border border-black/10 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] group"
+        >
             <h4 className="text-[10px] font-black text-black/30 mb-2 uppercase tracking-wider group-hover:text-black/50 transition-colors">{title}</h4>
             <div className="flex items-baseline justify-between">
                 <span className="text-2xl font-black tracking-tight text-black">{value}</span>
@@ -1138,7 +1169,7 @@ const StatCard = ({ title, value, change }: { title: string, value: string, chan
                     {change}
                 </span>
             </div>
-        </div>
+        </motion.div>
     )
 }
 
