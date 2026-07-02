@@ -77,7 +77,6 @@ export const WindowProvider = ({
     children: React.ReactNode
     value?: Partial<WindowContextType>
 }) => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const addWindow = (_newWindow: Omit<AppWindow, 'zIndex' | 'minimized' | 'sizeConstraints' | 'size' | 'previousSize' | 'position' | 'previousPosition' | 'fixedSize' | 'minimal'>) => {
     };
 

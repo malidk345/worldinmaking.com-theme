@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bell, X, MessageSquare, Newspaper } from 'lucide-react'
+import { Bell, X, MessageSquare, Newspaper, Zap, Info } from 'lucide-react'
 import { supabase } from 'lib/supabase'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'

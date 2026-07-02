@@ -31,7 +31,7 @@ export default function Link({
     ...other
 }: Props) {
     const { addWindow } = useApp()
-    const { appWindow } = useWindow()
+    const { navigate, appWindow } = useWindow()
 
     // Strip non-DOM props so they don't get spread onto <a> / <NextLink>
     const { state, newWindow, ...domProps } = other
@@ -41,18 +41,13 @@ export default function Link({
 
         // If it's an internal link
         if (to && to.startsWith('/')) {
-            const target = e.target as HTMLElement
-            const rect = target.getBoundingClientRect ? target.getBoundingClientRect() : null
-            const fromOrigin = rect ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : undefined
-
             // Case 1: Force a new window (fake OS window)
             if (state?.newWindow || newWindow) {
                 e.preventDefault()
                 addWindow({
-                    key: `${to}-${Date.now()}`,
+                    key: to,
                     path: to,
-                    title: to.split('/').pop() || 'window',
-                    fromOrigin
+                    title: to.split('/').pop() || 'window'
                 })
                 return
             }
@@ -61,14 +56,24 @@ export default function Link({
             // Cross-type links (e.g. post → profile) open as new windows on everywhere.
             // Same-type links (post → post) navigate within current window.
             if (appWindow && appWindow.key !== 'home') {
-                e.preventDefault()
-                addWindow({
-                    key: `${to}-${Date.now()}`,
-                    path: to,
-                    title: to.split('/').pop() || 'window',
-                    fromOrigin
-                })
-                return
+                const currentBase = (appWindow.path || '').split('/')[1] || ''
+                const targetBase = to.split('/')[1] || ''
+
+                if (currentBase !== targetBase) {
+                    e.preventDefault()
+                    addWindow({
+                        key: to,
+                        path: to,
+                        title: to.split('/').pop() || 'window'
+                    })
+                    return
+                }
+
+                if (navigate) {
+                    e.preventDefault()
+                    navigate(to)
+                    return
+                }
             }
         }
     }

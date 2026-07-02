@@ -27,7 +27,7 @@ body {
 
 ::-webkit-scrollbar-track {
   background: transparent;
-  box-shadow: inset 1px 0 0 rgb(var(--text-primary) / 0.05);
+  box-shadow: inset 1px 0 0 rgb(var(--primary-rgb) / 0.05);
 }
 
 .dark ::-webkit-scrollbar-track {
@@ -35,12 +35,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(var(--color-primary-rgb), 0.1);
+  background: rgb(var(--color-primary-rgb) / 0.1);
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(var(--color-primary-rgb), 0.2);
+  background: rgb(var(--color-primary-rgb) / 0.2);
 }
 
 .dark ::-webkit-scrollbar-thumb {
@@ -159,19 +159,18 @@ mark {
   .backdrop-blur-3xl-safe {
     backdrop-filter: blur(40px) saturate(180%);
     -webkit-backdrop-filter: blur(40px) saturate(180%);
-    background-color: rgb(var(--bg) / 0.65);
+    background-color: rgb(var(--bg-rgb) / 0.65);
   }
 
   .glass-card {
-    background: rgb(var(--bg) / 0.6);
-    backdrop-filter: blur(60px) saturate(200%);
-    -webkit-backdrop-filter: blur(60px) saturate(200%);
-    border: 1px solid rgb(var(--text-primary) / 0.05);
+    background: rgb(var(--bg-rgb) / 0.5);
+    backdrop-filter: blur(40px) saturate(200%);
+    -webkit-backdrop-filter: blur(40px) saturate(200%);
+    border: 1px solid rgb(var(--primary-rgb) / 0.05);
     box-shadow:
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.2),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.05),
-      0 20px 60px -10px rgba(0, 0, 0, 0.25),
-      0 40px 100px -20px rgba(0, 0, 0, 0.15);
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+      0 10px 40px -10px rgba(0, 0, 0, 0.15);
     /* Dynamic hover light based on mouse position */
     background-image: radial-gradient(
       600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
@@ -609,6 +608,7 @@ mark {
     --primary-rgb: 50 50 50;
     --secondary-rgb: 100 100 100;
     --accent-rgb: 240 240 245;
+    --bg-rgb: 255 255 255;
   }
 
   [data-scheme='secondary'] {
@@ -652,6 +652,7 @@ mark {
     --primary-rgb: 234 236 246;
     --secondary-rgb: 157 160 167;
     --accent-rgb: 30 30 35;
+    --bg-rgb: 15 15 20;
 
     .hover-invert:hover,
     .hover-invert[data-state='open'] {
@@ -771,8 +772,8 @@ mark {
   h5,
   h6 {
     @apply font-bold;
-    letter-spacing: -0.025em;
-    font-variation-settings: 'wght' 700;
+    letter-spacing: -0.015rem;
+    font-variation-settings: 'wght' 800;
     font-family: var(--font-ibm-plex), -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui', 'helvetica neue', helvetica, Ubuntu, roboto, noto, arial, sans-serif !important;
   }
 

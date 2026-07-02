@@ -320,7 +320,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                            <div className="p-4 border border-black/10 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] flex flex-col gap-4">
+                            <div className="p-4 border border-black/10 rounded-sm bg-white/50 backdrop-blur-sm flex flex-col gap-4">
                                 <h3 className="text-[11px] font-black tracking-widest text-black/40 flex items-center gap-2 lowercase">
                                     <IconTerminal className="size-3.5" /> system environment
                                 </h3>
@@ -338,12 +338,12 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                     </div>
                                     <div className="flex items-center justify-between text-xs">
                                         <span className="text-black/40 lowercase">access level</span>
-                                        <span className="font-bold lowercase bg-neutral-100 px-1.5 py-0.5 rounded-[24px]">{profile?.role || 'authorized'}</span>
+                                        <span className="font-bold lowercase bg-neutral-100 px-1.5 py-0.5 rounded-sm">{profile?.role || 'authorized'}</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="p-4 border border-black/10 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] flex flex-col gap-4">
+                            <div className="p-4 border border-black/10 rounded-sm bg-white/50 backdrop-blur-sm flex flex-col gap-4">
                                 <h3 className="text-[11px] font-black tracking-widest text-black/40 flex items-center gap-2 lowercase">
                                     <IconActivity className="size-3.5" /> recently active
                                 </h3>
@@ -382,7 +382,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                             onChange={(e) => setNewPostTitle(e.target.value)}
                                             className="bg-transparent border-b border-black/15 py-1 text-sm font-bold text-black focus:outline-none placeholder:text-black/25 w-full sm:w-64 max-w-[200px] sm:max-w-none"
                                         />
-                                        <OSButton className="rounded-full flex-shrink-0" size="sm" variant="primary" onClick={handleSavePost}>
+                                        <OSButton size="sm" variant="primary" onClick={handleSavePost} className="flex-shrink-0">
                                             <div className="flex items-center gap-1">
                                                 <Save className="size-3" />
                                                 <span className="lowercase text-xs">save</span>
@@ -413,7 +413,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                     >
                                         <ArrowLeft className="size-3.5" /> back
                                     </button>
-                                    <OSButton className="rounded-full" size="sm" variant="primary" onClick={handleSavePost}>
+                                    <OSButton size="sm" variant="primary" onClick={handleSavePost}>
                                         <div className="flex items-center gap-1">
                                             <Save className="size-3" />
                                             <span className="lowercase text-xs">{editingPost ? (editingPost.isLocal ? 'publish' : 'update') : 'save'}</span>
@@ -441,7 +441,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                         <button
                                                             key={lang.code}
                                                             onClick={() => handleLanguageChange(lang.code)}
-                                                            className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-[24px] border transition-all flex-shrink-0
+                                                            className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-sm border transition-all flex-shrink-0
                                                                 ${isActive
                                                                     ? 'bg-black text-white border-black'
                                                                     : 'bg-neutral-50 border-black/10 text-black/40 hover:bg-black/5 hover:text-black/70'}
@@ -453,7 +453,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                 })}
                                             </div>
                                             <select
-                                                className="bg-neutral-50 border border-black/10 rounded-[18px] text-[10px] font-bold text-black/50 px-2 py-1.5 sm:py-1 outline-none flex-shrink-0"
+                                                className="bg-neutral-50 border border-black/10 rounded-sm text-[10px] font-bold text-black/50 px-2 py-1.5 sm:py-1 outline-none flex-shrink-0"
                                                 value=""
                                                 onChange={(e) => {
                                                     if (e.target.value) handleLanguageChange(e.target.value)
@@ -490,14 +490,14 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                 placeholder="my-post-url"
                                                 value={newPostSlug}
                                                 onChange={(e) => setNewPostSlug(e.target.value)}
-                                                className="w-full bg-neutral-50 border border-black/10 rounded-[18px] px-2 py-1.5 sm:py-1 text-xs font-bold text-black focus:outline-none placeholder:text-black/20"
+                                                className="w-full bg-neutral-50 border border-black/10 rounded-sm px-2 py-1.5 sm:py-1 text-xs font-bold text-black focus:outline-none placeholder:text-black/20"
                                             />
                                         </div>
                                         <div>
                                             <label className="text-[9px] font-black uppercase text-black/30 mb-0.5 block tracking-wider">status</label>
                                             <button
                                                 onClick={() => setNewPostPublished(!newPostPublished)}
-                                                className={`w-full px-2 py-1.5 sm:py-1 text-[10px] font-bold rounded-[24px] border transition-colors ${newPostPublished
+                                                className={`w-full px-2 py-1.5 sm:py-1 text-[10px] font-bold rounded-sm border transition-colors ${newPostPublished
                                                     ? 'bg-black text-white border-black'
                                                     : 'bg-neutral-100 text-black/50 border-black/10'
                                                     }`}
@@ -510,7 +510,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                             <select
                                                 value={originalLanguage}
                                                 onChange={(e) => setOriginalLanguage(e.target.value)}
-                                                className="w-full bg-neutral-50 border border-black/10 rounded-[18px] px-2 py-1.5 sm:py-1 text-xs font-bold text-black outline-none"
+                                                className="w-full bg-neutral-50 border border-black/10 rounded-sm px-2 py-1.5 sm:py-1 text-xs font-bold text-black outline-none"
                                             >
                                                 {SUPPORTED_LANGS.map(l => (
                                                     <option key={l.code} value={l.code}>{l.label}</option>
@@ -526,7 +526,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                             placeholder="short description for seo..."
                                             value={newPostExcerpt}
                                             onChange={(e) => setNewPostExcerpt(e.target.value)}
-                                            className="w-full bg-neutral-50 border border-black/10 rounded-[18px] px-2 py-1.5 sm:py-1 text-xs text-black focus:outline-none resize-none h-16 sm:h-12 placeholder:text-black/20"
+                                            className="w-full bg-neutral-50 border border-black/10 rounded-sm px-2 py-1.5 sm:py-1 text-xs text-black focus:outline-none resize-none h-16 sm:h-12 placeholder:text-black/20"
                                         />
                                     </div>
 
@@ -539,7 +539,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                 placeholder="e.g. technology"
                                                 value={newPostCategory}
                                                 onChange={(e) => setNewPostCategory(e.target.value)}
-                                                className="w-full bg-neutral-50 border border-black/10 rounded-[18px] px-2 py-1.5 sm:py-1 text-xs font-bold text-black focus:outline-none placeholder:text-black/20"
+                                                className="w-full bg-neutral-50 border border-black/10 rounded-sm px-2 py-1.5 sm:py-1 text-xs font-bold text-black focus:outline-none placeholder:text-black/20"
                                             />
                                         </div>
                                         <div>
@@ -549,7 +549,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                 placeholder="https://..."
                                                 value={newPostImageUrl}
                                                 onChange={(e) => setNewPostImageUrl(e.target.value)}
-                                                className="w-full bg-neutral-50 border border-black/10 rounded-[18px] px-2 py-1.5 sm:py-1 text-xs font-bold text-black focus:outline-none placeholder:text-black/20"
+                                                className="w-full bg-neutral-50 border border-black/10 rounded-sm px-2 py-1.5 sm:py-1 text-xs font-bold text-black focus:outline-none placeholder:text-black/20"
                                             />
                                         </div>
                                     </div>
@@ -578,18 +578,18 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                 <p className="text-[10px] text-black/20 lowercase">manage and curate your nodes</p>
                             </div>
                             <div className="flex items-center gap-2">
-                                <div className="hidden sm:flex items-center bg-black/5 p-0.5 rounded-[24px]">
+                                <div className="hidden sm:flex items-center bg-black/5 p-0.5 rounded-sm">
                                     {(['all', 'published', 'draft', 'pending'] as const).map((f) => (
                                         <button
                                             key={f}
                                             onClick={() => setContentFilter(f)}
-                                            className={`px-2 py-1 text-[9px] font-black uppercase tracking-wider rounded-[24px] transition-all ${contentFilter === f ? 'bg-white text-black shadow-sm' : 'text-black/30 hover:text-black/60'}`}
+                                            className={`px-2 py-1 text-[9px] font-black uppercase tracking-wider rounded-sm transition-all ${contentFilter === f ? 'bg-white text-black shadow-sm' : 'text-black/30 hover:text-black/60'}`}
                                         >
                                             {f}
                                         </button>
                                     ))}
                                 </div>
-                                <OSButton className="rounded-full !bg-black !text-white hover:!bg-black/90 shadow-lg shadow-black/10" size="sm" onClick={() => setIsCreating(true)}>
+                                <OSButton size="sm" onClick={() => setIsCreating(true)} className="!bg-black !text-white hover:!bg-black/90 shadow-lg shadow-black/10">
                                     <div className="flex items-center gap-1.5 px-1 py-0.5">
                                         <Plus className="size-3.5" />
                                         <span className="text-xs font-bold lowercase">new node</span>
@@ -598,7 +598,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                             </div>
                         </div>
 
-                        <div className="flex-grow overflow-auto custom-scrollbar border border-black/5 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] min-h-0">
+                        <div className="flex-grow overflow-auto custom-scrollbar bg-white/50 border border-black/5 rounded-sm shadow-inner min-h-0">
                             {loading && (
                                 <div className="h-48 flex items-center justify-center">
                                     <Loading label="indexing your world" />
@@ -612,7 +612,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                     </div>
                                     <p className="text-xs font-bold text-black/40 lowercase mb-1">no articles found in the database</p>
                                     <p className="text-[10px] text-black/20 lowercase mb-6">your thinking hasn&apos;t been archived yet</p>
-                                    <OSButton className="rounded-full" size="sm" onClick={() => setIsCreating(true)}>
+                                    <OSButton size="sm" onClick={() => setIsCreating(true)}>
                                         <span className="lowercase font-bold px-2">create first node</span>
                                     </OSButton>
                                 </div>
@@ -676,11 +676,13 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                             )}
                                                         </OSButton>
                                                     )}
-                                                    <OSButton className="rounded-full hover:!bg-black hover:!text-white" size="xs" variant="secondary" onClick={() => handleEditClick(post)}>
+                                                    <OSButton size="xs" variant="secondary" onClick={() => handleEditClick(post)} className="hover:!bg-black hover:!text-white">
                                                         <Edit className="size-3" />
                                                     </OSButton>
                                                     {!post.isLocal && (
-                                                        <OSButton className="rounded-full hover:!bg-rose-50 hover:!text-rose-600" size="xs" variant="secondary" onClick={() => { if (window.confirm('permanently delete this node?')) deletePost(post.id) }}>
+                                                        <OSButton size="xs" variant="secondary" onClick={() => {
+                                                            if (window.confirm('permanently delete this node?')) deletePost(post.id)
+                                                        }} className="hover:!bg-rose-50 hover:!text-rose-600">
                                                             <Trash2 className="size-3" />
                                                         </OSButton>
                                                     )}
@@ -700,7 +702,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                             <h2 className="text-xs font-black uppercase tracking-widest text-black/30">user directory</h2>
                             <p className="text-[10px] text-black/20 lowercase">manage platform access & roles</p>
                         </div>
-                        <div className="border border-black/5 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] shadow-inner flex-1 flex items-center justify-center">
+                        <div className="border border-black/5 rounded-sm flex-1 bg-white/50 shadow-inner flex items-center justify-center">
                             <div className="text-center p-8">
                                 <IconUser className="size-10 text-black/5 mx-auto mb-4" />
                                 <div className="text-black/30 text-xs font-bold lowercase">
@@ -724,7 +726,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                             </span>
                         </div>
 
-                        <div className="flex-grow overflow-auto custom-scrollbar border border-black/5 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] bg-white/80 min-h-0">
+                        <div className="flex-grow overflow-auto custom-scrollbar border border-black/5 rounded-sm bg-white/50 shadow-inner min-h-0">
                             {writerApplicationsLoading && (
                                 <div className="h-48 flex items-center justify-center">
                                     <Loading label="connecting to orbital comms" />
@@ -777,7 +779,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                 </div>
                                             </div>
 
-                                            <div className="ml-4 sm:ml-14 mt-2 sm:mt-0 p-4 rounded-[24px] bg-black/[0.02] border border-black/[0.03]">
+                                            <div className="ml-4 sm:ml-14 mt-2 sm:mt-0 p-4 rounded-sm bg-black/[0.02] border border-black/[0.03]">
                                                 <p className="text-xs leading-relaxed text-black/70 whitespace-pre-wrap font-sans">
                                                     {application.message}
                                                 </p>
@@ -835,19 +837,19 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                     value={commentSearchQuery}
                                     onChange={(e) => setCommentSearchQuery(e.target.value)}
                                     placeholder="search transmissions..."
-                                    className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-black/5 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] text-black placeholder:text-black/20 focus:outline-none focus:border-black/20 transition-all font-sans"
+                                    className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-black/5 rounded-sm text-black placeholder:text-black/20 focus:outline-none focus:border-black/20 transition-all font-sans"
                                 />
                             </div>
-                            <div className="flex bg-white border border-black/5 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] p-0.5 shadow-sm">
+                            <div className="flex bg-white border border-black/5 rounded-sm p-0.5 shadow-sm">
                                 <button
                                     onClick={() => setCommentFilter('posts')}
-                                    className={`px-3 py-1 text-[10px] font-black uppercase tracking-wider transition-all rounded-full ${commentFilter === 'posts' ? 'bg-black text-white shadow-sm' : 'text-black/30 hover:text-black/60'}`}
+                                    className={`px-3 py-1 text-[10px] font-black uppercase tracking-wider transition-all rounded-[1px] ${commentFilter === 'posts' ? 'bg-black text-white shadow-sm' : 'text-black/30 hover:text-black/60'}`}
                                 >
                                     posts
                                 </button>
                                 <button
                                     onClick={() => setCommentFilter('replies')}
-                                    className={`px-3 py-1 text-[10px] font-black uppercase tracking-wider transition-all rounded-full ${commentFilter === 'replies' ? 'bg-black text-white shadow-sm' : 'text-black/30 hover:text-black/60'}`}
+                                    className={`px-3 py-1 text-[10px] font-black uppercase tracking-wider transition-all rounded-[1px] ${commentFilter === 'replies' ? 'bg-black text-white shadow-sm' : 'text-black/30 hover:text-black/60'}`}
                                 >
                                     replies
                                 </button>
@@ -855,7 +857,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                         </div>
 
                         {/* Content */}
-                        <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 bg-white/30 border border-black/5 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] shadow-inner p-2">
+                        <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 bg-white/30 border border-black/5 rounded-sm shadow-inner p-2">
                             {communityLoading ? (
                                 <div className="h-48 flex items-center justify-center">
                                     <Loading label="scanning neural networks" />
@@ -870,7 +872,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                         const isExpanded = expandedPostId === cp.id
 
                                         return (
-                                            <div key={cp.id} className="border border-black/5 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] bg-white overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                                            <div key={cp.id} className="border border-black/5 rounded-sm bg-white overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
                                                 {/* Post Header */}
                                                 <div className="p-3 flex items-start justify-between gap-2 border-b border-black/[0.02]">
                                                     <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -899,14 +901,14 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                             {postReplies.length}
                                                             {isExpanded ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
                                                         </button>
-                                                        <OSButton className="rounded-full" size="xs" variant="secondary" onClick={() => {
+                                                        <OSButton size="xs" variant="secondary" onClick={() => {
                                                             setEditingCommentId(cp.id)
                                                             setEditingCommentContent(cp.content)
                                                             setEditingCommentTitle(cp.title)
                                                         }}>
                                                             <Edit className="size-3" />
                                                         </OSButton>
-                                                        <OSButton className="rounded-full" size="xs" variant="secondary" onClick={() => {
+                                                        <OSButton size="xs" variant="secondary" onClick={() => {
                                                             if (window.confirm('delete this community post?')) deleteCommunityPost(cp.id)
                                                         }}>
                                                             <Trash2 className="size-3 text-rose-500/50 hover:text-rose-500" />
@@ -922,15 +924,15 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                                 type="text"
                                                                 value={editingCommentTitle}
                                                                 onChange={(e) => setEditingCommentTitle(e.target.value)}
-                                                                className="w-full bg-neutral-50 border border-black/5 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] px-3 py-2 text-xs focus:outline-none font-bold"
+                                                                className="w-full bg-neutral-50 border border-black/5 rounded-sm px-3 py-2 text-xs focus:outline-none font-bold"
                                                             />
                                                             <textarea
                                                                 value={editingCommentContent}
                                                                 onChange={(e) => setEditingCommentContent(e.target.value)}
-                                                                className="w-full bg-neutral-50 border border-black/5 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] p-3 text-xs h-24 focus:outline-none resize-none font-sans"
+                                                                className="w-full bg-neutral-50 border border-black/5 rounded-sm p-3 text-xs h-24 focus:outline-none resize-none font-sans"
                                                             />
                                                             <div className="flex justify-end gap-2">
-                                                                <OSButton className="rounded-full" size="xs" variant="secondary" onClick={() => setEditingCommentId(null)}>cancel</OSButton>
+                                                                <OSButton size="xs" variant="secondary" onClick={() => setEditingCommentId(null)}>cancel</OSButton>
                                                                 <OSButton size="xs" onClick={async () => {
                                                                     const res = await updateCommunityPost(cp.id, { title: editingCommentTitle, content: editingCommentContent })
                                                                     if (res) setEditingCommentId(null)
@@ -949,7 +951,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                             <div className="p-4 text-center text-[9px] font-black uppercase tracking-widest text-black/15">no transmissions found</div>
                                                         ) : (
                                                             postReplies.map(reply => (
-                                                                <div key={reply.id} className="p-3 pl-4 sm:pl-14 flex items-start justify-between group bg-white/80">
+                                                                <div key={reply.id} className="p-3 pl-4 sm:pl-14 flex items-start justify-between group bg-white/50">
                                                                     <div className="flex gap-3">
                                                                         <div className="size-6 rounded-full border border-black/5 bg-black/5 flex-shrink-0 overflow-hidden">
                                                                             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -968,7 +970,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                                         </div>
                                                                     </div>
                                                                     <div className="opacity-0 group-hover:opacity-100 transition-all duration-300">
-                                                                        <OSButton className="rounded-full" size="xs" variant="secondary" onClick={() => {
+                                                                        <OSButton size="xs" variant="secondary" onClick={() => {
                                                                             if (window.confirm('delete this reply?')) deleteCommunityReply(reply.id)
                                                                         }}>
                                                                             <Trash2 className="size-2.5 text-rose-400" />
@@ -993,7 +995,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                             const isEditing = editingCommentId === reply.id && commentFilter === 'replies'
 
                                             return (
-                                                <div key={reply.id} className="bg-white border border-black/5 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] p-3 flex items-start justify-between gap-3 shadow-[0_1px_2px_rgba(0,0,0,0.01)] hover:shadow-md transition-shadow">
+                                                <div key={reply.id} className="bg-white border border-black/5 rounded-sm p-3 flex items-start justify-between gap-3 shadow-[0_1px_2px_rgba(0,0,0,0.01)] hover:shadow-md transition-shadow">
                                                     <div className="flex items-start gap-4 flex-1">
                                                         <div className="size-8 rounded-full border border-black/5 bg-black/5 flex-shrink-0 overflow-hidden">
                                                             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1013,10 +1015,10 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                                     <textarea
                                                                         value={editingCommentContent}
                                                                         onChange={(e) => setEditingCommentContent(e.target.value)}
-                                                                        className="w-full bg-neutral-50 border border-black/5 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] p-3 text-xs h-24 focus:outline-none resize-none font-sans"
+                                                                        className="w-full bg-neutral-50 border border-black/5 rounded-sm p-3 text-xs h-24 focus:outline-none resize-none font-sans"
                                                                     />
                                                                     <div className="flex justify-end gap-2">
-                                                                        <OSButton className="rounded-full" size="xs" variant="secondary" onClick={() => setEditingCommentId(null)}>cancel</OSButton>
+                                                                        <OSButton size="xs" variant="secondary" onClick={() => setEditingCommentId(null)}>cancel</OSButton>
                                                                         <OSButton size="xs" onClick={async () => {
                                                                             const res = await updateCommunityReply(reply.id, editingCommentContent)
                                                                             if (res) setEditingCommentId(null)
@@ -1029,13 +1031,13 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-1.5 self-start pt-1">
-                                                        <OSButton className="rounded-full" size="xs" variant="secondary" onClick={() => {
+                                                        <OSButton size="xs" variant="secondary" onClick={() => {
                                                             setEditingCommentId(reply.id)
                                                             setEditingCommentContent(reply.content)
                                                         }}>
                                                             <Edit className="size-3" />
                                                         </OSButton>
-                                                        <OSButton className="rounded-full" size="xs" variant="secondary" onClick={() => {
+                                                        <OSButton size="xs" variant="secondary" onClick={() => {
                                                             if (window.confirm('permanently delete this reply?')) deleteCommunityReply(reply.id)
                                                         }}>
                                                             <Trash2 className="size-3 text-rose-500/50 hover:text-rose-500" />
@@ -1058,7 +1060,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                             <h2 className="text-xs font-black uppercase tracking-widest text-black/30">console configuration</h2>
                             <p className="text-[10px] text-black/20 lowercase">adjust system level parameters</p>
                         </div>
-                        <div className="border border-black/5 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] shadow-inner flex-1 flex items-center justify-center">
+                        <div className="border border-black/5 rounded-sm flex-1 bg-white/50 shadow-inner flex items-center justify-center">
                             <div className="text-center p-8">
                                 <Settings className="size-10 text-black/5 mx-auto mb-4" />
                                 <div className="text-black/30 text-xs font-bold lowercase">
@@ -1075,9 +1077,9 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
     }
 
     return (
-        <div className="flex flex-col md:flex-row w-full bg-white/40 supports-[backdrop-filter]:backdrop-blur-[60px] text-black overflow-hidden font-sans h-full">
+        <div className="flex flex-col md:flex-row w-full bg-[#f8fafb] text-black overflow-hidden font-sans h-full">
             {/* Sidebar */}
-            <div className="flex-shrink-0 border-b md:border-b-0 md:border-r border-black/5 bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] flex flex-row md:flex-col overflow-x-auto md:overflow-visible py-2 px-2 md:py-6 md:px-0 md:w-44 no-scrollbar">
+            <div className="flex-shrink-0 border-b md:border-b-0 md:border-r border-black/5 bg-white/50 backdrop-blur-md flex flex-row md:flex-col overflow-x-auto md:overflow-visible py-2 px-2 md:py-6 md:px-0 md:w-44 no-scrollbar">
                 <div className="hidden md:block px-5 mb-8">
                     <div className="flex items-center gap-2">
                         <div className="size-2 rounded-full bg-black/80" />
@@ -1090,9 +1092,9 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                            className={`flex items-center gap-2.5 px-3 py-2 rounded-[24px] text-[12px] transition-all text-left
+                            className={`flex items-center gap-2.5 px-3 py-2 rounded-sm text-[12px] transition-all text-left
                                 ${activeTab === tab.id
-                                    ? 'bg-black text-white font-bold shadow-lg shadow-black/20 rounded-full'
+                                    ? 'bg-black text-white font-bold shadow-md shadow-black/10'
                                     : 'text-black/40 hover:bg-black/5 hover:text-black/80'}
                                 justify-center md:justify-start flex-1 min-w-[3rem] md:w-full md:flex-none
                             `}
@@ -1109,7 +1111,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
             </div>
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col min-w-0 bg-white/40 supports-[backdrop-filter]:backdrop-blur-[60px] overflow-hidden">
+            <div className="flex-1 flex flex-col min-w-0 bg-[#f8fafb] overflow-hidden">
                 <main className="flex-1 overflow-hidden flex flex-col min-h-0">
                     {renderContent()}
                 </main>
@@ -1126,7 +1128,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
 const StatCard = ({ title, value, change }: { title: string, value: string, change: string }) => {
     const isPositive = change.startsWith('+')
     return (
-        <div className="p-4 border border-black/10 rounded-[24px] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:shadow-lg hover:shadow-black/5 transition-all group">
+        <div className="p-4 border border-black/10 rounded-sm bg-white shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:shadow-lg hover:shadow-black/5 transition-all group">
             <h4 className="text-[10px] font-black text-black/30 mb-2 uppercase tracking-wider group-hover:text-black/50 transition-colors">{title}</h4>
             <div className="flex items-baseline justify-between">
                 <span className="text-2xl font-black tracking-tight text-black">{value}</span>

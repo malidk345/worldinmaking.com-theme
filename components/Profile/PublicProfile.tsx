@@ -495,16 +495,16 @@ export default function PublicProfile({ username }: PublicProfileProps) {
     }
 
     return (
-        <div className="corpus-root flex flex-col size-full bg-white/80 dark:bg-black/80 supports-[backdrop-filter]:backdrop-blur-[60px] text-primary font-sans overflow-hidden">
+        <div className="corpus-root flex flex-col size-full bg-[#fafcfc] dark:bg-primary text-primary font-sans overflow-hidden">
             <div
                 data-scheme="tertiary"
-                className="flex w-auto mx-1 mt-1 items-center px-1.5 py-0.5 select-none gap-2 justify-between rounded-full shrink-0 z-10 h-10 overflow-x-auto custom-scrollbar no-scrollbar-on-mobile"
+                className="flex w-auto mx-1 mt-1 items-center px-1.5 py-0.5 select-none gap-2 justify-between bg-primary border border-primary rounded-md shrink-0 z-10 h-10 overflow-x-auto custom-scrollbar no-scrollbar-on-mobile"
             >
                 <div className="flex items-center gap-1 flex-shrink-0">
                     {isOwner && (
                         <Tooltip
                             trigger={
-                                <OSButton size="sm" onClick={() => setSidebarOpen((prev) => !prev)} active={sidebarOpen} className="p-1 h-8 w-8 !rounded-full">
+                                <OSButton size="sm" onClick={() => setSidebarOpen((prev) => !prev)} active={sidebarOpen} className="p-1 h-8 w-8 !rounded-md">
                                     {sidebarOpen ? <IconSidebarOpen className="size-[18px]" /> : <IconSidebarClose className="size-[18px]" />}
                                 </OSButton>
                             }
@@ -515,10 +515,10 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                     )}
 
                     <div className="hidden sm:flex items-center gap-0.5">
-                        <OSButton size="sm" onClick={goBack} disabled={!canGoBack} className="p-1 h-8 w-8 !rounded-full">
+                        <OSButton size="sm" onClick={goBack} disabled={!canGoBack} className="p-1 h-8 w-8 !rounded-md">
                             <IconChevronLeft className={`size-[18px] ${canGoBack ? 'opacity-100' : 'opacity-30'}`} />
                         </OSButton>
-                        <OSButton size="sm" onClick={goForward} disabled={!canGoForward} className="p-1 h-8 w-8 !rounded-full">
+                        <OSButton size="sm" onClick={goForward} disabled={!canGoForward} className="p-1 h-8 w-8 !rounded-md">
                             <IconChevronRight className={`size-[18px] ${canGoForward ? 'opacity-100' : 'opacity-30'}`} />
                         </OSButton>
                     </div>
@@ -545,25 +545,25 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                     {isOwner && !isEditingProfile && (
                         <>
                             <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
-                            <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-full flex items-center gap-1.5" onClick={handleAddNode}><IconPlus className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">new node</span></OSButton>} side="bottom">new node</Tooltip>
-                            <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-full flex items-center gap-1.5" onClick={handleAddPost}><BookOpen className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">new post</span></OSButton>} side="bottom">new post</Tooltip>
-                            <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-full flex items-center gap-1.5" onClick={openProfileEditor}><PenLine className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">edit profile</span></OSButton>} side="bottom">edit profile</Tooltip>
+                            <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-md flex items-center gap-1.5" onClick={handleAddNode}><IconPlus className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">new node</span></OSButton>} side="bottom">new node</Tooltip>
+                            <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-md flex items-center gap-1.5" onClick={handleAddPost}><BookOpen className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">new post</span></OSButton>} side="bottom">new post</Tooltip>
+                            <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-md flex items-center gap-1.5" onClick={openProfileEditor}><PenLine className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">edit profile</span></OSButton>} side="bottom">edit profile</Tooltip>
                         </>
                     )}
                     <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
-                    <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded-full" onClick={refreshAll}><RefreshCw className={`size-[16px] opacity-70 ${refreshing ? 'animate-spin' : ''}`} /></OSButton>} side="bottom">refresh profile</Tooltip>
-                    <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded-full" onClick={() => copyLink(publicProfilePath, 'profile')}><Share className="size-[16px] opacity-70" /></OSButton>} side="bottom">share profile</Tooltip>
+                    <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded" onClick={refreshAll}><RefreshCw className={`size-[16px] opacity-70 ${refreshing ? 'animate-spin' : ''}`} /></OSButton>} side="bottom">refresh profile</Tooltip>
+                    <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded" onClick={() => copyLink(publicProfilePath, 'profile')}><Share className="size-[16px] opacity-70" /></OSButton>} side="bottom">share profile</Tooltip>
                     {profile.website && (
-                        <Tooltip trigger={<a href={profile.website} target="_blank" rel="noopener noreferrer"><OSButton size="sm" className="p-1.5 h-8 w-8 !rounded-full"><ExternalLink className="size-[16px] opacity-70" /></OSButton></a>} side="bottom">website</Tooltip>
+                        <Tooltip trigger={<a href={profile.website} target="_blank" rel="noopener noreferrer"><OSButton size="sm" className="p-1.5 h-8 w-8 !rounded"><ExternalLink className="size-[16px] opacity-70" /></OSButton></a>} side="bottom">website</Tooltip>
                     )}
                 </div>
             </div>
 
-            <div className="flex flex-1 min-h-0 overflow-hidden relative bg-white/80 dark:bg-black/80 supports-[backdrop-filter]:backdrop-blur-[60px]">
+            <div className="flex flex-1 min-h-0 overflow-hidden relative bg-[#fafcfc] dark:bg-primary">
                 {isOwner && (
                     <div className={`shrink-0 flex flex-col border-r border-primary/5 bg-[#fafcfc] dark:bg-black/10 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${sidebarOpen ? 'w-64 opacity-100 translate-x-0' : 'w-0 opacity-0 -translate-x-full absolute h-full pointer-events-none'}`}>
                         <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-4 min-w-[256px]">
-                            <button className="flex items-center gap-2 w-full hover:bg-black/5 dark:hover:bg-white/5 p-1.5 rounded-2xl transition-colors">
+                            <button className="flex items-center gap-2 w-full hover:bg-black/5 dark:hover:bg-white/5 p-1.5 rounded-lg transition-colors">
                                 <div className="size-6 overflow-hidden rounded bg-primary/10 flex items-center justify-center shrink-0 shadow-sm border border-primary/10">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     {profile.avatar_url ? <img src={profile.avatar_url} alt={displayName} className="size-full object-cover" /> : <span className="text-xs font-black text-primary">{displayName.charAt(0).toUpperCase()}</span>}
@@ -575,21 +575,21 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                             <div className="space-y-1">
                                 {!isEditingProfile ? (
                                     <>
-                                        <OSButton size="sm" className="w-full !h-9 !rounded-full !px-2.5 flex items-center justify-start gap-2" onClick={handleAddNode}>
+                                        <OSButton size="sm" className="w-full !h-9 !rounded-md !px-2.5 flex items-center justify-start gap-2" onClick={handleAddNode}>
                                             <IconPlus className="size-[14px] opacity-70" />
                                             <span className="text-[12px] font-semibold">new node</span>
                                         </OSButton>
-                                        <OSButton size="sm" className="w-full !h-9 !rounded-full !px-2.5 flex items-center justify-start gap-2" onClick={handleAddPost}>
+                                        <OSButton size="sm" className="w-full !h-9 !rounded-md !px-2.5 flex items-center justify-start gap-2" onClick={handleAddPost}>
                                             <BookOpen className="size-[14px] opacity-70" />
                                             <span className="text-[12px] font-semibold">new post</span>
                                         </OSButton>
-                                        <OSButton size="sm" className="w-full !h-9 !rounded-full !px-2.5 flex items-center justify-start gap-2" onClick={openProfileEditor}>
+                                        <OSButton size="sm" className="w-full !h-9 !rounded-md !px-2.5 flex items-center justify-start gap-2" onClick={openProfileEditor}>
                                             <PenLine className="size-[14px] opacity-70" />
                                             <span className="text-[12px] font-semibold">edit profile</span>
                                         </OSButton>
                                     </>
                                 ) : (
-                                    <div className="rounded-2xl border border-primary/10 bg-black/5 dark:bg-white/5 px-2.5 py-2 text-[11px] font-bold lowercase text-primary/60">
+                                    <div className="rounded-lg border border-primary/10 bg-black/5 dark:bg-white/5 px-2.5 py-2 text-[11px] font-bold lowercase text-primary/60">
                                         editing profile… save and cancel are below
                                     </div>
                                 )}
@@ -612,7 +612,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                             setIsEditingProfile(false)
                                             setActiveSection(item.key as typeof activeSection)
                                         }}
-                                        className={`flex items-center gap-2.5 w-full p-1.5 px-2.5 rounded-2xl transition-colors font-medium text-[13px] ${activeSection === item.key ? 'bg-black/5 dark:bg-white/10 text-primary font-bold' : 'hover:bg-black/5 dark:hover:bg-white/5 text-primary/70 hover:text-primary'}`}
+                                        className={`flex items-center gap-2.5 w-full p-1.5 px-2.5 rounded-lg transition-colors font-medium text-[13px] ${activeSection === item.key ? 'bg-black/5 dark:bg-white/10 text-primary font-bold' : 'hover:bg-black/5 dark:hover:bg-white/5 text-primary/70 hover:text-primary'}`}
                                     >
                                         {item.icon}
                                         <span>{item.label}</span>
@@ -624,9 +624,9 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                     </div>
                 )}
 
-                <div className="flex-1 overflow-y-auto custom-scrollbar bg-white/80 dark:bg-black/80 supports-[backdrop-filter]:backdrop-blur-[60px]">
+                <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#fafcfc] dark:bg-primary">
                     <div className="corpus-nodes-wrapper" style={{ marginTop: 'clamp(0.5rem, 2vw, 1.5rem)' }}>
-                        <div className="corpus-profile-slot glass-card">
+                        <div className="corpus-profile-slot">
                             <div className="corpus-profile-stack">
                                 <div className="corpus-profile-visual corpus-profile-cardShadow">
                                     <div className="corpus-profile-cover">
@@ -640,7 +640,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                 </div>
 
                                 <div className="corpus-profile-layerStack">
-                                    <div className="corpus-profile-tableCard corpus-profile-cardShadow glass-card">
+                                    <div className="corpus-profile-tableCard corpus-profile-cardShadow">
                                         <div className="corpus-profile-cardHeading">
                                             {isEditingProfile ? <PenLine className="size-4" /> : <PanelsTopLeft className="size-4" />}
                                             <span>{isEditingProfile ? 'profile editor' : 'profile'}</span>
@@ -661,14 +661,14 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                     {isEditingProfile ? (
                                                         <>
                                                             <tr><td>username</td><td><span style={{ opacity: 0.55 }}>@{profile.username || 'anonymous'}</span></td></tr>
-                                                            <tr><td>pronouns</td><td><input type="text" value={form.pronouns || ''} onChange={(e) => setForm({ ...form, pronouns: e.target.value })} placeholder="she/her" className="w-full bg-white/10 dark:bg-black/10 backdrop-blur-md rounded-full px-3 py-1.5 border border-primary/10 outline-none text-sm text-primary placeholder:opacity-30 transition-all focus:bg-white/20 dark:focus:bg-black/20 focus:border-primary/30" /></td></tr>
-                                                            <tr><td>location</td><td><input type="text" value={form.location || ''} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="istanbul, TR" className="w-full bg-white/10 dark:bg-black/10 backdrop-blur-md rounded-full px-3 py-1.5 border border-primary/10 outline-none text-sm text-primary placeholder:opacity-30 transition-all focus:bg-white/20 dark:focus:bg-black/20 focus:border-primary/30" /></td></tr>
-                                                            <tr><td>website</td><td><input type="text" value={form.website || ''} onChange={(e) => setForm({ ...form, website: e.target.value })} placeholder="https://your-site.com" className="w-full bg-white/10 dark:bg-black/10 backdrop-blur-md rounded-full px-3 py-1.5 border border-primary/10 outline-none text-sm text-primary placeholder:opacity-30 transition-all focus:bg-white/20 dark:focus:bg-black/20 focus:border-primary/30" /></td></tr>
-                                                            <tr><td>github</td><td><input type="text" value={form.github || ''} onChange={(e) => setForm({ ...form, github: e.target.value })} placeholder="https://github.com/username" className="w-full bg-white/10 dark:bg-black/10 backdrop-blur-md rounded-full px-3 py-1.5 border border-primary/10 outline-none text-sm text-primary placeholder:opacity-30 transition-all focus:bg-white/20 dark:focus:bg-black/20 focus:border-primary/30" /></td></tr>
-                                                            <tr><td>linkedin</td><td><input type="text" value={form.linkedin || ''} onChange={(e) => setForm({ ...form, linkedin: e.target.value })} placeholder="https://linkedin.com/in/username" className="w-full bg-white/10 dark:bg-black/10 backdrop-blur-md rounded-full px-3 py-1.5 border border-primary/10 outline-none text-sm text-primary placeholder:opacity-30 transition-all focus:bg-white/20 dark:focus:bg-black/20 focus:border-primary/30" /></td></tr>
-                                                            <tr><td>twitter</td><td><input type="text" value={form.twitter || ''} onChange={(e) => setForm({ ...form, twitter: e.target.value })} placeholder="https://x.com/username" className="w-full bg-white/10 dark:bg-black/10 backdrop-blur-md rounded-full px-3 py-1.5 border border-primary/10 outline-none text-sm text-primary placeholder:opacity-30 transition-all focus:bg-white/20 dark:focus:bg-black/20 focus:border-primary/30" /></td></tr>
-                                                            <tr><td>avatar</td><td><input type="text" value={form.avatar_url || ''} onChange={(e) => setForm({ ...form, avatar_url: e.target.value })} placeholder="https://example.com/photo.png" className="w-full bg-white/10 dark:bg-black/10 backdrop-blur-md rounded-full px-3 py-1.5 border border-primary/10 outline-none text-sm text-primary placeholder:opacity-30 transition-all focus:bg-white/20 dark:focus:bg-black/20 focus:border-primary/30" /></td></tr>
-                                                            <tr><td>cover</td><td><input type="text" value={form.cover_url || ''} onChange={(e) => setForm({ ...form, cover_url: e.target.value })} placeholder="https://example.com/cover.jpg" className="w-full bg-white/10 dark:bg-black/10 backdrop-blur-md rounded-full px-3 py-1.5 border border-primary/10 outline-none text-sm text-primary placeholder:opacity-30 transition-all focus:bg-white/20 dark:focus:bg-black/20 focus:border-primary/30" /></td></tr>
+                                                            <tr><td>pronouns</td><td><input type="text" value={form.pronouns || ''} onChange={(e) => setForm({ ...form, pronouns: e.target.value })} placeholder="she/her" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
+                                                            <tr><td>location</td><td><input type="text" value={form.location || ''} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="istanbul, TR" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
+                                                            <tr><td>website</td><td><input type="text" value={form.website || ''} onChange={(e) => setForm({ ...form, website: e.target.value })} placeholder="https://your-site.com" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
+                                                            <tr><td>github</td><td><input type="text" value={form.github || ''} onChange={(e) => setForm({ ...form, github: e.target.value })} placeholder="https://github.com/username" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
+                                                            <tr><td>linkedin</td><td><input type="text" value={form.linkedin || ''} onChange={(e) => setForm({ ...form, linkedin: e.target.value })} placeholder="https://linkedin.com/in/username" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
+                                                            <tr><td>twitter</td><td><input type="text" value={form.twitter || ''} onChange={(e) => setForm({ ...form, twitter: e.target.value })} placeholder="https://x.com/username" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
+                                                            <tr><td>avatar</td><td><input type="text" value={form.avatar_url || ''} onChange={(e) => setForm({ ...form, avatar_url: e.target.value })} placeholder="https://example.com/photo.png" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
+                                                            <tr><td>cover</td><td><input type="text" value={form.cover_url || ''} onChange={(e) => setForm({ ...form, cover_url: e.target.value })} placeholder="https://example.com/cover.jpg" className="w-full bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30" /></td></tr>
                                                         </>
                                                     ) : (
                                                         tableRows.map((row) => (
@@ -690,8 +690,8 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                         onChange={(e) => setForm({ ...form, bio: e.target.value })}
                                                         placeholder="tell people what you build, write, or care about"
                                                         rows={4}
-                                                        className="w-full resize-none bg-white/10 dark:bg-black/10 backdrop-blur-md rounded-2xl p-3 border border-primary/10 outline-none text-sm text-primary placeholder:opacity-30 transition-all focus:bg-white/20 dark:focus:bg-black/20 focus:border-primary/30"
-                                                        style={{ margin: 0, lineHeight: 1.6 }}
+                                                        className="w-full resize-none bg-transparent border-none outline-none text-sm text-primary placeholder:opacity-30"
+                                                        style={{ margin: 0, lineHeight: 1.6, padding: '0.75rem' }}
                                                     />
                                                     <div className="flex items-center justify-end gap-2 px-3 py-3 border-t border-primary/10">
                                                         <OSButton type="button" variant="underlineOnHover" size="sm" onClick={() => setIsEditingProfile(false)}>cancel</OSButton>
@@ -721,7 +721,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                 ) : filteredNodes.length > 0 ? (
                                     <div className="corpus-doc-grid">
                                         {filteredNodes.map((node) => (
-                                            <article key={node.id} className="corpus-doc-card relative cursor-pointer glass-card" onClick={() => openNodeView(node)}>
+                                            <article key={node.id} className="corpus-doc-card relative cursor-pointer" onClick={() => openNodeView(node)}>
                                                 {isOwner && (
                                                     <div className="absolute right-2 top-2 z-10 flex items-center gap-1">
                                                         <button
@@ -730,7 +730,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                                 e.stopPropagation()
                                                                 openNodeEditor(node)
                                                             }}
-                                                            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-primary/10 bg-white/80 text-primary/60 supports-[backdrop-filter]:backdrop-blur-[60px] hover:text-primary"
+                                                            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-primary/10 bg-white/80 text-primary/60 backdrop-blur hover:text-primary"
                                                             aria-label={`edit ${node.title}`}
                                                             title="edit node"
                                                         >
@@ -742,7 +742,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                                 e.stopPropagation()
                                                                 void handleDeleteNode(node)
                                                             }}
-                                                            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-primary/10 bg-white/80 text-primary/60 supports-[backdrop-filter]:backdrop-blur-[60px] hover:text-red-600"
+                                                            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-primary/10 bg-white/80 text-primary/60 backdrop-blur hover:text-red-600"
                                                             aria-label={`delete ${node.title}`}
                                                             title="delete node"
                                                         >
@@ -779,7 +779,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                 ) : filteredPosts.length > 0 ? (
                                     <div className="corpus-doc-grid">
                                         {filteredPosts.map((post) => (
-                                            <article key={post.id} className={`corpus-doc-card relative glass-card ${isOwner ? 'cursor-pointer' : ''}`} onClick={() => handleOpenPost(post)}>
+                                            <article key={post.id} className={`corpus-doc-card relative ${isOwner ? 'cursor-pointer' : ''}`} onClick={() => handleOpenPost(post)}>
                                                 {isOwner && (
                                                     <div className="absolute right-2 top-2 z-10 flex items-center gap-1">
                                                         <button
@@ -788,7 +788,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                                 e.stopPropagation()
                                                                 handleEditPost(post)
                                                             }}
-                                                            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-primary/10 bg-white/80 text-primary/60 supports-[backdrop-filter]:backdrop-blur-[60px] hover:text-primary"
+                                                            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-primary/10 bg-white/80 text-primary/60 backdrop-blur hover:text-primary"
                                                             aria-label={`edit ${post.title}`}
                                                             title="edit post"
                                                         >
@@ -800,7 +800,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                                 e.stopPropagation()
                                                                 void handleDeletePost(post)
                                                             }}
-                                                            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-primary/10 bg-white/80 text-primary/60 supports-[backdrop-filter]:backdrop-blur-[60px] hover:text-red-600"
+                                                            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-primary/10 bg-white/80 text-primary/60 backdrop-blur hover:text-red-600"
                                                             aria-label={`delete ${post.title}`}
                                                             title="delete post"
                                                         >
@@ -840,7 +840,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                         {savedPosts.map((savedPost) => (
                                             <article
                                                 key={`${savedPost.post_slug}-${savedPost.saved_at}`}
-                                                className="corpus-doc-card cursor-pointer glass-card"
+                                                className="corpus-doc-card cursor-pointer"
                                                 onClick={() => openPost({ id: savedPost.post_slug, title: savedPost.post_title || savedPost.post_slug, slug: savedPost.post_slug, created_at: savedPost.saved_at, published: true, is_approved: true })}
                                             >
                                                 <div className="corpus-doc-media">

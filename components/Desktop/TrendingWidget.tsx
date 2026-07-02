@@ -133,11 +133,10 @@ export default function TrendingWidget() {
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className="fixed bottom-20 md:bottom-24 left-4 right-4 md:left-auto md:right-10 w-auto md:w-[700px] lg:w-[820px] bg-white/80 dark:bg-black/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1),_0_0_0_1px_rgba(255,255,255,0.2)_inset,0_0_0_1px_rgba(0,0,0,0.05)_inset] dark:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.5),_0_0_0_1px_rgba(255,255,255,0.05)_inset] z-50 font-sans border border-white/20 dark:border-white/10 rounded-[32px] overflow-hidden"
+            className="fixed bottom-20 md:bottom-24 left-4 right-4 md:left-auto md:right-10 w-auto md:w-[700px] lg:w-[820px] bg-white dark:bg-[#1a1c1e] shadow-2xl z-50 font-sans border border-[#dadce0] dark:border-[#3c4043] rounded-[4px] overflow-hidden"
         >
             {/* 1. Toolbar */}
-            <div className="flex items-center justify-between px-2 md:px-4 py-2 border-b border-black/5 dark:border-white/5">
+            <div className="flex items-center justify-between px-2 md:px-4 py-2 border-b border-[#f1f3f4] dark:border-[#3c4043]">
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">
                         {activeTab === 'blog' ? (
@@ -175,7 +174,7 @@ export default function TrendingWidget() {
             </div>
 
             {/* 2. Categorized Tabs (Blog & Community) */}
-            <div className="flex items-center border-b border-black/5 dark:border-white/5">
+            <div className="flex items-center border-b border-[#f1f3f4] dark:border-[#3c4043]">
                 <div
                     onClick={() => { setActiveTab('blog'); setCurrentPage(0); }}
                     className={`flex-1 flex items-center gap-2 md:gap-3 px-3 md:px-5 py-3 cursor-pointer transition-colors border-b-2 ${activeTab === 'blog' ? 'border-red-600 bg-red-50/10' : 'border-transparent hover:bg-black/5 opacity-60'}`}
@@ -217,12 +216,12 @@ export default function TrendingWidget() {
             </div>
 
             {/* 3. List Area */}
-            <div className="max-h-[35vh] md:max-h-[380px] overflow-y-auto custom-scrollbar bg-transparent">
+            <div className="max-h-[35vh] md:max-h-[380px] overflow-y-auto custom-scrollbar bg-white dark:bg-[#1a1c1e]">
                 {currentPosts.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage).map((post) => (
                     <div
                         key={`${post.type}-${post.id}`}
                         onClick={() => activeTab !== 'updates' && handleOpen(post)}
-                        className={`group flex items-center px-3 md:px-4 py-2 border-b border-black/5 dark:border-white/5 transition-all ${activeTab === 'updates' ? 'cursor-default' : 'cursor-pointer hover:bg-black/5 dark:hover:bg-white/10 rounded-xl mx-2 my-1 hover:border-transparent dark:hover:border-transparent'} relative`}
+                        className={`group flex items-center px-3 md:px-4 py-2 border-b border-[#f1f3f4] dark:border-[#3c4043]/50 transition-all ${activeTab === 'updates' ? 'cursor-default' : 'cursor-pointer hover:bg-[#f2f6fc] dark:hover:bg-white/5'} relative`}
                     >
                         {/* Author Avatar or System Icon */}
                         <div className="mr-3 flex-shrink-0">
@@ -231,7 +230,6 @@ export default function TrendingWidget() {
                                     <Bell className="w-3 h-3 text-[#172b4d]" />
                                 </div>
                             ) : post.avatar_url ? (
-                                /* eslint-disable-next-line @next/next/no-img-element */
                                 <img
                                     src={post.avatar_url}
                                     alt={post.author}
@@ -273,7 +271,7 @@ export default function TrendingWidget() {
             </div>
 
             {/* Footer */}
-            <div className="px-4 py-2 bg-black/5 dark:bg-white/5 border-t border-black/5 dark:border-white/5 flex justify-between items-center text-[10px] opacity-40 lowercase font-bold">
+            <div className="px-4 py-2 bg-[#f8f9fa] dark:bg-black/20 border-t border-[#f1f3f4] dark:border-[#3c4043] flex justify-between items-center text-[10px] opacity-40 lowercase font-bold">
                 <div className="flex gap-3">
                     {activeTab === 'blog' ? (
                         <span>1-{blogPosts.length} of {totalPosts} posts total</span>

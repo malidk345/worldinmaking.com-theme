@@ -57,22 +57,22 @@ const OSButton = React.memo(React.forwardRef<HTMLButtonElement | HTMLAnchorEleme
         ref
     ) => {
         const baseClasses =
-            'relative items-center rounded-full border text-primary transition-colors transition-[font-size,line-height,padding] transition-50 hover:transition-none disabled:text-muted disabled:cursor-not-allowed select-none'
+            'relative items-center rounded border text-primary transition-colors transition-[font-size,line-height,padding] transition-50 hover:transition-none disabled:text-muted disabled:cursor-not-allowed select-none'
 
         const parentSizeClasses = {
-            xs: 'border-px top-[0px] rounded-full',
-            sm: 'border-[1.5px] top-[0px] rounded-full',
-            md: 'border-[1.5px] top-[0px] rounded-full',
-            lg: 'border-[1.5px] top-[0px] rounded-full',
-            xl: 'border-[1.5px] top-[0px] rounded-full',
+            xs: 'border-px top-[0px] rounded-[5px]',
+            sm: 'border-[1.5px] top-[0px] rounded-[5px]',
+            md: 'border-[1.5px] top-[0px] rounded-[6px]',
+            lg: 'border-[1.5px] top-[0px] rounded-[6px]',
+            xl: 'border-[1.5px] top-[0px] rounded-[6px]',
         }
 
         const childSizeClasses = {
-            xs: 'px-1.5 py-0.5 text-[11px] gap-0.5 rounded-full translate-y-[-1px] hover:translate-y-[-2px] active:translate-y-[0px] border-[1.5px] -mx-px group-disabled:hover:!translate-y-[-1px]',
-            sm: 'px-2 py-0.5 text-xs gap-1 rounded-full translate-y-[-2px] hover:translate-y-[-3px] active:translate-y-[0px] border-[1.5px] mx-[-1.5px] group-disabled:hover:!translate-y-[-2px]',
-            md: 'px-2.5 py-1 gap-1 rounded-full text-[13px] translate-y-[-2px] hover:translate-y-[-3px] active:translate-y-[0px] border-[1.5px] mx-[-1.5px] group-disabled:hover:!translate-y-[-2px]',
-            lg: 'px-3 py-1.5 text-[15px] gap-1 rounded-full translate-y-[-2px] hover:translate-y-[-4px] active:translate-y-[0px] border-[1.5px] mx-[-1.5px] group-disabled:hover:!translate-y-[-2px]',
-            xl: 'px-4 py-2 text-base gap-1.5 rounded-full translate-y-[-2px] hover:translate-y-[-4px] active:translate-y-[0px] border-[1.5px] mx-[-1.5px] group-disabled:hover:!translate-y-[-2px]',
+            xs: 'px-1.5 py-0.5 text-[11px] gap-0.5 rounded-[5px] translate-y-[-1px] hover:translate-y-[-2px] active:translate-y-[0px] border-[1.5px] -mx-px group-disabled:hover:!translate-y-[-1px]',
+            sm: 'px-2 py-0.5 text-xs gap-1 rounded-[5px] translate-y-[-2px] hover:translate-y-[-3px] active:translate-y-[0px] border-[1.5px] mx-[-1.5px] group-disabled:hover:!translate-y-[-2px]',
+            md: 'px-2.5 py-1 gap-1 rounded-[6px] text-[13px] translate-y-[-2px] hover:translate-y-[-3px] active:translate-y-[0px] border-[1.5px] mx-[-1.5px] group-disabled:hover:!translate-y-[-2px]',
+            lg: 'px-3 py-1.5 text-[15px] gap-1 rounded-[6px] translate-y-[-2px] hover:translate-y-[-4px] active:translate-y-[0px] border-[1.5px] mx-[-1.5px] group-disabled:hover:!translate-y-[-2px]',
+            xl: 'px-4 py-2 text-base gap-1.5 rounded-[6px] translate-y-[-2px] hover:translate-y-[-4px] active:translate-y-[0px] border-[1.5px] mx-[-1.5px] group-disabled:hover:!translate-y-[-2px]',
         }
 
         const simpleSizeClasses = {

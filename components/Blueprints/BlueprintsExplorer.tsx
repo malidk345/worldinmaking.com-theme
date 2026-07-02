@@ -1,7 +1,6 @@
 "use client"
 
 import React, { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
 import { useBlueprints, BlueprintPost } from 'hooks/useBlueprints'
 import ScrollArea from 'components/RadixUI/ScrollArea'
 import Loading from 'components/Loading'
@@ -36,7 +35,7 @@ export default function BlueprintsExplorer() {
     if (loading) return <Loading fullScreen label="scanning blueprints" />
 
     return (
-        <div className="absolute inset-0 bg-transparent flex flex-col font-mono lowercase">
+        <div className="absolute inset-0 bg-primary flex flex-col font-mono lowercase">
             <ScrollArea>
                 <div className="max-w-4xl mx-auto py-12 px-6">
                     <header className="mb-12 border-b border-primary/10 pb-6">
@@ -49,21 +48,15 @@ export default function BlueprintsExplorer() {
                     <div className="space-y-12">
                         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                         {hierarchy.map((category: any) => (
-                            <motion.section
-                                key={category.id}
-                                className="blueprint-category"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.5, type: 'spring', bounce: 0.2 }}
-                            >
-                                <h2 className="text-xs font-black tracking-widest uppercase opacity-40 mb-6 inline-block bg-black/5 dark:bg-white/10 px-4 py-1.5 rounded-full">
+                            <section key={category.id} className="blueprint-category">
+                                <h2 className="text-xs font-black tracking-widest uppercase opacity-30 mb-6 border-l-2 border-primary pl-4">
                                     {category.name}
                                 </h2>
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                     {category.lectures?.map((lecture: any) => (
-                                        <div key={lecture.id} className="bg-white/40 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[24px] shadow-sm supports-[backdrop-filter]:backdrop-blur-xl p-6 hover:bg-white/60 dark:hover:bg-white/10 transition-all duration-300">
+                                        <div key={lecture.id} className="bg-accent/50 border border-primary/10 rounded-sm p-4 hover:border-primary/30 transition-colors">
                                             <h3 className="text-sm font-bold flex items-center gap-2 mb-3">
                                                 <BookOpen className="size-4 opacity-50" /> {lecture.name}
                                             </h3>
@@ -73,7 +66,7 @@ export default function BlueprintsExplorer() {
                                                     <li 
                                                         key={post.id}
                                                         onClick={() => handlePostClick(post)}
-                                                        className="text-[12px] opacity-70 hover:opacity-100 cursor-pointer flex items-center gap-2 group py-1.5 px-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-xl transition-colors"
+                                                        className="text-[11px] opacity-60 hover:opacity-100 hover:text-blue-500 cursor-pointer flex items-center gap-1 group"
                                                     >
                                                         <ChevronRight className="size-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                                                         {post.title}
@@ -83,7 +76,7 @@ export default function BlueprintsExplorer() {
                                         </div>
                                     ))}
                                 </div>
-                            </motion.section>
+                            </section>
                         ))}
                     </div>
                 </div>

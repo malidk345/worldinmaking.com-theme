@@ -8,8 +8,7 @@ import {
     IconPerson,
 } from '@posthog/icons'
 import { useApp } from 'context/App'
-import { usePosts } from 'hooks/usePosts'
-import type { Post } from 'types/database'
+import { usePosts, Post } from 'hooks/usePosts'
 import ScrollArea from 'components/RadixUI/ScrollArea'
 import BlogPostView from 'components/ReaderView/BlogPostView'
 import SEO from 'components/SEO'

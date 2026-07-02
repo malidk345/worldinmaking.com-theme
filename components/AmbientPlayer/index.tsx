@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useRef, useEffect } from 'react'
-import { Headphones, Volume2, Loader2 } from 'lucide-react'
+import { Headphones, Play, Square, Volume2, Loader2 } from 'lucide-react'
 import OSButton from 'components/OSButton'
 import Tooltip from 'components/RadixUI/Tooltip'
 

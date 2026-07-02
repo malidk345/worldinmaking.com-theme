@@ -129,7 +129,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         if (typeof window === 'undefined') return { x: inset, y: inset }
         return {
             x: Math.max(inset, Math.round(window.innerWidth / 2 - size.width / 2)),
-            y: Math.max(inset, Math.round((window.innerHeight) / 2 - size.height / 2)),
+            y: Math.max(inset, Math.round((window.innerHeight - 44) / 2 - size.height / 2)),
         }
     }, [])
 
@@ -162,7 +162,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
         const bounds = constraintsRef.current?.getBoundingClientRect()
         const maxX = bounds ? bounds.width - size.width - inset : window.innerWidth - size.width - inset
-        const maxY = bounds ? bounds.height - size.height - inset : window.innerHeight - size.height - inset
+        const maxY = bounds ? bounds.height - size.height - inset : window.innerHeight - 44 - size.height - inset
 
         if (potentialX > maxX || potentialY > maxY) {
             return getDesktopCenterPosition(size)
@@ -186,14 +186,14 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
             if (!existing) return prev
 
             // If already at front (highest zIndex) and not minimized, don't update zIndex
-            const maxZIndex = Math.max(...prev.map(w => w.zIndex), 0)
+            const maxZIndex = prev.length
             if (existing.zIndex === maxZIndex && !existing.minimized && focusedWindow?.key === key) {
                 return prev
             }
 
             return prev.map((el) => ({
                 ...el,
-                zIndex: el.key === key ? maxZIndex + 1 : el.zIndex > existing.zIndex ? el.zIndex - 1 : el.zIndex,
+                zIndex: el.key === key ? maxZIndex : el.zIndex > existing.zIndex ? el.zIndex - 1 : el.zIndex,
                 minimized: el.key === key ? false : el.minimized,
             }))
         })
@@ -205,10 +205,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
             const existing = prev.find(w => w.key === item.key)
             if (existing) {
                 // If window already exists, bring it to front and unminimize it
-                const maxZIndex = Math.max(...prev.map(w => w.zIndex), 0)
                 const newWindows = prev.map((el) => ({
                     ...el,
-                    zIndex: el.key === item.key ? maxZIndex + 1 : el.zIndex > existing.zIndex ? el.zIndex - 1 : el.zIndex,
+                    zIndex: el.key === item.key ? prev.length : el.zIndex > existing.zIndex ? el.zIndex - 1 : el.zIndex,
                     minimized: el.key === item.key ? false : el.minimized,
                 }))
                 setFocusedWindowKey(item.key)
@@ -229,10 +228,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
             if (!size) {
                 if (typeof window !== 'undefined') {
-                    const bounds = constraintsRef.current?.getBoundingClientRect()
                     size = {
-                        width: Math.min((bounds?.width || window.innerWidth) * 0.9, 2000),
-                        height: Math.min((bounds?.height || window.innerHeight) * 0.9, 2000)
+                        width: Math.min(window.innerWidth * 0.9, 2000),
+                        height: Math.min((window.innerHeight - 44) * 0.9, 2000)
                     }
                 } else {
                     size = DEFAULT_SIZE
@@ -243,10 +241,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
             if (!position) {
                 if (typeof window !== 'undefined' && window.innerWidth <= 768) {
                     const inset = 0
-                    const bounds = constraintsRef.current?.getBoundingClientRect()
                     size = {
                         width: window.innerWidth - inset * 2,
-                        height: bounds ? bounds.height - inset * 2 : window.innerHeight - inset * 2
+                        height: window.innerHeight - inset * 2
                     }
                     position = { x: inset, y: inset }
                 } else if (settings.topCenter && typeof window !== 'undefined') {
@@ -256,8 +253,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
                 }
             }
 
-            const maxZIndex = Math.max(...prev.map(w => w.zIndex), 0)
-
             const newWindow: AppWindow = {
                 ...item,
                 title: item.title || settings.title || getTitleFromPath(item.path),
@@ -265,15 +260,15 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
                 position,
                 previousSize: size,
                 previousPosition: position,
-                zIndex: maxZIndex + 1,
+                zIndex: prev.length + 1,
                 minimized: false,
                 sizeConstraints: item.sizeConstraints || { min: MIN_SIZE, max: { width: 2000, height: 2000 } },
                 fixedSize: item.fixedSize || false,
                 minimal: item.minimal || false,
-                fromOrigin: item.fromOrigin || (lastClickedElementRect.current ? {
+                fromOrigin: lastClickedElementRect.current ? {
                     x: lastClickedElementRect.current.x - size.width / 2,
                     y: lastClickedElementRect.current.y - size.height / 2
-                } : undefined)
+                } : undefined
             }
 
             setFocusedWindow(newWindow)
@@ -332,7 +327,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         setWindows((prev) => prev.map(w => w.key === key ? { ...w, ref } : w))
     }, [])
 
-    const openSearch = useCallback(() => {
+    const openSearch = useCallback((_filter?: string) => {
         const size = isMobile
             ? { width: typeof window !== 'undefined' ? Math.min(window.innerWidth - 32, 500) : 400, height: 320 }
             : { width: 600, height: 400 }
@@ -410,28 +405,24 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     useEffect(() => {
         if (typeof window === 'undefined') return
 
-        const handlePopState = (e: PopStateEvent) => {
+        const handlePopState = () => {
             const path = normalizePath(window.location.pathname)
 
+            // Check if we already have a window for this path
             let windowToFocus: AppWindow | null = null
 
             setWindows((currentWindows) => {
-                // Try to find by state key first if available, then fallback to path
-                const stateKey = e.state?.windowKey
-                const existingWindow = stateKey
-                    ? currentWindows.find(w => w.key === stateKey)
-                    : currentWindows.find(w => w.path === path)
+                const existingWindow = currentWindows.find(w => w.path === path)
 
                 if (existingWindow) {
-                    // If the path changed within the same window (e.g. going back within a window's history)
-                    const updatedExistingWindow = { ...existingWindow, path }
-                    windowToFocus = updatedExistingWindow
+                    // If window exists, bring it to front
+                    windowToFocus = existingWindow
 
                     // Calculate new z-index: bring to front (highest + 1), decrement others that were above it
                     const maxZIndex = Math.max(...currentWindows.map(w => w.zIndex), 0)
                     return currentWindows.map((el) => {
                         if (el.key === existingWindow.key) {
-                            return { ...updatedExistingWindow, zIndex: maxZIndex + 1, minimized: false }
+                            return { ...el, zIndex: maxZIndex + 1, minimized: false }
                         }
                         return {
                             ...el,
@@ -439,19 +430,19 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
                         }
                     })
                 } else {
-                    // If no window exists for this path/key, create one
+                    // If no window exists for this path, create one
                     const size = { width: 1000, height: 800 }
                     const position = getPositionDefaults(size, currentWindows)
 
                     const newWindow: AppWindow = {
-                        key: stateKey || (path === '/' || path === '/posts' ? 'posts-newspaper' : `window-${path}`),
+                        key: path === '/' || path === '/posts' ? 'posts-newspaper' : `window-${path}`,
                         path: path === '/' ? '/posts' : path,
                         title: getTitleFromPath(path === '/' ? '/posts' : path),
                         size,
                         position,
                         previousSize: size,
                         previousPosition: position,
-                        zIndex: Math.max(...currentWindows.map(w => w.zIndex), 0) + 1,
+                        zIndex: currentWindows.length + 1,
                         minimized: false,
                         sizeConstraints: { min: { width: 350, height: 250 }, max: { width: 2000, height: 2000 } },
                         fixedSize: false,
@@ -484,25 +475,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
             setCompact(window.innerWidth < 1024)
         }
 
-        const handleInteraction = (e: MouseEvent | TouchEvent) => {
+        const handleMouseDown = (e: MouseEvent) => {
             const target = e.target as HTMLElement
-            if (target && target.getBoundingClientRect) {
-                const rect = target.getBoundingClientRect()
-                // Update position using client coordinates from the event if possible for more accuracy,
-                // fallback to the center of the clicked element.
-                let x = rect.left + rect.width / 2
-                let y = rect.top + rect.height / 2
-
-                if (e.type === 'mousedown') {
-                    x = (e as MouseEvent).clientX
-                    y = (e as MouseEvent).clientY
-                } else if (e.type === 'touchstart' && (e as TouchEvent).touches && (e as TouchEvent).touches.length > 0) {
-                    x = (e as TouchEvent).touches[0].clientX
-                    y = (e as TouchEvent).touches[0].clientY
-                }
-
-                lastClickedElementRect.current = { x, y }
-            }
+            const rect = target.getBoundingClientRect()
+            lastClickedElementRect.current = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
         }
 
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -537,60 +513,31 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
         handleResize()
         window.addEventListener('resize', handleResize)
-        window.addEventListener('mousedown', handleInteraction, true)
-        window.addEventListener('touchstart', handleInteraction, true)
+        window.addEventListener('mousedown', handleMouseDown, true)
         window.addEventListener('keydown', handleKeyDown)
 
         return () => {
             window.removeEventListener('resize', handleResize)
-            window.removeEventListener('mousedown', handleInteraction, true)
-            window.removeEventListener('touchstart', handleInteraction, true)
+            window.removeEventListener('mousedown', handleMouseDown, true)
             window.removeEventListener('keydown', handleKeyDown)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [openSearch])
 
     // URL Sync - Updates the browser address bar to match the focused window's path
-    // We use pushState for new windows and internal navigations to build native history,
-    // and replaceState for simple window focus switches to keep history clean.
-    const prevFocusedKey = useRef<string | null>(null)
-    const prevWindowsCount = useRef<number>(0)
-
+    // We use replaceState instead of pushState to avoid polluting history with every focus change,
+    // and to prevent Next.js from interpreting this as a full navigation which might unmount components.
     useEffect(() => {
         if (typeof window === 'undefined') return
 
         const currentPath = normalizePath(window.location.pathname)
         const targetPath = normalizePath(focusedWindow?.path || '/')
 
+        // Only sync if the path actually changed and it's an internal path
         if (currentPath !== targetPath && targetPath.startsWith('/')) {
-            const isNewWindow = windows.length > prevWindowsCount.current
-            const isSameWindowNavigating = prevFocusedKey.current === focusedWindow?.key
-
-            // Respect trailingSlash: true from next.config.ts for the actual URL
-            let browserUrl = targetPath
-            if (browserUrl !== '/' && !browserUrl.endsWith('/')) {
-                browserUrl += '/'
-            }
-
-            const stateObj = { windowKey: focusedWindow?.key }
-
-            if (isNewWindow || isSameWindowNavigating) {
-                window.history.pushState(stateObj, '', browserUrl)
-            } else {
-                window.history.replaceState(stateObj, '', browserUrl)
-            }
-        } else if (focusedWindow?.key && (!window.history.state || window.history.state.windowKey !== focusedWindow.key)) {
-            // Even if path is same, make sure the current history state has the windowKey
-            let browserUrl = currentPath
-            if (browserUrl !== '/' && !browserUrl.endsWith('/')) {
-                browserUrl += '/'
-            }
-            window.history.replaceState({ windowKey: focusedWindow.key }, '', browserUrl)
+            window.history.replaceState(null, '', targetPath)
         }
-
-        prevFocusedKey.current = focusedWindow?.key || null
-        prevWindowsCount.current = windows.length
-    }, [focusedWindow, windows.length, normalizePath])
+    }, [focusedWindow, normalizePath])
 
     const value = React.useMemo(() => ({
         windows,

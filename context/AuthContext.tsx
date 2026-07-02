@@ -4,7 +4,20 @@ import React, { createContext, useContext, useEffect, useState, useCallback, Rea
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import logger from '../utils/logger';
-import { Profile } from '../types/database';
+
+interface Profile {
+    username: string;
+    avatar_url: string;
+    cover_url?: string;
+    role: string;
+    bio?: string;
+    website?: string;
+    github?: string;
+    linkedin?: string;
+    twitter?: string;
+    pronouns?: string;
+    location?: string;
+}
 
 interface AuthContextType {
     user: User | null;
@@ -89,8 +102,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
                     if (!insertError) {
                         // Retry fetching now that it's created
-                        fetchProfile(userId, 1);
-                        return;
+                        return fetchProfile(userId, 1);
                     } else {
                         logger.error('[Auth] Profile auto-creation failed:', insertError);
                     }
@@ -183,7 +195,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return () => subscription.unsubscribe();
     }, [fetchProfile]);
 
-    const updateProfile = useCallback(async (updates: Partial<Profile>) => {
+    const updateProfile = React.useCallback(async (updates: Partial<Profile>) => {
         if (!user) return false;
 
         const sanitizedUpdates = sanitizeProfileUpdates(updates);
@@ -198,7 +210,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (!Object.values(safeUpdates).some((value) => value !== undefined)) return false;
 
         if ('username' in safeUpdates) {
-            const nextUsername = trimValue(safeUpdates.username as string);
+            const nextUsername = trimValue(safeUpdates.username);
 
             if (!nextUsername) {
                 logger.warn('[Auth] Refusing to save blank username');
@@ -237,7 +249,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return true;
     }, [user, fetchProfile, hasExtendedProfileFields]);
 
-    const signInWithEmail = useCallback(async (email: string) => {
+    const signInWithEmail = React.useCallback(async (email: string) => {
         try {
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             const trimmedEmail = email?.trim();
@@ -251,8 +263,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 options: {
                     data: {
                         username: trimmedEmail.split('@')[0],
-                    },
-                    emailRedirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
+                    }
                 },
             });
 
@@ -262,14 +273,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
 
             return { error: null };
-        } catch (e) {
-            const err = e as Error;
-            logger.error('[Auth] signInWithOtp exception:', err);
-            return { error: { message: err.message || 'Unknown error' } };
+        } catch (e: unknown) {
+            logger.error('[Auth] signInWithOtp exception:', e);
+            return { error: { message: (e as Error)?.message || 'Unknown error' } };
         }
     }, []);
 
-    const signOut = useCallback(async () => {
+    const signOut = React.useCallback(async () => {
         await supabase.auth.signOut();
     }, []);
 

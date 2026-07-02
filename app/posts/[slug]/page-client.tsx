@@ -7,7 +7,7 @@ export default function PostPageClient({ initialPost }: { initialPost?: any }) {
     // to ensure the Blog view opens immediately with pre-fetched data.
     console.log('initialPost', initialPost);
     return (
-        <main className="h-[100dvh] w-screen overflow-hidden bg-light dark:bg-dark">
+        <main className="h-screen w-screen overflow-hidden bg-light dark:bg-dark">
             <Wrapper />
         </main>
     );

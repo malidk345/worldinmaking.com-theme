@@ -71,7 +71,7 @@ export default function ContactContent() {
 
     return (
         <div className="h-full flex flex-col lowercase font-sans">
-            <div className="p-6 border-b border-primary/10 bg-accent/40 supports-[backdrop-filter]:backdrop-blur-md">
+            <div className="p-6 border-b border-primary/10 bg-accent/40 backdrop-blur-md">
                 <div className="flex items-center gap-4 mb-3">
                     <div className="size-12 rounded-lg bg-primary border border-border shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex items-center justify-center text-primary">
                         <Mail className="size-6 opacity-80" />

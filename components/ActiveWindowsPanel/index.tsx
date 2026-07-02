@@ -55,9 +55,9 @@ export default function ActiveWindowsPanel() {
             onClose={closeActiveWindowsPanel}
             title="active tasks"
             width="w-[340px] max-w-[calc(100vw-1rem)]"
-            panelClassName="h-[calc(100dvh-44px-0.75rem)] max-h-[calc(100dvh-44px-0.75rem)] sm:h-[calc(100dvh-2rem-44px)] sm:max-h-[calc(100dvh-2rem-44px)] !border-primary/20"
+            panelClassName="h-[calc(100vh-44px-0.75rem)] max-h-[calc(100vh-44px-0.75rem)] sm:h-[calc(100vh-2rem-44px)] sm:max-h-[calc(100vh-2rem-44px)] !border-primary/30 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.2)] backdrop-blur-xl bg-white/90 dark:bg-zinc-900/90"
         >
-            <div className="h-full flex flex-col font-sans tracking-tight">
+            <div className="h-full flex flex-col font-mono">
                 <ScrollArea className="px-2 py-3 h-full">
                     <div className="flex flex-col gap-1.5">
                         <AnimatePresence>
@@ -65,28 +65,28 @@ export default function ActiveWindowsPanel() {
                                 <motion.div
                                     key={w.key}
                                     layout
-                                    initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                                    initial={{ opacity: 0, scale: 0.98, y: 5 }}
                                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                                    exit={{ opacity: 0, scale: 0.9, y: -10 }}
-                                    transition={{ type: "spring", stiffness: 500, damping: 25, mass: 1 }}
+                                    exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                                    transition={{ duration: 0.2 }}
                                     className="relative group"
                                 >
                                     <button
                                         onClick={() => handleWindowClick(w)}
-                                        className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-[24px] text-[13px] transition-all duration-300 border ${focusedWindow?.key === w.key
-                                            ? 'bg-white/90 dark:bg-white/10 text-black dark:text-white border-black/10 dark:border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.12)] font-semibold supports-[backdrop-filter]:backdrop-blur-xl'
-                                            : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-primary/80 border-transparent hover:border-black/10 dark:hover:border-white/10'
+                                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-md text-[11px] transition-all duration-200 border ${focusedWindow?.key === w.key
+                                            ? 'bg-zinc-900 text-white border-black shadow-md font-bold'
+                                            : 'bg-transparent text-primary hover:bg-zinc-800/10 hover:border-zinc-800/30 border-zinc-200 dark:border-zinc-800'
                                             }`}
                                     >
-                                        <div className={`size-5 rounded-full flex items-center justify-center shrink-0 ${focusedWindow?.key === w.key ? 'bg-white/10' : 'bg-primary/10'
+                                        <div className={`size-5 rounded-[3px] flex items-center justify-center shrink-0 ${focusedWindow?.key === w.key ? 'bg-white/10' : 'bg-primary/10'
                                             } ${w.minimized ? 'opacity-40 grayscale' : ''}`}>
-                                            {w.icon || <LayoutGrid className={`size-3.5 ${focusedWindow?.key === w.key ? 'text-black dark:text-white' : 'text-primary'}`} />}
+                                            {w.icon || <LayoutGrid className={`size-3 ${focusedWindow?.key === w.key ? 'text-white/90' : 'text-primary'}`} />}
                                         </div>
-                                        <span className={`flex-1 text-left truncate tracking-tight ${w.minimized ? 'italic opacity-60' : ''}`}>
+                                        <span className={`flex-1 text-left truncate tracking-wide lowercase ${w.minimized ? 'italic opacity-60' : ''}`}>
                                             {w.title || 'untitled'}
                                         </span>
                                         {w.minimized && (
-                                            <span className={`text-[8px] uppercase tracking-widest opacity-60 font-black px-1 py-0.5 rounded-full mr-6 ${focusedWindow?.key === w.key ? 'bg-white/10 text-white' : 'bg-primary/10 text-primary'
+                                            <span className={`text-[8px] uppercase tracking-widest opacity-60 font-black px-1 py-0.5 rounded mr-6 ${focusedWindow?.key === w.key ? 'bg-white/10 text-white' : 'bg-primary/10 text-primary'
                                                 }`}>min</span>
                                         )}
                                     </button>
@@ -95,7 +95,7 @@ export default function ActiveWindowsPanel() {
                                             e.stopPropagation()
                                             closeWindow(w)
                                         }}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 size-6 flex items-center justify-center bg-red-500/10 text-red-600 hover:bg-red-500 hover:text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 z-10"
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 size-6 flex items-center justify-center bg-red-500/10 text-red-600 hover:bg-red-500 hover:text-white rounded-md opacity-0 group-hover:opacity-100 transition-all duration-200 z-10"
                                     >
                                         <X className="size-3.5" />
                                     </button>
@@ -118,7 +118,7 @@ export default function ActiveWindowsPanel() {
                 </ScrollArea>
 
                 {totalWindows > 0 && (
-                    <div className="p-3 mt-auto border-t border-primary/20 bg-primary/5 supports-[backdrop-filter]:backdrop-blur-md">
+                    <div className="p-3 mt-auto border-t border-primary/20 bg-primary/5 backdrop-blur-md">
                         <div className="flex items-center justify-between mb-2">
                             <h3 className="text-[10px] font-black opacity-50 tracking-widest uppercase m-0 leading-none">session</h3>
                             <span className="text-[10px] font-bold text-primary/70 tracking-widest">
@@ -129,7 +129,7 @@ export default function ActiveWindowsPanel() {
                             variant="secondary"
                             size="sm"
                             width="full"
-                            className="justify-center font-bold tracking-widest uppercase text-[10px] gap-2 !bg-primary/10 hover:!bg-red-500 hover:!text-white hover:!border-red-600 border-transparent transition-colors duration-200 group !rounded-full"
+                            className="justify-center font-bold tracking-widest uppercase text-[10px] gap-2 !bg-primary/10 hover:!bg-red-500 hover:!text-white hover:!border-red-600 border-transparent transition-colors duration-200 group"
                             onClick={() => {
                                 closeAllWindows()
                                 closeActiveWindowsPanel()

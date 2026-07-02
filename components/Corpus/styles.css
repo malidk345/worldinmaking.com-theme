@@ -327,7 +327,9 @@
   }
 
   .corpus-profile-slot {
-    border-radius: 32px;
+    background: color-mix(in hsl, canvas, canvasText 2%);
+    border: 1px solid color-mix(in hsl, canvas, canvasText 10%);
+    border-radius: 6px;
     overflow: hidden;
     margin: 0;
     padding: 1rem;
@@ -344,7 +346,7 @@
     position: relative;
     overflow: hidden;
     min-height: 136px;
-    border-radius: 24px;
+    border-radius: 6px;
     border: 1px solid color-mix(in hsl, canvas, canvasText 20%);
     background: color-mix(in hsl, canvas, canvasText 3%);
   }
@@ -399,7 +401,7 @@
     translate: 0 0;
     width: 64px;
     height: 64px;
-    border-radius: 50%;
+    border-radius: 12px;
     border: 2px solid light-dark(white, hsl(0 0% 0% / 0.4));
     background: color-mix(in hsl, canvas, canvasText 4%);
     overflow: hidden;
@@ -424,13 +426,15 @@
 
   .corpus-profile-tableCard,
   .corpus-profile-statusCard {
-    border-radius: 24px;
+    background: color-mix(in hsl, canvas, canvasText 2%);
+    border: 1px solid color-mix(in hsl, canvas, canvasText 18%);
+    border-radius: 6px;
     overflow: hidden;
     position: relative;
   }
 
   .corpus-profile-cardShadow {
-    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
+    box-shadow: none;
   }
 
   .corpus-profile-cardHeading {
@@ -452,7 +456,7 @@
     margin-left: auto;
     background: #0000;
     border: 0;
-    border-radius: 50%;
+    border-radius: 6px;
     display: grid;
     place-items: center;
     cursor: pointer;
@@ -531,8 +535,8 @@
   }
 
   .corpus-profile-statusCard .corpus-status-dl {
-    background: color-mix(in hsl, canvas, transparent 50%);
-    border-radius: 18px;
+    background: canvas;
+    border-radius: 6px;
     margin: 0.75rem;
     border: 1px solid color-mix(in hsl, canvas, canvasText 12%);
     min-height: var(--corpus-content-size);
@@ -550,8 +554,8 @@
   }
 
   .corpus-profile-meta .corpus-status-dl {
-    background: color-mix(in hsl, canvas, transparent 50%);
-    border-radius: 18px;
+    background: canvas;
+    border-radius: 6px;
     border: 1px solid color-mix(in hsl, canvas, canvasText 12%);
     min-height: unset;
   }
@@ -580,7 +584,7 @@
       height: 56px;
       left: 0.75rem;
       bottom: 0.75rem;
-      border-radius: 50%;
+      border-radius: 10px;
     }
 
     .corpus-profile-layerStack {
@@ -634,7 +638,7 @@
   .corpus-stats-card {
     background: color-mix(in hsl, canvas, canvasText 2%);
     border: 1px solid color-mix(in hsl, canvas, canvasText 10%);
-    border-radius: 24px;
+    border-radius: 8px;
     overflow: hidden;
     position: relative;
     box-shadow:
@@ -644,7 +648,7 @@
 
   .corpus-nodes-card .corpus-table-heading,
   .corpus-stats-card .corpus-table-heading {
-    border-radius: 24px 24px 0 0;
+    border-radius: 4px 4px 0 0;
   }
 
 
@@ -675,7 +679,7 @@
     translate: 0 -50%;
     width: 24px;
     height: 24px;
-    border-radius: 50%;
+    border-radius: 6px;
   }
 
   .corpus-table-heading > button:is(:focus-visible, :hover) {
@@ -791,7 +795,7 @@
     align-items: center;
     background: color-mix(in hsl, var(--corpus-accent), #0000 90%);
     border: 1px solid var(--corpus-accent);
-    border-radius: 50px;
+    border-radius: 4px;
     color: var(--corpus-accent);
     display: flex;
     font-size: 11px;
@@ -856,7 +860,7 @@
     width: var(--corpus-dialog-width);
     height: var(--corpus-dialog-height);
     background: var(--corpus-shadow);
-    border-radius: 24px;
+    border-radius: 6px;
   }
 
   .corpus-dialog {
@@ -874,7 +878,7 @@
     top: -2px;
     right: 0;
     z-index: 99999;
-    border-radius: 24px;
+    border-radius: 6px;
     background: canvasText;
     color: canvas;
     padding: 0.1rem;
@@ -913,7 +917,7 @@
     align-items: center;
     padding: 0.4rem;
     border: 0;
-    border-radius: 50px;
+    border-radius: calc(6px - 0.1rem);
     cursor: pointer;
     background: #0000;
     font-weight: 300;
@@ -998,7 +1002,7 @@
   .corpus-edit-avatar-preview {
     width: 56px;
     height: 56px;
-    border-radius: 50%;
+    border-radius: 10px;
     border: 1px solid color-mix(in hsl, canvas, canvasText 12%);
     overflow: hidden;
     display: flex;
@@ -1067,7 +1071,7 @@
     font-size: 0.75rem;
     color: color-mix(in hsl, canvasText, canvas 40%);
     padding: 0.35rem 0.6rem;
-    border-radius: 50px;
+    border-radius: 5px;
   }
 
   .corpus-edit-cancel:hover {
@@ -1078,7 +1082,7 @@
   .corpus-edit-save {
     background: var(--corpus-accent);
     border: 0;
-    border-radius: 50px;
+    border-radius: 5px;
     color: color-mix(in hsl, canvas, canvasText 95%);
     cursor: pointer;
     font-family: monospace;
@@ -1141,7 +1145,7 @@
   .corpus-doc-tab {
     background: transparent;
     border: 0;
-    border-radius: 16px;
+    border-radius: 5px;
     color: color-mix(in hsl, canvasText, canvas 55%);
     cursor: pointer;
     font-family: monospace;
@@ -1186,7 +1190,9 @@
     display: grid;
     grid-template-rows: 1fr auto;
     padding: 0.375rem;
-    border-radius: 24px;
+    border: 1px solid color-mix(in hsl, canvas, canvasText 10%);
+    border-radius: 8px;
+    background: color-mix(in hsl, canvas, canvasText 2%);
     cursor: pointer;
     transition: border-color 0.2s, background 0.2s;
   }
@@ -1200,7 +1206,7 @@
     position: relative;
     width: 100%;
     min-height: 0;
-    border-radius: 18px;
+    border-radius: 5px;
     overflow: hidden;
     background: color-mix(in hsl, canvas, canvasText 5%);
   }
@@ -1232,7 +1238,7 @@
     z-index: 2;
     background: canvas;
     border: 1px solid color-mix(in hsl, canvas, canvasText 10%);
-    border-radius: 50px;
+    border-radius: 4px;
     padding: 0.15rem 0.35rem;
     display: flex;
     align-items: center;

@@ -228,7 +228,7 @@ const RichTextEditor = ({
         },
         editorProps: {
             attributes: {
-                class: `prose prose-sm max-w-none focus:outline-none px-0 py-4 font-sans ${focusMode ? 'min-h-[80vh] text-lg' : 'min-h-[300px] text-base'} text-black leading-relaxed prose-headings:text-black prose-headings:font-normal prose-headings:tracking-tight prose-p:text-black prose-p:leading-relaxed prose-strong:text-black prose-strong:font-semibold prose-a:text-black prose-a:underline prose-a:underline-offset-4 prose-a:decoration-black/20 hover:prose-a:decoration-black prose-code:text-black prose-code:bg-black/5 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-[16px] prose-code:before:content-none prose-code:after:content-none prose-pre:bg-black/[0.03] prose-pre:text-black prose-pre:border prose-pre:border-black/10 prose-blockquote:text-black/70 prose-blockquote:border-black/10 prose-blockquote:bg-black/[0.02] prose-blockquote:py-2 prose-blockquote:px-6 prose-blockquote:rounded-lg prose-blockquote:font-normal prose-blockquote:not-italic prose-li:text-black prose-td:border-black/10 prose-th:border-black/10 prose-th:text-black prose-th:font-normal prose-hr:border-black/10 transition-all`,
+                class: `prose prose-sm max-w-none focus:outline-none px-0 py-4 font-sans ${focusMode ? 'min-h-[80vh] text-lg' : 'min-h-[300px] text-base'} text-black leading-relaxed prose-headings:text-black prose-headings:font-normal prose-headings:tracking-tight prose-p:text-black prose-p:leading-relaxed prose-strong:text-black prose-strong:font-semibold prose-a:text-black prose-a:underline prose-a:underline-offset-4 prose-a:decoration-black/20 hover:prose-a:decoration-black prose-code:text-black prose-code:bg-black/5 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-pre:bg-black/[0.03] prose-pre:text-black prose-pre:border prose-pre:border-black/10 prose-blockquote:text-black/70 prose-blockquote:border-black/10 prose-blockquote:bg-black/[0.02] prose-blockquote:py-2 prose-blockquote:px-6 prose-blockquote:rounded-lg prose-blockquote:font-normal prose-blockquote:not-italic prose-li:text-black prose-td:border-black/10 prose-th:border-black/10 prose-th:text-black prose-th:font-normal prose-hr:border-black/10 transition-all`,
             },
         },
     })
@@ -397,7 +397,7 @@ const RichTextEditor = ({
                                     const url = window.prompt('URL')
                                     if (url) editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
                                 }}
-                                className={`text-left px-2 py-2 text-xs font-bold rounded-[24px] flex items-center gap-2 hover:bg-black/5 ${editor.isActive('link') ? 'bg-black/5' : ''}`}
+                                className={`text-left px-2 py-2 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 ${editor.isActive('link') ? 'bg-black/5' : ''}`}
                             >
                                 <LinkIcon className="size-4" /> add link
                             </button>
@@ -406,20 +406,20 @@ const RichTextEditor = ({
                                     const url = window.prompt('Image URL')
                                     if (url) editor.chain().focus().setImage({ src: url }).run()
                                 }}
-                                className="text-left px-2 py-2 text-xs font-bold rounded-[24px] flex items-center gap-2 hover:bg-black/5"
+                                className="text-left px-2 py-2 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5"
                             >
                                 <ImageIcon className="size-4" /> add image
                             </button>
                             <div className="h-px bg-primary/10 my-0.5" />
                             <button
                                 onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-                                className={`text-left px-2 py-2 text-xs font-bold rounded-[24px] flex items-center gap-2 hover:bg-black/5 ${editor.isActive('codeBlock') ? 'bg-black/5' : ''}`}
+                                className={`text-left px-2 py-2 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 ${editor.isActive('codeBlock') ? 'bg-black/5' : ''}`}
                             >
                                 <Terminal className="size-4" /> code block
                             </button>
                             <button
                                 onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
-                                className="text-left px-2 py-2 text-xs font-bold rounded-[24px] flex items-center gap-2 hover:bg-black/5"
+                                className="text-left px-2 py-2 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5"
                             >
                                 <TableIcon className="size-4" /> insert table
                             </button>
@@ -490,7 +490,7 @@ const RichTextEditor = ({
                         <div className="flex items-center ml-1 border-l border-primary/10 pl-1.5">
                             <button
                                 onClick={onToggleFocusMode}
-                                className={`p-1.5 rounded-[16px] transition-colors ${focusMode ? 'bg-black text-white' : 'text-black/40 hover:bg-black/10 hover:text-black'}`}
+                                className={`p-1.5 rounded transition-colors ${focusMode ? 'bg-black text-white' : 'text-black/40 hover:bg-black/10 hover:text-black'}`}
                                 title={focusMode ? 'Exit Focus' : 'Focus Mode'}
                             >
                                 {focusMode ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
@@ -523,7 +523,7 @@ const RichTextEditor = ({
     }, [handleKeyDown])
 
     return (
-        <div className={`${hideBorder ? 'bg-transparent overflow-hidden flex flex-col' : `border border-[#1E2F46]/15 rounded-[24px] bg-white overflow-hidden flex flex-col`} ${focusMode ? 'h-[100dvh] fixed inset-0 z-[100]' : (expandHeight ? 'h-auto' : 'h-full')}`}>
+        <div className={`${hideBorder ? 'bg-transparent overflow-hidden flex flex-col' : `border border-[#1E2F46]/15 rounded-sm bg-white overflow-hidden flex flex-col`} ${focusMode ? 'h-screen fixed inset-0 z-[100]' : (expandHeight ? 'h-auto' : 'h-full')}`}>
             {/* Toolkit - injected into Window Footer or Header via portal */}
             <Toolkit
                 windowKey={windowKey || targetKey}

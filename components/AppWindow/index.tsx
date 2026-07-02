@@ -43,10 +43,10 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
     const motionY = useMotionValue(0);
     const xVelocity = useVelocity(motionX);
     const yVelocity = useVelocity(motionY);
-    const smoothXVelocity = useSpring(xVelocity, { damping: 40, stiffness: 300 });
-    const smoothYVelocity = useSpring(yVelocity, { damping: 40, stiffness: 300 });
-    const tiltX = useTransform(smoothYVelocity, [-1000, 1000], [8, -8]); // Pitch
-    const tiltY = useTransform(smoothXVelocity, [-1000, 1000], [-8, 8]); // Yaw
+    const smoothXVelocity = useSpring(xVelocity, { damping: 50, stiffness: 400 });
+    const smoothYVelocity = useSpring(yVelocity, { damping: 50, stiffness: 400 });
+    const tiltX = useTransform(smoothYVelocity, [-1000, 1000], [5, -5]); // Pitch
+    const tiltY = useTransform(smoothXVelocity, [-1000, 1000], [-5, 5]); // Yaw
 
     const {
         minimizeWindow,
@@ -66,17 +66,16 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
     const sizeConstraints = useMemo(() => {
         const base = item.sizeConstraints || { min: { width: 400, height: 300 }, max: { width: 2000, height: 2000 } }
         if (typeof window !== 'undefined' && window.innerWidth <= 768) {
-            const bounds = constraintsRef.current?.getBoundingClientRect()
             return {
                 min: {
                     width: Math.min(base.min.width, window.innerWidth * 0.85),
-                    height: Math.min(base.min.height, ((bounds?.height || document.documentElement?.clientHeight || window.innerHeight) - 80) * 0.7)
+                    height: Math.min(base.min.height, (window.innerHeight - 80) * 0.7)
                 },
                 max: base.max
             }
         }
         return base
-    }, [item.sizeConstraints, constraintsRef])
+    }, [item.sizeConstraints])
 
     const size = item.size
     const position = item.position
@@ -395,8 +394,8 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             data-app="AppWindow"
                             data-scheme="tertiary"
                             className={`group @container absolute !select-auto flex flex-col glass-card ${isFocused ? 'shadow-[0_20px_60px_-15px_rgba(0,0,0,0.2)] border-black/5 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/10' : 'shadow-lg border-primary'
-                                } ${dragging ? '[&_*]:select-none' : ''} ${item.minimal ? '!shadow-none' : (isMaximized ? 'rounded-none border-b border-primary' : 'border rounded-2xl')} ${chrome ? 'overflow-hidden' : ''}`}
-                            style={{ pointerEvents: 'auto', rotateX: tiltX, rotateY: tiltY, transformPerspective: 1200, willChange: 'auto' }}
+                                } ${dragging ? '[&_*]:select-none' : ''} ${item.minimal ? '!shadow-none' : (isMaximized ? 'rounded-none border-b border-primary' : 'border rounded-[22px]')} ${chrome ? 'overflow-hidden' : ''}`}
+                            style={{ zIndex: item.zIndex, rotateX: tiltX, rotateY: tiltY, transformPerspective: 1200, willChange: 'auto' }}
                             initial={{
                                 scale: 0.08,
                                 x: item.fromOrigin?.x || windowPosition.x,
@@ -466,7 +465,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                     }
                                 }
                             }
-                            onPointerDownCapture={handleMouseDown}
+                            onMouseDown={handleMouseDown}
                             drag={!item.fixedSize}
                             dragControls={controls}
                             dragListener={false}
@@ -654,20 +653,20 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             )}
 
                             {/* Spotlight effect layered over window */}
-                            <div className="pointer-events-none absolute inset-0 z-50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                            <div className="pointer-events-none absolute inset-0 z-50 rounded-[22px] opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                                  style={{
                                     background: `radial-gradient(800px circle at var(--mouse-x) var(--mouse-y), rgba(255,255,255,0.06), transparent 40%)`, backgroundAttachment: "fixed"
                                  }}
                             />
 
                             <div className="w-full flex-1 flex flex-col bg-transparent min-h-0 relative px-1.5 has-[+div:empty]:pb-1.5">
-                                <div className="w-full h-full bg-white/80 dark:bg-accent-dark/80 backdrop-blur-3xl-safe flex-1 overflow-hidden relative shadow-[0_0_0_1px_rgba(0,0,0,0.05)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.05)] border border-black/10 dark:border-white/10 rounded-2xl">
+                                <div className="w-full h-full bg-white flex-1 overflow-hidden relative shadow-[0_0_0_1px_rgba(0,0,0,0.05)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.05)] border border-black/10 dark:border-white/10 rounded-[18px]">
                                     {(!animating || rendered) && (
                                         item.key === 'home' ? <HomeControl /> : <WindowRouter item={item} />
                                     )}
                                 </div>
                             </div>
-                            <div id={`window-footer-${item.key}`} className="w-full bg-transparent flex-shrink-0 pb-0.5" />
+                            <div id={`window-footer-${item.key}`} className="w-full bg-transparent empty:hidden flex-shrink-0 pb-0.5" />
 
                             {!item.fixedSize && !item.minimal && (
                                 <>
