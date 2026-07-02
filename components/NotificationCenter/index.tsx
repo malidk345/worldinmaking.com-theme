@@ -103,51 +103,52 @@ export default function NotificationCenter() {
                         />
                         
                         <motion.div
-                            initial={{ opacity: 0, y: -4 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -4 }}
-                            transition={{ duration: 0.15, ease: 'easeOut' }}
-                            className="absolute right-0 top-full mt-2 w-72 max-h-[420px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-[0_12px_44px_-12px_rgba(0,0,0,0.25)] z-[9999] flex flex-col overflow-hidden rounded-md lowercase font-mono"
+                            initial={{ opacity: 0, scale: 0.95, y: -10, filter: 'blur(10px)' }}
+                            animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
+                            exit={{ opacity: 0, scale: 0.95, y: -10, filter: 'blur(10px)' }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                            style={{ willChange: 'auto' }}
+                            className="absolute right-0 top-full mt-2 w-[320px] max-h-[420px] bg-white/80 dark:bg-black/80 supports-[backdrop-filter]:backdrop-blur-[60px] border border-black/5 dark:border-white/5 shadow-[0_24px_48px_-12px_rgba(0,0,0,0.2),0_4px_12px_rgba(0,0,0,0.1)] z-[9999] flex flex-col overflow-hidden rounded-[32px] lowercase font-mono"
                         >
-                            <div className="px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-zinc-50 dark:bg-zinc-800/50">
+                            <div className="px-4 py-3 border-b border-black/5 dark:border-white/5 flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <div className="size-1.5 rounded-full bg-blue-primary animate-pulse" />
-                                    <h3 className="font-bold text-[10px] tracking-widest opacity-50 uppercase">activity</h3>
+                                    <h3 className="font-bold text-[11px] tracking-tight opacity-50 uppercase">activity</h3>
                                 </div>
                                 <button 
                                     onClick={() => setIsOpen(false)}
-                                    className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded transition-colors text-primary"
+                                    className="p-1.5 hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors text-primary"
                                 >
                                     <X className="size-3 opacity-40" />
                                 </button>
                             </div>
 
                             <ScrollArea className="flex-1 min-h-0">
-                                <div className="p-1.5 space-y-0.5">
+                                <div className="p-2 space-y-1">
                                     {notifications.length === 0 ? (
-                                        <div className="py-10 text-center">
-                                            <Bell className="size-6 mx-auto opacity-10 mb-2" />
-                                            <p className="text-[11px] opacity-40">no recent activities</p>
+                                        <div className="py-12 text-center">
+                                            <Bell className="size-8 mx-auto opacity-10 mb-3" />
+                                            <p className="text-[12px] opacity-40">no recent activities</p>
                                         </div>
                                     ) : (
                                         notifications.map((notif) => (
                                             <div 
                                                 key={notif.id}
-                                                className="p-2.5 rounded hover:bg-zinc-800/10 dark:hover:bg-white/5 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 transition-all cursor-pointer group flex gap-3"
+                                                className="p-3 rounded-[24px] hover:bg-black/5 dark:hover:bg-white/10 border border-transparent hover:border-black/5 dark:hover:border-white/10 transition-all cursor-pointer group flex gap-3"
                                             >
-                                                <div className="size-7 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-blue-primary/10 transition-colors">
+                                                <div className="size-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-blue-primary/10 transition-colors">
                                                     {notif.type === 'post' ? (
-                                                        <Newspaper className="size-3.5 text-blue-primary opacity-60" />
+                                                        <Newspaper className="size-4 text-blue-primary opacity-60" />
                                                     ) : (
-                                                        <MessageSquare className="size-3.5 text-blue-primary opacity-60" />
+                                                        <MessageSquare className="size-4 text-blue-primary opacity-60" />
                                                     )}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center justify-between mb-0.5">
-                                                        <span className="text-[9px] font-bold tracking-wider opacity-30">{notif.title}</span>
-                                                        <span className="text-[9px] opacity-30">{dayjs(notif.timestamp).fromNow()}</span>
+                                                        <span className="text-[10px] font-bold tracking-tight opacity-40 uppercase">{notif.title}</span>
+                                                        <span className="text-[10px] opacity-40">{dayjs(notif.timestamp).fromNow()}</span>
                                                     </div>
-                                                    <p className="text-[12px] font-bold leading-snug line-clamp-2 text-primary group-hover:text-blue-primary transition-colors pr-1">
+                                                    <p className="text-[13px] font-bold leading-snug line-clamp-2 text-primary group-hover:text-blue-primary transition-colors pr-1 mt-0.5">
                                                         {notif.description}
                                                     </p>
                                                 </div>
@@ -157,8 +158,8 @@ export default function NotificationCenter() {
                                 </div>
                             </ScrollArea>
 
-                            <div className="px-3 py-2 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 flex items-center justify-center">
-                                <p className="text-[9px] font-bold opacity-30 tracking-widest lowercase">system online</p>
+                            <div className="px-4 py-3 border-t border-black/5 dark:border-white/5 flex items-center justify-center">
+                                <p className="text-[10px] font-bold opacity-30 tracking-tight lowercase">system online</p>
                             </div>
                         </motion.div>
                     </>
