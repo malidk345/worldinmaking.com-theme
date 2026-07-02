@@ -73,7 +73,7 @@ export default function ActiveWindowsPanel() {
                                 >
                                     <button
                                         onClick={() => handleWindowClick(w)}
-                                        className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-[24px] text-[13px] transition-all duration-300 border ${focusedWindow?.key === w.key
+                                        className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-[32px] text-[13px] transition-all duration-300 border ${focusedWindow?.key === w.key
                                             ? 'bg-white/90 dark:bg-white/10 text-black dark:text-white border-black/10 dark:border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.12)] font-semibold supports-[backdrop-filter]:backdrop-blur-xl'
                                             : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-primary/80 border-transparent hover:border-black/10 dark:hover:border-white/10'
                                             }`}
@@ -118,7 +118,7 @@ export default function ActiveWindowsPanel() {
                 </ScrollArea>
 
                 {totalWindows > 0 && (
-                    <div className="p-3 mt-auto border-t border-primary/20 bg-primary/5 supports-[backdrop-filter]:backdrop-blur-md">
+                    <div className="p-3 mt-auto border-t border-primary/20 bg-white/80 dark:bg-black/80 supports-[backdrop-filter]:backdrop-blur-[60px]">
                         <div className="flex items-center justify-between mb-2">
                             <h3 className="text-[10px] font-black opacity-50 tracking-widest uppercase m-0 leading-none">session</h3>
                             <span className="text-[10px] font-bold text-primary/70 tracking-widest">
