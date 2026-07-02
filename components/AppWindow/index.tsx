@@ -70,7 +70,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
             return {
                 min: {
                     width: Math.min(base.min.width, window.innerWidth * 0.85),
-                    height: Math.min(base.min.height, ((bounds?.height || window.innerHeight) - 80) * 0.7)
+                    height: Math.min(base.min.height, ((bounds?.height || document.documentElement?.clientHeight || window.innerHeight) - 80) * 0.7)
                 },
                 max: base.max
             }
@@ -466,7 +466,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                     }
                                 }
                             }
-                            onMouseDown={handleMouseDown}
+                            onPointerDownCapture={handleMouseDown}
                             drag={!item.fixedSize}
                             dragControls={controls}
                             dragListener={false}

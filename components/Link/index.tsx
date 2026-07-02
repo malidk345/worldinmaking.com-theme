@@ -41,13 +41,18 @@ export default function Link({
 
         // If it's an internal link
         if (to && to.startsWith('/')) {
+            const target = e.target as HTMLElement
+            const rect = target.getBoundingClientRect ? target.getBoundingClientRect() : null
+            const fromOrigin = rect ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : undefined
+
             // Case 1: Force a new window (fake OS window)
             if (state?.newWindow || newWindow) {
                 e.preventDefault()
                 addWindow({
-                    key: to,
+                    key: `${to}-${Date.now()}`,
                     path: to,
-                    title: to.split('/').pop() || 'window'
+                    title: to.split('/').pop() || 'window',
+                    fromOrigin
                 })
                 return
             }
@@ -58,9 +63,10 @@ export default function Link({
             if (appWindow && appWindow.key !== 'home') {
                 e.preventDefault()
                 addWindow({
-                    key: to,
+                    key: `${to}-${Date.now()}`,
                     path: to,
-                    title: to.split('/').pop() || 'window'
+                    title: to.split('/').pop() || 'window',
+                    fromOrigin
                 })
                 return
             }
