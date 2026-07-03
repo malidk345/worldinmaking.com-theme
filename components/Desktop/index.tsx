@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { useApp } from '../../context/App'
 import { AppIcon } from 'components/OSIcons/AppIcon'
 import DraggableDesktopIcon from './DraggableDesktopIcon'
+import SpatialIcon from './DesktopSpatialIcon'
 import { motion } from 'framer-motion'
 import PostsView from 'components/Posts'
 import TrendingWidget from './TrendingWidget'
@@ -15,7 +16,11 @@ export default function Desktop() {
     const apps = useMemo(() => [
         {
             label: 'home',
-            Icon: <AppIcon name="compass" />,
+            Icon: (
+                <SpatialIcon bgTint="from-blue-400 to-indigo-400">
+                    <AppIcon name="compass" />
+                </SpatialIcon>
+            ),
             onClick: () => addWindow({
                 key: 'home',
                 path: '/',
@@ -24,7 +29,11 @@ export default function Desktop() {
         },
         {
             label: 'posts',
-            Icon: <AppIcon name="forums" />,
+            Icon: (
+                <SpatialIcon bgTint="from-emerald-400 to-teal-400">
+                    <AppIcon name="forums" />
+                </SpatialIcon>
+            ),
             onClick: () => addWindow({
                 key: 'posts',
                 path: '/posts',
@@ -34,7 +43,11 @@ export default function Desktop() {
         },
         {
             label: 'login',
-            Icon: <AppIcon name="posthog" />,
+            Icon: (
+                <SpatialIcon bgTint="from-purple-400 to-pink-400">
+                    <AppIcon name="posthog" />
+                </SpatialIcon>
+            ),
             onClick: () => addWindow({
                 key: 'login',
                 path: '/login',
@@ -43,7 +56,11 @@ export default function Desktop() {
         },
         {
             label: 'contact',
-            Icon: <AppIcon name="contact" />,
+            Icon: (
+                <SpatialIcon bgTint="from-orange-400 to-amber-400">
+                    <AppIcon name="contact" />
+                </SpatialIcon>
+            ),
             onClick: () => addWindow({
                 key: 'contact',
                 path: '/contact',
@@ -137,12 +154,12 @@ export default function Desktop() {
             </div>
 
 
-            <nav className="fixed top-24 left-10 pointer-events-none z-10">
+            <nav className="fixed top-24 left-4 md:left-10 right-4 md:right-auto pointer-events-none z-10">
                 <motion.ul
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: rendered ? 1 : 0, y: rendered ? 0 : -20 }}
                     transition={{ duration: 0.5, delay: 0.2 }}
-                    className="list-none m-0 p-0 flex flex-row gap-8 items-start pointer-events-auto"
+                    className="list-none m-0 p-0 flex flex-row flex-wrap gap-4 md:gap-8 items-start pointer-events-auto w-full max-w-[calc(100vw-2rem)]"
                 >
                     {apps.map((app) => (
                         <DraggableDesktopIcon
