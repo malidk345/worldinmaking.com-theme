@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import { useApp } from '../../context/App'
+import { AppIcon } from 'components/OSIcons/AppIcon'
 import DraggableDesktopIcon from './DraggableDesktopIcon'
 import SpatialIcon from './DesktopSpatialIcon'
-import { IconHomeFilled, IconMessage, IconUser, IconLetter } from '@posthog/icons'
 import { motion } from 'framer-motion'
 import PostsView from 'components/Posts'
 import TrendingWidget from './TrendingWidget'
@@ -16,7 +16,11 @@ export default function Desktop() {
     const apps = useMemo(() => [
         {
             label: 'home',
-            Icon: <SpatialIcon icon={IconHomeFilled} color="text-blue-500 dark:text-blue-400" bgTint="from-blue-400 to-cyan-400" />,
+            Icon: (
+                <SpatialIcon bgTint="from-blue-400 to-indigo-400">
+                    <AppIcon name="compass" />
+                </SpatialIcon>
+            ),
             onClick: () => addWindow({
                 key: 'home',
                 path: '/',
@@ -25,7 +29,11 @@ export default function Desktop() {
         },
         {
             label: 'posts',
-            Icon: <SpatialIcon icon={IconMessage} color="text-emerald-500 dark:text-emerald-400" bgTint="from-emerald-400 to-teal-400" />,
+            Icon: (
+                <SpatialIcon bgTint="from-emerald-400 to-teal-400">
+                    <AppIcon name="forums" />
+                </SpatialIcon>
+            ),
             onClick: () => addWindow({
                 key: 'posts',
                 path: '/posts',
@@ -35,7 +43,11 @@ export default function Desktop() {
         },
         {
             label: 'login',
-            Icon: <SpatialIcon icon={IconUser} color="text-purple-500 dark:text-purple-400" bgTint="from-purple-400 to-fuchsia-400" />,
+            Icon: (
+                <SpatialIcon bgTint="from-purple-400 to-pink-400">
+                    <AppIcon name="posthog" />
+                </SpatialIcon>
+            ),
             onClick: () => addWindow({
                 key: 'login',
                 path: '/login',
@@ -44,7 +56,11 @@ export default function Desktop() {
         },
         {
             label: 'contact',
-            Icon: <SpatialIcon icon={IconLetter} color="text-orange-500 dark:text-orange-400" bgTint="from-orange-400 to-amber-400" />,
+            Icon: (
+                <SpatialIcon bgTint="from-orange-400 to-amber-400">
+                    <AppIcon name="contact" />
+                </SpatialIcon>
+            ),
             onClick: () => addWindow({
                 key: 'contact',
                 path: '/contact',
