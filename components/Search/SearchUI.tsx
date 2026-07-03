@@ -69,15 +69,15 @@ export const WindowSearchUI = ({ initialFilter }: { initialFilter?: string }) =>
     }
 
     return (
-        <div className="flex flex-col h-full bg-primary overflow-hidden">
+        <div className="flex flex-col h-full bg-transparent overflow-hidden">
             {/* Search Input */}
-            <div className="flex-shrink-0 p-2 border-b border-border bg-accent/30">
-                <div className="flex items-center gap-2 bg-primary border border-border rounded px-2 py-1.5">
-                    <IconSearch className="size-4 text-muted flex-shrink-0" />
+            <div className="flex-shrink-0 p-3 pb-2 border-b border-black/5 dark:border-white/5">
+                <div className="flex items-center gap-2 bg-black/5 dark:bg-white/10 shadow-inner rounded-full px-4 py-2.5">
+                    <IconSearch className="size-5 text-muted flex-shrink-0" />
                     <input
                         ref={inputRef}
                         type="text"
-                        className="flex-1 bg-transparent border-0 outline-none text-sm text-primary placeholder:text-muted"
+                        className="flex-1 bg-transparent border-0 outline-none text-[15px] font-medium tracking-tight text-primary placeholder:text-muted"
                         placeholder="search blog posts..."
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
@@ -86,58 +86,61 @@ export const WindowSearchUI = ({ initialFilter }: { initialFilter?: string }) =>
                     {query && (
                         <button
                             onClick={() => setQuery('')}
-                            className="text-muted hover:text-primary text-xs px-1"
+                            className="flex items-center justify-center size-5 bg-black/10 dark:bg-white/20 hover:bg-black/20 dark:hover:bg-white/30 rounded-full text-primary transition-colors flex-shrink-0"
                         >
-                            ✕
+                            <span className="text-[10px] font-bold">✕</span>
                         </button>
                     )}
                 </div>
             </div>
 
             {/* Results */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto px-2 py-2">
                 {loading ? (
-                    <div className="p-4 text-center text-muted text-sm">
+                    <div className="p-4 text-center text-muted text-[13px] tracking-tight">
                         loading posts...
                     </div>
                 ) : query.length < 2 ? (
-                    <div className="p-4 text-center text-muted text-sm">
+                    <div className="p-4 text-center text-muted text-[13px] tracking-tight">
                         type at least 2 characters to search...
                     </div>
                 ) : results.length === 0 ? (
-                    <div className="p-4 text-center text-muted text-sm">
+                    <div className="p-4 text-center text-muted text-[13px] tracking-tight">
                         no results found for &quot;{query}&quot;
                     </div>
                 ) : (
-                    <div className="divide-y divide-border">
-                        <div className="px-3 py-1.5 text-[11px] font-bold lowercase tracking-wider text-muted bg-accent/20">
+                    <div className="flex flex-col gap-1">
+                        <div className="px-3 py-1 text-[11px] font-bold lowercase tracking-wider text-muted opacity-60">
                             {results.length} result{results.length !== 1 ? 's' : ''}
                         </div>
                         {results.map((post) => (
                             <button
                                 key={post.id}
                                 onClick={() => handleResultClick(post)}
-                                className="w-full text-left px-3 py-2.5 hover:bg-accent/40 transition-colors block cursor-pointer"
+                                className="w-full text-left p-3 hover:bg-black/5 dark:hover:bg-white/10 rounded-[18px] transition-colors block cursor-pointer group"
                             >
-                                <div className="flex items-start gap-2">
+                                <div className="flex items-start gap-3">
                                     <div className="flex-1 min-w-0">
                                         {post.category && (
-                                            <span className="text-[10px] font-bold lowercase tracking-wider text-orange opacity-80">
+                                            <span className="text-[10px] font-bold lowercase tracking-wider text-orange opacity-80 mb-0.5 block">
                                                 {post.category}
                                             </span>
                                         )}
-                                        <h4 className="text-sm font-semibold text-primary m-0 line-clamp-1">
+                                        <h4 className="text-[15px] font-semibold tracking-tight text-primary m-0 line-clamp-1 group-hover:text-blue-500 transition-colors">
                                             {post.title}
                                         </h4>
-                                        <p className="text-xs text-secondary m-0 mt-0.5 line-clamp-2 opacity-70">
+                                        <p className="text-[13px] leading-snug tracking-tight text-secondary m-0 mt-1 line-clamp-2 opacity-70">
                                             {getExcerpt(post.content, query)}
                                         </p>
-                                        <div className="flex items-center gap-2 mt-1">
+                                        <div className="flex items-center gap-2 mt-2">
                                             {post.date && (
-                                                <span className="text-[10px] text-muted">{post.date}</span>
+                                                <span className="text-[11px] font-medium tracking-tight text-muted">{post.date}</span>
                                             )}
                                             {post.authorName && (
-                                                <span className="text-[10px] text-muted">by {post.authorName}</span>
+                                                <>
+                                                    <span className="w-1 h-1 rounded-full bg-black/10 dark:bg-white/20"></span>
+                                                    <span className="text-[11px] font-medium tracking-tight text-muted">{post.authorName}</span>
+                                                </>
                                             )}
                                         </div>
                                     </div>
@@ -146,7 +149,7 @@ export const WindowSearchUI = ({ initialFilter }: { initialFilter?: string }) =>
                                         <img
                                             src={post.image}
                                             alt=""
-                                            className="w-12 h-12 rounded object-cover flex-shrink-0"
+                                            className="w-14 h-14 rounded-full object-cover flex-shrink-0 shadow-sm border border-black/5 dark:border-white/5"
                                         />
                                     )}
                                 </div>
