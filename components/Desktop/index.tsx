@@ -16,7 +16,7 @@ export default function Desktop() {
     const apps = useMemo(() => [
         {
             label: 'home',
-            Icon: <SpatialIcon icon={IconHomeFilled} />,
+            Icon: <SpatialIcon icon={IconHomeFilled} color="text-blue-500 dark:text-blue-400" bgTint="from-blue-400 to-cyan-400" />,
             onClick: () => addWindow({
                 key: 'home',
                 path: '/',
@@ -25,7 +25,7 @@ export default function Desktop() {
         },
         {
             label: 'posts',
-            Icon: <SpatialIcon icon={IconMessage} />,
+            Icon: <SpatialIcon icon={IconMessage} color="text-emerald-500 dark:text-emerald-400" bgTint="from-emerald-400 to-teal-400" />,
             onClick: () => addWindow({
                 key: 'posts',
                 path: '/posts',
@@ -35,7 +35,7 @@ export default function Desktop() {
         },
         {
             label: 'login',
-            Icon: <SpatialIcon icon={IconUser} />,
+            Icon: <SpatialIcon icon={IconUser} color="text-purple-500 dark:text-purple-400" bgTint="from-purple-400 to-fuchsia-400" />,
             onClick: () => addWindow({
                 key: 'login',
                 path: '/login',
@@ -44,7 +44,7 @@ export default function Desktop() {
         },
         {
             label: 'contact',
-            Icon: <SpatialIcon icon={IconLetter} />,
+            Icon: <SpatialIcon icon={IconLetter} color="text-orange-500 dark:text-orange-400" bgTint="from-orange-400 to-amber-400" />,
             onClick: () => addWindow({
                 key: 'contact',
                 path: '/contact',
@@ -138,12 +138,12 @@ export default function Desktop() {
             </div>
 
 
-            <nav className="fixed top-24 left-10 pointer-events-none z-10">
+            <nav className="fixed top-24 left-4 md:left-10 right-4 md:right-auto pointer-events-none z-10">
                 <motion.ul
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: rendered ? 1 : 0, y: rendered ? 0 : -20 }}
                     transition={{ duration: 0.5, delay: 0.2 }}
-                    className="list-none m-0 p-0 flex flex-row gap-8 items-start pointer-events-auto"
+                    className="list-none m-0 p-0 flex flex-row flex-wrap gap-4 md:gap-8 items-start pointer-events-auto w-full max-w-[calc(100vw-2rem)]"
                 >
                     {apps.map((app) => (
                         <DraggableDesktopIcon
