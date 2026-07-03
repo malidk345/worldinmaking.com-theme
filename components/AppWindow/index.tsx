@@ -84,7 +84,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
     const windowRef = useRef<HTMLDivElement>(null)
     const [rendered, setRendered] = useState(false)
     const [dragging, setDragging] = useState(false)
-    const [closing, setClosing] = useState(false)
+        const [closing, setClosing] = useState(false)
     const [leftDragResizing, setLeftDragResizing] = useState(false)
     const [minimizing, setMinimizing] = useState(false)
     const [animating, setAnimating] = useState(true)
@@ -137,6 +137,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
             setMinimizing(false)
         }
     }
+
 
     const onAnimationStart = () => {
         animationStartTimeRef.current = performance.now()

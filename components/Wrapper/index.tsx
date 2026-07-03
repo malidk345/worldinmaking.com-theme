@@ -1,12 +1,11 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useEffect } from 'react'
 import { useApp } from '../../context/App'
 import Desktop from 'components/Desktop'
 import TaskBarMenu from 'components/TaskBarMenu'
 import AppWindow from 'components/AppWindow'
 import ActiveWindowsPanel from 'components/ActiveWindowsPanel'
-import { AnimatePresence, motion } from 'framer-motion'
 
 export default function Wrapper() {
     const {
@@ -14,7 +13,6 @@ export default function Wrapper() {
         constraintsRef
     } = useApp()
 
-    const [shakeReady] = useState(false)
 
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
@@ -42,61 +40,18 @@ export default function Wrapper() {
             <TaskBarMenu />
             <div ref={constraintsRef} className="flex-grow relative overflow-hidden">
                 <Desktop />
-                <AnimatePresence mode="popLayout">
-                    {windows.map((item, index: number) => {
+
+                    {windows.map((item) => {
                         return (
-                            <motion.div
+                            <div
                                 style={{ zIndex: item.zIndex, position: 'absolute', inset: 0, pointerEvents: 'none' }}
                                 key={item.key}
-                                initial={{
-                                    opacity: 0,
-                                    scale: 0.95,
-                                    y: 40,
-                                    z: -100 // Depth effect starting point
-                                }}
-                                animate={
-                                    shakeReady
-                                        ? {
-                                            x: [0, (Math.random() - 0.5) * 45],
-                                            y: [0, (Math.random() - 0.5) * 22],
-                                            rotate: [0, (Math.random() - 0.5) * 15],
-                                            transition: {
-                                                delay: index * 0.05,
-                                                duration: 0.1,
-                                            },
-                                        }
-                                        : {
-                                            opacity: 1,
-                                            scale: 1,
-                                            y: 0,
-                                            z: 0,
-                                            transition: {
-                                                type: "spring",
-                                                stiffness: 200,
-                                                damping: 20,
-                                                mass: 1,
-                                                restDelta: 0.001
-                                            }
-                                        }
-                                }
-                                exit={{
-                                    y: typeof window !== 'undefined' ? window.innerHeight + 200 : 800,
-                                    scale: 0.95,
-                                    opacity: 0,
-                                    transition: {
-                                        delay: index * 0.05,
-                                        type: "spring",
-                                        stiffness: 200,
-                                        damping: 25,
-                                        duration: 0.4
-                                    },
-                                }}
                             >
                                 <AppWindow item={item} key={item.key} />
-                            </motion.div>
+                            </div>
                         )
                     })}
-                </AnimatePresence>
+
             </div>
             <ActiveWindowsPanel />
         </div>
