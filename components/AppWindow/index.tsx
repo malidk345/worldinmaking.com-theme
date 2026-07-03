@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react'
-import {  motion, PanInfo, useDragControls , useMotionValue, useTransform, useVelocity, useSpring } from 'framer-motion'
+import {  AnimatePresence, motion, PanInfo, useDragControls , useMotionValue, useTransform, useVelocity, useSpring } from 'framer-motion'
 import {
     IconChevronDown,
     IconDocument,
@@ -30,8 +30,12 @@ import KeyboardShortcut from 'components/KeyboardShortcut'
 
 const snapThreshold = -50
 
-function WindowContainer({ children }: { children: React.ReactNode }) {
-    return <>{children}</>;
+function WindowContainer({ children, closing, onExit }: { children: React.ReactNode; closing: boolean; onExit: () => void }) {
+    return (
+        <AnimatePresence onExitComplete={onExit}>
+            {!closing && children}
+        </AnimatePresence>
+    )
 }
 
 export default function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: boolean }) {
@@ -80,7 +84,8 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
     const windowRef = useRef<HTMLDivElement>(null)
     const [rendered, setRendered] = useState(false)
     const [dragging, setDragging] = useState(false)
-        const [leftDragResizing, setLeftDragResizing] = useState(false)
+        const [closing, setClosing] = useState(false)
+    const [leftDragResizing, setLeftDragResizing] = useState(false)
     const [minimizing, setMinimizing] = useState(false)
     const [animating, setAnimating] = useState(true)
     const animationStartTimeRef = useRef<number | null>(null)
@@ -122,7 +127,15 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
     }
 
     const handleClose = () => {
-        closeWindow(item)
+        setClosing(true)
+    }
+
+    const handleExit = () => {
+        if (closing) {
+            closeWindow(item)
+        } else if (minimizing) {
+            setMinimizing(false)
+        }
     }
 
 
@@ -352,7 +365,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                 navigate
             }}
         >
-            <WindowContainer>
+            <WindowContainer closing={closing} onExit={handleExit}>
                 {!item.minimized && !minimizing && (
                     <>
                         {snapIndicator && constraintsRef.current && (() => {
