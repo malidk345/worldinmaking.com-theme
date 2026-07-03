@@ -15,7 +15,7 @@ export default function Desktop() {
     const apps = useMemo(() => [
         {
             label: 'home',
-            Icon: <AppIcon name="doc" />,
+            Icon: <AppIcon name="compass" />,
             onClick: () => addWindow({
                 key: 'home',
                 path: '/',
@@ -24,7 +24,7 @@ export default function Desktop() {
         },
         {
             label: 'posts',
-            Icon: <AppIcon name="newspaper" />,
+            Icon: <AppIcon name="forums" />,
             onClick: () => addWindow({
                 key: 'posts',
                 path: '/posts',
@@ -34,7 +34,7 @@ export default function Desktop() {
         },
         {
             label: 'login',
-            Icon: <AppIcon name="contact" />,
+            Icon: <AppIcon name="posthog" />,
             onClick: () => addWindow({
                 key: 'login',
                 path: '/login',
@@ -43,7 +43,7 @@ export default function Desktop() {
         },
         {
             label: 'contact',
-            Icon: <AppIcon name="envelope" />,
+            Icon: <AppIcon name="contact" />,
             onClick: () => addWindow({
                 key: 'contact',
                 path: '/contact',
@@ -112,24 +112,26 @@ export default function Desktop() {
                 </>
             )}
 
-            {/* Keyboard Garden Pattern Only with Parallax */}
+            {/* 2001 Bliss Pattern with Parallax */}
             <div className="absolute inset-[-50px] select-none pointer-events-none" style={{
                 transform: 'translate(calc(var(--mouse-nx, 0) * -15px), calc(var(--mouse-ny, 0) * -15px))'
             }}>
                 <div
                     className="absolute inset-0 opacity-40 dark:opacity-0"
                     style={{
-                        backgroundImage: "url('https://res.cloudinary.com/dmukukwp6/image/upload/keyboard_garden_bg_light_03a349af5c.png')",
-                        backgroundSize: '100px 100px',
-                        backgroundRepeat: 'repeat',
+                        backgroundImage: "url('https://res.cloudinary.com/dmukukwp6/image/upload/bliss_8bit_light_0b2e4ef53c.jpg')",
+                        backgroundSize: 'cover',
+                        backgroundRepeat: 'no-repeat',
+                        backgroundPosition: 'center'
                     }}
                 />
                 <div
                     className="absolute inset-0 opacity-0 dark:opacity-40"
                     style={{
-                        backgroundImage: "url('https://res.cloudinary.com/dmukukwp6/image/upload/keyboard_garden_bg_dark_9ab088797a.png')",
-                        backgroundSize: '200px 200px',
-                        backgroundRepeat: 'repeat',
+                        backgroundImage: "url('https://res.cloudinary.com/dmukukwp6/image/upload/bliss_8bit_dark_703ec033d6.jpg')",
+                        backgroundSize: 'cover',
+                        backgroundRepeat: 'no-repeat',
+                        backgroundPosition: 'center'
                     }}
                 />
             </div>
