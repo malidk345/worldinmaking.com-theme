@@ -16,7 +16,7 @@ export default function Desktop() {
     const apps = useMemo(() => [
         {
             label: 'home',
-            Icon: <SpatialIcon icon={IconHomeFilled} colorStart="from-blue-400" colorEnd="to-blue-600" shadowColor="bg-blue-500" />,
+            Icon: <SpatialIcon icon={IconHomeFilled} />,
             onClick: () => addWindow({
                 key: 'home',
                 path: '/',
@@ -25,7 +25,7 @@ export default function Desktop() {
         },
         {
             label: 'posts',
-            Icon: <SpatialIcon icon={IconMessage} colorStart="from-emerald-400" colorEnd="to-emerald-600" shadowColor="bg-emerald-500" />,
+            Icon: <SpatialIcon icon={IconMessage} />,
             onClick: () => addWindow({
                 key: 'posts',
                 path: '/posts',
@@ -35,7 +35,7 @@ export default function Desktop() {
         },
         {
             label: 'login',
-            Icon: <SpatialIcon icon={IconUser} colorStart="from-purple-400" colorEnd="to-purple-600" shadowColor="bg-purple-500" />,
+            Icon: <SpatialIcon icon={IconUser} />,
             onClick: () => addWindow({
                 key: 'login',
                 path: '/login',
@@ -44,7 +44,7 @@ export default function Desktop() {
         },
         {
             label: 'contact',
-            Icon: <SpatialIcon icon={IconLetter} colorStart="from-amber-400" colorEnd="to-amber-600" shadowColor="bg-amber-500" />,
+            Icon: <SpatialIcon icon={IconLetter} />,
             onClick: () => addWindow({
                 key: 'contact',
                 path: '/contact',
