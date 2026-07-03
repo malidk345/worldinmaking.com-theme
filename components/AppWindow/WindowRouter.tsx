@@ -535,13 +535,13 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                 {/* Main Node Content Area */}
                 <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 pb-20 flex-1 flex flex-col min-h-0 pt-6 gap-3">
                     {/* Title Input — framed, lowercase */}
-                    <div>
+                    <div className="space-y-4">
                         <input
                             type="text"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder="untitled node"
-                            className="bg-transparent border-none font-black tracking-tight text-primary outline-none placeholder:text-primary/20 w-full transition-all lowercase px-0 text-4xl sm:text-5xl mt-6 mb-4"
+                            className="bg-transparent border-none font-black tracking-tight text-primary outline-none placeholder:text-primary/20 w-full transition-all lowercase px-2 text-4xl sm:text-5xl mt-6 focus:bg-white/40 dark:focus:bg-black/40 focus:rounded-[24px] focus:py-2 focus:px-4 duration-300"
                         />
                     </div>
 
@@ -784,13 +784,13 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
                                 if (!currentPostId) setSlug(toSlug(e.target.value))
                             }}
                             placeholder="untitled post"
-                            className="bg-transparent border-none font-black tracking-tight text-primary outline-none placeholder:text-primary/20 w-full transition-all lowercase px-0 text-4xl sm:text-5xl mt-6 mb-4"
+                            className="bg-transparent border-none font-black tracking-tight text-primary outline-none placeholder:text-primary/20 w-full transition-all lowercase px-2 text-4xl sm:text-5xl mt-6 focus:bg-white/40 dark:focus:bg-black/40 focus:rounded-[24px] focus:py-2 focus:px-4 duration-300"
                         />
                         <textarea
                             value={excerpt}
                             onChange={(e) => setExcerpt(e.target.value)}
                             placeholder="brief excerpt or subtitle..."
-                            className="bg-transparent border-none text-primary/60 outline-none w-full resize-none text-lg leading-relaxed mb-6 px-0"
+                            className="w-full bg-transparent focus:bg-white/40 dark:focus:bg-black/40 border border-transparent focus:border-black/5 dark:focus:border-white/5 focus:shadow-[0_2px_12px_rgba(0,0,0,0.02)] rounded-[24px] px-2 focus:px-4 py-2 focus:py-3 text-lg leading-relaxed text-primary/60 outline-none resize-none transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]"
                             rows={2}
                         />
                     </div>

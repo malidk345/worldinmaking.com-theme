@@ -527,7 +527,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                             placeholder="short description for seo..."
                                             value={newPostExcerpt}
                                             onChange={(e) => setNewPostExcerpt(e.target.value)}
-                                            className="w-full bg-neutral-50 border border-black/10 rounded-[18px] px-2 py-1.5 sm:py-1 text-xs text-black focus:outline-none resize-none h-16 sm:h-12 placeholder:text-black/20"
+                                            className="w-full bg-white/60 supports-[backdrop-filter]:backdrop-blur-[20px] border border-black/5 shadow-[0_2px_12px_rgba(0,0,0,0.02)] rounded-[24px] px-4 py-3 text-xs text-black focus:bg-white/80 focus:border-black/10 focus:outline-none resize-none h-16 sm:h-20 placeholder:text-black/20 transition-all duration-300 ease-in-out"
                                         />
                                     </div>
 
@@ -930,12 +930,12 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                                 type="text"
                                                                 value={editingCommentTitle}
                                                                 onChange={(e) => setEditingCommentTitle(e.target.value)}
-                                                                className="w-full bg-neutral-50 border border-black/5 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] px-3 py-2 text-xs focus:outline-none font-bold"
+                                                                className="w-full border border-black/5 rounded-[24px] bg-white/60 supports-[backdrop-filter]:backdrop-blur-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] px-4 py-2 text-xs focus:bg-white/80 focus:border-black/10 focus:outline-none font-bold transition-all duration-300"
                                                             />
                                                             <textarea
                                                                 value={editingCommentContent}
                                                                 onChange={(e) => setEditingCommentContent(e.target.value)}
-                                                                className="w-full bg-neutral-50 border border-black/5 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] p-3 text-xs h-24 focus:outline-none resize-none font-sans"
+                                                                className="w-full border border-black/5 rounded-[24px] bg-white/60 supports-[backdrop-filter]:backdrop-blur-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] px-4 py-3 text-xs h-24 focus:bg-white/80 focus:border-black/10 focus:outline-none resize-none font-sans transition-all duration-300"
                                                             />
                                                             <div className="flex justify-end gap-2">
                                                                 <OSButton className="rounded-full" size="xs" variant="secondary" onClick={() => setEditingCommentId(null)}>cancel</OSButton>
@@ -1021,7 +1021,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                                     <textarea
                                                                         value={editingCommentContent}
                                                                         onChange={(e) => setEditingCommentContent(e.target.value)}
-                                                                        className="w-full bg-neutral-50 border border-black/5 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] p-3 text-xs h-24 focus:outline-none resize-none font-sans"
+                                                                        className="w-full border border-black/5 rounded-[24px] bg-white/60 supports-[backdrop-filter]:backdrop-blur-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] px-4 py-3 text-xs h-24 focus:bg-white/80 focus:border-black/10 focus:outline-none resize-none font-sans transition-all duration-300"
                                                                     />
                                                                     <div className="flex justify-end gap-2">
                                                                         <OSButton className="rounded-full" size="xs" variant="secondary" onClick={() => setEditingCommentId(null)}>cancel</OSButton>
