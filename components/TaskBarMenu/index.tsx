@@ -9,7 +9,7 @@ import {
     IconBolt,
     IconApps
 } from '@posthog/icons'
-import { Settings, Info, FileText, BookOpen, Newspaper, MessageSquare, RotateCw, LogOut, LogIn } from 'lucide-react'
+import { Settings, Info, FileText, BookOpen, Newspaper, MessageSquare, RotateCw, LogOut, LogIn, Home } from 'lucide-react'
 import { useApp } from '../../context/App'
 import { useAuth } from '../../context/AuthContext'
 import MenuBar, { MenuItemType } from 'components/RadixUI/MenuBar'
@@ -27,6 +27,7 @@ import AtmosphericStations from 'components/Ideas/AtmosphericStations'
 import EphemeralTransmissions from 'components/Ideas/EphemeralTransmissions'
 import AmbientPlayer from 'components/AmbientPlayer'
 import NotificationCenter from 'components/NotificationCenter'
+import { useTranslation } from 'hooks/useTranslation'
 
 export default function TaskBarMenu() {
     const {
@@ -34,9 +35,11 @@ export default function TaskBarMenu() {
         openSearch,
         setIsActiveWindowsPanelOpen,
         taskbarRef,
-        addWindow
+        addWindow,
+        closeAllWindows
     } = useApp()
     const { user, profile, isAdmin, signOut } = useAuth()
+    const { t } = useTranslation()
 
     const [isAnimating, setIsAnimating] = useState(false)
     const totalWindows = windows.length
@@ -80,12 +83,12 @@ export default function TaskBarMenu() {
             },
             {
                 type: 'item' as const,
-                label: 'My profile',
+                label: t('menu.profile'),
                 icon: <IconUser className="size-4 opacity-70" />,
                 onClick: () => profile?.username && addWindow({
                     key: `profile-${profile.username}`,
                     path: `/profile/${profile.username}`,
-                    title: `${profile.username}'s profile`,
+                    title: t('menu.profile'),
                     size: { width: 900, height: 680 },
                 })
             },
@@ -130,10 +133,22 @@ export default function TaskBarMenu() {
         },
         { type: 'separator' as const },
 
+        // Home
+        {
+            type: 'item' as const,
+            label: t('menu.home'),
+            icon: <Home className="size-4 opacity-70" />,
+            onClick: () => {
+                closeAllWindows()
+            }
+        },
+
+        { type: 'separator' as const },
+
         // Posts
         {
             type: 'submenu' as const,
-            label: 'Posts',
+            label: t('posts.title'),
             icon: <FileText className="size-4 opacity-70" />,
             items: [
                 { type: 'item' as const, label: 'All posts', icon: <FileText className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'posts-all', title: 'All Posts', path: '/posts' }) },
@@ -146,22 +161,22 @@ export default function TaskBarMenu() {
         // Community
         {
             type: 'submenu' as const,
-            label: 'Community',
+            label: t('menu.community'),
             icon: <MessageSquare className="size-4 opacity-70" />,
             items: [
-                { type: 'item' as const, label: 'Forums', icon: <MessageSquare className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'questions', title: 'Questions', path: '/questions' }) },
+                { type: 'item' as const, label: t('menu.forums'), icon: <MessageSquare className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'questions', title: 'Questions', path: '/questions' }) },
             ]
         },
 
         {
             type: 'submenu' as const,
-            label: 'Ideas',
+            label: t('menu.ideas'),
             icon: <BookOpen className="size-4 opacity-70" />,
             items: [
-                { type: 'item' as const, label: 'Marginalia', icon: <BookOpen className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'marginalia', path: '/ideas/marginalia', title: 'Marginalia Archive', element: <Marginalia /> }) },
-                { type: 'item' as const, label: 'Curated Dossiers', icon: <FileText className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'dossiers', path: '/ideas/dossiers', title: 'Curated Dossiers', element: <CuratedDossiers /> }) },
-                { type: 'item' as const, label: 'Atmospheric Stations', icon: <Settings className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'stations', path: '/ideas/stations', title: 'Atmospheric Stations', element: <AtmosphericStations /> }) },
-                { type: 'item' as const, label: 'Ephemeral Transmissions', icon: <MessageSquare className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'transmissions', path: '/ideas/transmissions', title: 'Ephemeral Transmissions', element: <EphemeralTransmissions /> }) },
+                { type: 'item' as const, label: t('menu.marginalia'), icon: <BookOpen className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'marginalia', path: '/ideas/marginalia', title: 'Marginalia Archive', element: <Marginalia /> }) },
+                { type: 'item' as const, label: t('menu.dossiers'), icon: <FileText className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'dossiers', path: '/ideas/dossiers', title: 'Curated Dossiers', element: <CuratedDossiers /> }) },
+                { type: 'item' as const, label: t('menu.stations'), icon: <Settings className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'stations', path: '/ideas/stations', title: 'Atmospheric Stations', element: <AtmosphericStations /> }) },
+                { type: 'item' as const, label: t('menu.transmissions'), icon: <MessageSquare className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'transmissions', path: '/ideas/transmissions', title: 'Ephemeral Transmissions', element: <EphemeralTransmissions /> }) },
             ]
         },
 
@@ -170,29 +185,29 @@ export default function TaskBarMenu() {
         // System items
         {
             type: 'item' as const,
-            label: 'System Settings',
+            label: t('menu.system_settings'),
             icon: <Settings className="size-4 opacity-70" />,
             onClick: () => addWindow({
                 key: 'system-settings',
-                title: 'System Settings',
+                title: t('menu.system_settings'),
                 icon: <Settings className="size-4" />,
                 path: '/settings',
                 element: <SystemSettings />,
                 size: { width: 680, height: 520 }
             })
         },
-        { type: 'item' as const, label: 'Force restart', icon: <RotateCw className="size-4 opacity-70" />, onClick: () => window.location.reload() },
+        { type: 'item' as const, label: t('menu.force_restart'), icon: <RotateCw className="size-4 opacity-70" />, onClick: () => window.location.reload() },
 
         // Admin
         ...(isAdmin ? [
             { type: 'separator' as const },
             {
                 type: 'item' as const,
-                label: 'Admin Dashboard',
+                label: t('menu.admin_dashboard'),
                 icon: <IconBolt className="size-4 text-purple-500" />,
                 onClick: () => addWindow({
                     key: 'admin-dashboard',
-                    title: 'Admin Dashboard',
+                    title: t('menu.admin_dashboard'),
                     path: '/admin',
                     icon: <Settings className="size-4 text-purple-500" />,
                     element: <AdminPanel />,
@@ -207,14 +222,14 @@ export default function TaskBarMenu() {
         ...(user ? [
             {
                 type: 'item' as const,
-                label: 'Sign out',
+                label: t('menu.sign_out'),
                 icon: <LogOut className="size-4 opacity-70" />,
                 onClick: () => signOut()
             }
         ] : [
             {
                 type: 'item' as const,
-                label: 'Sign in',
+                label: t('menu.sign_in'),
                 icon: <LogIn className="size-4 opacity-70" />,
                 onClick: () => addWindow({
                     key: 'login',
@@ -225,7 +240,7 @@ export default function TaskBarMenu() {
                 })
             }
         ])
-    ], [user, profile, isAdmin, addWindow, signOut])
+    ], [user, profile, isAdmin, addWindow, signOut, closeAllWindows, t])
 
     const accountMenu = React.useMemo(() => [
         {
@@ -303,16 +318,16 @@ export default function TaskBarMenu() {
                             <div className="max-w-48 text-center p-1">
                                 {totalWindows <= 0 ? (
                                     <>
-                                        <p className="text-sm font-bold mb-0.5">No active windows</p>
+                                        <p className="text-sm font-bold mb-0.5">{t('wm.no_windows')}</p>
                                         <p className="text-[12px] opacity-70 mb-0 leading-tight">
-                                            Open an app to see it here.
+                                            {t('wm.open_app')}
                                         </p>
                                     </>
                                 ) : (
                                     <>
-                                        <p className="text-sm font-bold mb-0.5">window manager</p>
+                                        <p className="text-sm font-bold mb-0.5">{t('wm.title')}</p>
                                         <p className="text-[12px] opacity-70 mb-0 leading-tight">
-                                            Managing {totalWindows} open window{totalWindows > 1 ? 's' : ''}.
+                                            {t('wm.managing')} {totalWindows} {totalWindows > 1 ? t('wm.open_windows') : t('wm.open_window')}
                                         </p>
                                     </>
                                 )}
@@ -328,7 +343,7 @@ export default function TaskBarMenu() {
                         }
                     >
                         <div className="flex flex-col items-center gap-1">
-                            <p className="text-sm mb-0 p-1">search</p>
+                            <p className="text-sm mb-0 p-1">{t('search.tooltip')}</p>
                             <KeyboardShortcut text="/" size="sm" />
                         </div>
                     </Tooltip>

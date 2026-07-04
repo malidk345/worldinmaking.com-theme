@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     pronouns    TEXT,
     location    TEXT,
     role        TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('admin', 'member')),
+    preferred_language TEXT DEFAULT 'en',
     created_at  TIMESTAMPTZ DEFAULT now(),
     updated_at  TIMESTAMPTZ DEFAULT now()
 );

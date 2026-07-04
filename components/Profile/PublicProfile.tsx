@@ -9,6 +9,7 @@ import { useToast } from 'context/ToastContext'
 import OSButton from 'components/OSButton'
 import Loading from 'components/Loading'
 import Tooltip from 'components/RadixUI/Tooltip'
+import { useTranslation } from 'hooks/useTranslation'
 import {
     BookOpen,
     PenLine,
@@ -49,6 +50,7 @@ interface ProfileData {
     pronouns?: string
     location?: string
     role?: string
+    preferred_language?: string
 }
 
 interface NodeDoc {
@@ -104,6 +106,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
     const { user, profile: authProfile, updateProfile } = useAuth()
     const { addWindow, isMobile } = useApp()
     const { addToast } = useToast()
+    const { t } = useTranslation()
     const windowCtx = useWindow()
     const goBack = windowCtx?.goBack
     const goForward = windowCtx?.goForward
@@ -133,6 +136,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
         twitter: '',
         pronouns: '',
         location: '',
+        preferred_language: 'en',
     })
 
     const normalizedUsername = useMemo(() => decodeURIComponent(username || '').trim(), [username])
@@ -284,7 +288,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
 
         const { data, error } = await supabase
             .from('profiles')
-            .select('id, username, avatar_url, cover_url, bio, website, github, linkedin, twitter, pronouns, location, role')
+            .select('id, username, avatar_url, cover_url, bio, website, github, linkedin, twitter, pronouns, location, role, preferred_language')
             .ilike('username', normalizedUsername)
             .maybeSingle()
 
@@ -431,7 +435,8 @@ export default function PublicProfile({ username }: PublicProfileProps) {
         (form.linkedin || '') !== (profile?.linkedin || '') ||
         (form.twitter || '') !== (profile?.twitter || '') ||
         (form.location || '') !== (profile?.location || '') ||
-        (form.pronouns || '') !== (profile?.pronouns || '')
+        (form.pronouns || '') !== (profile?.pronouns || '') ||
+        (form.preferred_language || '') !== (profile?.preferred_language || '')
 
     const filteredNodes = nodes.filter((node) => {
         if (!isOwner) return node.status === 'published'
@@ -460,6 +465,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
         { field: 'location', value: profile?.location || profile?.pronouns || 'not set' },
         { field: 'posts', value: `${isOwner ? posts.length : publishedPostCount} ${isOwner ? 'total' : 'published'}` },
         { field: 'nodes', value: `${isOwner ? nodes.length : publishedNodeCount} ${isOwner ? 'total' : 'published'}` },
+        { field: 'language', value: profile?.preferred_language === 'tr' ? 'türkçe' : 'english' },
     ]
 
     const showNodesSection = !isEditingProfile && (!isOwner || activeSection === 'overview' || activeSection.startsWith('nodes-'))
@@ -547,7 +553,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                             <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
                             <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-full flex items-center gap-1.5" onClick={handleAddNode}><IconPlus className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">new node</span></OSButton>} side="bottom">new node</Tooltip>
                             <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-full flex items-center gap-1.5" onClick={handleAddPost}><BookOpen className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">new post</span></OSButton>} side="bottom">new post</Tooltip>
-                            <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-full flex items-center gap-1.5" onClick={openProfileEditor}><PenLine className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">edit profile</span></OSButton>} side="bottom">edit profile</Tooltip>
+                            <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-full flex items-center gap-1.5" onClick={openProfileEditor}><PenLine className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">{t('profile.edit')}</span></OSButton>} side="bottom">{t('profile.edit')}</Tooltip>
                         </>
                     )}
                     <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
@@ -585,7 +591,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                         </OSButton>
                                         <OSButton size="sm" className="w-full !h-9 !rounded-full !px-2.5 flex items-center justify-start gap-2" onClick={openProfileEditor}>
                                             <PenLine className="size-[14px] opacity-70" />
-                                            <span className="text-[12px] font-semibold">edit profile</span>
+                                            <span className="text-[12px] font-semibold">{t('profile.edit')}</span>
                                         </OSButton>
                                     </>
                                 ) : (
@@ -669,6 +675,19 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                             <tr><td>twitter</td><td><input type="text" value={form.twitter || ''} onChange={(e) => setForm({ ...form, twitter: e.target.value })} placeholder="https://x.com/username" className="w-full bg-white/10 dark:bg-black/10 backdrop-blur-md rounded-full px-3 py-1.5 border border-primary/10 outline-none text-sm text-primary placeholder:opacity-30 transition-all focus:bg-white/20 dark:focus:bg-black/20 focus:border-primary/30" /></td></tr>
                                                             <tr><td>avatar</td><td><input type="text" value={form.avatar_url || ''} onChange={(e) => setForm({ ...form, avatar_url: e.target.value })} placeholder="https://example.com/photo.png" className="w-full bg-white/10 dark:bg-black/10 backdrop-blur-md rounded-full px-3 py-1.5 border border-primary/10 outline-none text-sm text-primary placeholder:opacity-30 transition-all focus:bg-white/20 dark:focus:bg-black/20 focus:border-primary/30" /></td></tr>
                                                             <tr><td>cover</td><td><input type="text" value={form.cover_url || ''} onChange={(e) => setForm({ ...form, cover_url: e.target.value })} placeholder="https://example.com/cover.jpg" className="w-full bg-white/10 dark:bg-black/10 backdrop-blur-md rounded-full px-3 py-1.5 border border-primary/10 outline-none text-sm text-primary placeholder:opacity-30 transition-all focus:bg-white/20 dark:focus:bg-black/20 focus:border-primary/30" /></td></tr>
+                                                            <tr>
+                                                                <td>{t('profile.language')}</td>
+                                                                <td>
+                                                                    <select
+                                                                        value={form.preferred_language || 'en'}
+                                                                        onChange={(e) => setForm({ ...form, preferred_language: e.target.value })}
+                                                                        className="w-full bg-white/10 dark:bg-black/10 backdrop-blur-md rounded-full px-3 py-1.5 border border-primary/10 outline-none text-sm text-primary transition-all focus:bg-white/20 dark:focus:bg-black/20 focus:border-primary/30 cursor-pointer"
+                                                                    >
+                                                                        <option value="en">english</option>
+                                                                        <option value="tr">türkçe</option>
+                                                                    </select>
+                                                                </td>
+                                                            </tr>
                                                         </>
                                                     ) : (
                                                         tableRows.map((row) => (
@@ -694,9 +713,9 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                         style={{ margin: 0, lineHeight: 1.6 }}
                                                     />
                                                     <div className="flex items-center justify-end gap-2 px-3 py-3 border-t border-primary/10">
-                                                        <OSButton type="button" variant="underlineOnHover" size="sm" onClick={() => setIsEditingProfile(false)}>cancel</OSButton>
+                                                        <OSButton type="button" variant="underlineOnHover" size="sm" onClick={() => setIsEditingProfile(false)}>{t('profile.cancel')}</OSButton>
                                                         <OSButton type="button" variant="primary" size="sm" onClick={handleSaveProfile} disabled={updatingProfile || !hasProfileChanges}>
-                                                            {updatingProfile ? 'saving...' : 'save profile'}
+                                                            {updatingProfile ? 'saving...' : t('profile.save')}
                                                         </OSButton>
                                                     </div>
                                                 </div>

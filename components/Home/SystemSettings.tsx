@@ -3,23 +3,24 @@
 import React from 'react'
 import { Monitor } from 'lucide-react'
 import { useApp } from '../../context/App'
+import { useTranslation } from 'hooks/useTranslation'
 
 export default function SystemSettings() {
     const { siteSettings, updateSiteSettings } = useApp()
-
+    const { t } = useTranslation()
 
     return (
         <div className="h-full bg-primary flex flex-col overflow-hidden lowercase">
             <div className="p-4 border-b border-primary bg-accent/20">
                 <h1 className="text-lg font-bold flex items-center gap-2">
                     <Monitor className="size-5" />
-                    system settings
+                    {t('sys.title')}
                 </h1>
             </div>
 
             <div className="flex-1 p-6 space-y-8 overflow-y-auto">
                 <section>
-                    <h2 className="text-sm font-bold opacity-60 mb-4 tracking-tight">appearance mode</h2>
+                    <h2 className="text-sm font-bold opacity-60 mb-4 tracking-tight">{t('sys.appearance')}</h2>
                     <div className="flex gap-4">
                         <button
                             onClick={() => updateSiteSettings(prev => ({ ...prev, colorMode: 'light' }))}
@@ -28,7 +29,7 @@ export default function SystemSettings() {
                             <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                                 <span className="text-xl">☀</span>
                             </div>
-                            <span className="text-[11px] font-bold">light mode</span>
+                            <span className="text-[11px] font-bold">{t('sys.light')}</span>
                         </button>
                         <button
                             onClick={() => updateSiteSettings(prev => ({ ...prev, colorMode: 'dark' }))}
@@ -37,7 +38,7 @@ export default function SystemSettings() {
                             <div className="size-8 rounded-full bg-zinc-700 flex items-center justify-center text-zinc-300">
                                 <span className="text-xl">☾</span>
                             </div>
-                            <span className="text-[11px] font-bold">dark mode</span>
+                            <span className="text-[11px] font-bold">{t('sys.dark')}</span>
                         </button>
                     </div>
                 </section>
@@ -47,8 +48,8 @@ export default function SystemSettings() {
                 <section className="pt-6 border-t border-primary/10">
                     <div className="flex items-center justify-between p-4 bg-accent/10 rounded border border-primary/20">
                         <div>
-                            <div className="font-bold text-sm">dynamic accent color</div>
-                            <div className="text-[11px] opacity-60">sync with system theme protocols</div>
+                            <div className="font-bold text-sm">{t('sys.dynamic')}</div>
+                            <div className="text-[11px] opacity-60">{t('sys.sync')}</div>
                         </div>
                         <div className="size-4 rounded-full bg-primary shadow-sm shadow-primary/50" />
                     </div>
