@@ -121,8 +121,8 @@ export default function DraggableDesktopIcon({ id, app, initialPosition, onPosit
                 scale: 1,
                 opacity: 1,
             }}
-            drag={!isMobile}
-            dragControls={!isMobile ? controls : undefined}
+            drag={true}
+            dragControls={controls}
             dragListener={false}
             dragMomentum={false}
             dragConstraints={constraintsRef}
