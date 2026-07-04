@@ -44,7 +44,7 @@ export default function TrendingWidget() {
     const [currentPage, setCurrentPage] = useState(0)
     const [totalPosts, setTotalPosts] = useState(0)
     const [totalEntries, setTotalEntries] = useState(0)
-    const itemsPerPage = 5
+    const itemsPerPage = 3
 
     const fetchTopPosts = async () => {
         setLoading(true)
@@ -134,40 +134,40 @@ export default function TrendingWidget() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className="fixed bottom-20 md:bottom-24 left-4 right-4 md:left-auto md:right-10 w-auto md:w-[700px] lg:w-[820px] bg-white/70 dark:bg-black/70 supports-[backdrop-filter]:backdrop-blur-[24px] shadow-[0_24px_80px_-20px_rgba(0,0,0,0.25)] dark:shadow-[0_24px_80px_-20px_rgba(0,0,0,0.65)] z-50 font-sans border border-black/10 dark:border-white/10 rounded-[32px]"
+            className="fixed bottom-20 md:bottom-24 left-4 right-4 md:left-auto md:right-10 w-auto md:w-[380px] lg:w-[400px] bg-white/70 dark:bg-black/70 supports-[backdrop-filter]:backdrop-blur-[20px] shadow-[0_16px_48px_-16px_rgba(0,0,0,0.2)] dark:shadow-[0_16px_48px_-16px_rgba(0,0,0,0.5)] z-50 font-sans border border-black/10 dark:border-white/10 rounded-[28px]"
         >
             {/* 1. Toolbar */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-black/5 dark:border-white/5">
-                <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-black/5 dark:border-white/5">
+                <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                         {activeTab === 'blog' ? (
-                            <FileText className="w-4 h-4 text-primary" />
+                            <FileText className="w-3.5 h-3.5 text-primary" />
                         ) : activeTab === 'community' ? (
-                            <MessageCircle className="w-4 h-4 text-primary" />
+                            <MessageCircle className="w-3.5 h-3.5 text-primary" />
                         ) : (
-                            <Bell className="w-4 h-4 text-primary" />
+                            <Bell className="w-3.5 h-3.5 text-primary" />
                         )}
-                        <span className="text-[13px] font-bold text-primary lowercase tracking-tight">
+                        <span className="text-[12px] font-bold text-primary lowercase tracking-tight">
                             {activeTab === 'blog' ? 'trending posts' : activeTab === 'community' ? 'trending entries' : 'updates'}
                         </span>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-4 text-[12px] opacity-60">
-                    <span className="lowercase text-[11px] font-bold">
+                <div className="flex items-center gap-3 text-[11px] opacity-60">
+                    <span className="lowercase text-[10px] font-bold font-mono">
                         {(currentPage * itemsPerPage) + 1}-{Math.min((currentPage + 1) * itemsPerPage, currentPosts.length)} of {currentPosts.length}
                     </span>
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2">
                         <RefreshCw
-                            className={`w-3.5 h-3.5 opacity-60 cursor-pointer hover:opacity-100 mr-2 ${loading ? 'animate-spin' : ''}`}
+                            className={`w-3 h-3 opacity-60 cursor-pointer hover:opacity-100 mr-1 ${loading ? 'animate-spin' : ''}`}
                             onClick={fetchTopPosts}
                         />
                         <ChevronLeft
-                            className={`w-4 h-4 cursor-pointer hover:opacity-100 ${currentPage === 0 ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
+                            className={`w-3.5 h-3.5 cursor-pointer hover:opacity-100 ${currentPage === 0 ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
                             onClick={() => setCurrentPage(0)}
                         />
                         <ChevronRight
-                            className={`w-4 h-4 cursor-pointer hover:opacity-100 ${currentPage >= totalPages - 1 ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
+                            className={`w-3.5 h-3.5 cursor-pointer hover:opacity-100 ${currentPage >= totalPages - 1 ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
                             onClick={() => setCurrentPage(prev => prev + 1)}
                         />
                     </div>
@@ -175,97 +175,92 @@ export default function TrendingWidget() {
             </div>
 
             {/* 2. Categorized Tabs (Segmented Control style) */}
-            <div className="bg-black/5 dark:bg-white/5 rounded-[24px] p-1 mx-6 my-3 flex gap-1 border border-black/5 dark:border-white/5">
+            <div className="bg-black/5 dark:bg-white/5 rounded-[18px] p-0.5 mx-4 my-2 flex gap-0.5 border border-black/5 dark:border-white/5">
                 <button
                     onClick={() => { setActiveTab('blog'); setCurrentPage(0); }}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 text-[13px] font-semibold transition-all duration-300 lowercase rounded-[20px] cursor-pointer ${
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 text-[11.5px] font-semibold transition-all duration-300 lowercase rounded-[15px] cursor-pointer ${
                         activeTab === 'blog'
-                            ? 'bg-white/95 dark:bg-white/10 text-black dark:text-white shadow-[0_4px_12px_rgba(0,0,0,0.06)] border border-black/5 dark:border-white/10'
-                            : 'text-primary/75 hover:bg-black/5 dark:hover:bg-white/5 border border-transparent'
+                            ? 'bg-white/95 dark:bg-white/10 text-black dark:text-white shadow-[0_2px_8px_rgba(0,0,0,0.05)] border border-black/5 dark:border-white/10'
+                            : 'text-primary/70 hover:bg-black/5 dark:hover:bg-white/5 border border-transparent'
                     }`}
                 >
-                    <FileText className="w-4 h-4" />
+                    <FileText className="w-3.5 h-3.5" />
                     <span>posts</span>
                 </button>
 
                 <button
                     onClick={() => { setActiveTab('community'); setCurrentPage(0); }}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 text-[13px] font-semibold transition-all duration-300 lowercase rounded-[20px] cursor-pointer ${
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 text-[11.5px] font-semibold transition-all duration-300 lowercase rounded-[15px] cursor-pointer ${
                         activeTab === 'community'
-                            ? 'bg-white/95 dark:bg-white/10 text-black dark:text-white shadow-[0_4px_12px_rgba(0,0,0,0.06)] border border-black/5 dark:border-white/10'
-                            : 'text-primary/75 hover:bg-black/5 dark:hover:bg-white/5 border border-transparent'
+                            ? 'bg-white/95 dark:bg-white/10 text-black dark:text-white shadow-[0_2px_8px_rgba(0,0,0,0.05)] border border-black/5 dark:border-white/10'
+                            : 'text-primary/70 hover:bg-black/5 dark:hover:bg-white/5 border border-transparent'
                     }`}
                 >
-                    <MessageCircle className="w-4 h-4" />
+                    <MessageCircle className="w-3.5 h-3.5" />
                     <span>entries</span>
                 </button>
 
                 <button
                     onClick={() => { setActiveTab('updates'); setCurrentPage(0); }}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 text-[13px] font-semibold transition-all duration-300 lowercase rounded-[20px] cursor-pointer ${
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 text-[11.5px] font-semibold transition-all duration-300 lowercase rounded-[15px] cursor-pointer ${
                         activeTab === 'updates'
-                            ? 'bg-white/95 dark:bg-white/10 text-black dark:text-white shadow-[0_4px_12px_rgba(0,0,0,0.06)] border border-black/5 dark:border-white/10'
-                            : 'text-primary/75 hover:bg-black/5 dark:hover:bg-white/5 border border-transparent'
+                            ? 'bg-white/95 dark:bg-white/10 text-black dark:text-white shadow-[0_2px_8px_rgba(0,0,0,0.05)] border border-black/5 dark:border-white/10'
+                            : 'text-primary/70 hover:bg-black/5 dark:hover:bg-white/5 border border-transparent'
                     }`}
                 >
-                    <Bell className="w-4 h-4" />
+                    <Bell className="w-3.5 h-3.5" />
                     <span>updates</span>
                 </button>
             </div>
 
             {/* 3. List Area */}
-            <div className="max-h-[35vh] md:max-h-[380px] overflow-y-auto custom-scrollbar bg-transparent px-4 pb-4">
+            <div className="max-h-[220px] overflow-y-auto custom-scrollbar bg-transparent px-3 pb-3 flex flex-col gap-1">
                 {currentPosts.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage).map((post) => (
                     <div
                         key={`${post.type}-${post.id}`}
                         onClick={() => activeTab !== 'updates' && handleOpen(post)}
-                        className={`group flex items-center px-4 py-3 border border-transparent transition-all duration-300 rounded-[20px] ${
+                        className={`group flex items-center px-3 py-2 border border-transparent transition-all duration-200 rounded-[14px] ${
                             activeTab === 'updates'
                                 ? 'cursor-default'
                                 : 'cursor-pointer hover:bg-black/5 dark:hover:bg-white/10 hover:border-black/5 dark:hover:border-white/5'
                         }`}
                     >
                         {/* Author Avatar or System Icon */}
-                        <div className="mr-3.5 flex-shrink-0">
+                        <div className="mr-2.5 flex-shrink-0">
                             {activeTab === 'updates' ? (
-                                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center border border-primary/5">
-                                    <Bell className="w-3.5 h-3.5 text-primary" />
+                                <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center border border-primary/5">
+                                    <Bell className="w-3 h-3 text-primary" />
                                 </div>
                             ) : post.avatar_url ? (
                                 /* eslint-disable-next-line @next/next/no-img-element */
                                 <img
                                     src={post.avatar_url}
                                     alt={post.author}
-                                    className="w-6 h-6 rounded-full object-cover border border-black/10 dark:border-white/10 shadow-sm"
+                                    className="w-5 h-5 rounded-full object-cover border border-black/10 dark:border-white/10 shadow-sm"
                                 />
                             ) : (
-                                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary lowercase border border-black/10 dark:border-white/10">
+                                <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-bold text-primary lowercase border border-black/10 dark:border-white/10">
                                     {(post.author || 'a').charAt(0)}
                                 </div>
                             )}
                         </div>
 
-                        {/* Title & Body Preview */}
-                        <div className="flex-1 flex items-baseline gap-2 min-w-0 pr-4 overflow-hidden">
-                            <span className={`text-[12px] md:text-[13.5px] font-semibold text-primary lowercase ${activeTab === 'updates' ? '' : 'truncate'}`}>
+                        {/* Title */}
+                        <div className="flex-1 min-w-0 pr-3">
+                            <span className={`text-[12px] font-semibold text-primary lowercase block truncate`}>
                                 {post.title}
                             </span>
-                            {activeTab !== 'updates' && (
-                                <span className="text-[11px] md:text-[12.5px] text-primary/40 truncate lowercase hidden sm:inline">
-                                    - trending {post.type} with {post.view_count} views...
-                                </span>
-                            )}
                         </div>
 
                         {/* Right side - Views & Time */}
-                        <div className="flex items-center gap-3 md:gap-6 flex-shrink-0">
+                        <div className="flex items-center gap-3 flex-shrink-0">
                             {activeTab !== 'updates' && (
-                                <div className="flex items-center gap-1.5 text-[10px] md:text-[11px] font-bold text-primary opacity-30 lowercase">
-                                    <Eye className="w-3.5 h-3.5" />
+                                <div className="flex items-center gap-1 text-[10px] font-bold text-primary opacity-30 lowercase">
+                                    <Eye className="w-3 h-3" />
                                     <span>{post.view_count || 0}</span>
                                 </div>
                             )}
-                            <span className="text-[10px] md:text-[11px] font-bold text-primary opacity-50 whitespace-nowrap lowercase">
+                            <span className="text-[10px] font-bold text-primary opacity-50 whitespace-nowrap lowercase font-mono">
                                 {post.time}
                             </span>
                         </div>
@@ -274,18 +269,18 @@ export default function TrendingWidget() {
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 bg-black/5 dark:bg-white/5 border-t border-black/5 dark:border-white/5 flex justify-between items-center text-[10px] opacity-40 lowercase font-bold rounded-b-[32px]">
+            <div className="px-4 py-2.5 bg-black/5 dark:bg-white/5 border-t border-black/5 dark:border-white/5 flex justify-between items-center text-[9px] opacity-40 lowercase font-bold rounded-b-[28px] font-mono">
                 <div className="flex gap-3">
                     {activeTab === 'blog' ? (
-                        <span>1-{blogPosts.length} of {totalPosts} posts total</span>
+                        <span>1-{blogPosts.length} of {totalPosts} posts</span>
                     ) : activeTab === 'community' ? (
-                        <span>1-{comPosts.length} of {totalEntries} entries total</span>
+                        <span>1-{comPosts.length} of {totalEntries} entries</span>
                     ) : (
-                        <span>{manualUpdates.length} updates total</span>
+                        <span>{manualUpdates.length} updates</span>
                     )}
                 </div>
                 <div className="flex items-center">
-                    <LayoutGrid className="w-4 h-4" />
+                    <LayoutGrid className="w-3.5 h-3.5" />
                 </div>
             </div>
         </motion.div>
