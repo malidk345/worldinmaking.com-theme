@@ -5,18 +5,20 @@ import ZoomHover from 'components/ZoomHover'
 import { useApp } from '../../context/App'
 
 interface DraggableDesktopIconProps {
+    id?: string
     app: AppItem
     initialPosition: { x: number; y: number }
     onPositionChange: (position: { x: number; y: number }) => void
     className?: string
 }
 
-export default function DraggableDesktopIcon({ app, initialPosition, onPositionChange, className }: DraggableDesktopIconProps) {
+export default function DraggableDesktopIcon({ id, app, initialPosition, onPositionChange, className }: DraggableDesktopIconProps) {
     const [position, setPosition] = useState(initialPosition)
     const [isDragging, setIsDragging] = useState(false)
+    const [isArchiving, setIsArchiving] = useState(false)
     const [hasDragged, setHasDragged] = useState(false)
     const controls = useDragControls()
-    const { constraintsRef, isMobile } = useApp()
+    const { constraintsRef, isMobile, archiveItem } = useApp()
 
     useEffect(() => {
         setPosition(initialPosition)
@@ -29,15 +31,51 @@ export default function DraggableDesktopIcon({ app, initialPosition, onPositionC
 
     const handleDrag = (_event: unknown, info: PanInfo) => {
         if (!isDragging) setIsDragging(true)
-        // Mark that we've actually dragged (not just started)
         if (Math.abs(info.offset.x) > 5 || Math.abs(info.offset.y) > 5) {
             setHasDragged(true)
+        }
+
+        // Live collision detection with archive folder
+        const folderEl = document.getElementById('desktop-folder-archive')
+        if (folderEl && app.label !== 'archive') {
+            const rect = folderEl.getBoundingClientRect()
+            const isOver = info.point.x >= rect.left &&
+                           info.point.x <= rect.right &&
+                           info.point.y >= rect.top &&
+                           info.point.y <= rect.bottom
+            
+            if (isOver) {
+                folderEl.classList.add('scale-115', 'bg-white/10', 'dark:bg-white/5', 'ring-1', 'ring-primary/20', 'shadow-md')
+            } else {
+                folderEl.classList.remove('scale-115', 'bg-white/10', 'dark:bg-white/5', 'ring-1', 'ring-primary/20', 'shadow-md')
+            }
         }
     }
 
     const handleDragEnd = (_event: unknown, info: PanInfo) => {
         setIsDragging(false)
         if (!constraintsRef.current) return
+
+        // Drop collision detection with archive folder
+        const folderEl = document.getElementById('desktop-folder-archive')
+        let droppedInFolder = false
+        if (folderEl && app.label !== 'archive') {
+            const rect = folderEl.getBoundingClientRect()
+            droppedInFolder = info.point.x >= rect.left &&
+                              info.point.x <= rect.right &&
+                              info.point.y >= rect.top &&
+                              info.point.y <= rect.bottom
+            
+            folderEl.classList.remove('scale-115', 'bg-white/10', 'dark:bg-white/5', 'ring-1', 'ring-primary/20', 'shadow-md')
+        }
+
+        if (droppedInFolder && app.label !== 'archive') {
+            setIsArchiving(true)
+            setTimeout(() => {
+                archiveItem(app.label)
+            }, 300)
+            return
+        }
 
         const bounds = constraintsRef.current.getBoundingClientRect()
         const newX = position.x + info.offset.x
@@ -64,15 +102,20 @@ export default function DraggableDesktopIcon({ app, initialPosition, onPositionC
     }
 
     const handleMouseDown = (e: React.MouseEvent) => {
-        // Prevent default to avoid text selection
         e.preventDefault()
         e.stopPropagation()
     }
 
     return (
         <motion.li
+            id={id}
             className={className || `absolute w-28 flex justify-center items-center ${isDragging ? 'z-50' : 'z-10'}`}
-            animate={{
+            animate={isArchiving ? {
+                scale: 0,
+                opacity: 0,
+                x: position.x,
+                y: position.y
+            } : {
                 x: position.x,
                 y: position.y,
                 scale: 1,
@@ -89,7 +132,7 @@ export default function DraggableDesktopIcon({ app, initialPosition, onPositionC
             onMouseDown={handleMouseDown}
             whileDrag={{ scale: 1.1, rotate: 2 }}
             initial={{ x: position.x, y: position.y }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
+            transition={isArchiving ? { duration: 0.3, ease: 'easeInOut' } : { duration: 0.3, ease: 'easeOut' }}
         >
             <div
                 className="relative cursor-move"

@@ -3,13 +3,14 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useApp } from '../../context/App'
 import { AppIcon } from 'components/OSIcons/AppIcon'
+import ArchiveExplorer from 'components/ArchiveExplorer'
 import DraggableDesktopIcon from './DraggableDesktopIcon'
 import { motion } from 'framer-motion'
 import PostsView from 'components/Posts'
 import TrendingWidget from './TrendingWidget'
 
 export default function Desktop() {
-    const { addWindow, siteSettings } = useApp()
+    const { addWindow, siteSettings, archivedItems } = useApp()
     const [rendered, setRendered] = useState(false)
 
     const apps = useMemo(() => [
@@ -49,8 +50,22 @@ export default function Desktop() {
                 path: '/contact',
                 title: 'contact'
             })
+        },
+        {
+            label: 'archive',
+            Icon: <AppIcon name="folder" />,
+            onClick: () => addWindow({
+                key: 'archive',
+                path: '/archive',
+                title: 'Archive Explorer',
+                element: <ArchiveExplorer />
+            })
         }
     ], [addWindow])
+
+    const visibleApps = useMemo(() => {
+        return apps.filter(app => app.label === 'archive' || !archivedItems.includes(app.label))
+    }, [apps, archivedItems])
 
     useEffect(() => {
         setRendered(true)
@@ -144,9 +159,10 @@ export default function Desktop() {
                     transition={{ duration: 0.5, delay: 0.2 }}
                     className="list-none m-0 p-0 flex flex-row gap-8 items-start pointer-events-auto"
                 >
-                    {apps.map((app) => (
+                    {visibleApps.map((app) => (
                         <DraggableDesktopIcon
                             key={app.label}
+                            id={app.label === 'archive' ? 'desktop-folder-archive' : undefined}
                             app={app}
                             initialPosition={{ x: 0, y: 0 }}
                             onPositionChange={() => { }}

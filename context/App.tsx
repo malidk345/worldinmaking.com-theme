@@ -38,6 +38,9 @@ interface AppContextType {
     compact: boolean
     taskbarHeight: number
     menu: unknown[]
+    archivedItems: string[]
+    archiveItem: (label: string) => void
+    restoreItem: (label: string) => void
 }
 
 export const Context = createContext<AppContextType | undefined>(undefined)
@@ -61,6 +64,38 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         screensaverDisabled: true,
         performanceBoost: false
     })
+
+    const [archivedItems, setArchivedItems] = useState<string[]>([])
+
+    // Load archivedItems from localStorage
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const saved = localStorage.getItem('archivedItems')
+        if (saved) {
+            try {
+                setArchivedItems(JSON.parse(saved))
+            } catch (e) {
+                console.error('Failed to parse archivedItems:', e)
+            }
+        }
+    }, [])
+
+    const archiveItem = useCallback((label: string) => {
+        setArchivedItems((prev) => {
+            if (prev.includes(label)) return prev
+            const next = [...prev, label]
+            localStorage.setItem('archivedItems', JSON.stringify(next))
+            return next
+        })
+    }, [])
+
+    const restoreItem = useCallback((label: string) => {
+        setArchivedItems((prev) => {
+            const next = prev.filter((item) => item !== label)
+            localStorage.setItem('archivedItems', JSON.stringify(next))
+            return next
+        })
+    }, [])
 
     const lastClickedElementRect = useRef<{ x: number; y: number } | null>(null)
 
@@ -615,12 +650,15 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         isMobile,
         compact,
         taskbarHeight: 44,
-        menu: []
+        menu: [],
+        archivedItems,
+        archiveItem,
+        restoreItem
     }), [
         windows, focusedWindow, bringToFront, addWindow, closeWindow, minimizeWindow,
         updateWindow, updateWindowRef, openSearch, expandWindow, handleSnapToSide,
         getDesktopCenterPosition, siteSettings, isActiveWindowsPanelOpen, closeAllWindows,
-        isMobile, compact
+        isMobile, compact, archivedItems, archiveItem, restoreItem
     ])
 
     return (

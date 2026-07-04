@@ -24,6 +24,7 @@ import { Popover } from 'components/RadixUI/Popover'
 import { sanitizeHtml, toSlug } from '../../utils/security'
 import BlueprintsExplorer from 'components/Blueprints/BlueprintsExplorer'
 import BlueprintPostView from 'components/Blueprints/BlueprintPostView'
+import ArchiveExplorer from 'components/ArchiveExplorer'
 
 interface AdaptablePost {
     id: number | string
@@ -139,6 +140,11 @@ function WindowRouterInner({ item }: { item: AppWindow }) {
     // /admin
     if (path === '/admin') {
         return <AdminPanel item={item} />
+    }
+
+    // /archive
+    if (path === '/archive') {
+        return <ArchiveExplorer />
     }
 
     // /node/:id (Published Read-Only Node View)
