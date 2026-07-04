@@ -10,6 +10,7 @@ export interface Profile {
     twitter?: string;
     pronouns?: string;
     location?: string;
+    preferred_language?: string;
 }
 
 export interface Post {

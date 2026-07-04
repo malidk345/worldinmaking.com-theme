@@ -9,8 +9,10 @@ import {
 } from '@posthog/icons'
 import { useApp } from 'context/App'
 import { usePosts } from 'hooks/usePosts'
+import { useAuth } from 'context/AuthContext'
 import type { Post } from 'types/database'
 import ScrollArea from 'components/RadixUI/ScrollArea'
+import { useTranslation } from 'hooks/useTranslation'
 import BlogPostView from 'components/ReaderView/BlogPostView'
 import SEO from 'components/SEO'
 import Loading from 'components/Loading'
@@ -26,10 +28,24 @@ const getPostHref = (slug?: string) => {
 const PostsView = React.memo(() => {
     const { posts, loading } = usePosts()
     const { addWindow } = useApp()
+    const { profile } = useAuth()
+    const { t } = useTranslation()
+
+    // For unauthenticated users, default to 'en' or we could check localStorage.
+    // The user explicitly stated "türkçeye geçildiğinde türkçe desteği olan postlar gösterilsin".
+    const preferredLanguage = profile?.preferred_language || 'en'
 
     const sortedRoadmaps = useMemo(() => {
-        return [...posts].sort((a, b) => dayjs.utc(b.date).unix() - dayjs.utc(a.date).unix())
-    }, [posts])
+        const filteredPosts = posts.filter(post => {
+            if (preferredLanguage === 'tr') {
+                return post.originalLanguage === 'tr' || post.translations?.['tr']
+            }
+            // default to English behavior
+            return post.originalLanguage === 'en' || post.translations?.['en'] || !post.originalLanguage
+        })
+
+        return [...filteredPosts].sort((a, b) => dayjs.utc(b.date).unix() - dayjs.utc(a.date).unix())
+    }, [posts, preferredLanguage])
 
     const handleRoadmapClick = (roadmap: Post) => {
         addWindow({
@@ -52,7 +68,7 @@ const PostsView = React.memo(() => {
                     <div className="w-full max-w-3xl mx-auto py-8 px-4 sm:px-6">
                         {sortedRoadmaps.length === 0 ? (
                             <div className="py-16 text-center text-secondary/70 text-sm font-bold bg-accent rounded border border-primary/10">
-                                no logs found.
+                                {t('posts.empty')}
                             </div>
                         ) : (
                             <ul className="m-0 p-0 list-none">

@@ -37,6 +37,7 @@ const sanitizeProfileUpdates = (updates: Partial<Profile>) => ({
     ...('twitter' in updates ? { twitter: normalizeExternalUrl(updates.twitter) } : {}),
     ...('pronouns' in updates ? { pronouns: trimValue(updates.pronouns) } : {}),
     ...('location' in updates ? { location: trimValue(updates.location) } : {}),
+    ...('preferred_language' in updates ? { preferred_language: trimValue(updates.preferred_language) } : {}),
 });
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -53,7 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .filter(Boolean);
 
     const fetchProfile = useCallback(async (userId: string, retryCount = 0) => {
-        const fullSelect = 'username, avatar_url, cover_url, role, bio, website, github, linkedin, twitter, pronouns, location';
+        const fullSelect = 'username, avatar_url, cover_url, role, bio, website, github, linkedin, twitter, pronouns, location, preferred_language';
         const minimalSelect = 'username, avatar_url, role';
 
         const { data, error } = await supabase
