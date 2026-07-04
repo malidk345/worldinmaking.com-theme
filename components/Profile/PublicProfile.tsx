@@ -690,7 +690,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                         onChange={(e) => setForm({ ...form, bio: e.target.value })}
                                                         placeholder="tell people what you build, write, or care about"
                                                         rows={4}
-                                                        className="w-full resize-none bg-white/10 dark:bg-black/10 backdrop-blur-md rounded-2xl p-3 border border-primary/10 outline-none text-sm text-primary placeholder:opacity-30 transition-all focus:bg-white/20 dark:focus:bg-black/20 focus:border-primary/30"
+                                                        className="w-full resize-none bg-white/60 dark:bg-black/60 supports-[backdrop-filter]:backdrop-blur-[20px] rounded-[24px] px-4 py-3 border border-black/5 dark:border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.02)] outline-none text-sm text-primary placeholder:text-primary/40 transition-all duration-300 ease-in-out focus:bg-white/80 dark:focus:bg-black/80 focus:border-black/10 dark:focus:border-white/10"
                                                         style={{ margin: 0, lineHeight: 1.6 }}
                                                     />
                                                     <div className="flex items-center justify-end gap-2 px-3 py-3 border-t border-primary/10">

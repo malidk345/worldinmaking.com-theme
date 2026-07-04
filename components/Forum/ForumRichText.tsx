@@ -10,9 +10,9 @@ import CharacterCount from '@tiptap/extension-character-count'
 import { useDropzone } from 'react-dropzone'
 
 import { AnimatePresence, motion } from 'framer-motion'
+import { Strikethrough, Heading1, Heading2, List, ListOrdered, Quote, Minus } from 'lucide-react'
 import { IconFeatures, IconImage, IconX } from '@posthog/icons'
 
-import OSButton from 'components/OSButton'
 import ForumAvatar from './ForumAvatar'
 import MarkdownLogo from './MarkdownLogo'
 
@@ -22,9 +22,9 @@ const buttons = [
     {
         name: 'bold',
         icon: (
-            <svg width="11" height="13" viewBox="0 0 11 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg width="10" height="13" viewBox="0 0 10 13" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
-                    d="M0.394742 13H5.65074C8.31474 13 10.1867 11.632 10.1867 9.238C10.1867 7.6 9.21474 6.574 8.08074 6.124C8.80074 5.728 9.53874 4.828 9.53874 3.64C9.53874 1.534 7.79274 0.399999 5.52474 0.399999H0.394742V13ZM3.23874 10.552V7.546H5.41674C6.87474 7.546 7.50474 8.086 7.50474 9.076C7.50474 10.048 6.87474 10.552 5.41674 10.552H3.23874ZM3.23874 5.17V2.632H5.23674C6.42474 2.632 6.92874 3.118 6.92874 3.91C6.92874 4.684 6.42474 5.17 5.29074 5.17H3.23874Z"
+                    d="M0.394742 13V0.399999H4.80274C5.69874 0.399999 6.45274 0.584 7.06474 0.952C7.68874 1.308 8.13674 1.796 8.40874 2.416C8.68074 3.036 8.81674 3.72 8.81674 4.468C8.81674 5.38 8.58074 6.124 8.10874 6.7C7.64874 7.276 6.98474 7.624 6.11674 7.744V7.816C7.23274 7.972 8.08474 8.396 8.67274 9.088C9.26074 9.772 9.55474 10.652 9.55474 11.728V11.956H7.13074V11.788C7.13074 11.08 6.92274 10.516 6.50674 10.096C6.10274 9.676 5.48674 9.466 4.65874 9.466H2.81874V13H0.394742ZM2.81874 7.42H4.67074C5.35474 7.42 5.86274 7.236 6.19474 6.868C6.52674 6.488 6.69274 5.968 6.69274 5.308C6.69274 4.54 6.51874 3.968 6.17074 3.592C5.83474 3.204 5.29074 3.01 4.53874 3.01H2.81874V7.42Z"
                     fill="currentColor"
                 />
             </svg>
@@ -48,6 +48,13 @@ const buttons = [
         isActive: (editor: Editor) => editor.isActive('italic'),
     },
     {
+        name: 'strike',
+        icon: <Strikethrough className="w-4 h-4" />,
+        tooltipContent: 'Strikethrough',
+        action: (editor: Editor) => editor.chain().focus().toggleStrike().run(),
+        isActive: (editor: Editor) => editor.isActive('strike'),
+    },
+    {
         name: 'code',
         icon: (
             <svg width="14" height="10" viewBox="0 0 14 10" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -64,6 +71,48 @@ const buttons = [
         tooltipContent: 'Code',
         action: (editor: Editor) => editor.chain().focus().toggleCode().run(),
         isActive: (editor: Editor) => editor.isActive('code'),
+    },
+    {
+        name: 'h1',
+        icon: <Heading1 className="w-4 h-4" />,
+        tooltipContent: 'Heading 1',
+        action: (editor: Editor) => editor.chain().focus().toggleHeading({ level: 1 }).run(),
+        isActive: (editor: Editor) => editor.isActive('heading', { level: 1 }),
+    },
+    {
+        name: 'h2',
+        icon: <Heading2 className="w-4 h-4" />,
+        tooltipContent: 'Heading 2',
+        action: (editor: Editor) => editor.chain().focus().toggleHeading({ level: 2 }).run(),
+        isActive: (editor: Editor) => editor.isActive('heading', { level: 2 }),
+    },
+    {
+        name: 'bulletList',
+        icon: <List className="w-4 h-4" />,
+        tooltipContent: 'Bullet List',
+        action: (editor: Editor) => editor.chain().focus().toggleBulletList().run(),
+        isActive: (editor: Editor) => editor.isActive('bulletList'),
+    },
+    {
+        name: 'orderedList',
+        icon: <ListOrdered className="w-4 h-4" />,
+        tooltipContent: 'Ordered List',
+        action: (editor: Editor) => editor.chain().focus().toggleOrderedList().run(),
+        isActive: (editor: Editor) => editor.isActive('orderedList'),
+    },
+    {
+        name: 'blockquote',
+        icon: <Quote className="w-4 h-4" />,
+        tooltipContent: 'Blockquote',
+        action: (editor: Editor) => editor.chain().focus().toggleBlockquote().run(),
+        isActive: (editor: Editor) => editor.isActive('blockquote'),
+    },
+    {
+        name: 'horizontalRule',
+        icon: <Minus className="w-4 h-4" />,
+        tooltipContent: 'Horizontal Rule',
+        action: (editor: Editor) => editor.chain().focus().setHorizontalRule().run(),
+        isActive: () => false,
     },
     {
         name: 'link',
@@ -127,29 +176,23 @@ const MOCK_PROFILES: Profile[] = [
 
 const MentionProfile = ({ profile, onSelect, index, focused }: { profile: Profile; onSelect?: (profile: Profile) => void; index: number; focused: number }) => {
     return (
-        <li className="border-b border-black/10 p-1">
-            <OSButton
+        <li>
+            <button
                 onClick={() => onSelect?.(profile)}
                 type="button"
-                variant="default"
-                width="full"
-                align="left"
-                className={`!px-3 !py-1 !justify-start ${focused === index ? 'bg-accent' : ''}`}
-                active={focused === index}
+                className={`w-full text-left px-3 py-2 rounded-[14px] transition-colors flex items-center gap-3 ${focused === index ? 'bg-black/10 dark:bg-white/10' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
             >
-                <div className="flex space-x-2 items-center w-full">
-                    <div className="size-6 overflow-hidden rounded-full">
-                        <ForumAvatar className="w-full h-full" image={profile.avatar_url} />
-                    </div>
-                    <div>
-                        <p className="m-0 text-[10px] font-semibold opacity-50 leading-none lowercase tracking-tighter">{profile.id}</p>
-                        <div className="flex space-x-1 items-center">
-                            <p className="m-0 leading-none text-sm line-clamp-1 lowercase">{profile.username}</p>
-                            {profile.id === 'max' && <IconFeatures className="size-3.5 text-primary opacity-50" />}
-                        </div>
-                    </div>
+                <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-black/10 dark:border-white/10">
+                    <ForumAvatar className="w-full h-full" image={profile.avatar_url} />
                 </div>
-            </OSButton>
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                        <p className="m-0 font-bold text-sm text-primary truncate lowercase">{profile.username}</p>
+                        {profile.id === 'max' && <IconFeatures className="w-3.5 h-3.5 text-primary opacity-50 shrink-0" />}
+                    </div>
+                    <p className="m-0 text-[10px] font-medium opacity-50 truncate lowercase tracking-wide">{profile.id}</p>
+                </div>
+            </button>
         </li>
     )
 }
@@ -179,20 +222,19 @@ const MentionProfiles = ({ onSelect, onClose, search = '' }: { onSelect?: (profi
 
     return (
         <motion.div
-            initial={{ opacity: 0, translateX: '100%' }}
-            animate={{ opacity: 1, translateX: 0, transition: { type: 'tween', duration: 0.1 } }}
-            exit={{ opacity: 0, translateX: '100%' }}
-            className="w-[200px] h-full absolute right-0 top-0 z-50 pt-2.5 pr-2.5"
+            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 300, damping: 25 } }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            style={{ willChange: 'auto' }}
+            className="absolute left-2 top-2 z-50 w-[240px] max-h-[200px] flex flex-col bg-white/80 dark:bg-black/80 supports-[backdrop-filter]:backdrop-blur-[60px] border border-black/10 dark:border-white/10 rounded-[20px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] overflow-hidden"
         >
-            <OSButton
-                type="button"
-                variant="default"
-                size="xs"
-                icon={<IconX className="w-3" />}
-                className="!p-1 rounded-full absolute top-0.5 right-0.5 z-20"
-                onClick={onClose}
-            />
-            <ul className="m-0 p-0 list-none border border-input bg-light dark:bg-dark h-full rounded-md overflow-auto shadow-2xl">
+            <div className="flex justify-between items-center px-3 py-2 border-b border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5">
+                <span className="text-[10px] font-bold lowercase opacity-50 tracking-wider">mentions</span>
+                <button onClick={onClose} className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors">
+                    <IconX className="w-3 h-3 text-primary" />
+                </button>
+            </div>
+            <ul className="m-0 p-0 list-none overflow-y-auto flex-1 p-1 space-y-0.5">
                 {filteredProfiles.map((profile, index) => (
                     <MentionProfile
                         focused={focused}
@@ -329,51 +371,52 @@ export default function ForumRichText({
     if (!editor) return null
 
     return (
-        <div className="relative" {...getRootProps()}>
+        <div className="relative bg-white/60 dark:bg-black/60 supports-[backdrop-filter]:backdrop-blur-[60px] rounded-[24px] border border-black/5 dark:border-white/5 shadow-inner flex flex-col overflow-hidden" {...getRootProps()}>
             <input className="hidden" {...getInputProps()} />
 
-            {/* Toolbar - PIXEL PERFECT from aa */}
+            {/* Toolbar - iOS 26 Style */}
             <div
-                data-scheme="secondary"
-                className={`not-prose bg-primary flex items-center justify-between py-0.5 ${boxed ? `border ${borderClass} rounded-t` : `border-b ${borderClass}/70`}`}
+                className={`not-prose flex items-center justify-between p-2 ${boxed ? `border-b ${borderClass}/50` : `border-b ${borderClass}/30`} bg-white/40 dark:bg-black/40 overflow-hidden`}
             >
-                <ul className="flex items-center list-none p-0 mx-2 space-x-1 w-full !mb-0">
+                <ul className="flex items-center list-none p-0 m-0 space-x-1 w-full flex-nowrap overflow-x-auto no-scrollbar pb-1 -mb-1">
                     {buttons.map((button, index) => (
                         <li key={index}>
-                            <OSButton
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
                                 type="button"
-                                variant="default"
-                                size="md"
-                                icon={button.icon}
-                                className={`!text-secondary hover:!text-primary ${button.isActive(editor) ? '!text-primary bg-accent' : ''}`}
-                                tooltip={button.tooltipContent}
-                                tooltipDelay={500}
-                                onClick={() => button.action(editor)}
-                            />
+                                className={`p-1.5 rounded-full flex items-center justify-center transition-colors duration-300 ${button.isActive(editor) ? 'bg-black/10 dark:bg-white/10 text-primary shadow-sm' : 'text-primary/40 hover:text-primary hover:bg-black/5 dark:hover:bg-white/5'}`}
+                                title={button.tooltipContent}
+                                onClick={(e) => {
+                                    e.preventDefault()
+                                    button.action(editor)
+                                }}
+                            >
+                                {React.cloneElement(button.icon as React.ReactElement<{ className?: string }>, { className: 'w-4 h-4' })}
+                            </motion.button>
                         </li>
                     ))}
                     <li>
-                        <OSButton
+                        <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
                             type="button"
-                            variant="default"
-                            size="md"
-                            icon={<IconImage />}
-                            className="!text-secondary hover:!text-primary"
-                            tooltip="Image"
-                            tooltipDelay={500}
+                            className="p-1.5 rounded-full flex items-center justify-center text-primary/40 hover:text-primary hover:bg-black/5 dark:hover:bg-white/5 transition-colors duration-300"
+                            title="Image"
                             onClick={(e) => {
                                 e.preventDefault()
                                 open()
                             }}
-                        />
+                        >
+                            <IconImage className="w-4 h-4" />
+                        </motion.button>
                     </li>
-
                 </ul>
             </div>
 
-            {/* Editor Area - PIXEL PERFECT from aa */}
-            <div className={`relative ${boxed ? `border ${borderClass} border-t-0 rounded-b` : ''} bg-primary`}>
-                <div className="relative">
+            {/* Editor Area - iOS 26 Style */}
+            <div className={`relative flex-1 bg-transparent min-h-[120px] transition-colors duration-300 ease-in-out focus-within:bg-white/80 dark:focus-within:bg-black/80`}>
+                <div className="relative h-full">
                     {mentions && (
                         <AnimatePresence>
                             {showMentionProfiles && (
@@ -386,32 +429,32 @@ export default function ForumRichText({
                         </AnimatePresence>
                     )}
                     {label && !!editor.getHTML() && (
-                        <label className="text-sm opacity-60 block font-medium mb-1 px-3 pt-2 lowercase">{label}</label>
+                        <label className="text-[10px] opacity-40 block font-bold mb-1 px-4 pt-3 lowercase tracking-wide">{label}</label>
                     )}
                     <EditorContent editor={editor} />
                 </div>
 
                 {isDragActive && (
-                    <div className="bg-primary/95 z-10 rounded-b flex items-center justify-center absolute w-full h-full inset-0 p-2">
-                        <div className="border border-dashed border-border rounded-md w-full h-full flex items-center justify-center">
-                            <p className="m-0 font-semibold lowercase">drop image here</p>
+                    <div className="bg-white/80 dark:bg-black/80 supports-[backdrop-filter]:backdrop-blur-[40px] z-10 flex items-center justify-center absolute w-full h-full inset-0 p-4">
+                        <div className="border-2 border-dashed border-primary/20 rounded-[16px] w-full h-full flex items-center justify-center bg-black/5 dark:bg-white/5">
+                            <p className="m-0 font-bold lowercase text-primary/60">drop image here</p>
                         </div>
                     </div>
                 )}
             </div>
 
-            {/* Bottom Bar - PIXEL PERFECT from aa */}
-            <div className="flex justify-between items-center mt-2 px-1">
+            {/* Bottom Bar - iOS 26 Style */}
+            <div className="flex justify-between items-center p-3 border-t border-black/5 dark:border-white/5 bg-white/40 dark:bg-black/40">
                 <div className="flex gap-2 items-center">
                     {cta ? (typeof cta === 'function' ? cta() : cta) : <div />}
                 </div>
                 <aside className="flex items-center gap-3">
-                    <span className="text-xs opacity-70 text-primary lowercase">
+                    <span className="text-[10px] font-bold opacity-40 text-primary lowercase tracking-wider">
                         {editor.storage.characterCount.characters()} / {maxLength}
                     </span>
                     {showMarkdownLogo && (
                         <a
-                            className="text-muted hover:text-secondary opacity-40 hover:opacity-100 transition-opacity"
+                            className="text-primary/20 hover:text-primary/60 transition-all duration-300"
                             href="https://www.markdownguide.org/cheat-sheet/"
                             target="_blank"
                             rel="noreferrer"
@@ -422,7 +465,6 @@ export default function ForumRichText({
                     )}
                 </aside>
             </div>
-
         </div>
     )
 }

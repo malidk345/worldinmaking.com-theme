@@ -127,7 +127,7 @@ export default function ContactContent() {
                                 value={formData.message}
                                 onChange={e => setFormData({ ...formData, message: e.target.value })}
                                 placeholder="type your transmission here..."
-                                className="w-full bg-primary border border-border rounded-md px-10 py-3 text-[15px] shadow-[0_2px_4px_rgba(0,0,0,0.02)] focus:border-blue-primary focus:ring-1 focus:ring-blue-primary transition-all resize-none text-primary placeholder:text-muted"
+                                className="w-full bg-white/60 dark:bg-black/60 supports-[backdrop-filter]:backdrop-blur-[20px] border border-black/5 dark:border-white/5 rounded-[24px] px-10 py-4 text-[15px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] focus:border-black/10 dark:focus:border-white/10 focus:bg-white/80 dark:focus:bg-black/80 transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] resize-none text-primary placeholder:text-primary/40 outline-none"
                             />
                         </div>
                     </div>
