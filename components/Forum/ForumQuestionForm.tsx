@@ -33,26 +33,26 @@ export default function ForumQuestionForm({ isInForum = false, archived = false,
         <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`relative bg-white/40 dark:bg-black/40 supports-[backdrop-filter]:backdrop-blur-[40px] rounded-[32px] p-4 border border-black/5 dark:border-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.04)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${className} ${archived ? 'opacity-25 pointer-events-none' : ''}`}
+            className={`relative bg-white/40 dark:bg-black/40 supports-[backdrop-filter]:backdrop-blur-[40px] rounded-[24px] md:rounded-[32px] p-3 md:p-4 border border-black/5 dark:border-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.04)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] w-full max-w-full min-w-0 ${className} ${archived ? 'opacity-25 pointer-events-none' : ''}`}
         >
-            <div className="flex items-start gap-3 mb-3">
-                <div className="w-[36px] h-[36px] rounded-full overflow-hidden shrink-0 mt-0.5 border border-black/10 dark:border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+            <div className="flex items-start gap-2 md:gap-3 mb-3">
+                <div className="w-[32px] h-[32px] md:w-[36px] md:h-[36px] rounded-full overflow-hidden shrink-0 mt-0.5 border border-black/10 dark:border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
                     <ForumAvatar
                         className="w-full h-full"
                         image={profile?.avatar_url}
                     />
                 </div>
 
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 w-full max-w-full">
                     {isInForum && (
-                        <div className="mb-3">
+                        <div className="mb-2 md:mb-3">
                             <Input
                                 label="Subject"
                                 showLabel={false}
                                 value={subject}
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSubject(e.target.value)}
                                 placeholder="subject (optional)"
-                                className="!w-full bg-white/60 dark:bg-black/60 !border !border-black/5 dark:!border-white/5 !rounded-full !px-4 !py-2 text-sm text-primary font-bold outline-none placeholder:text-primary/40 focus:!bg-white focus:!border-black/10 dark:focus:!bg-black/80 dark:focus:!border-white/10 shadow-inner transition-all duration-300 lowercase"
+                                className="!w-full bg-white/60 dark:bg-black/60 !border !border-black/5 dark:!border-white/5 !rounded-full !px-3 !py-1.5 md:!px-4 md:!py-2 text-xs md:text-sm text-primary font-bold outline-none placeholder:text-primary/40 focus:!bg-white focus:!border-black/10 dark:focus:!bg-black/80 dark:focus:!border-white/10 shadow-inner transition-all duration-300 lowercase"
                                 onBlur={(e: React.FocusEvent<HTMLInputElement>) => e.preventDefault()}
                                 required
                                 id="subject"
@@ -63,7 +63,7 @@ export default function ForumQuestionForm({ isInForum = false, archived = false,
                         </div>
                     )}
 
-                    <div data-scheme="primary" className="space-y-3">
+                    <div data-scheme="primary" className="space-y-2 md:space-y-3">
                         <ForumRichText
                             initialValue={body}
                             setFieldValue={(field: string, value: string) => setBody(value)}
@@ -71,7 +71,7 @@ export default function ForumQuestionForm({ isInForum = false, archived = false,
                             autoFocus={!isInForum}
                             boxed={true}
                             borderClass="border-black/10 dark:border-white/10"
-                            className="bg-transparent min-h-[120px] lowercase px-2"
+                            className="bg-transparent lowercase px-1 md:px-2"
                             placeholder={isInForum ? "type more details..." : "add a comment..."}
                             cta={
                                 <OSButton

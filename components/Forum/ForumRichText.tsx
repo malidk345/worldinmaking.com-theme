@@ -306,7 +306,7 @@ export default function ForumRichText({
         editorProps: {
             attributes: {
                 // Exact styling from aa project's OSTextarea but applied to Tiptap
-                class: `focus:outline-none min-h-[160px] max-h-[350px] overflow-y-auto p-3 prose prose-sm dark:prose-invert max-w-none text-black dark:text-white [&_p]:text-black [&_p]:dark:text-white focus:[&_p]:!text-black focus:[&_p]:dark:!text-white [&_a]:font-semibold break-words [overflow-wrap:anywhere] ${className}`,
+                class: `focus:outline-none min-h-[80px] md:min-h-[120px] max-h-[250px] md:max-h-[350px] overflow-y-auto p-3 prose prose-sm dark:prose-invert max-w-none text-black dark:text-white [&_p]:text-black [&_p]:dark:text-white focus:[&_p]:!text-black focus:[&_p]:dark:!text-white [&_a]:font-semibold break-words [overflow-wrap:anywhere] ${className}`,
             },
             handlePaste: (view, event) => {
                 const items = Array.from(event.clipboardData?.items || [])
@@ -371,21 +371,21 @@ export default function ForumRichText({
     if (!editor) return null
 
     return (
-        <div className="relative bg-white/60 dark:bg-black/60 supports-[backdrop-filter]:backdrop-blur-[60px] rounded-[24px] border border-black/5 dark:border-white/5 shadow-inner flex flex-col overflow-hidden" {...getRootProps()}>
+        <div className="relative bg-white/60 dark:bg-black/60 supports-[backdrop-filter]:backdrop-blur-[60px] rounded-[24px] border border-black/5 dark:border-white/5 shadow-inner flex flex-col overflow-hidden w-full max-w-full min-w-0" {...getRootProps()}>
             <input className="hidden" {...getInputProps()} />
 
             {/* Toolbar - iOS 26 Style */}
             <div
-                className={`not-prose flex items-center justify-between p-2 ${boxed ? `border-b ${borderClass}/50` : `border-b ${borderClass}/30`} bg-white/40 dark:bg-black/40 overflow-hidden`}
+                className={`not-prose flex items-center justify-between p-1 md:p-2 ${boxed ? `border-b ${borderClass}/50` : `border-b ${borderClass}/30`} bg-white/40 dark:bg-black/40 overflow-hidden`}
             >
                 <ul className="flex items-center list-none p-0 m-0 space-x-1 w-full flex-nowrap overflow-x-auto no-scrollbar pb-1 -mb-1">
                     {buttons.map((button, index) => (
-                        <li key={index}>
+                        <li key={index} className="shrink-0">
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                                 type="button"
-                                className={`p-1.5 rounded-full flex items-center justify-center transition-colors duration-300 ${button.isActive(editor) ? 'bg-black/10 dark:bg-white/10 text-primary shadow-sm' : 'text-primary/40 hover:text-primary hover:bg-black/5 dark:hover:bg-white/5'}`}
+                                className={`p-1 md:p-1.5 rounded-full flex items-center justify-center transition-colors duration-300 ${button.isActive(editor) ? 'bg-black/10 dark:bg-white/10 text-primary shadow-sm' : 'text-primary/40 hover:text-primary hover:bg-black/5 dark:hover:bg-white/5'}`}
                                 title={button.tooltipContent}
                                 onClick={(e) => {
                                     e.preventDefault()
@@ -396,12 +396,12 @@ export default function ForumRichText({
                             </motion.button>
                         </li>
                     ))}
-                    <li>
+                    <li className="shrink-0">
                         <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                             type="button"
-                            className="p-1.5 rounded-full flex items-center justify-center text-primary/40 hover:text-primary hover:bg-black/5 dark:hover:bg-white/5 transition-colors duration-300"
+                            className="p-1 md:p-1.5 rounded-full flex items-center justify-center text-primary/40 hover:text-primary hover:bg-black/5 dark:hover:bg-white/5 transition-colors duration-300"
                             title="Image"
                             onClick={(e) => {
                                 e.preventDefault()
@@ -444,7 +444,7 @@ export default function ForumRichText({
             </div>
 
             {/* Bottom Bar - iOS 26 Style */}
-            <div className="flex justify-between items-center p-3 border-t border-black/5 dark:border-white/5 bg-white/40 dark:bg-black/40">
+            <div className="flex justify-between items-center p-2 md:p-3 border-t border-black/5 dark:border-white/5 bg-white/40 dark:bg-black/40">
                 <div className="flex gap-2 items-center">
                     {cta ? (typeof cta === 'function' ? cta() : cta) : <div />}
                 </div>
