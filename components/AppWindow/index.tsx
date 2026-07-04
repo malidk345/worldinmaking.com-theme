@@ -520,33 +520,6 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                                     { type: 'separator' },
                                                     {
                                                         type: 'item',
-                                                        label: 'minimize',
-                                                        onClick: handleMinimize,
-                                                    },
-                                                    {
-                                                        type: 'item',
-                                                        label: 'maximize',
-                                                        onClick: handleDoubleClick,
-                                                    },
-                                                    {
-                                                        type: 'submenu',
-                                                        label: 'snap to...',
-                                                        items: [
-                                                            {
-                                                                type: 'item',
-                                                                label: 'left half',
-                                                                onClick: () => handleSnapToSide('left'),
-                                                            },
-                                                            {
-                                                                type: 'item',
-                                                                label: 'right half',
-                                                                onClick: () => handleSnapToSide('right'),
-                                                            },
-                                                        ]
-                                                    },
-                                                    { type: 'separator' },
-                                                    {
-                                                        type: 'item',
                                                         label: 'close',
                                                         onClick: handleClose,
                                                         shortcut: ['Shift', 'W'],
