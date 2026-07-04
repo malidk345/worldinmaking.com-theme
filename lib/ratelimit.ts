@@ -1,9 +1,11 @@
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis/cloudflare'
 
-// Initialize Redis only if the environment variables are present
-// This ensures that the application won't break if Redis is not configured
-const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+const url = process.env.UPSTASH_REDIS_REST_URL;
+const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+// Initialize Redis only if actual valid environment variables are present (not placeholders)
+const redis = url && token && url.startsWith('https://') && url !== 'your-upstash-url'
     ? Redis.fromEnv()
     : null;
 

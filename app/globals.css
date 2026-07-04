@@ -702,10 +702,10 @@ mark {
     position: fixed;
     margin: 0;
     padding: 0;
+    background-color: rgb(var(--accent)) !important;
   }
 
   body {
-    background-color: rgb(var(--bg));
     color: rgb(var(--text-primary));
     font-family: var(--font-ibm-plex), -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui', 'helvetica neue', helvetica, Ubuntu, roboto, noto, arial, sans-serif !important;
     word-wrap: break-word;
@@ -718,7 +718,7 @@ mark {
   }
 
   .dark body {
-    background-color: rgb(var(--bg));
+    background-color: rgb(var(--accent)) !important;
     color: rgb(var(--text-primary));
   }
 
