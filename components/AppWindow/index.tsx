@@ -138,6 +138,17 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
         }
     }
 
+    const handleCopyLink = () => {
+        if (typeof window !== 'undefined' && item.path) {
+            navigator.clipboard.writeText(window.location.origin + item.path).catch(() => {})
+        }
+    }
+
+    const handleRefresh = () => {
+        // Force a re-render of the window content by toggling the rendered state briefly
+        setRendered(false)
+        setTimeout(() => setRendered(true), 10)
+    }
 
     const onAnimationStart = () => {
         animationStartTimeRef.current = performance.now()
@@ -496,6 +507,44 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                                 ),
                                                 items: [
                                                     ...(Array.isArray(item.props?.pageOptions) ? item.props.pageOptions : []),
+                                                    {
+                                                        type: 'item',
+                                                        label: 'refresh',
+                                                        onClick: handleRefresh,
+                                                    },
+                                                    {
+                                                        type: 'item',
+                                                        label: 'copy link',
+                                                        onClick: handleCopyLink,
+                                                    },
+                                                    { type: 'separator' },
+                                                    {
+                                                        type: 'item',
+                                                        label: 'minimize',
+                                                        onClick: handleMinimize,
+                                                    },
+                                                    {
+                                                        type: 'item',
+                                                        label: 'maximize',
+                                                        onClick: handleDoubleClick,
+                                                    },
+                                                    {
+                                                        type: 'submenu',
+                                                        label: 'snap to...',
+                                                        items: [
+                                                            {
+                                                                type: 'item',
+                                                                label: 'left half',
+                                                                onClick: () => handleSnapToSide('left'),
+                                                            },
+                                                            {
+                                                                type: 'item',
+                                                                label: 'right half',
+                                                                onClick: () => handleSnapToSide('right'),
+                                                            },
+                                                        ]
+                                                    },
+                                                    { type: 'separator' },
                                                     {
                                                         type: 'item',
                                                         label: 'close',
