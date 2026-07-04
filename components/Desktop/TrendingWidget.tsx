@@ -134,20 +134,20 @@ export default function TrendingWidget() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className="fixed bottom-20 md:bottom-24 left-4 right-4 md:left-auto md:right-10 w-auto md:w-[700px] lg:w-[820px] bg-white/80 dark:bg-black/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1),_0_0_0_1px_rgba(255,255,255,0.2)_inset,0_0_0_1px_rgba(0,0,0,0.05)_inset] dark:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.5),_0_0_0_1px_rgba(255,255,255,0.05)_inset] z-50 font-sans border border-white/20 dark:border-white/10 rounded-[32px] overflow-hidden"
+            className="fixed bottom-20 md:bottom-24 left-4 right-4 md:left-auto md:right-10 w-auto md:w-[700px] lg:w-[820px] bg-white/70 dark:bg-black/70 supports-[backdrop-filter]:backdrop-blur-[24px] shadow-[0_24px_80px_-20px_rgba(0,0,0,0.25)] dark:shadow-[0_24px_80px_-20px_rgba(0,0,0,0.65)] z-50 font-sans border border-black/10 dark:border-white/10 rounded-[32px]"
         >
             {/* 1. Toolbar */}
-            <div className="flex items-center justify-between px-2 md:px-4 py-2 border-b border-black/5 dark:border-white/5">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-black/5 dark:border-white/5">
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">
                         {activeTab === 'blog' ? (
-                            <FileText className="w-4 h-4 text-red-600" />
+                            <FileText className="w-4 h-4 text-primary" />
                         ) : activeTab === 'community' ? (
-                            <MessageCircle className="w-4 h-4 text-emerald-600" />
+                            <MessageCircle className="w-4 h-4 text-primary" />
                         ) : (
-                            <Bell className="w-4 h-4 text-[#172b4d]" />
+                            <Bell className="w-4 h-4 text-primary" />
                         )}
-                        <span className="text-[13px] font-black text-primary lowercase tracking-tight">
+                        <span className="text-[13px] font-bold text-primary lowercase tracking-tight">
                             {activeTab === 'blog' ? 'trending posts' : activeTab === 'community' ? 'trending entries' : 'updates'}
                         </span>
                     </div>
@@ -157,7 +157,7 @@ export default function TrendingWidget() {
                     <span className="lowercase text-[11px] font-bold">
                         {(currentPage * itemsPerPage) + 1}-{Math.min((currentPage + 1) * itemsPerPage, currentPosts.length)} of {currentPosts.length}
                     </span>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2.5">
                         <RefreshCw
                             className={`w-3.5 h-3.5 opacity-60 cursor-pointer hover:opacity-100 mr-2 ${loading ? 'animate-spin' : ''}`}
                             onClick={fetchTopPosts}
@@ -174,71 +174,72 @@ export default function TrendingWidget() {
                 </div>
             </div>
 
-            {/* 2. Categorized Tabs (Blog & Community) */}
-            <div className="flex items-center border-b border-black/5 dark:border-white/5">
-                <div
+            {/* 2. Categorized Tabs (Segmented Control style) */}
+            <div className="bg-black/5 dark:bg-white/5 rounded-[24px] p-1 mx-6 my-3 flex gap-1 border border-black/5 dark:border-white/5">
+                <button
                     onClick={() => { setActiveTab('blog'); setCurrentPage(0); }}
-                    className={`flex-1 flex items-center gap-2 md:gap-3 px-3 md:px-5 py-3 cursor-pointer transition-colors border-b-2 ${activeTab === 'blog' ? 'border-red-600 bg-red-50/10' : 'border-transparent hover:bg-black/5 opacity-60'}`}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 text-[13px] font-semibold transition-all duration-300 lowercase rounded-[20px] cursor-pointer ${
+                        activeTab === 'blog'
+                            ? 'bg-white/95 dark:bg-white/10 text-black dark:text-white shadow-[0_4px_12px_rgba(0,0,0,0.06)] border border-black/5 dark:border-white/10'
+                            : 'text-primary/75 hover:bg-black/5 dark:hover:bg-white/5 border border-transparent'
+                    }`}
                 >
-                    <FileText className={`w-4 h-4 ${activeTab === 'blog' ? 'text-red-600' : ''}`} />
-                    <div className="flex flex-col min-w-0">
-                        <span className={`text-[13px] font-bold lowercase flex items-center gap-2 ${activeTab === 'blog' ? 'text-red-700' : ''}`}>
-                            posts
-                        </span>
-                        <span className="hidden md:inline text-[11px] opacity-50 lowercase truncate">trending, articles, worldinmaking</span>
-                    </div>
-                </div>
+                    <FileText className="w-4 h-4" />
+                    <span>posts</span>
+                </button>
 
-                <div
+                <button
                     onClick={() => { setActiveTab('community'); setCurrentPage(0); }}
-                    className={`flex-1 flex items-center gap-2 md:gap-3 px-3 md:px-5 py-3 cursor-pointer transition-colors border-b-2 ${activeTab === 'community' ? 'border-emerald-600 bg-emerald-600/10' : 'border-transparent hover:bg-black/5 opacity-60'}`}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 text-[13px] font-semibold transition-all duration-300 lowercase rounded-[20px] cursor-pointer ${
+                        activeTab === 'community'
+                            ? 'bg-white/95 dark:bg-white/10 text-black dark:text-white shadow-[0_4px_12px_rgba(0,0,0,0.06)] border border-black/5 dark:border-white/10'
+                            : 'text-primary/75 hover:bg-black/5 dark:hover:bg-white/5 border border-transparent'
+                    }`}
                 >
-                    <MessageCircle className={`w-4 h-4 ${activeTab === 'community' ? 'text-emerald-600' : ''}`} />
-                    <div className="flex flex-col min-w-0">
-                        <span className={`text-[13px] font-bold lowercase flex items-center gap-2 ${activeTab === 'community' ? 'text-emerald-700' : ''}`}>
-                            entries
-                        </span>
-                        <span className="hidden md:inline text-[11px] opacity-50 lowercase truncate">discussions, community, questions</span>
-                    </div>
-                </div>
+                    <MessageCircle className="w-4 h-4" />
+                    <span>entries</span>
+                </button>
 
-                <div
+                <button
                     onClick={() => { setActiveTab('updates'); setCurrentPage(0); }}
-                    className={`flex-1 flex items-center gap-2 md:gap-3 px-3 md:px-5 py-3 cursor-pointer transition-colors border-b-2 ${activeTab === 'updates' ? 'border-[#172b4d] bg-blue-900/5' : 'border-transparent hover:bg-black/5 opacity-40'}`}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 text-[13px] font-semibold transition-all duration-300 lowercase rounded-[20px] cursor-pointer ${
+                        activeTab === 'updates'
+                            ? 'bg-white/95 dark:bg-white/10 text-black dark:text-white shadow-[0_4px_12px_rgba(0,0,0,0.06)] border border-black/5 dark:border-white/10'
+                            : 'text-primary/75 hover:bg-black/5 dark:hover:bg-white/5 border border-transparent'
+                    }`}
                 >
-                    <Bell className={`w-4 h-4 ${activeTab === 'updates' ? 'text-[#172b4d]' : ''}`} />
-                    <div className="flex flex-col min-w-0">
-                        <span className={`text-[13px] font-bold lowercase flex items-center gap-2 ${activeTab === 'updates' ? 'text-[#172b4d]' : ''}`}>
-                            updates
-                        </span>
-                        <span className="hidden md:inline text-[11px] opacity-50 lowercase truncate">system logs, fix, status</span>
-                    </div>
-                </div>
+                    <Bell className="w-4 h-4" />
+                    <span>updates</span>
+                </button>
             </div>
 
             {/* 3. List Area */}
-            <div className="max-h-[35vh] md:max-h-[380px] overflow-y-auto custom-scrollbar bg-transparent">
+            <div className="max-h-[35vh] md:max-h-[380px] overflow-y-auto custom-scrollbar bg-transparent px-4 pb-4">
                 {currentPosts.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage).map((post) => (
                     <div
                         key={`${post.type}-${post.id}`}
                         onClick={() => activeTab !== 'updates' && handleOpen(post)}
-                        className={`group flex items-center px-3 md:px-4 py-2 border-b border-black/5 dark:border-white/5 transition-all ${activeTab === 'updates' ? 'cursor-default' : 'cursor-pointer hover:bg-black/5 dark:hover:bg-white/10 rounded-xl mx-2 my-1 hover:border-transparent dark:hover:border-transparent'} relative`}
+                        className={`group flex items-center px-4 py-3 border border-transparent transition-all duration-300 rounded-[20px] ${
+                            activeTab === 'updates'
+                                ? 'cursor-default'
+                                : 'cursor-pointer hover:bg-black/5 dark:hover:bg-white/10 hover:border-black/5 dark:hover:border-white/5'
+                        }`}
                     >
                         {/* Author Avatar or System Icon */}
-                        <div className="mr-3 flex-shrink-0">
+                        <div className="mr-3.5 flex-shrink-0">
                             {activeTab === 'updates' ? (
-                                <div className="w-5 h-5 rounded-full bg-slate-900/10 flex items-center justify-center border border-slate-900/20">
-                                    <Bell className="w-3 h-3 text-[#172b4d]" />
+                                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center border border-primary/5">
+                                    <Bell className="w-3.5 h-3.5 text-primary" />
                                 </div>
                             ) : post.avatar_url ? (
                                 /* eslint-disable-next-line @next/next/no-img-element */
                                 <img
                                     src={post.avatar_url}
                                     alt={post.author}
-                                    className="w-5 h-5 rounded-full object-cover border border-[#dadce0] dark:border-[#3c4043]"
+                                    className="w-6 h-6 rounded-full object-cover border border-black/10 dark:border-white/10 shadow-sm"
                                 />
                             ) : (
-                                <div className="w-5 h-5 rounded-full bg-black/10 dark:bg-white/10 flex items-center justify-center text-[10px] font-black text-primary lowercase border border-[#dadce0] dark:border-[#3c4043]">
+                                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary lowercase border border-black/10 dark:border-white/10">
                                     {(post.author || 'a').charAt(0)}
                                 </div>
                             )}
@@ -246,11 +247,11 @@ export default function TrendingWidget() {
 
                         {/* Title & Body Preview */}
                         <div className="flex-1 flex items-baseline gap-2 min-w-0 pr-4 overflow-hidden">
-                            <span className={`text-[12px] md:text-[13px] font-black text-primary lowercase ${activeTab === 'updates' ? '' : 'truncate'}`}>
+                            <span className={`text-[12px] md:text-[13.5px] font-semibold text-primary lowercase ${activeTab === 'updates' ? '' : 'truncate'}`}>
                                 {post.title}
                             </span>
                             {activeTab !== 'updates' && (
-                                <span className="text-[11px] md:text-[13px] text-primary/40 truncate lowercase hidden sm:inline">
+                                <span className="text-[11px] md:text-[12.5px] text-primary/40 truncate lowercase hidden sm:inline">
                                     - trending {post.type} with {post.view_count} views...
                                 </span>
                             )}
@@ -264,7 +265,7 @@ export default function TrendingWidget() {
                                     <span>{post.view_count || 0}</span>
                                 </div>
                             )}
-                            <span className="text-[10px] md:text-[11px] font-bold text-primary opacity-60 whitespace-nowrap lowercase">
+                            <span className="text-[10px] md:text-[11px] font-bold text-primary opacity-50 whitespace-nowrap lowercase">
                                 {post.time}
                             </span>
                         </div>
@@ -273,7 +274,7 @@ export default function TrendingWidget() {
             </div>
 
             {/* Footer */}
-            <div className="px-4 py-2 bg-black/5 dark:bg-white/5 border-t border-black/5 dark:border-white/5 flex justify-between items-center text-[10px] opacity-40 lowercase font-bold">
+            <div className="px-6 py-4 bg-black/5 dark:bg-white/5 border-t border-black/5 dark:border-white/5 flex justify-between items-center text-[10px] opacity-40 lowercase font-bold rounded-b-[32px]">
                 <div className="flex gap-3">
                     {activeTab === 'blog' ? (
                         <span>1-{blogPosts.length} of {totalPosts} posts total</span>
@@ -284,7 +285,7 @@ export default function TrendingWidget() {
                     )}
                 </div>
                 <div className="flex items-center">
-                    <LayoutGrid className="w-3.5 h-3.5" />
+                    <LayoutGrid className="w-4 h-4" />
                 </div>
             </div>
         </motion.div>
