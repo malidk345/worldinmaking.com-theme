@@ -193,6 +193,11 @@ export const useCommunity = () => {
     );
 
     useEffect(() => {
+        if (typeof window === 'undefined' || !window.WebSocket) {
+            logger.warn('[Supabase Realtime] WebSocket is not supported or defined in this environment.');
+            return;
+        }
+
         const channel = supabase
             .channel('community_changes')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'community_post_votes' }, () => {
@@ -207,7 +212,11 @@ export const useCommunity = () => {
                     if (activePostSlug) mutate(['community_posts_slug', activePostSlug]);
                 }
             )
-            .subscribe();
+            .subscribe((status) => {
+                if (status === 'CHANNEL_ERROR') {
+                    logger.warn('[Supabase Realtime] Failed to subscribe to channel community_changes');
+                }
+            });
 
         return () => {
             supabase.removeChannel(channel);
