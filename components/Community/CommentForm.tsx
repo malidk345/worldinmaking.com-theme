@@ -5,6 +5,7 @@ import OSButton from 'components/OSButton'
 import { useAuth } from 'context/AuthContext'
 import ForumAvatar from '../Forum/ForumAvatar'
 import ForumRichText from '../Forum/ForumRichText'
+import Input from '../OSForm/input'
 import { stripHtmlTags } from 'utils/security'
 
 interface CommentFormProps {
@@ -31,56 +32,58 @@ export default function CommentForm({ onSubmit, className = '', placeholder = "a
     if (!isActive) {
         return (
             <div className={`p-1 flex items-center space-x-3 ${className}`}>
-                <div className="w-[30px] h-[30px] ml-[-2px] rounded-full overflow-hidden shrink-0 border !border-black/10 dark:!border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+                <div className="w-[30px] h-[30px] ml-[-2px] rounded-full overflow-hidden shrink-0 border !border-black dark:border-white">
                     <ForumAvatar
                         className="w-full h-full"
                         image={profile?.avatar_url}
                     />
                 </div>
-                <button
+                <OSButton
                     id="comment-form-button"
                     onClick={() => setIsActive(true)}
-                    className="flex-1 text-left px-4 py-2.5 rounded-full border border-black/5 dark:border-white/5 bg-white/60 dark:bg-black/60 supports-[backdrop-filter]:backdrop-blur-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:bg-white/80 dark:hover:bg-black/80 hover:scale-[1.01] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]"
+                    size="md"
+                    width="full"
+                    align="left"
+                    variant="underlineOnHover"
+                    className="border !border-black dark:border-white bg-accent/70 hover:bg-accent !p-2"
                 >
-                    <span className="font-bold text-sm text-primary/60 lowercase">{placeholder}</span>
-                </button>
+                    <span className="font-bold text-primary">{placeholder}</span>
+                </OSButton>
             </div>
         )
     }
 
     return (
-        <div className={`relative bg-white/40 dark:bg-black/40 supports-[backdrop-filter]:backdrop-blur-[40px] rounded-[32px] p-4 border border-black/5 dark:border-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.04)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${className}`}>
-            <div className="flex items-start gap-3 mb-3">
-                <div className="w-[36px] h-[36px] rounded-full overflow-hidden shrink-0 mt-0.5 border border-black/10 dark:border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-                    <ForumAvatar
-                        className="w-full h-full"
-                        image={profile?.avatar_url}
-                    />
-                </div>
-                <div className="flex-1 min-w-0">
-                    <input
-                        type="text"
-                        value={subject}
-                        onChange={(e) => setSubject(e.target.value)}
-                        placeholder="subject (optional)"
-                        className="w-full bg-white/60 dark:bg-black/60 border border-black/5 dark:border-white/5 rounded-full px-4 py-2 text-sm text-primary font-bold outline-none placeholder:text-primary/40 focus:bg-white focus:border-black/10 dark:focus:bg-black/80 dark:focus:border-white/10 shadow-inner transition-all duration-300 lowercase"
-                        id="comment-subject"
-                        name="subject"
-                        maxLength={140}
-                        autoFocus
-                    />
-                </div>
+        <div className={`relative ${className}`}>
+            <div className="w-[40px] h-[40px] float-left ml-[-2px] rounded-full overflow-hidden shrink-0 mt-1">
+                <ForumAvatar
+                    className="w-full h-full"
+                    image={profile?.avatar_url}
+                />
             </div>
+            <div data-scheme="primary" className="pl-[55px] space-y-3">
+                <Input
+                    label="subject (optional)"
+                    showLabel={false}
+                    value={subject}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSubject(e.target.value)}
+                    placeholder="subject (optional)"
+                    className="text-primary lowercase !border-black"
+                    onBlur={(e: React.FocusEvent<HTMLInputElement>) => e.preventDefault()}
+                    id="comment-subject"
+                    name="subject"
+                    maxLength={140}
+                    autoFocus
+                />
 
-            <div data-scheme="primary" className="space-y-3">
                 <ForumRichText
                     initialValue={body}
                     setFieldValue={(field: string, value: string) => setBody(value)}
                     onSubmit={handleSubmit}
                     mentions={true}
                     boxed={true}
-                    borderClass="border-black/10 dark:border-white/10"
-                    className="bg-transparent min-h-[120px] lowercase px-2"
+                    borderClass="border-black"
+                    className="bg-transparent min-h-[120px] lowercase"
                     placeholder={placeholder}
                     cta={
                         <div className="flex gap-2">
@@ -89,9 +92,8 @@ export default function CommentForm({ onSubmit, className = '', placeholder = "a
                                 variant="primary"
                                 disabled={!stripHtmlTags(body)}
                                 onClick={handleSubmit}
-                                className="rounded-full !px-5 shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:scale-105 active:scale-95 transition-all duration-300"
                             >
-                                <span className="lowercase font-bold">post</span>
+                                <span className="lowercase">post</span>
                             </OSButton>
                             <OSButton
                                 size="sm"
@@ -101,17 +103,17 @@ export default function CommentForm({ onSubmit, className = '', placeholder = "a
                                     setSubject('')
                                     setIsActive(false)
                                 }}
-                                className="rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 border-none hover:scale-105 active:scale-95 transition-all duration-300"
                             >
-                                <span className="lowercase font-bold">cancel</span>
+                                <span className="lowercase">cancel</span>
                             </OSButton>
                         </div>
                     }
                 />
-                <p className="text-[10px] opacity-40 mt-2 px-2 [text-wrap:balance] text-primary lowercase font-medium tracking-wide">
+                <p className="text-[11px] opacity-40 mt-4 [text-wrap:balance] text-primary lowercase">
                     guidelines: please keep the discussion civil and constructive.
                 </p>
             </div>
+            <div className="clear-both" />
         </div>
     )
 }
