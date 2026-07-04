@@ -152,12 +152,12 @@ export default function Desktop() {
             </div>
 
 
-            <nav className="fixed top-24 left-10 pointer-events-none z-10">
+            <nav className="fixed top-24 left-6 sm:left-10 right-6 sm:right-auto pointer-events-none z-10">
                 <motion.ul
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: rendered ? 1 : 0, y: rendered ? 0 : -20 }}
                     transition={{ duration: 0.5, delay: 0.2 }}
-                    className="list-none m-0 p-0 flex flex-row gap-8 items-start pointer-events-auto"
+                    className="list-none m-0 p-0 flex flex-row flex-wrap gap-x-4 sm:gap-x-8 gap-y-6 items-start justify-start pointer-events-auto max-w-full sm:max-w-none"
                 >
                     {visibleApps.map((app) => (
                         <DraggableDesktopIcon
