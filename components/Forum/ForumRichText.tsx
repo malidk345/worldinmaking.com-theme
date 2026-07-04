@@ -329,51 +329,48 @@ export default function ForumRichText({
     if (!editor) return null
 
     return (
-        <div className="relative" {...getRootProps()}>
+        <div className="relative bg-white/60 dark:bg-black/60 supports-[backdrop-filter]:backdrop-blur-[20px] rounded-[24px] border border-black/5 dark:border-white/5 shadow-inner flex flex-col overflow-hidden" {...getRootProps()}>
             <input className="hidden" {...getInputProps()} />
 
-            {/* Toolbar - PIXEL PERFECT from aa */}
+            {/* Toolbar - iOS 26 Style */}
             <div
-                data-scheme="secondary"
-                className={`not-prose bg-primary flex items-center justify-between py-0.5 ${boxed ? `border ${borderClass} rounded-t` : `border-b ${borderClass}/70`}`}
+                className={`not-prose flex items-center justify-between p-2 ${boxed ? `border-b ${borderClass}/50` : `border-b ${borderClass}/30`} bg-white/40 dark:bg-black/40`}
             >
-                <ul className="flex items-center list-none p-0 mx-2 space-x-1 w-full !mb-0">
+                <ul className="flex items-center list-none p-0 m-0 space-x-1 w-full flex-wrap gap-y-1">
                     {buttons.map((button, index) => (
                         <li key={index}>
-                            <OSButton
+                            <button
                                 type="button"
-                                variant="default"
-                                size="md"
-                                icon={button.icon}
-                                className={`!text-secondary hover:!text-primary ${button.isActive(editor) ? '!text-primary bg-accent' : ''}`}
-                                tooltip={button.tooltipContent}
-                                tooltipDelay={500}
-                                onClick={() => button.action(editor)}
-                            />
+                                className={`p-1.5 rounded-full flex items-center justify-center transition-all duration-300 ${button.isActive(editor) ? 'bg-black/10 dark:bg-white/10 text-primary shadow-sm' : 'text-primary/40 hover:text-primary hover:bg-black/5 dark:hover:bg-white/5'}`}
+                                title={button.tooltipContent}
+                                onClick={(e) => {
+                                    e.preventDefault()
+                                    button.action(editor)
+                                }}
+                            >
+                                {React.cloneElement(button.icon as React.ReactElement<{ className?: string }>, { className: 'w-4 h-4' })}
+                            </button>
                         </li>
                     ))}
                     <li>
-                        <OSButton
+                        <button
                             type="button"
-                            variant="default"
-                            size="md"
-                            icon={<IconImage />}
-                            className="!text-secondary hover:!text-primary"
-                            tooltip="Image"
-                            tooltipDelay={500}
+                            className="p-1.5 rounded-full flex items-center justify-center text-primary/40 hover:text-primary hover:bg-black/5 dark:hover:bg-white/5 transition-all duration-300"
+                            title="Image"
                             onClick={(e) => {
                                 e.preventDefault()
                                 open()
                             }}
-                        />
+                        >
+                            <IconImage className="w-4 h-4" />
+                        </button>
                     </li>
-
                 </ul>
             </div>
 
-            {/* Editor Area - PIXEL PERFECT from aa */}
-            <div className={`relative ${boxed ? `border ${borderClass} border-t-0 rounded-b` : ''} bg-primary`}>
-                <div className="relative">
+            {/* Editor Area - iOS 26 Style */}
+            <div className={`relative flex-1 bg-transparent min-h-[120px] transition-colors duration-300 ease-in-out focus-within:bg-white/80 dark:focus-within:bg-black/80`}>
+                <div className="relative h-full">
                     {mentions && (
                         <AnimatePresence>
                             {showMentionProfiles && (
@@ -386,32 +383,32 @@ export default function ForumRichText({
                         </AnimatePresence>
                     )}
                     {label && !!editor.getHTML() && (
-                        <label className="text-sm opacity-60 block font-medium mb-1 px-3 pt-2 lowercase">{label}</label>
+                        <label className="text-[10px] opacity-40 block font-bold mb-1 px-4 pt-3 lowercase tracking-wide">{label}</label>
                     )}
                     <EditorContent editor={editor} />
                 </div>
 
                 {isDragActive && (
-                    <div className="bg-primary/95 z-10 rounded-b flex items-center justify-center absolute w-full h-full inset-0 p-2">
-                        <div className="border border-dashed border-border rounded-md w-full h-full flex items-center justify-center">
-                            <p className="m-0 font-semibold lowercase">drop image here</p>
+                    <div className="bg-white/80 dark:bg-black/80 supports-[backdrop-filter]:backdrop-blur-[40px] z-10 flex items-center justify-center absolute w-full h-full inset-0 p-4">
+                        <div className="border-2 border-dashed border-primary/20 rounded-[16px] w-full h-full flex items-center justify-center bg-black/5 dark:bg-white/5">
+                            <p className="m-0 font-bold lowercase text-primary/60">drop image here</p>
                         </div>
                     </div>
                 )}
             </div>
 
-            {/* Bottom Bar - PIXEL PERFECT from aa */}
-            <div className="flex justify-between items-center mt-2 px-1">
+            {/* Bottom Bar - iOS 26 Style */}
+            <div className="flex justify-between items-center p-3 border-t border-black/5 dark:border-white/5 bg-white/40 dark:bg-black/40">
                 <div className="flex gap-2 items-center">
                     {cta ? (typeof cta === 'function' ? cta() : cta) : <div />}
                 </div>
                 <aside className="flex items-center gap-3">
-                    <span className="text-xs opacity-70 text-primary lowercase">
+                    <span className="text-[10px] font-bold opacity-40 text-primary lowercase tracking-wider">
                         {editor.storage.characterCount.characters()} / {maxLength}
                     </span>
                     {showMarkdownLogo && (
                         <a
-                            className="text-muted hover:text-secondary opacity-40 hover:opacity-100 transition-opacity"
+                            className="text-primary/20 hover:text-primary/60 transition-all duration-300"
                             href="https://www.markdownguide.org/cheat-sheet/"
                             target="_blank"
                             rel="noreferrer"
@@ -422,7 +419,6 @@ export default function ForumRichText({
                     )}
                 </aside>
             </div>
-
         </div>
     )
 }
