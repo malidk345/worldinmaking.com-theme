@@ -97,7 +97,7 @@ export default function ContactContent() {
                                 value={formData.name}
                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
                                 placeholder="your identity..."
-                                className="w-full bg-primary border border-border rounded-md px-10 py-2.5 text-[15px] shadow-[0_2px_4px_rgba(0,0,0,0.02)] focus:border-blue-primary focus:ring-1 focus:ring-blue-primary transition-all text-primary placeholder:text-muted"
+                                className="w-full bg-white/60 dark:bg-black/60 supports-[backdrop-filter]:backdrop-blur-[20px] border border-black/5 dark:border-white/5 rounded-[24px] px-10 py-2.5 text-[15px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] focus:border-black/10 dark:focus:border-white/10 focus:bg-white/80 dark:focus:bg-black/80 transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] outline-none text-primary placeholder:text-primary/40"
                             />
                         </div>
                     </div>
@@ -112,7 +112,7 @@ export default function ContactContent() {
                                 value={formData.email}
                                 onChange={e => setFormData({ ...formData, email: e.target.value })}
                                 placeholder="address@domain.com..."
-                                className="w-full bg-primary border border-border rounded-md px-10 py-2.5 text-[15px] shadow-[0_2px_4px_rgba(0,0,0,0.02)] focus:border-blue-primary focus:ring-1 focus:ring-blue-primary transition-all text-primary placeholder:text-muted"
+                                className="w-full bg-white/60 dark:bg-black/60 supports-[backdrop-filter]:backdrop-blur-[20px] border border-black/5 dark:border-white/5 rounded-[24px] px-10 py-2.5 text-[15px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] focus:border-black/10 dark:focus:border-white/10 focus:bg-white/80 dark:focus:bg-black/80 transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] outline-none text-primary placeholder:text-primary/40"
                             />
                         </div>
                     </div>

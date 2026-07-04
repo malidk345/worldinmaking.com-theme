@@ -381,7 +381,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                             placeholder="post title..."
                                             value={newPostTitle}
                                             onChange={(e) => setNewPostTitle(e.target.value)}
-                                            className="bg-white/60 supports-[backdrop-filter]:backdrop-blur-[60px] border border-black/5 rounded-[24px] px-4 py-2 text-sm font-bold text-black focus:outline-none placeholder:text-black/25 w-full sm:w-64 max-w-[200px] sm:max-w-none shadow-[inset_0_2px_12px_rgba(0,0,0,0.02)] transition-all duration-300 focus:shadow-[inset_0_2px_16px_rgba(0,0,0,0.04)]"
+                                            className="bg-white/60 dark:bg-black/60 supports-[backdrop-filter]:backdrop-blur-[60px] border border-black/5 dark:border-white/5 rounded-[24px] px-4 py-2 text-sm font-bold text-primary focus:outline-none placeholder:text-primary/40 w-full sm:w-64 max-w-[200px] sm:max-w-none shadow-[inset_0_2px_12px_rgba(0,0,0,0.02)] transition-all duration-300 focus:shadow-[inset_0_2px_16px_rgba(0,0,0,0.04)]"
                                         />
                                         <OSButton className="rounded-full flex-shrink-0" size="sm" variant="primary" onClick={handleSavePost}>
                                             <div className="flex items-center gap-1">
@@ -527,7 +527,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                             placeholder="short description for seo..."
                                             value={newPostExcerpt}
                                             onChange={(e) => setNewPostExcerpt(e.target.value)}
-                                            className="w-full bg-white/60 supports-[backdrop-filter]:backdrop-blur-[20px] border border-black/5 shadow-[0_2px_12px_rgba(0,0,0,0.02)] rounded-[24px] px-4 py-3 text-xs text-black focus:bg-white/80 focus:border-black/10 focus:outline-none resize-none h-16 sm:h-20 placeholder:text-black/20 transition-all duration-300 ease-in-out"
+                                            className="w-full bg-white/60 dark:bg-black/60 supports-[backdrop-filter]:backdrop-blur-[20px] border border-black/5 dark:border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.02)] rounded-[24px] px-4 py-3 text-xs text-primary focus:bg-white/80 dark:focus:bg-black/80 focus:border-black/10 dark:focus:border-white/10 focus:outline-none resize-none h-16 sm:h-20 placeholder:text-primary/40 transition-all duration-300 ease-in-out"
                                         />
                                     </div>
 
@@ -837,13 +837,13 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                         {/* Search + Filter Bar */}
                         <div className="flex gap-2 mb-4 flex-shrink-0">
                             <div className="flex-1 relative">
-                                <Search className="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-black/30" />
+                                <Search className="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-primary/40" />
                                 <input
                                     type="text"
                                     value={commentSearchQuery}
                                     onChange={(e) => setCommentSearchQuery(e.target.value)}
                                     placeholder="search transmissions..."
-                                    className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-black/5 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] text-black placeholder:text-black/20 focus:outline-none focus:border-black/20 transition-all font-sans"
+                                    className="w-full pl-8 pr-3 py-1.5 text-xs bg-white/60 dark:bg-black/60 supports-[backdrop-filter]:backdrop-blur-[60px] border border-black/5 dark:border-white/5 rounded-[24px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] text-primary placeholder:text-primary/40 focus:outline-none focus:bg-white/80 dark:focus:bg-black/80 focus:border-black/10 dark:focus:border-white/10 transition-all font-sans"
                                 />
                             </div>
                             <div className="flex bg-white border border-black/5 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] p-0.5 shadow-sm">
@@ -930,12 +930,12 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                                 type="text"
                                                                 value={editingCommentTitle}
                                                                 onChange={(e) => setEditingCommentTitle(e.target.value)}
-                                                                className="w-full border border-black/5 rounded-[24px] bg-white/60 supports-[backdrop-filter]:backdrop-blur-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] px-4 py-2 text-xs focus:bg-white/80 focus:border-black/10 focus:outline-none font-bold transition-all duration-300"
+                                                                    className="w-full border border-black/5 dark:border-white/5 rounded-[24px] bg-white/60 dark:bg-black/60 supports-[backdrop-filter]:backdrop-blur-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] px-4 py-2 text-xs focus:bg-white/80 dark:focus:bg-black/80 focus:border-black/10 dark:focus:border-white/10 focus:outline-none font-bold transition-all duration-300"
                                                             />
                                                             <textarea
                                                                 value={editingCommentContent}
                                                                 onChange={(e) => setEditingCommentContent(e.target.value)}
-                                                                className="w-full border border-black/5 rounded-[24px] bg-white/60 supports-[backdrop-filter]:backdrop-blur-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] px-4 py-3 text-xs h-24 focus:bg-white/80 focus:border-black/10 focus:outline-none resize-none font-sans transition-all duration-300"
+                                                                    className="w-full border border-black/5 dark:border-white/5 rounded-[24px] bg-white/60 dark:bg-black/60 supports-[backdrop-filter]:backdrop-blur-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] px-4 py-3 text-xs h-24 focus:bg-white/80 dark:focus:bg-black/80 focus:border-black/10 dark:focus:border-white/10 focus:outline-none resize-none font-sans transition-all duration-300"
                                                             />
                                                             <div className="flex justify-end gap-2">
                                                                 <OSButton className="rounded-full" size="xs" variant="secondary" onClick={() => setEditingCommentId(null)}>cancel</OSButton>
@@ -1021,7 +1021,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                                     <textarea
                                                                         value={editingCommentContent}
                                                                         onChange={(e) => setEditingCommentContent(e.target.value)}
-                                                                        className="w-full border border-black/5 rounded-[24px] bg-white/60 supports-[backdrop-filter]:backdrop-blur-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] px-4 py-3 text-xs h-24 focus:bg-white/80 focus:border-black/10 focus:outline-none resize-none font-sans transition-all duration-300"
+                                                                        className="w-full border border-black/5 dark:border-white/5 rounded-[24px] bg-white/60 dark:bg-black/60 supports-[backdrop-filter]:backdrop-blur-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] px-4 py-3 text-xs h-24 focus:bg-white/80 dark:focus:bg-black/80 focus:border-black/10 dark:focus:border-white/10 focus:outline-none resize-none font-sans transition-all duration-300"
                                                                     />
                                                                     <div className="flex justify-end gap-2">
                                                                         <OSButton className="rounded-full" size="xs" variant="secondary" onClick={() => setEditingCommentId(null)}>cancel</OSButton>
