@@ -79,7 +79,6 @@ export default function ForumQuestionForm({ isInForum = false, archived = false,
                                     variant="primary"
                                     disabled={!stripHtmlTags(body) || (isInForum && !subject.trim())}
                                     onClick={handleSubmit}
-                                    className="rounded-full !px-5 shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:scale-105 active:scale-95 transition-all duration-300"
                                 >
                                     <span className="lowercase font-bold">post</span>
                                 </OSButton>

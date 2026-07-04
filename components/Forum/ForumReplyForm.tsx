@@ -85,7 +85,6 @@ export default function ForumReplyForm({ archived = false, onSubmit }: ForumRepl
                                             variant="primary"
                                             disabled={!stripHtmlTags(body)}
                                             onClick={handleSubmit}
-                                            className="rounded-full !px-5 shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:scale-105 active:scale-95 transition-all duration-300"
                                         >
                                             <span className="lowercase font-bold">post</span>
                                         </OSButton>
@@ -93,7 +92,7 @@ export default function ForumReplyForm({ archived = false, onSubmit }: ForumRepl
                                             size="sm"
                                             variant="default"
                                             onClick={() => setIsOpen(false)}
-                                            className="rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 border-none hover:scale-105 active:scale-95 transition-all duration-300"
+                                        className="border-none opacity-60 hover:opacity-100"
                                         >
                                             <span className="lowercase font-bold">cancel</span>
                                         </OSButton>
