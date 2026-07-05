@@ -58,6 +58,19 @@ const adaptPost = (p: DBPost): Post | null => {
         return indexA - indexB;
     });
 
+    const rawTranslations = p.translations || {}
+    const adaptedTranslations: Record<string, any> = {}
+    
+    Object.keys(rawTranslations).forEach((langKey) => {
+        const transObj = rawTranslations[langKey]
+        if (transObj) {
+            adaptedTranslations[langKey] = {
+                ...transObj,
+                excerpt: stripMarkdown(transObj.excerpt || '') || generateExcerptFromContent(transObj.content || '')
+            }
+        }
+    })
+
     return {
         id: p.id,
         slug: p.slug,
@@ -81,7 +94,7 @@ const adaptPost = (p: DBPost): Post | null => {
         headings: sortedHeadings,
         image: p.image_url || p.image || null,
         ribbon: p.ribbon || '#3546AB',
-        translations: p.translations || {},
+        translations: adaptedTranslations,
         language: p.language || 'en',
         originalLanguage: p.originalLanguage,
         is_approved: Boolean(p.is_approved),
