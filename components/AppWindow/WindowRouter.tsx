@@ -25,6 +25,7 @@ import { sanitizeHtml, toSlug } from '../../utils/security'
 import BlueprintsExplorer from 'components/Blueprints/BlueprintsExplorer'
 import BlueprintPostView from 'components/Blueprints/BlueprintPostView'
 import ArchiveExplorer from 'components/ArchiveExplorer'
+import ForumAvatar from 'components/Forum/ForumAvatar'
 
 interface AdaptablePost {
     id: number | string
@@ -376,7 +377,7 @@ function NodePublishedRouteView({ nodeId }: { nodeId: string }) {
 
 /** Node editor route view */
 function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; item: AppWindow; readOnly?: boolean }) {
-    const { user } = useAuth()
+    const { user, profile } = useAuth()
     const { addToast } = useToast()
     const [title, setTitle] = useState('untitled node')
     const [content, setContent] = useState('')
@@ -541,14 +542,22 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                 {/* Main Node Content Area */}
                 <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 pb-20 flex-1 flex flex-col min-h-0 pt-6 gap-3">
                     <div className="relative bg-white/40 dark:bg-black/40 supports-[backdrop-filter]:backdrop-blur-[40px] rounded-[24px] md:rounded-[32px] p-4 md:p-6 border border-black/5 dark:border-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.04)] flex flex-col gap-4">
-                        <div className="flex flex-col gap-3">
-                            <input
-                                type="text"
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                placeholder="untitled node"
-                                className="w-full bg-white/60 dark:bg-black/60 border border-black/5 dark:border-white/5 rounded-[24px] px-4 py-3 text-2xl font-black tracking-tight text-primary outline-none placeholder:text-primary/40 focus:bg-white focus:border-black/10 dark:focus:bg-black/80 dark:focus:border-white/10 shadow-inner transition-all duration-300 lowercase"
-                            />
+                        <div className="flex items-start gap-2 md:gap-3">
+                            <div className="w-[32px] h-[32px] md:w-[36px] md:h-[36px] rounded-full overflow-hidden shrink-0 mt-0.5 border border-black/10 dark:border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+                                <ForumAvatar
+                                    className="w-full h-full"
+                                    image={profile?.avatar_url}
+                                />
+                            </div>
+                            <div className="flex-1 min-w-0 w-full max-w-full">
+                                <input
+                                    type="text"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    placeholder="untitled node"
+                                    className="w-full bg-white/60 dark:bg-black/60 border border-black/5 dark:border-white/5 rounded-full px-4 py-2.5 text-xs md:text-sm text-primary font-bold outline-none placeholder:text-primary/40 focus:bg-white focus:border-black/10 dark:focus:bg-black/80 dark:focus:border-white/10 shadow-inner transition-all duration-300 lowercase"
+                                />
+                            </div>
                         </div>
 
                         <div className="w-full h-auto mb-16">
@@ -781,24 +790,32 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
             <div className="flex-col relative w-full flex-1 flex min-h-0 overflow-y-auto">
                 <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 pb-20 flex-1 flex flex-col min-h-0 pt-6 gap-3">
                     <div className="relative bg-white/40 dark:bg-black/40 supports-[backdrop-filter]:backdrop-blur-[40px] rounded-[24px] md:rounded-[32px] p-4 md:p-6 border border-black/5 dark:border-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.04)] flex flex-col gap-4">
-                        <div className="flex flex-col gap-3">
-                            <input
-                                type="text"
-                                value={title}
-                                onChange={(e) => {
-                                    setTitle(e.target.value)
-                                    if (!currentPostId) setSlug(toSlug(e.target.value))
-                                }}
-                                placeholder="untitled post"
-                                className="w-full bg-white/60 dark:bg-black/60 border border-black/5 dark:border-white/5 rounded-[24px] px-4 py-3 text-2xl font-black tracking-tight text-primary outline-none placeholder:text-primary/40 focus:bg-white focus:border-black/10 dark:focus:bg-black/80 dark:focus:border-white/10 shadow-inner transition-all duration-300 lowercase"
-                            />
-                            <textarea
-                                value={excerpt}
-                                onChange={(e) => setExcerpt(e.target.value)}
-                                placeholder="brief excerpt or subtitle..."
-                                className="w-full bg-white/60 dark:bg-black/60 border border-black/5 dark:border-white/5 rounded-[24px] px-4 py-3 text-sm leading-relaxed text-primary/80 outline-none placeholder:text-primary/40 focus:bg-white focus:border-black/10 dark:focus:bg-black/80 dark:focus:border-white/10 shadow-inner resize-none transition-all duration-300 lowercase"
-                                rows={2}
-                            />
+                        <div className="flex items-start gap-2 md:gap-3">
+                            <div className="w-[32px] h-[32px] md:w-[36px] md:h-[36px] rounded-full overflow-hidden shrink-0 mt-0.5 border border-black/10 dark:border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+                                <ForumAvatar
+                                    className="w-full h-full"
+                                    image={profile?.avatar_url}
+                                />
+                            </div>
+                            <div className="flex-1 min-w-0 w-full max-w-full flex flex-col gap-2 md:gap-3">
+                                <input
+                                    type="text"
+                                    value={title}
+                                    onChange={(e) => {
+                                        setTitle(e.target.value)
+                                        if (!currentPostId) setSlug(toSlug(e.target.value))
+                                    }}
+                                    placeholder="untitled post"
+                                    className="w-full bg-white/60 dark:bg-black/60 border border-black/5 dark:border-white/5 rounded-full px-4 py-2.5 text-xs md:text-sm text-primary font-bold outline-none placeholder:text-primary/40 focus:bg-white focus:border-black/10 dark:focus:bg-black/80 dark:focus:border-white/10 shadow-inner transition-all duration-300 lowercase"
+                                />
+                                <textarea
+                                    value={excerpt}
+                                    onChange={(e) => setExcerpt(e.target.value)}
+                                    placeholder="brief excerpt or subtitle..."
+                                    className="w-full bg-white/60 dark:bg-black/60 border border-black/5 dark:border-white/5 rounded-2xl px-4 py-2.5 text-xs md:text-sm text-primary/80 outline-none placeholder:text-primary/40 focus:bg-white focus:border-black/10 dark:focus:bg-black/80 dark:focus:border-white/10 shadow-inner resize-none transition-all duration-300 lowercase"
+                                    rows={2}
+                                />
+                            </div>
                         </div>
 
                         <div className="w-full h-auto mb-16">
