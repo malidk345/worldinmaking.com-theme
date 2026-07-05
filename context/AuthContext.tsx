@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const fetchProfile = useCallback(async (userId: string, retryCount = 0) => {
         const fullSelect = 'username, avatar_url, cover_url, role, bio, website, github, linkedin, twitter, pronouns, location, preferred_language';
-        const minimalSelect = 'username, avatar_url, role';
+        const minimalSelect = 'username, avatar_url, role, preferred_language';
 
         const { data, error } = await supabase
             .from('profiles')
@@ -194,6 +194,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             : {
                 username: sanitizedUpdates.username,
                 avatar_url: sanitizedUpdates.avatar_url,
+                preferred_language: sanitizedUpdates.preferred_language,
             };
 
         if (!Object.values(safeUpdates).some((value) => value !== undefined)) return false;

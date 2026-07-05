@@ -164,11 +164,11 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                 document.body.removeChild(textArea)
             }
 
-            addToast(`${label} link copied`, 'success')
+            addToast(`${label} ${t('profile.copied_success')}`, 'success')
         } catch {
-            addToast(`failed to copy ${label} link`, 'error')
+            addToast(`${t('profile.copied_failed')} ${label}`, 'error')
         }
-    }, [addToast])
+    }, [addToast, t])
 
     const openProfileEditor = useCallback(() => {
         if (!isOwner) return
@@ -204,7 +204,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
             .single()
 
         if (error || !data) {
-            addToast('failed to create node', 'error')
+            addToast(t('profile.create_node_failed'), 'error')
             return
         }
 
@@ -219,17 +219,17 @@ export default function PublicProfile({ username }: PublicProfileProps) {
 
     const handleDeleteNode = useCallback(async (node: NodeDoc) => {
         if (!isOwner) return
-        if (!window.confirm(`delete node "${node.title || 'untitled node'}"?`)) return
+        if (!window.confirm(`${t('profile.delete_node')} "${node.title || 'untitled node'}"?`)) return
 
         const { error } = await supabase.from('nodes').delete().eq('id', node.id)
         if (error) {
-            addToast(`failed to delete node: ${error.message}`, 'error')
+            addToast(`${t('profile.delete_node_failed')}: ${error.message}`, 'error')
             return
         }
 
         setNodes((prev) => prev.filter((item) => item.id !== node.id))
-        addToast('node deleted', 'success')
-    }, [addToast, isOwner])
+        addToast(t('profile.delete_node_success'), 'success')
+    }, [addToast, isOwner, t])
 
     const handleAddPost = useCallback(() => {
         if (!isOwner) return
@@ -268,17 +268,17 @@ export default function PublicProfile({ username }: PublicProfileProps) {
 
     const handleDeletePost = useCallback(async (post: PostItem) => {
         if (!isOwner) return
-        if (!window.confirm(`delete post "${post.title || 'untitled post'}"?`)) return
+        if (!window.confirm(`${t('profile.delete_post')} "${post.title || 'untitled post'}"?`)) return
 
         const { error } = await supabase.from('posts').delete().eq('id', post.id)
         if (error) {
-            addToast(`failed to delete post: ${error.message}`, 'error')
+            addToast(`${t('profile.delete_post_failed')}: ${error.message}`, 'error')
             return
         }
 
         setPosts((prev) => prev.filter((item) => item.id !== post.id))
-        addToast('post deleted', 'success')
-    }, [addToast, isOwner])
+        addToast(t('profile.delete_post_success'), 'success')
+    }, [addToast, isOwner, t])
 
     const loadProfile = useCallback(async () => {
         if (!normalizedUsername) {
@@ -418,9 +418,9 @@ export default function PublicProfile({ username }: PublicProfileProps) {
         if (success) {
             setProfile((prev) => prev ? ({ ...prev, ...form } as ProfileData) : prev)
             setIsEditingProfile(false)
-            addToast('profile updated successfully', 'success')
+            addToast(t('profile.update_success'), 'success')
         } else {
-            addToast('failed to update profile', 'error')
+            addToast(t('profile.update_failed'), 'error')
         }
 
         setUpdatingProfile(false)
@@ -721,7 +721,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                 </div>
                                             ) : (
                                                 <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.6, padding: '0.75rem' }}>
-                                                    {profile.bio ? <span style={{ opacity: 0.8 }}>{profile.bio}</span> : <span style={{ opacity: 0.35, fontStyle: 'italic' }}>no bio yet</span>}
+                                                    {profile.bio ? <span style={{ opacity: 0.8 }}>{profile.bio}</span> : <span style={{ opacity: 0.35, fontStyle: 'italic' }}>{t('profile.no_bio')}</span>}
                                                 </p>
                                             )}
                                         </div>
@@ -736,7 +736,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                     <button className="corpus-doc-tab corpus-doc-tab--active">{nodeSectionLabel} <span>{filteredNodes.length}</span></button>
                                 </div>
                                 {nodesLoading ? (
-                                    <div className="corpus-doc-empty"><RefreshCw className="size-6 animate-spin" style={{ opacity: 0.3 }} /><p>loading nodes...</p></div>
+                                    <div className="corpus-doc-empty"><RefreshCw className="size-6 animate-spin" style={{ opacity: 0.3 }} /><p>{t('profile.loading_nodes')}</p></div>
                                 ) : filteredNodes.length > 0 ? (
                                     <div className="corpus-doc-grid">
                                         {filteredNodes.map((node) => (
@@ -750,8 +750,8 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                                 openNodeEditor(node)
                                                             }}
                                                             className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-primary/10 bg-white/80 text-primary/60 supports-[backdrop-filter]:backdrop-blur-[60px] hover:text-primary"
-                                                            aria-label={`edit ${node.title}`}
-                                                            title="edit node"
+                                                            aria-label={`${t('profile.edit_node')} ${node.title}`}
+                                                            title={t('profile.edit_node')}
                                                         >
                                                             <PenLine className="size-3.5" />
                                                         </button>
@@ -762,8 +762,8 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                                 void handleDeleteNode(node)
                                                             }}
                                                             className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-primary/10 bg-white/80 text-primary/60 supports-[backdrop-filter]:backdrop-blur-[60px] hover:text-red-600"
-                                                            aria-label={`delete ${node.title}`}
-                                                            title="delete node"
+                                                            aria-label={`${t('profile.delete_node')} ${node.title}`}
+                                                            title={t('profile.delete_node')}
                                                         >
                                                             <Trash2 className="size-3.5" />
                                                         </button>
@@ -772,18 +772,18 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                 <div className="corpus-doc-media">
                                                     <div className="corpus-doc-preview-text">{node.preview}</div>
                                                     <div className="corpus-doc-media-fade" />
-                                                    <div className="corpus-doc-badge"><BookOpen className="size-3" /><span>{node.status === 'draft' ? 'draft' : 'pub'}</span></div>
+                                                    <div className="corpus-doc-badge"><BookOpen className="size-3" /><span>{node.status === 'draft' ? t('profile.draft') : t('profile.pub')}</span></div>
                                                 </div>
                                                 <div className="corpus-doc-info">
                                                     <div><FileText className="size-3.5" /><span>{node.updated}</span></div>
                                                     <h3>{node.title}</h3>
-                                                    <p>{isOwner ? `click to edit • ${node.status}` : 'published node'}</p>
+                                                    <p>{isOwner ? `${t('profile.click_to_edit')} • ${node.status === 'draft' ? t('profile.draft') : t('profile.pub')}` : t('profile.published_node')}</p>
                                                 </div>
                                             </article>
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="corpus-doc-empty"><BookOpen className="size-8" style={{ opacity: 0.2 }} /><p>no {nodeSectionLabel.replace('nodes', '').trim() || 'published'} nodes yet</p></div>
+                                    <div className="corpus-doc-empty"><BookOpen className="size-8" style={{ opacity: 0.2 }} /><p>{t('profile.no_nodes')}</p></div>
                                 )}
                             </div>
                         )}
@@ -808,8 +808,8 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                                 handleEditPost(post)
                                                             }}
                                                             className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-primary/10 bg-white/80 text-primary/60 supports-[backdrop-filter]:backdrop-blur-[60px] hover:text-primary"
-                                                            aria-label={`edit ${post.title}`}
-                                                            title="edit post"
+                                                            aria-label={`${t('profile.edit_post')} ${post.title}`}
+                                                            title={t('profile.edit_post')}
                                                         >
                                                             <PenLine className="size-3.5" />
                                                         </button>
@@ -820,8 +820,8 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                                 void handleDeletePost(post)
                                                             }}
                                                             className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-primary/10 bg-white/80 text-primary/60 supports-[backdrop-filter]:backdrop-blur-[60px] hover:text-red-600"
-                                                            aria-label={`delete ${post.title}`}
-                                                            title="delete post"
+                                                            aria-label={`${t('profile.delete_post')} ${post.title}`}
+                                                            title={t('profile.delete_post')}
                                                         >
                                                             <Trash2 className="size-3.5" />
                                                         </button>
@@ -829,20 +829,20 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                 )}
                                                 <div className="corpus-doc-media">
                                                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                    {post.image_url ? <img src={post.image_url} alt={post.title} className="size-full object-cover" /> : <div className="corpus-doc-preview-text">{post.excerpt || 'open the full post to read more'}</div>}
+                                                    {post.image_url ? <img src={post.image_url} alt={post.title} className="size-full object-cover" /> : <div className="corpus-doc-preview-text">{post.excerpt || t('profile.read_more')}</div>}
                                                     <div className="corpus-doc-media-fade" />
-                                                    <div className="corpus-doc-badge"><ArrowUpRight className="size-3" /><span>{post.published ? (post.is_approved ? 'post' : 'pending') : 'draft'}</span></div>
+                                                    <div className="corpus-doc-badge"><ArrowUpRight className="size-3" /><span>{post.published ? (post.is_approved ? t('profile.post') : t('profile.pending')) : t('profile.draft')}</span></div>
                                                 </div>
                                                 <div className="corpus-doc-info">
                                                     <div><BookOpen className="size-3.5" /><span>{relativeTime(post.created_at)}</span></div>
                                                     <h3>{post.title}</h3>
-                                                    <p>{isOwner ? 'click to edit' : 'open post'}</p>
+                                                    <p>{isOwner ? t('profile.click_to_edit') : t('profile.open_post')}</p>
                                                 </div>
                                             </article>
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="corpus-doc-empty"><BookOpen className="size-8" style={{ opacity: 0.2 }} /><p>no {postSectionLabel.replace('posts', '').trim() || 'published'} posts yet</p></div>
+                                    <div className="corpus-doc-empty"><BookOpen className="size-8" style={{ opacity: 0.2 }} /><p>{t('profile.no_posts')}</p></div>
                                 )}
                             </div>
                         )}
@@ -850,10 +850,10 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                         {showSavedPostsSection && (
                             <div className="corpus-doc-grid-wrapper">
                                 <div className="corpus-doc-tabs">
-                                    <button className="corpus-doc-tab corpus-doc-tab--active">saved posts <span>{savedPostCount}</span></button>
+                                    <button className="corpus-doc-tab corpus-doc-tab--active">{t('archive.saved_posts')} <span>{savedPostCount}</span></button>
                                 </div>
                                 {savedPostsLoading ? (
-                                    <div className="corpus-doc-empty"><RefreshCw className="size-6 animate-spin" style={{ opacity: 0.3 }} /><p>loading saved posts...</p></div>
+                                    <div className="corpus-doc-empty"><RefreshCw className="size-6 animate-spin" style={{ opacity: 0.3 }} /><p>{t('archive.loading_saved')}</p></div>
                                 ) : savedPosts.length > 0 ? (
                                     <div className="corpus-doc-grid">
                                         {savedPosts.map((savedPost) => (
@@ -865,18 +865,18 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                 <div className="corpus-doc-media">
                                                     <div className="corpus-doc-preview-text">{savedPost.post_title || savedPost.post_slug}</div>
                                                     <div className="corpus-doc-media-fade" />
-                                                    <div className="corpus-doc-badge"><IconBookmark className="size-3" /><span>saved</span></div>
+                                                    <div className="corpus-doc-badge"><IconBookmark className="size-3" /><span>{t('profile.saved_badge')}</span></div>
                                                 </div>
                                                 <div className="corpus-doc-info">
                                                     <div><BookOpen className="size-3.5" /><span>{relativeTime(savedPost.saved_at)}</span></div>
                                                     <h3>{savedPost.post_title || savedPost.post_slug}</h3>
-                                                    <p>open saved post</p>
+                                                    <p>{t('profile.open_saved')}</p>
                                                 </div>
                                             </article>
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="corpus-doc-empty"><IconBookmark className="size-8" style={{ opacity: 0.2 }} /><p>no saved posts yet</p></div>
+                                    <div className="corpus-doc-empty"><IconBookmark className="size-8" style={{ opacity: 0.2 }} /><p>{t('profile.no_saved')}</p></div>
                                 )}
                             </div>
                         )}

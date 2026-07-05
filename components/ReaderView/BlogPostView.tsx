@@ -13,6 +13,7 @@ import rehypeSlug from 'rehype-slug'
 import CloudinaryImage from 'components/CloudinaryImage'
 import { ArticleJsonLd, BreadcrumbJsonLd } from 'components/SEO/JsonLd'
 import { sanitizeHtml } from 'utils/security'
+import { useTranslation } from 'hooks/useTranslation'
 
 interface BlogPostViewProps {
     post: {
@@ -35,8 +36,13 @@ interface BlogPostViewProps {
 }
 
 const BlogPostView = React.memo(({ post }: BlogPostViewProps) => {
+    const { lang } = useTranslation()
+    const initialLang = (lang === 'tr' && (post.originalLanguage === 'tr' || post.translations?.['tr'])) 
+        ? 'tr' 
+        : (post.originalLanguage || post.language || 'en')
+
     return (
-        <ReaderViewProvider initialLanguage={post.language || 'en'}>
+        <ReaderViewProvider initialLanguage={initialLang}>
             <BlogPostInner post={post} />
         </ReaderViewProvider>
     )

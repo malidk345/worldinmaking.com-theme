@@ -15,6 +15,7 @@ import { InPageSearchProvider } from 'components/Search/InPageSearchContext'
 import { usePosts } from 'hooks/usePosts'
 import { useAuth } from 'context/AuthContext'
 import { useToast } from 'context/ToastContext'
+import { useTranslation } from 'hooks/useTranslation'
 import { supabase } from 'lib/supabase'
 import { sanitizeHtml } from 'utils/security'
 import dayjs from 'dayjs'
@@ -114,6 +115,7 @@ const ReaderViewContent = React.memo(({
     const { posts, loading: postsLoading } = usePosts()
     const { user } = useAuth()
     const { addToast } = useToast()
+    const { t } = useTranslation()
     const [isBookmarked, setIsBookmarked] = useState(false)
     const [bookmarkLoading, setBookmarkLoading] = useState(false)
     const suggestedPosts = React.useMemo(() => {
@@ -254,7 +256,7 @@ const ReaderViewContent = React.memo(({
         if (!normalizedBookmarkSlug) return
 
         if (!user?.id) {
-            addToast('please log in to save posts', 'warning')
+            addToast(t('reader.login_to_save'), 'warning')
             return
         }
 
@@ -268,13 +270,13 @@ const ReaderViewContent = React.memo(({
                 .eq('post_slug', normalizedBookmarkSlug)
 
             if (error) {
-                addToast(error.message || 'failed to remove bookmark', 'error')
+                addToast(error.message || t('reader.unsave_failed'), 'error')
                 setBookmarkLoading(false)
                 return
             }
 
             setIsBookmarked(false)
-            addToast('removed from saved posts', 'info')
+            addToast(t('reader.unsave_success'), 'info')
             setBookmarkLoading(false)
             return
         }
@@ -289,13 +291,13 @@ const ReaderViewContent = React.memo(({
             })
 
         if (error) {
-            addToast(error.message || 'failed to save post', 'error')
+            addToast(error.message || t('reader.save_failed'), 'error')
             setBookmarkLoading(false)
             return
         }
 
         setIsBookmarked(true)
-        addToast('post saved to your profile', 'success')
+        addToast(t('reader.save_success'), 'success')
         setBookmarkLoading(false)
     }
 
@@ -313,7 +315,7 @@ const ReaderViewContent = React.memo(({
                                         <div className="flex items-center gap-2 px-2 mb-3 pt-2">
                                             <div className="w-1 h-3 rounded-full bg-gradient-to-b from-burnt-orange to-burnt-orange/40" />
                                             <h4 className="font-nav font-black text-black dark:text-white m-0 text-[10px] lowercase tracking-[0.2em]">
-                                                suggested posts
+                                                {t('reader.suggested')}
                                             </h4>
                                         </div>
                                         {postsLoading && posts.length === 0 ? (
@@ -498,7 +500,7 @@ const ReaderViewContent = React.memo(({
                 {(() => {
                     const rightSidebarContent = (
                         <ScrollArea className="h-full pt-3 pb-2">
-                            <TableOfContents title="Content" tableOfContents={tableOfContents || []} contentRef={contentRef} />
+                            <TableOfContents title={t('reader.content_toc')} tableOfContents={tableOfContents || []} contentRef={contentRef} />
                         </ScrollArea>
                     )
 

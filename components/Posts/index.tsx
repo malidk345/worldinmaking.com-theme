@@ -29,11 +29,7 @@ const PostsView = React.memo(() => {
     const { posts, loading } = usePosts()
     const { addWindow } = useApp()
     const { profile } = useAuth()
-    const { t } = useTranslation()
-
-    // For unauthenticated users, default to 'en' or we could check localStorage.
-    // The user explicitly stated "türkçeye geçildiğinde türkçe desteği olan postlar gösterilsin".
-    const preferredLanguage = profile?.preferred_language || 'en'
+    const { t, lang: preferredLanguage } = useTranslation()
 
     const sortedRoadmaps = useMemo(() => {
         const filteredPosts = posts.filter(post => {
@@ -50,10 +46,11 @@ const PostsView = React.memo(() => {
     const handleRoadmapClick = (roadmap: Post) => {
         const isTr = preferredLanguage === 'tr'
         const displayTitle = (isTr && roadmap.translations?.['tr']?.title) ? roadmap.translations['tr'].title : roadmap.title
+        const activeSlug = (isTr && roadmap.translations?.['tr']?.slug) ? roadmap.translations['tr'].slug : roadmap.slug
 
         addWindow({
             key: `blog-${roadmap.id}`,
-            path: getPostHref(roadmap.slug),
+            path: getPostHref(activeSlug),
             title: displayTitle.toLowerCase(),
             element: <BlogPostView post={roadmap} />
         })

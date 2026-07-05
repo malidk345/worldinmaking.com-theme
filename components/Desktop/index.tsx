@@ -8,60 +8,67 @@ import DraggableDesktopIcon from './DraggableDesktopIcon'
 import { motion } from 'framer-motion'
 import PostsView from 'components/Posts'
 import TrendingWidget from './TrendingWidget'
+import { useTranslation } from 'hooks/useTranslation'
 
 export default function Desktop() {
     const { addWindow, siteSettings, archivedItems } = useApp()
     const [rendered, setRendered] = useState(false)
+    const { t } = useTranslation()
 
     const apps = useMemo(() => [
         {
             label: 'home',
+            displayLabel: t('menu.home'),
             Icon: <AppIcon name="compass" />,
             onClick: () => addWindow({
                 key: 'home',
                 path: '/',
-                title: 'home'
+                title: t('menu.home')
             })
         },
         {
             label: 'posts',
+            displayLabel: t('posts.title'),
             Icon: <AppIcon name="forums" />,
             onClick: () => addWindow({
                 key: 'posts',
                 path: '/posts',
-                title: 'posts',
+                title: t('posts.title'),
                 element: <PostsView />
             })
         },
         {
             label: 'login',
+            displayLabel: t('menu.sign_in'),
             Icon: <AppIcon name="posthog" />,
             onClick: () => addWindow({
                 key: 'login',
                 path: '/login',
-                title: 'login'
+                title: t('menu.sign_in')
             })
         },
         {
             label: 'contact',
+            displayLabel: t('contact.title'),
             Icon: <AppIcon name="contact" />,
             onClick: () => addWindow({
                 key: 'contact',
                 path: '/contact',
-                title: 'contact'
+                title: t('contact.title')
             })
         },
         {
             label: 'archive',
+            displayLabel: t('archive.breadcrumb'),
             Icon: <AppIcon name="folder" />,
             onClick: () => addWindow({
                 key: 'archive',
                 path: '/archive',
-                title: 'Archive Explorer',
+                title: t('archive.title'),
                 element: <ArchiveExplorer />
             })
         }
-    ], [addWindow])
+    ], [addWindow, t])
 
     const visibleApps = useMemo(() => {
         return apps.filter(app => app.label === 'archive' || !archivedItems.includes(app.label))

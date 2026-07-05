@@ -5,9 +5,11 @@ import OSButton from 'components/OSButton'
 import { supabase } from 'lib/supabase'
 import { useToast } from 'context/ToastContext'
 import { Mail, User, Send, MessageSquare } from 'lucide-react'
+import { useTranslation } from 'hooks/useTranslation'
 
 export default function ContactContent() {
     const { addToast } = useToast()
+    const { t } = useTranslation()
     const [loading, setLoading] = useState(false)
     const [sent, setSent] = useState(false)
     const [formData, setFormData] = useState({
@@ -19,7 +21,7 @@ export default function ContactContent() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!formData.name || !formData.email || !formData.message) {
-            addToast('please fill in all fields', 'warning')
+            addToast(t('contact.fill_fields'), 'warning')
             return
         }
 
@@ -38,11 +40,11 @@ export default function ContactContent() {
             if (error) throw error
 
             setSent(true)
-            addToast('message transmitted successfully', 'success')
+            addToast(t('contact.success'), 'success')
         } catch (err: unknown) {
             console.error('Contact error:', err)
             const message = err instanceof Error ? err.message : 'unknown error'
-            addToast(`failed to send message: ${message}`, 'error')
+            addToast(`${t('contact.failed')}: ${message}`, 'error')
         } finally {
             setLoading(false)
         }
@@ -54,16 +56,16 @@ export default function ContactContent() {
                 <div className="size-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 mb-2">
                     <Send className="size-8" />
                 </div>
-                <h2 className="text-xl font-black lowercase tracking-tighter">transmission complete</h2>
+                <h2 className="text-xl font-black lowercase tracking-tighter">{t('contact.sent_title')}</h2>
                 <p className="text-sm opacity-60 max-w-xs lowercase">
-                    your message has been archived in the system. we will respond if action is required.
+                    {t('contact.sent_desc')}
                 </p>
                 <OSButton 
                     variant="secondary" 
                     onClick={() => setSent(false)}
                     className="mt-4"
                 >
-                    <span className="px-4 lowercase">send another</span>
+                    <span className="px-4 lowercase">{t('contact.send_another')}</span>
                 </OSButton>
             </div>
         )
@@ -77,18 +79,18 @@ export default function ContactContent() {
                         <Mail className="size-6 opacity-80" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold tracking-tight text-primary leading-none">contact</h2>
+                        <h2 className="text-xl font-bold tracking-tight text-primary leading-none">{t('contact.title')}</h2>
                     </div>
                 </div>
                 <p className="text-[14px] text-secondary leading-relaxed max-w-sm">
-                    direct line for inquiries, collaborations, or system reports.
+                    {t('contact.desc')}
                 </p>
             </div>
 
             <form onSubmit={handleSubmit} className="flex-1 p-6 space-y-6 overflow-y-auto custom-scrollbar">
                 <div className="space-y-4 pt-2">
                     <div className="space-y-1.5">
-                        <label className="text-[13px] font-bold text-primary tracking-wide">name</label>
+                        <label className="text-[13px] font-bold text-primary tracking-wide">{t('contact.name_label')}</label>
                         <div className="relative group">
                             <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted group-focus-within:text-blue-primary transition-colors" />
                             <input
@@ -96,14 +98,14 @@ export default function ContactContent() {
                                 required
                                 value={formData.name}
                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                placeholder="your identity..."
+                                placeholder={t('contact.name_placeholder')}
                                 className="w-full bg-primary border border-border rounded-md px-10 py-2.5 text-[15px] shadow-[0_2px_4px_rgba(0,0,0,0.02)] focus:border-blue-primary focus:ring-1 focus:ring-blue-primary transition-all text-primary placeholder:text-muted"
                             />
                         </div>
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-[13px] font-bold text-primary tracking-wide">return email</label>
+                        <label className="text-[13px] font-bold text-primary tracking-wide">{t('contact.email_label')}</label>
                         <div className="relative group">
                             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted group-focus-within:text-blue-primary transition-colors" />
                             <input
@@ -111,14 +113,14 @@ export default function ContactContent() {
                                 required
                                 value={formData.email}
                                 onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                placeholder="address@domain.com..."
+                                placeholder={t('contact.email_placeholder')}
                                 className="w-full bg-primary border border-border rounded-md px-10 py-2.5 text-[15px] shadow-[0_2px_4px_rgba(0,0,0,0.02)] focus:border-blue-primary focus:ring-1 focus:ring-blue-primary transition-all text-primary placeholder:text-muted"
                             />
                         </div>
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-[13px] font-bold text-primary tracking-wide">message body</label>
+                        <label className="text-[13px] font-bold text-primary tracking-wide">{t('contact.msg_label')}</label>
                         <div className="relative group">
                             <MessageSquare className="absolute left-3 top-3.5 size-4 text-muted group-focus-within:text-blue-primary transition-colors" />
                             <textarea
@@ -126,7 +128,7 @@ export default function ContactContent() {
                                 rows={5}
                                 value={formData.message}
                                 onChange={e => setFormData({ ...formData, message: e.target.value })}
-                                placeholder="type your transmission here..."
+                                placeholder={t('contact.msg_placeholder')}
                                 className="w-full bg-white/60 dark:bg-black/60 supports-[backdrop-filter]:backdrop-blur-[20px] border border-black/5 dark:border-white/5 rounded-[24px] px-10 py-4 text-[15px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] focus:border-black/10 dark:focus:border-white/10 focus:bg-white/80 dark:focus:bg-black/80 transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] resize-none text-primary placeholder:text-primary/40 outline-none"
                             />
                         </div>
@@ -141,7 +143,7 @@ export default function ContactContent() {
                     >
                         <div className="flex items-center gap-2">
                             <span>
-                                {loading ? 'sending...' : 'send message'}
+                                {loading ? t('contact.sending_btn') : t('contact.send_btn')}
                             </span>
                             {!loading && <Send className="size-4 relative -top-[0.5px]" />}
                         </div>

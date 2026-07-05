@@ -17,6 +17,7 @@ import RichTextEditor from 'components/AdminPanel/RichTextEditor'
 import { AppWindow } from '../../context/Window'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
+import { useTranslation } from 'hooks/useTranslation'
 import { supabase } from '../../lib/supabase'
 import { Share, Image as ImageIcon, Palette, Hash, CheckCircle, ChevronDown, FileText, Flame, Rocket, Lightbulb, PenTool, Brain, Wrench, Sparkles, LayoutTemplate, Database, CalendarHeart } from 'lucide-react'
 import OSButton from 'components/OSButton'
@@ -252,34 +253,43 @@ function CommunityQuestionRouteView({ permalink }: { permalink: string }) {
 /** Separate component so usePosts hook can be called within the router */
 function BlogRouteView({ slug }: { slug: string }) {
     const { posts, loading } = usePosts()
+    const { lang } = useTranslation()
     
-    let adaptedPost = null;
+    let adaptedPost: any = null;
     const decodedSlug = decodeURIComponent(slug);
     
     for (const p of posts) {
-        // Compare with both decoded and original to be safe
-        if (p.slug === decodedSlug || p.slug === slug || p.slug === `/blog/${slug}` || p.slug === `/blog/${decodedSlug}`) {
-            adaptedPost = { ...p };
-            break;
-        }
+        const isOriginalMatch = p.slug === decodedSlug || p.slug === slug || p.slug === `/blog/${slug}` || p.slug === `/blog/${decodedSlug}`
+        let isTranslationMatch = false
+        
         if (p.translations) {
-            let found = false;
-            for (const lang of Object.keys(p.translations)) {
-                const transSlug = p.translations[lang]?.slug;
+            for (const l of Object.keys(p.translations)) {
+                const transSlug = p.translations[l]?.slug
                 if (transSlug === decodedSlug || transSlug === slug) {
-                    adaptedPost = {
-                        ...p,
-                        title: p.translations[lang].title || p.title,
-                        content: p.translations[lang].content || p.content,
-                        excerpt: p.translations[lang].excerpt || p.excerpt,
-                        language: lang,
-                        originalLanguage: p.language,
-                    };
-                    found = true;
-                    break;
+                    isTranslationMatch = true
+                    break
                 }
             }
-            if (found) break;
+        }
+
+        if (isOriginalMatch || isTranslationMatch) {
+            const targetLang = lang === 'tr' ? 'tr' : 'en'
+            const translation = p.translations?.[targetLang]
+
+            if (translation) {
+                adaptedPost = {
+                    ...p,
+                    title: translation.title || p.title,
+                    content: translation.content || p.content,
+                    excerpt: translation.excerpt || p.excerpt,
+                    htmlContent: (translation as any).htmlContent || (p as any).htmlContent,
+                    language: targetLang,
+                    originalLanguage: p.language || 'en',
+                }
+            } else {
+                adaptedPost = { ...p }
+            }
+            break
         }
     }
 
@@ -380,6 +390,7 @@ function NodePublishedRouteView({ nodeId }: { nodeId: string }) {
 function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; item: AppWindow; readOnly?: boolean }) {
     const { user, profile } = useAuth()
     const { addToast } = useToast()
+    const { t } = useTranslation()
     const [title, setTitle] = useState('untitled node')
     const [content, setContent] = useState('')
     const [saving, setSaving] = useState(false)
@@ -412,11 +423,11 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
 
     const handleSave = async (publishStatus: 'draft' | 'published' = 'draft') => {
         if (!nodeId) {
-            addToast('no node id — open from my profile to edit', 'error')
+            addToast(t('appwindow.no_node_id'), 'error')
             return
         }
         if (!user) {
-            addToast('you must be logged in to save', 'error')
+            addToast(t('appwindow.login_required_save'), 'error')
             return
         }
         setSaving(true)
@@ -425,11 +436,11 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
             .update({ title, content, status: publishStatus, updated_at: new Date().toISOString() })
             .eq('id', nodeId)
         if (error) {
-            addToast('failed to save: ' + error.message, 'error')
+            addToast(t('appwindow.save_failed') + ': ' + error.message, 'error')
         } else {
             setNodeStatus(publishStatus)
             setSaved(true)
-            addToast(publishStatus === 'published' ? 'node published!' : 'draft saved', 'success')
+            addToast(publishStatus === 'published' ? t('appwindow.publish_success') : t('appwindow.draft_success'), 'success')
             setTimeout(() => setSaved(false), 2500)
         }
         setSaving(false)
@@ -443,8 +454,8 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
     }
 
     const statusConfig = {
-        'draft': { label: 'draft', icon: <PenTool className="size-3" />, color: 'text-primary' },
-        'published': { label: 'published', icon: <CheckCircle className="size-3" />, color: 'text-emerald-500' },
+        'draft': { label: t('profile.draft'), icon: <PenTool className="size-3" />, color: 'text-primary' },
+        'published': { label: t('profile.pub'), icon: <CheckCircle className="size-3" />, color: 'text-emerald-500' },
     }
 
     const typeConfig = {
@@ -577,7 +588,7 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                                         disabled={saving}
                                         onClick={() => handleSave(nodeStatus)}
                                     >
-                                        <span className="lowercase font-bold">{saving ? 'saving...' : (nodeStatus === 'published' ? 'update' : 'publish')}</span>
+                                        <span className="lowercase font-bold">{saving ? t('appwindow.saving') : (nodeStatus === 'published' ? t('appwindow.update') : t('appwindow.publish'))}</span>
                                     </OSButton>
                                     <OSButton
                                         size="sm"
@@ -586,7 +597,7 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                                         disabled={saving}
                                         className="opacity-70 hover:opacity-100"
                                     >
-                                        <span className="lowercase font-bold">save draft</span>
+                                        <span className="lowercase font-bold">{t('appwindow.save_draft')}</span>
                                     </OSButton>
 
                                     <div className="w-[1px] h-5 bg-black/10 dark:bg-white/10 mx-1" />
@@ -676,6 +687,7 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
 function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow }) {
     const { user, profile, isAdmin } = useAuth()
     const { addToast } = useToast()
+    const { t } = useTranslation()
     const [currentPostId, setCurrentPostId] = useState<string | undefined>(postId)
     const [title, setTitle] = useState('untitled post')
     const [slug, setSlug] = useState('')
@@ -709,7 +721,7 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
 
     const handleSavePost = async (nextPublished: boolean) => {
         if (!user || !profile?.username) {
-            addToast('you must be logged in to save posts', 'error')
+            addToast(t('appwindow.login_required_posts'), 'error')
             return
         }
 
@@ -738,7 +750,7 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
                 .eq('id', currentPostId)
 
             if (error) {
-                addToast(`failed to save post: ${error.message}`, 'error')
+                addToast(`${t('appwindow.post_save_failed')}: ${error.message}`, 'error')
                 setSaving(false)
                 return
             }
@@ -750,7 +762,7 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
                 .single()
 
             if (error || !data) {
-                addToast(`failed to create post: ${error?.message || 'unknown error'}`, 'error')
+                addToast(`${t('appwindow.post_create_failed')}: ${error?.message || 'unknown error'}`, 'error')
                 setSaving(false)
                 return
             }
@@ -760,7 +772,7 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
 
         setPublished(nextPublished)
         setSaved(true)
-        addToast(nextPublished ? 'post published!' : 'post saved as draft', 'success')
+        addToast(nextPublished ? t('appwindow.post_published') : t('appwindow.draft_success'), 'success')
         setTimeout(() => setSaved(false), 2500)
         setSaving(false)
     }
@@ -818,7 +830,7 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
                                         disabled={saving}
                                         onClick={() => handleSavePost(true)}
                                     >
-                                        <span className="lowercase font-bold">{saving ? 'publishing...' : 'publish'}</span>
+                                        <span className="lowercase font-bold">{saving ? t('appwindow.publishing') : t('appwindow.publish')}</span>
                                     </OSButton>
                                     <OSButton
                                         size="sm"
@@ -827,7 +839,7 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
                                         disabled={saving}
                                         className="opacity-70 hover:opacity-100"
                                     >
-                                        <span className="lowercase font-bold">save draft</span>
+                                        <span className="lowercase font-bold">{t('appwindow.save_draft')}</span>
                                     </OSButton>
 
                                     <div className="w-[1px] h-5 bg-black/10 dark:bg-white/10 mx-1" />

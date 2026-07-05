@@ -44,7 +44,7 @@ export const WindowSearchUI = ({ initialFilter }: { initialFilter?: string }) =>
     const { posts, loading } = usePosts()
     const [query, setQuery] = useState('')
     const inputRef = useRef<HTMLInputElement>(null)
-    const { t } = useTranslation()
+    const { t, lang } = useTranslation()
 
     void initialFilter
 
@@ -80,7 +80,7 @@ export const WindowSearchUI = ({ initialFilter }: { initialFilter?: string }) =>
                         ref={inputRef}
                         type="text"
                         className="flex-1 bg-transparent border-0 outline-none text-[15px] font-medium tracking-tight text-primary placeholder:text-muted"
-                        placeholder="search blog posts..."
+                        placeholder={t('search.placeholder')}
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         autoFocus
@@ -108,12 +108,12 @@ export const WindowSearchUI = ({ initialFilter }: { initialFilter?: string }) =>
                     </div>
                 ) : results.length === 0 ? (
                     <div className="p-4 text-center text-muted text-[13px] tracking-tight">
-                        no results found for &quot;{query}&quot;
+                        {t('search.no_results')} &quot;{query}&quot;
                     </div>
                 ) : (
                     <div className="flex flex-col gap-1">
                         <div className="px-3 py-1 text-[11px] font-bold lowercase tracking-wider text-muted opacity-60">
-                            {results.length} result{results.length !== 1 ? 's' : ''}
+                            {results.length} {lang === 'en' ? (results.length === 1 ? 'result' : 'results') : t('search.results_count')}
                         </div>
                         {results.map((post) => (
                             <button

@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/App';
 import { useToast } from '../../context/ToastContext';
+import { useTranslation } from 'hooks/useTranslation';
 import OSButton from 'components/OSButton';
 
 // Icons
@@ -24,6 +25,7 @@ export default function LoginContent() {
     const { signInWithEmail, user, profile, signOut, loading: authLoading, isAdmin } = useAuth();
     const { addWindow } = useApp();
     const { addToast } = useToast();
+    const { t } = useTranslation();
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
     const [sent, setSent] = useState(false);
@@ -37,22 +39,22 @@ export default function LoginContent() {
         setLoading(false);
 
         if (error) {
-            addToast(error.message?.toLowerCase() || 'login failed', 'error');
+            addToast(error.message?.toLowerCase() || t('login.failed'), 'error');
         } else {
             setSent(true);
-            addToast('magic link sent. check your inbox.', 'success');
+            addToast(t('login.magic_sent_success'), 'success');
         }
     };
 
     const handleSignOut = async () => {
         await signOut();
-        addToast('signed out successfully', 'info');
+        addToast(t('login.signout_success'), 'info');
     };
 
     if (authLoading) {
         return (
             <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 h-full w-full bg-accent/40">
-                <span className="animate-pulse text-sm font-bold !text-black opacity-60 lowercase">initializing subsystem...</span>
+                <span className="animate-pulse text-sm font-bold !text-black opacity-60 lowercase">{t('login.initializing')}</span>
             </div>
         );
     }
@@ -67,13 +69,13 @@ export default function LoginContent() {
                 >
                     <div className="border border-primary bg-accent shadow-[4px_4px_0_0_rgba(0,0,0,0.2)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.1)] flex flex-col">
                         <div className="bg-primary px-3 py-1.5 border-b border-primary flex items-center">
-                            <span className="!text-black font-bold text-xs tracking-widest lowercase">system status</span>
+                            <span className="!text-black font-bold text-xs tracking-widest lowercase">{t('login.sys_status')}</span>
                         </div>
                         <div className="p-6 flex flex-col items-center text-center">
                             <div className="w-14 h-14 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center mb-4 text-green-600 dark:text-green-400">
                                 <UserIcon />
                             </div>
-                            <h2 className="text-lg font-black !text-black lowercase mb-1">authenticated</h2>
+                            <h2 className="text-lg font-black !text-black lowercase mb-1">{t('login.authenticated')}</h2>
                             <p className="text-sm !text-black mb-6 font-medium bg-primary/5 px-3 py-1 border border-primary/20 opacity-80 lowercase">
                                 {profile?.username || user.email}
                             </p>
@@ -82,10 +84,10 @@ export default function LoginContent() {
                                 {isAdmin && (
                                     <OSButton
                                         variant="secondary"
-                                        onClick={() => addWindow({ key: 'admin', path: '/admin', title: 'Admin Dashboard' })}
+                                        onClick={() => addWindow({ key: 'admin', path: '/admin', title: t('menu.admin_dashboard') })}
                                         className="w-full justify-center lowercase !text-black"
                                     >
-                                        open dashboard
+                                        {t('login.open_dashboard')}
                                     </OSButton>
                                 )}
                                 <OSButton
@@ -93,7 +95,7 @@ export default function LoginContent() {
                                     onClick={handleSignOut}
                                     className="w-full justify-center opacity-80 hover:opacity-100 hover:text-red-600 dark:hover:text-red-400 lowercase !text-black"
                                 >
-                                    sign out
+                                    {t('menu.sign_out')}
                                 </OSButton>
                             </div>
                         </div>
@@ -113,15 +115,15 @@ export default function LoginContent() {
                 >
                     <div className="border border-primary bg-accent shadow-[4px_4px_0_0_rgba(0,0,0,0.2)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.1)] flex flex-col">
                         <div className="bg-primary px-3 py-1.5 border-b border-primary flex items-center">
-                            <span className="!text-black font-bold text-xs tracking-widest lowercase">awaiting action</span>
+                            <span className="!text-black font-bold text-xs tracking-widest lowercase">{t('login.awaiting_action')}</span>
                         </div>
                         <div className="p-6 flex flex-col items-center text-center">
                             <div className="w-14 h-14 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center mb-4 text-blue-600 dark:text-blue-400 animate-pulse">
                                 <MailIcon />
                             </div>
-                            <h2 className="text-lg font-black !text-black lowercase mb-2">check your inbox</h2>
+                            <h2 className="text-lg font-black !text-black lowercase mb-2">{t('login.check_inbox')}</h2>
                             <p className="text-sm !text-black opacity-80 mb-6 font-medium leading-relaxed lowercase">
-                                we sent a magic link to <span className="font-bold border-b border-primary/30 pb-px !text-black">{email}</span>.<br />click it to sign in.
+                                {t('login.magic_sent_to')} <span className="font-bold border-b border-primary/30 pb-px !text-black">{email}</span>.<br />{t('login.click_to_signin')}
                             </p>
                             <OSButton
                                 variant="default"
@@ -129,7 +131,7 @@ export default function LoginContent() {
                                 onClick={() => setSent(false)}
                                 className="lowercase !text-black"
                             >
-                                enter different email
+                                {t('login.diff_email')}
                             </OSButton>
                         </div>
                     </div>
@@ -148,7 +150,7 @@ export default function LoginContent() {
                 <div className="border border-primary bg-accent shadow-[4px_4px_0_0_rgba(0,0,0,0.2)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.1)] flex flex-col">
                     {/* Header */}
                     <div className="bg-primary px-3 py-1.5 border-b border-primary flex items-center">
-                        <span className="!text-black font-bold text-[11px] tracking-widest lowercase">authentication request</span>
+                        <span className="!text-black font-bold text-[11px] tracking-widest lowercase">{t('login.auth_request')}</span>
                     </div>
 
                     {/* Body */}
@@ -158,9 +160,9 @@ export default function LoginContent() {
                                 <UserIcon />
                             </div>
                             <div>
-                                <h2 className="text-base font-black !text-black lowercase mb-1 leading-none">member login</h2>
+                                <h2 className="text-base font-black !text-black lowercase mb-1 leading-none">{t('login.member_login')}</h2>
                                 <p className="text-xs font-semibold !text-black opacity-60 leading-snug lowercase">
-                                    auth link will be sent to your email address. no password required.
+                                    {t('login.auth_desc')}
                                 </p>
                             </div>
                         </div>
@@ -169,7 +171,7 @@ export default function LoginContent() {
                             <input
                                 type="email"
                                 required
-                                placeholder="name@domain.com"
+                                placeholder={t('login.placeholder')}
                                 value={email}
                                 onChange={e => setEmail(e.target.value)}
                                 className="w-full px-3 py-2 bg-white border border-primary text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary !text-black placeholder:!text-black/50 shadow-[inset_1px_1px_3px_rgba(0,0,0,0.1)] font-medium lowercase"
@@ -182,7 +184,7 @@ export default function LoginContent() {
                                     disabled={loading}
                                     className="!opacity-100 lowercase !text-black"
                                 >
-                                    {loading ? 'sending link...' : 'send magic link'}
+                                    {loading ? t('login.sending_link') : t('login.send_link')}
                                 </OSButton>
                             </div>
                         </form>
@@ -191,7 +193,7 @@ export default function LoginContent() {
 
                 <div className="mt-4 text-center">
                     <p className="text-[10px] font-semibold !text-black opacity-40 lowercase tracking-wider">
-                        secure access system
+                        {t('login.secure_system')}
                     </p>
                 </div>
             </motion.div>

@@ -154,10 +154,10 @@ export default function TaskBarMenu() {
             label: t('posts.title'),
             icon: <FileText className="size-4 opacity-70" />,
             items: [
-                { type: 'item' as const, label: 'All posts', icon: <FileText className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'posts-all', title: 'All Posts', path: '/posts' }) },
-                { type: 'item' as const, label: 'Blueprints', icon: <BookOpen className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'blueprints', title: 'Blueprints', path: '/blueprints' }) },
+                { type: 'item' as const, label: t('menu.all_posts'), icon: <FileText className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'posts-all', title: t('menu.all_posts'), path: '/posts' }) },
+                { type: 'item' as const, label: t('menu.blueprints'), icon: <BookOpen className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'blueprints', title: t('menu.blueprints'), path: '/blueprints' }) },
                 { type: 'separator' as const },
-                { type: 'item' as const, label: 'Newspaper', icon: <Newspaper className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'posts', title: 'Posts', element: <PostsView />, path: '/posts-newspaper' }) },
+                { type: 'item' as const, label: t('menu.newspaper'), icon: <Newspaper className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'posts', title: t('menu.newspaper'), element: <PostsView />, path: '/posts-newspaper' }) },
             ]
         },
 
@@ -220,15 +220,16 @@ export default function TaskBarMenu() {
         ] : []),
 
         { type: 'separator' as const },
+        {
+            type: 'item' as const,
+            label: t('profile.language'),
+            icon: <IconGlobe className="size-4 opacity-70" />,
+            onClick: () => setLanguageSelectorOpen(true)
+        },
+        { type: 'separator' as const },
 
         // Auth
         ...(user ? [
-            {
-                type: 'item' as const,
-                label: t('profile.language'),
-                icon: <IconGlobe className="size-4 opacity-70" />,
-                onClick: () => setLanguageSelectorOpen(true)
-            },
             {
                 type: 'item' as const,
                 label: t('menu.sign_out'),
@@ -243,7 +244,7 @@ export default function TaskBarMenu() {
                 onClick: () => addWindow({
                     key: 'login',
                     path: '/login',
-                    title: 'Member Access',
+                    title: t('menu.member_access'),
                     size: { width: 450, height: 450 },
                     element: <LoginContent />
                 })
@@ -280,9 +281,15 @@ export default function TaskBarMenu() {
                 visible={languageSelectorOpen}
                 onClose={() => setLanguageSelectorOpen(false)}
                 currentLanguage={lang}
+                positionClass="fixed top-[42px] right-2 z-[10002]"
                 onLanguageChange={(code) => {
                     if (user && profile) {
                         updateProfile({ preferred_language: code })
+                    } else {
+                        if (typeof window !== 'undefined') {
+                            localStorage.setItem('preferred_language', code)
+                            window.location.reload()
+                        }
                     }
                 }}
             />

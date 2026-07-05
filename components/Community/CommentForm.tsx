@@ -7,6 +7,7 @@ import ForumAvatar from '../Forum/ForumAvatar'
 import ForumRichText from '../Forum/ForumRichText'
 import { stripHtmlTags } from 'utils/security'
 import { AnimatePresence, motion } from 'framer-motion'
+import { useTranslation } from 'hooks/useTranslation'
 
 interface CommentFormProps {
     onSubmit?: (subject: string, content: string) => void
@@ -14,7 +15,9 @@ interface CommentFormProps {
     placeholder?: string
 }
 
-export default function CommentForm({ onSubmit, className = '', placeholder = "add a comment..." }: CommentFormProps) {
+export default function CommentForm({ onSubmit, className = '', placeholder }: CommentFormProps) {
+    const { t } = useTranslation()
+    const activePlaceholder = placeholder || t('comments.add_placeholder')
     const [body, setBody] = useState('')
     const [subject, setSubject] = useState('')
     const [isActive, setIsActive] = useState(false)
@@ -51,7 +54,7 @@ export default function CommentForm({ onSubmit, className = '', placeholder = "a
                         onClick={() => setIsActive(true)}
                         className="flex-1 min-w-0 text-left px-3 py-2 md:px-4 md:py-2.5 rounded-full border border-black/5 dark:border-white/5 bg-white/60 dark:bg-black/60 supports-[backdrop-filter]:backdrop-blur-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:bg-white/80 dark:hover:bg-black/80 hover:scale-[1.01] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]"
                     >
-                        <span className="font-bold text-xs md:text-sm text-primary/60 lowercase truncate block">{placeholder}</span>
+                        <span className="font-bold text-xs md:text-sm text-primary/60 lowercase truncate block">{activePlaceholder}</span>
                     </button>
                 </motion.div>
             ) : (
@@ -75,7 +78,7 @@ export default function CommentForm({ onSubmit, className = '', placeholder = "a
                                 type="text"
                                 value={subject}
                                 onChange={(e) => setSubject(e.target.value)}
-                                placeholder="subject (optional)"
+                                placeholder={t('comments.subject_placeholder')}
                                 className="w-full bg-white/60 dark:bg-black/60 border border-black/5 dark:border-white/5 rounded-full px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm text-primary font-bold outline-none placeholder:text-primary/40 focus:bg-white focus:border-black/10 dark:focus:bg-black/80 dark:focus:border-white/10 shadow-inner transition-all duration-300 lowercase"
                                 id="comment-subject"
                                 name="subject"
@@ -94,7 +97,7 @@ export default function CommentForm({ onSubmit, className = '', placeholder = "a
                             boxed={true}
                             borderClass="border-black/10 dark:border-white/10"
                             className="bg-transparent lowercase px-1 md:px-2"
-                            placeholder={placeholder}
+                            placeholder={activePlaceholder}
                             cta={
                                 <div className="flex gap-2">
                                     <OSButton
@@ -103,7 +106,7 @@ export default function CommentForm({ onSubmit, className = '', placeholder = "a
                                         disabled={!stripHtmlTags(body)}
                                         onClick={handleSubmit}
                                     >
-                                        <span className="lowercase font-bold">post</span>
+                                        <span className="lowercase font-bold">{t('comments.post_btn')}</span>
                                     </OSButton>
                                     <OSButton
                                         size="sm"
@@ -115,13 +118,13 @@ export default function CommentForm({ onSubmit, className = '', placeholder = "a
                                         }}
                                         className="border-none opacity-60 hover:opacity-100"
                                     >
-                                        <span className="lowercase font-bold">cancel</span>
+                                        <span className="lowercase font-bold">{t('comments.cancel_btn')}</span>
                                     </OSButton>
                                 </div>
                             }
                         />
                         <p className="text-[10px] opacity-40 mt-2 px-2 [text-wrap:balance] text-primary lowercase font-medium tracking-wide">
-                            guidelines: please keep the discussion civil and constructive.
+                            {t('comments.guidelines')}
                         </p>
                     </div>
                 </motion.div>

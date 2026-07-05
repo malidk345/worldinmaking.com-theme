@@ -13,8 +13,6 @@ interface Language {
 const SUPPORTED_LANGUAGES: Language[] = [
     { code: 'en', name: 'English', nativeName: 'English' },
     { code: 'tr', name: 'Turkish', nativeName: 'Türkçe' },
-    { code: 'de', name: 'German', nativeName: 'Deutsch' },
-    { code: 'es', name: 'Spanish', nativeName: 'Español' },
 ]
 
 interface LanguageSelectorProps {
@@ -23,6 +21,7 @@ interface LanguageSelectorProps {
     currentLanguage: string
     onLanguageChange: (code: string) => void
     availableLanguages?: string[] // Optional: restrict to languages the post actually has
+    positionClass?: string // Optional custom positioning classes
 }
 
 export function LanguageSelector({
@@ -30,7 +29,8 @@ export function LanguageSelector({
     onClose,
     currentLanguage,
     onLanguageChange,
-    availableLanguages
+    availableLanguages,
+    positionClass = "absolute bottom-full right-0 mb-2 z-[101]"
 }: LanguageSelectorProps) {
     return (
         <AnimatePresence>
@@ -40,14 +40,14 @@ export function LanguageSelector({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[100]"
+                        className="fixed inset-0 z-[10001]"
                         onClick={onClose}
                     />
                     <motion.div
                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute bottom-full right-0 mb-2 w-48 bg-primary border border-primary rounded-md shadow-2xl z-[101] overflow-hidden"
+                        className={`${positionClass} w-48 bg-primary border border-primary rounded-md shadow-2xl overflow-hidden`}
                     >
                         <div className="p-2 border-b border-primary bg-accent/30 flex items-center gap-2">
                             <IconGlobe className="size-3.5 opacity-50" />

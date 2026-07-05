@@ -5,6 +5,7 @@ import ForumQuestionCard from '../Forum/ForumQuestionCard'
 import CommentForm from './CommentForm'
 import { useCommunity } from 'hooks/useCommunity'
 import ArticleActions from './ArticleActions'
+import { useTranslation } from 'hooks/useTranslation'
 
 interface CommentSectionProps {
     slug?: string
@@ -19,6 +20,7 @@ export default function CommentSection({
     className = '',
     views = 0,
 }: CommentSectionProps) {
+    const { t } = useTranslation()
     const {
         posts,
         loading,
@@ -65,10 +67,10 @@ export default function CommentSection({
         <div className={`mt-12 community-section ${className}`}>
             <ArticleActions slug={slug} views={views} />
 
-            <h3 id="community-questions" className="text-xl font-bold mb-6 text-primary lowercase">comments</h3>
+            <h3 id="community-questions" className="text-xl font-bold mb-6 text-primary lowercase">{t('comments.title')}</h3>
 
             {loading && posts.length === 0 ? (
-                <Loading label="syncing discussion" />
+                <Loading label={t('comments.syncing')} />
             ) : posts.length > 0 ? (
                 <ul className="not-prose m-0 p-0 list-none mb-6 space-y-1">
                     {adaptedPosts.map((post) => (
@@ -81,13 +83,13 @@ export default function CommentSection({
                     ))}
                 </ul>
             ) : (
-                <p className="text-black dark:text-white font-medium text-sm mb-6 lowercase">no comments yet. be the first to comment!</p>
+                <p className="text-black dark:text-white font-medium text-sm mb-6 lowercase">{t('comments.empty')}</p>
             )}
 
             <div className="mt-8 border-t border-black/20 dark:border-white/20 pt-6">
                 <CommentForm
                     onSubmit={handleCreatePost}
-                    placeholder="add a comment..."
+                    placeholder={t('comments.add_placeholder')}
                 />
             </div>
         </div>

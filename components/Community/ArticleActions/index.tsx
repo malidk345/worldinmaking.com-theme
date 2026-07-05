@@ -6,6 +6,7 @@ import VotePicker from 'components/VotePicker'
 import { Share2 } from 'lucide-react'
 import { supabase } from 'lib/supabase'
 import ViewCounter from 'components/ViewCounter'
+import { useTranslation } from 'hooks/useTranslation'
 
 interface ArticleActionsProps {
     slug?: string
@@ -14,6 +15,7 @@ interface ArticleActionsProps {
 
 export default function ArticleActions({ slug, views = 0 }: ArticleActionsProps) {
     const { addToast } = useToast()
+    const { t } = useTranslation()
     const [userVote, setUserVote] = useState(0)
     const [totalVotes, setTotalVotes] = useState(0)
     const [loading, setLoading] = useState(true)
@@ -60,7 +62,7 @@ export default function ArticleActions({ slug, views = 0 }: ArticleActionsProps)
 
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) {
-            addToast('please log in to vote', 'error')
+            addToast(t('votes.login_required'), 'error')
             return
         }
 
@@ -68,7 +70,7 @@ export default function ArticleActions({ slug, views = 0 }: ArticleActionsProps)
         const nextVote = userVote + delta
 
         if (nextVote > 5 || nextVote < -5) {
-            addToast(`you have reached the ${direction === 'up' ? 'maximum' : 'minimum'} vote limit`, 'warning')
+            addToast(t('votes.limit_reached'), 'warning')
             return
         }
 
@@ -106,7 +108,7 @@ export default function ArticleActions({ slug, views = 0 }: ArticleActionsProps)
         if (error) {
             console.error('Vote error:', error)
             const errMsg = (error as { message?: string }).message?.toLowerCase() || 'unknown error'
-            addToast(`failed to save vote: ${errMsg}`, 'error')
+            addToast(`${t('votes.failed')}: ${errMsg}`, 'error')
             // Rollback
             setUserVote(prevUserVote)
             setTotalVotes(prev => prev - delta)
@@ -126,7 +128,7 @@ export default function ArticleActions({ slug, views = 0 }: ArticleActionsProps)
         try {
             if (navigator.clipboard && window.isSecureContext) {
                 await navigator.clipboard.writeText(window.location.href)
-                addToast('link copied to clipboard!', 'success')
+                addToast(t('share.copied'), 'success')
             } else {
                 const textArea = document.createElement("textarea")
                 textArea.value = window.location.href
@@ -136,11 +138,11 @@ export default function ArticleActions({ slug, views = 0 }: ArticleActionsProps)
                 textArea.focus()
                 textArea.select()
                 document.execCommand('copy')
-                addToast('link copied to clipboard!', 'success')
+                addToast(t('share.copied'), 'success')
                 document.body.removeChild(textArea)
             }
         } catch {
-            addToast('failed to copy link', 'error')
+            addToast(t('share.failed'), 'error')
         }
     }
 
@@ -171,7 +173,7 @@ export default function ArticleActions({ slug, views = 0 }: ArticleActionsProps)
                 onClick={handleShare}
                 onKeyDown={(e) => e.key === 'Enter' && handleShare()}
                 className="vote-picker p-2 flex items-center justify-center cursor-pointer"
-                title="share link"
+                title={t('share.title')}
             >
                 <Share2 className="size-3.5" />
             </div>

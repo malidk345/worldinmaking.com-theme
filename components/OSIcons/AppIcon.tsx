@@ -279,6 +279,7 @@ export interface AppItem {
     color?: string
     background?: string
     label: string
+    displayLabel?: string
     url?: string
     onClick?: () => void
     className?: string
@@ -296,6 +297,7 @@ export const AppLink = ({
     color,
     background,
     label,
+    displayLabel,
     url: initialUrl,
     onClick,
     className,
@@ -409,7 +411,7 @@ export const AppLink = ({
                     <span
                         className={`skin-classic:underline decoration-dotted decoration-primary underline-offset-[3px] wallpaper-parade:bg-white dark:wallpaper-parade:bg-black wallpaper-coding-at-night:text-white ${finalBackground}  rounded-full px-3 py-1`}
                     >
-                        {label}
+                        {displayLabel || label}
                         {extension && <span className="opacity-75">.{extension}</span>}
                     </span>
                 </span>

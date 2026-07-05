@@ -3,6 +3,7 @@ import { useApp } from 'context/App'
 import { useAuth } from 'context/AuthContext'
 import { supabase } from 'lib/supabase'
 import { AppIcon, AppIconName } from 'components/OSIcons/AppIcon'
+import { useTranslation } from 'hooks/useTranslation'
 import { 
     LayoutGrid, 
     RotateCcw, 
@@ -33,6 +34,7 @@ interface SavedPost {
 export default function ArchiveExplorer() {
     const { archivedItems, restoreItem, addWindow } = useApp()
     const { user } = useAuth()
+    const { t, lang } = useTranslation()
     
     const [currentFolder, setCurrentFolder] = useState<'root' | 'apps' | 'saved-posts'>('root')
     const [savedPosts, setSavedPosts] = useState<SavedPost[]>([])
@@ -65,6 +67,16 @@ export default function ArchiveExplorer() {
         }
     }, [currentFolder, user])
 
+    const getAppTranslation = (label: string) => {
+        switch (label) {
+            case 'home': return t('menu.home')
+            case 'posts': return t('posts.title')
+            case 'login': return t('menu.sign_in')
+            case 'contact': return t('contact.title')
+            default: return label
+        }
+    }
+
     const handleRestoreApp = (label: string) => {
         restoreItem(label)
     }
@@ -75,7 +87,7 @@ export default function ArchiveExplorer() {
             addWindow({
                 key: meta.label,
                 path: meta.path,
-                title: meta.title,
+                title: getAppTranslation(label),
                 element: meta.element
             })
         }
@@ -108,13 +120,20 @@ export default function ArchiveExplorer() {
         addWindow({
             key: 'login',
             path: '/login',
-            title: 'login'
+            title: t('menu.sign_in')
         })
     }
 
     const archivedApps = archivedItems
-        .map(label => APP_META[label])
-        .filter(Boolean)
+        .map(label => {
+            const meta = APP_META[label]
+            if (!meta) return null
+            return {
+                ...meta,
+                displayLabel: getAppTranslation(label)
+            }
+        })
+        .filter((x): x is NonNullable<typeof x> => Boolean(x))
 
     return (
         <div className="h-full flex flex-col font-sans text-primary select-none p-4 bg-transparent">
@@ -134,12 +153,12 @@ export default function ArchiveExplorer() {
                             className={`cursor-pointer hover:underline hover:text-primary transition-all ${currentFolder !== 'root' ? 'opacity-50' : 'text-primary font-bold'}`}
                             onClick={() => setCurrentFolder('root')}
                         >
-                            archive
+                            {t('archive.breadcrumb')}
                         </span>
                         {currentFolder !== 'root' && (
                             <>
                                 <span className="opacity-30 text-[9px] font-mono">&gt;</span>
-                                <span className="font-bold text-primary">{currentFolder === 'apps' ? 'applications' : 'saved posts'}</span>
+                                <span className="font-bold text-primary">{currentFolder === 'apps' ? t('archive.applications') : t('archive.saved_posts')}</span>
                             </>
                         )}
                     </span>
@@ -155,9 +174,9 @@ export default function ArchiveExplorer() {
                         </button>
                     )}
                     <span className="bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-lg border border-black/5 dark:border-white/5">
-                        {currentFolder === 'root' && `${archivedApps.length + (user ? savedPosts.length : 0)} items`}
-                        {currentFolder === 'apps' && `${archivedApps.length} apps`}
-                        {currentFolder === 'saved-posts' && (user ? `${savedPosts.length} posts` : 'locked')}
+                        {currentFolder === 'root' && `${archivedApps.length + (user ? savedPosts.length : 0)} ${t('archive.items')}`}
+                        {currentFolder === 'apps' && `${archivedApps.length} ${t('archive.apps')}`}
+                        {currentFolder === 'saved-posts' && (user ? `${savedPosts.length} ${t('archive.posts')}` : t('archive.locked'))}
                     </span>
                 </div>
             </header>
@@ -177,9 +196,9 @@ export default function ArchiveExplorer() {
                                 <AppIcon name="folder" className="size-7 grayscale opacity-50 dark:opacity-60 transition-all duration-300 group-hover:scale-105 group-hover:opacity-85" />
                             </div>
                             <div>
-                                <h4 className="font-bold text-[12px] text-primary lowercase">applications</h4>
+                                <h4 className="font-bold text-[12px] text-primary lowercase">{t('archive.applications')}</h4>
                                 <p className="text-[10px] text-primary/50 mt-0.5 lowercase leading-tight truncate">
-                                    {archivedApps.length} items
+                                    {archivedApps.length} {t('archive.items')}
                                 </p>
                             </div>
                         </div>
@@ -193,9 +212,9 @@ export default function ArchiveExplorer() {
                                 <AppIcon name="doc" className="size-7 grayscale opacity-50 dark:opacity-60 transition-all duration-300 group-hover:scale-105 group-hover:opacity-85" />
                             </div>
                             <div>
-                                <h4 className="font-bold text-[12px] text-primary lowercase">saved posts</h4>
+                                <h4 className="font-bold text-[12px] text-primary lowercase">{t('archive.saved_posts')}</h4>
                                 <p className="text-[10px] text-primary/50 mt-0.5 lowercase leading-tight truncate">
-                                    {!user ? 'locked' : `${savedPosts.length} posts`}
+                                    {!user ? t('archive.locked') : `${savedPosts.length} ${t('archive.posts')}`}
                                 </p>
                             </div>
                         </div>
@@ -208,8 +227,8 @@ export default function ArchiveExplorer() {
                         {archivedApps.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center text-center p-6 text-muted min-h-[180px]">
                                 <Folder className="size-10 stroke-[1.2] mb-2 opacity-35" />
-                                <p className="text-xs lowercase font-semibold">applications folder is empty.</p>
-                                <p className="text-[10px] mt-0.5 lowercase opacity-60">drag and drop desktop icons to archive them.</p>
+                                <p className="text-xs lowercase font-semibold">{t('archive.empty_apps')}</p>
+                                <p className="text-[10px] mt-0.5 lowercase opacity-60">{t('archive.empty_apps_sub')}</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-fadeIn">
@@ -222,20 +241,20 @@ export default function ArchiveExplorer() {
                                             <AppIcon name={app.iconName} className="size-6.5 grayscale opacity-60" />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <h4 className="font-bold text-[12px] text-primary truncate lowercase">{app.label}</h4>
+                                            <h4 className="font-bold text-[12px] text-primary truncate lowercase">{app.displayLabel || app.label}</h4>
                                             <p className="text-[10px] text-primary/45 truncate lowercase font-mono mt-0.5">{app.path}</p>
                                         </div>
                                         <div className="flex items-center gap-1">
                                             <button
                                                 onClick={() => handleLaunchApp(app.label)}
-                                                title="open app"
+                                                title={t('archive.open_app')}
                                                 className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-primary transition-all cursor-pointer"
                                             >
                                                 <Play className="size-3 fill-current" />
                                             </button>
                                             <button
                                                 onClick={() => handleRestoreApp(app.label)}
-                                                title="restore to desktop"
+                                                title={t('archive.restore_desktop')}
                                                 className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-primary transition-all cursor-pointer"
                                             >
                                                 <RotateCcw className="size-3" />
@@ -257,28 +276,28 @@ export default function ArchiveExplorer() {
                                     <div className="size-11 rounded-xl bg-black/5 dark:bg-white/5 flex items-center justify-center mb-3 text-primary border border-black/5 dark:border-white/5">
                                         <Lock className="size-5 grayscale opacity-60" />
                                     </div>
-                                    <h4 className="font-bold text-[12.5px] text-primary lowercase mb-1">authentication required</h4>
+                                    <h4 className="font-bold text-[12.5px] text-primary lowercase mb-1">{t('archive.auth_required')}</h4>
                                     <p className="text-[10px] text-primary/50 leading-normal lowercase mb-4 max-w-[190px]">
-                                        you must be logged in to view your bookmarked articles.
+                                        {t('archive.auth_required_sub')}
                                     </p>
                                     <button
                                         onClick={handleOpenLogin}
                                         className="w-full py-2 rounded-full bg-black/85 hover:bg-black dark:bg-white/80 dark:hover:bg-white text-white dark:text-black font-semibold text-[11px] transition-all cursor-pointer shadow-sm"
                                     >
-                                        sign in
+                                        {t('archive.sign_in')}
                                     </button>
                                 </div>
                             </div>
                         ) : loadingPosts ? (
                             <div className="h-full flex flex-col items-center justify-center text-center p-6 text-muted min-h-[180px]">
                                 <RefreshCw className="size-6 animate-spin opacity-50 mb-2" />
-                                <p className="text-xs lowercase">loading saved posts...</p>
+                                <p className="text-xs lowercase">{t('archive.loading_saved')}</p>
                             </div>
                         ) : savedPosts.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center text-center p-6 text-muted min-h-[180px]">
                                 <Bookmark className="size-10 stroke-[1.2] mb-2 opacity-35" />
-                                <p className="text-xs lowercase font-semibold">no saved posts found.</p>
-                                <p className="text-[10px] mt-0.5 lowercase opacity-60">posts saved from the reader view will appear here.</p>
+                                <p className="text-xs lowercase font-semibold">{t('archive.no_saved')}</p>
+                                <p className="text-[10px] mt-0.5 lowercase opacity-60">{t('archive.no_saved_sub')}</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 gap-2 animate-fadeIn">
@@ -294,21 +313,21 @@ export default function ArchiveExplorer() {
                                             <div className="min-w-0">
                                                 <h4 className="font-bold text-[12px] text-primary truncate lowercase hover:underline cursor-pointer" onClick={() => handleLaunchPost(post)}>{post.post_title || post.post_slug}</h4>
                                                 <p className="text-[9px] text-primary/40 truncate font-mono mt-0.5">
-                                                    saved {new Date(post.saved_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                                                    {t('archive.saved_date')} {new Date(post.saved_at).toLocaleDateString(lang === 'tr' ? 'tr-TR' : 'en-GB', { day: '2-digit', month: 'short' })}
                                                 </p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-1.5 shrink-0">
                                             <button
                                                 onClick={() => handleLaunchPost(post)}
-                                                title="read post"
+                                                title={t('archive.read_post')}
                                                 className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-primary transition-colors cursor-pointer"
                                             >
                                                 <ExternalLink className="size-3.5" />
                                             </button>
                                             <button
                                                 onClick={() => handleUnsavePost(post.post_slug)}
-                                                title="remove bookmark"
+                                                title={t('archive.remove_bookmark')}
                                                 className="p-2 rounded-full hover:bg-red-500/10 text-primary/60 hover:text-red-500 transition-colors cursor-pointer"
                                             >
                                                 <Trash2 className="size-3.5" />

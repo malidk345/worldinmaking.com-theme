@@ -1,31 +1,33 @@
-import Link from 'next/link'
-import { Metadata } from 'next'
+"use client"
 
-export const metadata: Metadata = {
-    title: '404 - Page Not Found',
-    description: 'The page you are looking for does not exist on World in Making.',
-    robots: {
-        index: false,
-        follow: true,
-    }
-}
+import Link from 'next/link'
+import { useTranslation } from 'hooks/useTranslation'
+import { useEffect } from 'react'
 
 export default function NotFound() {
+    const { t } = useTranslation()
+
+    useEffect(() => {
+        if (typeof document !== 'undefined') {
+            document.title = t('notfound.title')
+        }
+    }, [t])
+
     return (
         <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-light px-6 text-center dark:bg-dark">
             <h1 className="text-9xl font-black text-burnt-orange opacity-20">404</h1>
             <div className="relative -mt-16">
                 <h2 className="mb-4 text-3xl font-bold text-primary-text lowercase tracking-tight">
-                    lost in space
+                    {t('notfound.lost')}
                 </h2>
                 <p className="mb-8 max-w-md text-primary-text/60 lowercase">
-                    the transmission you are looking for could not be found or has been moved to a different coordinate.
+                    {t('notfound.lost_desc')}
                 </p>
                 <Link
                     href="/"
                     className="inline-flex items-center justify-center rounded-md bg-burnt-orange px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-burnt-orange/90 active:scale-95 lowercase"
                 >
-                    return to orbit
+                    {t('notfound.return_btn')}
                 </Link>
             </div>
 
