@@ -28,7 +28,6 @@ const getPostHref = (slug?: string) => {
 const PostsView = React.memo(() => {
     const { posts, loading } = usePosts()
     const { addWindow } = useApp()
-    const { profile } = useAuth()
     const { t, lang: preferredLanguage } = useTranslation()
 
     const sortedRoadmaps = useMemo(() => {

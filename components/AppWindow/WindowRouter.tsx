@@ -13,13 +13,12 @@ import PublicProfile from 'components/Profile/PublicProfile'
 import PostsView from 'components/Posts'
 import ContactContent from 'components/Contact/ContactContent'
 import LoginContent from 'components/Login/LoginContent'
-import RichTextEditor from 'components/AdminPanel/RichTextEditor'
 import { AppWindow } from '../../context/Window'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { useTranslation } from 'hooks/useTranslation'
 import { supabase } from '../../lib/supabase'
-import { Share, Image as ImageIcon, Palette, Hash, CheckCircle, ChevronDown, FileText, Flame, Rocket, Lightbulb, PenTool, Brain, Wrench, Sparkles, LayoutTemplate, Database, CalendarHeart } from 'lucide-react'
+import { Share, Palette, CheckCircle, ChevronDown, FileText, Flame, Rocket, Lightbulb, PenTool, Brain, Wrench, Sparkles, LayoutTemplate, Database, CalendarHeart } from 'lucide-react'
 import OSButton from 'components/OSButton'
 import { Popover } from 'components/RadixUI/Popover'
 import { sanitizeHtml, toSlug } from '../../utils/security'
@@ -255,6 +254,7 @@ function BlogRouteView({ slug }: { slug: string }) {
     const { posts, loading } = usePosts()
     const { lang } = useTranslation()
     
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let adaptedPost: any = null;
     const decodedSlug = decodeURIComponent(slug);
     
@@ -282,6 +282,7 @@ function BlogRouteView({ slug }: { slug: string }) {
                     title: translation.title || p.title,
                     content: translation.content || p.content,
                     excerpt: translation.excerpt || p.excerpt,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     htmlContent: (translation as any).htmlContent || (p as any).htmlContent,
                     language: targetLang,
                     originalLanguage: p.language || 'en',
