@@ -6,6 +6,7 @@ import { useApp } from '../../context/App'
 import { IconSearch } from '@posthog/icons'
 import { usePosts } from '../../hooks/usePosts'
 import type { Post } from '../../types/database'
+import { useTranslation } from '../../hooks/useTranslation'
 
 // Simple local search function
 function searchPosts(allPosts: Post[], query: string) {
@@ -43,6 +44,7 @@ export const WindowSearchUI = ({ initialFilter }: { initialFilter?: string }) =>
     const { posts, loading } = usePosts()
     const [query, setQuery] = useState('')
     const inputRef = useRef<HTMLInputElement>(null)
+    const { t } = useTranslation()
 
     void initialFilter
 
@@ -98,11 +100,11 @@ export const WindowSearchUI = ({ initialFilter }: { initialFilter?: string }) =>
             <div className="flex-1 overflow-y-auto px-2 py-2">
                 {loading ? (
                     <div className="p-4 text-center text-muted text-[13px] tracking-tight">
-                        loading posts...
+                        {t('loading.posts')}
                     </div>
                 ) : query.length < 2 ? (
                     <div className="p-4 text-center text-muted text-[13px] tracking-tight">
-                        type at least 2 characters to search...
+                        {t('search.type_to_search')}
                     </div>
                 ) : results.length === 0 ? (
                     <div className="p-4 text-center text-muted text-[13px] tracking-tight">

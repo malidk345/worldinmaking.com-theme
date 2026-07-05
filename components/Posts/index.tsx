@@ -48,15 +48,18 @@ const PostsView = React.memo(() => {
     }, [posts, preferredLanguage])
 
     const handleRoadmapClick = (roadmap: Post) => {
+        const isTr = preferredLanguage === 'tr'
+        const displayTitle = (isTr && roadmap.translations?.['tr']?.title) ? roadmap.translations['tr'].title : roadmap.title
+
         addWindow({
             key: `blog-${roadmap.id}`,
             path: getPostHref(roadmap.slug),
-            title: roadmap.title.toLowerCase(),
+            title: displayTitle.toLowerCase(),
             element: <BlogPostView post={roadmap} />
         })
     }
 
-    if (loading) return <Loading fullScreen label="loading posts..." />
+    if (loading) return <Loading fullScreen label={t('loading.posts')} />
 
     return (
         <div className="absolute inset-0 flex flex-col text-primary bg-primary overflow-hidden">
@@ -75,6 +78,10 @@ const PostsView = React.memo(() => {
                                 {sortedRoadmaps.map((roadmap) => {
                                     const teamName = roadmap.authorName || 'worldinmaking'
                                     const computedReadTime = roadmap.wordCount ? `${Math.max(1, Math.ceil(roadmap.wordCount / 200))}m` : '2m'
+
+                                    const isTr = preferredLanguage === 'tr'
+                                    const displayTitle = (isTr && roadmap.translations?.['tr']?.title) ? roadmap.translations['tr'].title : roadmap.title
+                                    const displayDescription = (isTr && roadmap.translations?.['tr']?.excerpt) ? roadmap.translations['tr'].excerpt : roadmap.description
 
                                     return (
                                         <li key={roadmap.id} className="font-mono text-xs lowercase border-b border-black/10 last:border-0 py-2 group">
@@ -98,11 +105,11 @@ const PostsView = React.memo(() => {
                                                     </div>
 
                                                     <span className="text-primary font-bold group-hover:!text-black dark:group-hover:!text-white leading-tight break-words text-[13px]">
-                                                        {roadmap.title}
+                                                        {displayTitle}
                                                     </span>
-                                                    {roadmap.description && (
+                                                    {displayDescription && (
                                                         <span className="opacity-50 text-[10px] mt-0.5 leading-snug line-clamp-6 italic">
-                                                            <span>{'//'}</span> {roadmap.description}
+                                                            <span>{'//'}</span> {displayDescription}
                                                         </span>
                                                     )}
                                                     {/* Colored Preview Image */}
