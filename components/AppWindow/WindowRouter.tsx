@@ -540,24 +540,23 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
 
                 {/* Main Node Content Area */}
                 <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 pb-20 flex-1 flex flex-col min-h-0 pt-6 gap-3">
-                    {/* Title Input — framed, lowercase */}
-                    <div className="space-y-4">
-                        <input
-                            type="text"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder="untitled node"
-                            className="bg-transparent border-none font-black tracking-tight text-primary outline-none placeholder:text-primary/20 w-full transition-all lowercase px-2 text-4xl sm:text-5xl mt-6 focus:bg-white/40 dark:focus:bg-black/40 focus:rounded-[24px] focus:py-2 focus:px-4 duration-300"
-                        />
-                    </div>
+                    <div className="relative bg-white/40 dark:bg-black/40 supports-[backdrop-filter]:backdrop-blur-[40px] rounded-[24px] md:rounded-[32px] p-4 md:p-6 border border-black/5 dark:border-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.04)] flex flex-col gap-4">
+                        <div className="flex flex-col gap-3">
+                            <input
+                                type="text"
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                                placeholder="untitled node"
+                                className="w-full bg-white/60 dark:bg-black/60 border border-black/5 dark:border-white/5 rounded-[24px] px-4 py-3 text-2xl font-black tracking-tight text-primary outline-none placeholder:text-primary/40 focus:bg-white focus:border-black/10 dark:focus:bg-black/80 dark:focus:border-white/10 shadow-inner transition-all duration-300 lowercase"
+                            />
+                        </div>
 
-                    {/* Rich Text Editor */}
-                    <div className="w-full h-auto mb-32">
-                        <RichTextEditor
-                            placeholder="type here..."
-                            content={content}
-                            onChange={setContent}
-                            hideBorder={true}
+                        <div className="w-full h-auto mb-16">
+                            <RichTextEditor
+                                placeholder="type here..."
+                                content={content}
+                                onChange={setContent}
+                                hideBorder={false}
                             expandHeight={true}
                             toolkitPosition="header"
                             windowKey={item.key}
@@ -674,6 +673,7 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                             ]}
                         />
                     </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -780,33 +780,33 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
 
             <div className="flex-col relative w-full flex-1 flex min-h-0 overflow-y-auto">
                 <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 pb-20 flex-1 flex flex-col min-h-0 pt-6 gap-3">
-                    {/* Title Input — framed, lowercase */}
-                    <div>
-                        <input
-                            type="text"
-                            value={title}
-                            onChange={(e) => {
-                                setTitle(e.target.value)
-                                if (!currentPostId) setSlug(toSlug(e.target.value))
-                            }}
-                            placeholder="untitled post"
-                            className="bg-transparent border-none font-black tracking-tight text-primary outline-none placeholder:text-primary/20 w-full transition-all lowercase px-2 text-4xl sm:text-5xl mt-6 focus:bg-white/40 dark:focus:bg-black/40 focus:rounded-[24px] focus:py-2 focus:px-4 duration-300"
-                        />
-                        <textarea
-                            value={excerpt}
-                            onChange={(e) => setExcerpt(e.target.value)}
-                            placeholder="brief excerpt or subtitle..."
-                            className="w-full bg-transparent focus:bg-white/40 dark:focus:bg-black/40 border border-transparent focus:border-black/5 dark:focus:border-white/5 focus:shadow-[0_2px_12px_rgba(0,0,0,0.02)] rounded-[24px] px-2 focus:px-4 py-2 focus:py-3 text-lg leading-relaxed text-primary/60 outline-none resize-none transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]"
-                            rows={2}
-                        />
-                    </div>
+                    <div className="relative bg-white/40 dark:bg-black/40 supports-[backdrop-filter]:backdrop-blur-[40px] rounded-[24px] md:rounded-[32px] p-4 md:p-6 border border-black/5 dark:border-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.04)] flex flex-col gap-4">
+                        <div className="flex flex-col gap-3">
+                            <input
+                                type="text"
+                                value={title}
+                                onChange={(e) => {
+                                    setTitle(e.target.value)
+                                    if (!currentPostId) setSlug(toSlug(e.target.value))
+                                }}
+                                placeholder="untitled post"
+                                className="w-full bg-white/60 dark:bg-black/60 border border-black/5 dark:border-white/5 rounded-[24px] px-4 py-3 text-2xl font-black tracking-tight text-primary outline-none placeholder:text-primary/40 focus:bg-white focus:border-black/10 dark:focus:bg-black/80 dark:focus:border-white/10 shadow-inner transition-all duration-300 lowercase"
+                            />
+                            <textarea
+                                value={excerpt}
+                                onChange={(e) => setExcerpt(e.target.value)}
+                                placeholder="brief excerpt or subtitle..."
+                                className="w-full bg-white/60 dark:bg-black/60 border border-black/5 dark:border-white/5 rounded-[24px] px-4 py-3 text-sm leading-relaxed text-primary/80 outline-none placeholder:text-primary/40 focus:bg-white focus:border-black/10 dark:focus:bg-black/80 dark:focus:border-white/10 shadow-inner resize-none transition-all duration-300 lowercase"
+                                rows={2}
+                            />
+                        </div>
 
-                    <div className="w-full h-auto mb-32">
-                        <RichTextEditor
-                            placeholder="type here..."
-                            content={content}
-                            onChange={setContent}
-                            hideBorder={true}
+                        <div className="w-full h-auto mb-16">
+                            <RichTextEditor
+                                placeholder="type here..."
+                                content={content}
+                                onChange={setContent}
+                                hideBorder={false}
                             expandHeight={true}
                             toolkitPosition="header"
                             windowKey={item.key}
@@ -866,6 +866,7 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
                                 }
                             ]}
                         />
+                    </div>
                     </div>
                 </div>
             </div>
