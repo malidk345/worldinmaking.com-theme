@@ -551,26 +551,34 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                         </button>
                     </div>
                 )}
-
                 {/* Main Node Content Area */}
-                <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 pb-6 flex-1 flex flex-col min-h-0 pt-6 gap-3">
-                    <div className="relative bg-white/40 dark:bg-black/40 supports-[backdrop-filter]:backdrop-blur-[40px] rounded-[24px] md:rounded-[32px] p-4 md:p-6 border border-black/5 dark:border-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.04)] flex flex-col gap-4 flex-1 h-full min-h-0">
-                        <div className="flex items-start gap-2 md:gap-3">
-                            <div className="w-[32px] h-[32px] md:w-[36px] md:h-[36px] rounded-full overflow-hidden shrink-0 mt-0.5 border border-black/10 dark:border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-                                <ForumAvatar
-                                    className="w-full h-full"
-                                    image={profile?.avatar_url}
-                                />
+                <div className="w-full max-w-4xl mx-auto px-2 sm:px-6 pb-4 sm:pb-6 flex-1 flex flex-col min-h-0 pt-4 sm:pt-6 gap-3">
+                    <div className="relative bg-white/40 dark:bg-black/40 supports-[backdrop-filter]:backdrop-blur-[40px] rounded-[24px] md:rounded-[32px] p-3 sm:p-6 border border-black/5 dark:border-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.04)] flex flex-col gap-3 sm:gap-4 flex-1 h-full min-h-0">
+                        {/* Meta Bar */}
+                        <div className="flex items-center justify-between pb-2 border-b border-black/5 dark:border-white/5 select-none">
+                            <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-full overflow-hidden border border-black/10 dark:border-white/10 shadow-sm">
+                                    <ForumAvatar className="w-full h-full" image={profile?.avatar_url} />
+                                </div>
+                                <span className="text-[10px] font-bold text-primary/50 lowercase">@{profile?.username || 'writer'}</span>
                             </div>
-                            <div className="flex-1 min-w-0 w-full max-w-full">
-                                <input
-                                    type="text"
-                                    value={title}
-                                    onChange={(e) => setTitle(e.target.value)}
-                                    placeholder="untitled node"
-                                    className="w-full bg-white/60 dark:bg-black/60 border border-black/5 dark:border-white/5 rounded-full px-4 py-2.5 text-xs md:text-sm text-primary font-bold outline-none placeholder:text-primary/40 focus:bg-white focus:border-black/10 dark:focus:bg-black/80 dark:focus:border-white/10 shadow-inner transition-all duration-300 lowercase"
-                                />
+                            <div className="flex items-center gap-1">
+                                {coverImage ? (
+                                    <span className="text-[9px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/10 lowercase">has cover</span>
+                                ) : (
+                                    <span className="text-[9px] font-black text-primary/30 bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-full border border-black/5 dark:border-white/5 lowercase">no cover</span>
+                                )}
                             </div>
+                        </div>
+
+                        <div className="w-full">
+                            <input
+                                type="text"
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                                placeholder="untitled node"
+                                className="w-full bg-white/60 dark:bg-black/60 border border-black/5 dark:border-white/5 rounded-full px-4 py-2.5 text-xs md:text-sm text-primary font-bold outline-none placeholder:text-primary/40 focus:bg-white focus:border-black/10 dark:focus:bg-black/80 dark:focus:border-white/10 shadow-inner transition-all duration-300 lowercase"
+                            />
                         </div>
 
                         <ForumRichText
@@ -582,99 +590,105 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                             boxed={true}
                             borderClass="border-black/10 dark:border-white/10"
                             cta={
-                                <div className="flex flex-wrap gap-2 items-center">
-                                    <OSButton
-                                        size="sm"
-                                        variant="primary"
-                                        disabled={saving}
-                                        onClick={() => handleSave(nodeStatus)}
-                                    >
-                                        <span className="lowercase font-bold">{saving ? t('appwindow.saving') : (nodeStatus === 'published' ? t('appwindow.update') : t('appwindow.publish'))}</span>
-                                    </OSButton>
-                                    <OSButton
-                                        size="sm"
-                                        variant="default"
-                                        onClick={() => handleSave('draft')}
-                                        disabled={saving}
-                                        className="opacity-70 hover:opacity-100"
-                                    >
-                                        <span className="lowercase font-bold">{t('appwindow.save_draft')}</span>
-                                    </OSButton>
+                                <div className="flex flex-wrap items-center gap-2 w-full">
+                                    {/* Action Group (Left) */}
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                        <OSButton
+                                            size="sm"
+                                            variant="primary"
+                                            disabled={saving}
+                                            onClick={() => handleSave(nodeStatus)}
+                                        >
+                                            <span className="lowercase font-bold">{saving ? t('appwindow.saving') : (nodeStatus === 'published' ? t('appwindow.update') : t('appwindow.publish'))}</span>
+                                        </OSButton>
+                                        <OSButton
+                                            size="sm"
+                                            variant="default"
+                                            onClick={() => handleSave('draft')}
+                                            disabled={saving}
+                                            className="opacity-70 hover:opacity-100"
+                                        >
+                                            <span className="lowercase font-bold">{t('appwindow.save_draft')}</span>
+                                        </OSButton>
+                                    </div>
 
-                                    <div className="w-[1px] h-5 bg-black/10 dark:bg-white/10 mx-1" />
+                                    <div className="w-[1px] h-5 bg-black/10 dark:bg-white/10 mx-0.5 hidden sm:block shrink-0" />
 
-                                    <Popover
-                                        trigger={
-                                            <OSButton size="sm">
-                                                <div className="flex items-center gap-1.5 lowercase">
-                                                    {statusConfig[nodeStatus].icon}
-                                                    <span className="font-bold">{statusConfig[nodeStatus].label}</span>
-                                                    <ChevronDown className="size-3 opacity-50" />
-                                                </div>
-                                            </OSButton>
-                                        }
-                                        dataScheme="primary"
-                                        contentClassName="w-40 p-1 border border-primary bg-bg"
-                                    >
-                                        <div className="flex flex-col gap-0.5">
-                                            {(Object.keys(statusConfig) as Array<keyof typeof statusConfig>).map(s => (
-                                                <button key={s} onClick={() => setNodeStatus(s as keyof typeof statusConfig)} className={`text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 ${statusConfig[s as keyof typeof statusConfig].color}`}>
-                                                    {statusConfig[s as keyof typeof statusConfig].icon} {statusConfig[s as keyof typeof statusConfig].label}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </Popover>
+                                    {/* Settings Group (Right) - Scrollable on mobile */}
+                                    <div className="flex-1 min-w-0 w-full overflow-x-auto no-scrollbar flex items-center gap-1.5 pb-1 sm:pb-0 -mb-1 sm:mb-0 select-none flex-nowrap">
+                                        <Popover
+                                            trigger={
+                                                <OSButton size="sm">
+                                                    <div className="flex items-center gap-1.25 lowercase">
+                                                        {statusConfig[nodeStatus].icon}
+                                                        <span className="font-bold">{statusConfig[nodeStatus].label}</span>
+                                                        <ChevronDown className="size-3 opacity-50" />
+                                                    </div>
+                                                </OSButton>
+                                            }
+                                            dataScheme="primary"
+                                            contentClassName="w-40 p-1 border border-primary bg-bg"
+                                        >
+                                            <div className="flex flex-col gap-0.5">
+                                                {(Object.keys(statusConfig) as Array<keyof typeof statusConfig>).map(s => (
+                                                    <button key={s} onClick={() => setNodeStatus(s as keyof typeof statusConfig)} className={`text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 ${statusConfig[s as keyof typeof statusConfig].color}`}>
+                                                        {statusConfig[s as keyof typeof statusConfig].icon} {statusConfig[s as keyof typeof statusConfig].label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </Popover>
 
-                                    <Popover
-                                        trigger={
-                                            <OSButton size="sm">
-                                                <div className="flex items-center gap-1.5 lowercase">
-                                                    {typeConfig[nodeType].icon}
-                                                    <span className="font-bold">{typeConfig[nodeType].label}</span>
-                                                    <ChevronDown className="size-3 opacity-50" />
-                                                </div>
-                                            </OSButton>
-                                        }
-                                        dataScheme="primary"
-                                        contentClassName="w-40 p-1 border border-primary bg-bg"
-                                    >
-                                        <div className="flex flex-col gap-0.5">
-                                            {(Object.keys(typeConfig) as Array<keyof typeof typeConfig>).map(t => (
-                                                <button key={t} onClick={() => setNodeType(t as keyof typeof typeConfig)} className="text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-primary">
-                                                    {typeConfig[t as keyof typeof typeConfig].icon} {typeConfig[t as keyof typeof typeConfig].label}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </Popover>
+                                        <Popover
+                                            trigger={
+                                                <OSButton size="sm">
+                                                    <div className="flex items-center gap-1.25 lowercase">
+                                                        {typeConfig[nodeType].icon}
+                                                        <span className="font-bold">{typeConfig[nodeType].label}</span>
+                                                        <ChevronDown className="size-3 opacity-50" />
+                                                    </div>
+                                                </OSButton>
+                                            }
+                                            dataScheme="primary"
+                                            contentClassName="w-40 p-1 border border-primary bg-bg"
+                                        >
+                                            <div className="flex flex-col gap-0.5">
+                                                {(Object.keys(typeConfig) as Array<keyof typeof typeConfig>).map(t => (
+                                                    <button key={t} onClick={() => setNodeType(t as keyof typeof typeConfig)} className="text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-primary">
+                                                        {typeConfig[t as keyof typeof typeConfig].icon} {typeConfig[t as keyof typeof typeConfig].label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </Popover>
 
-                                    <OSButton
-                                        size="sm"
-                                        onClick={() => {
-                                            const url = window.prompt('enter cover image url')
-                                            if (url && url.trim()) setCoverImage(url.trim())
-                                        }}
-                                    >
-                                        <span className="lowercase font-bold">cover</span>
-                                    </OSButton>
+                                        <OSButton
+                                            size="sm"
+                                            onClick={() => {
+                                                const url = window.prompt('enter cover image url')
+                                                if (url && url.trim()) setCoverImage(url.trim())
+                                            }}
+                                        >
+                                            <span className="lowercase font-bold">cover</span>
+                                        </OSButton>
 
-                                    <Popover
-                                        trigger={
-                                            <OSButton size="sm" title="theme">
-                                                <Palette className="size-3.5" />
-                                            </OSButton>
-                                        }
-                                        dataScheme="primary"
-                                        contentClassName="w-48 p-2 border border-primary bg-bg"
-                                    >
-                                        <div className="flex flex-col gap-1">
-                                            <span className="text-[10px] font-black lowercase tracking-widest text-primary/40 px-2 py-1">node theme</span>
-                                            {(Object.keys(themeClasses) as Array<keyof typeof themeClasses>).map(t => (
-                                                <button key={t} onClick={() => setTheme(t as keyof typeof themeClasses)} className="text-left px-2 py-1.5 text-xs font-bold hover:bg-black/5 rounded-md lowercase">
-                                                    {t} canvas
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </Popover>
+                                        <Popover
+                                            trigger={
+                                                <OSButton size="sm" title="theme">
+                                                    <Palette className="size-3.5" />
+                                                </OSButton>
+                                            }
+                                            dataScheme="primary"
+                                            contentClassName="w-48 p-2 border border-primary bg-bg"
+                                        >
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-[10px] font-black lowercase tracking-widest text-primary/40 px-2 py-1">node theme</span>
+                                                {(Object.keys(themeClasses) as Array<keyof typeof themeClasses>).map(t => (
+                                                    <button key={t} onClick={() => setTheme(t as keyof typeof themeClasses)} className="text-left px-2 py-1.5 text-xs font-bold hover:bg-black/5 rounded-md lowercase">
+                                                        {t} canvas
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </Popover>
+                                    </div>
                                 </div>
                             }
                         />
@@ -783,36 +797,44 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
             <aside className="sticky top-0 z-50 shrink-0">
                 <div id={`window-inner-header-${item.key}`} className="pointer-events-auto" />
             </aside>
-
             <div className="flex-col relative w-full flex-1 flex min-h-0">
-                <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 pb-6 flex-1 flex flex-col min-h-0 pt-6 gap-3">
-                    <div className="relative bg-white/40 dark:bg-black/40 supports-[backdrop-filter]:backdrop-blur-[40px] rounded-[24px] md:rounded-[32px] p-4 md:p-6 border border-black/5 dark:border-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.04)] flex flex-col gap-4 flex-1 h-full min-h-0">
-                        <div className="flex items-start gap-2 md:gap-3">
-                            <div className="w-[32px] h-[32px] md:w-[36px] md:h-[36px] rounded-full overflow-hidden shrink-0 mt-0.5 border border-black/10 dark:border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-                                <ForumAvatar
-                                    className="w-full h-full"
-                                    image={profile?.avatar_url}
-                                />
+                <div className="w-full max-w-4xl mx-auto px-2 sm:px-6 pb-4 sm:pb-6 flex-1 flex flex-col min-h-0 pt-4 sm:pt-6 gap-3">
+                    <div className="relative bg-white/40 dark:bg-black/40 supports-[backdrop-filter]:backdrop-blur-[40px] rounded-[24px] md:rounded-[32px] p-3 sm:p-6 border border-black/5 dark:border-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.04)] flex flex-col gap-3 sm:gap-4 flex-1 h-full min-h-0">
+                        {/* Meta Bar */}
+                        <div className="flex items-center justify-between pb-2 border-b border-black/5 dark:border-white/5 select-none">
+                            <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-full overflow-hidden border border-black/10 dark:border-white/10 shadow-sm">
+                                    <ForumAvatar className="w-full h-full" image={profile?.avatar_url} />
+                                </div>
+                                <span className="text-[10px] font-bold text-primary/50 lowercase">@{profile?.username || 'writer'}</span>
                             </div>
-                            <div className="flex-1 min-w-0 w-full max-w-full flex flex-col gap-2 md:gap-3">
-                                <input
-                                    type="text"
-                                    value={title}
-                                    onChange={(e) => {
-                                        setTitle(e.target.value)
-                                        if (!currentPostId) setSlug(toSlug(e.target.value))
-                                    }}
-                                    placeholder="untitled post"
-                                    className="w-full bg-white/60 dark:bg-black/60 border border-black/5 dark:border-white/5 rounded-full px-4 py-2.5 text-xs md:text-sm text-primary font-bold outline-none placeholder:text-primary/40 focus:bg-white focus:border-black/10 dark:focus:bg-black/80 dark:focus:border-white/10 shadow-inner transition-all duration-300 lowercase"
-                                />
-                                <textarea
-                                    value={excerpt}
-                                    onChange={(e) => setExcerpt(e.target.value)}
-                                    placeholder="brief excerpt or subtitle..."
-                                    className="w-full bg-white/60 dark:bg-black/60 border border-black/5 dark:border-white/5 rounded-2xl px-4 py-2.5 text-xs md:text-sm text-primary/80 outline-none placeholder:text-primary/40 focus:bg-white focus:border-black/10 dark:focus:bg-black/80 dark:focus:border-white/10 shadow-inner resize-none transition-all duration-300 lowercase"
-                                    rows={2}
-                                />
+                            <div className="flex items-center gap-1">
+                                {imageUrl ? (
+                                    <span className="text-[9px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/10 lowercase">has cover</span>
+                                ) : (
+                                    <span className="text-[9px] font-black text-primary/30 bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-full border border-black/5 dark:border-white/5 lowercase">no cover</span>
+                                )}
                             </div>
+                        </div>
+
+                        <div className="w-full flex flex-col gap-2 sm:gap-3">
+                            <input
+                                type="text"
+                                value={title}
+                                onChange={(e) => {
+                                    setTitle(e.target.value)
+                                    if (!currentPostId) setSlug(toSlug(e.target.value))
+                                }}
+                                placeholder="untitled post"
+                                className="w-full bg-white/60 dark:bg-black/60 border border-black/5 dark:border-white/5 rounded-full px-4 py-2.5 text-xs md:text-sm text-primary font-bold outline-none placeholder:text-primary/40 focus:bg-white focus:border-black/10 dark:focus:bg-black/80 dark:focus:border-white/10 shadow-inner transition-all duration-300 lowercase"
+                            />
+                            <textarea
+                                value={excerpt}
+                                onChange={(e) => setExcerpt(e.target.value)}
+                                placeholder="brief excerpt or subtitle..."
+                                className="w-full bg-white/60 dark:bg-black/60 border border-black/5 dark:border-white/5 rounded-2xl px-4 py-2.5 text-xs md:text-sm text-primary/80 outline-none placeholder:text-primary/40 focus:bg-white focus:border-black/10 dark:focus:bg-black/80 dark:focus:border-white/10 shadow-inner resize-none transition-all duration-300 lowercase"
+                                rows={2}
+                            />
                         </div>
 
                         <ForumRichText
@@ -824,59 +846,65 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
                             boxed={true}
                             borderClass="border-black/10 dark:border-white/10"
                             cta={
-                                <div className="flex flex-wrap gap-2 items-center">
-                                    <OSButton
-                                        size="sm"
-                                        variant="primary"
-                                        disabled={saving}
-                                        onClick={() => handleSavePost(true)}
-                                    >
-                                        <span className="lowercase font-bold">{saving ? t('appwindow.publishing') : t('appwindow.publish')}</span>
-                                    </OSButton>
-                                    <OSButton
-                                        size="sm"
-                                        variant="default"
-                                        onClick={() => handleSavePost(false)}
-                                        disabled={saving}
-                                        className="opacity-70 hover:opacity-100"
-                                    >
-                                        <span className="lowercase font-bold">{t('appwindow.save_draft')}</span>
-                                    </OSButton>
+                                <div className="flex flex-wrap items-center gap-2 w-full">
+                                    {/* Action Group (Left) */}
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                        <OSButton
+                                            size="sm"
+                                            variant="primary"
+                                            disabled={saving}
+                                            onClick={() => handleSavePost(true)}
+                                        >
+                                            <span className="lowercase font-bold">{saving ? t('appwindow.publishing') : t('appwindow.publish')}</span>
+                                        </OSButton>
+                                        <OSButton
+                                            size="sm"
+                                            variant="default"
+                                            onClick={() => handleSavePost(false)}
+                                            disabled={saving}
+                                            className="opacity-70 hover:opacity-100"
+                                        >
+                                            <span className="lowercase font-bold">{t('appwindow.save_draft')}</span>
+                                        </OSButton>
+                                    </div>
 
-                                    <div className="w-[1px] h-5 bg-black/10 dark:bg-white/10 mx-1" />
+                                    <div className="w-[1px] h-5 bg-black/10 dark:bg-white/10 mx-0.5 hidden sm:block shrink-0" />
 
-                                    <Popover
-                                        trigger={
-                                            <OSButton size="sm">
-                                                <div className="flex items-center gap-1.5 lowercase">
-                                                    {published ? <CheckCircle className="size-3.5 text-emerald-500" /> : <PenTool className="size-3.5" />}
-                                                    <span className="font-bold">{published ? 'published' : 'draft'}</span>
-                                                    <ChevronDown className="size-3 opacity-50" />
-                                                </div>
-                                            </OSButton>
-                                        }
-                                        dataScheme="primary"
-                                        contentClassName="w-40 p-1 border border-primary bg-bg"
-                                    >
-                                        <div className="flex flex-col gap-0.5">
-                                            <button onClick={() => setPublished(false)} className="text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-primary">
-                                                <PenTool className="size-3" /> draft
-                                            </button>
-                                            <button onClick={() => setPublished(true)} className="text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-emerald-600">
-                                                <CheckCircle className="size-3" /> published
-                                            </button>
-                                        </div>
-                                    </Popover>
+                                    {/* Settings Group (Right) - Scrollable on mobile */}
+                                    <div className="flex-1 min-w-0 w-full overflow-x-auto no-scrollbar flex items-center gap-1.5 pb-1 sm:pb-0 -mb-1 sm:mb-0 select-none flex-nowrap">
+                                        <Popover
+                                            trigger={
+                                                <OSButton size="sm">
+                                                    <div className="flex items-center gap-1.25 lowercase">
+                                                        {published ? <CheckCircle className="size-3.5 text-emerald-500" /> : <PenTool className="size-3.5" />}
+                                                        <span className="font-bold">{published ? 'published' : 'draft'}</span>
+                                                        <ChevronDown className="size-3 opacity-50" />
+                                                    </div>
+                                                </OSButton>
+                                            }
+                                            dataScheme="primary"
+                                            contentClassName="w-40 p-1 border border-primary bg-bg"
+                                        >
+                                            <div className="flex flex-col gap-0.5">
+                                                <button onClick={() => setPublished(false)} className="text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-primary">
+                                                    <PenTool className="size-3" /> draft
+                                                </button>
+                                                <button onClick={() => setPublished(true)} className="text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-emerald-600">
+                                                    <CheckCircle className="size-3" /> published
+                                                </button>
+                                            </div>
+                                        </Popover>
 
-                                    <OSButton
-                                        size="sm"
-                                        onClick={() => {
-                                            const url = window.prompt('enter post cover image url', imageUrl || '')
-                                            if (url !== null) setImageUrl(url.trim())
-                                        }}
-                                    >
-                                        <span className="lowercase font-bold">cover</span>
-                                    </OSButton>
+                                        <OSButton
+                                            size="sm"
+                                            onClick={() => {
+                                                const url = window.prompt('enter post cover image url', imageUrl || '')
+                                                if (url !== null) setImageUrl(url.trim())
+                                            }}
+                                        >
+                                            <span className="lowercase font-bold">cover</span>
+                                        </OSButton>
+                                    </div>
                                 </div>
                             }
                         />
