@@ -794,7 +794,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                     <button className="corpus-doc-tab corpus-doc-tab--active">{postSectionLabel} <span>{filteredPosts.length}</span></button>
                                 </div>
                                 {postsLoading ? (
-                                    <div className="corpus-doc-empty"><RefreshCw className="size-6 animate-spin" style={{ opacity: 0.3 }} /><p>loading posts...</p></div>
+                                    <div className="corpus-doc-empty"><RefreshCw className="size-6 animate-spin" style={{ opacity: 0.3 }} /><p>{t('loading.posts')}</p></div>
                                 ) : filteredPosts.length > 0 ? (
                                     <div className="corpus-doc-grid">
                                         {filteredPosts.map((post) => (

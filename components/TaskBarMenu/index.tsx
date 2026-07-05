@@ -7,7 +7,8 @@ import {
     IconUser,
     IconChevronDown,
     IconBolt,
-    IconApps
+    IconApps,
+    IconGlobe
 } from '@posthog/icons'
 import { Settings, Info, FileText, BookOpen, Newspaper, MessageSquare, RotateCw, LogOut, LogIn, Home } from 'lucide-react'
 import { useApp } from '../../context/App'
@@ -28,6 +29,7 @@ import EphemeralTransmissions from 'components/Ideas/EphemeralTransmissions'
 import AmbientPlayer from 'components/AmbientPlayer'
 import NotificationCenter from 'components/NotificationCenter'
 import { useTranslation } from 'hooks/useTranslation'
+import { LanguageSelector } from 'components/OSChrome/LanguageSelector'
 
 export default function TaskBarMenu() {
     const {
@@ -38,10 +40,11 @@ export default function TaskBarMenu() {
         addWindow,
         closeAllWindows
     } = useApp()
-    const { user, profile, isAdmin, signOut } = useAuth()
-    const { t } = useTranslation()
+    const { user, profile, isAdmin, signOut, updateProfile } = useAuth()
+    const { t, lang } = useTranslation()
 
     const [isAnimating, setIsAnimating] = useState(false)
+    const [languageSelectorOpen, setLanguageSelectorOpen] = useState(false)
     const totalWindows = windows.length
 
     useEffect(() => {
@@ -76,7 +79,7 @@ export default function TaskBarMenu() {
                 type: 'item' as const,
                 node: (
                     <div className="text-[10px] uppercase font-black opacity-40 px-3 py-1 tracked-widest select-none">
-                        signed in as {profile?.username || user.email}
+                        {t('menu.signed_in_as')} {profile?.username || user.email}
                     </div>
                 ),
                 disabled: true
@@ -98,32 +101,32 @@ export default function TaskBarMenu() {
         // Main app items
         {
             type: 'item' as const,
-            label: 'About WorldInMaking',
+            label: t('menu.about_title'),
             icon: <Info className="size-4 opacity-70" />,
             onClick: () => addWindow({
                 key: 'about',
-                title: 'About WorldInMaking',
+                title: t('menu.about_title'),
                 path: '/about',
                 element: (
                     <div className="w-full h-full bg-accent text-primary p-6 md:p-10 overflow-hidden flex flex-col font-mono">
                         <ScrollArea>
                             <div className="max-w-2xl mx-auto lowercase leading-relaxed space-y-6 text-[13px] md:text-sm">
                                 <div className="mb-12">
-                                    <p className="font-bold text-lg">i am mustafa ali.</p>
+                                    <p className="font-bold text-lg">{t('menu.about_h1')}</p>
                                 </div>
-                                <p>worldinmaking (wim) began from a simple but unsettling intuition: the world is not something we merely inhabit — it is something continuously being formed.</p>
-                                <p>what appears stable is often the result of repetition. what feels natural is usually constructed. institutions harden over time and begin to look inevitable. moral language disguises power. economic systems present themselves as neutral mechanisms. even desire carries the marks of history.</p>
-                                <p>this project exists in that unstable space where certainty starts to fracture.</p>
-                                <p>worldinmaking (wim) is an independent writing and research platform where ideas are not treated as finished monuments but as living structures — open to interrogation, reinterpretation, and reconstruction. rather than offering definitive answers, it lingers with tension. it questions what presents itself as obvious. it returns to inherited concepts not to preserve them, but to test their foundations.</p>
-                                <p>the sacred, the ethical, the political, the psychological — none are approached as fixed domains. they intersect. they shape one another. they produce the world we move through every day without noticing its architecture.</p>
+                                <p>{t('menu.about_p1')}</p>
+                                <p>{t('menu.about_p2')}</p>
+                                <p>{t('menu.about_p3')}</p>
+                                <p>{t('menu.about_p4')}</p>
+                                <p>{t('menu.about_p5')}</p>
                                 <div>
-                                    <p>to think is not a passive act. thought participates in construction.</p>
-                                    <p>to question is already to intervene.</p>
+                                    <p>{t('menu.about_p6')}</p>
+                                    <p>{t('menu.about_p7')}</p>
                                 </div>
-                                <p>worldinmaking (wim) is an ongoing attempt to remain intellectually restless — to resist comfort, to slow down judgment, and to take ideas seriously in a time that prefers immediacy.</p>
-                                <p>if the world is still in formation, then responsibility begins with attention.</p>
+                                <p>{t('menu.about_p8')}</p>
+                                <p>{t('menu.about_p9')}</p>
                                 <div className="pt-8 border-t border-primary/10">
-                                    <p>— mustafa ali</p>
+                                    <p>{t('menu.about_author')}</p>
                                 </div>
                             </div>
                         </ScrollArea>
@@ -222,6 +225,12 @@ export default function TaskBarMenu() {
         ...(user ? [
             {
                 type: 'item' as const,
+                label: t('profile.language'),
+                icon: <IconGlobe className="size-4 opacity-70" />,
+                onClick: () => setLanguageSelectorOpen(true)
+            },
+            {
+                type: 'item' as const,
                 label: t('menu.sign_out'),
                 icon: <LogOut className="size-4 opacity-70" />,
                 onClick: () => signOut()
@@ -267,6 +276,16 @@ export default function TaskBarMenu() {
 
     return (
         <>
+            <LanguageSelector
+                visible={languageSelectorOpen}
+                onClose={() => setLanguageSelectorOpen(false)}
+                currentLanguage={lang}
+                onLanguageChange={(code) => {
+                    if (user && profile) {
+                        updateProfile({ preferred_language: code })
+                    }
+                }}
+            />
             <div
                 ref={taskbarRef}
                 id="taskbar"

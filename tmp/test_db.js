@@ -31,17 +31,17 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 async function test() {
     console.log('Connecting to:', supabaseUrl);
-    
+
     // Check total posts count
     const { data: totalData, error: totalError } = await supabase
         .from('posts')
         .select('id, title, slug, published, is_approved');
-        
+
     if (totalError) {
         console.error('Error fetching posts:', totalError);
         return;
     }
-    
+
     console.log('Total posts in database:', totalData.length);
     console.log('Posts details:', totalData);
 }
