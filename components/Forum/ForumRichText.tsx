@@ -159,6 +159,8 @@ interface ForumRichTextProps {
     mentions?: boolean
     borderClass?: string
     showMarkdownLogo?: boolean
+    expandHeight?: boolean
+    wrapperClassName?: string
 }
 
 interface Profile {
@@ -265,6 +267,8 @@ export default function ForumRichText({
     mentions = true,
     borderClass = 'border-border',
     showMarkdownLogo = false,
+    expandHeight = false,
+    wrapperClassName = '',
 }: ForumRichTextProps) {
     const [showMentionProfiles, setShowMentionProfiles] = useState(false)
     const [mentionSearch, setMentionSearch] = useState('')
@@ -306,7 +310,7 @@ export default function ForumRichText({
         editorProps: {
             attributes: {
                 // Exact styling from aa project's OSTextarea but applied to Tiptap
-                class: `focus:outline-none min-h-[80px] md:min-h-[120px] max-h-[250px] md:max-h-[350px] overflow-y-auto p-3 prose prose-sm dark:prose-invert max-w-none text-black dark:text-white [&_p]:text-black [&_p]:dark:text-white focus:[&_p]:!text-black focus:[&_p]:dark:!text-white [&_a]:font-semibold break-words [overflow-wrap:anywhere] ${className}`,
+                class: `focus:outline-none overflow-y-auto p-3 prose prose-sm dark:prose-invert max-w-none text-black dark:text-white [&_p]:text-black [&_p]:dark:text-white focus:[&_p]:!text-black focus:[&_p]:dark:!text-white [&_a]:font-semibold break-words [overflow-wrap:anywhere] ${expandHeight ? 'flex-1 h-full min-h-0' : 'min-h-[80px] md:min-h-[120px] max-h-[250px] md:max-h-[350px]'} ${className}`,
             },
             handlePaste: (view, event) => {
                 const items = Array.from(event.clipboardData?.items || [])
@@ -371,7 +375,7 @@ export default function ForumRichText({
     if (!editor) return null
 
     return (
-        <div className="relative bg-white/60 dark:bg-black/60 supports-[backdrop-filter]:backdrop-blur-[60px] rounded-[24px] border border-black/5 dark:border-white/5 shadow-inner flex flex-col overflow-hidden w-full max-w-full min-w-0" {...getRootProps()}>
+        <div className={`relative bg-white/60 dark:bg-black/60 supports-[backdrop-filter]:backdrop-blur-[60px] rounded-[24px] border border-black/5 dark:border-white/5 shadow-inner flex flex-col overflow-hidden w-full max-w-full min-w-0 ${expandHeight ? 'flex-1 h-full min-h-0' : ''} ${wrapperClassName}`} {...getRootProps()}>
             <input className="hidden" {...getInputProps()} />
 
             {/* Toolbar - iOS 26 Style */}
@@ -415,8 +419,8 @@ export default function ForumRichText({
             </div>
 
             {/* Editor Area - iOS 26 Style */}
-            <div className={`relative flex-1 bg-transparent min-h-[120px] transition-colors duration-300 ease-in-out focus-within:bg-white/80 dark:focus-within:bg-black/80`}>
-                <div className="relative h-full">
+            <div className={`relative bg-transparent transition-colors duration-300 ease-in-out focus-within:bg-white/80 dark:focus-within:bg-black/80 ${expandHeight ? 'flex-grow flex flex-col min-h-0 h-full' : 'min-h-[120px]'}`}>
+                <div className={`relative h-full ${expandHeight ? 'flex-grow flex flex-col min-h-0 h-full' : ''}`}>
                     {mentions && (
                         <AnimatePresence>
                             {showMentionProfiles && (
@@ -431,7 +435,7 @@ export default function ForumRichText({
                     {label && !!editor.getHTML() && (
                         <label className="text-[10px] opacity-40 block font-bold mb-1 px-4 pt-3 lowercase tracking-wide">{label}</label>
                     )}
-                    <EditorContent editor={editor} />
+                    <EditorContent editor={editor} className={expandHeight ? 'flex-1 flex flex-col min-h-0 h-full' : ''} />
                 </div>
 
                 {isDragActive && (
