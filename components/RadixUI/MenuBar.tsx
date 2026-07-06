@@ -30,15 +30,26 @@ export type MenuType = {
 }
 
 const RootClasses = 'flex gap-px py-0.5 h-full'
-const TriggerClasses =
+const TriggerClassesDefault =
     'group flex select-none items-center justify-between gap-0.5 rounded px-1.5 py-0.5 text-[13px] leading-none text-primary outline-none data-[highlighted]:bg-accent hover:bg-accent-2 data-[state=open]:bg-accent'
-const ItemClasses =
+const ItemClassesDefault =
     'hover:bg-accent group relative flex h-[25px] select-none justify-between items-center rounded text-[13px] leading-none text-primary bg-primary outline-none data-[disabled]:pointer-events-none data-[disabled]:text-muted [&>span]:inline-flex [&>span]:w-full'
-const SubTriggerClasses =
+const SubTriggerClassesDefault =
     'hover:bg-accent group relative flex h-[25px] select-none items-center rounded px-2.5 text-[13px] leading-none text-primary bg-primary outline-none data-[disabled]:pointer-events-none data-[disabled]:text-muted'
-const ContentClasses =
+const ContentClassesDefault =
     'bg-primary min-w-[180px] md:min-w-[220px] rounded-md p-[5px] shadow-[0px_10px_38px_-10px_rgba(22,_23,_24,_0.35),_0px_10px_20px_-15px_rgba(22,_23,_24,_0.2)] will-change-[transform,opacity] [animation-duration:_400ms] [animation-timing-function:_cubic-bezier(0.16,_1,_0.3,_1)]'
-const SeparatorClasses = 'm-[5px] h-px bg-border'
+const SeparatorClassesDefault = 'm-[5px] h-px bg-border'
+
+const ContentClassesIos26 = 'bg-white/80 dark:bg-black/80 supports-[backdrop-filter]:backdrop-blur-[60px] min-w-[180px] md:min-w-[250px] rounded-[24px] p-2 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.3)] border border-black/10 dark:border-white/10 will-change-[transform,opacity] [animation-duration:_400ms] [animation-timing-function:_cubic-bezier(0.23,_1,_0.32,_1)]'
+const ItemClassesIos26 = 'group relative flex min-h-[32px] py-1 select-none justify-between items-center rounded-[18px] px-2 text-[14px] leading-none text-primary bg-transparent outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&>span]:inline-flex [&>span]:w-full transition-colors duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] data-[highlighted]:bg-black/5 dark:data-[highlighted]:bg-white/10 cursor-pointer'
+const SubTriggerClassesIos26 = 'group relative flex min-h-[32px] py-1 select-none items-center rounded-[18px] px-2 text-[14px] leading-none text-primary bg-transparent outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 transition-colors duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] data-[highlighted]:bg-black/5 dark:data-[highlighted]:bg-white/10 cursor-pointer'
+const SeparatorClassesIos26 = 'm-[5px] h-px bg-black/10 dark:bg-white/10'
+
+const getContentClasses = (variant?: 'default' | 'ios26') => variant === 'ios26' ? ContentClassesIos26 : ContentClassesDefault
+const getItemClasses = (variant?: 'default' | 'ios26') => variant === 'ios26' ? ItemClassesIos26 : ItemClassesDefault
+const getSubTriggerClasses = (variant?: 'default' | 'ios26') => variant === 'ios26' ? SubTriggerClassesIos26 : SubTriggerClassesDefault
+const getSeparatorClasses = (variant?: 'default' | 'ios26') => variant === 'ios26' ? SeparatorClassesIos26 : SeparatorClassesDefault
+
 const ShortcutClasses =
     'ml-auto pl-5 group-hover:text-secondary group-data-[disabled]:text-muted data-[highlighted]:data-[state=open]:text-secondary group-data-[highlighted]:text-secondary'
 
@@ -149,14 +160,15 @@ const MenuItem: React.FC<{
     item: MenuItemType
     forceIconIndent?: boolean
     menuIndex: number
-}> = ({ item, forceIconIndent, menuIndex }) => {
+    variant?: 'default' | 'ios26'
+}> = ({ item, forceIconIndent, menuIndex, variant }) => {
     if (item.type === 'separator') {
-        return <Menubar.Separator className={SeparatorClasses} />
+        return <Menubar.Separator className={getSeparatorClasses(variant)} />
     }
 
     if (item.node) {
         return (
-            <Menubar.Item className={ItemClasses} disabled={item.disabled} onClick={item.onClick}>
+            <Menubar.Item className={getItemClasses(variant)} disabled={item.disabled} onClick={item.onClick}>
                 {item.node}
             </Menubar.Item>
         )
@@ -176,24 +188,24 @@ const MenuItem: React.FC<{
                             className="no-underline"
                             onClick={(e: React.MouseEvent) => e.stopPropagation()}
                         >
-                            <Menubar.SubTrigger className={SubTriggerClasses}>
+                            <Menubar.SubTrigger className={getSubTriggerClasses(variant)}>
                                 {MenuItemContent(item, forceIconIndent)}
                             </Menubar.SubTrigger>
                         </Link>
                     ) : (
-                        <Menubar.SubTrigger className={SubTriggerClasses}>
+                        <Menubar.SubTrigger className={getSubTriggerClasses(variant)}>
                             {MenuItemContent(item, forceIconIndent)}
                         </Menubar.SubTrigger>
                     )}
                     <Menubar.Portal>
-                        <Menubar.SubContent className={ContentClasses} alignOffset={-5} data-scheme="primary">
+                        <Menubar.SubContent className={getContentClasses(variant)} alignOffset={-5} data-scheme="primary">
                             <ScrollArea className="max-h-[100dvh] !overflow-y-auto">
                                 {item.items.map((subItem, subIndex) => (
                                     <MenuItem
                                         key={`${subItem.link}-${subIndex}`}
                                         item={subItem}
                                         forceIconIndent={anyChildHasIcon}
-                                        menuIndex={menuIndex}
+                                        menuIndex={menuIndex} variant={variant}
                                     />
                                 ))}
                             </ScrollArea>
@@ -206,7 +218,7 @@ const MenuItem: React.FC<{
         if (React.isValidElement(item.items)) {
             return (
                 <Menubar.Sub>
-                    <Menubar.SubTrigger className={SubTriggerClasses}>
+                    <Menubar.SubTrigger className={getSubTriggerClasses(variant)}>
                         {item.icon ? (
                             <span className="mr-2 flex items-center">{item.icon}</span>
                         ) : forceIconIndent ? (
@@ -218,7 +230,7 @@ const MenuItem: React.FC<{
                         </div>
                     </Menubar.SubTrigger>
                     <Menubar.Portal>
-                        <Menubar.SubContent className={ContentClasses} alignOffset={-5} data-scheme="primary">
+                        <Menubar.SubContent className={getContentClasses(variant)} alignOffset={-5} data-scheme="primary">
                             {item.items}
                         </Menubar.SubContent>
                     </Menubar.Portal>
@@ -229,7 +241,7 @@ const MenuItem: React.FC<{
 
     return (
         <Menubar.Item
-            className={`${ItemClasses} ${item.active ? 'bg-accent' : ''}`}
+            className={`${getItemClasses(variant)} ${item.active ? 'bg-accent' : ''}`}
             disabled={item.disabled}
             onClick={item.onClick}
         >
@@ -285,12 +297,13 @@ const MenuItem: React.FC<{
 
 export interface MenuBarProps {
     menus: MenuType[]
+    variant?: 'default' | 'ios26'
     className?: string
     customTriggerClasses?: string
     triggerAsChild?: boolean
 }
 
-const MenuBar: React.FC<MenuBarProps> = React.memo(({ menus, className, triggerAsChild, customTriggerClasses }) => {
+const MenuBar: React.FC<MenuBarProps> = React.memo(({ menus, className, triggerAsChild, customTriggerClasses, variant }) => {
     const { isMobile } = useApp()
 
     // Process menus for mobile if needed
@@ -320,7 +333,7 @@ const MenuBar: React.FC<MenuBarProps> = React.memo(({ menus, className, triggerA
                             key={menuIndex}
                             to={menu.mobileLink}
                             state={{ newWindow: true }}
-                            className={`${TriggerClasses} ${menu.bold ? 'font-bold' : 'font-medium'} ${customTriggerClasses || ''
+                            className={`${TriggerClassesDefault} ${menu.bold ? 'font-bold' : 'font-medium'} ${customTriggerClasses || ''
                                 }`}
                         >
                             {menu.trigger}
@@ -332,21 +345,21 @@ const MenuBar: React.FC<MenuBarProps> = React.memo(({ menus, className, triggerA
                     <Menubar.Menu key={menuIndex} data-scheme="primary">
                         <Menubar.Trigger
                             asChild={triggerAsChild}
-                            className={`${triggerAsChild ? '' : TriggerClasses} ${menu.bold ? 'font-bold' : 'font-medium'
+                            className={`${triggerAsChild ? '' : TriggerClassesDefault} ${menu.bold ? 'font-bold' : 'font-medium'
                                 } ${customTriggerClasses}`}
                         >
                             {menu.trigger}
                         </Menubar.Trigger>
                         <Menubar.Portal>
                             <Menubar.Content
-                                className={ContentClasses}
+                                className={getContentClasses(variant)}
                                 align="start"
                                 sideOffset={5}
                                 alignOffset={-3}
                                 data-scheme="primary"
                             >
                                 {menu.items.map((item, itemIndex) => (
-                                    <MenuItem key={`${menuIndex}-${itemIndex}`} item={item} menuIndex={menuIndex} />
+                                    <MenuItem key={`${menuIndex}-${itemIndex}`} item={item} menuIndex={menuIndex} variant={variant} />
                                 ))}
                             </Menubar.Content>
                         </Menubar.Portal>

@@ -370,6 +370,7 @@ export default function TaskBarMenu() {
                     <MenuBar
                         menus={accountMenu}
                         triggerAsChild={true}
+                        variant="ios26"
                         className="!inline-flex items-center !py-0 !h-auto !gap-0"
                     />
                 </aside>
