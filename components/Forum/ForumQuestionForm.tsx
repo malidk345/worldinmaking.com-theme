@@ -18,15 +18,14 @@ interface ForumQuestionFormProps {
 export default function ForumQuestionForm({ isInForum = false, archived = false, onSubmit, className = '' }: ForumQuestionFormProps) {
     const [subject, setSubject] = useState('')
     const [body, setBody] = useState('')
-    const [isOpen, setIsOpen] = useState(false)
     const { profile } = useAuth()
+    const [isOpen, setIsOpen] = useState(false)
 
     const handleSubmit = () => {
         if (stripHtmlTags(body) && (isInForum ? subject.trim() : true)) {
             onSubmit?.({ subject, body })
             setSubject('')
             setBody('')
-            setIsOpen(false)
         }
     }
 
