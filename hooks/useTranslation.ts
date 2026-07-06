@@ -2,6 +2,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCallback, useEffect, useState } from 'react';
 
 export type TranslationKey =
+  | 'menu.create_post'
   // TaskBarMenu
   | 'menu.home'
   | 'menu.profile'
