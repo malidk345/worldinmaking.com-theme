@@ -1,227 +1,193 @@
 "use client"
 
-import React, { useEffect, useState, useCallback } from 'react'
-import { useEditor, EditorContent, Editor } from '@tiptap/react'
+import { Editor, EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import Link from '@tiptap/extension-link'
 import Image from '@tiptap/extension-image'
 import CharacterCount from '@tiptap/extension-character-count'
-import Highlight from '@tiptap/extension-highlight'
 import Underline from '@tiptap/extension-underline'
-import { useDropzone } from 'react-dropzone'
-
-import { AnimatePresence, motion } from 'framer-motion'
+import Highlight from '@tiptap/extension-highlight'
 import {
-    Bold, Italic, Strikethrough, Underline as UnderlineIcon,
-    Heading1, Heading2, List, ListOrdered, Quote, Minus,
-    Link as LinkIcon, Image as ImageIcon, Highlighter,
-    Undo2, Redo2, Code, Terminal,
+    Bold,
+    Italic,
+    Strikethrough,
+    Code,
+    Heading1,
+    Heading2,
+    List,
+    ListOrdered,
+    Quote,
+    Terminal,
+    Undo,
+    Redo,
+    Minus,
+    Link as LinkIcon,
+    Image as ImageIcon,
+    Underline as UnderlineIcon,
+    Highlighter
 } from 'lucide-react'
+import React, { useCallback, useEffect, useState } from 'react'
+import { useDropzone } from 'react-dropzone'
+import { MarkdownLogo } from 'components/Markdown'
+import { AnimatePresence, motion } from 'framer-motion'
 import { IconFeatures, IconX } from '@posthog/icons'
-
 import ForumAvatar from './ForumAvatar'
-import MarkdownLogo from './MarkdownLogo'
 
-
-interface ToolbarButton {
+interface ButtonConfig {
     name: string
     icon: React.ReactNode
-    tooltipContent: string
     action: (editor: Editor) => void
     isActive: (editor: Editor) => boolean
     canExecute?: (editor: Editor) => boolean
+    tooltipContent: string
     separator?: boolean
 }
 
-const buttons: ToolbarButton[] = [
+const buttons: ButtonConfig[] = [
     {
-        name: 'undo',
-        icon: <Undo2 className="size-4" />,
-        tooltipContent: 'Undo',
+        name: 'Undo',
+        icon: <Undo size={14} />,
         action: (editor) => editor.chain().focus().undo().run(),
         isActive: () => false,
         canExecute: (editor) => editor.can().undo(),
+        tooltipContent: 'Undo',
     },
     {
-        name: 'redo',
-        icon: <Redo2 className="size-4" />,
-        tooltipContent: 'Redo',
+        name: 'Redo',
+        icon: <Redo size={14} />,
         action: (editor) => editor.chain().focus().redo().run(),
         isActive: () => false,
         canExecute: (editor) => editor.can().redo(),
+        tooltipContent: 'Redo',
     },
+    { name: 'Separator1', separator: true } as ButtonConfig,
     {
-        name: 'sep1',
-        icon: null,
-        tooltipContent: '',
-        action: () => {},
-        isActive: () => false,
-        separator: true,
-    },
-    {
-        name: 'bold',
-        icon: <Bold className="size-4" />,
-        tooltipContent: 'Bold',
+        name: 'Bold',
+        icon: <Bold size={14} />,
         action: (editor) => editor.chain().focus().toggleBold().run(),
         isActive: (editor) => editor.isActive('bold'),
+        canExecute: (editor) => editor.can().toggleBold(),
+        tooltipContent: 'Bold',
     },
     {
-        name: 'italic',
-        icon: <Italic className="size-4" />,
-        tooltipContent: 'Italic',
+        name: 'Italic',
+        icon: <Italic size={14} />,
         action: (editor) => editor.chain().focus().toggleItalic().run(),
         isActive: (editor) => editor.isActive('italic'),
+        canExecute: (editor) => editor.can().toggleItalic(),
+        tooltipContent: 'Italic',
     },
     {
-        name: 'underline',
-        icon: <UnderlineIcon className="size-4" />,
-        tooltipContent: 'Underline',
+        name: 'Underline',
+        icon: <UnderlineIcon size={14} />,
         action: (editor) => editor.chain().focus().toggleUnderline().run(),
         isActive: (editor) => editor.isActive('underline'),
+        canExecute: (editor) => editor.can().toggleUnderline(),
+        tooltipContent: 'Underline',
     },
     {
-        name: 'strike',
-        icon: <Strikethrough className="size-4" />,
-        tooltipContent: 'Strikethrough',
+        name: 'Strikethrough',
+        icon: <Strikethrough size={14} />,
         action: (editor) => editor.chain().focus().toggleStrike().run(),
         isActive: (editor) => editor.isActive('strike'),
+        canExecute: (editor) => editor.can().toggleStrike(),
+        tooltipContent: 'Strikethrough',
     },
     {
-        name: 'highlight',
-        icon: <Highlighter className="size-4" />,
-        tooltipContent: 'Highlight',
+        name: 'Highlight',
+        icon: <Highlighter size={14} />,
         action: (editor) => editor.chain().focus().toggleHighlight().run(),
         isActive: (editor) => editor.isActive('highlight'),
+        canExecute: (editor) => editor.can().toggleHighlight(),
+        tooltipContent: 'Highlight',
     },
+    { name: 'Separator2', separator: true } as ButtonConfig,
     {
-        name: 'sep2',
-        icon: null,
-        tooltipContent: '',
-        action: () => {},
-        isActive: () => false,
-        separator: true,
-    },
-    {
-        name: 'h1',
-        icon: <Heading1 className="size-4" />,
-        tooltipContent: 'Heading 1',
+        name: 'Heading 1',
+        icon: <Heading1 size={14} />,
         action: (editor) => editor.chain().focus().toggleHeading({ level: 1 }).run(),
         isActive: (editor) => editor.isActive('heading', { level: 1 }),
+        canExecute: (editor) => editor.can().toggleHeading({ level: 1 }),
+        tooltipContent: 'Heading 1',
     },
     {
-        name: 'h2',
-        icon: <Heading2 className="size-4" />,
-        tooltipContent: 'Heading 2',
+        name: 'Heading 2',
+        icon: <Heading2 size={14} />,
         action: (editor) => editor.chain().focus().toggleHeading({ level: 2 }).run(),
         isActive: (editor) => editor.isActive('heading', { level: 2 }),
+        canExecute: (editor) => editor.can().toggleHeading({ level: 2 }),
+        tooltipContent: 'Heading 2',
     },
+    { name: 'Separator3', separator: true } as ButtonConfig,
     {
-        name: 'sep3',
-        icon: null,
-        tooltipContent: '',
-        action: () => {},
-        isActive: () => false,
-        separator: true,
-    },
-    {
-        name: 'bulletList',
-        icon: <List className="size-4" />,
-        tooltipContent: 'Bullet List',
+        name: 'Bullet List',
+        icon: <List size={14} />,
         action: (editor) => editor.chain().focus().toggleBulletList().run(),
         isActive: (editor) => editor.isActive('bulletList'),
+        canExecute: (editor) => editor.can().toggleBulletList(),
+        tooltipContent: 'Bullet List',
     },
     {
-        name: 'orderedList',
-        icon: <ListOrdered className="size-4" />,
-        tooltipContent: 'Ordered List',
+        name: 'Ordered List',
+        icon: <ListOrdered size={14} />,
         action: (editor) => editor.chain().focus().toggleOrderedList().run(),
         isActive: (editor) => editor.isActive('orderedList'),
+        canExecute: (editor) => editor.can().toggleOrderedList(),
+        tooltipContent: 'Ordered List',
     },
     {
-        name: 'blockquote',
-        icon: <Quote className="size-4" />,
-        tooltipContent: 'Blockquote',
+        name: 'Blockquote',
+        icon: <Quote size={14} />,
         action: (editor) => editor.chain().focus().toggleBlockquote().run(),
         isActive: (editor) => editor.isActive('blockquote'),
+        canExecute: (editor) => editor.can().toggleBlockquote(),
+        tooltipContent: 'Blockquote',
     },
     {
-        name: 'sep4',
-        icon: null,
-        tooltipContent: '',
-        action: () => {},
-        isActive: () => false,
-        separator: true,
-    },
-    {
-        name: 'code',
-        icon: <Code className="size-4" />,
-        tooltipContent: 'Inline Code',
-        action: (editor) => editor.chain().focus().toggleCode().run(),
-        isActive: (editor) => editor.isActive('code'),
-    },
-    {
-        name: 'codeBlock',
-        icon: <Terminal className="size-4" />,
-        tooltipContent: 'Code Block',
+        name: 'Code Block',
+        icon: <Terminal size={14} />,
         action: (editor) => editor.chain().focus().toggleCodeBlock().run(),
         isActive: (editor) => editor.isActive('codeBlock'),
+        canExecute: (editor) => editor.can().toggleCodeBlock(),
+        tooltipContent: 'Code Block',
     },
+    { name: 'Separator4', separator: true } as ButtonConfig,
     {
-        name: 'horizontalRule',
-        icon: <Minus className="size-4" />,
-        tooltipContent: 'Horizontal Rule',
+        name: 'Horizontal Rule',
+        icon: <Minus size={14} />,
         action: (editor) => editor.chain().focus().setHorizontalRule().run(),
         isActive: () => false,
+        canExecute: (editor) => editor.can().setHorizontalRule(),
+        tooltipContent: 'Horizontal Rule',
     },
+    { name: 'Separator5', separator: true } as ButtonConfig,
     {
-        name: 'sep5',
-        icon: null,
-        tooltipContent: '',
-        action: () => {},
-        isActive: () => false,
-        separator: true,
-    },
-    {
-        name: 'link',
-        icon: <LinkIcon className="size-4" />,
-        tooltipContent: 'Link',
+        name: 'Link',
+        icon: <LinkIcon size={14} />,
         action: (editor) => {
-            const url = window.prompt('URL')
-            if (url) editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+            const previousUrl = editor.getAttributes('link').href
+            const url = window.prompt('URL', previousUrl)
+            if (url === null) return
+            if (url === '') {
+                editor.chain().focus().extendMarkRange('link').unsetLink().run()
+                return
+            }
+            editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
         },
         isActive: (editor) => editor.isActive('link'),
+        tooltipContent: 'Link',
     },
     {
-        name: 'image',
-        icon: <ImageIcon className="size-4" />,
-        tooltipContent: 'Image',
-        action: (editor) => {
-            const url = window.prompt('Image URL')
-            if (url) editor.chain().focus().setImage({ src: url }).run()
+        name: 'Image',
+        icon: <ImageIcon size={14} />,
+        action: () => {
+            // Dropzone handles image uploads
         },
-        isActive: () => false,
+        isActive: (editor) => editor.isActive('image'),
+        tooltipContent: 'Drop an image to upload',
     },
 ]
-
-interface ForumRichTextProps {
-    initialValue?: string
-    setFieldValue: (key: string, value: string) => void
-    autoFocus?: boolean
-    onSubmit?: () => void
-    maxLength?: number
-    bodyKey?: string
-    className?: string
-    cta?: React.ReactNode | (() => React.ReactNode)
-    placeholder?: string
-    boxed?: boolean
-    label?: string
-    mentions?: boolean
-    borderClass?: string
-    showMarkdownLogo?: boolean
-    expandHeight?: boolean
-    wrapperClassName?: string
-}
 
 interface Profile {
     id: string
@@ -314,10 +280,27 @@ const MentionProfiles = ({ onSelect, onClose, search = '' }: { onSelect?: (profi
     )
 }
 
+interface ForumRichTextProps {
+    initialValue?: string
+    setFieldValue: (key: string, value: string) => void
+    onSubmit?: () => void
+    bodyKey?: string
+    className?: string
+    cta?: React.ReactNode | (() => React.ReactNode)
+    placeholder?: string
+    boxed?: boolean
+    label?: string
+    mentions?: boolean
+    borderClass?: string
+    showMarkdownLogo?: boolean
+    expandHeight?: boolean
+    wrapperClassName?: string
+}
+
 export default function ForumRichText({
     initialValue = '',
     setFieldValue,
-    maxLength = 2000,
+    onSubmit,
     bodyKey = 'body',
     className = '',
     cta = null,
@@ -347,9 +330,7 @@ export default function ForumRichText({
                     class: 'rounded-md max-w-full h-auto my-4 border border-primary/20',
                 },
             }),
-            CharacterCount.configure({
-                limit: maxLength,
-            }),
+            CharacterCount,
             Highlight.configure({
                 HTMLAttributes: {
                     style: 'background-color: rgba(0, 0, 0, 0.08); color: black; border-radius: 4px; padding: 2px 4px;',
@@ -410,7 +391,7 @@ export default function ForumRichText({
         [editor]
     )
 
-    const { getRootProps, getInputProps, open, isDragActive } = useDropzone({
+    const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
         noClick: true,
         noKeyboard: true,
@@ -520,7 +501,7 @@ export default function ForumRichText({
                 </div>
                 <aside className="flex items-center gap-3">
                     <span className="text-[10px] font-bold opacity-40 text-primary lowercase tracking-wider">
-                        {editor.storage.characterCount.characters()} / {maxLength}
+                        {editor.storage.characterCount.words()} words
                     </span>
                     {showMarkdownLogo && (
                         <a
