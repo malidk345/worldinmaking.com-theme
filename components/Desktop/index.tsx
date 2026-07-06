@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import { useApp } from '../../context/App'
+import { useAuth } from '../../context/AuthContext'
 import { AppIcon } from 'components/OSIcons/AppIcon'
 import ArchiveExplorer from 'components/ArchiveExplorer'
 import DraggableDesktopIcon from './DraggableDesktopIcon'
@@ -12,73 +13,81 @@ import { useTranslation } from 'hooks/useTranslation'
 
 export default function Desktop() {
     const { addWindow, siteSettings, archivedItems } = useApp()
+    const { user } = useAuth()
     const [rendered, setRendered] = useState(false)
     const { t } = useTranslation()
 
-    const apps = useMemo(() => [
-        {
-            label: 'write-post',
-            displayLabel: t('menu.create_post'),
-            Icon: <AppIcon name="typewriter" />,
-            onClick: () => addWindow({
-                key: 'write-post',
-                path: '/write-post',
-                title: t('menu.create_post')
-            })
-        },
-        {
-            label: 'home',
-            displayLabel: t('menu.home'),
-            Icon: <AppIcon name="compass" />,
-            onClick: () => addWindow({
-                key: 'home',
-                path: '/',
-                title: t('menu.home')
-            })
-        },
-        {
-            label: 'posts',
-            displayLabel: t('posts.title'),
-            Icon: <AppIcon name="forums" />,
-            onClick: () => addWindow({
-                key: 'posts',
-                path: '/posts',
-                title: t('posts.title'),
-                element: <PostsView />
-            })
-        },
-        {
-            label: 'login',
-            displayLabel: t('menu.sign_in'),
-            Icon: <AppIcon name="posthog" />,
-            onClick: () => addWindow({
-                key: 'login',
-                path: '/login',
-                title: t('menu.sign_in')
-            })
-        },
-        {
-            label: 'contact',
-            displayLabel: t('contact.title'),
-            Icon: <AppIcon name="contact" />,
-            onClick: () => addWindow({
-                key: 'contact',
-                path: '/contact',
-                title: t('contact.title')
-            })
-        },
-        {
-            label: 'archive',
-            displayLabel: t('archive.breadcrumb'),
-            Icon: <AppIcon name="folder" />,
-            onClick: () => addWindow({
-                key: 'archive',
-                path: '/archive',
-                title: t('archive.title'),
-                element: <ArchiveExplorer />
+    const apps = useMemo(() => {
+        const baseApps = [
+            {
+                label: 'home',
+                displayLabel: t('menu.home'),
+                Icon: <AppIcon name="compass" />,
+                onClick: () => addWindow({
+                    key: 'home',
+                    path: '/',
+                    title: t('menu.home')
+                })
+            },
+            {
+                label: 'posts',
+                displayLabel: t('posts.title'),
+                Icon: <AppIcon name="forums" />,
+                onClick: () => addWindow({
+                    key: 'posts',
+                    path: '/posts',
+                    title: t('posts.title'),
+                    element: <PostsView />
+                })
+            },
+            {
+                label: 'login',
+                displayLabel: t('menu.sign_in'),
+                Icon: <AppIcon name="posthog" />,
+                onClick: () => addWindow({
+                    key: 'login',
+                    path: '/login',
+                    title: t('menu.sign_in')
+                })
+            },
+            {
+                label: 'contact',
+                displayLabel: t('contact.title'),
+                Icon: <AppIcon name="contact" />,
+                onClick: () => addWindow({
+                    key: 'contact',
+                    path: '/contact',
+                    title: t('contact.title')
+                })
+            },
+            {
+                label: 'archive',
+                displayLabel: t('archive.breadcrumb'),
+                Icon: <AppIcon name="folder" />,
+                onClick: () => addWindow({
+                    key: 'archive',
+                    path: '/archive',
+                    title: t('archive.title'),
+                    element: <ArchiveExplorer />
+                })
+            }
+        ]
+
+        if (user) {
+            baseApps.unshift({
+                label: 'write-post',
+                displayLabel: t('menu.create_post'),
+                Icon: <AppIcon name="typewriter" />,
+                onClick: () => addWindow({
+                    key: 'write-post',
+                    path: '/write-post',
+                    title: t('menu.create_post')
+                })
             })
         }
-    ], [addWindow, t])
+
+        return baseApps
+    }, [addWindow, t, user])
 
     const visibleApps = useMemo(() => {
         return apps.filter(app => app.label === 'archive' || !archivedItems.includes(app.label))
