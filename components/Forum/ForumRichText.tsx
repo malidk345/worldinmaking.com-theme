@@ -347,9 +347,7 @@ export default function ForumRichText({
                     class: 'rounded-md max-w-full h-auto my-4 border border-primary/20',
                 },
             }),
-            CharacterCount.configure({
-                limit: maxLength,
-            }),
+            CharacterCount,
             Highlight.configure({
                 HTMLAttributes: {
                     style: 'background-color: rgba(0, 0, 0, 0.08); color: black; border-radius: 4px; padding: 2px 4px;',
@@ -520,7 +518,7 @@ export default function ForumRichText({
                 </div>
                 <aside className="flex items-center gap-3">
                     <span className="text-[10px] font-bold opacity-40 text-primary lowercase tracking-wider">
-                        {editor.storage.characterCount.characters()} / {maxLength}
+                        {editor.storage.characterCount.words()} words
                     </span>
                     {showMarkdownLogo && (
                         <a
