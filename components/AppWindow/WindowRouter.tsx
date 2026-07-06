@@ -18,9 +18,9 @@ import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { useTranslation } from 'hooks/useTranslation'
 import { supabase } from '../../lib/supabase'
-import { Share, Palette, CheckCircle, ChevronDown, FileText, Flame, Rocket, Lightbulb, PenTool, Brain, Wrench, Sparkles, LayoutTemplate, Database, CalendarHeart } from 'lucide-react'
+import { Share, CheckCircle, FileText, Flame, Rocket, Lightbulb, PenTool, Brain, Wrench, Sparkles, LayoutTemplate, Database, CalendarHeart } from 'lucide-react'
 import OSButton from 'components/OSButton'
-import { Popover } from 'components/RadixUI/Popover'
+
 import { sanitizeHtml, toSlug } from '../../utils/security'
 import BlueprintsExplorer from 'components/Blueprints/BlueprintsExplorer'
 import BlueprintPostView from 'components/Blueprints/BlueprintPostView'
@@ -399,7 +399,7 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
     const [nodeStatus, setNodeStatus] = useState<'draft' | 'published'>('draft')
 
     const [coverImage, setCoverImage] = useState<string | null>(null)
-    const [iconIndex] = useState<number>(0)
+    const [iconIndex, setIconIndex] = useState<number>(0)
     const [theme, setTheme] = useState<'default' | 'yellow' | 'green' | 'blue'>('default')
     const [nodeType, setNodeType] = useState<'canvas' | 'list' | 'journal'>('canvas')
     const [, setTags] = useState<string[]>([])
@@ -550,8 +550,7 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                             remove cover
                         </button>
                     </div>
-                )}
-                {/* Main Node Content Area */}
+                )}                {/* Main Node Content Area */}
                 <div className="w-full max-w-4xl mx-auto px-2 sm:px-6 pb-4 sm:pb-6 flex-1 flex flex-col min-h-0 pt-4 sm:pt-6 gap-3">
                     <div className="relative bg-white/40 dark:bg-black/40 supports-[backdrop-filter]:backdrop-blur-[40px] rounded-[24px] md:rounded-[32px] p-3 sm:p-6 border border-black/5 dark:border-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.04)] flex flex-col gap-3 sm:gap-4 flex-1 h-full min-h-0">
                         {/* Meta Bar */}
@@ -568,6 +567,120 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                                 ) : (
                                     <span className="text-[9px] font-black text-primary/30 bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-full border border-black/5 dark:border-white/5 lowercase">no cover</span>
                                 )}
+                            </div>
+                        </div>
+
+                        {/* iOS 26 Style Properties Bar */}
+                        <div className="bg-white/30 dark:bg-black/30 rounded-[20px] border border-black/5 dark:border-white/5 p-3 flex flex-col gap-2.5 select-none shrink-0">
+                            <div className="flex items-center justify-between pb-1 border-b border-black/5 dark:border-white/5">
+                                <span className="text-[9px] font-black lowercase tracking-widest text-primary/45">node properties</span>
+                                <span className="text-[9px] font-black text-primary/30 uppercase">ios 26 canvas</span>
+                            </div>
+                            
+                            {/* Scrollable Properties Content */}
+                            <div className="flex flex-row overflow-x-auto no-scrollbar gap-4 pb-0.5 flex-nowrap items-start">
+                                {/* Status Property */}
+                                <div className="flex flex-col gap-1 shrink-0 min-w-[100px]">
+                                    <span className="text-[9px] font-bold text-primary/40 lowercase">status</span>
+                                    <div className="flex bg-black/5 dark:bg-white/5 p-0.5 rounded-full border border-black/5 dark:border-white/5">
+                                        {(Object.keys(statusConfig) as Array<keyof typeof statusConfig>).map(s => (
+                                            <button
+                                                key={s}
+                                                type="button"
+                                                onClick={() => setNodeStatus(s)}
+                                                className={`px-3 py-1 rounded-full text-[9px] font-black lowercase transition-all duration-300 flex items-center gap-1.5
+                                                    ${nodeStatus === s 
+                                                        ? 'bg-white dark:bg-black text-primary shadow-sm border border-black/5 dark:border-white/5' 
+                                                        : 'text-primary/40 hover:text-primary'}`}
+                                            >
+                                                {statusConfig[s].icon}
+                                                {statusConfig[s].label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Type Property */}
+                                <div className="flex flex-col gap-1 shrink-0 min-w-[140px]">
+                                    <span className="text-[9px] font-bold text-primary/40 lowercase">layout type</span>
+                                    <div className="flex bg-black/5 dark:bg-white/5 p-0.5 rounded-full border border-black/5 dark:border-white/5">
+                                        {(Object.keys(typeConfig) as Array<keyof typeof typeConfig>).map(t => (
+                                            <button
+                                                key={t}
+                                                type="button"
+                                                onClick={() => setNodeType(t)}
+                                                className={`px-3 py-1 rounded-full text-[9px] font-black lowercase transition-all duration-300 flex items-center gap-1.5
+                                                    ${nodeType === t 
+                                                        ? 'bg-white dark:bg-black text-primary shadow-sm border border-black/5 dark:border-white/5' 
+                                                        : 'text-primary/40 hover:text-primary'}`}
+                                            >
+                                                {typeConfig[t].icon}
+                                                {typeConfig[t].label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Theme Property */}
+                                <div className="flex flex-col gap-1 shrink-0">
+                                    <span className="text-[9px] font-bold text-primary/40 lowercase">theme</span>
+                                    <div className="flex bg-black/5 dark:bg-white/5 p-1 rounded-full border border-black/5 dark:border-white/5 gap-1">
+                                        {(Object.keys(themeClasses) as Array<keyof typeof themeClasses>).map(t => {
+                                            const themeDotClasses = {
+                                                'default': 'bg-slate-200 dark:bg-slate-800',
+                                                'yellow': 'bg-amber-100 dark:bg-amber-900',
+                                                'green': 'bg-emerald-100 dark:bg-emerald-900',
+                                                'blue': 'bg-sky-100 dark:bg-sky-900',
+                                            }
+                                            return (
+                                                <button
+                                                    key={t}
+                                                    type="button"
+                                                    onClick={() => setTheme(t)}
+                                                    title={`${t} theme`}
+                                                    className={`size-6 rounded-full transition-all duration-300 border flex items-center justify-center
+                                                        ${theme === t 
+                                                            ? 'border-primary ring-2 ring-primary/20 scale-105 shadow-sm' 
+                                                            : 'border-transparent hover:scale-105'}`}
+                                                >
+                                                    <span className={`size-3.5 rounded-full ${themeDotClasses[t]}`} />
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Icon Picker Property */}
+                                <div className="flex flex-col gap-1 shrink-0">
+                                    <span className="text-[9px] font-bold text-primary/40 lowercase">canvas icon</span>
+                                    <div className="flex bg-black/5 dark:bg-white/5 p-1 rounded-full border border-black/5 dark:border-white/5 gap-1">
+                                        {ICONS.map((ico, idx) => (
+                                            <button
+                                                key={idx}
+                                                type="button"
+                                                onClick={() => setIconIndex(idx)}
+                                                className={`size-6 rounded-full transition-all duration-300 border flex items-center justify-center
+                                                    ${iconIndex === idx 
+                                                        ? 'bg-white dark:bg-black border-primary shadow-sm' 
+                                                        : 'border-transparent hover:bg-black/5 dark:hover:bg-white/5'}`}
+                                            >
+                                                {React.createElement(ico.IconNode, { className: `size-3.5 ${ico.color}` })}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Cover Image Input Property */}
+                                <div className="flex flex-col gap-1 shrink-0 min-w-[200px]">
+                                    <span className="text-[9px] font-bold text-primary/40 lowercase">cover image url</span>
+                                    <input
+                                        type="text"
+                                        value={coverImage || ''}
+                                        onChange={(e) => setCoverImage(e.target.value.trim() || null)}
+                                        placeholder="https://images.unsplash.com/..."
+                                        className="bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-full px-4 py-1.5 text-[9px] font-bold text-primary outline-none placeholder:text-primary/30 focus:bg-white focus:border-black/10 dark:focus:bg-black/85 dark:focus:border-white/10 shadow-inner w-full transition-all duration-300 lowercase"
+                                    />
+                                </div>
                             </div>
                         </div>
 
@@ -590,105 +703,24 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                             boxed={true}
                             borderClass="border-black/10 dark:border-white/10"
                             cta={
-                                <div className="flex flex-wrap items-center gap-2 w-full">
-                                    {/* Action Group (Left) */}
-                                    <div className="flex items-center gap-1.5 shrink-0">
-                                        <OSButton
-                                            size="sm"
-                                            variant="primary"
-                                            disabled={saving}
-                                            onClick={() => handleSave(nodeStatus)}
-                                        >
-                                            <span className="lowercase font-bold">{saving ? t('appwindow.saving') : (nodeStatus === 'published' ? t('appwindow.update') : t('appwindow.publish'))}</span>
-                                        </OSButton>
-                                        <OSButton
-                                            size="sm"
-                                            variant="default"
-                                            onClick={() => handleSave('draft')}
-                                            disabled={saving}
-                                            className="opacity-70 hover:opacity-100"
-                                        >
-                                            <span className="lowercase font-bold">{t('appwindow.save_draft')}</span>
-                                        </OSButton>
-                                    </div>
-
-                                    <div className="w-[1px] h-5 bg-black/10 dark:bg-white/10 mx-0.5 hidden sm:block shrink-0" />
-
-                                    {/* Settings Group (Right) - Scrollable on mobile */}
-                                    <div className="flex-1 min-w-0 w-full overflow-x-auto no-scrollbar flex items-center gap-1.5 pb-1 sm:pb-0 -mb-1 sm:mb-0 select-none flex-nowrap">
-                                        <Popover
-                                            trigger={
-                                                <OSButton size="sm">
-                                                    <div className="flex items-center gap-1.25 lowercase">
-                                                        {statusConfig[nodeStatus].icon}
-                                                        <span className="font-bold">{statusConfig[nodeStatus].label}</span>
-                                                        <ChevronDown className="size-3 opacity-50" />
-                                                    </div>
-                                                </OSButton>
-                                            }
-                                            dataScheme="primary"
-                                            contentClassName="w-40 p-1 border border-primary bg-bg"
-                                        >
-                                            <div className="flex flex-col gap-0.5">
-                                                {(Object.keys(statusConfig) as Array<keyof typeof statusConfig>).map(s => (
-                                                    <button key={s} onClick={() => setNodeStatus(s as keyof typeof statusConfig)} className={`text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 ${statusConfig[s as keyof typeof statusConfig].color}`}>
-                                                        {statusConfig[s as keyof typeof statusConfig].icon} {statusConfig[s as keyof typeof statusConfig].label}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </Popover>
-
-                                        <Popover
-                                            trigger={
-                                                <OSButton size="sm">
-                                                    <div className="flex items-center gap-1.25 lowercase">
-                                                        {typeConfig[nodeType].icon}
-                                                        <span className="font-bold">{typeConfig[nodeType].label}</span>
-                                                        <ChevronDown className="size-3 opacity-50" />
-                                                    </div>
-                                                </OSButton>
-                                            }
-                                            dataScheme="primary"
-                                            contentClassName="w-40 p-1 border border-primary bg-bg"
-                                        >
-                                            <div className="flex flex-col gap-0.5">
-                                                {(Object.keys(typeConfig) as Array<keyof typeof typeConfig>).map(t => (
-                                                    <button key={t} onClick={() => setNodeType(t as keyof typeof typeConfig)} className="text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-primary">
-                                                        {typeConfig[t as keyof typeof typeConfig].icon} {typeConfig[t as keyof typeof typeConfig].label}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </Popover>
-
-                                        <OSButton
-                                            size="sm"
-                                            onClick={() => {
-                                                const url = window.prompt('enter cover image url')
-                                                if (url && url.trim()) setCoverImage(url.trim())
-                                            }}
-                                        >
-                                            <span className="lowercase font-bold">cover</span>
-                                        </OSButton>
-
-                                        <Popover
-                                            trigger={
-                                                <OSButton size="sm" title="theme">
-                                                    <Palette className="size-3.5" />
-                                                </OSButton>
-                                            }
-                                            dataScheme="primary"
-                                            contentClassName="w-48 p-2 border border-primary bg-bg"
-                                        >
-                                            <div className="flex flex-col gap-1">
-                                                <span className="text-[10px] font-black lowercase tracking-widest text-primary/40 px-2 py-1">node theme</span>
-                                                {(Object.keys(themeClasses) as Array<keyof typeof themeClasses>).map(t => (
-                                                    <button key={t} onClick={() => setTheme(t as keyof typeof themeClasses)} className="text-left px-2 py-1.5 text-xs font-bold hover:bg-black/5 rounded-md lowercase">
-                                                        {t} canvas
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </Popover>
-                                    </div>
+                                <div className="flex items-center gap-1.5 w-full">
+                                    <OSButton
+                                        size="sm"
+                                        variant="primary"
+                                        disabled={saving}
+                                        onClick={() => handleSave(nodeStatus)}
+                                    >
+                                        <span className="lowercase font-bold">{saving ? t('appwindow.saving') : (nodeStatus === 'published' ? t('appwindow.update') : t('appwindow.publish'))}</span>
+                                    </OSButton>
+                                    <OSButton
+                                        size="sm"
+                                        variant="default"
+                                        onClick={() => handleSave('draft')}
+                                        disabled={saving}
+                                        className="opacity-70 hover:opacity-100"
+                                    >
+                                        <span className="lowercase font-bold">{t('appwindow.save_draft')}</span>
+                                    </OSButton>
                                 </div>
                             }
                         />
@@ -709,6 +741,7 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
     const [excerpt, setExcerpt] = useState('')
     const [content, setContent] = useState('')
     const [imageUrl, setImageUrl] = useState('')
+    const [category, setCategory] = useState('')
     const [published, setPublished] = useState(false)
     const [saving, setSaving] = useState(false)
     const [saved, setSaved] = useState(false)
@@ -718,7 +751,7 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
         const load = async () => {
             const { data } = await supabase
                 .from('posts')
-                .select('id, title, slug, excerpt, content, image_url, published')
+                .select('id, title, slug, excerpt, content, image_url, published, category')
                 .eq('id', currentPostId)
                 .single()
 
@@ -728,6 +761,7 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
                 setExcerpt(data.excerpt || '')
                 setContent(data.content || '')
                 setImageUrl(data.image_url || '')
+                setCategory(data.category || '')
                 setPublished(Boolean(data.published))
             }
         }
@@ -752,6 +786,7 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
             content,
             excerpt: finalExcerpt || null,
             image_url: imageUrl || null,
+            category: category || 'General',
             published: nextPublished,
             author: profile.username,
             author_avatar: profile.avatar_url || '',
@@ -808,12 +843,91 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
                                 </div>
                                 <span className="text-[10px] font-bold text-primary/50 lowercase">@{profile?.username || 'writer'}</span>
                             </div>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1.5">
+                                {saved && (
+                                    <span className="text-[9px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/10 lowercase animate-pulse">saved</span>
+                                )}
                                 {imageUrl ? (
                                     <span className="text-[9px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/10 lowercase">has cover</span>
                                 ) : (
                                     <span className="text-[9px] font-black text-primary/30 bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-full border border-black/5 dark:border-white/5 lowercase">no cover</span>
                                 )}
+                            </div>
+                        </div>
+
+                        {/* iOS 26 Style Properties Bar */}
+                        <div className="bg-white/30 dark:bg-black/30 rounded-[20px] border border-black/5 dark:border-white/5 p-3 flex flex-col gap-2.5 select-none shrink-0">
+                            <div className="flex items-center justify-between pb-1 border-b border-black/5 dark:border-white/5">
+                                <span className="text-[9px] font-black lowercase tracking-widest text-primary/45">post properties</span>
+                                <span className="text-[9px] font-black text-primary/30 uppercase">blog editor</span>
+                            </div>
+                            
+                            {/* Scrollable Properties Content */}
+                            <div className="flex flex-row overflow-x-auto no-scrollbar gap-4 pb-0.5 flex-nowrap items-start">
+                                {/* Status Property */}
+                                <div className="flex flex-col gap-1 shrink-0">
+                                    <span className="text-[9px] font-bold text-primary/40 lowercase">status</span>
+                                    <div className="flex bg-black/5 dark:bg-white/5 p-0.5 rounded-full border border-black/5 dark:border-white/5">
+                                        <button
+                                            type="button"
+                                            onClick={() => setPublished(false)}
+                                            className={`px-3 py-1 rounded-full text-[9px] font-black lowercase transition-all duration-300 flex items-center gap-1.5
+                                                ${!published 
+                                                    ? 'bg-white dark:bg-black text-primary shadow-sm border border-black/5 dark:border-white/5' 
+                                                    : 'text-primary/40 hover:text-primary'}`}
+                                        >
+                                            <PenTool className="size-3" />
+                                            draft
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setPublished(true)}
+                                            className={`px-3 py-1 rounded-full text-[9px] font-black lowercase transition-all duration-300 flex items-center gap-1.5
+                                                ${published 
+                                                    ? 'bg-white dark:bg-black text-emerald-600 shadow-sm border border-black/5 dark:border-white/5' 
+                                                    : 'text-primary/40 hover:text-primary'}`}
+                                        >
+                                            <CheckCircle className="size-3" />
+                                            published
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Slug Property */}
+                                <div className="flex flex-col gap-1 shrink-0 min-w-[180px]">
+                                    <span className="text-[9px] font-bold text-primary/40 lowercase">slug</span>
+                                    <input
+                                        type="text"
+                                        value={slug}
+                                        onChange={(e) => setSlug(e.target.value)}
+                                        placeholder="my-post-url"
+                                        className="bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-full px-4 py-1.5 text-[9px] font-bold text-primary outline-none placeholder:text-primary/30 focus:bg-white focus:border-black/10 dark:focus:bg-black/85 dark:focus:border-white/10 shadow-inner w-full transition-all duration-300 lowercase"
+                                    />
+                                </div>
+
+                                {/* Category Property */}
+                                <div className="flex flex-col gap-1 shrink-0 min-w-[140px]">
+                                    <span className="text-[9px] font-bold text-primary/40 lowercase">category</span>
+                                    <input
+                                        type="text"
+                                        value={category}
+                                        onChange={(e) => setCategory(e.target.value)}
+                                        placeholder="e.g. technology"
+                                        className="bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-full px-4 py-1.5 text-[9px] font-bold text-primary outline-none placeholder:text-primary/30 focus:bg-white focus:border-black/10 dark:focus:bg-black/85 dark:focus:border-white/10 shadow-inner w-full transition-all duration-300 lowercase"
+                                    />
+                                </div>
+
+                                {/* Cover Image URL Property */}
+                                <div className="flex flex-col gap-1 shrink-0 min-w-[220px]">
+                                    <span className="text-[9px] font-bold text-primary/40 lowercase">cover image url</span>
+                                    <input
+                                        type="text"
+                                        value={imageUrl}
+                                        onChange={(e) => setImageUrl(e.target.value.trim())}
+                                        placeholder="https://images.unsplash.com/..."
+                                        className="bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-full px-4 py-1.5 text-[9px] font-bold text-primary outline-none placeholder:text-primary/30 focus:bg-white focus:border-black/10 dark:focus:bg-black/85 dark:focus:border-white/10 shadow-inner w-full transition-all duration-300 lowercase"
+                                    />
+                                </div>
                             </div>
                         </div>
 
@@ -846,65 +960,24 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
                             boxed={true}
                             borderClass="border-black/10 dark:border-white/10"
                             cta={
-                                <div className="flex flex-wrap items-center gap-2 w-full">
-                                    {/* Action Group (Left) */}
-                                    <div className="flex items-center gap-1.5 shrink-0">
-                                        <OSButton
-                                            size="sm"
-                                            variant="primary"
-                                            disabled={saving}
-                                            onClick={() => handleSavePost(true)}
-                                        >
-                                            <span className="lowercase font-bold">{saving ? t('appwindow.publishing') : t('appwindow.publish')}</span>
-                                        </OSButton>
-                                        <OSButton
-                                            size="sm"
-                                            variant="default"
-                                            onClick={() => handleSavePost(false)}
-                                            disabled={saving}
-                                            className="opacity-70 hover:opacity-100"
-                                        >
-                                            <span className="lowercase font-bold">{t('appwindow.save_draft')}</span>
-                                        </OSButton>
-                                    </div>
-
-                                    <div className="w-[1px] h-5 bg-black/10 dark:bg-white/10 mx-0.5 hidden sm:block shrink-0" />
-
-                                    {/* Settings Group (Right) - Scrollable on mobile */}
-                                    <div className="flex-1 min-w-0 w-full overflow-x-auto no-scrollbar flex items-center gap-1.5 pb-1 sm:pb-0 -mb-1 sm:mb-0 select-none flex-nowrap">
-                                        <Popover
-                                            trigger={
-                                                <OSButton size="sm">
-                                                    <div className="flex items-center gap-1.25 lowercase">
-                                                        {published ? <CheckCircle className="size-3.5 text-emerald-500" /> : <PenTool className="size-3.5" />}
-                                                        <span className="font-bold">{published ? 'published' : 'draft'}</span>
-                                                        <ChevronDown className="size-3 opacity-50" />
-                                                    </div>
-                                                </OSButton>
-                                            }
-                                            dataScheme="primary"
-                                            contentClassName="w-40 p-1 border border-primary bg-bg"
-                                        >
-                                            <div className="flex flex-col gap-0.5">
-                                                <button onClick={() => setPublished(false)} className="text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-primary">
-                                                    <PenTool className="size-3" /> draft
-                                                </button>
-                                                <button onClick={() => setPublished(true)} className="text-left px-2 py-1.5 text-xs font-bold rounded-sm flex items-center gap-2 hover:bg-black/5 text-emerald-600">
-                                                    <CheckCircle className="size-3" /> published
-                                                </button>
-                                            </div>
-                                        </Popover>
-
-                                        <OSButton
-                                            size="sm"
-                                            onClick={() => {
-                                                const url = window.prompt('enter post cover image url', imageUrl || '')
-                                                if (url !== null) setImageUrl(url.trim())
-                                            }}
-                                        >
-                                            <span className="lowercase font-bold">cover</span>
-                                        </OSButton>
-                                    </div>
+                                <div className="flex items-center gap-1.5 w-full">
+                                    <OSButton
+                                        size="sm"
+                                        variant="primary"
+                                        disabled={saving}
+                                        onClick={() => handleSavePost(true)}
+                                    >
+                                        <span className="lowercase font-bold">{saving ? t('appwindow.publishing') : t('appwindow.publish')}</span>
+                                    </OSButton>
+                                    <OSButton
+                                        size="sm"
+                                        variant="default"
+                                        onClick={() => handleSavePost(false)}
+                                        disabled={saving}
+                                        className="opacity-70 hover:opacity-100"
+                                    >
+                                        <span className="lowercase font-bold">{t('appwindow.save_draft')}</span>
+                                    </OSButton>
                                 </div>
                             }
                         />
