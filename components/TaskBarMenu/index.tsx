@@ -10,7 +10,7 @@ import {
     IconApps,
     IconGlobe
 } from '@posthog/icons'
-import { Settings, Info, FileText, BookOpen, Newspaper, MessageSquare, RotateCw, LogOut, LogIn, Home } from 'lucide-react'
+import { Settings, Info, FileText, BookOpen, Newspaper, MessageSquare, RotateCw, LogOut, LogIn } from 'lucide-react'
 import { useApp } from '../../context/App'
 import { useAuth } from '../../context/AuthContext'
 import MenuBar, { MenuItemType } from 'components/RadixUI/MenuBar'
@@ -37,8 +37,7 @@ export default function TaskBarMenu() {
         openSearch,
         setIsActiveWindowsPanelOpen,
         taskbarRef,
-        addWindow,
-        closeAllWindows
+        addWindow
     } = useApp()
     const { user, profile, isAdmin, signOut, updateProfile } = useAuth()
     const { t, lang } = useTranslation()
@@ -134,18 +133,6 @@ export default function TaskBarMenu() {
                 )
             })
         },
-        { type: 'separator' as const },
-
-        // Home
-        {
-            type: 'item' as const,
-            label: t('menu.home'),
-            icon: <Home className="size-4 opacity-70" />,
-            onClick: () => {
-                closeAllWindows()
-            }
-        },
-
         { type: 'separator' as const },
 
         // Posts
@@ -250,7 +237,7 @@ export default function TaskBarMenu() {
                 })
             }
         ])
-    ], [user, profile, isAdmin, addWindow, signOut, closeAllWindows, t])
+    ], [user, profile, isAdmin, addWindow, signOut, t])
 
     const accountMenu = React.useMemo(() => [
         {
