@@ -2,6 +2,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCallback, useEffect, useState } from 'react';
 
 export type TranslationKey =
+  | 'menu.create_post'
   // TaskBarMenu
   | 'menu.home'
   | 'menu.profile'
@@ -372,6 +373,7 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     'reader.save_failed': 'failed to save post',
     'reader.save_success': 'post saved to your profile',
     // Menu Extra
+    'menu.create_post': 'create post',
     'menu.all_posts': 'all posts',
     'menu.blueprints': 'blueprints',
     'menu.newspaper': 'newspaper',
@@ -570,6 +572,7 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     'reader.save_failed': 'gönderi kaydedilemedi',
     'reader.save_success': 'gönderi profilinize kaydedildi',
     // Menu Extra
+    'menu.create_post': 'gönderi oluştur',
     'menu.all_posts': 'tüm yazılar',
     'menu.blueprints': 'planlar',
     'menu.newspaper': 'gazete',

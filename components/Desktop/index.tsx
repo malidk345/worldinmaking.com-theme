@@ -17,6 +17,16 @@ export default function Desktop() {
 
     const apps = useMemo(() => [
         {
+            label: 'write-post',
+            displayLabel: t('menu.create_post'),
+            Icon: <AppIcon name="typewriter" />,
+            onClick: () => addWindow({
+                key: 'write-post',
+                path: '/write-post',
+                title: t('menu.create_post')
+            })
+        },
+        {
             label: 'home',
             displayLabel: t('menu.home'),
             Icon: <AppIcon name="compass" />,
