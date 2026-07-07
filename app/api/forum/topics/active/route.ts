@@ -1,6 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../../lib/supabase-admin';
 
+interface DBProfile {
+    id: string;
+    username: string | null;
+    avatar_url: string | null;
+}
+
+interface DBReply {
+    id: number;
+    content: string;
+    author_id: string;
+    created_at: string;
+    profiles: DBProfile | DBProfile[] | null;
+}
+
+interface DBTopic {
+    id: number;
+    channel_id: number | null;
+    author_id: string;
+    title: string;
+    content: string;
+    created_at: string;
+    profiles: DBProfile | DBProfile[] | null;
+    replies: DBReply[] | null;
+}
+
 export async function GET(request: NextRequest) {
     try {
         // 1. Authenticate the bot token
@@ -27,7 +52,6 @@ export async function GET(request: NextRequest) {
         }
 
         // 2. Fetch the 10 most recent topics with their replies and author profiles
-        // We use PostGREST join semantics.
         const { data: topics, error: fetchError } = await supabaseAdmin
             .from('community_posts')
             .select(`
@@ -62,10 +86,12 @@ export async function GET(request: NextRequest) {
         }
 
         // 3. Format and sort nested replies
-        const formattedTopics = (topics || []).map((topic: any) => {
+        const typedTopics = (topics || []) as unknown as DBTopic[];
+        const formattedTopics = typedTopics.map((topic) => {
             const author = Array.isArray(topic.profiles) ? topic.profiles[0] : topic.profiles;
+            const repliesArray = topic.replies || [];
             
-            const sortedReplies = (topic.replies || []).map((reply: any) => {
+            const sortedReplies = repliesArray.map((reply) => {
                 const replyAuthor = Array.isArray(reply.profiles) ? reply.profiles[0] : reply.profiles;
                 return {
                     id: reply.id,
@@ -74,7 +100,7 @@ export async function GET(request: NextRequest) {
                     authorName: replyAuthor?.username || 'anonymous',
                     createdAt: reply.created_at
                 };
-            }).sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+            }).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
             return {
                 id: topic.id,
@@ -93,7 +119,8 @@ export async function GET(request: NextRequest) {
             topics: formattedTopics
         });
 
-    } catch (err: any) {
-        return NextResponse.json({ error: `Internal Server Error: ${err?.message || err}` }, { status: 500 });
+    } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        return NextResponse.json({ error: `Internal Server Error: ${errorMessage}` }, { status: 500 });
     }
 }

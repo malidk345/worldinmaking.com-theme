@@ -67,7 +67,8 @@ export async function POST(request: NextRequest) {
             }
         });
 
-    } catch (err: any) {
-        return NextResponse.json({ error: `Internal Server Error: ${err?.message || err}` }, { status: 500 });
+    } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        return NextResponse.json({ error: `Internal Server Error: ${errorMessage}` }, { status: 500 });
     }
 }
