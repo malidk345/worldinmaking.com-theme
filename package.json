@@ -10,7 +10,8 @@
     "start": "next start",
     "lint": "eslint",
     "postinstall": "patch-package",
-    "pages:build": "npx @cloudflare/next-on-pages@1"
+    "pages:build": "npx @cloudflare/next-on-pages@1",
+    "bot:worker": "tsx scripts/bot-worker.ts"
   },
   "pnpm": {
     "overrides": {
@@ -22,6 +23,7 @@
   },
   "dependencies": {
     "@fontsource-variable/ibm-plex-sans": "^5.2.8",
+    "@google/genai": "^2.10.0",
     "@headlessui/react": "^2.2.10",
     "@headlessui/tailwindcss": "^0.2.2",
     "@next/third-parties": "^16.2.9",
@@ -99,6 +101,7 @@
     "knip": "^5.88.1",
     "patch-package": "^8.0.1",
     "tailwindcss": "^4.3.2",
+    "tsx": "^4.23.0",
     "typescript": "^5.9.3",
     "wrangler": "^4.106.0"
   }
