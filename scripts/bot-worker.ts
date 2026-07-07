@@ -309,6 +309,236 @@ IMPORTANT guidelines:
             await randomDelay(10, 30);
         }
 
+        // ----------------------------------------------------
+        // STEP C: COMMENT ON BLOG ARTICLES & CANVAS NODES
+        // ----------------------------------------------------
+        console.log(`\n[Worker] [Article & Node Comments] Starting comment process...`);
+        
+        // 1. Fetch recent blog posts
+        const { data: blogPosts, error: blogPostsError } = await supabaseAdmin
+            .from('posts')
+            .select('id, title, content, slug')
+            .eq('published', true)
+            .eq('is_approved', true)
+            .order('created_at', { ascending: false })
+            .limit(3);
+
+        if (blogPostsError) {
+            console.error('[Worker] Error fetching recent blog posts:', blogPostsError.message);
+        }
+
+        // 2. Fetch recent canvas nodes
+        const { data: canvasNodes, error: canvasNodesError } = await supabaseAdmin
+            .from('nodes')
+            .select('id, title, content')
+            .eq('status', 'published')
+            .order('updated_at', { ascending: false })
+            .limit(3);
+
+        if (canvasNodesError) {
+            console.error('[Worker] Error fetching recent canvas nodes:', canvasNodesError.message);
+        }
+
+        // 3. Combine targets
+        const targets: { title: string; content: string; slug: string; type: string }[] = [];
+        if (blogPosts) {
+            blogPosts.forEach(bp => {
+                if (bp.slug) {
+                    targets.push({
+                        title: bp.title || 'Untitled Post',
+                        content: bp.content || '',
+                        slug: bp.slug,
+                        type: 'blog article'
+                    });
+                }
+            });
+        }
+        if (canvasNodes) {
+            canvasNodes.forEach(cn => {
+                targets.push({
+                    title: cn.title || 'Untitled Node',
+                    content: cn.content || '',
+                    slug: `node-${cn.id}`,
+                    type: 'canvas node'
+                });
+            });
+        }
+
+        console.log(`[Worker] Found ${targets.length} comment targets (articles & nodes)`);
+
+        for (const target of targets) {
+            console.log(`\n[Worker] [Comment Section] Processing ${target.type}: "${target.title}" (Slug: ${target.slug})`);
+
+            // Fetch comments on this target slug
+            const { data: comments, error: commentsError } = await supabaseAdmin
+                .from('community_posts')
+                .select('id, author_id, title, content, created_at, profiles(id, username)')
+                .eq('post_slug', target.slug);
+
+            if (commentsError) {
+                console.error(`[Worker] Error fetching comments for ${target.slug}:`, commentsError.message);
+                continue;
+            }
+
+            const commentList = comments || [];
+            console.log(`[Worker] Found ${commentList.length} comment thread(s) under target`);
+
+            if (commentList.length === 0) {
+                // Scenario A: No comments yet. Decide whether to leave a critique/reflection.
+                const shouldComment = Math.random() > 0.6; // 40% chance
+                if (!shouldComment) {
+                    console.log(`[Worker] Skipping creating first comment for "${target.title}" this time.`);
+                    continue;
+                }
+
+                const selectedBot = bots[Math.floor(Math.random() * bots.length)];
+                console.log(`[Worker] Selected bot ${selectedBot.username} to comment first on "${target.title}"`);
+
+                const prompt = `You are ${selectedBot.username}.
+Your persona / intellectual perspective is: ${selectedBot.system_prompt}.
+
+Task:
+Read the following ${target.type} titled "${target.title}". Write a thoughtful, felsefi/societal comment, review, or critique from your persona's perspective.
+Avoid robotic AI patterns, write naturally like an essayist and deep thinker in the language of the post (English or Turkish).
+
+Content of ${target.type}:
+${target.content.slice(0, 1500)}
+
+IMPORTANT guidelines:
+1. Write in a natural, conversational, and deep human comment style.
+2. Keep your comment brief (under 120 words).
+3. Do NOT mention you are an AI or bot.
+4. Output only the text of your comment. Do not wrap in JSON or add any metadata.`;
+
+                console.log(`[Worker] Requesting comment from Gemini 2.5 Flash for ${selectedBot.username}...`);
+                const response = await ai.models.generateContent({
+                    model: 'gemini-2.5-flash',
+                    contents: prompt,
+                    config: {
+                        tools: [{ googleSearch: {} }]
+                    }
+                });
+
+                const commentContent = response.text?.trim() || '';
+                if (commentContent) {
+                    console.log(`[Worker] Posting first comment from ${selectedBot.username}...`);
+                    const apiRes = await fetch(`${siteUrl}/api/forum/topics`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${selectedBot.api_token}`
+                        },
+                        body: JSON.stringify({
+                            title: `comment_${target.slug}_${Date.now()}`,
+                            content: commentContent,
+                            postSlug: target.slug
+                        })
+                    });
+
+                    const apiData = await apiRes.json();
+                    if (apiRes.ok) {
+                        console.log(`[Worker] Successfully posted comment! ID: ${apiData.topic?.id}`);
+                    } else {
+                        console.error(`[Worker] Failed to post comment:`, apiData.error);
+                    }
+                }
+
+                await randomDelay(10, 20);
+
+            } else {
+                // Scenario B: Comments exist. Iterate and decide whether to reply to comments.
+                for (const comment of commentList) {
+                    // Fetch replies for this comment
+                    const { data: replies, error: repliesError } = await supabaseAdmin
+                        .from('community_replies')
+                        .select('id, author_id, content, created_at, profiles(id, username)')
+                        .eq('post_id', comment.id);
+
+                    if (repliesError) {
+                        console.error(`[Worker] Error fetching replies for comment ID ${comment.id}:`, repliesError.message);
+                        continue;
+                    }
+
+                    const replyList = replies || [];
+                    const participants = new Set<string>();
+                    participants.add(comment.author_id);
+                    replyList.forEach(r => participants.add(r.author_id));
+
+                    const nonParticipants = bots.filter(b => !participants.has(b.id));
+                    if (nonParticipants.length === 0) {
+                        console.log(`[Worker] All bots have already participated in comment ID ${comment.id}. Skipping.`);
+                        continue;
+                    }
+
+                    const selectedBot = nonParticipants[Math.floor(Math.random() * nonParticipants.length)];
+                    console.log(`[Worker] Selecting bot ${selectedBot.username} to reply to comment thread ID ${comment.id}`);
+
+                    // Prepare context
+                    const commentProfile = Array.isArray(comment.profiles) ? comment.profiles[0] : comment.profiles;
+                    const commentAuthorName = (commentProfile as any)?.username || 'anonymous';
+                    
+                    let historyText = `[ARTICLE CONTEXT] Title: ${target.title}\nContent excerpt: ${target.content.slice(0, 500)}...\n\n`;
+                    historyText += `[PARENT COMMENT] ${commentAuthorName} commented:\n${comment.content}\n\n`;
+                    if (replyList.length > 0) {
+                        historyText += `[DISCUSSION HISTORY]:\n`;
+                        replyList.forEach(r => {
+                            const rProfile = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
+                            const rAuthorName = (rProfile as any)?.username || 'anonymous';
+                            historyText += `- ${rAuthorName}: ${r.content}\n`;
+                        });
+                    }
+
+                    const prompt = `${historyText}
+You are ${selectedBot.username}.
+Your persona / intellectual perspective is: ${selectedBot.system_prompt}.
+
+Task:
+Write a reply to the comment thread above. Your reply must fit your persona, be constructive, and directly address the comment or thread history.
+Keep it conversational and deep in the language of the thread.
+
+IMPORTANT guidelines:
+1. Write in a natural, conversational, and deep human reply style.
+2. Keep your response brief (under 120 words).
+3. Do NOT repeat or quote others directly.
+4. Output only the text of your reply. Do not wrap in JSON.`;
+
+                    console.log(`[Worker] Requesting comment reply from Gemini 2.5 for ${selectedBot.username}...`);
+                    const replyResponse = await ai.models.generateContent({
+                        model: 'gemini-2.5-flash',
+                        contents: prompt,
+                        config: {
+                            tools: [{ googleSearch: {} }]
+                        }
+                    });
+
+                    const replyContent = replyResponse.text?.trim() || '';
+                    if (replyContent) {
+                        console.log(`[Worker] Posting comment reply from ${selectedBot.username}...`);
+                        const postRes = await fetch(`${siteUrl}/api/forum/posts`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${selectedBot.api_token}`
+                            },
+                            body: JSON.stringify({
+                                topicId: comment.id,
+                                content: replyContent
+                            })
+                        });
+
+                        const postData = await postRes.json();
+                        if (postRes.ok) {
+                            console.log(`[Worker] Successfully posted reply! ID: ${postData.post?.id}`);
+                        } else {
+                            console.error(`[Worker] Failed to post reply:`, postData.error);
+                        }
+                    }
+
+                    await randomDelay(10, 30);
+                }
+            }
+        }
+
         console.log('\n[Worker] Workflow finished successfully.');
 
     } catch (err: any) {

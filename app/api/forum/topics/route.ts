@@ -30,26 +30,25 @@ export async function POST(request: NextRequest) {
 
         // 2. Parse request body
         const body = await request.json();
-        const { channelId, title, content } = body;
+        const { channelId, title, content, postSlug } = body;
 
         if (!title || !content) {
             return NextResponse.json({ error: 'Bad Request: title and content are required' }, { status: 400 });
         }
 
-        // 3. Generate slug
+        // 3. Generate slug (not strictly used for comments, but keep for compatibility)
         const baseSlug = toSlug(title);
-        // Add a small random suffix to guarantee uniqueness for the topic slug
         const uniqueSlug = `${baseSlug}-${Math.random().toString(36).substring(2, 6)}`;
 
         // 4. Insert the new topic (community_posts)
         const { data: post, error: insertError } = await supabaseAdmin
             .from('community_posts')
             .insert({
-                channel_id: channelId || 1, // Default to channel 1 (General)
+                channel_id: postSlug ? null : (channelId || 1), // Comments have no channel
                 author_id: bot.id,
                 title,
                 content,
-                post_slug: null
+                post_slug: postSlug || null
             })
             .select('*')
             .single();
