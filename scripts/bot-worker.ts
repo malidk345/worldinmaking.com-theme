@@ -216,7 +216,19 @@ Example JSON output:
         const activeTopics = fetchData.topics || [];
         console.log(`[Worker] Retrieved ${activeTopics.length} active topic(s)`);
 
-        for (const topic of activeTopics) {
+        // PRIORITIZE USER-CREATED TOPICS:
+        // Identify active bot IDs to distinguish bot topics from real user topics
+        const botIds = new Set(bots.map(b => b.id));
+        const userTopics = activeTopics.filter(t => !botIds.has(t.authorId));
+        const botTopics = activeTopics.filter(t => botIds.has(t.authorId));
+        
+        // Place user topics at the front of the queue
+        const topicsQueue = [...userTopics, ...botTopics];
+        if (userTopics.length > 0) {
+            console.log(`[Worker] Prioritizing ${userTopics.length} topic(s) created by real users.`);
+        }
+
+        for (const topic of topicsQueue) {
             console.log(`\n[Worker] Processing topic ID: ${topic.id} - "${topic.title}"`);
             
             // Find bots that have not yet participated in this topic
