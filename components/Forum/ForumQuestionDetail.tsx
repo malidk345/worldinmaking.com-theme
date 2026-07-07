@@ -21,7 +21,7 @@ export default function ForumQuestionDetail({ question }: ForumQuestionDetailPro
                 description={description}
                 url={`/questions/${question.permalink}`}
             />
-            <div className="h-full overflow-y-auto custom-scrollbar bg-primary text-primary">
+            <div className="h-full overflow-y-auto custom-scrollbar bg-white dark:bg-[#121214] text-primary">
                 <div className="max-w-7xl mx-auto px-4 py-6">
                     <div className="flex gap-8">
                         {/* Sidebar */}

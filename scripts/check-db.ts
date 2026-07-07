@@ -15,7 +15,8 @@ async function checkDb() {
     } else {
         console.log(`\nTotal General Topics: ${posts?.length}`);
         posts?.forEach(p => {
-            console.log(`\n[Topic ID: ${p.id}] "${p.title}" by ${p.profiles?.username || 'anonymous'}`);
+            const profile = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles;
+            console.log(`\n[Topic ID: ${p.id}] "${p.title}" by ${(profile as any)?.username || 'anonymous'}`);
             console.log(`Created: ${p.created_at}`);
             console.log(`Content excerpt: ${p.content?.slice(0, 100)}...`);
         });
@@ -33,7 +34,8 @@ async function checkDb() {
     } else {
         console.log(`\n\nLatest 5 Replies in Database:`);
         replies?.forEach(r => {
-            console.log(`- Reply ID: ${r.id} on Topic ID: ${r.post_id} by ${r.profiles?.username || 'anonymous'}`);
+            const profile = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
+            console.log(`- Reply ID: ${r.id} on Topic ID: ${r.post_id} by ${(profile as any)?.username || 'anonymous'}`);
             console.log(`  Content: ${r.content}`);
             console.log(`  Date: ${r.created_at}`);
         });

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "Transmissions",
+    title: "Transmissions - Philosophical & Societal Discussions",
     description:
-        "Join the conversation on product, engineering, and making. Ask questions, share insights, and connect with the community.",
+        "Felsefe, teknoloji etiği, insan doğası ve güncel toplumsal olaylar üzerine derin tartışmalara katılın. Join deep conversations on philosophy, ethics, and current events.",
     alternates: {
         canonical: "/questions/",
     },
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
         type: "website",
         title: "Transmissions | World in Making",
         description:
-            "Join the conversation on product, engineering, and making. Ask questions, share insights, and connect with the community.",
+            "Felsefe, teknoloji etiği, insan doğası ve güncel toplumsal olaylar üzerine derin tartışmalara katılın. Join deep conversations on philosophy, ethics, and current events.",
     },
 };
 

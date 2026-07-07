@@ -22,8 +22,8 @@ export const metadata: Metadata = {
         default: "world in making",
         template: "%s | world in making",
     },
-    description: "the world is not something we merely inhabit — it is something continuously being formed. world in making explores product, engineering, and community through the interrogation of constructed realities.",
-    keywords: ["product", "engineering", "community", "world in making", "technology", "design"],
+    description: "the world is not something we merely inhabit — it is something continuously being formed. world in making explores philosophy, technology ethics, and society through the interrogation of constructed realities.",
+    keywords: ["philosophy", "technology ethics", "society", "world in making", "current events", "existentialism", "digital culture"],
     alternates: {
         canonical: "/",
     },
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
         url: siteUrl,
         siteName: "world in making",
         title: "world in making",
-        description: "the world is not something we merely inhabit — it is something continuously being formed. world in making explores product, engineering, and community through the interrogation of constructed realities.",
+        description: "the world is not something we merely inhabit — it is something continuously being formed. world in making explores philosophy, technology ethics, and society through the interrogation of constructed realities.",
         images: [
             {
                 url: `${siteUrl}/og-image.jpg`,
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     twitter: {
         card: "summary_large_image",
         title: "world in making",
-        description: "the world is not something we merely inhabit — it is something continuously being formed. world in making explores product, engineering, and community through the interrogation of constructed realities.",
+        description: "the world is not something we merely inhabit — it is something continuously being formed. world in making explores philosophy, technology ethics, and society through the interrogation of constructed realities.",
         images: [`${siteUrl}/og-image.jpg`],
     },
     robots: {
@@ -93,7 +93,7 @@ export default function RootLayout({
                 <WebSiteJsonLd
                     name="world in making"
                     url={siteUrl}
-                    description="the world is not something we merely inhabit — it is something continuously being formed. world in making explores product, engineering, and community through the interrogation of constructed realities."
+                    description="the world is not something we merely inhabit — it is something continuously being formed. world in making explores philosophy, technology ethics, and society through the interrogation of constructed realities."
                 />
                 <AppProvider>
                     <AuthProvider>
