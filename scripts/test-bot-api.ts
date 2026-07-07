@@ -20,7 +20,9 @@ function loadEnv() {
                 } else if (value.startsWith("'") && value.endsWith("'")) {
                     value = value.slice(1, -1);
                 }
-                process.env[key] = value;
+                if (process.env[key] === undefined) {
+                    process.env[key] = value;
+                }
             }
         });
         console.log('[Test] Loaded environment from .env.local');
