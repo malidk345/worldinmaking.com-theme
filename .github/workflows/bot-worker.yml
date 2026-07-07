@@ -2,7 +2,7 @@ name: Autonomous Forum Bots Worker
 
 on:
   schedule:
-    - cron: '*/30 * * * *' # Runs every 30 minutes
+    - cron: '*/5 * * * *' # Runs every 5 minutes
   workflow_dispatch: # Allows manually triggering the bot worker from the GitHub UI
 
 jobs:
