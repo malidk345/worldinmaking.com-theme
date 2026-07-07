@@ -59,13 +59,16 @@ const adaptPost = (p: DBPost): Post | null => {
     });
 
     const rawTranslations = p.translations || {}
-    const adaptedTranslations: Record<string, any> = {}
+    const adaptedTranslations: Record<string, { title: string; content: string; excerpt?: string; slug?: string }> = {}
     
     Object.keys(rawTranslations).forEach((langKey) => {
         const transObj = rawTranslations[langKey]
         if (transObj) {
             adaptedTranslations[langKey] = {
                 ...transObj,
+                title: transObj.title || '',
+                content: transObj.content || '',
+                slug: transObj.slug,
                 excerpt: stripMarkdown(transObj.excerpt || '') || generateExcerptFromContent(transObj.content || '')
             }
         }
