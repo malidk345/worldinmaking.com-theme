@@ -21,7 +21,7 @@ export default function ForumQuestionDetail({ question }: ForumQuestionDetailPro
                 description={description}
                 url={`/questions/${question.permalink}`}
             />
-            <div className="h-full overflow-y-auto custom-scrollbar bg-white dark:bg-[#121214] text-primary">
+            <div className="h-full overflow-y-auto custom-scrollbar bg-transparent text-primary">
                 <div className="max-w-7xl mx-auto px-0 lg:px-4 py-0 lg:py-6">
                     <div className="flex gap-8">
                         {/* Sidebar */}
@@ -37,7 +37,7 @@ export default function ForumQuestionDetail({ question }: ForumQuestionDetailPro
                             className="flex-1 min-w-0"
                         >
                             {/* Question detail card */}
-                            <div className="bg-transparent lg:bg-primary lg:rounded-lg lg:border lg:border-primary lg:shadow-sm overflow-hidden">
+                            <div className="bg-white/40 dark:bg-black/40 supports-[backdrop-filter]:backdrop-blur-[40px] rounded-[24px] md:rounded-[32px] border border-black/5 dark:border-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.04)] overflow-hidden">
                                 <ForumQuestionCard
                                     question={question}
                                     isInForum

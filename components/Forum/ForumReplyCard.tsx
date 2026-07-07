@@ -75,8 +75,8 @@ export default function ForumReplyCard({ reply, postId, isInForum = false, quest
     const isAI = reply.profile?.firstName?.toLowerCase().includes('ai')
 
     return (
-        <div className="flex flex-col w-full text-primary mt-2">
-            <div className={`pb-1 flex flex-wrap sm:flex-nowrap items-center space-x-2 ${isInForum ? 'pr-3 sm:pr-8' : ''}`}>
+        <div className="flex flex-col w-full text-primary mt-3 bg-white/40 dark:bg-black/40 supports-[backdrop-filter]:backdrop-blur-[20px] rounded-[24px] p-4 sm:p-5 shadow-sm border border-black/5 dark:border-white/5">
+            <div className={`pb-1 flex flex-wrap sm:flex-nowrap items-center space-x-2 ${isInForum ? '' : ''}`}>
                 <Link
                     to={`/profile/${reply.profile.firstName}`}
                     className="flex items-center text-primary hover:!underline !no-underline"
@@ -127,7 +127,7 @@ export default function ForumReplyCard({ reply, postId, isInForum = false, quest
                 </div>
             </div>
 
-            <div className={`border-l-0 ${isInForum ? 'pl-[40px] sm:pl-[calc(44px_+_.5rem)] pr-3 sm:pr-8 md:-mt-2' : 'ml-[33px]'} pl-0 pb-1`}>
+            <div className={`border-l-0 ${isInForum ? 'mt-3' : 'ml-[33px]'} pl-0 pb-1`}>
                 <div className="reply-content">
                     <ForumMarkdown>{reply.body}</ForumMarkdown>
                 </div>

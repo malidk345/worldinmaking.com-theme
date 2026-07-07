@@ -113,7 +113,7 @@ export default function ForumQuestionCard({
     }))
 
     return (
-        <div className="flex flex-col w-full text-primary">
+        <div className="flex flex-col w-full text-primary bg-white/40 dark:bg-black/40 supports-[backdrop-filter]:backdrop-blur-[20px] rounded-[24px] p-4 sm:p-5 mb-4 shadow-sm border border-black/5 dark:border-white/5">
             {question.archived && (
                 <div
                     data-scheme="secondary"
@@ -126,7 +126,7 @@ export default function ForumQuestionCard({
                 </div>
             )}
 
-            <div className={`flex flex-wrap sm:flex-nowrap items-center w-full ${isComment ? 'gap-1.5' : 'space-x-2'} ${isInForum ? 'pt-4 px-4 sm:pt-5 sm:pl-5 sm:pr-8' : ''} ${!question.subject ? (isComment ? '-mb-1' : '-mb-2') : ''}`}>
+            <div className={`flex flex-wrap sm:flex-nowrap items-center w-full ${isComment ? 'gap-1.5' : 'space-x-2'} ${isInForum ? '' : ''} ${!question.subject ? (isComment ? '-mb-1' : '-mb-2') : ''}`}>
                 {isComment ? (
                     <Link
                         to={`/profile/${question.profile.firstName}`}
@@ -170,7 +170,7 @@ export default function ForumQuestionCard({
 
             <div className={question.archived ? 'opacity-50' : ''}>
                 <div
-                    className={`${isComment ? 'pb-2' : 'pb-4'} ${isComment ? 'pl-[30px]' : isInForum ? 'px-4 sm:pl-[calc(2.5rem_+_30px)] sm:pr-8 mt-2 sm:mt-0' : 'squeak-left-border ml-5 pl-[30px]'
+                    className={`${isComment ? 'pb-2' : 'pb-4'} ${isComment ? 'pl-[30px]' : isInForum ? 'mt-3 sm:mt-2' : 'squeak-left-border ml-5 pl-[30px]'
                         }`}
                 >
                     {question.subject && (
@@ -275,10 +275,10 @@ export default function ForumQuestionCard({
                 {/* Reply form */}
                 {(
                     <div
-                        className={`pb-1 relative w-full ${isComment
+                        className={`pb-1 relative w-full mt-4 ${isComment
                             ? 'pl-[30px] ml-[10px] border-l border-black/10 dark:border-white/10'
                             : isInForum
-                                ? 'bg-transparent border-t border-primary/20 pt-4 px-4 sm:bg-primary sm:px-6'
+                                ? 'bg-transparent border-t border-black/10 dark:border-white/10 pt-4'
                                 : 'ml-5 pl-8 pr-5 squeak-left-border'
                             } ${question.archived ? 'opacity-25 pointer-events-none' : ''}`}
                     >

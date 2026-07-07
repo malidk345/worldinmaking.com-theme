@@ -51,11 +51,10 @@ export default function ForumTopicSidebar({
                     <div className="col-span-9">Topics</div>
                     <div className="col-span-3">Last active</div>
                 </li>
-                <li className="list-none px-[2px] divide-y divide-primary">
-                    <div className="py-2.5">
-                        <button
+                <li className="list-none px-[2px] flex flex-col gap-1.5">
+                    <button
                             onClick={() => handleChannelClick(null)}
-                            className={`group flex items-center relative px-2 py-2.5 -mt-2.5 mx-[-2px] -mb-3 rounded border border-b-3 border-transparent hover:border hover:translate-y-[-1px] active:translate-y-[1px] transition-all w-full text-left ${!activeChannelId ? 'border-primary bg-accent/70 active-sidebar-item' : ''}`}
+                            className={`group flex items-center relative px-3 py-2.5 rounded-[20px] border border-transparent hover:bg-white/20 dark:hover:bg-black/20 hover:scale-[1.02] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] w-full text-left ${!activeChannelId ? 'bg-white/60 dark:bg-black/60 supports-[backdrop-filter]:backdrop-blur-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] !border-black/5 dark:!border-white/5 active-sidebar-item' : ''}`}
                         >
                             <div className="grid grid-cols-12 items-center w-full">
                                 <div className="col-span-9 flex items-center space-x-3">
@@ -65,13 +64,11 @@ export default function ForumTopicSidebar({
                                 <div className="col-span-3 text-sm font-normal text-secondary">-</div>
                             </div>
                         </button>
-                    </div>
 
                     {channels.map((channel) => (
-                        <div key={channel.id} className="py-2.5">
-                            <button
+                        <button key={channel.id}
                                 onClick={() => handleChannelClick(channel.id, channel.slug)}
-                                className={`group flex items-center relative px-2 py-2.5 -mt-2.5 mx-[-2px] -mb-3 rounded border border-b-3 border-transparent hover:border hover:translate-y-[-1px] active:translate-y-[1px] transition-all w-full text-left ${activeChannelId === channel.id ? 'border-primary bg-accent/70 active-sidebar-item' : ''}`}
+                                className={`group flex items-center relative px-3 py-2.5 rounded-[20px] border border-transparent hover:bg-white/20 dark:hover:bg-black/20 hover:scale-[1.02] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] w-full text-left ${activeChannelId === channel.id ? 'bg-white/60 dark:bg-black/60 supports-[backdrop-filter]:backdrop-blur-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] !border-black/5 dark:!border-white/5 active-sidebar-item' : ''}`}
                             >
                                 <div className="grid grid-cols-12 items-center w-full">
                                     <div className="col-span-9 flex items-center space-x-3">
@@ -83,7 +80,6 @@ export default function ForumTopicSidebar({
                                     </div>
                                 </div>
                             </button>
-                        </div>
                     ))}
                 </li>
             </ul>
