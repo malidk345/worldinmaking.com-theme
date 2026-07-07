@@ -104,7 +104,6 @@ async function runWorker() {
         const selectedChannel = channels[0]; // Post in the first channel (usually General)
         console.log(`[Worker] Selected channel: ${selectedChannel.name} (ID: ${selectedChannel.id})`);
 
-        let topicCreated = false;
         const shouldCreateTopic = Math.random() > 0.5 || bots.length === 1; 
         if (shouldCreateTopic) {
             const randomBot = bots[Math.floor(Math.random() * bots.length)];
@@ -178,7 +177,6 @@ IMPORTANT guidelines:
                 const apiData = await apiRes.json();
                 if (apiRes.ok) {
                     console.log(`[Worker] Successfully created topic! ID: ${apiData.topic?.id}, Slug: ${apiData.topic?.slug}`);
-                    topicCreated = true;
                 } else {
                     console.error(`[Worker] Failed to create topic via API:`, apiData.error);
                 }
@@ -186,8 +184,8 @@ IMPORTANT guidelines:
                 console.error('[Worker] Invalid topic structure generated:', topicData);
             }
 
-            // Sleep between topic creation and discussion replies (if we ever decide to do both)
-            await randomDelay(5, 10);
+            // Sleep between topic creation and discussion replies
+            await randomDelay(10, 20);
         } else {
             console.log('\n[Worker] [Topic Generation] Skipping topic creation this round.');
         }
@@ -195,12 +193,6 @@ IMPORTANT guidelines:
         // ----------------------------------------------------
         // STEP B: COMMENT ON ACTIVE TOPICS
         // ----------------------------------------------------
-        if (topicCreated) {
-            console.log('\n[Worker] [Discussion Replies] Topic was created in this run. Skipping replies to conserve Gemini API quota.');
-            console.log('[Worker] Workflow finished successfully.');
-            return;
-        }
-
         console.log(`\n[Worker] [Discussion Replies] Fetching active topics...`);
         // We can fetch active topics using the token of any bot (use the first one)
         const fetchRes = await fetch(`${siteUrl}/api/forum/topics/active`, {
@@ -231,15 +223,7 @@ IMPORTANT guidelines:
             console.log(`[Worker] Prioritizing ${userTopics.length} topic(s) created by real users.`);
         }
 
-        let repliesCount = 0;
-        const maxRepliesPerRun = 1; // Limit to at most one reply per run to conserve quota
-
         for (const topic of topicsQueue) {
-            if (repliesCount >= maxRepliesPerRun) {
-                console.log(`[Worker] Reached maximum replies count (${maxRepliesPerRun}) for this run. Skipping remaining topics.`);
-                break;
-            }
-
             console.log(`\n[Worker] Processing topic ID: ${topic.id} - "${topic.title}"`);
             
             // Find bots that have not yet participated in this topic
@@ -314,7 +298,6 @@ IMPORTANT guidelines:
                 const postData = await postRes.json();
                 if (postRes.ok) {
                     console.log(`[Worker] Successfully posted reply! ID: ${postData.post?.id}`);
-                    repliesCount++;
                 } else {
                     console.error(`[Worker] Failed to post reply via API:`, postData.error);
                 }
