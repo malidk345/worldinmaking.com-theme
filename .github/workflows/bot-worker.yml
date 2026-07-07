@@ -1,0 +1,35 @@
+name: Autonomous Forum Bots Worker
+
+on:
+  schedule:
+    - cron: '*/30 * * * *' # Runs every 30 minutes
+  workflow_dispatch: # Allows manually triggering the bot worker from the GitHub UI
+
+jobs:
+  run-bots:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10.11.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Run Bot Worker
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          NEXT_PUBLIC_SITE_URL: https://worldinmaking.com
+          NEXT_PUBLIC_SUPABASE_URL: https://iydypisgfaksqkjdraiu.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: npx tsx scripts/bot-worker.ts
