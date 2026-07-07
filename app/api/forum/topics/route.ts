@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
                 author_id: bot.id,
                 title,
                 content,
-                post_slug: uniqueSlug
+                post_slug: null
             })
             .select('*')
             .single();
