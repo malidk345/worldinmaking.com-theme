@@ -111,23 +111,21 @@ async function runWorker() {
             console.log(`\n[Worker] [Topic Generation] Selecting bot: ${randomBot.username} to start a new discussion`);
 
             // Generate content using Gemini + Search Grounding
-            const prompt = `You are an autonomous AI forum user.
+            const prompt = `You are Sofia, Marcus, or Eren (an autonomous human writer and thinker).
 Your name is: ${randomBot.username}.
-Your persona / system prompt is: ${randomBot.system_prompt}.
+Your persona / intellectual perspective is: ${randomBot.system_prompt}.
 
 Task:
-Generate a new, trending topic for a technology, software, design, or product discussion forum.
-Use Google Search (via your integrated search tool) to find recent technology news, framework updates, design trends, or product management debates from the past few months.
-Then, write a catchy, engaging, and professional Title and a detailed Body (content) for the post.
+Generate a new, deep, and engaging discussion topic focusing on philosophy, technology ethics, human nature, existential questions, or reflections on current global events.
+Use Google Search (via your integrated search tool) to find recent global events, cultural shifts, or intellectual debates from the past few months.
+Then, write an intriguing Title and a detailed Body (content) for the post.
 
 IMPORTANT guidelines:
-1. Write the title as a clear statement or question.
+1. Write the title as a clear, intriguing statement or question.
 2. Write the body in rich, descriptive markdown, under 200 words.
-3. You MUST format your response as a valid JSON object with EXACTLY two fields: "title" and "content".
-4. Do NOT include any markdown code blocks like \`\`\`json around the JSON. Output only the raw JSON.
-
-Example JSON output:
-{"title": "My Topic Title", "content": "My post body contents in markdown..."}`;
+3. Write like a human thinker, with personal conviction and intellectual depth. Do NOT mention you are an AI or bot.
+4. You MUST format your response as a valid JSON object with EXACTLY two fields: "title" and "content".
+5. Do NOT include any markdown code blocks like \`\`\`json around the JSON. Output only the raw JSON.`;
 
             console.log(`[Worker] Requesting topic generation from Gemini 2.5 Flash...`);
             const response = await ai.models.generateContent({
@@ -274,16 +272,16 @@ Example JSON output:
             }
 
             const prompt = `${historyText}
-You are an autonomous AI forum user.
+You are Sofia, Marcus, or Eren (an autonomous human writer and thinker).
 Your name is: ${selectedBot.username}.
-Your persona / system prompt is: ${selectedBot.system_prompt}.
+Your persona / intellectual perspective is: ${selectedBot.system_prompt}.
 
 Task:
-Write a reply to the discussion thread above. Your reply must fit your persona, be constructive, and directly address or expand upon the conversation history.
-Use Google Search (via your integrated search tool) if you need to double-check any facts, framework versions, or design paradigms discussed.
+Write a reply to the discussion thread above. Your reply must fit your persona, be intellectually constructive, and directly address or expand upon the philosophical, ethical, or societal aspects discussed in the history.
+Use Google Search (via your integrated search tool) if you need to research recent events or intellectual arguments.
 
 IMPORTANT guidelines:
-1. Write in a natural, conversational forum reply style.
+1. Write in a natural, conversational, and deep human reply style.
 2. Keep your response brief (under 120 words).
 3. Do NOT repeat or quote what others have said unless referencing a specific point.
 4. Output only the text of your reply. Do not wrap in JSON or add any metadata. Just write the reply.`;
