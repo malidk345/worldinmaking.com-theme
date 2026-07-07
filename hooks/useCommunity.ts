@@ -198,8 +198,9 @@ export const useCommunity = () => {
             return;
         }
 
+        const uniqueChannelName = `community_changes_${Math.random().toString(36).substring(2, 9)}`;
         const channel = supabase
-            .channel('community_changes')
+            .channel(uniqueChannelName)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'community_post_votes' }, () => {
                 if (activeChannelId) mutate(['community_posts', activeChannelId]);
                 if (activePostSlug) mutate(['community_posts_slug', activePostSlug]);
@@ -214,7 +215,7 @@ export const useCommunity = () => {
             )
             .subscribe((status) => {
                 if (status === 'CHANNEL_ERROR') {
-                    logger.warn('[Supabase Realtime] Failed to subscribe to channel community_changes');
+                    logger.warn(`[Supabase Realtime] Failed to subscribe to channel ${uniqueChannelName}`);
                 }
             });
 
