@@ -192,7 +192,7 @@ const MentionProfiles = ({ onSelect, onClose, search = '' }: { onSelect?: (profi
                 className="!p-1 rounded-full absolute top-0.5 right-0.5 z-20"
                 onClick={onClose}
             />
-            <ul className="m-0 p-0 list-none border border-input bg-light dark:bg-dark h-full rounded-md overflow-auto shadow-2xl">
+            <ul className="m-0 p-0 list-none border border-input h-full rounded-[24px] overflow-auto shadow-2xl backdrop-blur-[60px] bg-white/80 dark:bg-black/80">
                 {filteredProfiles.map((profile, index) => (
                     <MentionProfile
                         focused={focused}
@@ -335,7 +335,7 @@ export default function ForumRichText({
             {/* Toolbar - PIXEL PERFECT from aa */}
             <div
                 data-scheme="secondary"
-                className={`not-prose bg-primary flex items-center justify-between py-0.5 ${boxed ? `border ${borderClass} rounded-t` : `border-b ${borderClass}/70`}`}
+                className={`not-prose backdrop-blur-[60px] bg-white/80 dark:bg-black/80 flex items-center justify-between py-0.5 ${boxed ? `border ${borderClass} rounded-t-[24px]` : `border-b ${borderClass}/70`}`}
             >
                 <ul className="flex items-center list-none p-0 mx-2 space-x-1 w-full !mb-0">
                     {buttons.map((button, index) => (
@@ -372,7 +372,7 @@ export default function ForumRichText({
             </div>
 
             {/* Editor Area - PIXEL PERFECT from aa */}
-            <div className={`relative ${boxed ? `border ${borderClass} border-t-0 rounded-b` : ''} bg-primary`}>
+            <div className={`relative ${boxed ? `border ${borderClass} border-t-0 rounded-b-[24px]` : ''} backdrop-blur-[60px] bg-white/80 dark:bg-black/80 shadow-inner`}>
                 <div className="relative">
                     {mentions && (
                         <AnimatePresence>

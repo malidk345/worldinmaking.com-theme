@@ -29,7 +29,7 @@ export default function ForumQuestionForm({ isInForum = false, archived = false,
     }
 
     return (
-        <div className={`relative ${className} ${archived ? 'opacity-25 pointer-events-none' : ''}`}>
+        <div className={`relative p-3 rounded-[24px] backdrop-blur-[60px] bg-white/80 dark:bg-black/80 shadow-2xl border border-[#1E2F46]/15 ${className} ${archived ? 'opacity-25 pointer-events-none' : ''}`}>
             <div className="w-[40px] h-[40px] float-left rounded-full overflow-hidden">
                 <ForumAvatar
                     className="w-full h-full"

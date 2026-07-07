@@ -42,7 +42,7 @@ export default function ForumReplyForm({ archived = false, onSubmit }: ForumRepl
                     width="full"
                     align="left"
                     variant="underlineOnHover"
-                    className="border border-border bg-accent/70 hover:bg-accent !p-2"
+                    className="border border-border bg-accent/70 hover:bg-accent !p-2 !rounded-[24px]"
                 >
                     <span className="font-bold text-primary lowercase">reply</span>
                 </OSButton>
@@ -51,7 +51,7 @@ export default function ForumReplyForm({ archived = false, onSubmit }: ForumRepl
     }
 
     return (
-        <div className={`relative ${archived ? 'opacity-25 pointer-events-none' : ''}`}>
+        <div className={`relative p-3 rounded-[24px] backdrop-blur-[60px] bg-white/80 dark:bg-black/80 shadow-2xl border border-[#1E2F46]/15 ${archived ? 'opacity-25 pointer-events-none' : ''}`}>
             <div className="w-[40px] h-[40px] float-left ml-[-2px] rounded-full overflow-hidden shrink-0">
                 <ForumAvatar
                     className="w-full h-full"

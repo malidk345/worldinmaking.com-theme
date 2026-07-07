@@ -108,7 +108,7 @@ const Input = ({
             )}
             <div className={`relative ${direction === 'column' ? 'w-full' : 'flex-1'}`}>
                 <input
-                    className={`bg-primary border border-primary rounded ring-0 focus:ring-1 ${touched && error ? 'border-red dark:border-yellow' : 'border-primary'
+                    className={`backdrop-blur-[60px] bg-white/80 dark:bg-black/80 shadow-inner border border-primary rounded-[24px] ring-0 focus:ring-1 ${touched && error ? 'border-red dark:border-yellow' : 'border-primary'
                         } ${sizeClasses[size]} ${widthClasses[width]} ${showClearButton && value ? 'pr-10' : ''
                         } ${className}`}
                     type={type}
