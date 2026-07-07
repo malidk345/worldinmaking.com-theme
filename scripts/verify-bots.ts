@@ -12,7 +12,8 @@ async function verify() {
     } else {
         console.log(`Total Active Bots: ${bots?.length}`);
         bots?.forEach(b => {
-            console.log(`- Bot Name: ${b.profiles?.username || 'unknown'} | ID: ${b.id} | Token: ${b.api_token}`);
+            const profile = Array.isArray(b.profiles) ? b.profiles[0] : b.profiles;
+            console.log(`- Bot Name: ${(profile as any)?.username || 'unknown'} | ID: ${b.id} | Token: ${b.api_token}`);
         });
     }
 }

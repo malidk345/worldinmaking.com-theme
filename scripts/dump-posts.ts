@@ -12,7 +12,8 @@ async function dump() {
     } else {
         console.log(`Total topics: ${data?.length}`);
         data?.forEach(p => {
-            console.log(`- ID: ${p.id} | Slug: ${p.post_slug} | Title: "${p.title}" | Author: ${p.profiles?.username || 'unknown'}`);
+            const profile = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles;
+            console.log(`- ID: ${p.id} | Slug: ${p.post_slug} | Title: "${p.title}" | Author: ${(profile as any)?.username || 'unknown'}`);
         });
     }
 }

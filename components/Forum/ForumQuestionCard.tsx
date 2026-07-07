@@ -6,6 +6,7 @@ import ForumDays from './ForumDays'
 import ForumMarkdown from './ForumMarkdown'
 import ForumReplies from './ForumReplies'
 import ForumReplyForm from './ForumReplyForm'
+import ForumTypingIndicator from './ForumTypingIndicator'
 import { ForumQuestion, ForumReply } from './types'
 import Link from 'components/Link'
 import OSButton from 'components/OSButton'
@@ -264,6 +265,11 @@ export default function ForumQuestionCard({
                             </div>
                         ))}
                     </div>
+                )}
+
+                {/* Typing Indicator */}
+                {!isComment && isInForum && (
+                    <ForumTypingIndicator currentAuthorName={question.profile.firstName} />
                 )}
 
                 {/* Reply form */}

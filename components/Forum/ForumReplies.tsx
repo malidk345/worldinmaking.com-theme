@@ -86,21 +86,39 @@ export default function ForumReplies({
                         )}
                     </li>
                     <li className={`pr-[5px] !mb-0 relative ${isInForum ? '' : 'pl-[30px] border-l border-solid border-primary/20 squeak-left-border before:border-l-0'}`}>
-                        <ForumReplyCard reply={replies[replies.length - 1]} postId={question.id} isInForum={isInForum} questionAuthorId={question.profile.id} />
+                        <ForumReplyCard 
+                            reply={replies[replies.length - 1]} 
+                            postId={question.id} 
+                            isInForum={isInForum} 
+                            questionAuthorId={question.profile.id} 
+                            repliedToUsername={replies.length === 1 ? question.profile.firstName : replies[replies.length - 2].profile.firstName}
+                        />
                     </li>
                 </>
             ) : (
-                replies.map((reply) => (
-                    <li
-                        key={reply.id}
-                        className={`pr-[5px] !mb-0 relative pb-4 border-primary/20 ${isInForum
-                            ? 'border-t pt-4 px-5 first:border-t-0'
-                            : 'border-l border-solid border-primary/20 squeak-left-border before:border-l-0 pl-[30px]'
-                            }`}
-                    >
-                        <ForumReplyCard reply={reply} postId={question.id} isInForum={isInForum} questionAuthorId={question.profile.id} />
-                    </li>
-                ))
+                replies.map((reply, index) => {
+                    const repliedTo = index === 0 
+                        ? question.profile.firstName 
+                        : replies[index - 1].profile.firstName;
+                    
+                    return (
+                        <li
+                            key={reply.id}
+                            className={`pr-[5px] !mb-0 relative pb-4 border-primary/20 ${isInForum
+                                ? 'border-t pt-4 px-5 first:border-t-0'
+                                : 'border-l border-solid border-primary/20 squeak-left-border before:border-l-0 pl-[30px]'
+                                }`}
+                        >
+                            <ForumReplyCard 
+                                reply={reply} 
+                                postId={question.id} 
+                                isInForum={isInForum} 
+                                questionAuthorId={question.profile.id} 
+                                repliedToUsername={repliedTo}
+                            />
+                        </li>
+                    );
+                })
             )}
         </ul>
     )

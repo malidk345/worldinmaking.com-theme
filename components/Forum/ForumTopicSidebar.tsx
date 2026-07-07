@@ -5,6 +5,7 @@ import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { IconMessage } from '@posthog/icons'
 import { useCommunity } from 'hooks/useCommunity'
+import { useWindow } from 'context/Window'
 
 dayjs.extend(relativeTime)
 
@@ -18,6 +19,19 @@ export default function ForumTopicSidebar({
     onChannelChange
 }: ForumTopicSidebarProps) {
     const { channels, posts } = useCommunity()
+    const { navigate } = useWindow()
+
+    const handleChannelClick = (channelId: number | null, slug?: string) => {
+        if (onChannelChange) {
+            onChannelChange(channelId)
+        } else {
+            if (channelId === null) {
+                navigate('/questions')
+            } else if (slug) {
+                navigate(`/questions/topic/${slug}`)
+            }
+        }
+    }
 
     const getLastActive = (channelId: number) => {
         const channelPosts = posts.filter((post) => post.channel_id === channelId)
@@ -40,7 +54,7 @@ export default function ForumTopicSidebar({
                 <li className="list-none px-[2px] divide-y divide-primary">
                     <div className="py-2.5">
                         <button
-                            onClick={() => onChannelChange?.(null)}
+                            onClick={() => handleChannelClick(null)}
                             className={`group flex items-center relative px-2 py-2.5 -mt-2.5 mx-[-2px] -mb-3 rounded border border-b-3 border-transparent hover:border hover:translate-y-[-1px] active:translate-y-[1px] transition-all w-full text-left ${!activeChannelId ? 'border-primary bg-accent/70 active-sidebar-item' : ''}`}
                         >
                             <div className="grid grid-cols-12 items-center w-full">
@@ -56,7 +70,7 @@ export default function ForumTopicSidebar({
                     {channels.map((channel) => (
                         <div key={channel.id} className="py-2.5">
                             <button
-                                onClick={() => onChannelChange?.(channel.id)}
+                                onClick={() => handleChannelClick(channel.id, channel.slug)}
                                 className={`group flex items-center relative px-2 py-2.5 -mt-2.5 mx-[-2px] -mb-3 rounded border border-b-3 border-transparent hover:border hover:translate-y-[-1px] active:translate-y-[1px] transition-all w-full text-left ${activeChannelId === channel.id ? 'border-primary bg-accent/70 active-sidebar-item' : ''}`}
                             >
                                 <div className="grid grid-cols-12 items-center w-full">

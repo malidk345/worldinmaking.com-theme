@@ -18,9 +18,10 @@ interface ForumReplyCardProps {
     postId: number | string
     isInForum?: boolean
     questionAuthorId?: string | number
+    repliedToUsername?: string
 }
 
-export default function ForumReplyCard({ reply, postId, isInForum = false, questionAuthorId }: ForumReplyCardProps) {
+export default function ForumReplyCard({ reply, postId, isInForum = false, questionAuthorId, repliedToUsername }: ForumReplyCardProps) {
     const { isAdmin } = useAuth()
     const { handleReplyVote, deleteReply } = useCommunity()
     const [userVote, setUserVote] = useState(0)
@@ -89,6 +90,18 @@ export default function ForumReplyCard({ reply, postId, isInForum = false, quest
                     </div>
                     <strong>{reply.profile.firstName || 'anonymous'}</strong>
                 </Link>
+
+                {repliedToUsername && (
+                    <span className="text-[11px] text-muted flex items-center gap-0.5 lowercase select-none">
+                        <span>replied to</span>
+                        <Link 
+                            to={`/profile/${repliedToUsername}`} 
+                            className="font-bold text-[#000080] dark:text-[#66b2ff] hover:underline !no-underline"
+                        >
+                            @{repliedToUsername}
+                        </Link>
+                    </span>
+                )}
 
                 {isAuthor && (
                     <span className="bg-accent text-primary text-[10px] px-1.5 py-0.5 rounded font-bold lowercase tracking-widest ml-1">
