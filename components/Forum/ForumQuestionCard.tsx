@@ -126,7 +126,7 @@ export default function ForumQuestionCard({
                 </div>
             )}
 
-            <div className={`flex flex-wrap sm:flex-nowrap items-center w-full ${isComment ? 'gap-1.5' : 'space-x-2'} ${isInForum ? 'pt-3 sm:pt-5 pl-3 sm:pl-5 pr-3 sm:pr-8' : ''} ${!question.subject ? (isComment ? '-mb-1' : '-mb-2') : ''}`}>
+            <div className={`flex flex-wrap sm:flex-nowrap items-center w-full ${isComment ? 'gap-1.5' : 'space-x-2'} ${isInForum ? 'pt-4 px-4 sm:pt-5 sm:pl-5 sm:pr-8' : ''} ${!question.subject ? (isComment ? '-mb-1' : '-mb-2') : ''}`}>
                 {isComment ? (
                     <Link
                         to={`/profile/${question.profile.firstName}`}
@@ -170,7 +170,7 @@ export default function ForumQuestionCard({
 
             <div className={question.archived ? 'opacity-50' : ''}>
                 <div
-                    className={`${isComment ? 'pb-2' : 'pb-4'} ${isComment ? 'pl-[30px]' : isInForum ? 'pl-3 sm:pl-[calc(2.5rem_+_30px)] pr-3 sm:pr-8 mt-2 sm:mt-0' : 'squeak-left-border ml-5 pl-[30px]'
+                    className={`${isComment ? 'pb-2' : 'pb-4'} ${isComment ? 'pl-[30px]' : isInForum ? 'px-4 sm:pl-[calc(2.5rem_+_30px)] sm:pr-8 mt-2 sm:mt-0' : 'squeak-left-border ml-5 pl-[30px]'
                         }`}
                 >
                     {question.subject && (
@@ -278,7 +278,7 @@ export default function ForumQuestionCard({
                         className={`pb-1 relative w-full ${isComment
                             ? 'pl-[30px] ml-[10px] border-l border-black/10 dark:border-white/10'
                             : isInForum
-                                ? 'bg-primary border-t border-primary/20 pt-4 px-3 sm:px-4'
+                                ? 'bg-transparent border-t border-primary/20 pt-4 px-4 sm:bg-primary sm:px-6'
                                 : 'ml-5 pl-8 pr-5 squeak-left-border'
                             } ${question.archived ? 'opacity-25 pointer-events-none' : ''}`}
                     >
