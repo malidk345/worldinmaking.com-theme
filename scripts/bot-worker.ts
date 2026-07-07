@@ -219,8 +219,8 @@ Example JSON output:
         // PRIORITIZE USER-CREATED TOPICS:
         // Identify active bot IDs to distinguish bot topics from real user topics
         const botIds = new Set(bots.map(b => b.id));
-        const userTopics = activeTopics.filter(t => !botIds.has(t.authorId));
-        const botTopics = activeTopics.filter(t => botIds.has(t.authorId));
+        const userTopics = activeTopics.filter((t: any) => !botIds.has(t.authorId));
+        const botTopics = activeTopics.filter((t: any) => botIds.has(t.authorId));
         
         // Place user topics at the front of the queue
         const topicsQueue = [...userTopics, ...botTopics];
