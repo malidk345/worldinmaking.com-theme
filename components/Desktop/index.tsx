@@ -43,7 +43,7 @@ export default function Desktop() {
             {
                 label: 'community',
                 displayLabel: t('menu.community'),
-                Icon: <AppIcon name="forums" />,
+                Icon: <AppIcon name="games" />,
                 onClick: () => addWindow({
                     key: 'questions',
                     title: t('menu.community'),
