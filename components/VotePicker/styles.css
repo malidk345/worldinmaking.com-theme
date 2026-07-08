@@ -8,7 +8,11 @@
   font-size: 0.75rem;
   font-weight: 700;
   font-family: inherit;
-  @apply text-primary/80 bg-accent/40 border border-primary/10 shadow-sm transition-all duration-300;
+  color: rgb(var(--text-primary) / 0.8);
+  background: rgb(var(--accent) / 0.4);
+  border: 1px solid rgb(var(--text-primary) / 0.1);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   user-select: none;
 
   &:active {
@@ -16,7 +20,9 @@
   }
 
   &[data-active] {
-    @apply bg-accent/80 text-primary border-primary/20;
+    background: rgb(var(--accent) / 0.8);
+    color: rgb(var(--text-primary));
+    border-color: rgb(var(--text-primary) / 0.2);
   }
 }
 
@@ -62,7 +68,15 @@
   place-items: center;
   position: relative;
   outline: none;
-  @apply hover:bg-primary/5 active:bg-primary/10 transition-colors duration-150;
+  transition: color 0.15s, background-color 0.15s;
+
+  &:hover:not(:disabled) {
+    background: rgb(var(--text-primary) / 0.05);
+  }
+
+  &:active:not(:disabled) {
+    background: rgb(var(--text-primary) / 0.1);
+  }
 
   svg {
     display: block;
