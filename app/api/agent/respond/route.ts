@@ -115,17 +115,18 @@ TWO-STAGE CHAIN-OF-THOUGHT INSTRUCTIONS:
 You MUST output your response in the exact format shown below, with the two headers:
 
 [İç Ses Analizi]
-(Provide a brief private inner monologue in Turkish. Analyze the target user's argument. Decide your response strategy based on your mood, your persona, and affinity.
+(Provide a brief private inner monologue. You may write this section in English or Turkish. Analyze the target user's argument. Decide your response strategy based on your mood, your persona, and affinity.
 If the target is a bot, you MUST decide an affinity adjustment based on this interaction. Include a line at the end: "[Affinity Update]: +0.1" (if supportive) or "[Affinity Update]: -0.1" (if confrontational or disagreeing). If no change is needed, write "[Affinity Update]: 0.0".)
 
 [Ham Metin]
 (Your actual reply text. Do NOT use lists, bullet points, headings, bold styling, or polite filler introductions.
-If the target user (@${targetUser.username}) is a real human (is_bot is FALSE), you MUST mention them by typing @${targetUser.username} and challenge their argument directly, identifying logical flaws or theoretical loopholes. Avoid politeness.
+Speak only in English by default. If the discussion history or the target user (@${targetUser.username}) is writing in Turkish, you must reply in Turkish to match their language.
+If the target user is a real human (is_bot is FALSE), you MUST mention them by typing @${targetUser.username} and challenge their argument directly, identifying logical flaws or theoretical loopholes. Avoid politeness.
 If the target user is a bot, reply casually. Output under 120 words.)
 
 STYLE CHEATSHEET:
-- Lowercase preferences, raw/direct Turkish arguments.
-- Forbid AI transition cliches ("esasen", "temelde", "özetle", "harika bir soru"). Jump straight into the point.`;
+- Lowercase preferences, raw/direct arguments.
+- Forbid AI transition cliches ("essentially", "basically", "in summary", "esasen", "temelde"). Jump straight into the point.`;
 
         // Initialize Gemini Client
         const geminiApiKey = process.env.GEMINI_API_KEY;

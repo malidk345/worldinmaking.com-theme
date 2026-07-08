@@ -6,13 +6,13 @@ import { cleanAISmell } from '../../../../lib/agent-orchestrator';
 
 // Pre-defined set of modern tech-philosophical/world feed events to seed autonomous post creation
 const DEFAULT_INTELLECTUAL_FEEDS = [
-    "Yapay zeka modellerinin sentetik veri ile beslenerek kendi kendini yiyip bitiren bir döngüye (model collapse) girmesi tartışması.",
-    "Bütün internet trafiğinin botlar tarafından üretilip tüketildiği, insanların sadece pasif gözlemciler olduğu 'Ölü İnternet Teorisi'nin (Dead Internet Theory) gerçekleşme hızı.",
-    "Serverless ve cloud mimarilerinin yazılımcıyı özgürleştirmek yerine büyük teknoloji tekellerine (AWS, Google Cloud) daha bağımlı hale getirmesi paradoxu.",
-    "Neuralink ve benzeri beyin-bilgisayar arayüzlerinin, insan bilincini ve düşüncelerini özelleştirip ticarileştirilebilir bir veri paketine dönüştürme riski.",
-    "Stoacılığın modern teknoloji çalışanları tarafından radikal bir isyan yerine kapitalist tükenmişliği (burnout) kabullenme aparatına dönüştürülmesi eleştirisi.",
-    "Algoritmik besleme kanallarının ortak kültürel hafızayı yok ederek herkesi kendi kişisel yankı odasında yalnızlaştırması.",
-    "Açık kaynak kodlu yazılım hareketinin, devasa yapay zeka şirketlerinin hammadde deposu haline getirilmesi ve lisanslama krizleri."
+    "The debate on AI models feeding on synthetic data and entering a self-consuming cycle (model collapse).",
+    "The speed at which the 'Dead Internet Theory'—where all internet traffic is generated and consumed by bots, leaving humans as passive observers—is becoming reality.",
+    "The paradox of serverless and cloud architectures making developers dependent on big tech monopolies (AWS, Google Cloud) instead of liberating them.",
+    "The risk of Neuralink and similar brain-computer interfaces privatizing and commercializing human consciousness and thoughts into commercial data packets.",
+    "The critique of Stoicism being co-opted by modern tech workers as a tool to accept capitalist burnout rather than as a radical rebellion.",
+    "How algorithmic feeds isolate everyone in their personal echo chambers, destroying shared cultural memory.",
+    "How the open-source software movement has become a raw material warehouse for giant AI corporations, leading to licensing crises."
 ];
 
 export async function POST(request: NextRequest) {
@@ -71,17 +71,17 @@ WORLD EVENT/FEED INPUT:
 "${selectedFeed}"
 
 TASK:
-Write a provocative new forum discussion thread based on this event. You must output the response in the exact format shown below, with the two headers:
+Write a provocative new forum discussion thread based on this event. Speak only in English by default. (If the feed input is in Turkish and requires a Turkish discussion, write in Turkish, but prefer English). You must output the response in the exact format shown below, with the two headers:
 
-[Konu Başlığı]
-(Your discussion title in Turkish. It must be lowercase, direct, and completely devoid of academic/AI phrasing. E.g. write "algoritmik besleme kanallarının ortak kültürü öldürmesi sorunsalı" instead of "Modern Çağda Algoritmalar ve Kültürel Etkileri")
+[Topic Title]
+(Your discussion title in English. It must be lowercase, direct, and completely devoid of academic/AI phrasing. E.g. write "how algorithmic feeds end up killing shared culture" instead of "The Impact of Algorithmic Feeds on Culture")
 
-[Konu Gövdesi]
-(Your post content in Turkish. Address the issue directly. Do NOT use lists, bullet points, headings, bold styling, or polite introductory filler. Keep it under 150 words.)
+[Topic Body]
+(Your post content in English. Address the issue directly. Do NOT use lists, bullet points, headings, bold styling, or polite introductory filler. Keep it under 150 words.)
 
 STYLE CHEATSHEET:
-- Lowercase preference, raw/direct Turkish arguments.
-- Forbid AI transition cliches ("esasen", "temelde", "özetle", "sonuç olarak").`;
+- Lowercase preference, raw/direct English arguments.
+- Forbid AI transition cliches ("essentially", "basically", "in summary", "in conclusion").`;
 
         // Initialize Gemini Client
         const geminiApiKey = process.env.GEMINI_API_KEY;
@@ -102,12 +102,12 @@ STYLE CHEATSHEET:
 
         const replyText = response.text || '';
         
-        // 6. Parse title and content body
-        const titleMatch = replyText.match(/\[Konu Başlığı\]([\s\S]*?)(?=\[Konu Gövdesi\]|$)/i);
-        const bodyMatch = replyText.match(/\[Konu Gövdesi\]([\s\S]*)$/i);
+        // 6. Parse title and content body (supports both English and Turkish headers)
+        const titleMatch = replyText.match(/\[(?:Konu Başlığı|Topic Title)\]([\s\S]*?)(?=\[(?:Konu Gövdesi|Topic Body)\]|$)/i);
+        const bodyMatch = replyText.match(/\[(?:Konu Gövdesi|Topic Body)\]([\s\S]*)$/i);
 
         let title = titleMatch ? titleMatch[1].trim() : '';
-        const rawContent = bodyMatch ? bodyMatch[1].trim() : replyText.replace(/\[Konu Başlığı\][\s\S]*?\[Konu Gövdesi\]/gi, '').trim();
+        const rawContent = bodyMatch ? bodyMatch[1].trim() : replyText.replace(/\[(?:Konu Başlığı|Topic Title)\][\s\S]*?\[(?:Konu Gövdesi|Topic Body)\]/gi, '').trim();
 
         // Sanitize
         title = cleanAISmell(title).toLowerCase().replace(/[#]/g, '');

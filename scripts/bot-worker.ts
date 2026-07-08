@@ -350,20 +350,21 @@ async function runWorker() {
 Your persona / intellectual perspective is: ${selectedBot.system_prompt}.
 
 Task:
-Read the following ${target.type} titled "${target.title}". Write a thoughtful, felsefi/societal comment, review, or critique from your persona's perspective.
+Read the following ${target.type} titled "${target.title}". Write a thoughtful, critical comment, review, or critique from your persona's perspective.
+Speak only in English by default. (If the article or node content is in Turkish and requires a Turkish discussion, write in Turkish, but prefer English).
 
 Content of ${target.type}:
 ${target.content.slice(0, 1500)}
 
 STYLE GUIDELINES (ELIMINATE AI SMELL):
-1. FORBID POLITE INTROS. Do NOT start with "This is an excellent article", "Harika bir yazı olmuş", "Eline sağlık".
+1. FORBID POLITE INTROS. Do NOT start with "This is an excellent article", "Harika bir yazı olmuş", "nice writeup".
 2. WRITE AS A CASUAL REVIEWER. Jump directly into your critique, dilemma, or reaction.
 3. NO BULLET POINTS OR HEADERS. Write in 1 or 2 raw, organic paragraphs (under 120 words).
-4. For Turkish posts: Use lowercase patterns, drop sentence ending periods occasionally, and use casual vocabulary.
+4. Lowercase preference, drop sentence ending periods occasionally, and use casual vocabulary.
 
 EXAMPLES FOR ARTICLE COMMENTS:
 - BAD (AI style): "This is a very insightful post about next.js. I agree with the author that routing is fast. Firstly, we have dynamic routes. Secondly, layouts..."
-- GOOD (Human style): "nextjs app router olayına başlarda çok sıcaktım ama production seviyesinde işler büyüdükçe caching mekanizması tam bir işkenceye dönüşüyor. yazarın hız konusundaki tespitleri doğru ama getirdikleri karmaşıklık götürdüklerinden fazla sanki."`;
+- GOOD (Human style): "was pretty hyped about nextjs app router at first but caching gets to be a total nightmare once you hit production. the speed claims are fine but the sheer complexity it introduces just doesn't feel worth it"`;
 
                 console.log(`[Worker] Requesting comment from Gemini 2.5 Flash for ${selectedBot.username}...`);
                 const response = await ai.models.generateContent({
@@ -450,15 +451,16 @@ Your persona / intellectual perspective is: ${selectedBot.system_prompt}.
 
 Task:
 Write a reply to the comment thread above. Your reply must fit your persona, be constructive, and directly address the comment or thread history.
+Speak only in English by default. If the parent comment or the discussion history is in Turkish, write in Turkish to match their language.
 
 STYLE GUIDELINES (ELIMINATE AI SMELL):
 1. FORBID FILLERS. Do NOT start with "I agree", "Polite words", "Katılıyorum", "Güzel yorum".
 2. NO BULLET POINTS OR HEADERS. Write in 1 or 2 raw, organic paragraphs (under 120 words).
-3. For Turkish replies: Use lowercase patterns, drop sentence ending periods, and use casual vocabulary.
+3. Lowercase preference, drop sentence ending periods, and use casual vocabulary.
 
 EXAMPLES FOR COMMENT REPLIES:
 - BAD (AI style): "That is a very interesting comment. I agree with your point that caching is complex. In my opinion, we can solve this by..."
-- GOOD (Human style): "caching cidden baş belası ya. dev modda her şey süper çalışırken production'da alakasız sayfaların eski data göstermesi delirtiyor insanı. middleware ile çözmeye çalıştım ama o da ayrı bi dert."`;
+- GOOD (Human style): "caching is such a pain. everything works fine in dev but once in prod random pages serve stale data and you lose your mind. tried fixing it with middleware but that brings its own set of issues"`;
 
                     console.log(`[Worker] Requesting comment reply from Gemini 2.5 for ${selectedBot.username}...`);
                     const replyResponse = await ai.models.generateContent({
