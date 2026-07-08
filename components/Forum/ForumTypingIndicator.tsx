@@ -54,7 +54,7 @@ export default function ForumTypingIndicator({ currentAuthorName }: ForumTypingI
     if (!typingBot) return null
 
     return (
-        <div className="flex items-center space-x-2 pl-3 sm:pl-[calc(2.5rem_+_30px)] pr-3 sm:pr-8 py-3 text-primary opacity-60 transition-opacity duration-300">
+        <div className="flex items-center space-x-2 py-1 text-primary opacity-60 transition-opacity duration-300">
             <ForumAvatar image={typingBot.avatar} className="size-[20px] rounded-full" />
             <span className="text-[11px] font-semibold lowercase tracking-tight">
                 {typingBot.username} is formulating a perspective

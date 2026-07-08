@@ -374,7 +374,7 @@ export default function ForumRichText({
         editorProps: {
             attributes: {
                 // Exact styling from aa project's OSTextarea but applied to Tiptap
-                class: `focus:outline-none overflow-y-auto p-3 prose prose-sm dark:prose-invert max-w-none text-black dark:text-white [&_p]:text-black [&_p]:dark:text-white focus:[&_p]:!text-black focus:[&_p]:dark:!text-white [&_a]:font-semibold break-words [overflow-wrap:anywhere] ${expandHeight ? 'flex-1 h-full min-h-0' : 'min-h-[80px] md:min-h-[120px] max-h-[250px] md:max-h-[350px]'} ${className}`,
+                class: `focus:outline-none overflow-y-auto p-3 prose dark:prose-invert max-w-none text-black dark:text-white [&_p]:text-black [&_p]:dark:text-white focus:[&_p]:!text-black focus:[&_p]:dark:!text-white [&_a]:font-semibold break-words [overflow-wrap:anywhere] text-[13px] leading-[1.4] tracking-tight [&_p]:pb-1.5 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 ${expandHeight ? 'flex-1 h-full min-h-0' : 'min-h-[80px] md:min-h-[120px] max-h-[250px] md:max-h-[350px]'} ${className}`,
             },
             handlePaste: (view, event) => {
                 const items = Array.from(event.clipboardData?.items || [])

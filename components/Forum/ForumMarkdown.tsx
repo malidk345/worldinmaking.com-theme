@@ -43,17 +43,17 @@ export default function ForumMarkdown({
             remarkPlugins={[remarkGfm]}
             rehypePlugins={[rehypeRaw, rehypeSanitize]}
             urlTransform={transformImageUri}
-            className={`markdown prose dark:prose-invert prose-sm max-w-full text-black dark:text-white [&_p]:text-black dark:[&_p]:text-white [&_a]:font-semibold break-words [overflow-wrap:anywhere] ${className}`}
+            className={`markdown prose dark:prose-invert max-w-full text-black dark:text-white [&_p]:text-black dark:[&_p]:text-white [&_a]:font-semibold break-words [overflow-wrap:anywhere] text-[13px] leading-[1.4] tracking-tight [&_ul]:my-1 [&_ul]:pl-5 [&_ol]:my-1 [&_ol]:pl-5 [&_li]:my-0.5 [&_pre]:my-2 [&_blockquote]:my-2 [&_blockquote]:pl-3 [&_blockquote]:border-l-2 [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm [&_h4]:text-xs [&_h5]:text-xs [&_h6]:text-xs ${className}`}
             components={{
-                p: ({ children }) => <p className="text-black dark:text-white !m-0 pb-3 last:pb-0">{children}</p>,
+                p: ({ children }) => <p className="text-black dark:text-white !m-0 pb-1.5 last:pb-0 text-[13px] leading-[1.4] tracking-tight">{children}</p>,
                 pre: ({ children }) => (
-                    <pre className="whitespace-pre-wrap">
+                    <pre className="whitespace-pre-wrap text-[11px] leading-normal my-2 p-2 bg-black/5 dark:bg-white/5 rounded border border-black/5 dark:border-white/5">
                         {children}
                     </pre>
                 ),
                 code({ className, children, ...props }: React.HTMLAttributes<HTMLElement> & { className?: string; children?: React.ReactNode }) {
                     return (
-                        <code className={`${className} break-all inline-block`} {...props}>
+                        <code className={`${className} break-all inline-block text-[11.5px] bg-black/5 dark:bg-white/5 px-1 py-0.5 rounded font-mono`} {...props}>
                             {children}
                         </code>
                     )
@@ -61,7 +61,7 @@ export default function ForumMarkdown({
                 a: ({ href, children }) => (
                     <a
                         href={href || ''}
-                        className="font-semibold"
+                        className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
                         target="_blank"
                         rel="nofollow noopener noreferrer"
                     >
@@ -70,7 +70,7 @@ export default function ForumMarkdown({
                 ),
                 img: (props) => (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img {...props} alt={props.alt || ''} className="rounded-md max-w-full h-auto my-4" />
+                    <img {...props} alt={props.alt || ''} className="rounded-md max-w-full h-auto my-3" />
                 ),
             }}
         >

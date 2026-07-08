@@ -6,25 +6,6 @@ import ForumReplyCard from './ForumReplyCard'
 import { ForumReply, ForumQuestion } from './types'
 import ForumAvatar from './ForumAvatar'
 
-const Squiggle = ({ className }: { className: string }) => {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19 11" className={`h-2 ${className}`}>
-            <path d="m13.5 8.793 4.646-4.647.707.708-5.353 5.353-8.5-8.5-3.646 3.647-.708-.708L5 .293l8.5 8.5Z" fill="currentColor" />
-        </svg>
-    )
-}
-
-const Squiggles = ({ className = '' }: { className: string }) => {
-    return (
-        <div className="flex [&_svg]:ml-[-1.25px] mt-3">
-            <Squiggle className={className} />
-            <Squiggle className={className} />
-            <Squiggle className={className} />
-            <Squiggle className={className} />
-            <Squiggle className={className} />
-        </div>
-    )
-}
 
 interface ForumRepliesProps {
     replies: ForumReply[]
@@ -48,7 +29,7 @@ export default function ForumReplies({
     const shouldExpandInline = expanded || replyCount < 3
 
     return (
-        <ul className={`${isInForum ? '' : 'ml-5'} !mb-0 p-0 list-none`}>
+        <ul className={`${isInForum ? 'ml-[36px] sm:ml-[40px] pr-4 sm:pr-6 md:pr-8' : 'ml-5'} !mb-0 p-0 list-none`}>
             <AnimatePresence initial={false}>
             {!shouldExpandInline ? (
                 <motion.div
@@ -57,24 +38,20 @@ export default function ForumReplies({
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
                 >
-                    <li className={`!mb-0 relative ${isInForum ? '' : 'pr-[5px] pl-[30px] border-l border-solid border-primary/20 squeak-left-border before:border-l-0'}`}>
+                    <li className="!mb-0 relative pr-[5px] pl-[30px] border-l border-dashed border-primary/20 squeak-left-border before:border-l-0">
                         {isInForum ? (
-                            <div className="pb-2 justify-center !pl-0 flex items-center w-full relative before:content-[''] before:absolute before:top-[15px] before:left-0 before:w-full before:h-full before:border-t before:border-primary/20">
-                                <div className="bg-white dark:bg-[#121214] flex justify-center -top-1/2 relative space-x-4 px-4">
-                                    <Squiggles className="fill-border opacity-20" />
-                                    <div className="flex items-center -space-x-2">
-                                        {avatars.map((avatar, index) => (
-                                            <ForumAvatar key={index} image={avatar as string} className="w-[25px] h-[25px] border-2 border-primary/40" />
-                                        ))}
-                                    </div>
-                                    <button
-                                        className="text-sm font-semibold text-primary hover:underline lowercase"
-                                        onClick={() => onToggleExpanded(true)}
-                                    >
-                                        view {replyCount - 1} other {replyCount - 1 === 1 ? 'reply' : 'replies'}
-                                    </button>
-                                    <Squiggles className="fill-border opacity-20" />
+                            <div className="pb-2 justify-start flex items-center w-full relative">
+                                <div className="flex items-center -space-x-2 mr-3">
+                                    {avatars.map((avatar, index) => (
+                                        <ForumAvatar key={index} image={avatar as string} className="w-[22px] h-[22px] border-2 border-primary/40" />
+                                    ))}
                                 </div>
+                                <button
+                                    className="text-xs font-semibold text-[#000080] dark:text-[#66b2ff] hover:underline lowercase"
+                                    onClick={() => onToggleExpanded(true)}
+                                >
+                                    view {replyCount - 1} other {replyCount - 1 === 1 ? 'reply' : 'replies'}
+                                </button>
                             </div>
                         ) : (
                             <div className="pb-4 -my-2 flex items-center space-x-4">
@@ -92,7 +69,7 @@ export default function ForumReplies({
                             </div>
                         )}
                     </li>
-                    <li className={`pr-[5px] !mb-0 relative ${isInForum ? '' : 'pl-[30px] border-l border-solid border-primary/20 squeak-left-border before:border-l-0'}`}>
+                    <li className="pr-[5px] !mb-0 relative pl-[30px] border-l border-dashed border-primary/20 squeak-left-border before:border-l-0">
                         <ForumReplyCard 
                             reply={replies[replies.length - 1]} 
                             postId={question.id} 
@@ -115,10 +92,7 @@ export default function ForumReplies({
                             exit={{ opacity: 0, height: 0, y: -10 }}
                             transition={{ type: "spring", bounce: 0, duration: 0.4 }}
                             key={reply.id}
-                            className={`pr-[5px] !mb-0 relative pb-4 border-primary/20 ${isInForum
-                                ? 'border-t pt-4 px-5 first:border-t-0'
-                                : 'border-l border-solid border-primary/20 squeak-left-border before:border-l-0 pl-[30px]'
-                                }`}
+                            className="pr-[5px] !mb-0 relative pb-4 pl-[30px] border-l border-dashed border-primary/20 squeak-left-border before:border-l-0"
                         >
                             <ForumReplyCard 
                                 reply={reply} 

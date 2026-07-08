@@ -842,7 +842,11 @@ mark {
   /* ... existing components ... */
 
   .squeak-left-border {
-    @apply before:border-l before:border-b before:border-solid before:border-black before:rounded-bl-md before:h-[20px] before:top-0 before:absolute before:w-[30px] before:left-0;
+    @apply before:border-l before:border-b before:border-dashed before:border-primary/25 before:rounded-bl-md before:h-[20px] before:top-0 before:absolute before:w-[30px] before:left-0 before:transition-colors before:duration-300;
+  }
+
+  .squeak-left-border:hover::before {
+    @apply before:border-primary/50;
   }
 
   /* PostHog Active Glow Indicator */

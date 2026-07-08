@@ -1,7 +1,6 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import ForumProfileBadge from './ForumProfileBadge'
 import ForumDays from './ForumDays'
 import ForumMarkdown from './ForumMarkdown'
 import ForumReplies from './ForumReplies'
@@ -33,7 +32,7 @@ export default function ForumQuestionCard({
     isComment = false,
 }: ForumQuestionCardProps) {
     const [expanded, setExpanded] = useState(initialExpanded)
-    const { replies, fetchReplies, createReply, handleVote, deletePost, deleteReply } = useCommunity()
+    const { replies, fetchReplies, createReply, handleVote, deletePost } = useCommunity()
     const { isAdmin } = useAuth()
     const [isEditing, setIsEditing] = useState(false)
     const [userVote, setUserVote] = useState(0)
@@ -112,22 +111,19 @@ export default function ForumQuestionCard({
         downvotes: 0
     }))
 
-    return (
-        <div className="flex flex-col w-full text-primary">
-            {question.archived && (
-                <div
-                    data-scheme="secondary"
-                    className="m-4 mb-0 bg-primary border border-black p-4 rounded text-center"
-                >
-                    <p className="font-bold text-base !m-0 !p-0 lowercase">the following thread has been archived.</p>
-                    <p className="!text-sm !m-0 text-balance opacity-60 lowercase">
-                        it&apos;s likely out of date, no longer relevant, or the answer has been added to our documentation.
-                    </p>
-                </div>
-            )}
+    if (isComment) {
+        return (
+            <div className="flex flex-col w-full text-primary">
+                {question.archived && (
+                    <div className="m-4 mb-0 bg-primary border border-black p-4 rounded text-center">
+                        <p className="font-bold text-base !m-0 !p-0 lowercase">the following thread has been archived.</p>
+                        <p className="!text-sm !m-0 text-balance opacity-60 lowercase">
+                            it&apos;s likely out of date, no longer relevant, or the answer has been added to our documentation.
+                        </p>
+                    </div>
+                )}
 
-            <div className={`flex flex-wrap sm:flex-nowrap items-center w-full ${isComment ? 'gap-1.5' : 'space-x-2'} ${isInForum ? 'pt-4 px-4 sm:pt-5 sm:pl-5 sm:pr-8' : ''} ${!question.subject ? (isComment ? '-mb-1' : '-mb-2') : ''}`}>
-                {isComment ? (
+                <div className={`flex flex-wrap sm:flex-nowrap items-center w-full gap-1.5 ${!question.subject ? '-mb-1' : ''}`}>
                     <Link
                         to={`/profile/${question.profile.firstName}`}
                         className="flex items-center text-primary hover:!underline !no-underline gap-1.5 shrink-0"
@@ -138,157 +134,201 @@ export default function ForumQuestionCard({
                         />
                         <strong className="text-xs">{question.profile.firstName || 'anonymous'}</strong>
                     </Link>
-                ) : (
-                    <ForumProfileBadge
+                    <ForumDays
+                        created={question.createdAt}
                         profile={question.profile}
-                        className={question.archived ? 'opacity-50' : ''}
                     />
-                )}
-                <ForumDays
-                    created={question.createdAt}
-                    profile={question.profile}
-                />
-                {!isComment && (
-                    <div className="!ml-auto flex items-center space-x-px">
-                        <OSButton
-                            onClick={() => setIsEditing(!isEditing)}
-                            icon={<IconPencil />}
-                            size="md"
-                            tooltip="edit post"
-                            className="!p-1.5 opacity-60 hover:opacity-100 hidden sm:flex"
-                        />
-                        <OSButton
-                            onClick={() => { }} // Handle archive toggle
-                            icon={question.archived ? <IconUndo /> : <IconArchive />}
-                            size="md"
-                            tooltip={question.archived ? 'restore thread' : 'archive thread'}
-                            className="!p-1.5 opacity-60 hover:opacity-100 hidden sm:flex"
-                        />
-                    </div>
-                )}
-            </div>
+                </div>
 
-            <div className={question.archived ? 'opacity-50' : ''}>
-                <div
-                    className={`${isComment ? 'pb-2' : 'pb-4'} ${isComment ? 'pl-[30px]' : isInForum ? 'px-4 sm:pl-[calc(2.5rem_+_30px)] sm:pr-8 mt-2 sm:mt-0' : 'squeak-left-border ml-5 pl-[30px]'
-                        }`}
-                >
-                    {question.subject && (
-                        <h3 className={`font-semibold !m-0 pb-1 leading-5 ${isComment ? 'text-sm' : 'text-base'}`}>
-                            <Link
-                                to={`/questions/${question.permalink}`}
-                                className="!no-underline hover:!underline font-semibold text-[#000080] dark:text-[#66b2ff]"
-                            >
-                                {question.subject}
-                            </Link>
-                        </h3>
+                <div className="opacity-50">
+                    <div className="pb-2 pl-[30px]">
+                        {question.subject && (
+                            <h3 className="font-semibold !m-0 pb-1 leading-5 text-sm">
+                                <Link
+                                    to={`/questions/${question.permalink}`}
+                                    className="!no-underline hover:!underline font-semibold text-[#000080] dark:text-[#66b2ff]"
+                                >
+                                    {question.subject}
+                                </Link>
+                            </h3>
+                        )}
+
+                        <div className="question-content text-sm [&_p]:!my-1 [&_p]:!text-sm">
+                            <ForumMarkdown>{question.body}</ForumMarkdown>
+                        </div>
+
+                        <div className="flex items-center gap-2 mt-1.5">
+                            <VotePicker
+                                count={totalVotes}
+                                active={userVote !== 0}
+                                onDecrement={() => handleVoteChange('down')}
+                                onIncrement={() => handleVoteChange('up')}
+                                size="sm"
+                            />
+                        </div>
+                    </div>
+
+                    {adaptedReplies.length > 0 && (
+                        <div className="pl-[30px] border-l border-black/10 dark:border-white/10 ml-[10px] mb-2">
+                            {adaptedReplies.map((reply) => (
+                                <div key={reply.id} className="flex flex-col py-1.5">
+                                    <div className="flex items-center gap-1.5">
+                                        <Link
+                                            to={`/profile/${reply.profile.firstName}`}
+                                            className="flex items-center text-primary hover:!underline !no-underline gap-1 shrink-0"
+                                        >
+                                            <ForumAvatar className="size-[18px] rounded-full" image={reply.profile.avatar} />
+                                            <strong className="text-[11px]">{reply.profile.firstName || 'anonymous'}</strong>
+                                        </Link>
+                                        <ForumDays created={reply.createdAt} />
+                                    </div>
+                                    <div className="text-sm [&_p]:!my-0.5 [&_p]:!text-xs pl-[26px]">
+                                        <ForumMarkdown>{reply.body}</ForumMarkdown>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     )}
+                </div>
+            </div>
+        )
+    }
 
-                    <div className={`question-content ${isComment ? 'text-sm [&_p]:!my-1 [&_p]:!text-sm' : ''}`}>
-                        <ForumMarkdown>{question.body}</ForumMarkdown>
+    return (
+        <div className="flex flex-col w-full text-primary">
+            {question.archived && (
+                <div className="m-4 mb-0 bg-primary border border-black p-4 rounded text-center">
+                    <p className="font-bold text-base !m-0 !p-0 lowercase">the following thread has been archived.</p>
+                    <p className="!text-sm !m-0 text-balance opacity-60 lowercase">
+                        it&apos;s likely out of date, no longer relevant, or the answer has been added to our documentation.
+                    </p>
+                </div>
+            )}
+
+            {/* Standard Forum Thread Layout with Continuous Left Vertical Timeline Line */}
+            <div className={`flex w-full gap-3 relative ${isInForum ? 'pt-4 px-4 sm:pt-5 sm:pl-5 sm:pr-8' : ''}`}>
+                
+                {/* Left Timeline Column: Main Avatar & Vertical Line */}
+                <div className="w-[40px] shrink-0 flex flex-col items-center relative">
+                    <ForumAvatar
+                        className="size-10 rounded-full border border-black/10 dark:border-white/10"
+                        image={question.profile.avatar}
+                    />
+                    
+                    {/* Vertical line connecting the main avatar to all replies below it */}
+                    {expanded && (
+                        <div className="w-0 border-l border-dashed border-primary/20 absolute top-10 bottom-0 left-[20px]" />
+                    )}
+                </div>
+
+                {/* Right Content Column */}
+                <div className="flex-grow min-w-0">
+                    
+                    {/* Author Meta Header Info */}
+                    <div className="flex items-center space-x-2 w-full">
+                        <strong className="text-primary font-bold text-sm">{question.profile.firstName || 'anonymous'}</strong>
+                        <ForumDays
+                            created={question.createdAt}
+                            profile={question.profile}
+                        />
+                        
+                        <div className="!ml-auto flex items-center space-x-px">
+                            <OSButton
+                                onClick={() => setIsEditing(!isEditing)}
+                                icon={<IconPencil />}
+                                size="md"
+                                tooltip="edit post"
+                                className="!p-1.5 opacity-60 hover:opacity-100 hidden sm:flex"
+                            />
+                            <OSButton
+                                onClick={() => { }} 
+                                icon={question.archived ? <IconUndo /> : <IconArchive />}
+                                size="md"
+                                tooltip={question.archived ? 'restore thread' : 'archive thread'}
+                                className="!p-1.5 opacity-60 hover:opacity-100 hidden sm:flex"
+                            />
+                        </div>
                     </div>
 
-                    <div className={`flex items-center gap-2 ${isComment ? 'mt-1.5' : 'mt-4'}`}>
-                        <VotePicker
-                            count={totalVotes}
-                            active={userVote !== 0}
-                            onDecrement={() => handleVoteChange('down')}
-                            onIncrement={() => handleVoteChange('up')}
-                            size={isComment ? 'sm' : 'default'}
-                        />
-                        {!isComment && (
+                    {/* Title & Body */}
+                    <div className={question.archived ? 'opacity-50' : ''}>
+                        <div className="mt-1">
+                            {question.subject && (
+                                <h3 className="font-semibold !m-0 pb-1 leading-5 text-base">
+                                    <Link
+                                        to={`/questions/${question.permalink}`}
+                                        className="!no-underline hover:!underline font-semibold text-[#000080] dark:text-[#66b2ff]"
+                                    >
+                                        {question.subject}
+                                    </Link>
+                                </h3>
+                            )}
+
+                            <div className="question-content text-sm leading-relaxed">
+                                <ForumMarkdown>{question.body}</ForumMarkdown>
+                            </div>
+                        </div>
+
+                        {/* Vote picker & views */}
+                        <div className="flex items-center gap-2 mt-4">
+                            <VotePicker
+                                count={totalVotes}
+                                active={userVote !== 0}
+                                onDecrement={() => handleVoteChange('down')}
+                                onIncrement={() => handleVoteChange('up')}
+                                size="default"
+                            />
                             <ViewCounter 
                                 idOrSlug={question.id} 
                                 type="community" 
                                 views={question.views || 0} 
                             />
-                        )}
-                        {isAdmin && (
-                            <OSButton
-                                size="sm"
-                                onClick={() => {
-                                    if (confirm('are you sure you want to delete this?')) {
-                                        deletePost(question.id)
-                                    }
-                                }}
-                                icon={<IconTrash />}
-                                tooltip="delete"
-                                className="!p-1 opacity-40 hover:opacity-100 hover:text-red-500"
-                            />
-                        )}
+                            {isAdmin && (
+                                <OSButton
+                                    size="sm"
+                                    onClick={() => {
+                                        if (confirm('are you sure you want to delete this?')) {
+                                            deletePost(question.id)
+                                        }
+                                    }}
+                                    icon={<IconTrash />}
+                                    tooltip="delete"
+                                    className="!p-1 opacity-40 hover:opacity-100 hover:text-red-500"
+                                />
+                            )}
+                        </div>
                     </div>
-                </div>
 
-                {/* Replies section */}
-                {!isComment && (
-                    <ForumReplies
-                        replies={adaptedReplies}
-                        question={question}
-                        expanded={expanded}
-                        onToggleExpanded={setExpanded}
-                        isInForum={isInForum}
-                    />
-                )}
-
-                {/* Comment-mode inline replies */}
-                {isComment && adaptedReplies.length > 0 && (
-                    <div className="pl-[30px] border-l border-black/10 dark:border-white/10 ml-[10px] mb-2">
-                        {adaptedReplies.map((reply) => (
-                            <div key={reply.id} className="flex flex-col py-1.5">
-                                <div className="flex items-center gap-1.5">
-                                    <Link
-                                        to={`/profile/${reply.profile.firstName}`}
-                                        className="flex items-center text-primary hover:!underline !no-underline gap-1 shrink-0"
-                                    >
-                                        <ForumAvatar className="size-[18px] rounded-full" image={reply.profile.avatar} />
-                                        <strong className="text-[11px]">{reply.profile.firstName || 'anonymous'}</strong>
-                                    </Link>
-                                    <ForumDays created={reply.createdAt} />
-                                    {isAdmin && (
-                                        <button
-                                            type="button"
-                                            className="ml-auto text-muted hover:text-red-500 transition-colors"
-                                            title="delete reply"
-                                            onClick={() => {
-                                                if (confirm('delete this reply?')) {
-                                                    deleteReply(reply.id, question.id)
-                                                }
-                                            }}
-                                        >
-                                            <IconTrash className="size-3" />
-                                        </button>
-                                    )}
-                                </div>
-                                <div className="text-sm [&_p]:!my-0.5 [&_p]:!text-xs pl-[26px]">
-                                    <ForumMarkdown>{reply.body}</ForumMarkdown>
-                                </div>
-                            </div>
-                        ))}
+                    {/* Replies section */}
+                    <div className="mt-4">
+                        <ForumReplies
+                            replies={adaptedReplies}
+                            question={question}
+                            expanded={expanded}
+                            onToggleExpanded={setExpanded}
+                            isInForum={isInForum}
+                        />
                     </div>
-                )}
 
-                {/* Typing Indicator */}
-                {!isComment && isInForum && (
-                    <ForumTypingIndicator currentAuthorName={question.profile.firstName} />
-                )}
+                    {/* Typing Indicator */}
+                    {isInForum && (
+                        <div className="relative ml-[36px] sm:ml-[40px] pl-[30px] border-l border-dashed border-primary/20 squeak-left-border before:border-l-0 pt-1 pb-3 pr-4 sm:pr-6 md:pr-8">
+                            <div className="absolute left-[-24px] w-[24px] h-[15px] border-b border-l border-dashed border-primary/20 rounded-bl-md top-[-2px]" />
+                            <ForumTypingIndicator currentAuthorName={question.profile.firstName} />
+                        </div>
+                    )}
 
-                {/* Reply form */}
-                {(
-                    <div
-                        className={`pb-1 relative w-full ${isComment
-                            ? 'pl-[30px] ml-[10px] border-l border-black/10 dark:border-white/10'
-                            : isInForum
-                                ? 'bg-transparent border-t border-primary/20 pt-4 px-4 sm:bg-white sm:dark:bg-[#121214] sm:px-6'
-                                : 'ml-5 pl-8 pr-5 squeak-left-border'
-                            } ${question.archived ? 'opacity-25 pointer-events-none' : ''}`}
-                    >
+                    {/* Reply form */}
+                    <div className={`mt-4 relative ${question.archived ? 'opacity-25 pointer-events-none' : ''}`}>
+                        {/* Horizontal connector curve from the Level 0 vertical line to the reply form avatar */}
+                        <div className="absolute left-[-24px] w-[24px] h-[15px] border-b border-l border-dashed border-primary/20 rounded-bl-md top-[-2px]" />
                         <ForumReplyForm
                             archived={question.archived}
                             isInForum={isInForum}
                             onSubmit={handleReplySubmit}
                         />
                     </div>
-                )}
+                </div>
             </div>
         </div>
     )
