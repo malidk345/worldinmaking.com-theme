@@ -60,7 +60,7 @@ export default function ForumReplies({
                     <li className={`!mb-0 relative ${isInForum ? '' : 'pr-[5px] pl-[30px] border-l border-solid border-primary/20 squeak-left-border before:border-l-0'}`}>
                         {isInForum ? (
                             <div className="pb-2 justify-center !pl-0 flex items-center w-full relative before:content-[''] before:absolute before:top-[15px] before:left-0 before:w-full before:h-full before:border-t before:border-primary/20">
-                                <div className="bg-primary flex justify-center -top-1/2 relative space-x-4 px-4">
+                                <div className="bg-white dark:bg-[#121214] flex justify-center -top-1/2 relative space-x-4 px-4">
                                     <Squiggles className="fill-border opacity-20" />
                                     <div className="flex items-center -space-x-2">
                                         {avatars.map((avatar, index) => (

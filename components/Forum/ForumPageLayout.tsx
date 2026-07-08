@@ -88,7 +88,7 @@ export default function ForumPageLayout({
                         </div>
 
                         {/* Questions list */}
-                        <div className="relative mb-8">
+                        <div className="relative mb-8 lg:bg-white lg:dark:bg-[#121214] lg:border lg:border-primary/10 lg:shadow-sm lg:rounded-2xl lg:p-6">
                             {loading && questions.length === 0 ? (
                                 <div className="py-20 text-center">
                                     <div className="text-[11px] font-bold lowercase opacity-20 tracking-widest">polling...</div>

@@ -278,7 +278,7 @@ export default function ForumQuestionCard({
                         className={`pb-1 relative w-full ${isComment
                             ? 'pl-[30px] ml-[10px] border-l border-black/10 dark:border-white/10'
                             : isInForum
-                                ? 'bg-transparent border-t border-primary/20 pt-4 px-4 sm:bg-primary sm:px-6'
+                                ? 'bg-transparent border-t border-primary/20 pt-4 px-4 sm:bg-white sm:dark:bg-[#121214] sm:px-6'
                                 : 'ml-5 pl-8 pr-5 squeak-left-border'
                             } ${question.archived ? 'opacity-25 pointer-events-none' : ''}`}
                     >
