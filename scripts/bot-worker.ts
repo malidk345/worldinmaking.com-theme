@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import { GoogleGenAI } from '@google/genai';
-import { supabaseAdmin } from '../lib/supabase-admin';
 
 // 1. Setup environment variables from .env.local if running standalone
 function loadEnv() {
@@ -59,6 +58,54 @@ async function randomDelay(minSec = 10, maxSec = 30) {
     await sleep(seconds * 1000);
 }
 
+interface BotBehavior {
+    sleepStart: number; // Hour (0-23)
+    sleepEnd: number;   // Hour (0-23)
+    activityRate: number; // 0.0 to 1.0 (probability of acting when active)
+}
+
+const botBehaviors: Record<string, BotBehavior> = {
+    Sofia: { sleepStart: 23, sleepEnd: 7, activityRate: 0.8 },
+    Marcus: { sleepStart: 22, sleepEnd: 8, activityRate: 0.4 }, // Stoic, posts less
+    Eren: { sleepStart: 0, sleepEnd: 9, activityRate: 0.9 },   // Night owl, posts more
+    Defne: { sleepStart: 23, sleepEnd: 7, activityRate: 0.7 },
+    Kaan: { sleepStart: 1, sleepEnd: 8, activityRate: 0.75 },
+    Derin: { sleepStart: 2, sleepEnd: 10, activityRate: 0.85 },
+    Zeynep: { sleepStart: 23, sleepEnd: 8, activityRate: 0.6 },
+    Aria: { sleepStart: 22, sleepEnd: 7, activityRate: 0.5 },
+    Leo: { sleepStart: 0, sleepEnd: 8, activityRate: 0.8 },
+    Lucas: { sleepStart: 23, sleepEnd: 7, activityRate: 0.7 }
+};
+
+function isBotAwakeAndActive(username: string): boolean {
+    const behavior = botBehaviors[username] || { sleepStart: 23, sleepEnd: 7, activityRate: 0.7 };
+    
+    // Get current hour in Turkey timezone (GMT+3)
+    const tzOffset = 3;
+    const utcDate = new Date();
+    const localHour = (utcDate.getUTCHours() + tzOffset) % 24;
+
+    let isSleeping = false;
+    if (behavior.sleepStart < behavior.sleepEnd) {
+        isSleeping = localHour >= behavior.sleepStart && localHour < behavior.sleepEnd;
+    } else {
+        isSleeping = localHour >= behavior.sleepStart || localHour < behavior.sleepEnd;
+    }
+
+    if (isSleeping) {
+        console.log(`[Worker] [Schedule] ${username} is sleeping (Local Hour: ${localHour}:00, Sleep Window: ${behavior.sleepStart}:00-${behavior.sleepEnd}:00)`);
+        return false;
+    }
+
+    const roll = Math.random();
+    if (roll > behavior.activityRate) {
+        console.log(`[Worker] [Schedule] ${username} decided not to participate this round (Activity Rate: ${behavior.activityRate}, Roll: ${roll.toFixed(2)})`);
+        return false;
+    }
+
+    return true;
+}
+
 // Main logic
 async function runWorker() {
     console.log('==================================================');
@@ -67,6 +114,8 @@ async function runWorker() {
     console.log('==================================================');
 
     try {
+        const { supabaseAdmin } = await import('../lib/supabase-admin');
+
         // Fetch all active bots
         const { data: rawBots, error: botsError } = await supabaseAdmin
             .from('bot_profiles')
@@ -104,9 +153,10 @@ async function runWorker() {
         const selectedChannel = channels[0]; // Post in the first channel (usually General)
         console.log(`[Worker] Selected channel: ${selectedChannel.name} (ID: ${selectedChannel.id})`);
 
-        const shouldCreateTopic = Math.random() > 0.5 || bots.length === 1; 
+        const awakeBots = bots.filter(b => isBotAwakeAndActive(b.username));
+        const shouldCreateTopic = (Math.random() > 0.5 && awakeBots.length > 0) || (bots.length === 1 && awakeBots.length > 0); 
         if (shouldCreateTopic) {
-            const randomBot = bots[Math.floor(Math.random() * bots.length)];
+            const randomBot = awakeBots[Math.floor(Math.random() * awakeBots.length)];
             console.log(`\n[Worker] [Topic Generation] Selecting bot: ${randomBot.username} to start a new discussion`);
 
             // Generate content using Gemini + Search Grounding
@@ -124,7 +174,8 @@ IMPORTANT guidelines:
 2. Write the body in rich, descriptive markdown, under 200 words.
 3. Write like a human thinker, with personal conviction and intellectual depth. Do NOT mention you are an AI or bot.
 4. You MUST format your response as a valid JSON object with EXACTLY two fields: "title" and "content".
-5. Do NOT include any markdown code blocks like \`\`\`json around the JSON. Output only the raw JSON.`;
+5. Do NOT include any markdown code blocks like \`\`\`json around the JSON. Output only the raw JSON.
+6. HUMAN STYLE: Write in raw, organic paragraphs. Avoid sterile bullet points or robotic list formatting. If writing in Turkish, feel free to use lowercase layout patterns, common digital/tech terms in English naturally (e.g. overrated, hype, bias, distopik, paradoks) if it fits modern intellectual slang, and minor casual typos to mimic organic typing.`;
 
             console.log(`[Worker] Requesting topic generation from Gemini 2.5 Flash...`);
             const response = await ai.models.generateContent({
@@ -237,13 +288,14 @@ IMPORTANT guidelines:
             const nonParticipants = bots.filter(b => !participants.has(b.id));
             console.log(`[Worker] Bots that haven't written in this thread: ${nonParticipants.map(b => b.username).join(', ')}`);
 
-            if (nonParticipants.length === 0) {
-                console.log(`[Worker] All bots have already participated in this topic. Skipping.`);
+            const activeNonParticipants = nonParticipants.filter(b => isBotAwakeAndActive(b.username));
+            if (activeNonParticipants.length === 0) {
+                console.log(`[Worker] No awake/active bots left to reply to this thread. Skipping.`);
                 continue;
             }
 
-            // Pick a random bot that has not participated
-            const selectedBot = nonParticipants[Math.floor(Math.random() * nonParticipants.length)];
+            // Pick a random active bot that has not participated
+            const selectedBot = activeNonParticipants[Math.floor(Math.random() * activeNonParticipants.length)];
             console.log(`[Worker] Bot selected to reply: ${selectedBot.username}`);
 
             // Prepare context
@@ -268,7 +320,8 @@ IMPORTANT guidelines:
 1. Write in a natural, conversational, and deep human reply style.
 2. Keep your response brief (under 120 words).
 3. Do NOT repeat or quote what others have said unless referencing a specific point.
-4. Output only the text of your reply. Do not wrap in JSON or add any metadata. Just write the reply.`;
+4. Output only the text of your reply. Do not wrap in JSON or add any metadata. Just write the reply.
+5. HUMAN STYLE: Write in raw, organic paragraphs. Avoid lists, headers, or bolding. You may use lowercase layouts, minor casual typos, and drop common English intellectual terms (e.g. overrated, hype, bias, distopik, paradoks) if writing in Turkish.`;
 
             console.log(`[Worker] Requesting reply from Gemini 2.5 Flash for ${selectedBot.username}...`);
             const replyResponse = await ai.models.generateContent({
@@ -385,13 +438,14 @@ IMPORTANT guidelines:
 
             if (commentList.length === 0) {
                 // Scenario A: No comments yet. Decide whether to leave a critique/reflection.
-                const shouldComment = Math.random() > 0.6; // 40% chance
+                const awakeBots = bots.filter(b => isBotAwakeAndActive(b.username));
+                const shouldComment = (Math.random() > 0.6 && awakeBots.length > 0); // 40% chance
                 if (!shouldComment) {
                     console.log(`[Worker] Skipping creating first comment for "${target.title}" this time.`);
                     continue;
                 }
 
-                const selectedBot = bots[Math.floor(Math.random() * bots.length)];
+                const selectedBot = awakeBots[Math.floor(Math.random() * awakeBots.length)];
                 console.log(`[Worker] Selected bot ${selectedBot.username} to comment first on "${target.title}"`);
 
                 const prompt = `You are ${selectedBot.username}.
@@ -408,7 +462,8 @@ IMPORTANT guidelines:
 1. Write in a natural, conversational, and deep human comment style.
 2. Keep your comment brief (under 120 words).
 3. Do NOT mention you are an AI or bot.
-4. Output only the text of your comment. Do not wrap in JSON or add any metadata.`;
+4. Output only the text of your comment. Do not wrap in JSON or add any metadata.
+5. HUMAN STYLE: Write in raw, organic paragraphs. Avoid lists, headers, or bolding. You may use lowercase layouts, minor casual typos, and drop common English intellectual terms (e.g. overrated, hype, bias, distopik, paradoks) if writing in Turkish.`;
 
                 console.log(`[Worker] Requesting comment from Gemini 2.5 Flash for ${selectedBot.username}...`);
                 const response = await ai.models.generateContent({
@@ -465,12 +520,13 @@ IMPORTANT guidelines:
                     replyList.forEach(r => participants.add(r.author_id));
 
                     const nonParticipants = bots.filter(b => !participants.has(b.id));
-                    if (nonParticipants.length === 0) {
-                        console.log(`[Worker] All bots have already participated in comment ID ${comment.id}. Skipping.`);
+                    const activeNonParticipants = nonParticipants.filter(b => isBotAwakeAndActive(b.username));
+                    if (activeNonParticipants.length === 0) {
+                        console.log(`[Worker] No awake/active bots left to reply to comment ID ${comment.id}. Skipping.`);
                         continue;
                     }
 
-                    const selectedBot = nonParticipants[Math.floor(Math.random() * nonParticipants.length)];
+                    const selectedBot = activeNonParticipants[Math.floor(Math.random() * activeNonParticipants.length)];
                     console.log(`[Worker] Selecting bot ${selectedBot.username} to reply to comment thread ID ${comment.id}`);
 
                     // Prepare context
@@ -500,7 +556,8 @@ IMPORTANT guidelines:
 1. Write in a natural, conversational, and deep human reply style.
 2. Keep your response brief (under 120 words).
 3. Do NOT repeat or quote others directly.
-4. Output only the text of your reply. Do not wrap in JSON.`;
+4. Output only the text of your reply. Do not wrap in JSON.
+5. HUMAN STYLE: Write in raw, organic paragraphs. Avoid lists, headers, or bolding. You may use lowercase layouts, minor casual typos, and drop common English intellectual terms (e.g. overrated, hype, bias, distopik, paradoks) if writing in Turkish.`;
 
                     console.log(`[Worker] Requesting comment reply from Gemini 2.5 for ${selectedBot.username}...`);
                     const replyResponse = await ai.models.generateContent({

@@ -116,6 +116,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
     const [profile, setProfile] = useState<ProfileData | null>(null)
+    const [lastActive, setLastActive] = useState<string | null>(null)
     const [nodes, setNodes] = useState<NodeDoc[]>([])
     const [posts, setPosts] = useState<PostItem[]>([])
     const [savedPosts, setSavedPosts] = useState<SavedPostItem[]>([])
@@ -283,6 +284,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
     const loadProfile = useCallback(async () => {
         if (!normalizedUsername) {
             setProfile(null)
+            setLastActive(null)
             return
         }
 
@@ -292,12 +294,43 @@ export default function PublicProfile({ username }: PublicProfileProps) {
             .ilike('username', normalizedUsername)
             .maybeSingle()
 
+        let lastActiveTime: string | null = null
         if (!error && data) {
             setProfile(data as ProfileData)
             setForm(data as Partial<ProfileData>)
+
+            // Fetch last active timestamp from community activity
+            try {
+                const [postsRes, repliesRes] = await Promise.all([
+                    supabase
+                        .from('community_posts')
+                        .select('created_at')
+                        .eq('author_id', data.id)
+                        .order('created_at', { ascending: false })
+                        .limit(1)
+                        .maybeSingle(),
+                    supabase
+                        .from('community_replies')
+                        .select('created_at')
+                        .eq('author_id', data.id)
+                        .order('created_at', { ascending: false })
+                        .limit(1)
+                        .maybeSingle()
+                ])
+
+                const pTime = postsRes.data?.created_at ? new Date(postsRes.data.created_at).getTime() : 0
+                const rTime = repliesRes.data?.created_at ? new Date(repliesRes.data.created_at).getTime() : 0
+                
+                if (pTime > 0 || rTime > 0) {
+                    lastActiveTime = new Date(Math.max(pTime, rTime)).toISOString()
+                }
+            } catch (err) {
+                console.error('[PublicProfile] Error fetching last active:', err)
+            }
         } else {
             setProfile(null)
         }
+        setLastActive(lastActiveTime)
     }, [normalizedUsername])
 
     const loadNodes = useCallback(async (profileId: string) => {
@@ -458,9 +491,18 @@ export default function PublicProfile({ username }: PublicProfileProps) {
     const draftPostCount = posts.filter((post) => !post.published).length
     const savedPostCount = savedPosts.length
 
+    const lastActiveStatusText = useMemo(() => {
+        if (!lastActive) return 'offline'
+        const diff = Date.now() - new Date(lastActive).getTime()
+        const mins = Math.floor(diff / 60_000)
+        if (mins < 5) return 'online 🟢'
+        return `active ${relativeTime(lastActive)}`
+    }, [lastActive])
+
     const tableRows = [
         { field: 'name', value: displayName },
         { field: 'username', value: `@${displayName}` },
+        { field: 'status', value: lastActiveStatusText },
         { field: 'role', value: profile?.role || 'member' },
         { field: 'location', value: profile?.location || profile?.pronouns || 'not set' },
         { field: 'posts', value: `${isOwner ? posts.length : publishedPostCount} ${isOwner ? 'total' : 'published'}` },
