@@ -37,7 +37,7 @@ export default function ForumQuestionDetail({ question }: ForumQuestionDetailPro
                             className="flex-1 min-w-0"
                         >
                             {/* Question detail card */}
-                            <div className="bg-transparent lg:bg-white lg:dark:bg-[#121214] lg:rounded-lg lg:border lg:border-primary/10 lg:shadow-sm overflow-hidden">
+                            <div className="w-full">
                                 <ForumQuestionCard
                                     question={question}
                                     isInForum
