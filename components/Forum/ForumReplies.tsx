@@ -29,7 +29,7 @@ export default function ForumReplies({
     const shouldExpandInline = expanded || replyCount < 3
 
     return (
-        <ul className={`${isInForum ? 'ml-[-52px]' : 'ml-5'} !mb-0 p-0 list-none relative flex flex-col gap-4`}>
+        <ul className={`${isInForum ? 'ml-[-52px] w-[calc(100%+52px)]' : 'ml-5'} !mb-0 p-0 list-none relative flex flex-col gap-4`}>
             <AnimatePresence initial={false}>
             {!shouldExpandInline ? (
                 <motion.div

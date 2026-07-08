@@ -312,7 +312,7 @@ export default function ForumQuestionCard({
 
                     {/* Typing Indicator */}
                     {isInForum && (
-                        <div className="relative ml-[-52px] mt-2 flex w-full gap-3 pt-1 pb-3">
+                        <div className="relative ml-[-52px] w-[calc(100%+52px)] mt-2 flex gap-3 pt-1 pb-3">
                             <div className="w-[40px] shrink-0 flex justify-center items-center" />
                             <div className="flex-grow min-w-0 text-xs text-primary/60 lowercase italic">
                                 <ForumTypingIndicator currentAuthorName={question.profile.firstName} />
@@ -323,7 +323,7 @@ export default function ForumQuestionCard({
                     {/* Reply form */}
                     <div className={`mt-4 relative ${question.archived ? 'opacity-25 pointer-events-none' : ''}`}>
                         {isInForum ? (
-                            <div className="ml-[-52px] flex w-full gap-3">
+                            <div className="ml-[-52px] w-[calc(100%+52px)] flex gap-3">
                                 <div className="w-[40px] shrink-0 flex justify-center items-start pt-1.5">
                                     <ForumAvatar
                                         className="size-8 rounded-full border border-black/10 dark:border-white/10 bg-white dark:bg-[#121214]"
