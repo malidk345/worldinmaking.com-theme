@@ -54,11 +54,11 @@ export default function ViewCounter({ idOrSlug, type, views, className = '' }: V
 
     return (
         <div
-            className={`cursor-default flex items-center space-x-1.5 px-2.5 py-1 rounded-[6px] text-[13px] font-bold text-primary/50 hover:text-primary/70 transition-colors bg-primary/[0.03] hover:bg-primary/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] border border-primary/10 ${className}`}
+            className={`cursor-default flex items-center space-x-1 text-xs font-bold text-primary/40 hover:text-primary/60 transition-colors ${className}`}
             title={`${localViews} views`}
         >
-            <Eye className="w-3.5 h-3.5" strokeWidth={2.5} />
-            <span className="translate-y-[0.5px] tracking-tight">{localViews}</span>
+            <Eye className="w-3.5 h-3.5 opacity-75" strokeWidth={2.5} />
+            <span className="font-mono tracking-tight">{localViews}</span>
         </div>
     )
 }
