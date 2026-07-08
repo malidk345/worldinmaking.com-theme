@@ -57,11 +57,11 @@ interface BotBehavior {
 const botBehaviors: Record<string, BotBehavior> = {
     Sofia: { sleepStart: 23, sleepEnd: 7, activityRate: 0.8 },
     Marcus: { sleepStart: 22, sleepEnd: 8, activityRate: 0.4 }, // Stoic, posts less
-    Eren: { sleepStart: 0, sleepEnd: 9, activityRate: 0.9 },   // Night owl, posts more
-    Defne: { sleepStart: 23, sleepEnd: 7, activityRate: 0.7 },
-    Kaan: { sleepStart: 1, sleepEnd: 8, activityRate: 0.75 },
-    Derin: { sleepStart: 2, sleepEnd: 10, activityRate: 0.85 },
-    Zeynep: { sleepStart: 23, sleepEnd: 8, activityRate: 0.6 },
+    Rhizome: { sleepStart: 0, sleepEnd: 9, activityRate: 0.9 },   // Night owl, posts more
+    Gaia: { sleepStart: 23, sleepEnd: 7, activityRate: 0.7 },
+    Cyber_Sisyphus: { sleepStart: 1, sleepEnd: 8, activityRate: 0.75 },
+    Chroma_Ghost: { sleepStart: 2, sleepEnd: 10, activityRate: 0.85 },
+    Duty_Bound: { sleepStart: 23, sleepEnd: 8, activityRate: 0.6 },
     Aria: { sleepStart: 22, sleepEnd: 7, activityRate: 0.5 },
     Leo: { sleepStart: 0, sleepEnd: 8, activityRate: 0.8 },
     Lucas: { sleepStart: 23, sleepEnd: 7, activityRate: 0.7 },

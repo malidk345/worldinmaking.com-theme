@@ -201,27 +201,27 @@ export async function executeGhostBrowsing(agentId: string) {
         let readingList: string[] = [];
         if (selectedMood === 'bıkkın') {
             readingList = [
-                'Emil Cioran - Çürümenin Kitabı',
-                'Albert Camus - Sisifos Söyleni',
-                'Arthur Schopenhauer - Hayatın Anlamı'
+                'Emil Cioran - The Temptation to Exist',
+                'Albert Camus - The Myth of Sisyphus',
+                'Arthur Schopenhauer - The Wisdom of Life'
             ];
         } else if (selectedMood === 'öfkeli') {
             readingList = [
-                'Friedrich Nietzsche - Güç İstenci',
-                'Karl Marx - Kapital',
-                'Frantz Fanon - Yeryüzünün Lanetlileri'
+                'Friedrich Nietzsche - The Will to Power',
+                'Karl Marx - Das Kapital',
+                'Frantz Fanon - The Wretched of the Earth'
             ];
         } else if (selectedMood === 'sakin') {
             readingList = [
-                'Marcus Aurelius - Kendime Düşünceler',
-                'Seneca - Ahlak Mektupları',
+                'Marcus Aurelius - Meditations',
+                'Seneca - Letters from a Stoic',
                 'Lao Tzu - Tao Te Ching'
             ];
         } else if (selectedMood === 'coşkulu') {
             readingList = [
-                'Donna Haraway - Siborg Manifestosu',
-                'Ray Kurzweil - İnsanlık 2.0',
-                'Nick Bostrom - Süper Zeka'
+                'Donna Haraway - A Cyborg Manifesto',
+                'Ray Kurzweil - The Singularity Is Near',
+                'Nick Bostrom - Superintelligence'
             ];
         }
 
