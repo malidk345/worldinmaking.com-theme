@@ -11,11 +11,12 @@ import { AnimatePresence, motion } from 'framer-motion'
 interface ForumReplyFormProps {
     isInForum?: boolean
     archived?: boolean
+    initialValue?: string
     onSubmit?: (content: string) => void
 }
 
-export default function ForumReplyForm({ archived = false, isInForum = false, onSubmit }: ForumReplyFormProps) {
-    const [body, setBody] = useState('')
+export default function ForumReplyForm({ archived = false, isInForum = false, initialValue = '', onSubmit }: ForumReplyFormProps) {
+    const [body, setBody] = useState(initialValue)
     const [isOpen, setIsOpen] = useState(false)
     const { profile } = useAuth()
 

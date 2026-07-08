@@ -7,11 +7,12 @@ import { ForumReply } from './types'
 import ForumAvatar from './ForumAvatar'
 import OSButton from 'components/OSButton'
 import VotePicker from 'components/VotePicker'
-import { IconPencil, IconTrash } from '@posthog/icons'
+import { IconPencil, IconTrash, IconMessage } from '@posthog/icons'
 import Link from 'components/Link'
 import { supabase } from 'lib/supabase'
 import { useAuth } from 'context/AuthContext'
 import { useCommunity } from 'hooks/useCommunity'
+import ForumReplyForm from './ForumReplyForm'
 
 interface ForumReplyCardProps {
     reply: ForumReply
@@ -22,10 +23,11 @@ interface ForumReplyCardProps {
 }
 
 export default function ForumReplyCard({ reply, postId, isInForum = false, questionAuthorId, repliedToUsername }: ForumReplyCardProps) {
-    const { isAdmin } = useAuth()
-    const { handleReplyVote, deleteReply } = useCommunity()
+    const { isAdmin, profile } = useAuth()
+    const { handleReplyVote, deleteReply, createReply } = useCommunity()
     const [userVote, setUserVote] = useState(0)
     const [totalVotes, setTotalVotes] = useState(reply.upvotes || 0)
+    const [isReplying, setIsReplying] = useState(false)
 
     // Load saved vote state from Supabase
     useEffect(() => {
@@ -141,6 +143,15 @@ export default function ForumReplyCard({ reply, postId, isInForum = false, quest
                         onDecrement={() => handleVoteChange('down')}
                         onIncrement={() => handleVoteChange('up')}
                     />
+                    <OSButton
+                        size="sm"
+                        tooltip="reply"
+                        onClick={() => setIsReplying(!isReplying)}
+                        icon={<IconMessage className="w-3.5 h-3.5" />}
+                        className="!p-1 text-xs opacity-60 hover:opacity-100 font-bold lowercase flex items-center gap-1"
+                    >
+                        reply
+                    </OSButton>
                     {isAdmin && (
                         <OSButton
                             size="sm"
@@ -155,6 +166,40 @@ export default function ForumReplyCard({ reply, postId, isInForum = false, quest
                         />
                     )}
                 </div>
+
+                {isReplying && (
+                    isInForum ? (
+                        <div className="mt-3 relative ml-[-52px] w-[calc(100%+52px)] flex gap-3 pt-2">
+                            <div className="w-[40px] shrink-0 flex justify-center items-start pt-1.5">
+                                <ForumAvatar
+                                    className="size-8 rounded-full border border-black/10 dark:border-white/10 bg-white dark:bg-[#121214]"
+                                    image={profile?.avatar_url}
+                                />
+                            </div>
+                            <div className="flex-grow min-w-0">
+                                <ForumReplyForm
+                                    isInForum={true}
+                                    initialValue={`@${reply.profile.firstName || 'anonymous'} `}
+                                    onSubmit={async (content) => {
+                                        await createReply(postId, content)
+                                        setIsReplying(false)
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="mt-3 pt-2">
+                            <ForumReplyForm
+                                isInForum={false}
+                                initialValue={`@${reply.profile.firstName || 'anonymous'} `}
+                                onSubmit={async (content) => {
+                                    await createReply(postId, content)
+                                    setIsReplying(false)
+                                }}
+                            />
+                        </div>
+                    )
+                )}
             </div>
         </div>
     )
