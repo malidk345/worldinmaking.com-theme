@@ -3,16 +3,17 @@
 .vote-picker {
   display: inline-flex;
   align-items: center;
-  height: 26px;
-  border-radius: 9999px;
+  height: 24px;
+  border-radius: 6px;
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 600;
   font-family: inherit;
-  color: rgb(var(--text-primary) / 0.8);
-  background: rgb(var(--accent) / 0.4);
-  border: 1px solid rgb(var(--text-primary) / 0.1);
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: rgb(var(--text-primary) / 0.85);
+  background: rgba(var(--bg-rgb), 0.5);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgb(var(--text-primary) / 0.12);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
   user-select: none;
 
   &:active {
@@ -20,20 +21,21 @@
   }
 
   &[data-active] {
-    background: rgb(var(--accent) / 0.8);
-    color: rgb(var(--text-primary));
-    border-color: rgb(var(--text-primary) / 0.2);
+    background: rgba(var(--bg-rgb), 0.85);
+    border-color: rgb(var(--text-primary) / 0.25);
+    box-shadow: 0 2px 8px -2px rgb(var(--text-primary) / 0.1);
   }
 }
 
 /* ── Small variant ── */
 .vote-picker--sm {
   height: 20px;
+  border-radius: 4px;
 }
 
 .vote-picker--sm .vote-picker__btn {
   width: 20px;
-  height: 20px;
+  height: 18px;
 }
 
 .vote-picker--sm .vote-picker__btn svg {
@@ -42,27 +44,27 @@
 }
 
 .vote-picker--sm .vote-picker__btn--left {
-  border-radius: 9999px 0 0 9999px;
+  border-radius: 3px 0 0 3px;
 }
 
 .vote-picker--sm .vote-picker__btn--right {
-  border-radius: 0 9999px 9999px 0;
+  border-radius: 0 3px 3px 0;
 }
 
 .vote-picker--sm .vote-picker__track {
-  width: 1.2rem;
-  height: 20px;
+  width: 1.4rem;
+  height: 18px;
 }
 
 /* ── Buttons ── */
 .vote-picker__btn {
   flex-shrink: 0;
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 22px;
   padding: 0;
   border: 0;
   background: transparent;
-  color: inherit;
+  color: rgb(var(--text-primary) / 0.6);
   cursor: pointer;
   display: grid;
   place-items: center;
@@ -70,17 +72,23 @@
   outline: none;
   transition: color 0.15s, background-color 0.15s;
 
-  &:hover:not(:disabled) {
-    background: rgb(var(--text-primary) / 0.05);
-  }
-
-  &:active:not(:disabled) {
-    background: rgb(var(--text-primary) / 0.1);
-  }
-
   svg {
     display: block;
     flex-shrink: 0;
+    transition: transform 0.15s ease;
+  }
+
+  &:hover:not(:disabled) {
+    color: rgb(var(--text-primary));
+    background: rgb(var(--text-primary) / 0.04);
+
+    svg {
+      transform: scale(1.1);
+    }
+  }
+
+  &:active:not(:disabled) {
+    background: rgb(var(--text-primary) / 0.08);
   }
 
   &:disabled {
@@ -90,21 +98,24 @@
 }
 
 .vote-picker__btn--left {
-  border-radius: 9999px 0 0 9999px;
+  border-radius: 5px 0 0 5px;
 }
 
 .vote-picker__btn--right {
-  border-radius: 0 9999px 9999px 0;
+  border-radius: 0 5px 5px 0;
 }
 
 /* ── Animated number track ── */
 .vote-picker__track {
-  width: 1.8rem;
-  height: 26px;
+  width: 2rem;
+  height: 22px;
   overflow: hidden;
   position: relative;
   flex-shrink: 0;
   pointer-events: none;
+  border-left: 1px solid rgb(var(--text-primary) / 0.08);
+  border-right: 1px solid rgb(var(--text-primary) / 0.08);
+  background: rgb(var(--text-primary) / 0.01);
 }
 
 .vote-picker__num {
@@ -115,6 +126,7 @@
   justify-content: center;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
+  font-weight: 700;
 }
 
 /* Slide up (count increased) */
