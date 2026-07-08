@@ -73,11 +73,11 @@ const Row = React.memo(({
     const activeAt = replies.length > 0 ? replies[replies.length - 1].createdAt : createdAt
 
     return (
-        <div className="py-2.5">
+        <div className="py-1">
             <Link
                 to={`/questions/${permalink}`}
                 newWindow
-                className="group flex items-center relative px-2 py-1.5 -mt-1.5 mx-[-2px] -mb-3 rounded active:bg-light dark:active:bg-dark border-primary border-b-3 border-transparent hover:border hover:translate-y-[-1px] active:translate-y-[1px] active:transition-all active:before:h-[2px] active:before:bg-light dark:active:before:bg-dark active:before:absolute active:before:content-[''] active:before:top-[-3px] active:before:left-0 active:before:right-0 !no-underline"
+                className="group flex items-center relative p-3 md:p-4 rounded-[24px] bg-white/40 dark:bg-black/40 supports-[backdrop-filter]:backdrop-blur-[20px] border border-black/5 dark:border-white/5 shadow-[0_4px_24px_rgba(0,0,0,0.02)] hover:bg-white/60 dark:hover:bg-black/60 hover:scale-[1.01] hover:shadow-[0_8px_32px_rgba(0,0,0,0.04)] active:scale-[0.99] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] !no-underline"
             >
                 <div className="grid grid-cols-12 items-center w-full">
                     <div className="col-span-12 md:col-span-8 flex items-center space-x-4">
@@ -131,18 +131,14 @@ const ForumQuestionsTable = React.memo(({
     showBody,
 }: ForumQuestionsTableProps) => {
     return (
-        <ul className="m-0 p-0 list-none">
-            <li className="grid grid-cols-12 pl-2 pr-3 py-1.5 items-center text-secondary !text-sm bg-accent rounded">
-                <div className="col-span-12 md:col-span-8 pl-8">Question / Topic</div>
-                <div className="hidden md:block md:col-span-1 text-center">Replies</div>
-                <div className="hidden md:block md:col-span-3">{sortBy === 'activity' ? 'Last active' : 'Created'}</div>
-            </li>
+        <ul className="m-0 p-0 list-none flex flex-col gap-2">
+
 
             {questions.length === 0 && !isLoading ? (
                 <li className="py-16 text-center text-secondary/70 text-sm font-bold">No discussions found.</li>
             ) : (
                 questions.map((question) => (
-                    <li key={question.id} className="list-none px-[2px] divide-y divide-primary">
+                    <li key={question.id} className="list-none">
                         <Row
                             question={question}
                             sortBy={sortBy}

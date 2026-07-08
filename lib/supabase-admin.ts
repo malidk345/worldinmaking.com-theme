@@ -1,12 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-key';
 
-if (!supabaseUrl) {
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
     console.warn('[Supabase Admin] NEXT_PUBLIC_SUPABASE_URL is missing!');
 }
-if (!supabaseServiceKey) {
+if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     console.warn('[Supabase Admin] SUPABASE_SERVICE_ROLE_KEY is missing! Admin operations will fail.');
 }
 

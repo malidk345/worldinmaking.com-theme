@@ -46,7 +46,7 @@ export default function ForumPageLayout({
     }, [questions, sortBy])
 
     return (
-        <div className="h-full overflow-y-auto custom-scrollbar bg-primary text-primary">
+        <div className="h-full overflow-y-auto custom-scrollbar bg-transparent text-primary">
             <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
                 <div className="flex gap-8 xl:gap-12">
                     {/* Sidebar */}
@@ -71,14 +71,14 @@ export default function ForumPageLayout({
                                     </span>
                                 )}
                             </div>
-                            <div className="flex items-center bg-accent p-1 rounded-md border border-primary/70">
+                            <div className="flex items-center bg-white/40 dark:bg-black/40 supports-[backdrop-filter]:backdrop-blur-[20px] p-1 rounded-full border border-black/5 dark:border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.02)]">
                                 {(['newest', 'activity', 'popular'] as const).map((sort) => (
                                     <button
                                         key={sort}
                                         onClick={() => setSortBy(sort)}
-                                        className={`px-3 py-1 text-[10px] font-black tracking-tight transition-all rounded-md lowercase ${sortBy === sort
-                                            ? 'bg-primary text-primary border border-primary'
-                                            : 'text-secondary hover:text-primary'
+                                        className={`px-3 py-1 text-[10px] font-black tracking-tight transition-all duration-300 rounded-full lowercase ${sortBy === sort
+                                            ? 'bg-white/80 dark:bg-black/80 text-primary shadow-[0_2px_8px_rgba(0,0,0,0.04)]'
+                                            : 'text-primary/60 hover:text-primary hover:bg-white/20 dark:hover:bg-black/20'
                                             }`}
                                     >
                                         {sort}
