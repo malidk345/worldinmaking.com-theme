@@ -35,7 +35,7 @@ interface AdaptablePost {
     created_at: string
     author_id?: string | number
     profiles?: { username?: string; avatar_url?: string } | { username?: string; avatar_url?: string }[]
-    _count?: { likes?: number, views?: number }
+    _count?: { replies?: number, likes?: number, views?: number }
     total_votes?: number
 }
 
@@ -54,6 +54,7 @@ const adaptPost = (p: AdaptablePost) => {
             avatar: profile?.avatar_url || null,
         },
         replies: [],
+        replyCount: p._count?.replies ?? 0,
         topics: [],
         pinnedTopics: [],
         resolved: false,

@@ -41,6 +41,7 @@ export interface ForumQuestion {
     createdAt: string
     profile: ForumProfile
     replies: ForumReply[]
+    replyCount?: number
     topics: ForumTopic[]
     pinnedTopics: ForumTopic[]
     resolved: boolean
