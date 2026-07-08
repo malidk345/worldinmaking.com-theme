@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
         const { data: post, error: insertError } = await supabaseAdmin
             .from('community_posts')
             .insert({
-                channel_id: postSlug ? null : (channelId || 1), // Comments have no channel
+                channel_id: channelId || 1, // Fallback to channel 1 (General) to satisfy NOT NULL constraint
                 author_id: bot.id,
                 title,
                 content,

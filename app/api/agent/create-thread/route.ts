@@ -1,7 +1,6 @@
 export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabase-admin';
-import { GoogleGenAI } from '@google/genai';
 import { cleanAISmell } from '../../../../lib/agent-orchestrator';
 
 // Pre-defined set of modern tech-philosophical/world feed events to seed autonomous post creation
@@ -59,7 +58,58 @@ export async function POST(request: NextRequest) {
         }
 
         // 4. Select or simulate external feed input
-        const selectedFeed = feedInput || DEFAULT_INTELLECTUAL_FEEDS[Math.floor(Math.random() * DEFAULT_INTELLECTUAL_FEEDS.length)];
+        let selectedFeed = feedInput || '';
+        let chosenItem: any = null;
+        let chosenFeed: any = null;
+
+        if (!selectedFeed) {
+            try {
+                // Fetch active RSS feeds
+                const { data: activeFeeds } = await supabaseAdmin
+                    .from('forum_rss_feeds')
+                    .select('*')
+                    .eq('is_active', true);
+
+                if (activeFeeds && activeFeeds.length > 0) {
+                    // Shuffle feeds to spread the usage
+                    const shuffledFeeds = [...activeFeeds].sort(() => Math.random() - 0.5);
+
+                    for (const feed of shuffledFeeds) {
+                        const { fetchAndParseFeed } = await import('../../../../lib/feed-parser');
+                        const items = await fetchAndParseFeed(feed.url);
+
+                        if (items && items.length > 0) {
+                            // Fetch already processed items for this feed
+                            const { data: processed } = await supabaseAdmin
+                                .from('processed_rss_items')
+                                .select('guid')
+                                .eq('feed_id', feed.id);
+
+                            const processedGuids = new Set(processed?.map((p: any) => p.guid) || []);
+                            const freshItems = items.filter(item => !processedGuids.has(item.guid));
+
+                            if (freshItems.length > 0) {
+                                // Pick a random fresh item
+                                chosenItem = freshItems[Math.floor(Math.random() * freshItems.length)];
+                                chosenFeed = feed;
+                                break;
+                            }
+                        }
+                    }
+                }
+            } catch (rssErr) {
+                console.error('[Create-Thread API] Failed fetching/parsing RSS feeds:', rssErr);
+            }
+
+            if (chosenItem && chosenFeed) {
+                selectedFeed = `${chosenItem.title}`;
+                console.log(`[Create-Thread API] Sourced topic from RSS feed "${chosenFeed.title}": "${selectedFeed}"`);
+            } else {
+                // Fallback
+                selectedFeed = DEFAULT_INTELLECTUAL_FEEDS[Math.floor(Math.random() * DEFAULT_INTELLECTUAL_FEEDS.length)];
+                console.log(`[Create-Thread API] No fresh RSS items found. Using default fallback: "${selectedFeed}"`);
+            }
+        }
 
         // 5. Build prompt
         const prompt = `You are @${profile.username}.
@@ -83,24 +133,9 @@ STYLE CHEATSHEET:
 - Lowercase preference, raw/direct English arguments.
 - Forbid AI transition cliches ("essentially", "basically", "in summary", "in conclusion").`;
 
-        // Initialize Gemini Client
-        const geminiApiKey = process.env.GEMINI_API_KEY;
-        if (!geminiApiKey) {
-            return NextResponse.json({ error: 'GEMINI_API_KEY is not configured on the server.' }, { status: 500 });
-        }
-        
-        const aiInstance = new GoogleGenAI({ apiKey: geminiApiKey });
         console.log(`[Create-Thread API] Generating topic for @${profile.username} based on: "${selectedFeed}"...`);
-
-        const response = await aiInstance.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-            config: {
-                tools: [{ googleSearch: {} }]
-            }
-        });
-
-        const replyText = response.text || '';
+        const { generateBotResponse } = await import('../../../../lib/ai-provider');
+        const replyText = await generateBotResponse(prompt, profile.username);
         
         // 6. Parse title and content body (supports both English and Turkish headers)
         const titleMatch = replyText.match(/\[(?:Konu Başlığı|Topic Title)\]([\s\S]*?)(?=\[(?:Konu Gövdesi|Topic Body)\]|$)/i);
@@ -133,6 +168,23 @@ STYLE CHEATSHEET:
 
         if (insertError || !post) {
             return NextResponse.json({ error: `Database Error: ${insertError?.message || 'Failed to create thread'}` }, { status: 500 });
+        }
+
+        // 7.5 Record RSS item as processed if applicable
+        if (chosenItem && chosenFeed) {
+            try {
+                await supabaseAdmin
+                    .from('processed_rss_items')
+                    .insert({
+                        feed_id: chosenFeed.id,
+                        guid: chosenItem.guid,
+                        title: chosenItem.title,
+                        link: chosenItem.link
+                    });
+                console.log(`[Create-Thread API] Recorded RSS item as processed: "${chosenItem.title}"`);
+            } catch (rssSaveErr) {
+                console.error('[Create-Thread API] Failed to save processed RSS item:', rssSaveErr);
+            }
         }
 
         // 8. Energy Decay

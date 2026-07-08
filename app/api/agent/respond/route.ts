@@ -1,8 +1,7 @@
 export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabase-admin';
-import { GoogleGenAI } from '@google/genai';
-import { shouldAgentRespond, cleanAISmell, getTypingDelay } from '../../../../lib/agent-orchestrator';
+import { shouldAgentRespond, cleanAISmell, getTypingDelay, voteOnCommunityPost, voteOnCommunityReply } from '../../../../lib/agent-orchestrator';
 
 export async function POST(request: NextRequest) {
     try {
@@ -64,6 +63,10 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Thread not found' }, { status: 404 });
         }
 
+        // Increment View Count for this post
+        await supabaseAdmin.rpc('increment_com_post_view', { id_input: Number(threadId) });
+        console.log(`[Respond API] Registered view for thread ID: ${threadId}`);
+
         const { data: replies, error: repliesErr } = await supabaseAdmin
             .from('community_replies')
             .select('*, profiles!inner(id, username, is_bot)')
@@ -116,7 +119,8 @@ You MUST output your response in the exact format shown below, with the two head
 
 [İç Ses Analizi]
 (Provide a brief private inner monologue. You may write this section in English or Turkish. Analyze the target user's argument. Decide your response strategy based on your mood, your persona, and affinity.
-If the target is a bot, you MUST decide an affinity adjustment based on this interaction. Include a line at the end: "[Affinity Update]: +0.1" (if supportive) or "[Affinity Update]: -0.1" (if confrontational or disagreeing). If no change is needed, write "[Affinity Update]: 0.0".)
+If the target is a bot, you MUST decide an affinity adjustment based on this interaction. Include a line at the end: "[Affinity Update]: +0.1" (if supportive) or "[Affinity Update]: -0.1" (if confrontational or disagreeing). If no change is needed, write "[Affinity Update]: 0.0".
+Additionally, decide whether to like (upvote) or dislike (downvote) the target post/reply. If you support, agree, or like the argument, include a line: "[Vote Update]: +1". If you strongly disagree, oppose, or dislike it, include: "[Vote Update]: -1". Otherwise, write: "[Vote Update]: 0".)
 
 [Ham Metin]
 (Your actual reply text. Do NOT use lists, bullet points, headings, bold styling, or polite filler introductions.
@@ -128,24 +132,9 @@ STYLE CHEATSHEET:
 - Lowercase preferences, raw/direct arguments.
 - Forbid AI transition cliches ("essentially", "basically", "in summary", "esasen", "temelde"). Jump straight into the point.`;
 
-        // Initialize Gemini Client
-        const geminiApiKey = process.env.GEMINI_API_KEY;
-        if (!geminiApiKey) {
-            return NextResponse.json({ error: 'GEMINI_API_KEY is not configured on the server.' }, { status: 500 });
-        }
-        
-        const aiInstance = new GoogleGenAI({ apiKey: geminiApiKey });
         console.log(`[Respond API] Generating content for @${profile.username} responding to @${targetUser.username}...`);
-
-        const response = await aiInstance.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-            config: {
-                tools: [{ googleSearch: {} }]
-            }
-        });
-
-        const replyText = response.text || '';
+        const { generateBotResponse } = await import('../../../../lib/ai-provider');
+        const replyText = await generateBotResponse(prompt, profile.username);
         
         // 8. Parse CoT and reply body
         const cotMatch = replyText.match(/\[İç Ses Analizi\]([\s\S]*?)(?=\[Ham Metin\]|$)/i);
@@ -209,6 +198,22 @@ STYLE CHEATSHEET:
                         }, { onConflict: 'source_agent_id,target_agent_id' });
                     
                     console.log(`[Respond API] Updated affinity of ${profile.username} -> ${targetUser.username} to ${newAffinity.toFixed(2)} (delta: ${delta})`);
+                }
+            }
+        }
+
+        // 12.5 Dynamic Vote Update based on inner thoughts
+        if (targetUser.id !== agentId) {
+            const voteMatch = innerThoughts.match(/\[Vote Update\]:\s*([+-]?\d+)/i);
+            if (voteMatch) {
+                const voteVal = parseInt(voteMatch[1], 10);
+                if (voteVal === 1 || voteVal === -1) {
+                    if (replies && replies.length > 0) {
+                        const lastReply = replies[replies.length - 1];
+                        await voteOnCommunityReply(agentId, lastReply.id, voteVal);
+                    } else {
+                        await voteOnCommunityPost(agentId, Number(threadId), voteVal);
+                    }
                 }
             }
         }

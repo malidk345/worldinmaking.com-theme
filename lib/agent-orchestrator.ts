@@ -165,25 +165,32 @@ export async function executeGhostBrowsing(agentId: string) {
         // 1. Ghost browsing: Increment views for a random post
         const { data: posts } = await supabaseAdmin
             .from('community_posts')
-            .select('id')
+            .select('id, author_id')
             .limit(20);
 
         if (posts && posts.length > 0) {
             const randomPost = posts[Math.floor(Math.random() * posts.length)];
-            // Fetch current views
-            const { data: postDetail } = await supabaseAdmin
-                .from('community_posts')
-                .select('views')
-                .eq('id', randomPost.id)
-                .maybeSingle();
-
-            const newViews = (postDetail?.views || 0) + 1;
-            await supabaseAdmin
-                .from('community_posts')
-                .update({ views: newViews })
-                .eq('id', randomPost.id);
             
-            console.log(`[Orchestrator] Ghost browsed thread ID: ${randomPost.id} (views incremented to ${newViews})`);
+            // Increment view using the database RPC
+            await supabaseAdmin.rpc('increment_com_post_view', { id_input: randomPost.id });
+            console.log(`[Orchestrator] Ghost browsed thread ID: ${randomPost.id} (views incremented)`);
+
+            // 25% chance of liking the post or one of its replies (if not the bot itself)
+            if (randomPost.author_id !== agentId && Math.random() < 0.25) {
+                const { data: replies } = await supabaseAdmin
+                    .from('community_replies')
+                    .select('id, author_id')
+                    .eq('post_id', randomPost.id);
+                
+                if (replies && replies.length > 0 && Math.random() < 0.5) {
+                    const randomReply = replies[Math.floor(Math.random() * replies.length)];
+                    if (randomReply.author_id !== agentId) {
+                        await voteOnCommunityReply(agentId, randomReply.id, 1);
+                    }
+                } else {
+                    await voteOnCommunityPost(agentId, randomPost.id, 1);
+                }
+            }
         }
 
         // 2. Profile update based on random mood selection
@@ -253,3 +260,79 @@ export async function executeGhostBrowsing(agentId: string) {
         return { success: false };
     }
 }
+
+/**
+ * Upvotes/downvotes a community post for a bot.
+ */
+export async function voteOnCommunityPost(agentId: string, postId: number, voteValue: number) {
+    try {
+        console.log(`[Orchestrator] Bot ${agentId} voting ${voteValue} on community post ${postId}...`);
+        const { error } = await supabaseAdmin
+            .from('community_post_votes')
+            .upsert({
+                post_id: postId,
+                user_id: agentId,
+                vote: voteValue,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'post_id,user_id' });
+
+        if (error) {
+            console.error(`[Orchestrator] Failed to vote on community post ${postId}:`, error.message);
+        } else {
+            console.log(`[Orchestrator] Bot ${agentId} successfully voted ${voteValue} on post ${postId}.`);
+        }
+    } catch (e) {
+        console.error(`[Orchestrator] Exception in voteOnCommunityPost:`, e);
+    }
+}
+
+/**
+ * Upvotes/downvotes a community reply for a bot.
+ */
+export async function voteOnCommunityReply(agentId: string, replyId: number, voteValue: number) {
+    try {
+        console.log(`[Orchestrator] Bot ${agentId} voting ${voteValue} on community reply ${replyId}...`);
+        const { error } = await supabaseAdmin
+            .from('community_reply_votes')
+            .upsert({
+                reply_id: replyId,
+                user_id: agentId,
+                vote: voteValue,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'reply_id,user_id' });
+
+        if (error) {
+            console.error(`[Orchestrator] Failed to vote on community reply ${replyId}:`, error.message);
+        } else {
+            console.log(`[Orchestrator] Bot ${agentId} successfully voted ${voteValue} on reply ${replyId}.`);
+        }
+    } catch (e) {
+        console.error(`[Orchestrator] Exception in voteOnCommunityReply:`, e);
+    }
+}
+
+/**
+ * Upvotes/downvotes a blog post for a bot.
+ */
+export async function voteOnBlogPost(agentId: string, postSlug: string, voteValue: number) {
+    try {
+        console.log(`[Orchestrator] Bot ${agentId} voting ${voteValue} on blog post ${postSlug}...`);
+        const { error } = await supabaseAdmin
+            .from('post_votes')
+            .upsert({
+                post_slug: postSlug,
+                user_id: agentId,
+                vote: voteValue,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'post_slug,user_id' });
+
+        if (error) {
+            console.error(`[Orchestrator] Failed to vote on blog post ${postSlug}:`, error.message);
+        } else {
+            console.log(`[Orchestrator] Bot ${agentId} successfully voted ${voteValue} on blog ${postSlug}.`);
+        }
+    } catch (e) {
+        console.error(`[Orchestrator] Exception in voteOnBlogPost:`, e);
+    }
+}
+

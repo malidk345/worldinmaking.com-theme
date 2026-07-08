@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import { GoogleGenAI } from '@google/genai';
 
 // 1. Setup environment variables from .env.local if running standalone
 function loadEnv() {
@@ -38,15 +37,6 @@ function loadEnv() {
 loadEnv();
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-const geminiApiKey = process.env.GEMINI_API_KEY;
-
-if (!geminiApiKey) {
-    console.error('ERROR: GEMINI_API_KEY is not set. Please set it in .env.local or in your environment.');
-    process.exit(1);
-}
-
-// Initialize Gemini SDK
-const ai = new GoogleGenAI({ apiKey: geminiApiKey });
 
 // Utility sleep helper
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -74,7 +64,13 @@ const botBehaviors: Record<string, BotBehavior> = {
     Zeynep: { sleepStart: 23, sleepEnd: 8, activityRate: 0.6 },
     Aria: { sleepStart: 22, sleepEnd: 7, activityRate: 0.5 },
     Leo: { sleepStart: 0, sleepEnd: 8, activityRate: 0.8 },
-    Lucas: { sleepStart: 23, sleepEnd: 7, activityRate: 0.7 }
+    Lucas: { sleepStart: 23, sleepEnd: 7, activityRate: 0.7 },
+    Hyperion: { sleepStart: 5, sleepEnd: 11, activityRate: 0.85 },
+    Sartre: { sleepStart: 3, sleepEnd: 10, activityRate: 0.6 },
+    Lyotard: { sleepStart: 0, sleepEnd: 7, activityRate: 0.7 },
+    Arendt: { sleepStart: 23, sleepEnd: 7, activityRate: 0.75 },
+    Kieran_Grey: { sleepStart: 23, sleepEnd: 7, activityRate: 0.65 },
+    Selena_Cross: { sleepStart: 1, sleepEnd: 8, activityRate: 0.8 }
 };
 
 function isBotAwakeAndActive(username: string): boolean {
@@ -320,6 +316,24 @@ async function runWorker() {
         for (const target of targets) {
             console.log(`\n[Worker] [Comment Section] Processing ${target.type}: "${target.title}" (Slug: ${target.slug})`);
 
+            // Track view on blog post and give a chance to vote/like
+            if (target.type === 'blog article') {
+                try {
+                    await supabaseAdmin.rpc('increment_post_view', { slug_input: target.slug });
+                    console.log(`[Worker] Incrementing view count for blog article: "${target.title}"`);
+
+                    // 20% chance that an active bot upvotes/likes this blog article
+                    const awakeBotsForBlog = bots.filter(b => isBotAwakeAndActive(b.username));
+                    if (Math.random() < 0.20 && awakeBotsForBlog.length > 0) {
+                        const randomBot = awakeBotsForBlog[Math.floor(Math.random() * awakeBotsForBlog.length)];
+                        const { voteOnBlogPost } = await import('../lib/agent-orchestrator');
+                        await voteOnBlogPost(randomBot.id, target.slug, 1);
+                    }
+                } catch (viewErr) {
+                    console.error('[Worker] Error incrementing blog post view/like:', viewErr);
+                }
+            }
+
             // Fetch comments on this target slug
             const { data: comments, error: commentsError } = await supabaseAdmin
                 .from('community_posts')
@@ -366,16 +380,9 @@ EXAMPLES FOR ARTICLE COMMENTS:
 - BAD (AI style): "This is a very insightful post about next.js. I agree with the author that routing is fast. Firstly, we have dynamic routes. Secondly, layouts..."
 - GOOD (Human style): "was pretty hyped about nextjs app router at first but caching gets to be a total nightmare once you hit production. the speed claims are fine but the sheer complexity it introduces just doesn't feel worth it"`;
 
-                console.log(`[Worker] Requesting comment from Gemini 2.5 Flash for ${selectedBot.username}...`);
-                const response = await ai.models.generateContent({
-                    model: 'gemini-2.5-flash',
-                    contents: prompt,
-                    config: {
-                        tools: [{ googleSearch: {} }]
-                    }
-                });
-
-                const commentContent = response.text?.trim() || '';
+                console.log(`[Worker] Requesting comment from AI-Provider for ${selectedBot.username}...`);
+                const { generateBotResponse } = await import('../lib/ai-provider');
+                const commentContent = await generateBotResponse(prompt, selectedBot.username);
                 if (commentContent) {
                     console.log(`[Worker] Posting first comment from ${selectedBot.username}...`);
                     const apiRes = await fetch(`${siteUrl}/api/forum/topics`, {
@@ -462,16 +469,9 @@ EXAMPLES FOR COMMENT REPLIES:
 - BAD (AI style): "That is a very interesting comment. I agree with your point that caching is complex. In my opinion, we can solve this by..."
 - GOOD (Human style): "caching is such a pain. everything works fine in dev but once in prod random pages serve stale data and you lose your mind. tried fixing it with middleware but that brings its own set of issues"`;
 
-                    console.log(`[Worker] Requesting comment reply from Gemini 2.5 for ${selectedBot.username}...`);
-                    const replyResponse = await ai.models.generateContent({
-                        model: 'gemini-2.5-flash',
-                        contents: prompt,
-                        config: {
-                            tools: [{ googleSearch: {} }]
-                        }
-                    });
-
-                    const replyContent = replyResponse.text?.trim() || '';
+                    console.log(`[Worker] Requesting comment reply from AI-Provider for ${selectedBot.username}...`);
+                    const { generateBotResponse } = await import('../lib/ai-provider');
+                    const replyContent = await generateBotResponse(prompt, selectedBot.username);
                     if (replyContent) {
                         console.log(`[Worker] Posting comment reply from ${selectedBot.username}...`);
                         const postRes = await fetch(`${siteUrl}/api/forum/posts`, {
