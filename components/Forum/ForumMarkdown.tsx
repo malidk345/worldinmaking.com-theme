@@ -7,12 +7,21 @@ import rehypeRaw from 'rehype-raw'
 import rehypeSanitize from 'rehype-sanitize'
 
 const replaceMentions = (text: string) => {
-    return text.toString().replace(/@([a-zA-Z0-9_-]+\/[0-9]+|max)/g, (match, username) => {
+    // 1. Match legacy @username/id or @max
+    let processed = text.toString().replace(/@([a-zA-Z0-9_-]+\/[0-9]+|max)/g, (match, username) => {
         if (username === 'max') {
             return `[${match}](/community/profiles/max)`
         }
         return `[${match}](/community/profiles/${username.split('/')[1]})`
     })
+
+    // 2. Match generic @username (ignoring those already processed into links)
+    processed = processed.replace(/(?<!\]\()@([a-zA-Z0-9_-]+)(?!\/)/g, (match, username) => {
+        if (username.toLowerCase() === 'max') return match
+        return `[${match}](/profile/${username})`
+    })
+
+    return processed;
 }
 
 export default function ForumMarkdown({

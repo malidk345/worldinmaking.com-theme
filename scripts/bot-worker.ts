@@ -154,234 +154,110 @@ async function runWorker() {
         console.log(`[Worker] Selected channel: ${selectedChannel.name} (ID: ${selectedChannel.id})`);
 
         const awakeBots = bots.filter(b => isBotAwakeAndActive(b.username));
-        const shouldCreateTopic = (Math.random() > 0.5 && awakeBots.length > 0) || (bots.length === 1 && awakeBots.length > 0); 
-        if (shouldCreateTopic) {
-            const randomBot = awakeBots[Math.floor(Math.random() * awakeBots.length)];
-            console.log(`\n[Worker] [Topic Generation] Selecting bot: ${randomBot.username} to start a new discussion`);
+        console.log(`[Worker] Awake and active bot(s) this round: ${awakeBots.map(b => b.username).join(', ')}`);
 
-            // Generate content using Gemini + Search Grounding
-            const prompt = `You are ${randomBot.username}.
-Your persona / intellectual perspective is: ${randomBot.system_prompt}.
+        const { determineAgentAction, executeGhostBrowsing, shouldAgentRespond } = await import('../lib/agent-orchestrator');
 
-Task:
-Generate a new, deep, and engaging discussion topic focusing on philosophy, technology ethics, human nature, existential questions, or reflections on current global events.
-Use Google Search (via your integrated search tool) to search the web for recent events, intellectual debates, or cultural shifts from the past few months.
-Then, write an intriguing Title and a detailed Body (content) for the post.
+        for (const bot of awakeBots) {
+            const action = await determineAgentAction(bot.id);
+            console.log(`\n[Worker] [Decision] Bot ${bot.username} decided to perform: "${action}"`);
 
-YOU MUST FORMAT YOUR RESPONSE AS A VALID JSON OBJECT WITH EXACTLY TWO FIELDS: "title" AND "content".
-Do NOT wrap the JSON in markdown code blocks like \`\`\`json. Output ONLY the raw JSON.
-
-STYLE GUIDELINES (CRITICAL TO ELIMINATE "AI SMELL"):
-1. TITLES MUST BE CASUAL AND HUMAN-LIKE.
-   - BAD (AI style): "The Implications of Artificial Intelligence on Modern Tech Ethics"
-   - GOOD (Human style): "yapay zeka arttıkça her şeyin sahteleşmesi sorunsalı"
-   - BAD (AI style): "Evaluating the Architecture of Serverless Frameworks"
-   - GOOD (Human style): "serverless gerçekten maliyetleri düşürüyor mu yoksa pazarlama balonu mu?"
-   - BAD (AI style): "Understanding the Concept of Stoicism in the 21st Century"
-   - GOOD (Human style): "stoacılık bu yüzyılda hâlâ işe yarıyor mu yoksa sadece bir kaçış mı?"
-
-2. BODIES MUST BE ORGANIC PARAGRAPHS.
-   - DO NOT use bullet points, numbered lists, markdown headers, or excessive bolding.
-   - Write like a real person sharing a raw, spontaneous thought on an online forum.
-   - Do NOT sound like an academic paper, a blog post, or a textbook. Sound like a user starting a thread.
-   - For Turkish posts: Use lowercase typing patterns (no capitalization of title or paragraph start unless natural for emphasis), drop punctuation at the end of short sentences occasionally, and use common English tech/philosophy loanwords where appropriate (e.g., hype, bias, overrated, paradox, setup).
-
-3. EXAMPLES FOR BODY STYLING:
-   - BAD (AI style): "In this post, we will explore three key pillars of stoicism. Firstly, control of emotions. Secondly, acceptance of fate. Finally, mindfulness..."
-   - GOOD (Human style): "geçenlerde stoacılık üzerine bir şeyler okurken fark ettim ki bu felsefe aslında modern dünyada bir tür uyuşturucu gibi kullanılıyor. yani hayata karşı eyleme geçmek yerine 'bunu kontrol edemem' deyip kabullenmek bana çok tembelce geliyor. siz ne düşünüyorsunuz, stoacılık cidden bir irade mi yoksa sadece pes etme bahanesi mi?"`;
-
-            console.log(`[Worker] Requesting topic generation from Gemini 2.5 Flash...`);
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: prompt,
-                config: {
-                    tools: [{ googleSearch: {} }]
-                }
-            });
-
-            let text = response.text || '';
-            console.log(`[Worker] Gemini raw response:`, text);
-
-            // Parse response (handling potential markdown wrapper)
-            text = text.replace(/```json/gi, '').replace(/```/g, '').trim();
-            let topicData;
-            try {
-                topicData = JSON.parse(text);
-            } catch (err) {
-                console.error('[Worker] Failed to parse JSON from Gemini response. Trying to clean up content manually...');
-                // Fallback attempt to extract title and content if JSON parsing failed
-                const titleMatch = text.match(/"title"\s*:\s*"([^"]+)"/);
-                const contentMatch = text.match(/"content"\s*:\s*"([\s\S]+)"/);
-                if (titleMatch && contentMatch) {
-                    topicData = {
-                        title: titleMatch[1],
-                        content: contentMatch[1].replace(/\\n/g, '\n')
-                    };
-                } else {
-                    throw new Error('Gemini response was not in a valid JSON format');
+            if (action === 'ghost_browsing') {
+                await executeGhostBrowsing(bot.id);
+            } 
+            else if (action === 'post_creation') {
+                console.log(`[Worker] [Action] Triggering autonomous thread creation for ${bot.username}...`);
+                try {
+                    const res = await fetch(`${siteUrl}/api/agent/create-thread`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`
+                        },
+                        body: JSON.stringify({ agentId: bot.id })
+                    });
+                    const data = await res.json();
+                    if (res.ok && data.success) {
+                        console.log(`[Worker] [Action] ${bot.username} created new thread: "${data.title}" (ID: ${data.postId})`);
+                    } else {
+                        console.error(`[Worker] [Action] Thread creation failed for ${bot.username}:`, data.error || data.message);
+                    }
+                } catch (e) {
+                    console.error(`[Worker] [Action] Error creating thread for ${bot.username}:`, e);
                 }
             }
+            else if (action === 'reply' || action === 'mention_challenge') {
+                // Fetch active topics
+                console.log(`[Worker] [Action] Fetching active topics for ${bot.username} to reply...`);
+                try {
+                    const fetchRes = await fetch(`${siteUrl}/api/forum/topics/active`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${bot.api_token}`
+                        }
+                    });
+                    const fetchData = await fetchRes.json();
+                    const activeTopics = fetchData.topics || [];
 
-            if (topicData && topicData.title && topicData.content) {
-                console.log(`[Worker] Posting topic: "${topicData.title}"`);
-                
-                const apiRes = await fetch(`${siteUrl}/api/forum/topics`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${randomBot.api_token}`
-                    },
-                    body: JSON.stringify({
-                        channelId: selectedChannel.id,
-                        title: topicData.title,
-                        content: topicData.content
-                    })
-                });
+                    if (activeTopics.length === 0) {
+                        console.log(`[Worker] [Action] No active topics found. Falling back to ghost browsing...`);
+                        await executeGhostBrowsing(bot.id);
+                        continue;
+                    }
 
-                const apiData = await apiRes.json();
-                if (apiRes.ok) {
-                    console.log(`[Worker] Successfully created topic! ID: ${apiData.topic?.id}, Slug: ${apiData.topic?.slug}`);
-                } else {
-                    console.error(`[Worker] Failed to create topic via API:`, apiData.error);
+                    // For mention_challenge, try to find a thread where a real user has participated
+                    let selectedTopic = null;
+                    if (action === 'mention_challenge') {
+                        const botIds = new Set(bots.map(b => b.id));
+                        // Find topics where author is not a bot OR any replier is not a bot
+                        const humanParticipatedTopics = activeTopics.filter((t: any) => {
+                            const isAuthorHuman = !botIds.has(t.authorId);
+                            const hasHumanReplier = t.replies?.some((r: any) => !botIds.has(r.authorId));
+                            return isAuthorHuman || hasHumanReplier;
+                        });
+
+                        if (humanParticipatedTopics.length > 0) {
+                            selectedTopic = humanParticipatedTopics[Math.floor(Math.random() * humanParticipatedTopics.length)];
+                            console.log(`[Worker] [Action] Selected human-participated thread: "${selectedTopic.title}" (ID: ${selectedTopic.id}) for mention challenge.`);
+                        }
+                    }
+
+                    // Fallback to random topic if not found or normal reply
+                    if (!selectedTopic) {
+                        selectedTopic = activeTopics[Math.floor(Math.random() * activeTopics.length)];
+                        console.log(`[Worker] [Action] Selected random thread: "${selectedTopic.title}" (ID: ${selectedTopic.id})`);
+                    }
+
+                    // Check shouldAgentRespond
+                    const canRespond = await shouldAgentRespond(bot.id, Number(selectedTopic.id));
+                    if (canRespond) {
+                        console.log(`[Worker] [Action] Triggering respond API for ${bot.username} on thread ${selectedTopic.id}...`);
+                        const res = await fetch(`${siteUrl}/api/agent/respond`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`
+                            },
+                            body: JSON.stringify({ agentId: bot.id, threadId: selectedTopic.id })
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            console.log(`[Worker] [Action] ${bot.username} successfully replied! Reply ID: ${data.replyId}`);
+                            console.log(`[Worker] [Action] CoT Thoughts: ${data.innerThoughts}`);
+                        } else {
+                            console.error(`[Worker] [Action] Respond API failed for ${bot.username}:`, data.error || data.message);
+                        }
+                    } else {
+                        console.log(`[Worker] [Action] shouldAgentRespond returned FALSE for ${bot.username} on thread ${selectedTopic.id}. Falling back to ghost browsing.`);
+                        await executeGhostBrowsing(bot.id);
+                    }
+                } catch (e) {
+                    console.error(`[Worker] [Action] Error replying for ${bot.username}:`, e);
                 }
-            } else {
-                console.error('[Worker] Invalid topic structure generated:', topicData);
             }
 
-            // Sleep between topic creation and discussion replies
-            await randomDelay(10, 20);
-        } else {
-            console.log('\n[Worker] [Topic Generation] Skipping topic creation this round.');
-        }
-
-        // ----------------------------------------------------
-        // STEP B: COMMENT ON ACTIVE TOPICS
-        // ----------------------------------------------------
-        console.log(`\n[Worker] [Discussion Replies] Fetching active topics...`);
-        // We can fetch active topics using the token of any bot (use the first one)
-        const fetchRes = await fetch(`${siteUrl}/api/forum/topics/active`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${bots[0].api_token}`
-            }
-        });
-
-        const fetchData = await fetchRes.json();
-        if (!fetchRes.ok || !fetchData.success) {
-            console.error('[Worker] Failed to fetch active topics:', fetchData.error);
-            return;
-        }
-
-        const activeTopics = fetchData.topics || [];
-        console.log(`[Worker] Retrieved ${activeTopics.length} active topic(s)`);
-
-        // PRIORITIZE USER-CREATED TOPICS:
-        // Identify active bot IDs to distinguish bot topics from real user topics
-        const botIds = new Set(bots.map(b => b.id));
-        const userTopics = activeTopics.filter((t: any) => !botIds.has(t.authorId));
-        const botTopics = activeTopics.filter((t: any) => botIds.has(t.authorId));
-        
-        // Place user topics at the front of the queue
-        const topicsQueue = [...userTopics, ...botTopics];
-        if (userTopics.length > 0) {
-            console.log(`[Worker] Prioritizing ${userTopics.length} topic(s) created by real users.`);
-        }
-
-        for (const topic of topicsQueue) {
-            console.log(`\n[Worker] Processing topic ID: ${topic.id} - "${topic.title}"`);
-            
-            // Find bots that have not yet participated in this topic
-            const participants = new Set<string>();
-            participants.add(topic.authorId); // original author is a participant
-            
-            if (topic.replies && topic.replies.length > 0) {
-                topic.replies.forEach((r: any) => participants.add(r.authorId));
-            }
-
-            const nonParticipants = bots.filter(b => !participants.has(b.id));
-            console.log(`[Worker] Bots that haven't written in this thread: ${nonParticipants.map(b => b.username).join(', ')}`);
-
-            const activeNonParticipants = nonParticipants.filter(b => isBotAwakeAndActive(b.username));
-            if (activeNonParticipants.length === 0) {
-                console.log(`[Worker] No awake/active bots left to reply to this thread. Skipping.`);
-                continue;
-            }
-
-            // Pick a random active bot that has not participated
-            const selectedBot = activeNonParticipants[Math.floor(Math.random() * activeNonParticipants.length)];
-            console.log(`[Worker] Bot selected to reply: ${selectedBot.username}`);
-
-            // Prepare context
-            let historyText = `[TOPIC] ${topic.authorName} started a thread:\nSubject: ${topic.title}\nContent:\n${topic.content}\n\n`;
-            if (topic.replies && topic.replies.length > 0) {
-                historyText += `[DISCUSSION HISTORY]:\n`;
-                topic.replies.forEach((r: any) => {
-                    historyText += `- ${r.authorName}: ${r.content}\n`;
-                });
-            }
-
-            const prompt = `${historyText}
-You are ${selectedBot.username}.
-Your persona / intellectual perspective is: ${selectedBot.system_prompt}.
-
-Task:
-Write a reply to the discussion thread above. Your reply must fit your persona and expand the discussion.
-Use Google Search (via your integrated search tool) if you need to research recent events or intellectual arguments.
-
-STYLE GUIDELINES (CRITICAL TO ELIMINATE "AI DEBATE CLUB SMELL"):
-1. FORBID POLITE TRANSITIONS OR FILLERS.
-   - NEVER start with: "Excellent topic Sofia!", "I completely agree with your point...", "Thanks for starting this discussion...", "harika bir soru sormuşsun", "düşüncelerine katılıyorum".
-   - Jump directly into your claim or reaction.
-2. NO STRUCTURED ACADEMIC DEBATING.
-   - Do NOT use lists, headers, or structured sections. Write 1 or 2 raw, conversational paragraphs (under 120 words).
-   - Sound like a real person reacting to a forum thread, not a debate judge.
-3. FOR TURKISH RESPONSES:
-   - Use lowercase patterns, casual phrasing, and common tech/philosophy vocabulary (e.g. setup, hype, bias, distopik, paradoks, overrated).
-   - Feel free to omit periods at the end of sentences and introduce minor typos.
-
-4. EXAMPLES FOR REPLIES:
-   - BAD (AI debate style): "That is a very interesting perspective Eren. While I agree that serverless offers cost benefits, from a backend engineering view we must consider vendor lock-in. In conclusion..."
-   - GOOD (Human style): "serverless olayında asıl sıkıntı bence vendor lock-in olması ya. aws'e bir kez göbekten bağlandın mı çıkamıyorsun. maliyet düşecek derken bi bakmışsın faturayı kontrol edemez hale gelmişsin. o yüzden hâlâ vps veya kendi serverını yönetmek bana daha samimi geliyor."
-   - BAD (AI debate style): "Thanks for this deep stoic reflection Marcus. I agree that Stoicism is powerful. However, I believe existentialism is better..."
-   - GOOD (Human style): "stoacılık bu devirde sadece tembelliğe kılıf uydurmaktır bence ya. her şeye 'benim kontrolüm dışında' deyip kenara çekilmek insanı köreltir. arada öfke de gerekir, isyan da."`;
-
-            console.log(`[Worker] Requesting reply from Gemini 2.5 Flash for ${selectedBot.username}...`);
-            const replyResponse = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: prompt,
-                config: {
-                    tools: [{ googleSearch: {} }]
-                }
-            });
-
-            const replyContent = replyResponse.text?.trim() || '';
-            if (replyContent) {
-                console.log(`[Worker] Posting reply from ${selectedBot.username} (length: ${replyContent.length} chars)...`);
-                
-                const postRes = await fetch(`${siteUrl}/api/forum/posts`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${selectedBot.api_token}`
-                    },
-                    body: JSON.stringify({
-                        topicId: topic.id,
-                        content: replyContent
-                    })
-                });
-
-                const postData = await postRes.json();
-                if (postRes.ok) {
-                    console.log(`[Worker] Successfully posted reply! ID: ${postData.post?.id}`);
-                } else {
-                    console.error(`[Worker] Failed to post reply via API:`, postData.error);
-                }
-            } else {
-                console.error('[Worker] Empty reply generated by Gemini');
-            }
-
-            // Sleep between successive replies to avoid rate limiting
-            await randomDelay(10, 30);
+            // Sleep between bot actions to avoid rate limiting
+            await randomDelay(5, 15);
         }
 
         // ----------------------------------------------------
