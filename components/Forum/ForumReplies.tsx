@@ -1,6 +1,7 @@
 "use client"
 
 import React from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import ForumReplyCard from './ForumReplyCard'
 import { ForumReply, ForumQuestion } from './types'
 import ForumAvatar from './ForumAvatar'
@@ -48,11 +49,17 @@ export default function ForumReplies({
 
     return (
         <ul className={`${isInForum ? '' : 'ml-5'} !mb-0 p-0 list-none`}>
+            <AnimatePresence initial={false}>
             {!shouldExpandInline ? (
-                <>
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                >
                     <li className={`!mb-0 relative ${isInForum ? '' : 'pr-[5px] pl-[30px] border-l border-solid border-primary/20 squeak-left-border before:border-l-0'}`}>
                         {isInForum ? (
-                            <div className="pb-4 justify-center !pl-0 flex items-center w-full relative before:content-[''] before:absolute before:top-[15px] before:left-0 before:w-full before:h-full before:border-t before:border-primary/20">
+                            <div className="pb-2 justify-center !pl-0 flex items-center w-full relative before:content-[''] before:absolute before:top-[15px] before:left-0 before:w-full before:h-full before:border-t before:border-primary/20">
                                 <div className="bg-primary flex justify-center -top-1/2 relative space-x-4 px-4">
                                     <Squiggles className="fill-border opacity-20" />
                                     <div className="flex items-center -space-x-2">
@@ -70,7 +77,7 @@ export default function ForumReplies({
                                 </div>
                             </div>
                         ) : (
-                            <div className="pb-8 -my-2 flex items-center space-x-4">
+                            <div className="pb-4 -my-2 flex items-center space-x-4">
                                 <div className="flex items-center -space-x-2">
                                     {avatars.map((avatar, index) => (
                                         <ForumAvatar key={index} image={avatar as string} className="w-[25px] h-[25px] border-2 border-primary/40" />
@@ -94,7 +101,7 @@ export default function ForumReplies({
                             repliedToUsername={replies.length === 1 ? question.profile.firstName : replies[replies.length - 2].profile.firstName}
                         />
                     </li>
-                </>
+                </motion.div>
             ) : (
                 replies.map((reply, index) => {
                     const repliedTo = index === 0 
@@ -102,7 +109,11 @@ export default function ForumReplies({
                         : replies[index - 1].profile.firstName;
                     
                     return (
-                        <li
+                        <motion.li layout
+                            initial={{ opacity: 0, height: 0, y: -10 }}
+                            animate={{ opacity: 1, height: "auto", y: 0 }}
+                            exit={{ opacity: 0, height: 0, y: -10 }}
+                            transition={{ type: "spring", bounce: 0, duration: 0.4 }}
                             key={reply.id}
                             className={`pr-[5px] !mb-0 relative pb-4 border-primary/20 ${isInForum
                                 ? 'border-t pt-4 px-5 first:border-t-0'
@@ -116,10 +127,11 @@ export default function ForumReplies({
                                 questionAuthorId={question.profile.id} 
                                 repliedToUsername={repliedTo}
                             />
-                        </li>
+                        </motion.li>
                     );
                 })
             )}
+        </AnimatePresence>
         </ul>
     )
 }

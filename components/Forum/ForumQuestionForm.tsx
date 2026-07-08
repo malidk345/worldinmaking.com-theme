@@ -49,7 +49,7 @@ export default function ForumQuestionForm({ isInForum = false, archived = false,
                     <button
                         onClick={() => setIsOpen(true)}
                         disabled={archived}
-                        className="flex-1 min-w-0 text-left px-3 py-2 md:px-4 md:py-2.5 rounded-full border border-black/5 dark:border-white/5 bg-white/60 dark:bg-black/60 supports-[backdrop-filter]:backdrop-blur-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:bg-white/80 dark:hover:bg-black/80 hover:scale-[1.01] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]"
+                        className="flex-1 min-w-0 text-left px-3 py-1.5 md:px-4 md:py-2 rounded-full border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200"
                     >
                         <span className="font-bold text-xs md:text-sm text-primary/60 lowercase block truncate">{isInForum ? "start a new discussion..." : "add a comment..."}</span>
                     </button>
@@ -61,7 +61,7 @@ export default function ForumQuestionForm({ isInForum = false, archived = false,
                     animate={{ opacity: 1, height: 'auto', scale: 1 }}
                     exit={{ opacity: 0, height: 0, scale: 0.95 }}
                     transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                    className={`relative bg-white/40 dark:bg-black/40 supports-[backdrop-filter]:backdrop-blur-[40px] rounded-[24px] md:rounded-[32px] p-3 md:p-4 border border-black/5 dark:border-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.04)] overflow-hidden w-full max-w-full min-w-0 ${className} ${archived ? 'opacity-25 pointer-events-none' : ''}`}
+                    className={`relative bg-white dark:bg-[#1C1C1E] rounded-[20px] p-2.5 md:p-3 border border-gray-100 dark:border-gray-800 shadow-md overflow-hidden w-full max-w-full min-w-0 ${className} ${archived ? 'opacity-25 pointer-events-none' : ''}`}
                 >
                     <div className="flex items-start gap-2 md:gap-3 mb-3">
                         <div className="w-[32px] h-[32px] md:w-[36px] md:h-[36px] rounded-full overflow-hidden shrink-0 mt-0.5 border border-black/10 dark:border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
@@ -78,7 +78,7 @@ export default function ForumQuestionForm({ isInForum = false, archived = false,
                                     value={subject}
                                     onChange={(e) => setSubject(e.target.value)}
                                     placeholder="subject (optional)"
-                                    className="w-full bg-white/60 dark:bg-black/60 border border-black/5 dark:border-white/5 rounded-full px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm text-primary font-bold outline-none placeholder:text-primary/40 focus:bg-white focus:border-black/10 dark:focus:bg-black/80 dark:focus:border-white/10 shadow-inner transition-all duration-300 lowercase"
+                                    className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-full px-3 py-1.5 text-xs md:text-sm text-primary font-bold outline-none placeholder:text-primary/40 focus:bg-white dark:focus:bg-black focus:border-gray-300 dark:focus:border-gray-700 transition-all duration-200 lowercase"
                                     id="subject"
                                     name="subject"
                                     maxLength={140}

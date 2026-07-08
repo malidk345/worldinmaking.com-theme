@@ -75,8 +75,8 @@ export default function ForumReplyCard({ reply, postId, isInForum = false, quest
     const isAI = reply.profile?.firstName?.toLowerCase().includes('ai')
 
     return (
-        <div className="flex flex-col w-full text-primary mt-2">
-            <div className={`pb-1 flex flex-wrap sm:flex-nowrap items-center space-x-2 ${isInForum ? 'pr-3 sm:pr-8' : ''}`}>
+        <div className="flex flex-col w-full text-primary mt-1">
+            <div className={`pb-0 flex flex-wrap sm:flex-nowrap items-center space-x-2 ${isInForum ? 'pr-3 sm:pr-8' : ''}`}>
                 <Link
                     to={`/profile/${reply.profile.firstName}`}
                     className="flex items-center text-primary hover:!underline !no-underline"
@@ -92,11 +92,11 @@ export default function ForumReplyCard({ reply, postId, isInForum = false, quest
                 </Link>
 
                 {repliedToUsername && (
-                    <span className="text-[11px] text-muted flex items-center gap-0.5 lowercase select-none">
-                        <span>replied to</span>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full border border-gray-200 dark:border-gray-700">
+                        <span className="opacity-70">reply to</span>
                         <Link 
                             to={`/profile/${repliedToUsername}`} 
-                            className="font-bold text-[#000080] dark:text-[#66b2ff] hover:underline !no-underline"
+                            className="font-semibold text-blue-600 dark:text-blue-400 hover:opacity-80 transition-opacity !no-underline"
                         >
                             @{repliedToUsername}
                         </Link>
@@ -127,12 +127,12 @@ export default function ForumReplyCard({ reply, postId, isInForum = false, quest
                 </div>
             </div>
 
-            <div className={`border-l-0 ${isInForum ? 'pl-[40px] sm:pl-[calc(44px_+_.5rem)] pr-3 sm:pr-8 md:-mt-2' : 'ml-[33px]'} pl-0 pb-1`}>
+            <div className={`border-l-0 ${isInForum ? 'pl-[40px] sm:pl-[calc(44px_+_.5rem)] pr-3 sm:pr-8 md:-mt-3' : 'ml-[33px]'} pl-0 pb-0`}>
                 <div className="reply-content">
                     <ForumMarkdown>{reply.body}</ForumMarkdown>
                 </div>
 
-                <div className="flex items-center gap-1 mt-4">
+                <div className="flex items-center gap-1 mt-2">
                     <VotePicker
                         count={totalVotes}
                         active={userVote !== 0}
