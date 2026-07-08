@@ -206,7 +206,7 @@ export default function ForumQuestionCard({
             )}
 
             {/* Standard Forum Thread Layout with Continuous Left Vertical Timeline Line */}
-            <div className={`flex w-full gap-3 relative ${isInForum ? 'pt-5 px-5 pb-5 sm:pt-6 sm:pl-6 sm:pr-8 bg-white/60 dark:bg-[#121214]/40 backdrop-blur-md border border-primary/10 rounded-[24px] md:rounded-[32px] shadow-sm shadow-black/5' : ''}`}>
+            <div className={`flex w-full gap-3 relative ${isInForum ? 'pt-4 px-4 pb-4 sm:pt-6 sm:pl-6 sm:pr-8 bg-transparent sm:bg-white/60 sm:dark:bg-[#121214]/40 sm:backdrop-blur-md border-none sm:border sm:border-primary/10 rounded-none sm:rounded-[24px] md:sm:rounded-[32px] shadow-none sm:shadow-sm sm:shadow-black/5' : ''}`}>
                 
                 {/* Left Timeline Column: Main Avatar & Vertical Line */}
                 <div className="w-[40px] shrink-0 flex flex-col items-center relative">
