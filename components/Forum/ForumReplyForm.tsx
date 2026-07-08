@@ -14,7 +14,7 @@ interface ForumReplyFormProps {
     onSubmit?: (content: string) => void
 }
 
-export default function ForumReplyForm({ archived = false, onSubmit }: ForumReplyFormProps) {
+export default function ForumReplyForm({ archived = false, isInForum = false, onSubmit }: ForumReplyFormProps) {
     const [body, setBody] = useState('')
     const [isOpen, setIsOpen] = useState(false)
     const { profile } = useAuth()
@@ -38,12 +38,14 @@ export default function ForumReplyForm({ archived = false, onSubmit }: ForumRepl
                     transition={{ duration: 0.2 }}
                     className={`p-1 flex items-center space-x-2 md:space-x-3 w-full max-w-full min-w-0 ${archived ? 'opacity-25 pointer-events-none' : ''}`}
                 >
-                    <div className="w-[28px] h-[28px] md:w-[30px] md:h-[30px] ml-[-2px] rounded-full overflow-hidden shrink-0 border !border-black/10 dark:!border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-                        <ForumAvatar
-                            className="w-full h-full"
-                            image={profile?.avatar_url}
-                        />
-                    </div>
+                    {!isInForum && (
+                        <div className="w-[28px] h-[28px] md:w-[30px] md:h-[30px] ml-[-2px] rounded-full overflow-hidden shrink-0 border !border-black/10 dark:!border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+                            <ForumAvatar
+                                className="w-full h-full"
+                                image={profile?.avatar_url}
+                            />
+                        </div>
+                    )}
                     <button
                         onClick={() => setIsOpen(true)}
                         disabled={archived}
@@ -62,12 +64,14 @@ export default function ForumReplyForm({ archived = false, onSubmit }: ForumRepl
                     className={`relative bg-white/40 dark:bg-black/40 supports-[backdrop-filter]:backdrop-blur-[40px] rounded-[24px] md:rounded-[32px] p-3 md:p-4 border border-black/5 dark:border-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.04)] overflow-hidden w-full max-w-full min-w-0 ${archived ? 'opacity-25 pointer-events-none' : ''}`}
                 >
                     <div className="flex items-start gap-2 md:gap-3">
-                        <div className="w-[32px] h-[32px] md:w-[36px] md:h-[36px] rounded-full overflow-hidden shrink-0 mt-0.5 border border-black/10 dark:border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-                            <ForumAvatar
-                                className="w-full h-full"
-                                image={profile?.avatar_url}
-                            />
-                        </div>
+                        {!isInForum && (
+                            <div className="w-[32px] h-[32px] md:w-[36px] md:h-[36px] rounded-full overflow-hidden shrink-0 mt-0.5 border border-black/10 dark:border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+                                <ForumAvatar
+                                    className="w-full h-full"
+                                    image={profile?.avatar_url}
+                                />
+                            </div>
+                        )}
                         <div className="flex-1 min-w-0 w-full max-w-full">
                             <ForumRichText
                                 initialValue={body}
@@ -92,7 +96,7 @@ export default function ForumReplyForm({ archived = false, onSubmit }: ForumRepl
                                             size="sm"
                                             variant="default"
                                             onClick={() => setIsOpen(false)}
-                                        className="border-none opacity-60 hover:opacity-100"
+                                            className="border-none opacity-60 hover:opacity-100"
                                         >
                                             <span className="lowercase font-bold">cancel</span>
                                         </OSButton>

@@ -75,28 +75,30 @@ export default function ForumReplyCard({ reply, postId, isInForum = false, quest
     const isAI = reply.profile?.firstName?.toLowerCase().includes('ai')
 
     return (
-        <div className="flex flex-col w-full text-primary mt-1">
+        <div className={`flex flex-col w-full text-primary ${isInForum ? 'mt-1 mb-2' : 'mt-1'}`}>
             <div className={`pb-0 flex flex-wrap sm:flex-nowrap items-center space-x-2 ${isInForum ? 'pr-3 sm:pr-8' : ''}`}>
                 <Link
                     to={`/profile/${reply.profile.firstName}`}
                     className="flex items-center text-primary hover:!underline !no-underline"
                 >
-                    <div className="mr-2 relative ml-[-2px]">
-                        <ForumAvatar
-                            className={`${isInForum ? 'size-[32px] sm:size-[40px]' : 'size-[25px]'} rounded-full`}
-                            image={reply.profile.avatar}
-                            isTeamMember={isAI}
-                        />
-                    </div>
+                    {!isInForum && (
+                        <div className="mr-2 relative ml-[-2px]">
+                            <ForumAvatar
+                                className="size-[25px] rounded-full"
+                                image={reply.profile.avatar}
+                                isTeamMember={isAI}
+                            />
+                        </div>
+                    )}
                     <strong>{reply.profile.firstName || 'anonymous'}</strong>
                 </Link>
 
                 {repliedToUsername && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full border border-gray-200 dark:border-gray-700">
-                        <span className="opacity-70">reply to</span>
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-accent/80 text-primary/80 px-2 py-0.5 rounded-full border border-primary/5">
+                        <span className="opacity-60 lowercase">reply to</span>
                         <Link 
                             to={`/profile/${repliedToUsername}`} 
-                            className="font-semibold text-blue-600 dark:text-blue-400 hover:opacity-80 transition-opacity !no-underline"
+                            className="font-bold text-red dark:text-yellow hover:opacity-80 transition-opacity !no-underline lowercase"
                         >
                             @{repliedToUsername}
                         </Link>
@@ -127,7 +129,7 @@ export default function ForumReplyCard({ reply, postId, isInForum = false, quest
                 </div>
             </div>
 
-            <div className={`border-l-0 ${isInForum ? 'pl-[40px] sm:pl-[calc(44px_+_.5rem)] pr-3 sm:pr-8 md:-mt-3' : 'ml-[33px]'} pl-0 pb-0`}>
+            <div className={`border-l-0 ${isInForum ? 'pl-0 pr-3 sm:pr-8' : 'ml-[33px]'} pl-0 pb-0 mt-1`}>
                 <div className="reply-content">
                     <ForumMarkdown>{reply.body}</ForumMarkdown>
                 </div>

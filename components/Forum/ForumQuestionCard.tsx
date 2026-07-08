@@ -33,7 +33,7 @@ export default function ForumQuestionCard({
 }: ForumQuestionCardProps) {
     const [expanded, setExpanded] = useState(initialExpanded)
     const { replies, fetchReplies, createReply, handleVote, deletePost } = useCommunity()
-    const { isAdmin } = useAuth()
+    const { isAdmin, profile } = useAuth()
     const [isEditing, setIsEditing] = useState(false)
     const [userVote, setUserVote] = useState(0)
     const [totalVotes, setTotalVotes] = useState(question.upvotes || 0)
@@ -206,7 +206,7 @@ export default function ForumQuestionCard({
             )}
 
             {/* Standard Forum Thread Layout with Continuous Left Vertical Timeline Line */}
-            <div className={`flex w-full gap-3 relative ${isInForum ? 'pt-4 px-4 sm:pt-5 sm:pl-5 sm:pr-8' : ''}`}>
+            <div className={`flex w-full gap-3 relative ${isInForum ? 'pt-5 px-5 pb-5 sm:pt-6 sm:pl-6 sm:pr-8 bg-white/60 dark:bg-[#121214]/40 backdrop-blur-md border border-primary/10 rounded-[24px] md:rounded-[32px] shadow-sm shadow-black/5' : ''}`}>
                 
                 {/* Left Timeline Column: Main Avatar & Vertical Line */}
                 <div className="w-[40px] shrink-0 flex flex-col items-center relative">
@@ -217,7 +217,7 @@ export default function ForumQuestionCard({
                     
                     {/* Vertical line connecting the main avatar to all replies below it */}
                     {expanded && (
-                        <div className="w-0 border-l border-dashed border-primary/20 absolute top-10 bottom-0 left-[20px]" />
+                        <div className="w-0.5 bg-primary/10 absolute top-10 bottom-0 left-[20px]" />
                     )}
                 </div>
 
@@ -312,21 +312,39 @@ export default function ForumQuestionCard({
 
                     {/* Typing Indicator */}
                     {isInForum && (
-                        <div className="relative ml-[36px] sm:ml-[40px] pl-[30px] border-l border-dashed border-primary/20 squeak-left-border before:border-l-0 pt-1 pb-3 pr-4 sm:pr-6 md:pr-8">
-                            <div className="absolute left-[-24px] w-[24px] h-[15px] border-b border-l border-dashed border-primary/20 rounded-bl-md top-[-2px]" />
-                            <ForumTypingIndicator currentAuthorName={question.profile.firstName} />
+                        <div className="relative ml-[-52px] mt-2 flex w-full gap-3 pt-1 pb-3">
+                            <div className="w-[40px] shrink-0 flex justify-center items-center" />
+                            <div className="flex-grow min-w-0 text-xs text-primary/60 lowercase italic">
+                                <ForumTypingIndicator currentAuthorName={question.profile.firstName} />
+                            </div>
                         </div>
                     )}
 
                     {/* Reply form */}
                     <div className={`mt-4 relative ${question.archived ? 'opacity-25 pointer-events-none' : ''}`}>
-                        {/* Horizontal connector curve from the Level 0 vertical line to the reply form avatar */}
-                        <div className="absolute left-[-24px] w-[24px] h-[15px] border-b border-l border-dashed border-primary/20 rounded-bl-md top-[-2px]" />
-                        <ForumReplyForm
-                            archived={question.archived}
-                            isInForum={isInForum}
-                            onSubmit={handleReplySubmit}
-                        />
+                        {isInForum ? (
+                            <div className="ml-[-52px] flex w-full gap-3">
+                                <div className="w-[40px] shrink-0 flex justify-center items-start pt-1.5">
+                                    <ForumAvatar
+                                        className="size-8 rounded-full border border-black/10 dark:border-white/10 bg-white dark:bg-[#121214]"
+                                        image={profile?.avatar_url}
+                                    />
+                                </div>
+                                <div className="flex-grow min-w-0">
+                                    <ForumReplyForm
+                                        archived={question.archived}
+                                        isInForum={isInForum}
+                                        onSubmit={handleReplySubmit}
+                                    />
+                                </div>
+                            </div>
+                        ) : (
+                            <ForumReplyForm
+                                archived={question.archived}
+                                isInForum={isInForum}
+                                onSubmit={handleReplySubmit}
+                            />
+                        )}
                     </div>
                 </div>
             </div>

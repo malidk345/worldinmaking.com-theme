@@ -29,7 +29,7 @@ export default function ForumReplies({
     const shouldExpandInline = expanded || replyCount < 3
 
     return (
-        <ul className={`${isInForum ? 'ml-[36px] sm:ml-[40px] pr-4 sm:pr-6 md:pr-8' : 'ml-5'} !mb-0 p-0 list-none`}>
+        <ul className={`${isInForum ? 'ml-[-52px]' : 'ml-5'} !mb-0 p-0 list-none relative flex flex-col gap-4`}>
             <AnimatePresence initial={false}>
             {!shouldExpandInline ? (
                 <motion.div
@@ -37,24 +37,29 @@ export default function ForumReplies({
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
+                    className="flex flex-col gap-4"
                 >
-                    <li className="!mb-0 relative pr-[5px] pl-[30px] border-l border-dashed border-primary/20 squeak-left-border before:border-l-0">
+                    <li className="!mb-0 relative">
                         {isInForum ? (
-                            <div className="pb-2 justify-start flex items-center w-full relative">
-                                <div className="flex items-center -space-x-2 mr-3">
-                                    {avatars.map((avatar, index) => (
-                                        <ForumAvatar key={index} image={avatar as string} className="w-[22px] h-[22px] border-2 border-primary/40" />
-                                    ))}
+                            <div className="flex w-full gap-3 items-center">
+                                <div className="w-[40px] shrink-0 flex justify-center items-center">
+                                    <div className="flex items-center -space-x-1 bg-white dark:bg-[#121214] py-0.5 px-1 rounded-full border border-primary/5">
+                                        {avatars.map((avatar, index) => (
+                                            <ForumAvatar key={index} image={avatar as string} className="w-[16px] h-[16px] border border-primary/20" />
+                                        ))}
+                                    </div>
                                 </div>
-                                <button
-                                    className="text-xs font-semibold text-[#000080] dark:text-[#66b2ff] hover:underline lowercase"
-                                    onClick={() => onToggleExpanded(true)}
-                                >
-                                    view {replyCount - 1} other {replyCount - 1 === 1 ? 'reply' : 'replies'}
-                                </button>
+                                <div className="flex-grow min-w-0">
+                                    <button
+                                        className="text-xs font-semibold text-[#000080] dark:text-[#66b2ff] hover:underline lowercase"
+                                        onClick={() => onToggleExpanded(true)}
+                                    >
+                                        view {replyCount - 1} other {replyCount - 1 === 1 ? 'reply' : 'replies'}
+                                    </button>
+                                </div>
                             </div>
                         ) : (
-                            <div className="pb-4 -my-2 flex items-center space-x-4">
+                            <div className="pb-4 -my-2 flex items-center space-x-4 pl-[30px] border-l border-dashed border-primary/20 squeak-left-border before:border-l-0">
                                 <div className="flex items-center -space-x-2">
                                     {avatars.map((avatar, index) => (
                                         <ForumAvatar key={index} image={avatar as string} className="w-[25px] h-[25px] border-2 border-primary/40" />
@@ -69,14 +74,36 @@ export default function ForumReplies({
                             </div>
                         )}
                     </li>
-                    <li className="pr-[5px] !mb-0 relative pl-[30px] border-l border-dashed border-primary/20 squeak-left-border before:border-l-0">
-                        <ForumReplyCard 
-                            reply={replies[replies.length - 1]} 
-                            postId={question.id} 
-                            isInForum={isInForum} 
-                            questionAuthorId={question.profile.id} 
-                            repliedToUsername={replies.length === 1 ? question.profile.firstName : replies[replies.length - 2].profile.firstName}
-                        />
+                    <li className="!mb-0 relative">
+                        {isInForum ? (
+                            <div className="flex w-full gap-3">
+                                <div className="w-[40px] shrink-0 flex justify-center items-start pt-1.5">
+                                    <ForumAvatar
+                                        className="size-8 rounded-full border border-black/10 dark:border-white/10 bg-white dark:bg-[#121214]"
+                                        image={replies[replies.length - 1].profile.avatar}
+                                    />
+                                </div>
+                                <div className="flex-grow min-w-0">
+                                    <ForumReplyCard 
+                                        reply={replies[replies.length - 1]} 
+                                        postId={question.id} 
+                                        isInForum={isInForum} 
+                                        questionAuthorId={question.profile.id} 
+                                        repliedToUsername={replies.length === 1 ? question.profile.firstName : replies[replies.length - 2].profile.firstName}
+                                    />
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="pl-[30px] border-l border-dashed border-primary/20 squeak-left-border before:border-l-0">
+                                <ForumReplyCard 
+                                    reply={replies[replies.length - 1]} 
+                                    postId={question.id} 
+                                    isInForum={isInForum} 
+                                    questionAuthorId={question.profile.id} 
+                                    repliedToUsername={replies.length === 1 ? question.profile.firstName : replies[replies.length - 2].profile.firstName}
+                                />
+                            </div>
+                        )}
                     </li>
                 </motion.div>
             ) : (
@@ -92,15 +119,37 @@ export default function ForumReplies({
                             exit={{ opacity: 0, height: 0, y: -10 }}
                             transition={{ type: "spring", bounce: 0, duration: 0.4 }}
                             key={reply.id}
-                            className="pr-[5px] !mb-0 relative pb-4 pl-[30px] border-l border-dashed border-primary/20 squeak-left-border before:border-l-0"
+                            className="!mb-0 relative"
                         >
-                            <ForumReplyCard 
-                                reply={reply} 
-                                postId={question.id} 
-                                isInForum={isInForum} 
-                                questionAuthorId={question.profile.id} 
-                                repliedToUsername={repliedTo}
-                            />
+                            {isInForum ? (
+                                <div className="flex w-full gap-3">
+                                    <div className="w-[40px] shrink-0 flex justify-center items-start pt-1.5">
+                                        <ForumAvatar
+                                            className="size-8 rounded-full border border-black/10 dark:border-white/10 bg-white dark:bg-[#121214]"
+                                            image={reply.profile.avatar}
+                                        />
+                                    </div>
+                                    <div className="flex-grow min-w-0">
+                                        <ForumReplyCard 
+                                            reply={reply} 
+                                            postId={question.id} 
+                                            isInForum={isInForum} 
+                                            questionAuthorId={question.profile.id} 
+                                            repliedToUsername={repliedTo}
+                                        />
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="pl-[30px] border-l border-dashed border-primary/20 squeak-left-border before:border-l-0">
+                                    <ForumReplyCard 
+                                        reply={reply} 
+                                        postId={question.id} 
+                                        isInForum={isInForum} 
+                                        questionAuthorId={question.profile.id} 
+                                        repliedToUsername={repliedTo}
+                                    />
+                                </div>
+                            )}
                         </motion.li>
                     );
                 })
