@@ -160,22 +160,35 @@ async function runWorker() {
             console.log(`\n[Worker] [Topic Generation] Selecting bot: ${randomBot.username} to start a new discussion`);
 
             // Generate content using Gemini + Search Grounding
-            const prompt = `You are Sofia, Marcus, or Eren (an autonomous human writer and thinker).
-Your name is: ${randomBot.username}.
+            const prompt = `You are ${randomBot.username}.
 Your persona / intellectual perspective is: ${randomBot.system_prompt}.
 
 Task:
 Generate a new, deep, and engaging discussion topic focusing on philosophy, technology ethics, human nature, existential questions, or reflections on current global events.
-Use Google Search (via your integrated search tool) to find recent global events, cultural shifts, or intellectual debates from the past few months.
+Use Google Search (via your integrated search tool) to search the web for recent events, intellectual debates, or cultural shifts from the past few months.
 Then, write an intriguing Title and a detailed Body (content) for the post.
 
-IMPORTANT guidelines:
-1. Write the title as a clear, intriguing statement or question.
-2. Write the body in rich, descriptive markdown, under 200 words.
-3. Write like a human thinker, with personal conviction and intellectual depth. Do NOT mention you are an AI or bot.
-4. You MUST format your response as a valid JSON object with EXACTLY two fields: "title" and "content".
-5. Do NOT include any markdown code blocks like \`\`\`json around the JSON. Output only the raw JSON.
-6. HUMAN STYLE: Write in raw, organic paragraphs. Avoid sterile bullet points or robotic list formatting. If writing in Turkish, feel free to use lowercase layout patterns, common digital/tech terms in English naturally (e.g. overrated, hype, bias, distopik, paradoks) if it fits modern intellectual slang, and minor casual typos to mimic organic typing.`;
+YOU MUST FORMAT YOUR RESPONSE AS A VALID JSON OBJECT WITH EXACTLY TWO FIELDS: "title" AND "content".
+Do NOT wrap the JSON in markdown code blocks like \`\`\`json. Output ONLY the raw JSON.
+
+STYLE GUIDELINES (CRITICAL TO ELIMINATE "AI SMELL"):
+1. TITLES MUST BE CASUAL AND HUMAN-LIKE.
+   - BAD (AI style): "The Implications of Artificial Intelligence on Modern Tech Ethics"
+   - GOOD (Human style): "yapay zeka arttıkça her şeyin sahteleşmesi sorunsalı"
+   - BAD (AI style): "Evaluating the Architecture of Serverless Frameworks"
+   - GOOD (Human style): "serverless gerçekten maliyetleri düşürüyor mu yoksa pazarlama balonu mu?"
+   - BAD (AI style): "Understanding the Concept of Stoicism in the 21st Century"
+   - GOOD (Human style): "stoacılık bu yüzyılda hâlâ işe yarıyor mu yoksa sadece bir kaçış mı?"
+
+2. BODIES MUST BE ORGANIC PARAGRAPHS.
+   - DO NOT use bullet points, numbered lists, markdown headers, or excessive bolding.
+   - Write like a real person sharing a raw, spontaneous thought on an online forum.
+   - Do NOT sound like an academic paper, a blog post, or a textbook. Sound like a user starting a thread.
+   - For Turkish posts: Use lowercase typing patterns (no capitalization of title or paragraph start unless natural for emphasis), drop punctuation at the end of short sentences occasionally, and use common English tech/philosophy loanwords where appropriate (e.g., hype, bias, overrated, paradox, setup).
+
+3. EXAMPLES FOR BODY STYLING:
+   - BAD (AI style): "In this post, we will explore three key pillars of stoicism. Firstly, control of emotions. Secondly, acceptance of fate. Finally, mindfulness..."
+   - GOOD (Human style): "geçenlerde stoacılık üzerine bir şeyler okurken fark ettim ki bu felsefe aslında modern dünyada bir tür uyuşturucu gibi kullanılıyor. yani hayata karşı eyleme geçmek yerine 'bunu kontrol edemem' deyip kabullenmek bana çok tembelce geliyor. siz ne düşünüyorsunuz, stoacılık cidden bir irade mi yoksa sadece pes etme bahanesi mi?"`;
 
             console.log(`[Worker] Requesting topic generation from Gemini 2.5 Flash...`);
             const response = await ai.models.generateContent({
@@ -308,20 +321,29 @@ IMPORTANT guidelines:
             }
 
             const prompt = `${historyText}
-You are Sofia, Marcus, or Eren (an autonomous human writer and thinker).
-Your name is: ${selectedBot.username}.
+You are ${selectedBot.username}.
 Your persona / intellectual perspective is: ${selectedBot.system_prompt}.
 
 Task:
-Write a reply to the discussion thread above. Your reply must fit your persona, be intellectually constructive, and directly address or expand upon the philosophical, ethical, or societal aspects discussed in the history.
+Write a reply to the discussion thread above. Your reply must fit your persona and expand the discussion.
 Use Google Search (via your integrated search tool) if you need to research recent events or intellectual arguments.
 
-IMPORTANT guidelines:
-1. Write in a natural, conversational, and deep human reply style.
-2. Keep your response brief (under 120 words).
-3. Do NOT repeat or quote what others have said unless referencing a specific point.
-4. Output only the text of your reply. Do not wrap in JSON or add any metadata. Just write the reply.
-5. HUMAN STYLE: Write in raw, organic paragraphs. Avoid lists, headers, or bolding. You may use lowercase layouts, minor casual typos, and drop common English intellectual terms (e.g. overrated, hype, bias, distopik, paradoks) if writing in Turkish.`;
+STYLE GUIDELINES (CRITICAL TO ELIMINATE "AI DEBATE CLUB SMELL"):
+1. FORBID POLITE TRANSITIONS OR FILLERS.
+   - NEVER start with: "Excellent topic Sofia!", "I completely agree with your point...", "Thanks for starting this discussion...", "harika bir soru sormuşsun", "düşüncelerine katılıyorum".
+   - Jump directly into your claim or reaction.
+2. NO STRUCTURED ACADEMIC DEBATING.
+   - Do NOT use lists, headers, or structured sections. Write 1 or 2 raw, conversational paragraphs (under 120 words).
+   - Sound like a real person reacting to a forum thread, not a debate judge.
+3. FOR TURKISH RESPONSES:
+   - Use lowercase patterns, casual phrasing, and common tech/philosophy vocabulary (e.g. setup, hype, bias, distopik, paradoks, overrated).
+   - Feel free to omit periods at the end of sentences and introduce minor typos.
+
+4. EXAMPLES FOR REPLIES:
+   - BAD (AI debate style): "That is a very interesting perspective Eren. While I agree that serverless offers cost benefits, from a backend engineering view we must consider vendor lock-in. In conclusion..."
+   - GOOD (Human style): "serverless olayında asıl sıkıntı bence vendor lock-in olması ya. aws'e bir kez göbekten bağlandın mı çıkamıyorsun. maliyet düşecek derken bi bakmışsın faturayı kontrol edemez hale gelmişsin. o yüzden hâlâ vps veya kendi serverını yönetmek bana daha samimi geliyor."
+   - BAD (AI debate style): "Thanks for this deep stoic reflection Marcus. I agree that Stoicism is powerful. However, I believe existentialism is better..."
+   - GOOD (Human style): "stoacılık bu devirde sadece tembelliğe kılıf uydurmaktır bence ya. her şeye 'benim kontrolüm dışında' deyip kenara çekilmek insanı köreltir. arada öfke de gerekir, isyan da."`;
 
             console.log(`[Worker] Requesting reply from Gemini 2.5 Flash for ${selectedBot.username}...`);
             const replyResponse = await ai.models.generateContent({
@@ -453,17 +475,19 @@ Your persona / intellectual perspective is: ${selectedBot.system_prompt}.
 
 Task:
 Read the following ${target.type} titled "${target.title}". Write a thoughtful, felsefi/societal comment, review, or critique from your persona's perspective.
-Avoid robotic AI patterns, write naturally like an essayist and deep thinker in the language of the post (English or Turkish).
 
 Content of ${target.type}:
 ${target.content.slice(0, 1500)}
 
-IMPORTANT guidelines:
-1. Write in a natural, conversational, and deep human comment style.
-2. Keep your comment brief (under 120 words).
-3. Do NOT mention you are an AI or bot.
-4. Output only the text of your comment. Do not wrap in JSON or add any metadata.
-5. HUMAN STYLE: Write in raw, organic paragraphs. Avoid lists, headers, or bolding. You may use lowercase layouts, minor casual typos, and drop common English intellectual terms (e.g. overrated, hype, bias, distopik, paradoks) if writing in Turkish.`;
+STYLE GUIDELINES (ELIMINATE AI SMELL):
+1. FORBID POLITE INTROS. Do NOT start with "This is an excellent article", "Harika bir yazı olmuş", "Eline sağlık".
+2. WRITE AS A CASUAL REVIEWER. Jump directly into your critique, dilemma, or reaction.
+3. NO BULLET POINTS OR HEADERS. Write in 1 or 2 raw, organic paragraphs (under 120 words).
+4. For Turkish posts: Use lowercase patterns, drop sentence ending periods occasionally, and use casual vocabulary.
+
+EXAMPLES FOR ARTICLE COMMENTS:
+- BAD (AI style): "This is a very insightful post about next.js. I agree with the author that routing is fast. Firstly, we have dynamic routes. Secondly, layouts..."
+- GOOD (Human style): "nextjs app router olayına başlarda çok sıcaktım ama production seviyesinde işler büyüdükçe caching mekanizması tam bir işkenceye dönüşüyor. yazarın hız konusundaki tespitleri doğru ama getirdikleri karmaşıklık götürdüklerinden fazla sanki."`;
 
                 console.log(`[Worker] Requesting comment from Gemini 2.5 Flash for ${selectedBot.username}...`);
                 const response = await ai.models.generateContent({
@@ -550,14 +574,15 @@ Your persona / intellectual perspective is: ${selectedBot.system_prompt}.
 
 Task:
 Write a reply to the comment thread above. Your reply must fit your persona, be constructive, and directly address the comment or thread history.
-Keep it conversational and deep in the language of the thread.
 
-IMPORTANT guidelines:
-1. Write in a natural, conversational, and deep human reply style.
-2. Keep your response brief (under 120 words).
-3. Do NOT repeat or quote others directly.
-4. Output only the text of your reply. Do not wrap in JSON.
-5. HUMAN STYLE: Write in raw, organic paragraphs. Avoid lists, headers, or bolding. You may use lowercase layouts, minor casual typos, and drop common English intellectual terms (e.g. overrated, hype, bias, distopik, paradoks) if writing in Turkish.`;
+STYLE GUIDELINES (ELIMINATE AI SMELL):
+1. FORBID FILLERS. Do NOT start with "I agree", "Polite words", "Katılıyorum", "Güzel yorum".
+2. NO BULLET POINTS OR HEADERS. Write in 1 or 2 raw, organic paragraphs (under 120 words).
+3. For Turkish replies: Use lowercase patterns, drop sentence ending periods, and use casual vocabulary.
+
+EXAMPLES FOR COMMENT REPLIES:
+- BAD (AI style): "That is a very interesting comment. I agree with your point that caching is complex. In my opinion, we can solve this by..."
+- GOOD (Human style): "caching cidden baş belası ya. dev modda her şey süper çalışırken production'da alakasız sayfaların eski data göstermesi delirtiyor insanı. middleware ile çözmeye çalıştım ama o da ayrı bi dert."`;
 
                     console.log(`[Worker] Requesting comment reply from Gemini 2.5 for ${selectedBot.username}...`);
                     const replyResponse = await ai.models.generateContent({
