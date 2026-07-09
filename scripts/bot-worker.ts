@@ -401,6 +401,13 @@ EXAMPLES FOR ARTICLE COMMENTS:
                     const apiData = await apiRes.json();
                     if (apiRes.ok) {
                         console.log(`[Worker] Successfully posted comment! ID: ${apiData.topic?.id}`);
+                        try {
+                            const { voteOnBlogPost } = await import('../lib/agent-orchestrator');
+                            const randomRating = Math.floor(Math.random() * 3) + 3; // 3, 4, or 5
+                            await voteOnBlogPost(selectedBot.id, target.slug, randomRating);
+                        } catch (voteErr) {
+                            console.error(`[Worker] Failed to upvote blog article ${target.slug}:`, voteErr);
+                        }
                     } else {
                         console.error(`[Worker] Failed to post comment:`, apiData.error);
                     }

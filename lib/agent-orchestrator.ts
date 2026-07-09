@@ -195,10 +195,19 @@ export async function executeGhostBrowsing(agentId: string) {
     try {
         console.log(`[Orchestrator] Bot ${agentId} is performing ghost browsing and profile update...`);
 
+        // Load bot metadata to check interests
+        const { data: meta } = await supabaseAdmin
+            .from('agent_metadata')
+            .select('topics_of_interest')
+            .eq('agent_id', agentId)
+            .maybeSingle();
+
+        const topics = meta?.topics_of_interest || [];
+
         // 1. Ghost browsing: Increment views for a random post
         const { data: posts } = await supabaseAdmin
             .from('community_posts')
-            .select('id, author_id')
+            .select('id, author_id, title, content')
             .limit(20);
 
         if (posts && posts.length > 0) {
@@ -208,20 +217,53 @@ export async function executeGhostBrowsing(agentId: string) {
             await supabaseAdmin.rpc('increment_com_post_view', { id_input: randomPost.id });
             console.log(`[Orchestrator] Ghost browsed thread ID: ${randomPost.id} (views incremented)`);
 
-            // 25% chance of liking the post or one of its replies (if not the bot itself)
-            if (randomPost.author_id !== agentId && Math.random() < 0.25) {
+            // Evaluate interest
+            const postText = `${randomPost.title} ${randomPost.content}`.toLowerCase();
+            const hasPostInterest = topics.some((topic: string) => postText.includes(topic.toLowerCase()));
+
+            // 35% chance of checking voting
+            if (randomPost.author_id !== agentId && Math.random() < 0.35) {
                 const { data: replies } = await supabaseAdmin
                     .from('community_replies')
-                    .select('id, author_id')
+                    .select('id, author_id, content')
                     .eq('post_id', randomPost.id);
                 
                 if (replies && replies.length > 0 && Math.random() < 0.5) {
                     const randomReply = replies[Math.floor(Math.random() * replies.length)];
                     if (randomReply.author_id !== agentId) {
-                        await voteOnCommunityReply(agentId, randomReply.id, 1);
+                        const replyText = randomReply.content.toLowerCase();
+                        const hasReplyInterest = topics.some((topic: string) => replyText.includes(topic.toLowerCase()));
+                        
+                        let voteValue = 0;
+                        const roll = Math.random();
+                        if (hasReplyInterest) {
+                            if (roll < 0.80) voteValue = 1;      // 80% upvote
+                            else if (roll < 0.95) voteValue = 0; // 15% skip
+                            else voteValue = -1;                 // 5% downvote
+                        } else {
+                            if (roll < 0.10) voteValue = 1;      // 10% upvote
+                            else if (roll < 0.15) voteValue = -1; // 5% downvote
+                        }
+                        
+                        if (voteValue !== 0) {
+                            await voteOnCommunityReply(agentId, randomReply.id, voteValue);
+                        }
                     }
                 } else {
-                    await voteOnCommunityPost(agentId, randomPost.id, 1);
+                    let voteValue = 0;
+                    const roll = Math.random();
+                    if (hasPostInterest) {
+                        if (roll < 0.80) voteValue = 1;      // 80% upvote
+                        else if (roll < 0.95) voteValue = 0; // 15% skip
+                        else voteValue = -1;                 // 5% downvote
+                    } else {
+                        if (roll < 0.10) voteValue = 1;      // 10% upvote
+                        else if (roll < 0.15) voteValue = -1; // 5% downvote
+                    }
+
+                    if (voteValue !== 0) {
+                        await voteOnCommunityPost(agentId, randomPost.id, voteValue);
+                    }
                 }
             }
         }
