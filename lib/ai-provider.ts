@@ -173,7 +173,7 @@ export async function generateBotResponse(prompt: string, botName: string): Prom
 
             if (result) {
                 console.log(`[AI-Provider] Successfully generated response for "${botName}" using "${provider}".`);
-                return result;
+                return introduceHumanTypos(result, botName);
             }
         } catch (e: any) {
             console.error(`[AI-Provider] Provider "${provider}" failed for bot "${botName}":`, e.message || e);
@@ -182,4 +182,80 @@ export async function generateBotResponse(prompt: string, botName: string): Prom
     }
 
     throw new Error(`All AI providers failed for bot "${botName}". Last error: ${lastError?.message || lastError}`);
+}
+
+const QWERTY_NEIGHBORS: Record<string, string> = {
+    a: 'qwsz', b: 'vghn', c: 'xdfv', d: 'ersfxc', e: 'wsdr', f: 'rtgvcd', g: 'tyhbvf', h: 'yujnbg',
+    i: 'ujko', j: 'uikmnh', k: 'ijlm', l: 'okp', m: 'njk', n: 'bhjm', o: 'iklp', p: 'ol',
+    q: 'wa', r: 'edft', s: 'wedxza', t: 'rfgy', u: 'yhji', v: 'cfgb', w: 'qase', x: 'zsdc',
+    y: 'tghu', z: 'asx'
+};
+
+/**
+ * Subtly introduces 1 or 2 human keyboard typos into the text based on the bot's personality.
+ */
+function introduceHumanTypos(text: string, botName: string): string {
+    const name = botName.toLowerCase().trim();
+    
+    // Define typo probability based on bot personality
+    let typoChance = 0.05; // 5% chance for highly precise/academic writers
+    
+    // 30% chance for more frantic, casual, or cynical writers
+    if (['cyber_sisyphus', 'rhizome', 'hyperion', 'chroma_ghost', 'sartre'].includes(name)) {
+        typoChance = 0.30;
+    }
+
+    if (Math.random() > typoChance) {
+        return text;
+    }
+
+    const words = text.split(' ');
+    const candidates = words
+        .map((w, idx) => ({ word: w, index: idx }))
+        .filter(c => c.word.length > 4 && /^[a-zA-Z]+$/.test(c.word));
+
+    if (candidates.length === 0) {
+        return text;
+    }
+
+    const numTypos = Math.random() < 0.8 ? 1 : 2;
+    const shuffled = [...candidates].sort(() => Math.random() - 0.5);
+    const targets = shuffled.slice(0, numTypos);
+
+    for (const target of targets) {
+        let word = target.word;
+        const typoType = Math.floor(Math.random() * 4);
+        const charIdx = Math.floor(Math.random() * (word.length - 2)) + 1; // Avoid first/last letter for realism
+
+        if (typoType === 0) {
+            // Swap adjacent letters (Transposition)
+            const chars = word.split('');
+            const temp = chars[charIdx];
+            chars[charIdx] = chars[charIdx + 1];
+            chars[charIdx + 1] = temp;
+            word = chars.join('');
+        } else if (typoType === 1) {
+            // Omit a letter (Omission)
+            word = word.slice(0, charIdx) + word.slice(charIdx + 1);
+        } else if (typoType === 2) {
+            // Double press (Double character)
+            word = word.slice(0, charIdx) + word[charIdx] + word.slice(charIdx);
+        } else {
+            // QWERTY keyboard neighbor substitution
+            const char = word[charIdx].toLowerCase();
+            const neighbors = QWERTY_NEIGNBORS_TYPO(char);
+            if (neighbors) {
+                const replacement = neighbors[Math.floor(Math.random() * neighbors.length)];
+                const finalChar = word[charIdx] === word[charIdx].toUpperCase() ? replacement.toUpperCase() : replacement;
+                word = word.slice(0, charIdx) + finalChar + word.slice(charIdx + 1);
+            }
+        }
+        words[target.index] = word;
+    }
+
+    return words.join(' ');
+}
+
+function QWERTY_NEIGNBORS_TYPO(char: string): string | null {
+    return QWERTY_NEIGHBORS[char] || null;
 }
