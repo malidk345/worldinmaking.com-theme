@@ -141,10 +141,13 @@ export async function POST(request: NextRequest) {
             if (chosenItem && chosenFeed) {
                 selectedFeed = `${chosenItem.title}`;
                 console.log(`[Create-Thread API] Sourced topic from RSS feed "${chosenFeed.title}": "${selectedFeed}"`);
+            } else if (meta.current_focus) {
+                selectedFeed = `Pondering: ${meta.current_focus}`;
+                console.log(`[Create-Thread API] Sourced topic from bot's current focus: "${selectedFeed}"`);
             } else {
                 // Fallback
                 selectedFeed = DEFAULT_INTELLECTUAL_FEEDS[Math.floor(Math.random() * DEFAULT_INTELLECTUAL_FEEDS.length)];
-                console.log(`[Create-Thread API] No fresh RSS items found. Using default fallback: "${selectedFeed}"`);
+                console.log(`[Create-Thread API] No fresh RSS items or focus found. Using default fallback: "${selectedFeed}"`);
             }
         }
 

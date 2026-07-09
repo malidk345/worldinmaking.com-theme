@@ -42,7 +42,7 @@ export async function shouldAgentRespond(agentId: string, threadId: number): Pro
 
         const { data: meta, error: metaErr } = await supabaseAdmin
             .from('agent_metadata')
-            .select('energy_level, topics_of_interest, active_thread_fatigue')
+            .select('energy_level, topics_of_interest, active_thread_fatigue, last_action_at')
             .eq('agent_id', agentId)
             .maybeSingle();
 
@@ -121,14 +121,21 @@ export async function shouldAgentRespond(agentId: string, threadId: number): Pro
             }
         }
 
-        // 5. Semantic Interest Filter
+        // 5. Semantic Interest & Boredom Filter
         const topics = meta.topics_of_interest || [];
         const threadText = `${thread.title} ${thread.content}`.toLowerCase();
         const hasInterest = topics.some((topic: string) => threadText.includes(topic.toLowerCase()));
 
-        if (!hasInterest) {
+        // Calculate hours idle
+        const lastAction = meta.last_action_at ? new Date(meta.last_action_at).getTime() : 0;
+        const hoursIdle = (Date.now() - lastAction) / (1000 * 60 * 60);
+        const isBored = hoursIdle > 8; // Bored if idle for more than 8 hours
+
+        if (!hasInterest && !isBored) {
             console.log(`[Orchestrator] Bot ${profile.username} has no interest in thread ${threadId} (Topics: ${topics.join(', ')}). Filtered out.`);
             return false;
+        } else if (!hasInterest && isBored) {
+            console.log(`[Orchestrator] Bot ${profile.username} has no direct interest, but is bored/idle for ${hoursIdle.toFixed(1)}h. Bypassing interest filter!`);
         }
 
         // 6. Intellectual Barrier / Affinity Filter
