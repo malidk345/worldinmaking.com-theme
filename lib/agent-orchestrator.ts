@@ -90,8 +90,23 @@ export async function shouldAgentRespond(agentId: string, threadId: number): Pro
         const isMentionedInReplies = replies?.some(r => mentionRegex.test(r.content)) || false;
         const isMentioned = isMentionedInThread || isMentionedInReplies;
 
-        if (isMentioned) {
-            console.log(`[Orchestrator] Bot ${profile.username} was MENTIONED in thread ${threadId}. Bypassing interest filters!`);
+        // Check if bot is the parent of the last reply (direct reply)
+        let isRepliedTo = false;
+        if (replies && replies.length >= 1) {
+            const lastReply = replies[0]; // descending order, index 0 is latest
+            if (lastReply.author_id !== agentId) {
+                let parentAuthorId = '';
+                if (replies.length >= 2) {
+                    parentAuthorId = replies[1].author_id;
+                } else {
+                    parentAuthorId = thread.author_id;
+                }
+                isRepliedTo = parentAuthorId === agentId;
+            }
+        }
+
+        if (isMentioned || isRepliedTo) {
+            console.log(`[Orchestrator] Bot ${profile.username} was MENTIONED or REPLIED TO in thread ${threadId}. Bypassing interest filters!`);
             return true;
         }
 

@@ -430,19 +430,60 @@ EXAMPLES FOR ARTICLE COMMENTS:
                     }
 
                     const replyList = replies || [];
-                    const participants = new Set<string>();
-                    participants.add(comment.author_id);
-                    replyList.forEach(r => participants.add(r.author_id));
+                    
+                    // 1. Identify the last comment/post author and content in the thread
+                    let lastAuthorId = '';
+                    let lastContent = '';
+                    if (replyList.length > 0) {
+                        const lastReply = replyList[replyList.length - 1];
+                        lastAuthorId = lastReply.author_id;
+                        lastContent = lastReply.content || '';
+                    } else {
+                        lastAuthorId = comment.author_id;
+                        lastContent = comment.content || '';
+                    }
 
-                    const nonParticipants = bots.filter(b => !participants.has(b.id));
-                    const activeNonParticipants = nonParticipants.filter(b => isBotAwakeAndActive(b.username));
-                    if (activeNonParticipants.length === 0) {
-                        console.log(`[Worker] No awake/active bots left to reply to comment ID ${comment.id}. Skipping.`);
+                    // 2. Filter eligible bots (awake/active and not the last author)
+                    const eligibleBots = bots.filter(b => b.id !== lastAuthorId && isBotAwakeAndActive(b.username));
+
+                    if (eligibleBots.length === 0) {
+                        console.log(`[Worker] No awake/active bots eligible to reply to comment ID ${comment.id}. Skipping.`);
                         continue;
                     }
 
-                    const selectedBot = activeNonParticipants[Math.floor(Math.random() * activeNonParticipants.length)];
-                    console.log(`[Worker] Selecting bot ${selectedBot.username} to reply to comment thread ID ${comment.id}`);
+                    let selectedBot = null;
+
+                    // 3. Priority 1: Mentions in the last comment/post
+                    for (const bot of eligibleBots) {
+                        const mentionRegex = new RegExp(`@${bot.username}\\b`, 'i');
+                        if (mentionRegex.test(lastContent)) {
+                            console.log(`[Worker] Priority 1: Bot ${bot.username} was mentioned in the last comment. Selecting for reply!`);
+                            selectedBot = bot;
+                            break;
+                        }
+                    }
+
+                    // 4. Priority 2: Direct reply to a bot's comment
+                    if (!selectedBot && replyList.length >= 1) {
+                        let parentAuthorId = '';
+                        if (replyList.length >= 2) {
+                            parentAuthorId = replyList[replyList.length - 2].author_id;
+                        } else {
+                            parentAuthorId = comment.author_id;
+                        }
+
+                        const parentBot = eligibleBots.find(b => b.id === parentAuthorId);
+                        if (parentBot) {
+                            console.log(`[Worker] Priority 2: Last comment was a reply to bot ${parentBot.username}. Selecting for reply!`);
+                            selectedBot = parentBot;
+                        }
+                    }
+
+                    // 5. Fallback: Select a random eligible bot
+                    if (!selectedBot) {
+                        selectedBot = eligibleBots[Math.floor(Math.random() * eligibleBots.length)];
+                        console.log(`[Worker] Fallback: Selecting random eligible bot ${selectedBot.username} to reply.`);
+                    }
 
                     // Prepare context
                     const commentProfile = Array.isArray(comment.profiles) ? comment.profiles[0] : comment.profiles;
