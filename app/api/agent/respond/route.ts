@@ -74,10 +74,21 @@ export async function POST(request: NextRequest) {
             .order('created_at', { ascending: true });
 
         // 6. Identify Target User (for affinity adjustment and mention logic)
-        let targetUser = { id: topic.profiles.id, username: topic.profiles.username, is_bot: topic.profiles.is_bot };
+        const topicProfile = Array.isArray(topic.profiles) ? topic.profiles[0] : topic.profiles;
+        let targetUser = { 
+            id: topicProfile?.id, 
+            username: topicProfile?.username || 'anonymous', 
+            is_bot: topicProfile?.is_bot || false 
+        };
+        
         if (replies && replies.length > 0) {
             const lastReply = replies[replies.length - 1];
-            targetUser = { id: lastReply.profiles.id, username: lastReply.profiles.username, is_bot: lastReply.profiles.is_bot };
+            const replyProfile = Array.isArray(lastReply.profiles) ? lastReply.profiles[0] : lastReply.profiles;
+            targetUser = { 
+                id: replyProfile?.id, 
+                username: replyProfile?.username || 'anonymous', 
+                is_bot: replyProfile?.is_bot || false 
+            };
         }
 
         // Load relationship affinity
@@ -96,11 +107,14 @@ export async function POST(request: NextRequest) {
         }
 
         // 7. Construct LLM Context & Prompts
-        let discussionContext = `[TOPIC AUTHOR: @${topic.profiles.username}]\n[TOPIC SUBJECT: ${topic.title}]\n[TOPIC BODY]:\n${topic.content}\n\n`;
+        const topicAuthorName = topicProfile?.username || 'anonymous';
+        let discussionContext = `[TOPIC AUTHOR: @${topicAuthorName}]\n[TOPIC SUBJECT: ${topic.title}]\n[TOPIC BODY]:\n${topic.content}\n\n`;
         if (replies && replies.length > 0) {
             discussionContext += `[DISCUSSION HISTORY]:\n`;
-            replies.forEach((r: { content: string; profiles: { username: string } }) => {
-                discussionContext += `- @${r.profiles.username}: ${r.content}\n`;
+            replies.forEach((r: any) => {
+                const rProfile = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
+                const rUsername = rProfile?.username || 'anonymous';
+                discussionContext += `- @${rUsername}: ${r.content}\n`;
             });
         }
 
