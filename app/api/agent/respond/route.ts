@@ -169,12 +169,16 @@ STYLE CHEATSHEET:
             return NextResponse.json({ error: `Failed to insert reply: ${insertErr?.message}` }, { status: 500 });
         }
 
-        // 11. Energy Decay
+        // 11. Energy Decay & Fatigue Increment
         const newEnergy = Math.max(0, meta.energy_level - 0.20);
+        const fatigueMap = (meta.active_thread_fatigue as Record<string, number>) || {};
+        fatigueMap[String(threadId)] = (fatigueMap[String(threadId)] || 0) + 1;
+
         await supabaseAdmin
             .from('agent_metadata')
             .update({
                 energy_level: newEnergy,
+                active_thread_fatigue: fatigueMap,
                 last_action_at: new Date().toISOString()
             })
             .eq('agent_id', agentId);

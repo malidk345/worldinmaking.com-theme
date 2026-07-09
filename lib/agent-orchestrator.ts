@@ -33,101 +33,127 @@ export async function shouldAgentRespond(agentId: string, threadId: number): Pro
     try {
         console.log(`[Orchestrator] Checking if bot ${agentId} should respond to thread ${threadId}...`);
 
-        // 1. Tiredness Filter (Energy level check)
+        // Load bot profile and metadata
+        const { data: profile } = await supabaseAdmin
+            .from('profiles')
+            .select('username')
+            .eq('id', agentId)
+            .maybeSingle();
+
         const { data: meta, error: metaErr } = await supabaseAdmin
             .from('agent_metadata')
-            .select('energy_level')
+            .select('energy_level, topics_of_interest, active_thread_fatigue')
             .eq('agent_id', agentId)
             .maybeSingle();
 
-        if (metaErr || !meta) {
-            console.warn(`[Orchestrator] Failed to fetch metadata for bot ${agentId}, defaulting to inactive.`, metaErr?.message);
+        if (metaErr || !meta || !profile) {
+            console.warn(`[Orchestrator] Failed to fetch profile/metadata for bot ${agentId}.`, metaErr?.message);
             return false;
         }
 
+        // 1. Fatigue Filter
+        const fatigueMap = (meta.active_thread_fatigue as Record<string, number>) || {};
+        const threadFatigue = fatigueMap[String(threadId)] || 0;
+        if (threadFatigue >= 2) {
+            console.log(`[Orchestrator] Bot ${profile.username} is fatigued for thread ${threadId} (Replies: ${threadFatigue} >= 2). Filtered out.`);
+            return false;
+        }
+
+        // 2. Tiredness Filter
         if (meta.energy_level < 0.15) {
-            console.log(`[Orchestrator] Bot ${agentId} is too tired (Energy: ${meta.energy_level.toFixed(2)} < 0.15). Filtered out.`);
+            console.log(`[Orchestrator] Bot ${profile.username} is too tired (Energy: ${meta.energy_level.toFixed(2)} < 0.15). Filtered out.`);
             return false;
         }
 
-        // 2. Thread Saturation Filter (Max 6 bot comments in last 1 hour)
-        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-        const { data: recentReplies, error: recentErr } = await supabaseAdmin
-            .from('community_replies')
-            .select('id, author_id, profiles!inner(is_bot)')
-            .eq('post_id', threadId)
-            .gt('created_at', oneHourAgo);
+        // Fetch thread details
+        const { data: thread } = await supabaseAdmin
+            .from('community_posts')
+            .select('title, content, author_id')
+            .eq('id', threadId)
+            .maybeSingle();
 
-        if (recentErr) {
-            console.warn(`[Orchestrator] Error fetching recent replies for thread ${threadId}:`, recentErr.message);
-        } else if (recentReplies) {
-            const botRepliesCount = recentReplies.filter((r: { id: number; author_id: string; profiles: { is_bot: boolean } | { is_bot: boolean }[] | null }) => {
-                const profile = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
-                return profile?.is_bot;
+        if (!thread) {
+            console.warn(`[Orchestrator] Thread ${threadId} not found.`);
+            return false;
+        }
+
+        // Fetch replies to search for mentions
+        const { data: replies } = await supabaseAdmin
+            .from('community_replies')
+            .select('id, content, author_id, profiles!inner(is_bot)')
+            .eq('post_id', threadId)
+            .order('created_at', { ascending: false });
+
+        // Check if bot is mentioned
+        const mentionRegex = new RegExp(`@${profile.username}\\b`, 'i');
+        const isMentionedInThread = mentionRegex.test(thread.title) || mentionRegex.test(thread.content);
+        const isMentionedInReplies = replies?.some(r => mentionRegex.test(r.content)) || false;
+        const isMentioned = isMentionedInThread || isMentionedInReplies;
+
+        if (isMentioned) {
+            console.log(`[Orchestrator] Bot ${profile.username} was MENTIONED in thread ${threadId}. Bypassing interest filters!`);
+            return true;
+        }
+
+        // 3. Thread Saturation Filter (Max 6 bot comments in last 1 hour)
+        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+        if (replies) {
+            const botRepliesCount = replies.filter(r => {
+                const p = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
+                return p?.is_bot;
             }).length;
             if (botRepliesCount > 6) {
-                console.log(`[Orchestrator] Thread ${threadId} is saturated with bot replies (Count: ${botRepliesCount} > 6). Filtered out.`);
+                console.log(`[Orchestrator] Thread ${threadId} is saturated with bot replies. Filtered out.`);
                 return false;
             }
         }
 
-        // 3. Infinite Loop Prevention Filter (Last 4 replies are all bots)
-        const { data: lastReplies, error: lastErr } = await supabaseAdmin
-            .from('community_replies')
-            .select('id, author_id, profiles!inner(is_bot)')
-            .eq('post_id', threadId)
-            .order('created_at', { ascending: false })
-            .limit(4);
-
-        if (lastErr) {
-            console.warn(`[Orchestrator] Error fetching last replies for thread ${threadId}:`, lastErr.message);
-        } else if (lastReplies && lastReplies.length === 4) {
-            const allBots = lastReplies.every((r: { id: number; author_id: string; profiles: { is_bot: boolean } | { is_bot: boolean }[] | null }) => {
-                const profile = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
-                return profile?.is_bot;
+        // 4. Infinite Loop Prevention Filter
+        if (replies && replies.length >= 4) {
+            const last4 = replies.slice(0, 4);
+            const allBots = last4.every(r => {
+                const p = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
+                return p?.is_bot;
             });
             if (allBots) {
-                console.log(`[Orchestrator] Thread ${threadId} is stuck in a bot-to-bot loop (last 4 replies are bots). Filtered out.`);
+                console.log(`[Orchestrator] Thread ${threadId} is stuck in a bot-to-bot loop. Filtered out.`);
                 return false;
             }
         }
 
-        // 4. Intellectual Barrier / Affinity Filter (affinity_score < -0.90)
-        // Find target user (last replier, or thread author if no replies)
+        // 5. Semantic Interest Filter
+        const topics = meta.topics_of_interest || [];
+        const threadText = `${thread.title} ${thread.content}`.toLowerCase();
+        const hasInterest = topics.some((topic: string) => threadText.includes(topic.toLowerCase()));
+
+        if (!hasInterest) {
+            console.log(`[Orchestrator] Bot ${profile.username} has no interest in thread ${threadId} (Topics: ${topics.join(', ')}). Filtered out.`);
+            return false;
+        }
+
+        // 6. Intellectual Barrier / Affinity Filter
         let targetUserId: string | null = null;
-        if (lastReplies && lastReplies.length > 0) {
-            targetUserId = lastReplies[0].author_id;
+        if (replies && replies.length > 0) {
+            targetUserId = replies[0].author_id;
         } else {
-            const { data: thread, error: threadErr } = await supabaseAdmin
-                .from('community_posts')
-                .select('author_id')
-                .eq('id', threadId)
-                .maybeSingle();
-            
-            if (threadErr || !thread) {
-                console.warn(`[Orchestrator] Failed to fetch thread details for ${threadId}:`, threadErr?.message);
-            } else {
-                targetUserId = thread.author_id;
-            }
+            targetUserId = thread.author_id;
         }
 
         if (targetUserId && targetUserId !== agentId) {
-            const { data: relation, error: relErr } = await supabaseAdmin
+            const { data: relation } = await supabaseAdmin
                 .from('agent_relationships')
                 .select('affinity_score')
                 .eq('source_agent_id', agentId)
                 .eq('target_agent_id', targetUserId)
                 .maybeSingle();
 
-            if (relErr) {
-                console.warn(`[Orchestrator] Failed to query relationships for ${agentId} -> ${targetUserId}:`, relErr.message);
-            } else if (relation && relation.affinity_score < -0.90) {
-                console.log(`[Orchestrator] Intellectual block: Bot ${agentId} ignores target ${targetUserId} due to severe hostility (Affinity: ${relation.affinity_score.toFixed(2)} < -0.90). Filtered out.`);
+            if (relation && relation.affinity_score < -0.90) {
+                console.log(`[Orchestrator] Intellectual block: Bot ${profile.username} ignores target due to hostility (Affinity: ${relation.affinity_score.toFixed(2)}). Filtered out.`);
                 return false;
             }
         }
 
-        console.log(`[Orchestrator] Bot ${agentId} passed all filters for thread ${threadId}.`);
+        console.log(`[Orchestrator] Bot ${profile.username} passed all filters for thread ${threadId}.`);
         return true;
     } catch (err) {
         console.error('[Orchestrator] Error inside shouldAgentRespond:', err);
