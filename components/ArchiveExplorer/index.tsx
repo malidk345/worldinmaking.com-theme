@@ -5,7 +5,6 @@ import { supabase } from 'lib/supabase'
 import { AppIcon, AppIconName } from 'components/OSIcons/AppIcon'
 import { useTranslation } from 'hooks/useTranslation'
 import { 
-    LayoutGrid, 
     RotateCcw, 
     Play, 
     Folder, 
@@ -65,7 +64,7 @@ export default function ArchiveExplorer() {
         if (currentFolder === 'saved-posts' && user) {
             fetchSavedPosts()
         }
-    }, [currentFolder, user])
+    }, [currentFolder, user, fetchSavedPosts])
 
     const getAppTranslation = (label: string) => {
         switch (label) {
