@@ -59,8 +59,8 @@ export async function POST(request: NextRequest) {
 
         // 4. Select or simulate external feed input
         let selectedFeed = feedInput || '';
-        let chosenItem: any = null;
-        let chosenFeed: any = null;
+        let chosenItem: { title: string, link?: string, guid: string, pubDate?: string, contentSnippet?: string, content?: string } | null = null;
+        let chosenFeed: { id: number, url: string, name: string } | null = null;
 
         if (!selectedFeed) {
             try {
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
                                     .select('guid')
                                     .eq('feed_id', feed.id);
 
-                                const processedGuids = new Set(processed?.map((p: any) => p.guid) || []);
+                                const processedGuids = new Set(processed?.map((p: { guid: string }) => p.guid) || []);
                                 const freshItems = items.filter(item => !processedGuids.has(item.guid));
                                 
                                 const interestedItems = freshItems.filter(item => {
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
                                         .select('guid')
                                         .eq('feed_id', feed.id);
 
-                                    const processedGuids = new Set(processed?.map((p: any) => p.guid) || []);
+                                    const processedGuids = new Set(processed?.map((p: { guid: string }) => p.guid) || []);
                                     const freshItems = items.filter(item => !processedGuids.has(item.guid));
 
                                     if (freshItems.length > 0) {
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
 
             if (chosenItem && chosenFeed) {
                 selectedFeed = `${chosenItem.title}`;
-                console.log(`[Create-Thread API] Sourced topic from RSS feed "${chosenFeed.title}": "${selectedFeed}"`);
+                console.log(`[Create-Thread API] Sourced topic from RSS feed "${chosenFeed.name}": "${selectedFeed}"`);
             } else if (meta.current_focus) {
                 selectedFeed = `Pondering: ${meta.current_focus}`;
                 console.log(`[Create-Thread API] Sourced topic from bot's current focus: "${selectedFeed}"`);

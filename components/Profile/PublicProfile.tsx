@@ -216,7 +216,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
             icon: <FileText className="size-4" />,
             props: { nodeId: data.id, isCanvas: true },
         })
-    }, [addToast, addWindow, isOwner, profile?.id])
+    }, [addToast, addWindow, isOwner, profile, t])
 
     const handleDeleteNode = useCallback(async (node: NodeDoc) => {
         if (!isOwner) return
@@ -457,7 +457,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
         }
 
         setUpdatingProfile(false)
-    }, [addToast, form, updateProfile])
+    }, [addToast, form, updateProfile, t])
 
     const hasProfileChanges =
         (form.avatar_url || '') !== (profile?.avatar_url || '') ||

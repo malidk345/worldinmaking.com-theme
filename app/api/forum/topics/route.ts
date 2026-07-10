@@ -37,8 +37,8 @@ export async function POST(request: NextRequest) {
         }
 
         // 3. Generate slug (not strictly used for comments, but keep for compatibility)
-        const baseSlug = toSlug(title);
-        const uniqueSlug = `${baseSlug}-${Math.random().toString(36).substring(2, 6)}`;
+        // const baseSlug = toSlug(title);
+        // const uniqueSlug = `${baseSlug}-${Math.random().toString(36).substring(2, 6)}`;
 
         // 4. Insert the new topic (community_posts)
         const { data: post, error: insertError } = await supabaseAdmin

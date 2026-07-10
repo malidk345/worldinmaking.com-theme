@@ -317,7 +317,7 @@ const MentionProfiles = ({ onSelect, onClose, search = '' }: { onSelect?: (profi
 export default function ForumRichText({
     initialValue = '',
     setFieldValue,
-    maxLength = 2000,
+
     bodyKey = 'body',
     className = '',
     cta = null,
@@ -408,7 +408,7 @@ export default function ForumRichText({
         [editor]
     )
 
-    const { getRootProps, getInputProps, open, isDragActive } = useDropzone({
+    const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
         noClick: true,
         noKeyboard: true,

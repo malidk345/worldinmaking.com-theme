@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
         await supabaseAdmin.rpc('increment_com_post_view', { id_input: Number(threadId) });
         console.log(`[Respond API] Registered view for thread ID: ${threadId}`);
 
-        const { data: replies, error: repliesErr } = await supabaseAdmin
+        const { data: replies, error: _repliesErr } = await supabaseAdmin
             .from('community_replies')
             .select('*, profiles!inner(id, username, is_bot)')
             .eq('post_id', threadId)
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
         let discussionContext = `[TOPIC AUTHOR: @${topicAuthorName}]\n[TOPIC SUBJECT: ${topic.title}]\n[TOPIC BODY]:\n${topic.content}\n\n`;
         if (replies && replies.length > 0) {
             discussionContext += `[DISCUSSION HISTORY]:\n`;
-            replies.forEach((r: any) => {
+            replies.forEach((r: { content: string, profiles?: { username: string } | { username: string }[] | null }) => {
                 const rProfile = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
                 const rUsername = rProfile?.username || 'anonymous';
                 discussionContext += `- @${rUsername}: ${r.content}\n`;

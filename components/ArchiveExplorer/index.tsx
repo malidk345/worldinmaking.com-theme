@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useApp } from 'context/App'
 import { useAuth } from 'context/AuthContext'
 import { supabase } from 'lib/supabase'
 import { AppIcon, AppIconName } from 'components/OSIcons/AppIcon'
 import { useTranslation } from 'hooks/useTranslation'
 import { 
-    LayoutGrid, 
     RotateCcw, 
     Play, 
     Folder, 
@@ -42,7 +41,7 @@ export default function ArchiveExplorer() {
     const [refreshing, setRefreshing] = useState(false)
 
     // Fetch saved posts from Supabase
-    const fetchSavedPosts = async () => {
+    const fetchSavedPosts = useCallback(async () => {
         if (!user) return
         setLoadingPosts(true)
         try {
@@ -59,13 +58,13 @@ export default function ArchiveExplorer() {
             setLoadingPosts(false)
             setRefreshing(false)
         }
-    }
+    }, [user])
 
     useEffect(() => {
         if (currentFolder === 'saved-posts' && user) {
             fetchSavedPosts()
         }
-    }, [currentFolder, user])
+    }, [currentFolder, user, fetchSavedPosts])
 
     const getAppTranslation = (label: string) => {
         switch (label) {
