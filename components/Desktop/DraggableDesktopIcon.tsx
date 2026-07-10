@@ -18,7 +18,7 @@ export default function DraggableDesktopIcon({ id, app, initialPosition, onPosit
     const [isArchiving, setIsArchiving] = useState(false)
     const [hasDragged, setHasDragged] = useState(false)
     const controls = useDragControls()
-    const { constraintsRef, isMobile, archiveItem } = useApp()
+    const { constraintsRef, archiveItem } = useApp()
 
     useEffect(() => {
         setPosition(initialPosition)

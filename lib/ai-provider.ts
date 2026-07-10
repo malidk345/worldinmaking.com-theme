@@ -154,7 +154,7 @@ async function callHuggingFace(prompt: string): Promise<string> {
  */
 export async function generateBotResponse(prompt: string, botName: string): Promise<string> {
     const providers = getProviderOrder(botName);
-    let lastError: any = null;
+    let lastError: unknown = null;
 
     for (const provider of providers) {
         try {
@@ -175,13 +175,15 @@ export async function generateBotResponse(prompt: string, botName: string): Prom
                 console.log(`[AI-Provider] Successfully generated response for "${botName}" using "${provider}".`);
                 return introduceHumanTypos(result, botName);
             }
-        } catch (e: any) {
-            console.error(`[AI-Provider] Provider "${provider}" failed for bot "${botName}":`, e.message || e);
-            lastError = e;
+        } catch (e: unknown) {
+            const err = e as Error;
+            console.error(`[AI-Provider] Provider "${provider}" failed for bot "${botName}":`, err.message || err);
+            lastError = err;
         }
     }
 
-    throw new Error(`All AI providers failed for bot "${botName}". Last error: ${lastError?.message || lastError}`);
+    const finalErr = lastError as Error;
+    throw new Error(`All AI providers failed for bot "${botName}". Last error: ${finalErr?.message || finalErr}`);
 }
 
 const QWERTY_NEIGHBORS: Record<string, string> = {

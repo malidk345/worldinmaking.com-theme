@@ -111,7 +111,7 @@ export async function shouldAgentRespond(agentId: string, threadId: number): Pro
         }
 
         // 3. Thread Saturation Filter (Max 6 bot comments in last 1 hour)
-        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+        const _oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
         if (replies) {
             const botRepliesCount = replies.filter(r => {
                 const p = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;

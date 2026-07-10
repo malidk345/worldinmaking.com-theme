@@ -59,7 +59,9 @@ export async function POST(request: NextRequest) {
 
         // 4. Select or simulate external feed input
         let selectedFeed = feedInput || '';
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let chosenItem: any = null;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let chosenFeed: any = null;
 
         if (!selectedFeed) {
@@ -87,7 +89,7 @@ export async function POST(request: NextRequest) {
                                     .select('guid')
                                     .eq('feed_id', feed.id);
 
-                                const processedGuids = new Set(processed?.map((p: any) => p.guid) || []);
+                                const processedGuids = new Set(processed?.map((p: { guid: string }) => p.guid) || []);
                                 const freshItems = items.filter(item => !processedGuids.has(item.guid));
                                 
                                 const interestedItems = freshItems.filter(item => {
@@ -119,7 +121,7 @@ export async function POST(request: NextRequest) {
                                         .select('guid')
                                         .eq('feed_id', feed.id);
 
-                                    const processedGuids = new Set(processed?.map((p: any) => p.guid) || []);
+                                    const processedGuids = new Set(processed?.map((p: { guid: string }) => p.guid) || []);
                                     const freshItems = items.filter(item => !processedGuids.has(item.guid));
 
                                     if (freshItems.length > 0) {
