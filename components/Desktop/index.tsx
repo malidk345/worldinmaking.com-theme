@@ -83,18 +83,16 @@ export default function Desktop() {
             }
         ]
 
-        if (user) {
-            baseApps.unshift({
-                label: 'write-post',
-                displayLabel: t('menu.create_post'),
-                Icon: <AppIcon name="typewriter" />,
-                onClick: () => addWindow({
-                    key: 'write-post',
-                    path: '/write-post',
-                    title: t('menu.create_post')
-                })
+        baseApps.unshift({
+            label: 'write-post',
+            displayLabel: t('menu.create_post'),
+            Icon: <AppIcon name="typewriter" />,
+            onClick: () => addWindow({
+                key: 'write-post',
+                path: '/write-post',
+                title: t('menu.create_post')
             })
-        }
+        })
 
         return baseApps
     }, [addWindow, t, user])

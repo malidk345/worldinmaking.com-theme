@@ -27,6 +27,7 @@ import BlueprintPostView from 'components/Blueprints/BlueprintPostView'
 import ArchiveExplorer from 'components/ArchiveExplorer'
 import ForumAvatar from 'components/Forum/ForumAvatar'
 import ForumRichText from 'components/Forum/ForumRichText'
+import PostLexicalEditor from 'components/Forum/PostLexicalEditor'
 
 interface AdaptablePost {
     id: number | string
@@ -952,36 +953,38 @@ function WritePostRouteView({ postId, item }: { postId?: string, item: AppWindow
                             />
                         </div>
 
-                        <ForumRichText
+                        <PostLexicalEditor
                             initialValue={content}
-                            setFieldValue={(key: string, val: string) => setContent(val)}
-                            placeholder="type here..."
-                            expandHeight={true}
-                            mentions={true}
-                            boxed={true}
-                            borderClass="border-black/10 dark:border-white/10"
-                            cta={
-                                <div className="flex items-center gap-1.5 w-full">
-                                    <OSButton
-                                        size="sm"
-                                        variant="primary"
-                                        disabled={saving}
-                                        onClick={() => handleSavePost(true)}
-                                    >
-                                        <span className="lowercase font-bold">{saving ? t('appwindow.publishing') : t('appwindow.publish')}</span>
-                                    </OSButton>
-                                    <OSButton
-                                        size="sm"
-                                        variant="default"
-                                        onClick={() => handleSavePost(false)}
-                                        disabled={saving}
-                                        className="opacity-70 hover:opacity-100"
-                                    >
-                                        <span className="lowercase font-bold">{t('appwindow.save_draft')}</span>
-                                    </OSButton>
-                                </div>
-                            }
+                            onChange={(val: string) => setContent(val)}
+                            placeholder="start typing your story here..."
+                            className="flex-1 min-h-[300px]"
                         />
+
+                        {/* CTA Footer */}
+                        <div className="flex items-center justify-between gap-3 pt-3 border-t border-black/5 dark:border-white/5 shrink-0 select-none">
+                            <p className="text-[10px] opacity-40 [text-wrap:balance] text-primary lowercase font-medium tracking-wide">
+                                drafts auto-save locally. publish to make it visible on the main feed.
+                            </p>
+                            <div className="flex items-center gap-1.5">
+                                <OSButton
+                                    size="sm"
+                                    variant="primary"
+                                    disabled={saving}
+                                    onClick={() => handleSavePost(true)}
+                                >
+                                    <span className="lowercase font-bold">{saving ? t('appwindow.publishing') : t('appwindow.publish')}</span>
+                                </OSButton>
+                                <OSButton
+                                    size="sm"
+                                    variant="default"
+                                    onClick={() => handleSavePost(false)}
+                                    disabled={saving}
+                                    className="opacity-70 hover:opacity-100"
+                                >
+                                    <span className="lowercase font-bold">{t('appwindow.save_draft')}</span>
+                                </OSButton>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
