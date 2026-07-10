@@ -9,7 +9,7 @@ import {
 } from '@posthog/icons'
 import { useApp } from 'context/App'
 import { usePosts } from 'hooks/usePosts'
-import { useAuth } from 'context/AuthContext'
+
 import type { Post } from 'types/database'
 import ScrollArea from 'components/RadixUI/ScrollArea'
 import { useTranslation } from 'hooks/useTranslation'

@@ -154,7 +154,7 @@ async function callHuggingFace(prompt: string): Promise<string> {
  */
 export async function generateBotResponse(prompt: string, botName: string): Promise<string> {
     const providers = getProviderOrder(botName);
-    let lastError: any = null;
+    let lastError: Error | null = null;
 
     for (const provider of providers) {
         try {
@@ -175,6 +175,7 @@ export async function generateBotResponse(prompt: string, botName: string): Prom
                 console.log(`[AI-Provider] Successfully generated response for "${botName}" using "${provider}".`);
                 return introduceHumanTypos(result, botName);
             }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (e: any) {
             console.error(`[AI-Provider] Provider "${provider}" failed for bot "${botName}":`, e.message || e);
             lastError = e;
