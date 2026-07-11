@@ -97,7 +97,7 @@ body {
 }
 
 body {
-  font-family: var(--font-ibm-plex), '-apple-system', 'BlinkMacSystemFont', 'avenir next',
+  font-family: var(--font-apple), '-apple-system', 'BlinkMacSystemFont', 'avenir next',
     'avenir', 'segoe ui', 'helvetica neue', 'helvetica', 'Ubuntu', 'roboto', 'noto', 'arial', 'sans-serif' !important;
   overflow-x: hidden;
   word-wrap: break-word;
@@ -256,10 +256,10 @@ mark {
   --font-fairytale-title: "Fairytale", sans-serif;
   --font-fairytale: "Computer Modern", sans-serif;
   --font-serif: "Charter", "MatterVF", "Arial", "Helvetica", sans-serif;
-  --font-sans: var(--font-ibm-plex), -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui', 'helvetica neue', helvetica, Ubuntu, roboto, noto, arial, sans-serif;
+  --font-sans: var(--font-apple), -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui', 'helvetica neue', helvetica, Ubuntu, roboto, noto, arial, sans-serif;
   --font-fancy: "Zapfino", serif;
-  --font-button: var(--font-ibm-plex), sans-serif;
-  --font-nav: var(--font-ibm-plex), sans-serif;
+  --font-button: var(--font-apple), sans-serif;
+  --font-nav: var(--font-apple), sans-serif;
   --font-code: "Source Code Pro", Menlo, Consolas, monaco, monospace;
   --font-squeak: "Squeak", sans-serif;
   --font-comic: "Comic Sans MS", "Comic Sans", "Arial Rounded MT Bold", "Helvetica Rounded", Arial, sans-serif;
@@ -751,7 +751,7 @@ mark {
 
   body {
     color: rgb(var(--text-primary));
-    font-family: var(--font-ibm-plex), -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui', 'helvetica neue', helvetica, Ubuntu, roboto, noto, arial, sans-serif !important;
+    font-family: var(--font-apple), -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui', 'helvetica neue', helvetica, Ubuntu, roboto, noto, arial, sans-serif !important;
     word-wrap: break-word;
     position: fixed;
     inset: 0;
@@ -819,7 +819,7 @@ mark {
     @apply font-bold;
     letter-spacing: -0.025em;
     font-variation-settings: 'wght' 700;
-    font-family: var(--font-ibm-plex), -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui', 'helvetica neue', helvetica, Ubuntu, roboto, noto, arial, sans-serif !important;
+    font-family: var(--font-apple), -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui', 'helvetica neue', helvetica, Ubuntu, roboto, noto, arial, sans-serif !important;
   }
 
   a:hover,
@@ -828,7 +828,7 @@ mark {
   }
 
   [data-app="AppWindow"] header {
-    font-family: var(--font-ibm-plex), -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui', 'helvetica neue', helvetica, Ubuntu, roboto, noto, arial, sans-serif !important;
+    font-family: var(--font-apple), -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui', 'helvetica neue', helvetica, Ubuntu, roboto, noto, arial, sans-serif !important;
   }
 
   h1 {
@@ -874,7 +874,7 @@ mark {
   .reader-view-content-container h5,
   .reader-view-content-container h6,
   .reader-view-content-container blockquote {
-    font-family: var(--font-ibm-plex), -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui', 'helvetica neue', helvetica, Ubuntu, roboto, noto, arial, sans-serif !important;
+    font-family: var(--font-apple), -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui', 'helvetica neue', helvetica, Ubuntu, roboto, noto, arial, sans-serif !important;
   }
 
   mark {
