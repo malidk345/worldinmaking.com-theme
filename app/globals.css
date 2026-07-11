@@ -1,3 +1,48 @@
+
+@theme {
+  --font-apple: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-apple-code: "SF Mono", SFMono-Regular, Consolas, monospace;
+}
+
+@utility antialiased {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@utility apple-h1 {
+  font-family: var(--font-apple);
+  font-size: 24px;
+  font-weight: 600;
+  color: #1d1d1f;
+  letter-spacing: -0.019em;
+  line-height: 1.2;
+}
+
+@utility apple-body {
+  font-family: var(--font-apple);
+  font-size: 17px;
+  font-weight: 400;
+  color: #1d1d1f;
+  letter-spacing: -0.022em;
+  line-height: 1.4706;
+}
+
+@utility apple-footnote {
+  font-family: var(--font-apple);
+  font-size: 12px;
+  font-weight: 500;
+  color: #86868b;
+  letter-spacing: -0.01em;
+  line-height: 1.3334;
+}
+
+@utility apple-code {
+  font-family: var(--font-apple-code);
+  font-size: 14px;
+  letter-spacing: -0.005em;
+  line-height: 1.4;
+}
+
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 @plugin "@tailwindcss/forms";

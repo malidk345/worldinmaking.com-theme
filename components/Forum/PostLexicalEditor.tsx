@@ -40,9 +40,9 @@ import {
 
 // Theme configuration matching iOS 26 premium, minimalist design
 const theme = {
-    paragraph: "mb-3 text-sm md:text-base leading-relaxed text-zinc-800 dark:text-zinc-200 lowercase",
+    paragraph: "apple-body mb-4 dark:text-zinc-200",
     heading: {
-        h1: "text-2xl md:text-3xl font-black mt-5 mb-2.5 tracking-tight text-zinc-950 dark:text-zinc-50 lowercase",
+        h1: "apple-h1 mt-8 mb-4 dark:text-zinc-50",
         h2: "text-xl md:text-2xl font-extrabold mt-4 mb-2 tracking-tight text-zinc-900 dark:text-zinc-100 lowercase",
         h3: "text-lg md:text-xl font-bold mt-3.5 mb-1.5 text-zinc-800 dark:text-zinc-200 lowercase",
     },
@@ -60,7 +60,7 @@ const theme = {
         italic: "italic",
         underline: "underline decoration-zinc-400",
         strikethrough: "line-through decoration-zinc-400",
-        code: "bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-lg px-2 py-0.5 font-mono text-[13px] text-rose-600 dark:text-rose-400",
+        code: "apple-code bg-zinc-100 dark:bg-zinc-800 rounded px-1 py-0.5",
     },
     link: "text-zinc-950 dark:text-zinc-50 underline decoration-zinc-400 hover:decoration-zinc-950 cursor-pointer transition-colors duration-150 font-bold",
 };
@@ -357,7 +357,7 @@ export default function PostLexicalEditor({
                     <RichTextPlugin
                         contentEditable={
                             <ContentEditable 
-                                className="outline-none focus:outline-none p-5 sm:p-7 text-zinc-800 dark:text-zinc-200 text-sm md:text-base leading-relaxed h-full min-h-[300px]"
+                                className="apple-body outline-none focus:outline-none p-5 sm:p-7 dark:text-zinc-200 h-full min-h-[300px] antialiased"
                             />
                         }
                         placeholder={
