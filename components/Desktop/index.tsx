@@ -95,7 +95,7 @@ export default function Desktop() {
         })
 
         return baseApps
-    }, [addWindow, t, user])
+    }, [addWindow, t])
 
     const visibleApps = useMemo(() => {
         return apps.filter(app => app.label === 'archive' || !archivedItems.includes(app.label))
