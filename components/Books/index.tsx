@@ -388,7 +388,7 @@ export default function BooksApp() {
                                 <span className="text-xs font-bold">no books in library yet.</span>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                            <div className="grid grid-cols-2 @sm:grid-cols-3 @md:grid-cols-4 @lg:grid-cols-5 gap-6">
                                 {books.map((book) => (
                                     <div
                                         key={book.id}
@@ -441,20 +441,32 @@ export default function BooksApp() {
             ) : (
                 
                 /* 2. Reader Mode (If book selected) */
-                <div className="flex-1 flex size-full overflow-hidden bg-white dark:bg-[#1C1C1E] transition-colors duration-500">
+                <div className="flex-1 flex size-full overflow-hidden bg-white dark:bg-[#1C1C1E] transition-colors duration-500 @container relative">
                     
-                    {/* 2.1 Table of Contents Sidebar */}
+                    {/* Sidebar backdrop on mobile */}
                     {sidebarOpen && (
-                        <div className="w-56 shrink-0 border-r border-zinc-200/50 dark:border-zinc-800/50 flex flex-col h-full bg-[#fbfbfb] dark:bg-zinc-900/30">
-                            {/* Return to Catalog Header */}
-                            <div className="p-3 border-b border-zinc-200/50 dark:border-zinc-800/50 flex items-center justify-between gap-2 shrink-0">
-                                <button
-                                    onClick={() => setActiveBook(null)}
-                                    className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-100 text-xs font-bold transition-colors"
-                                >
-                                    <ChevronLeft className="w-4 h-4" />
-                                    library
-                                </button>
+                        <div 
+                            onClick={() => setSidebarOpen(false)} 
+                            className="absolute inset-0 bg-black/10 dark:bg-black/40 backdrop-blur-[1px] z-40 @lg:hidden" 
+                        />
+                    )}
+
+                    {/* 2.1 Table of Contents Sidebar */}
+                    <div className={`absolute inset-y-0 left-0 w-64 z-50 bg-[#fbfbfb] dark:bg-zinc-900 border-r border-zinc-200/50 dark:border-zinc-800/50 shadow-xl flex flex-col h-full transition-transform duration-300
+                        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+                        @lg:static @lg:translate-x-0 @lg:w-56 @lg:shadow-none
+                        ${sidebarOpen ? '@lg:flex' : '@lg:hidden'}`}
+                    >
+                        {/* Return to Catalog Header */}
+                        <div className="p-3 border-b border-zinc-200/50 dark:border-zinc-800/50 flex items-center justify-between gap-2 shrink-0">
+                            <button
+                                onClick={() => setActiveBook(null)}
+                                className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-100 text-xs font-bold transition-colors"
+                            >
+                                <ChevronLeft className="w-4 h-4" />
+                                library
+                            </button>
+                            <div className="flex items-center gap-1">
                                 {isAdmin && (
                                     <button
                                         onClick={() => setShowAddChapter(true)}
@@ -464,7 +476,14 @@ export default function BooksApp() {
                                         <Plus className="w-3.5 h-3.5" />
                                     </button>
                                 )}
+                                <button 
+                                    onClick={() => setSidebarOpen(false)} 
+                                    className="p-1 rounded-md hover:bg-zinc-200/50 dark:hover:bg-zinc-800 text-zinc-500 @lg:hidden"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
                             </div>
+                        </div>
 
                             {/* Book Info Panel */}
                             <div className="p-4 border-b border-zinc-200/40 dark:border-zinc-800/40 shrink-0">
@@ -495,7 +514,6 @@ export default function BooksApp() {
                                 )}
                             </div>
                         </div>
-                    )}
 
                     {/* 2.2 Main Reading Area (Center Canvas) */}
                     <div className={`flex-1 flex flex-col h-full min-w-0 transition-colors duration-500 ${getThemeClass()}`}>
@@ -592,22 +610,42 @@ export default function BooksApp() {
                         </div>
                     </div>
 
-                    {/* 2.3 Bot Debate & Human Commentary Sidebar (Right Panel) */}
+                    {/* Debate Panel backdrop on mobile */}
                     {debatePanelOpen && activeChapter?.forum_post_id && (
-                        <div className="w-80 shrink-0 border-l border-zinc-200/50 dark:border-zinc-800/50 flex flex-col h-full bg-[#fcfcfc] dark:bg-zinc-900/15">
+                        <div 
+                            onClick={() => setDebatePanelOpen(false)} 
+                            className="absolute inset-0 bg-black/10 dark:bg-black/40 backdrop-blur-[1px] z-40 @lg:hidden" 
+                        />
+                    )}
+
+                    {/* 2.3 Bot Debate & Human Commentary Sidebar (Right Panel) */}
+                    {activeChapter?.forum_post_id && (
+                        <div className={`absolute inset-y-0 right-0 w-80 max-w-[90%] z-50 bg-[#fcfcfc] dark:bg-[#1C1C1E] border-l border-zinc-200/50 dark:border-zinc-800/50 shadow-xl flex flex-col h-full transition-transform duration-300
+                            ${debatePanelOpen ? 'translate-x-0' : 'translate-x-full'}
+                            @lg:static @lg:translate-x-0 @lg:w-80 @lg:shadow-none
+                            ${debatePanelOpen ? '@lg:flex' : '@lg:hidden'}`}
+                        >
                             {/* Panel Header */}
                             <div className="p-3 border-b border-zinc-200/50 dark:border-zinc-800/50 flex items-center justify-between shrink-0 select-none">
                                 <div className="flex items-center gap-1.5">
                                     <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400 animate-pulse" />
                                     <span className="text-[10px] font-black tracking-wider text-zinc-700 dark:text-zinc-300">debate board</span>
                                 </div>
-                                <button
-                                    onClick={triggerBotDebate}
-                                    disabled={isBotResponding}
-                                    className="flex items-center gap-1 px-2 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-md text-[10px] font-black hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
-                                >
-                                    trigger agent
-                                </button>
+                                <div className="flex items-center gap-1.5">
+                                    <button
+                                        onClick={triggerBotDebate}
+                                        disabled={isBotResponding}
+                                        className="flex items-center gap-1 px-2 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-md text-[10px] font-black hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+                                    >
+                                        trigger agent
+                                    </button>
+                                    <button 
+                                        onClick={() => setDebatePanelOpen(false)} 
+                                        className="p-1 rounded-md hover:bg-zinc-200/50 dark:hover:bg-zinc-800 text-zinc-500 @lg:hidden"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Comments Timeline */}
