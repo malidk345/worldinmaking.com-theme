@@ -28,6 +28,7 @@ import ArchiveExplorer from 'components/ArchiveExplorer'
 import ForumAvatar from 'components/Forum/ForumAvatar'
 import ForumRichText from 'components/Forum/ForumRichText'
 import PostLexicalEditor from 'components/Forum/PostLexicalEditor'
+import BooksApp from 'components/Books'
 
 interface AdaptablePost {
     id: number | string
@@ -165,6 +166,11 @@ function WindowRouterInner({ item }: { item: AppWindow }) {
     // /write-post (User Post Editor)
     if (path === '/write-post') {
         return <WritePostRouteView postId={item.props?.postId as string | undefined} item={item} />
+    }
+
+    // /books (ePub Books Library App)
+    if (path === '/books') {
+        return <BooksApp />
     }
 
     // Fallback for any other path

@@ -80,6 +80,16 @@ export default function Desktop() {
                     title: t('archive.title'),
                     element: <ArchiveExplorer />
                 })
+            },
+            {
+                label: 'books',
+                displayLabel: 'books',
+                Icon: <AppIcon name="handbook" />,
+                onClick: () => addWindow({
+                    key: 'books',
+                    path: '/books',
+                    title: 'books'
+                })
             }
         ]
 
