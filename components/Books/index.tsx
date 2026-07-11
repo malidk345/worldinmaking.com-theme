@@ -12,9 +12,7 @@ import {
     Sparkles, 
     BookOpen, 
     CornerDownLeft, 
-    Menu, 
     X,
-    FileText,
     MessageSquare
 } from "lucide-react";
 
@@ -53,11 +51,10 @@ export default function BooksApp() {
     const { user, profile, isAdmin } = useAuth();
     const { addToast } = useToast();
     
-    // UI Panels & Navigation
+    // state management
     const [books, setBooks] = useState<Book[]>([]);
     const [activeBook, setActiveBook] = useState<Book | null>(null);
     const [chapters, setChapters] = useState<Chapter[]>([]);
-    const [activeChapter, setActiveChapter] = useState<Chapter | null>(null);
     const [comments, setComments] = useState<DiscussionComment[]>([]);
     
     // Loading states
@@ -66,13 +63,12 @@ export default function BooksApp() {
     const [loadingComments, setLoadingComments] = useState(false);
     const [isBotResponding, setIsBotResponding] = useState(false);
     
-    // ePub Style Preferences
+    // ePub / PDF formatting preferences
     const [fontSize, setFontSize] = useState<"sm" | "base" | "lg" | "xl">("base");
     const [readerTheme, setReaderTheme] = useState<"paper" | "sepia" | "dark">("sepia");
-    const [sidebarOpen, setSidebarOpen] = useState(true);
     const [debatePanelOpen, setDebatePanelOpen] = useState(true);
     
-    // User Commentary
+    // User commentary input
     const [newComment, setNewComment] = useState("");
     
     // Admin Forms State
@@ -89,7 +85,7 @@ export default function BooksApp() {
     const [newChapterTitle, setNewChapterTitle] = useState("");
     const [newChapterContent, setNewChapterContent] = useState("");
 
-    // 1. Fetch Books List
+    // 1. Fetch Books
     const fetchBooks = useCallback(async () => {
         setLoadingBooks(true);
         try {
@@ -111,7 +107,7 @@ export default function BooksApp() {
         fetchBooks();
     }, [fetchBooks]);
 
-    // 2. Fetch Chapters for Active Book
+    // 2. Fetch Chapters (Sorted by Chapter Number)
     const fetchChapters = useCallback(async (bookId: string) => {
         setLoadingChapters(true);
         try {
@@ -119,11 +115,6 @@ export default function BooksApp() {
             const data = await res.json();
             if (data.chapters) {
                 setChapters(data.chapters);
-                if (data.chapters.length > 0) {
-                    setActiveChapter(data.chapters[0]);
-                } else {
-                    setActiveChapter(null);
-                }
             } else if (data.error) {
                 addToast(data.error, "error");
             }
@@ -139,11 +130,14 @@ export default function BooksApp() {
             fetchChapters(activeBook.id);
         } else {
             setChapters([]);
-            setActiveChapter(null);
         }
     }, [activeBook, fetchChapters]);
 
-    // 3. Fetch Comments / Live Debates for Active Chapter
+    // Determine target discussion thread ID (linked to first chapter of the book)
+    const activeThreadId = chapters[0]?.forum_post_id;
+    const activeChapterId = chapters[0]?.id;
+
+    // 3. Fetch Comments / Debates
     const fetchComments = useCallback(async (threadId: number) => {
         setLoadingComments(true);
         try {
@@ -166,22 +160,22 @@ export default function BooksApp() {
     }, []);
 
     useEffect(() => {
-        if (activeChapter?.forum_post_id) {
-            fetchComments(activeChapter.forum_post_id);
+        if (activeThreadId) {
+            fetchComments(activeThreadId);
             
             // Set up real-time listener for new bot/user replies in this thread
             const channel = supabase
-                .channel(`book-replies-${activeChapter.forum_post_id}`)
+                .channel(`book-replies-${activeThreadId}`)
                 .on(
                     "postgres_changes",
                     {
                         event: "INSERT",
                         schema: "public",
                         table: "community_replies",
-                        filter: `post_id=eq.${activeChapter.forum_post_id}`
+                        filter: `post_id=eq.${activeThreadId}`
                     },
                     () => {
-                        fetchComments(activeChapter.forum_post_id!);
+                        fetchComments(activeThreadId);
                     }
                 )
                 .subscribe();
@@ -192,7 +186,7 @@ export default function BooksApp() {
         } else {
             setComments([]);
         }
-    }, [activeChapter, fetchComments]);
+    }, [activeThreadId, fetchComments]);
 
     // 4. Handle Post Comment / User Response
     const handlePostComment = async (e: React.FormEvent) => {
@@ -201,7 +195,7 @@ export default function BooksApp() {
             addToast("please log in to participate in the debate.", "error");
             return;
         }
-        if (!newComment.trim() || !activeChapter?.forum_post_id) return;
+        if (!newComment.trim() || !activeThreadId) return;
 
         const commentText = newComment.trim();
         setNewComment("");
@@ -210,7 +204,7 @@ export default function BooksApp() {
             const { error } = await supabase
                 .from("community_replies")
                 .insert({
-                    post_id: activeChapter.forum_post_id,
+                    post_id: activeThreadId,
                     author_id: user.id,
                     content: commentText
                 });
@@ -219,7 +213,7 @@ export default function BooksApp() {
                 addToast(error.message, "error");
                 setNewComment(commentText);
             } else {
-                fetchComments(activeChapter.forum_post_id);
+                fetchComments(activeThreadId);
             }
         } catch (err) {
             addToast("failed to submit comment", "error");
@@ -228,7 +222,7 @@ export default function BooksApp() {
 
     // 5. Trigger Bot Debate/Perspective
     const triggerBotDebate = async () => {
-        if (!activeChapter?.id) return;
+        if (!activeChapterId) return;
         setIsBotResponding(true);
         addToast("calling AI agent to formulate a perspective...", "success");
 
@@ -243,15 +237,15 @@ export default function BooksApp() {
                     ...(sessionToken ? { "Authorization": `Bearer ${sessionToken}` } : {})
                 },
                 body: JSON.stringify({
-                    chapterId: activeChapter.id
+                    chapterId: activeChapterId
                 })
             });
 
             const data = await res.json();
             if (data.success) {
                 addToast("agent successfully posted their perspective!", "success");
-                if (activeChapter.forum_post_id) {
-                    fetchComments(activeChapter.forum_post_id);
+                if (activeThreadId) {
+                    fetchComments(activeThreadId);
                 }
             } else {
                 addToast(data.error || "failed to trigger bot debate", "error");
@@ -341,7 +335,7 @@ export default function BooksApp() {
         }
     };
 
-    // Style Helpers based on ePub preferences
+    // ePub formatting style class resolvers
     const getFontSizeClass = () => {
         if (fontSize === "sm") return "text-xs md:text-sm";
         if (fontSize === "lg") return "text-base md:text-lg";
@@ -353,6 +347,12 @@ export default function BooksApp() {
         if (readerTheme === "sepia") return "bg-[#FBF0D9] text-[#5B4636] border-[#E8DCBF]";
         if (readerTheme === "dark") return "bg-[#1C1C1E] text-zinc-300 border-zinc-800";
         return "bg-white text-zinc-900 border-zinc-100";
+    };
+
+    const getContainerBackgroundClass = () => {
+        if (readerTheme === "sepia") return "bg-[#ebdcb9] dark:bg-[#ebdcb9]";
+        if (readerTheme === "dark") return "bg-[#121214] dark:bg-[#121214]";
+        return "bg-[#f5f5f7] dark:bg-zinc-900";
     };
 
     return (
@@ -442,96 +442,41 @@ export default function BooksApp() {
                 
                 /* 2. Reader Mode (If book selected) */
                 <div className="flex-1 flex size-full overflow-hidden bg-white dark:bg-[#1C1C1E] transition-colors duration-500 @container relative">
-                    
-                    {/* Sidebar backdrop on mobile */}
-                    {sidebarOpen && (
-                        <div 
-                            onClick={() => setSidebarOpen(false)} 
-                            className="absolute inset-0 bg-black/10 dark:bg-black/40 backdrop-blur-[1px] z-40 @lg:hidden" 
-                        />
-                    )}
 
-                    {/* 2.1 Table of Contents Sidebar */}
-                    <div className={`absolute inset-y-0 left-0 w-64 z-50 bg-[#fbfbfb] dark:bg-zinc-900 border-r border-zinc-200/50 dark:border-zinc-800/50 shadow-xl flex flex-col h-full transition-transform duration-300
-                        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-                        @lg:static @lg:translate-x-0 @lg:w-56 @lg:shadow-none
-                        ${sidebarOpen ? '@lg:flex' : '@lg:hidden'}`}
-                    >
-                        {/* Return to Catalog Header */}
-                        <div className="p-3 border-b border-zinc-200/50 dark:border-zinc-800/50 flex items-center justify-between gap-2 shrink-0">
-                            <button
-                                onClick={() => setActiveBook(null)}
-                                className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-100 text-xs font-bold transition-colors"
-                            >
-                                <ChevronLeft className="w-4 h-4" />
-                                library
-                            </button>
-                            <div className="flex items-center gap-1">
-                                {isAdmin && (
-                                    <button
-                                        onClick={() => setShowAddChapter(true)}
-                                        className="p-1 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
-                                        title="add chapter"
-                                    >
-                                        <Plus className="w-3.5 h-3.5" />
-                                    </button>
-                                )}
-                                <button 
-                                    onClick={() => setSidebarOpen(false)} 
-                                    className="p-1 rounded-md hover:bg-zinc-200/50 dark:hover:bg-zinc-800 text-zinc-500 @lg:hidden"
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
-                            </div>
-                        </div>
-
-                            {/* Book Info Panel */}
-                            <div className="p-4 border-b border-zinc-200/40 dark:border-zinc-800/40 shrink-0">
-                                <h2 className="font-extrabold text-sm text-zinc-950 dark:text-zinc-50 line-clamp-2 leading-snug">{activeBook.title}</h2>
-                                <p className="text-xs text-zinc-400 mt-0.5 truncate">by {activeBook.author}</p>
-                            </div>
-
-                            {/* Chapters List */}
-                            <div className="flex-1 overflow-y-auto no-scrollbar p-2 space-y-0.5">
-                                {loadingChapters ? (
-                                    <div className="text-center text-xs font-bold text-zinc-400 py-8">loading contents...</div>
-                                ) : chapters.length === 0 ? (
-                                    <div className="text-center text-xs text-zinc-400 py-8 px-2 font-bold">no chapters loaded.</div>
-                                ) : (
-                                    chapters.map((ch) => (
-                                        <button
-                                            key={ch.id}
-                                            onClick={() => setActiveChapter(ch)}
-                                            className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition-all duration-150 flex items-start gap-2
-                                                ${activeChapter?.id === ch.id 
-                                                    ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-950 dark:text-zinc-50 shadow-inner" 
-                                                    : "text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 hover:text-zinc-800 dark:hover:text-zinc-200"}`}
-                                        >
-                                            <FileText className="w-3.5 h-3.5 shrink-0 mt-0.5 opacity-50" />
-                                            <span className="line-clamp-2">ch {ch.chapter_number}: {ch.title}</span>
-                                        </button>
-                                    ))
-                                )}
-                            </div>
-                        </div>
-
-                    {/* 2.2 Main Reading Area (Center Canvas) */}
-                    <div className={`flex-1 flex flex-col h-full min-w-0 transition-colors duration-500 ${getThemeClass()}`}>
+                    {/* 2.1 Main Reading Area (Center Canvas) */}
+                    <div className={`flex-1 flex flex-col h-full min-w-0 transition-colors duration-500 ${getContainerBackgroundClass()}`}>
                         
                         {/* Reader Sub-Header (Controls Bar) */}
-                        <div className="h-10 border-b flex items-center justify-between px-4 shrink-0 bg-transparent select-none">
+                        <div className="h-10 border-b border-black/5 dark:border-white/5 flex items-center justify-between px-4 shrink-0 bg-white/70 dark:bg-[#1C1C1E]/70 backdrop-blur-md select-none z-10">
                             <div className="flex items-center gap-2">
                                 <button
-                                    onClick={() => setSidebarOpen(prev => !prev)}
-                                    className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 text-zinc-500 dark:text-zinc-400"
+                                    onClick={() => setActiveBook(null)}
+                                    className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-100 text-xs font-bold transition-colors"
                                 >
-                                    <Menu className="w-4 h-4" />
+                                    <ChevronLeft className="w-4 h-4" />
+                                    library
                                 </button>
-                                <span className="text-[10px] font-black text-zinc-400 tracking-wider">epub reader</span>
+                                <span className="text-[10px] font-black text-zinc-400 tracking-wider">/ {activeBook.title}</span>
+                            </div>
+
+                            {/* Centered Document Title on Desktop Viewports */}
+                            <div className="hidden @md:block text-xs font-extrabold text-zinc-800 dark:text-zinc-200">
+                                {activeBook.title} — {activeBook.author}
                             </div>
 
                             {/* ePub Formatting settings */}
                             <div className="flex items-center gap-3">
+                                {isAdmin && (
+                                    <button
+                                        onClick={() => setShowAddChapter(true)}
+                                        className="p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 text-zinc-600 dark:text-zinc-400 flex items-center gap-1 text-[10px] font-black"
+                                        title="add chapter"
+                                    >
+                                        <Plus className="w-3.5 h-3.5" />
+                                        chapter
+                                    </button>
+                                )}
+
                                 {/* Font Sizing */}
                                 <div className="flex items-center bg-black/5 dark:bg-white/5 rounded-full p-0.5 border border-black/5 dark:border-white/5">
                                     <button
@@ -572,7 +517,7 @@ export default function BooksApp() {
 
                                 <button
                                     onClick={() => setDebatePanelOpen(prev => !prev)}
-                                    className={`p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-1 text-[10px] font-black lowercase ${debatePanelOpen ? "text-zinc-950 dark:text-zinc-50" : "text-zinc-400"}`}
+                                    className={`p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-1 text-[10px] font-black ${debatePanelOpen ? "text-zinc-950 dark:text-zinc-50" : "text-zinc-400"}`}
                                 >
                                     <MessageSquare className="w-3.5 h-3.5" />
                                     debate
@@ -580,46 +525,58 @@ export default function BooksApp() {
                             </div>
                         </div>
 
-                        {/* ePub Text Canvas (Spacious Serif Viewport) */}
-                        <div className="flex-1 overflow-y-auto no-scrollbar p-6 md:p-12">
+                        {/* ePub/PDF Centered Page Layout Sheet Canvas */}
+                        <div className="flex-1 overflow-y-auto no-scrollbar p-3 sm:p-6 md:p-8 flex justify-center">
                             {loadingChapters ? (
                                 <div className="flex items-center justify-center h-full text-xs font-bold text-zinc-400 animate-pulse">loading text...</div>
-                            ) : !activeChapter ? (
-                                <div className="flex flex-col items-center justify-center h-full text-zinc-400 gap-2">
+                            ) : chapters.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center self-center text-zinc-400 gap-2">
                                     <BookOpen className="w-10 h-10 text-zinc-300 stroke-[1.5]" />
-                                    <span className="text-xs font-bold">no chapter content loaded.</span>
+                                    <span className="text-xs font-bold">no content loaded.</span>
                                 </div>
                             ) : (
-                                <article className="max-w-2xl mx-auto flex flex-col gap-4 font-serif">
-                                    {/* Chapter Title */}
-                                    <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight mb-6 pb-2 border-b border-black/5 dark:border-white/5 leading-snug">
-                                        chapter {activeChapter.chapter_number}: {activeChapter.title}
-                                    </h1>
-                                    
-                                    {/* Chapter Body */}
-                                    <div 
-                                        className={`leading-relaxed tracking-wide space-y-4 text-justify select-text select-all ${getFontSizeClass()}`}
-                                        style={{ fontFamily: "Georgia, serif" }}
-                                    >
-                                        {activeChapter.content.split("\n\n").map((para, idx) => (
-                                            <p key={idx}>{para}</p>
+                                <div className={`w-full max-w-2xl rounded-2xl shadow-lg border p-6 sm:p-10 md:p-12 mb-12 h-fit select-text select-all transition-colors duration-300 ${getThemeClass()}`}>
+                                    <article className="flex flex-col gap-6 font-serif">
+                                        {/* Book Title & Author Sheet Header */}
+                                        <div className="text-center pb-4 border-b border-black/5 dark:border-white/5 mb-8">
+                                            <h1 className="text-xl md:text-2xl font-black tracking-tight leading-snug">{activeBook.title}</h1>
+                                            <p className="text-xs opacity-50 mt-1">by {activeBook.author}</p>
+                                        </div>
+
+                                        {/* Continuous Chapters flow */}
+                                        {chapters.map((ch) => (
+                                            <div key={ch.id} className="mb-10 last:mb-0">
+                                                <h2 className="text-sm md:text-base font-extrabold tracking-tight mb-4 border-b border-black/5 dark:border-white/5 pb-1 opacity-75">
+                                                    chapter {ch.chapter_number}: {ch.title}
+                                                </h2>
+                                                
+                                                {/* Chapter Content Block */}
+                                                <div 
+                                                    className={`leading-relaxed tracking-wide space-y-4 text-justify select-text select-all ${getFontSizeClass()}`}
+                                                    style={{ fontFamily: "Georgia, serif" }}
+                                                >
+                                                    {ch.content.split("\n\n").map((para, idx) => (
+                                                        <p key={idx}>{para}</p>
+                                                    ))}
+                                                </div>
+                                            </div>
                                         ))}
-                                    </div>
-                                </article>
+                                    </article>
+                                </div>
                             )}
                         </div>
                     </div>
 
                     {/* Debate Panel backdrop on mobile */}
-                    {debatePanelOpen && activeChapter?.forum_post_id && (
+                    {debatePanelOpen && activeThreadId && (
                         <div 
                             onClick={() => setDebatePanelOpen(false)} 
                             className="absolute inset-0 bg-black/10 dark:bg-black/40 backdrop-blur-[1px] z-40 @lg:hidden" 
                         />
                     )}
 
-                    {/* 2.3 Bot Debate & Human Commentary Sidebar (Right Panel) */}
-                    {activeChapter?.forum_post_id && (
+                    {/* 2.2 Bot Debate & Human Commentary Sidebar (Right Panel) */}
+                    {activeThreadId && (
                         <div className={`absolute inset-y-0 right-0 w-80 max-w-[90%] z-50 bg-[#fcfcfc] dark:bg-[#1C1C1E] border-l border-zinc-200/50 dark:border-zinc-800/50 shadow-xl flex flex-col h-full transition-transform duration-300
                             ${debatePanelOpen ? 'translate-x-0' : 'translate-x-full'}
                             @lg:static @lg:translate-x-0 @lg:w-80 @lg:shadow-none
@@ -653,9 +610,9 @@ export default function BooksApp() {
                                 {loadingComments ? (
                                     <div className="text-center text-xs font-bold text-zinc-400 py-12">loading discussion...</div>
                                 ) : comments.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center py-12 text-zinc-400 gap-1.5">
+                                    <div className="flex flex-col items-center justify-center py-12 text-zinc-400 gap-1.5 animate-fade">
                                         <MessageSquare className="w-6 h-6 stroke-[1.5]" />
-                                        <span className="text-[10px] font-bold">no commentary yet. trigger a bot debate!</span>
+                                        <span className="text-[10px] font-bold text-center">no commentary yet. trigger an agent!</span>
                                     </div>
                                 ) : (
                                     comments.map((comment) => {
@@ -715,7 +672,7 @@ export default function BooksApp() {
                         </div>
                     )}
 
-                    {/* 2.4 Admin: Add Chapter Modal */}
+                    {/* 2.3 Admin: Add Chapter Modal */}
                     {showAddChapter && activeBook && (
                         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
                             <form onSubmit={handleAddChapter} className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 p-5 rounded-2xl w-full max-w-lg shadow-2xl flex flex-col gap-4">
