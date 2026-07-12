@@ -321,7 +321,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                            <div className="p-4 border border-black/10 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] flex flex-col gap-4">
+                            <div className="p-4 border border-black/5 dark:border-white/5 rounded-[24px] bg-white dark:bg-[#1C1C1E] shadow-sm flex flex-col gap-4">
                                 <h3 className="text-[11px] font-black tracking-widest text-black/40 flex items-center gap-2 lowercase">
                                     <IconTerminal className="size-3.5" /> system environment
                                 </h3>
@@ -344,7 +344,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                 </div>
                             </div>
 
-                            <div className="p-4 border border-black/10 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] flex flex-col gap-4">
+                            <div className="p-4 border border-black/5 dark:border-white/5 rounded-[24px] bg-white dark:bg-[#1C1C1E] shadow-sm flex flex-col gap-4">
                                 <h3 className="text-[11px] font-black tracking-widest text-black/40 flex items-center gap-2 lowercase">
                                     <IconActivity className="size-3.5" /> recently active
                                 </h3>
@@ -381,7 +381,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                             placeholder="post title..."
                                             value={newPostTitle}
                                             onChange={(e) => setNewPostTitle(e.target.value)}
-                                            className="bg-white/60 supports-[backdrop-filter]:backdrop-blur-[60px] border border-black/5 rounded-[24px] px-4 py-2 text-sm font-bold text-black focus:outline-none placeholder:text-black/25 w-full sm:w-64 max-w-[200px] sm:max-w-none shadow-[inset_0_2px_12px_rgba(0,0,0,0.02)] transition-all duration-300 focus:shadow-[inset_0_2px_16px_rgba(0,0,0,0.04)]"
+                                            className="bg-gray-50 dark:bg-gray-900 border border-black/5 dark:border-white/5 rounded-[24px] px-4 py-2 text-sm font-bold text-black dark:text-white focus:outline-none placeholder:text-black/30 dark:placeholder:text-white/30 w-full sm:w-64 max-w-[200px] sm:max-w-none transition-all duration-300 focus:bg-white dark:focus:bg-black focus:border-black/20 dark:focus:border-white/20"
                                         />
                                         <OSButton className="rounded-full flex-shrink-0" size="sm" variant="primary" onClick={handleSavePost}>
                                             <div className="flex items-center gap-1">
@@ -444,8 +444,8 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                             onClick={() => handleLanguageChange(lang.code)}
                                                             className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-full border transition-all duration-300 flex-shrink-0
                                                                 ${isActive
-                                                                    ? 'bg-black text-white border-black shadow-[0_4px_12px_rgba(0,0,0,0.1)]'
-                                                                    : 'bg-white/60 supports-[backdrop-filter]:backdrop-blur-[60px] border-black/5 text-black/40 hover:bg-white/80 hover:text-black hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] hover:-translate-y-0.5'}
+                                                                    ? 'bg-black text-white border-black shadow-sm'
+                                                                    : 'bg-gray-50 dark:bg-gray-900 border-black/5 dark:border-white/5 text-black/50 dark:text-white/50 hover:bg-white dark:hover:bg-black hover:text-black dark:hover:text-white'}
                                                             `}
                                                         >
                                                             {lang.label} {isOriginal && '·'}
@@ -454,7 +454,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                 })}
                                             </div>
                                             <select
-                                                className="bg-white/60 supports-[backdrop-filter]:backdrop-blur-[60px] border border-black/5 rounded-full text-[10px] font-bold text-black/50 px-3 py-1.5 outline-none flex-shrink-0 shadow-[0_4px_12px_rgba(0,0,0,0.04)] transition-all duration-300 hover:shadow-[0_6px_16px_rgba(0,0,0,0.06)]"
+                                                className="bg-gray-50 dark:bg-gray-900 border border-black/5 dark:border-white/5 rounded-full text-[10px] font-bold text-black/50 dark:text-white/50 px-3 py-1.5 outline-none flex-shrink-0 transition-all duration-300 hover:bg-white dark:hover:bg-black"
                                                 value=""
                                                 onChange={(e) => {
                                                     if (e.target.value) handleLanguageChange(e.target.value)
@@ -479,7 +479,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                 setNewPostSlug(toSlug(e.target.value))
                                             }
                                         }}
-                                        className="w-full bg-white/60 supports-[backdrop-filter]:backdrop-blur-[60px] border border-black/5 rounded-[32px] px-6 py-4 text-base sm:text-lg font-black text-black focus:outline-none placeholder:text-black/20 mb-4 shadow-[inset_0_2px_16px_rgba(0,0,0,0.02)] transition-all duration-300 focus:shadow-[inset_0_4px_24px_rgba(0,0,0,0.04)]"
+                                        className="w-full bg-gray-50 dark:bg-gray-900 border border-black/5 dark:border-white/5 rounded-[32px] px-6 py-4 text-base sm:text-lg font-black text-black dark:text-white focus:outline-none placeholder:text-black/30 dark:placeholder:text-white/30 mb-4 transition-all duration-300 focus:bg-white dark:focus:bg-black focus:border-black/10 dark:focus:border-white/10"
                                     />
 
                                     {/* Compact Row: slug + status + language */}
@@ -491,7 +491,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                 placeholder="my-post-url"
                                                 value={newPostSlug}
                                                 onChange={(e) => setNewPostSlug(e.target.value)}
-                                                className="w-full bg-white/60 supports-[backdrop-filter]:backdrop-blur-[60px] border border-black/5 rounded-[24px] px-4 py-2.5 text-xs font-bold text-black focus:outline-none placeholder:text-black/20 shadow-[inset_0_2px_12px_rgba(0,0,0,0.02)] transition-all duration-300 focus:shadow-[inset_0_2px_16px_rgba(0,0,0,0.04)]"
+                                                className="w-full bg-gray-50 dark:bg-gray-900 border border-black/5 dark:border-white/5 rounded-[24px] px-4 py-2.5 text-xs font-bold text-black dark:text-white focus:outline-none placeholder:text-black/30 dark:placeholder:text-white/30 transition-all duration-300 focus:bg-white dark:focus:bg-black focus:border-black/10 dark:focus:border-white/10"
                                             />
                                         </div>
                                         <div>
@@ -499,8 +499,8 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                             <button
                                                 onClick={() => setNewPostPublished(!newPostPublished)}
                                                 className={`w-full px-4 py-2.5 text-[10px] font-bold rounded-[24px] border transition-all duration-300 ${newPostPublished
-                                                    ? 'bg-black text-white border-black shadow-[0_4px_16px_rgba(0,0,0,0.2)]'
-                                                    : 'bg-white/60 supports-[backdrop-filter]:backdrop-blur-[60px] text-black/50 border-black/5 shadow-[0_4px_12px_rgba(0,0,0,0.04)] hover:bg-white/80'
+                                                    ? 'bg-black text-white border-black shadow-sm'
+                                                    : 'bg-gray-50 dark:bg-gray-900 text-black/50 dark:text-white/50 border-black/5 dark:border-white/5 hover:bg-white dark:hover:bg-black hover:text-black dark:hover:text-white'
                                                     }`}
                                             >
                                                 {newPostPublished ? '● published' : '○ draft'}
@@ -511,7 +511,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                             <select
                                                 value={originalLanguage}
                                                 onChange={(e) => setOriginalLanguage(e.target.value)}
-                                                className="w-full bg-white/60 supports-[backdrop-filter]:backdrop-blur-[60px] border border-black/5 rounded-[24px] px-4 py-2.5 text-xs font-bold text-black outline-none shadow-[0_4px_12px_rgba(0,0,0,0.04)] transition-all duration-300 hover:shadow-[0_6px_16px_rgba(0,0,0,0.06)]"
+                                                className="w-full bg-gray-50 dark:bg-gray-900 border border-black/5 dark:border-white/5 rounded-[24px] px-4 py-2.5 text-xs font-bold text-black dark:text-white outline-none transition-all duration-300 hover:bg-white dark:hover:bg-black focus:border-black/10 dark:focus:border-white/10"
                                             >
                                                 {SUPPORTED_LANGS.map(l => (
                                                     <option key={l.code} value={l.code}>{l.label}</option>
@@ -527,7 +527,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                             placeholder="short description for seo..."
                                             value={newPostExcerpt}
                                             onChange={(e) => setNewPostExcerpt(e.target.value)}
-                                            className="w-full bg-white/60 supports-[backdrop-filter]:backdrop-blur-[20px] border border-black/5 shadow-[0_2px_12px_rgba(0,0,0,0.02)] rounded-[24px] px-4 py-3 text-xs text-black focus:bg-white/80 focus:border-black/10 focus:outline-none resize-none h-16 sm:h-20 placeholder:text-black/20 transition-all duration-300 ease-in-out"
+                                            className="w-full bg-gray-50 dark:bg-gray-900 border border-black/5 dark:border-white/5 rounded-[24px] px-4 py-3 text-xs text-black dark:text-white focus:bg-white dark:focus:bg-black focus:border-black/10 dark:focus:border-white/10 focus:outline-none resize-none h-16 sm:h-20 placeholder:text-black/30 dark:placeholder:text-white/30 transition-all duration-300 ease-in-out"
                                         />
                                     </div>
 
@@ -540,7 +540,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                 placeholder="e.g. technology"
                                                 value={newPostCategory}
                                                 onChange={(e) => setNewPostCategory(e.target.value)}
-                                                className="w-full bg-neutral-50 border border-black/10 rounded-[18px] px-2 py-1.5 sm:py-1 text-xs font-bold text-black focus:outline-none placeholder:text-black/20"
+                                                className="w-full bg-gray-50 dark:bg-gray-900 border border-black/5 dark:border-white/5 rounded-[18px] px-3 py-1.5 sm:py-1.5 text-xs font-bold text-black dark:text-white focus:bg-white dark:focus:bg-black focus:border-black/10 dark:focus:border-white/10 focus:outline-none placeholder:text-black/30 dark:placeholder:text-white/30 transition-all"
                                             />
                                         </div>
                                         <div>
@@ -550,7 +550,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                 placeholder="https://..."
                                                 value={newPostImageUrl}
                                                 onChange={(e) => setNewPostImageUrl(e.target.value)}
-                                                className="w-full bg-neutral-50 border border-black/10 rounded-[18px] px-2 py-1.5 sm:py-1 text-xs font-bold text-black focus:outline-none placeholder:text-black/20"
+                                                className="w-full bg-gray-50 dark:bg-gray-900 border border-black/5 dark:border-white/5 rounded-[18px] px-3 py-1.5 sm:py-1.5 text-xs font-bold text-black dark:text-white focus:bg-white dark:focus:bg-black focus:border-black/10 dark:focus:border-white/10 focus:outline-none placeholder:text-black/30 dark:placeholder:text-white/30 transition-all"
                                             />
                                         </div>
                                     </div>
@@ -599,7 +599,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                             </div>
                         </div>
 
-                        <div className="flex-grow overflow-auto custom-scrollbar border border-black/5 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] min-h-0">
+                        <div className="flex-grow overflow-auto custom-scrollbar border border-black/5 dark:border-white/5 rounded-[24px] bg-white dark:bg-[#1C1C1E] shadow-sm min-h-0">
                             {loading && (
                                 <div className="h-48 flex items-center justify-center">
                                     <Loading label="indexing your world" />
@@ -635,7 +635,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                 animate={{ opacity: 1, y: 0 }}
                                                 exit={{ opacity: 0, scale: 0.95 }}
                                                 transition={{ type: 'spring', bounce: 0.2 }}
-                                                key={post.id} className="bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] px-4 py-3 flex items-center justify-between hover:bg-neutral-50 group transition-all cursor-default text-black"
+                                                key={post.id} className="bg-white dark:bg-[#1C1C1E] px-4 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-900 group transition-all cursor-default text-black dark:text-white"
                                             >
                                                 <div className="flex flex-col gap-1 min-w-0 pr-4">
                                                     <div className="flex items-center gap-2 flex-wrap">
@@ -708,7 +708,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                             <h2 className="text-xs font-black uppercase tracking-widest text-black/30">user directory</h2>
                             <p className="text-[10px] text-black/20 lowercase">manage platform access & roles</p>
                         </div>
-                        <div className="border border-black/5 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] shadow-inner flex-1 flex items-center justify-center">
+                        <div className="border border-black/5 dark:border-white/5 rounded-[24px] bg-white dark:bg-[#1C1C1E] shadow-sm flex-1 flex items-center justify-center">
                             <div className="text-center p-8">
                                 <IconUser className="size-10 text-black/5 mx-auto mb-4" />
                                 <div className="text-black/30 text-xs font-bold lowercase">
@@ -732,7 +732,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                             </span>
                         </div>
 
-                        <div className="flex-grow overflow-auto custom-scrollbar border border-black/5 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] bg-white/80 min-h-0">
+                        <div className="flex-grow overflow-auto custom-scrollbar border border-black/5 dark:border-white/5 rounded-[24px] bg-white dark:bg-[#1C1C1E] shadow-sm min-h-0">
                             {writerApplicationsLoading && (
                                 <div className="h-48 flex items-center justify-center">
                                     <Loading label="connecting to orbital comms" />
@@ -843,10 +843,10 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                     value={commentSearchQuery}
                                     onChange={(e) => setCommentSearchQuery(e.target.value)}
                                     placeholder="search transmissions..."
-                                    className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-black/5 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] text-black placeholder:text-black/20 focus:outline-none focus:border-black/20 transition-all font-sans"
+                                        className="w-full pl-8 pr-3 py-1.5 text-xs bg-white dark:bg-[#1C1C1E] border border-black/5 dark:border-white/5 rounded-[24px] shadow-sm text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30 focus:outline-none focus:border-black/20 dark:focus:border-white/20 transition-all font-sans"
                                 />
                             </div>
-                            <div className="flex bg-white border border-black/5 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] p-0.5 shadow-sm">
+                            <div className="flex bg-white dark:bg-[#1C1C1E] border border-black/5 dark:border-white/5 rounded-[24px] p-0.5 shadow-sm">
                                 <button
                                     onClick={() => setCommentFilter('posts')}
                                     className={`px-3 py-1 text-[10px] font-black uppercase tracking-wider transition-all rounded-full ${commentFilter === 'posts' ? 'bg-black text-white shadow-sm' : 'text-black/30 hover:text-black/60'}`}
@@ -863,7 +863,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                         </div>
 
                         {/* Content */}
-                        <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 bg-white/30 border border-black/5 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] shadow-inner p-2">
+                        <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 border border-black/5 dark:border-white/5 rounded-[24px] bg-gray-50 dark:bg-gray-900 p-2">
                             {communityLoading ? (
                                 <div className="h-48 flex items-center justify-center">
                                     <Loading label="scanning neural networks" />
@@ -878,7 +878,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                         const isExpanded = expandedPostId === cp.id
 
                                         return (
-                                            <div key={cp.id} className="border border-black/5 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] bg-white overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                                            <div key={cp.id} className="border border-black/5 dark:border-white/5 rounded-[24px] bg-white dark:bg-[#1C1C1E] overflow-hidden shadow-sm">
                                                 {/* Post Header */}
                                                 <div className="p-3 flex items-start justify-between gap-2 border-b border-black/[0.02]">
                                                     <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -930,12 +930,12 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                                 type="text"
                                                                 value={editingCommentTitle}
                                                                 onChange={(e) => setEditingCommentTitle(e.target.value)}
-                                                                className="w-full border border-black/5 rounded-[24px] bg-white/60 supports-[backdrop-filter]:backdrop-blur-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] px-4 py-2 text-xs focus:bg-white/80 focus:border-black/10 focus:outline-none font-bold transition-all duration-300"
+                                                                className="w-full border border-black/10 dark:border-white/10 rounded-[24px] bg-gray-50 dark:bg-gray-900 px-4 py-2 text-xs focus:bg-white dark:focus:bg-black focus:border-black/20 dark:focus:border-white/20 focus:outline-none font-bold transition-all duration-300 text-black dark:text-white"
                                                             />
                                                             <textarea
                                                                 value={editingCommentContent}
                                                                 onChange={(e) => setEditingCommentContent(e.target.value)}
-                                                                className="w-full border border-black/5 rounded-[24px] bg-white/60 supports-[backdrop-filter]:backdrop-blur-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] px-4 py-3 text-xs h-24 focus:bg-white/80 focus:border-black/10 focus:outline-none resize-none font-sans transition-all duration-300"
+                                                                className="w-full border border-black/10 dark:border-white/10 rounded-[24px] bg-gray-50 dark:bg-gray-900 px-4 py-3 text-xs h-24 focus:bg-white dark:focus:bg-black focus:border-black/20 dark:focus:border-white/20 focus:outline-none resize-none font-sans transition-all duration-300 text-black dark:text-white"
                                                             />
                                                             <div className="flex justify-end gap-2">
                                                                 <OSButton className="rounded-full" size="xs" variant="secondary" onClick={() => setEditingCommentId(null)}>cancel</OSButton>
@@ -957,7 +957,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                             <div className="p-4 text-center text-[9px] font-black uppercase tracking-widest text-black/15">no transmissions found</div>
                                                         ) : (
                                                             postReplies.map(reply => (
-                                                                <div key={reply.id} className="p-3 pl-4 sm:pl-14 flex items-start justify-between group bg-white/80">
+                                                                <div key={reply.id} className="p-3 pl-4 sm:pl-14 flex items-start justify-between group bg-white dark:bg-[#1C1C1E]">
                                                                     <div className="flex gap-3">
                                                                         <div className="size-6 rounded-full border border-black/5 bg-black/5 flex-shrink-0 overflow-hidden">
                                                                             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1001,7 +1001,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                             const isEditing = editingCommentId === reply.id && commentFilter === 'replies'
 
                                             return (
-                                                <div key={reply.id} className="bg-white border border-black/5 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] p-3 flex items-start justify-between gap-3 shadow-[0_1px_2px_rgba(0,0,0,0.01)] hover:shadow-md transition-shadow">
+                                                <div key={reply.id} className="bg-white dark:bg-[#1C1C1E] border border-black/5 dark:border-white/5 rounded-[24px] shadow-sm p-3 flex items-start justify-between gap-3 hover:shadow-md transition-shadow">
                                                     <div className="flex items-start gap-4 flex-1">
                                                         <div className="size-8 rounded-full border border-black/5 bg-black/5 flex-shrink-0 overflow-hidden">
                                                             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1021,7 +1021,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                                     <textarea
                                                                         value={editingCommentContent}
                                                                         onChange={(e) => setEditingCommentContent(e.target.value)}
-                                                                        className="w-full border border-black/5 rounded-[24px] bg-white/60 supports-[backdrop-filter]:backdrop-blur-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] px-4 py-3 text-xs h-24 focus:bg-white/80 focus:border-black/10 focus:outline-none resize-none font-sans transition-all duration-300"
+                                                                        className="w-full border border-black/10 dark:border-white/10 rounded-[24px] bg-gray-50 dark:bg-gray-900 px-4 py-3 text-xs h-24 focus:bg-white dark:focus:bg-black focus:border-black/20 dark:focus:border-white/20 focus:outline-none resize-none font-sans transition-all duration-300 text-black dark:text-white"
                                                                     />
                                                                     <div className="flex justify-end gap-2">
                                                                         <OSButton className="rounded-full" size="xs" variant="secondary" onClick={() => setEditingCommentId(null)}>cancel</OSButton>
@@ -1066,7 +1066,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                             <h2 className="text-xs font-black uppercase tracking-widest text-black/30">console configuration</h2>
                             <p className="text-[10px] text-black/20 lowercase">adjust system level parameters</p>
                         </div>
-                        <div className="border border-black/5 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] shadow-inner flex-1 flex items-center justify-center">
+                        <div className="border border-black/5 dark:border-white/5 rounded-[24px] bg-white dark:bg-[#1C1C1E] shadow-sm flex-1 flex items-center justify-center">
                             <div className="text-center p-8">
                                 <Settings className="size-10 text-black/5 mx-auto mb-4" />
                                 <div className="text-black/30 text-xs font-bold lowercase">
@@ -1083,9 +1083,9 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
     }
 
     return (
-        <div className="flex flex-col md:flex-row w-full bg-white/40 supports-[backdrop-filter]:backdrop-blur-[60px] text-black overflow-hidden font-sans h-full">
+        <div className="flex flex-col md:flex-row w-full bg-gray-50 dark:bg-gray-900 text-black overflow-hidden font-sans h-full">
             {/* Sidebar */}
-            <div className="flex-shrink-0 border-b md:border-b-0 md:border-r border-black/5 bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] flex flex-row md:flex-col overflow-x-auto md:overflow-visible py-2 px-2 md:py-6 md:px-0 md:w-44 no-scrollbar">
+            <div className="flex-shrink-0 border-b md:border-b-0 md:border-r border-black/5 dark:border-white/5 bg-gray-50 dark:bg-gray-900 flex flex-row md:flex-col overflow-x-auto md:overflow-visible py-2 px-2 md:py-6 md:px-0 md:w-44 no-scrollbar">
                 <div className="hidden md:block px-5 mb-8">
                     <div className="flex items-center gap-2">
                         <div className="size-2 rounded-full bg-black/80" />
@@ -1125,7 +1125,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
             </div>
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col min-w-0 bg-white/40 supports-[backdrop-filter]:backdrop-blur-[60px] overflow-hidden">
+            <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-[#1C1C1E] overflow-hidden">
                 <main className="flex-1 overflow-hidden flex flex-col min-h-0 relative">
                     <AnimatePresence mode="wait">
                         <motion.div
@@ -1156,7 +1156,7 @@ const StatCard = ({ title, value, change }: { title: string, value: string, chan
         <motion.div
             whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
-            className="p-4 border border-black/10 rounded-[24px] bg-white/80 supports-[backdrop-filter]:backdrop-blur-[60px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] group"
+            className="p-4 border border-black/5 dark:border-white/5 rounded-[24px] bg-white dark:bg-[#1C1C1E] shadow-sm group"
         >
             <h4 className="text-[10px] font-black text-black/30 mb-2 uppercase tracking-wider group-hover:text-black/50 transition-colors">{title}</h4>
             <div className="flex items-baseline justify-between">

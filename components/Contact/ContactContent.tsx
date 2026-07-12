@@ -92,14 +92,14 @@ export default function ContactContent() {
                     <div className="space-y-1.5">
                         <label className="text-[13px] font-bold text-primary tracking-wide">{t('contact.name_label')}</label>
                         <div className="relative group">
-                            <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted group-focus-within:text-blue-primary transition-colors" />
+                            <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted group-focus-within:text-primary transition-colors" />
                             <input
                                 type="text"
                                 required
                                 value={formData.name}
                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
                                 placeholder={t('contact.name_placeholder')}
-                                className="w-full bg-primary border border-border rounded-md px-10 py-2.5 text-[15px] shadow-[0_2px_4px_rgba(0,0,0,0.02)] focus:border-blue-primary focus:ring-1 focus:ring-blue-primary transition-all text-primary placeholder:text-muted"
+                                className="w-full bg-gray-50 dark:bg-gray-900 border border-black/10 dark:border-white/10 rounded-[20px] px-10 py-2.5 text-[15px] shadow-none outline-none focus:border-black/20 dark:focus:border-white/20 focus:bg-white dark:focus:bg-black transition-all duration-200 text-primary placeholder:text-muted"
                             />
                         </div>
                     </div>
@@ -107,14 +107,14 @@ export default function ContactContent() {
                     <div className="space-y-1.5">
                         <label className="text-[13px] font-bold text-primary tracking-wide">{t('contact.email_label')}</label>
                         <div className="relative group">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted group-focus-within:text-blue-primary transition-colors" />
+                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted group-focus-within:text-primary transition-colors" />
                             <input
                                 type="email"
                                 required
                                 value={formData.email}
                                 onChange={e => setFormData({ ...formData, email: e.target.value })}
                                 placeholder={t('contact.email_placeholder')}
-                                className="w-full bg-primary border border-border rounded-md px-10 py-2.5 text-[15px] shadow-[0_2px_4px_rgba(0,0,0,0.02)] focus:border-blue-primary focus:ring-1 focus:ring-blue-primary transition-all text-primary placeholder:text-muted"
+                                className="w-full bg-gray-50 dark:bg-gray-900 border border-black/10 dark:border-white/10 rounded-[20px] px-10 py-2.5 text-[15px] shadow-none outline-none focus:border-black/20 dark:focus:border-white/20 focus:bg-white dark:focus:bg-black transition-all duration-200 text-primary placeholder:text-muted"
                             />
                         </div>
                     </div>
@@ -122,14 +122,14 @@ export default function ContactContent() {
                     <div className="space-y-1.5">
                         <label className="text-[13px] font-bold text-primary tracking-wide">{t('contact.msg_label')}</label>
                         <div className="relative group">
-                            <MessageSquare className="absolute left-3 top-3.5 size-4 text-muted group-focus-within:text-blue-primary transition-colors" />
+                            <MessageSquare className="absolute left-3 top-3.5 size-4 text-muted group-focus-within:text-primary transition-colors" />
                             <textarea
                                 required
                                 rows={5}
                                 value={formData.message}
                                 onChange={e => setFormData({ ...formData, message: e.target.value })}
                                 placeholder={t('contact.msg_placeholder')}
-                                className="w-full bg-white/60 dark:bg-black/60 supports-[backdrop-filter]:backdrop-blur-[20px] border border-black/5 dark:border-white/5 rounded-[24px] px-10 py-4 text-[15px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] focus:border-black/10 dark:focus:border-white/10 focus:bg-white/80 dark:focus:bg-black/80 transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] resize-none text-primary placeholder:text-primary/40 outline-none"
+                                className="w-full bg-gray-50 dark:bg-gray-900 border border-black/10 dark:border-white/10 rounded-[24px] px-10 py-4 text-[15px] shadow-none focus:border-black/20 dark:focus:border-white/20 focus:bg-white dark:focus:bg-black transition-all duration-200 resize-none text-primary placeholder:text-primary/40 outline-none"
                             />
                         </div>
                     </div>
