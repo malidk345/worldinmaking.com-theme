@@ -5,6 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { supabase } from "../../lib/supabase";
 import ForumAvatar from "../Forum/ForumAvatar";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Book as BookIcon,
   Plus,
@@ -65,9 +66,6 @@ export default function BooksApp() {
 
   // ePub / PDF formatting preferences
   const [fontSize, setFontSize] = useState<"sm" | "base" | "lg" | "xl">("base");
-  const [readerTheme, setReaderTheme] = useState<"paper" | "sepia" | "dark">(
-    "sepia",
-  );
   const [debatePanelOpen, setDebatePanelOpen] = useState(true);
 
   // User commentary input
@@ -349,25 +347,19 @@ export default function BooksApp() {
     return "text-sm md:text-base";
   };
 
-  const getThemeClass = () => {
-    if (readerTheme === "sepia")
-      return "bg-[#FBF0D9] text-[#5B4636] border-[#E8DCBF]";
-    if (readerTheme === "dark")
-      return "bg-[#1C1C1E] text-zinc-300 border-zinc-800";
-    return "bg-white text-zinc-900 border-zinc-100";
-  };
-
-  const getContainerBackgroundClass = () => {
-    if (readerTheme === "sepia") return "bg-[#ebdcb9] dark:bg-[#ebdcb9]";
-    if (readerTheme === "dark") return "bg-[#121214] dark:bg-[#121214]";
-    return "bg-[#f5f5f7] dark:bg-zinc-900";
-  };
-
   return (
     <div className="flex size-full overflow-hidden text-black bg-transparent select-none lowercase font-sans">
-      {/* 1. Books List / Library Mode (If no active book selected) */}
-      {!activeBook ? (
-        <div className="flex-1 flex flex-col size-full overflow-hidden p-4 md:p-8">
+      <AnimatePresence mode="wait">
+        {/* 1. Books List / Library Mode (If no active book selected) */}
+        {!activeBook ? (
+          <motion.div
+            key="library"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="flex-1 flex flex-col size-full overflow-hidden p-4 md:p-8 bg-[#F2F2F7] dark:bg-[#0A0A0A] rounded-[32px]"
+          >
           {/* Header */}
           <div className="flex items-center justify-between mb-8 pb-4 border-b border-black/5 dark:border-white/5">
             <div className="flex items-center gap-3">
@@ -406,7 +398,7 @@ export default function BooksApp() {
                   <div
                     key={book.id}
                     onClick={() => setActiveBook(book)}
-                    className="flex flex-col bg-white/60 dark:bg-black/40 supports-[backdrop-filter]:backdrop-blur-[40px] border border-black/5 dark:border-white/5 rounded-[24px] p-3 cursor-pointer hover:border-black/10 dark:hover:border-white/10 transition-all duration-300 hover:-translate-y-0.5 group shadow-[0_8px_32px_rgba(0,0,0,0.04)]"
+                    className="flex flex-col bg-white dark:bg-[#1C1C1E] border border-black/5 dark:border-white/5 rounded-[24px] p-3 cursor-pointer transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] group shadow-sm"
                   >
                     <div className="aspect-[3/4] w-full bg-black/5 dark:bg-white/5 rounded-[18px] overflow-hidden mb-3 border border-black/5 dark:border-white/5 shadow-inner flex items-center justify-center">
                       {book.cover_url ? (
@@ -506,16 +498,23 @@ export default function BooksApp() {
               </form>
             </div>
           )}
-        </div>
-      ) : (
-        /* 2. Reader Mode (If book selected) */
-        <div className="flex-1 flex size-full overflow-hidden bg-transparent transition-colors duration-500 @container relative rounded-[32px]">
-          {/* 2.1 Main Reading Area (Center Canvas) */}
-          <div
-            className={`flex-1 flex flex-col h-full min-w-0 transition-colors duration-500 ${getContainerBackgroundClass()}`}
+          </motion.div>
+        ) : (
+          /* 2. Reader Mode (If book selected) */
+          <motion.div
+            key="reader"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="flex-1 flex size-full overflow-hidden bg-transparent transition-colors duration-500 @container relative rounded-[32px]"
           >
+            {/* 2.1 Main Reading Area (Center Canvas) */}
+            <div
+              className={`flex-1 flex flex-col h-full min-w-0 transition-colors duration-500 bg-white dark:bg-black rounded-l-[32px]`}
+            >
             {/* Reader Sub-Header (Controls Bar) */}
-            <div className="h-10 border-b border-black/5 dark:border-white/5 flex items-center justify-between px-4 shrink-0 bg-white/60 dark:bg-black/40 supports-[backdrop-filter]:backdrop-blur-[40px] select-none z-10">
+            <div className="h-10 border-b border-black/5 dark:border-white/5 flex items-center justify-between px-4 shrink-0 bg-white dark:bg-black select-none z-10 rounded-tl-[32px]">
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setActiveBook(null)}
@@ -576,25 +575,6 @@ export default function BooksApp() {
                   </button>
                 </div>
 
-                {/* Themes switcher */}
-                <div className="flex items-center bg-black/5 dark:bg-white/5 rounded-full p-0.5 border border-black/5 dark:border-white/5">
-                  <button
-                    onClick={() => setReaderTheme("paper")}
-                    className={`w-4 h-4 rounded-full border shadow-sm transition-all duration-200 mr-0.5 ${readerTheme === "paper" ? "border-black scale-110" : "border-black/10"}`}
-                    style={{ backgroundColor: "#ffffff" }}
-                  />
-                  <button
-                    onClick={() => setReaderTheme("sepia")}
-                    className={`w-4 h-4 rounded-full border shadow-sm transition-all duration-200 mr-0.5 ${readerTheme === "sepia" ? "border-black/60 scale-110" : "border-black/10"}`}
-                    style={{ backgroundColor: "#FBF0D9" }}
-                  />
-                  <button
-                    onClick={() => setReaderTheme("dark")}
-                    className={`w-4 h-4 rounded-full border shadow-sm transition-all duration-200 ${readerTheme === "dark" ? "border-white scale-110" : "border-white/10"}`}
-                    style={{ backgroundColor: "#1C1C1E" }}
-                  />
-                </div>
-
                 <button
                   onClick={() => setDebatePanelOpen((prev) => !prev)}
                   className={`px-2 py-1 rounded-full hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-1 text-[10px] font-black ${debatePanelOpen ? "bg-black/5 dark:bg-white/5 text-black dark:text-white" : "text-black/40 dark:text-white/40"}`}
@@ -618,7 +598,7 @@ export default function BooksApp() {
                 </div>
               ) : (
                 <div
-                  className={`w-full max-w-2xl rounded-[32px] shadow-[0_12px_48px_rgba(0,0,0,0.06)] border p-6 sm:p-10 md:p-12 mb-12 h-fit select-text select-all transition-colors duration-300 ${getThemeClass()}`}
+                  className={`w-full max-w-2xl rounded-[32px] border p-6 sm:p-10 md:p-12 mb-12 h-fit select-text select-all transition-colors duration-300 bg-white dark:bg-black text-black dark:text-white border-black/5 dark:border-white/5`}
                 >
                   <article className="flex flex-col gap-6 font-serif">
                     {/* Book Title & Author Sheet Header */}
@@ -664,15 +644,17 @@ export default function BooksApp() {
           )}
 
           {/* 2.2 Bot Debate & Human Commentary Sidebar (Right Panel) */}
-          {activeThreadId && (
-            <div
-              className={`absolute inset-y-0 right-0 w-80 max-w-[90%] z-50 bg-white/60 dark:bg-black/40 supports-[backdrop-filter]:backdrop-blur-[40px] border-l border-black/5 dark:border-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.04)] flex flex-col h-full transition-transform duration-300 rounded-r-[32px] @lg:rounded-l-none @lg:rounded-r-[32px]
-                            ${debatePanelOpen ? "translate-x-0" : "translate-x-full"}
-                            @lg:static @lg:translate-x-0 @lg:w-80 @lg:shadow-none
-                            ${debatePanelOpen ? "@lg:flex" : "@lg:hidden"}`}
+          <AnimatePresence>
+          {activeThreadId && debatePanelOpen && (
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className={`absolute inset-y-0 right-0 w-80 max-w-[90%] z-50 bg-gray-50 dark:bg-[#121214] border-l border-black/5 dark:border-white/5 flex flex-col h-full rounded-r-[32px] @lg:rounded-l-none @lg:rounded-r-[32px] @lg:static @lg:w-80`}
             >
               {/* Panel Header */}
-              <div className="p-3 border-b border-black/5 dark:border-white/5 flex items-center justify-between shrink-0 select-none">
+              <div className="p-3 border-b border-black/5 dark:border-white/5 flex items-center justify-between shrink-0 select-none bg-white dark:bg-[#1a1a1c] rounded-tr-[32px]">
                 <div className="flex items-center gap-1.5">
                   <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400 animate-pulse" />
                   <span className="text-[10px] font-black tracking-wider text-black/60 dark:text-white/60">
@@ -719,8 +701,8 @@ export default function BooksApp() {
                     return (
                       <div
                         key={comment.id}
-                        className={`flex flex-col bg-white/60 dark:bg-black/40 supports-[backdrop-filter]:backdrop-blur-[40px] border rounded-[24px] p-3 shadow-sm transition-all duration-200
-                                                    ${isBot ? "border-purple-100/50 dark:border-purple-900/20 bg-purple-50/5 dark:bg-purple-950/5" : "border-black/5 dark:border-white/5"}`}
+                        className={`flex flex-col bg-white dark:bg-[#1a1a1c] border rounded-[24px] p-3 shadow-sm transition-all duration-200
+                                                    ${isBot ? "border-purple-100/50 dark:border-purple-900/20 bg-purple-50 dark:bg-purple-950/20" : "border-black/5 dark:border-white/5"}`}
                       >
                         {/* Author Header */}
                         <div className="flex items-center gap-2 mb-1.5">
@@ -762,7 +744,7 @@ export default function BooksApp() {
               {/* Human Response Input Form */}
               <form
                 onSubmit={handlePostComment}
-                className="p-3 border-t border-black/5 dark:border-white/5 shrink-0 flex items-center gap-2 bg-black/5 dark:bg-white/5"
+                className="p-3 border-t border-black/5 dark:border-white/5 shrink-0 flex items-center gap-2 bg-white dark:bg-[#1a1a1c] rounded-br-[32px]"
               >
                 <input
                   type="text"
@@ -774,7 +756,7 @@ export default function BooksApp() {
                       : "log in to participate..."
                   }
                   disabled={!user}
-                  className="flex-1 bg-white/60 dark:bg-black/40 border border-transparent rounded-full px-4 py-2 text-xs text-black dark:text-white outline-none placeholder:text-black/40 dark:placeholder:text-white/40 focus:bg-white dark:focus:bg-black focus:border-black/10 dark:focus:border-white/10 transition-colors duration-250 lowercase"
+                  className="flex-1 bg-gray-100 dark:bg-[#2a2a2c] border border-transparent rounded-full px-4 py-2 text-xs text-black dark:text-white outline-none placeholder:text-black/40 dark:placeholder:text-white/40 focus:bg-white dark:focus:bg-black focus:border-black/10 dark:focus:border-white/10 transition-colors duration-250 lowercase"
                 />
                 <button
                   type="submit"
@@ -784,15 +766,21 @@ export default function BooksApp() {
                   <CornerDownLeft className="w-4 h-4" />
                 </button>
               </form>
-            </div>
+            </motion.div>
           )}
+          </AnimatePresence>
 
           {/* 2.3 Admin: Add Chapter Modal */}
+          <AnimatePresence>
           {showAddChapter && activeBook && (
             <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 supports-[backdrop-filter]:backdrop-blur-sm p-4">
-              <form
+              <motion.form
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
                 onSubmit={handleAddChapter}
-                className="bg-white/90 dark:bg-[#121214]/90 supports-[backdrop-filter]:backdrop-blur-xl border border-black/5 dark:border-white/5 p-6 rounded-[32px] w-full max-w-lg shadow-2xl flex flex-col gap-4"
+                className="bg-white dark:bg-[#121214] border border-black/5 dark:border-white/5 p-6 rounded-[32px] w-full max-w-lg shadow-2xl flex flex-col gap-4"
               >
                 <div className="flex items-center justify-between pb-3 border-b border-black/5 dark:border-white/5">
                   <h2 className="text-sm font-black text-black dark:text-white">
@@ -864,11 +852,13 @@ export default function BooksApp() {
                     cancel
                   </button>
                 </div>
-              </form>
+              </motion.form>
             </div>
           )}
-        </div>
-      )}
+          </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
