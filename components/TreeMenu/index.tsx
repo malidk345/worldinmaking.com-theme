@@ -90,7 +90,7 @@ function TreeMenuItem({
     // Premium styling for the item container with accent indicator
     const itemClass = `
         group flex w-full justify-between items-center relative py-1.5 px-2.5
-        text-[11px] font-medium rounded-md transition-all duration-200 cursor-pointer
+        text-[11px] font-medium rounded-[14px] transition-all duration-200 cursor-pointer
         before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2
         before:w-[2px] before:rounded-full before:transition-all before:duration-200
         ${active
