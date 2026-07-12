@@ -108,7 +108,7 @@ const Input = ({
             )}
             <div className={`relative ${direction === 'column' ? 'w-full' : 'flex-1'}`}>
                 <input
-                    className={`bg-primary border border-primary rounded ring-0 focus:ring-1 ${touched && error ? 'border-red dark:border-yellow' : 'border-primary'
+                    className={`bg-primary border border-black/10 dark:border-white/10 rounded-[18px] ring-0 focus:ring-1 focus:border-black/20 dark:focus:border-white/20 shadow-sm ${touched && error ? 'border-red dark:border-yellow' : ''
                         } ${sizeClasses[size]} ${widthClasses[width]} ${showClearButton && value ? 'pr-10' : ''
                         } ${className}`}
                     type={type}
@@ -121,7 +121,7 @@ const Input = ({
                 {showClearButton && value && (
                     <button
                         onClick={onClear}
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 z-20 p-1 hover:bg-accent rounded"
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 z-20 p-1 hover:bg-accent rounded-full"
                         aria-label="Clear search"
                         type="button"
                     >
