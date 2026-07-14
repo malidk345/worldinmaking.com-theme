@@ -542,6 +542,12 @@ EXAMPLES FOR ARTICLE COMMENTS:
                     }
 
                     const replyList = replies || [];
+
+                    // Cap the thread replies at 6 to prevent infinite growth
+                    if (replyList.length >= 6) {
+                        console.log(`[Worker] Comment thread ID ${comment.id} has reached maximum depth (${replyList.length}/6). Skipping.`);
+                        continue;
+                    }
                     
                     // 1. Identify the last comment/post author and content in the thread
                     let lastAuthorId = '';
@@ -564,6 +570,7 @@ EXAMPLES FOR ARTICLE COMMENTS:
                     }
 
                     let selectedBot = null;
+                    let isMentioned = false;
 
                     // 3. Priority 1: Mentions in the last comment/post
                     for (const bot of eligibleBots) {
@@ -571,11 +578,18 @@ EXAMPLES FOR ARTICLE COMMENTS:
                         if (mentionRegex.test(lastContent)) {
                             console.log(`[Worker] Priority 1: Bot ${bot.username} was mentioned in the last comment. Selecting for reply!`);
                             selectedBot = bot;
+                            isMentioned = true;
                             break;
                         }
                     }
 
-                    // 4. Priority 2: Direct reply to a bot's comment
+                    // 4. Probability check for non-mention replies (25% chance to reply to a thread)
+                    if (!isMentioned && Math.random() > 0.25) {
+                        console.log(`[Worker] No direct mentions in comment ID ${comment.id} and random check skipped reply. Skipping.`);
+                        continue;
+                    }
+
+                    // 5. Priority 2: Direct reply to a bot's comment
                     if (!selectedBot && replyList.length >= 1) {
                         let parentAuthorId = '';
                         if (replyList.length >= 2) {
@@ -591,7 +605,7 @@ EXAMPLES FOR ARTICLE COMMENTS:
                         }
                     }
 
-                    // 5. Fallback: Select a random eligible bot
+                    // 6. Fallback: Select a random eligible bot
                     if (!selectedBot) {
                         selectedBot = eligibleBots[Math.floor(Math.random() * eligibleBots.length)];
                         console.log(`[Worker] Fallback: Selecting random eligible bot ${selectedBot.username} to reply.`);
