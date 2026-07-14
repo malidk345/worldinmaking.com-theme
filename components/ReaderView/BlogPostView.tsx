@@ -236,7 +236,7 @@ const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
                                             src={finalSrc}
                                             alt={alt || 'Blog post image'}
                                             title={title}
-                                            className="my-10 rounded-xl border border-primary shadow-lg overflow-hidden"
+                                                className="my-10 rounded-[18px] md:rounded-[24px] border border-black/5 dark:border-white/5 shadow-lg overflow-hidden"
                                             imgClassName="object-contain w-full h-auto"
                                             width={1200}
                                             height={675}

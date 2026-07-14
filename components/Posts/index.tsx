@@ -80,15 +80,15 @@ const PostsView = React.memo(() => {
                                     const displayDescription = (isTr && roadmap.translations?.['tr']?.excerpt) ? roadmap.translations['tr'].excerpt : roadmap.description
 
                                     return (
-                                        <li key={roadmap.id} className="font-mono text-xs lowercase border-b border-black/10 last:border-0 py-2 group">
+                                        <li key={roadmap.id} className="font-mono text-xs lowercase py-2 group">
                                             <div
-                                                className="flex items-start gap-3 px-2 sm:px-4 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition-all"
+                                                className="flex items-start gap-3 p-4 bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 rounded-[24px] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] cursor-pointer transition-all shadow-[0_2px_8px_rgba(0,0,0,0.02)]"
                                                 onClick={() => handleRoadmapClick(roadmap)}
                                             >
                                                 <div className="flex-grow flex flex-col min-w-0">
                                                     {/* Author / Profile Area at Top */}
                                                     <div className="flex items-center gap-2 mb-2 opacity-50">
-                                                        <div className="size-5 shrink-0 border border-primary/20 bg-primary/5 rounded-sm overflow-hidden flex items-center justify-center">
+                                                        <div className="size-5 shrink-0 border border-black/10 dark:border-white/10 bg-primary/5 rounded-full overflow-hidden flex items-center justify-center">
                                                             {roadmap.authorAvatar ? (
                                                                 // eslint-disable-next-line @next/next/no-img-element
                                                                 <img src={roadmap.authorAvatar} alt="" className="size-full object-cover" />
@@ -110,7 +110,7 @@ const PostsView = React.memo(() => {
                                                     )}
                                                     {/* Colored Preview Image */}
                                                     {roadmap.image && (
-                                                        <div className="mt-2 w-full max-w-[240px] aspect-video border border-primary/10 bg-primary/5 overflow-hidden rounded-[1px] shadow-sm">
+                                                        <div className="mt-3 w-full max-w-[280px] aspect-video border border-black/5 dark:border-white/5 bg-primary/5 overflow-hidden rounded-[16px] shadow-sm">
                                                             {/* eslint-disable-next-line @next/next/no-img-element */}
                                                             <img
                                                                 src={roadmap.image}
