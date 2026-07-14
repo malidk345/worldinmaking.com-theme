@@ -28,7 +28,7 @@ import ArchiveExplorer from 'components/ArchiveExplorer'
 import ForumAvatar from 'components/Forum/ForumAvatar'
 import ForumRichText from 'components/Forum/ForumRichText'
 import PostEditor from 'components/PostEditor'
-import BooksApp from 'components/Books'
+import SymposiumApp from 'components/Symposium'
 
 interface AdaptablePost {
     id: number | string
@@ -168,9 +168,9 @@ function WindowRouterInner({ item }: { item: AppWindow }) {
         return <PostEditor postId={item.props?.postId as string | undefined} item={item} />
     }
 
-    // /books (ePub Books Library App)
-    if (path === '/books') {
-        return <BooksApp />
+    // /symposium (Collective AI Thinking Space)
+    if (path === '/symposium') {
+        return <SymposiumApp />
     }
 
     // Fallback for any other path

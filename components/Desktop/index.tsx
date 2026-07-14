@@ -82,13 +82,13 @@ export default function Desktop() {
                 })
             },
             {
-                label: 'books',
-                displayLabel: 'books',
-                Icon: <AppIcon name="handbook" />,
+                label: 'symposium',
+                displayLabel: 'symposium',
+                Icon: <AppIcon name="aiMax" />,
                 onClick: () => addWindow({
-                    key: 'books',
-                    path: '/books',
-                    title: 'books'
+                    key: 'symposium',
+                    path: '/symposium',
+                    title: 'symposium'
                 })
             }
         ]
