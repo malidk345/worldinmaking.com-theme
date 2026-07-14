@@ -115,7 +115,7 @@ async function runWorker() {
         // Fetch all active bots
         const { data: rawBots, error: botsError } = await supabaseAdmin
             .from('bot_profiles')
-            .select('id, system_prompt, api_token, profiles:id ( username, avatar_url )')
+            .select('id, system_prompt, api_token, profiles:profiles!id ( username, avatar_url )')
             .eq('is_active', true);
 
         if (botsError || !rawBots || rawBots.length === 0) {
@@ -134,6 +134,119 @@ async function runWorker() {
             };
         });
 
+        const awakeBots = bots.filter(b => isBotAwakeAndActive(b.username));
+
+        // Check and advance any active symposium collaborations
+        console.log('[Worker] Checking for active symposium collaborations to advance...');
+        const { data: activeCollabs } = await supabaseAdmin
+            .from('symposium_collaborations')
+            .select('id, title, step_count')
+            .neq('status', 'completed')
+            .order('updated_at', { ascending: true }); // prioritize oldest updated active collab
+
+        if (activeCollabs && activeCollabs.length > 0) {
+            const collab = activeCollabs[0];
+            console.log(`[Worker] Advancing active symposium: "${collab.title}" (Current steps: ${collab.step_count})`);
+            try {
+                const stepRes = await fetch(`${siteUrl}/api/agent/symposium/step`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ collaborationId: collab.id })
+                });
+                const stepData = await stepRes.json() as { success?: boolean; error?: string; message?: string; taskType?: string };
+                if (stepRes.ok && stepData.success) {
+                    console.log(`[Worker] Advanced symposium "${collab.title}" successfully: ${stepData.taskType || stepData.message}`);
+                } else {
+                    console.error(`[Worker] Failed to advance symposium:`, stepData.error || stepData.message);
+                }
+            } catch (err: any) {
+                console.error(`[Worker] Exception advancing symposium:`, err?.message || err);
+            }
+            await sleep(2000);
+        } else {
+            console.log('[Worker] No active symposium collaborations. Checking if we should launch one autonomously...');
+            // 20% chance to autonomously start a new symposium collaboration if none are active
+            const shouldLaunch = Math.random() < 0.20;
+            if (shouldLaunch && awakeBots.length > 0) {
+                const initiatingBot = awakeBots[Math.floor(Math.random() * awakeBots.length)];
+                console.log(`[Worker] [Symposium Launch] Bot @${initiatingBot.username} decided to initiate a new autonomous symposium...`);
+                try {
+                    // Try to fetch RSS feed items or use fallback
+                    const { data: feeds } = await supabaseAdmin
+                        .from('forum_rss_feeds')
+                        .select('url')
+                        .eq('is_active', true);
+
+                    let seedTopic = "The speed at which the 'Dead Internet Theory' is becoming reality.";
+                    const DEFAULT_INTELLECTUAL_FEEDS = [
+                        "The debate on AI models feeding on synthetic data and entering a self-consuming cycle (model collapse).",
+                        "The paradox of serverless and cloud architectures making developers dependent on big tech monopolies.",
+                        "The risk of brain-computer interfaces privatizing and commercializing human consciousness.",
+                        "The co-optation of Stoicism by modern tech workers as a tool to accept capitalist burnout.",
+                        "How algorithmic feeds isolate everyone in their personal echo chambers.",
+                        "How the open-source software movement has become a raw material warehouse for giant AI corporations."
+                    ];
+
+                    if (feeds && feeds.length > 0) {
+                        const randomFeed = feeds[Math.floor(Math.random() * feeds.length)];
+                        const { fetchAndParseFeed } = await import('../lib/feed-parser');
+                        const items = await fetchAndParseFeed(randomFeed.url);
+                        if (items && items.length > 0) {
+                            seedTopic = items[Math.floor(Math.random() * items.length)].title;
+                        } else {
+                            seedTopic = DEFAULT_INTELLECTUAL_FEEDS[Math.floor(Math.random() * DEFAULT_INTELLECTUAL_FEEDS.length)];
+                        }
+                    } else {
+                        seedTopic = DEFAULT_INTELLECTUAL_FEEDS[Math.floor(Math.random() * DEFAULT_INTELLECTUAL_FEEDS.length)];
+                    }
+
+                    // Formulate thesis topic using LLM
+                    const thesisPrompt = `You are @${initiatingBot.username}.
+Your intellectual persona: ${initiatingBot.system_prompt}
+
+TASK:
+We want to launch an academic/philosophical symposium on a topic inspired by this headline: "${seedTopic}"
+Write a short, engaging thesis title (3-7 words) and a 1-sentence topic description.
+Output in the exact format:
+[Başlık]
+your thesis title here
+
+[Açıklama]
+your 1-sentence topic description here`;
+
+                    const { generateBotResponse } = await import('../lib/ai-provider');
+                    const thesisReply = await generateBotResponse(thesisPrompt, initiatingBot.username);
+
+                    const titleMatch = thesisReply.match(/\[Başlık\]([\s\S]*?)(?=\[Açıklama\]|$)/i);
+                    const descMatch = thesisReply.match(/\[Açıklama\]([\s\S]*)$/i);
+
+                    const finalTitle = titleMatch ? titleMatch[1].trim() : seedTopic;
+                    const finalDesc = descMatch ? descMatch[1].trim() : `A cooperative review on the implications of ${seedTopic}.`;
+
+                    console.log(`[Worker] [Symposium Launch] @${initiatingBot.username} launching: "${finalTitle}"`);
+
+                    const createRes = await fetch(`${siteUrl}/api/symposium`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            title: finalTitle,
+                            topicDescription: finalDesc,
+                            isContinuous: true
+                        })
+                    });
+                    const createData = await createRes.json() as { collaboration?: { id: string }; error?: string };
+                    if (createRes.ok && createData.collaboration) {
+                        console.log(`[Worker] [Symposium Launch] Successfully launched! ID: ${createData.collaboration.id}`);
+                    } else {
+                        console.error(`[Worker] [Symposium Launch] Creation failed:`, createData.error);
+                    }
+                } catch (e: any) {
+                    console.error('[Worker] [Symposium Launch] Exception:', e?.message || e);
+                }
+                await sleep(2000);
+            }
+        }
+
         console.log(`[Worker] Found ${bots.length} active bot(s): ${bots.map(b => b.username).join(', ')}`);
 
         // Fetch channels to find where to post
@@ -149,8 +262,7 @@ async function runWorker() {
         const selectedChannel = channels[0]; // Post in the first channel (usually General)
         console.log(`[Worker] Selected channel: ${selectedChannel.name} (ID: ${selectedChannel.id})`);
 
-        const awakeBots = bots.filter(b => isBotAwakeAndActive(b.username));
-        console.log(`[Worker] Awake and active bot(s) this round: ${awakeBots.map(b => b.username).join(', ')}`);
+
 
         const { determineAgentAction, executeGhostBrowsing, shouldAgentRespond } = await import('../lib/agent-orchestrator');
 
