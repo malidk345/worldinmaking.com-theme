@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useToast } from 'context/ToastContext'
 import VotePicker from 'components/VotePicker'
-import { Share2 } from 'lucide-react'
+import { IconShare } from '@posthog/icons';
 import { supabase } from 'lib/supabase'
 import ViewCounter from 'components/ViewCounter'
 import { useTranslation } from 'hooks/useTranslation'
@@ -175,7 +175,7 @@ export default function ArticleActions({ slug, views = 0 }: ArticleActionsProps)
                 className="vote-picker p-2 flex items-center justify-center cursor-pointer"
                 title={t('share.title')}
             >
-                <Share2 className="size-3.5" />
+                <IconShare className="size-3.5" />
             </div>
         </div>
     )

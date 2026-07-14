@@ -1,7 +1,7 @@
 import React, { useLayoutEffect, useRef } from 'react'
 import * as PopoverPrimitive from '@radix-ui/react-popover'
 import ScrollArea from 'components/RadixUI/ScrollArea'
-import { X as IconX } from 'lucide-react'
+import { IconX } from '@posthog/icons';
 
 interface PopoverProps {
     trigger: React.ReactNode

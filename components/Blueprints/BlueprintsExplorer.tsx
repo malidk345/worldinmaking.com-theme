@@ -6,7 +6,7 @@ import { useBlueprints, BlueprintPost } from 'hooks/useBlueprints'
 import ScrollArea from 'components/RadixUI/ScrollArea'
 import Loading from 'components/Loading'
 import { useApp } from 'context/App'
-import { ChevronRight, BookOpen, Layers } from 'lucide-react'
+import { IconBook, IconChevronRight, IconStack } from '@posthog/icons';
 
 export default function BlueprintsExplorer() {
     const { fetchHierarchy } = useBlueprints()
@@ -41,7 +41,7 @@ export default function BlueprintsExplorer() {
                 <div className="max-w-4xl mx-auto py-12 px-6">
                     <header className="mb-12 border-b border-primary/10 pb-6">
                         <h1 className="text-2xl font-black flex items-center gap-3">
-                            <Layers className="size-6" /> blueprints
+                            <IconStack className="size-6" /> blueprints
                         </h1>
                         <p className="opacity-50 mt-2 text-xs">structured knowledge / technical archives</p>
                     </header>
@@ -65,7 +65,7 @@ export default function BlueprintsExplorer() {
                                     {category.lectures?.map((lecture: any) => (
                                         <div key={lecture.id} className="bg-white/40 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[24px] shadow-sm supports-[backdrop-filter]:backdrop-blur-xl p-6 hover:bg-white/60 dark:hover:bg-white/10 transition-all duration-300">
                                             <h3 className="text-sm font-bold flex items-center gap-2 mb-3">
-                                                <BookOpen className="size-4 opacity-50" /> {lecture.name}
+                                                <IconBook className="size-4 opacity-50" /> {lecture.name}
                                             </h3>
                                             
                                             <ul className="space-y-1 ml-6">
@@ -75,7 +75,7 @@ export default function BlueprintsExplorer() {
                                                         onClick={() => handlePostClick(post)}
                                                         className="text-[12px] opacity-70 hover:opacity-100 cursor-pointer flex items-center gap-2 group py-1.5 px-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-xl transition-colors"
                                                     >
-                                                        <ChevronRight className="size-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                        <IconChevronRight className="size-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                                                         {post.title}
                                                     </li>
                                                 ))}

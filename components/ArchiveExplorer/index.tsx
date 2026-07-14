@@ -4,17 +4,7 @@ import { useAuth } from 'context/AuthContext'
 import { supabase } from 'lib/supabase'
 import { AppIcon, AppIconName } from 'components/OSIcons/AppIcon'
 import { useTranslation } from 'hooks/useTranslation'
-import { 
-    RotateCcw, 
-    Play, 
-    Folder, 
-    Bookmark, 
-    ChevronLeft, 
-    Trash2, 
-    Lock,
-    RefreshCw,
-    ExternalLink
-} from 'lucide-react'
+import { IconBookmark, IconChevronLeft, IconExternal, IconFolder, IconLock, IconPlay, IconRefresh, IconSparkles, IconTrash } from '@posthog/icons';
 import PostsView from 'components/Posts'
 
 const APP_META: Record<string, { label: string; iconName: AppIconName; path: string; title: string; element?: React.ReactNode }> = {
@@ -144,7 +134,7 @@ export default function ArchiveExplorer() {
                             onClick={() => setCurrentFolder('root')}
                             className="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-primary transition-all cursor-pointer flex items-center justify-center"
                         >
-                            <ChevronLeft className="size-3.5" />
+                            <IconChevronLeft className="size-3.5" />
                         </button>
                     )}
                     <span className="font-semibold tracking-tight text-[11px] lowercase flex items-center gap-1.5">
@@ -169,7 +159,7 @@ export default function ArchiveExplorer() {
                             onClick={() => { setRefreshing(true); fetchSavedPosts(); }}
                             className={`p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-all cursor-pointer ${refreshing ? 'animate-spin' : ''}`}
                         >
-                            <RefreshCw className="size-3" />
+                            <IconRefresh className="size-3" />
                         </button>
                     )}
                     <span className="bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-lg border border-black/5 dark:border-white/5">
@@ -225,7 +215,7 @@ export default function ArchiveExplorer() {
                     <>
                         {archivedApps.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center text-center p-6 text-muted min-h-[180px]">
-                                <Folder className="size-10 stroke-[1.2] mb-2 opacity-35" />
+                                <IconFolder className="size-10 stroke-[1.2] mb-2 opacity-35" />
                                 <p className="text-xs lowercase font-semibold">{t('archive.empty_apps')}</p>
                                 <p className="text-[10px] mt-0.5 lowercase opacity-60">{t('archive.empty_apps_sub')}</p>
                             </div>
@@ -249,14 +239,14 @@ export default function ArchiveExplorer() {
                                                 title={t('archive.open_app')}
                                                 className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-primary transition-all cursor-pointer"
                                             >
-                                                <Play className="size-3 fill-current" />
+                                                <IconPlay className="size-3 fill-current" />
                                             </button>
                                             <button
                                                 onClick={() => handleRestoreApp(app.label)}
                                                 title={t('archive.restore_desktop')}
                                                 className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-primary transition-all cursor-pointer"
                                             >
-                                                <RotateCcw className="size-3" />
+                                                <IconSparkles className="size-3" />
                                             </button>
                                         </div>
                                     </div>
@@ -273,7 +263,7 @@ export default function ArchiveExplorer() {
                             <div className="h-full flex flex-col items-center justify-center text-center p-4 min-h-[200px] justify-self-center max-w-[260px] w-full animate-fadeIn">
                                 <div className="w-full p-6 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-black/5 dark:border-white/5 shadow-sm flex flex-col items-center text-center">
                                     <div className="size-11 rounded-xl bg-black/5 dark:bg-white/10 flex items-center justify-center mb-3 text-primary border border-black/5 dark:border-white/5">
-                                        <Lock className="size-5 grayscale opacity-60" />
+                                        <IconLock className="size-5 grayscale opacity-60" />
                                     </div>
                                     <h4 className="font-bold text-[12.5px] text-primary lowercase mb-1">{t('archive.auth_required')}</h4>
                                     <p className="text-[10px] text-primary/50 leading-normal lowercase mb-4 max-w-[190px]">
@@ -289,12 +279,12 @@ export default function ArchiveExplorer() {
                             </div>
                         ) : loadingPosts ? (
                             <div className="h-full flex flex-col items-center justify-center text-center p-6 text-muted min-h-[180px]">
-                                <RefreshCw className="size-6 animate-spin opacity-50 mb-2" />
+                                <IconRefresh className="size-6 animate-spin opacity-50 mb-2" />
                                 <p className="text-xs lowercase">{t('archive.loading_saved')}</p>
                             </div>
                         ) : savedPosts.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center text-center p-6 text-muted min-h-[180px]">
-                                <Bookmark className="size-10 stroke-[1.2] mb-2 opacity-35" />
+                                <IconBookmark className="size-10 stroke-[1.2] mb-2 opacity-35" />
                                 <p className="text-xs lowercase font-semibold">{t('archive.no_saved')}</p>
                                 <p className="text-[10px] mt-0.5 lowercase opacity-60">{t('archive.no_saved_sub')}</p>
                             </div>
@@ -322,14 +312,14 @@ export default function ArchiveExplorer() {
                                                 title={t('archive.read_post')}
                                                 className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-primary transition-colors cursor-pointer"
                                             >
-                                                <ExternalLink className="size-3.5" />
+                                                <IconExternal className="size-3.5" />
                                             </button>
                                             <button
                                                 onClick={() => handleUnsavePost(post.post_slug)}
                                                 title={t('archive.remove_bookmark')}
                                                 className="p-2 rounded-full hover:bg-red-500/10 text-primary/60 hover:text-red-500 transition-colors cursor-pointer"
                                             >
-                                                <Trash2 className="size-3.5" />
+                                                <IconTrash className="size-3.5" />
                                             </button>
                                         </div>
                                     </div>

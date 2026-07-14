@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react'
-import { Monitor } from 'lucide-react'
+import { IconScreen } from '@posthog/icons';
 import { useApp } from '../../context/App'
 import { useTranslation } from 'hooks/useTranslation'
 
@@ -13,7 +13,7 @@ export default function SystemSettings() {
         <div className="h-full bg-primary flex flex-col overflow-hidden lowercase">
             <div className="p-4 border-b border-primary bg-accent/20">
                 <h1 className="text-lg font-bold flex items-center gap-2">
-                    <Monitor className="size-5" />
+                    <IconScreen className="size-5" />
                     {t('sys.title')}
                 </h1>
             </div>

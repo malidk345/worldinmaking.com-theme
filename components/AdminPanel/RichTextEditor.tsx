@@ -16,14 +16,7 @@ import { TableHeader } from '@tiptap/extension-table-header'
 import { createLowlight, common } from 'lowlight'
 import 'highlight.js/styles/github.css' // Light mode theme to prevent white text
 
-import {
-    Bold, Italic, List, ListOrdered, Quote, Heading2, Heading3,
-    Link as LinkIcon, Image as ImageIcon, Undo, Redo,
-    Maximize2, Minimize2,
-    Underline as UnderlineIcon, Highlighter,
-    Terminal, Table as TableIcon, MessageSquareWarning, BookMarked,
-    Save, CheckCircle, Loader2, MoreHorizontal, Settings
-} from 'lucide-react'
+import { IconApps, IconBookmark, IconCheckCircle, IconCollapse, IconDownload, IconEllipsis, IconExpand, IconExternal, IconGear, IconImage, IconList, IconMinus, IconMinusSmall, IconPencil, IconQuote, IconRedo, IconSpinner, IconTerminal, IconTextWidth, IconTextWidthFixed, IconUndo, IconWarning } from '@posthog/icons';
 
 import { Toolbar, ToolbarElement } from 'components/RadixUI/Toolbar'
 import { Toolkit } from '../Toolkit'
@@ -239,7 +232,7 @@ const RichTextEditor = ({
         {
             type: 'button',
             label: 'undo',
-            icon: <Undo className="size-4" />,
+            icon: <IconUndo className="size-4" />,
             hideLabel: true,
             onClick: () => editor.chain().focus().undo().run(),
             disabled: !editor.can().undo(),
@@ -247,7 +240,7 @@ const RichTextEditor = ({
         {
             type: 'button',
             label: 'redo',
-            icon: <Redo className="size-4" />,
+            icon: <IconRedo className="size-4" />,
             hideLabel: true,
             onClick: () => editor.chain().focus().redo().run(),
             disabled: !editor.can().redo(),
@@ -256,7 +249,7 @@ const RichTextEditor = ({
         {
             type: 'button',
             label: 'bold',
-            icon: <Bold className="size-4 text-black" />,
+            icon: <IconTextWidthFixed className="size-4 text-black" />,
             hideLabel: true,
             active: editor.isActive('bold'),
             onClick: () => editor.chain().focus().toggleBold().run(),
@@ -264,7 +257,7 @@ const RichTextEditor = ({
         {
             type: 'button',
             label: 'italic',
-            icon: <Italic className="size-4 text-black" />,
+            icon: <IconMinusSmall className="size-4 text-black" />,
             hideLabel: true,
             active: editor.isActive('italic'),
             onClick: () => editor.chain().focus().toggleItalic().run(),
@@ -272,7 +265,7 @@ const RichTextEditor = ({
         {
             type: 'button',
             label: 'underline',
-            icon: <UnderlineIcon className="size-4 text-black" />,
+            icon: <IconMinus className="size-4 text-black" />,
             hideLabel: true,
             active: editor.isActive('underline'),
             onClick: () => editor.chain().focus().toggleUnderline().run(),
@@ -280,7 +273,7 @@ const RichTextEditor = ({
         {
             type: 'button',
             label: 'highlight',
-            icon: <Highlighter className="size-4 text-black" />,
+            icon: <IconPencil className="size-4 text-black" />,
             hideLabel: true,
             active: editor.isActive('highlight'),
             onClick: () => editor.chain().focus().toggleHighlight().run(),
@@ -289,7 +282,7 @@ const RichTextEditor = ({
         {
             type: 'button',
             label: 'H2',
-            icon: <Heading2 className="size-4 text-black" />,
+            icon: <IconTextWidth className="size-4 text-black" />,
             hideLabel: true,
             active: editor.isActive('heading', { level: 2 }),
             onClick: () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
@@ -297,7 +290,7 @@ const RichTextEditor = ({
         {
             type: 'button',
             label: 'H3',
-            icon: <Heading3 className="size-4 text-black" />,
+            icon: <IconTextWidth className="size-4 text-black" />,
             hideLabel: true,
             active: editor.isActive('heading', { level: 3 }),
             onClick: () => editor.chain().focus().toggleHeading({ level: 3 }).run(),
@@ -306,7 +299,7 @@ const RichTextEditor = ({
         {
             type: 'button',
             label: 'Bullet List',
-            icon: <List className="size-4 text-black" />,
+            icon: <IconList className="size-4 text-black" />,
             hideLabel: true,
             active: editor.isActive('bulletList'),
             onClick: () => editor.chain().focus().toggleBulletList().run(),
@@ -314,7 +307,7 @@ const RichTextEditor = ({
         {
             type: 'button',
             label: 'Ordered List',
-            icon: <ListOrdered className="size-4 text-black" />,
+            icon: <IconList className="size-4 text-black" />,
             hideLabel: true,
             active: editor.isActive('orderedList'),
             onClick: () => editor.chain().focus().toggleOrderedList().run(),
@@ -322,7 +315,7 @@ const RichTextEditor = ({
         {
             type: 'button',
             label: 'Quote',
-            icon: <Quote className="size-4 text-black" />,
+            icon: <IconQuote className="size-4 text-black" />,
             hideLabel: true,
             active: editor.isActive('blockquote'),
             onClick: () => editor.chain().focus().toggleBlockquote().run(),
@@ -331,7 +324,7 @@ const RichTextEditor = ({
         {
             type: 'button',
             label: 'Callout',
-            icon: <MessageSquareWarning className="size-4 text-black" />,
+            icon: <IconWarning className="size-4 text-black" />,
             hideLabel: true,
             active: editor.isActive('callout'),
             onClick: () => (editor.chain().focus() as unknown as { setCallout: () => { run: () => void } }).setCallout().run(),
@@ -339,7 +332,7 @@ const RichTextEditor = ({
         {
             type: 'button',
             label: 'References',
-            icon: <BookMarked className="size-4 text-black" />,
+            icon: <IconBookmark className="size-4 text-black" />,
             hideLabel: true,
             active: editor.isActive('references'),
             onClick: () => (editor.chain().focus() as unknown as { insertReferences: () => { run: () => void } }).insertReferences().run(),
@@ -354,7 +347,7 @@ const RichTextEditor = ({
                             {
                                 type: 'button',
                                 label: 'Link',
-                                icon: <LinkIcon className="size-4 text-black" />,
+                                icon: <IconExternal className="size-4 text-black" />,
                                 hideLabel: true,
                                 active: editor.isActive('link'),
                                 onClick: () => {
@@ -365,7 +358,7 @@ const RichTextEditor = ({
                             {
                                 type: 'button',
                                 label: 'Image',
-                                icon: <ImageIcon className="size-4 text-black" />,
+                                icon: <IconImage className="size-4 text-black" />,
                                 hideLabel: true,
                                 onClick: () => {
                                     const url = window.prompt('Image URL')
@@ -385,7 +378,7 @@ const RichTextEditor = ({
                     <Popover
                         trigger={
                             <OSButton size="sm">
-                                <MoreHorizontal className="size-4" />
+                                <IconEllipsis className="size-4" />
                             </OSButton>
                         }
                         dataScheme="primary"
@@ -399,7 +392,7 @@ const RichTextEditor = ({
                                 }}
                                 className={`text-left px-2 py-2 text-xs font-bold rounded-[24px] flex items-center gap-2 hover:bg-black/5 ${editor.isActive('link') ? 'bg-black/5' : ''}`}
                             >
-                                <LinkIcon className="size-4" /> add link
+                                <IconExternal className="size-4" /> add link
                             </button>
                             <button
                                 onClick={() => {
@@ -408,20 +401,20 @@ const RichTextEditor = ({
                                 }}
                                 className="text-left px-2 py-2 text-xs font-bold rounded-[24px] flex items-center gap-2 hover:bg-black/5"
                             >
-                                <ImageIcon className="size-4" /> add image
+                                <IconImage className="size-4" /> add image
                             </button>
                             <div className="h-px bg-primary/10 my-0.5" />
                             <button
                                 onClick={() => editor.chain().focus().toggleCodeBlock().run()}
                                 className={`text-left px-2 py-2 text-xs font-bold rounded-[24px] flex items-center gap-2 hover:bg-black/5 ${editor.isActive('codeBlock') ? 'bg-black/5' : ''}`}
                             >
-                                <Terminal className="size-4" /> code block
+                                <IconTerminal className="size-4" /> code block
                             </button>
                             <button
                                 onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
                                 className="text-left px-2 py-2 text-xs font-bold rounded-[24px] flex items-center gap-2 hover:bg-black/5"
                             >
-                                <TableIcon className="size-4" /> insert table
+                                <IconApps className="size-4" /> insert table
                             </button>
                         </div>
                     </Popover>
@@ -438,7 +431,7 @@ const RichTextEditor = ({
                         <Popover
                             trigger={
                                 <OSButton size="sm">
-                                    <Settings className="size-4" />
+                                    <IconGear className="size-4" />
                                 </OSButton>
                             }
                             dataScheme="primary"
@@ -466,7 +459,7 @@ const RichTextEditor = ({
                     {onSaveDraft && (
                         <OSButton size="sm" onClick={onSaveDraft} disabled={isSaving}>
                             <div className="flex items-center gap-1.5 lowercase px-1 font-bold">
-                                {isSaving ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
+                                {isSaving ? <IconSpinner className="size-3.5 animate-spin" /> : <IconDownload className="size-3.5" />}
                                 <span className="hidden md:inline px-0.5">save</span>
                             </div>
                         </OSButton>
@@ -480,7 +473,7 @@ const RichTextEditor = ({
                             className="!bg-primary !text-white hover:!bg-primary/90"
                         >
                             <div className="flex items-center gap-1.5 lowercase px-1 font-bold">
-                                <CheckCircle className="size-3.5" />
+                                <IconCheckCircle className="size-3.5" />
                                 <span className="hidden md:inline px-0.5">{isPublished ? 'update' : 'publish'}</span>
                             </div>
                         </OSButton>
@@ -493,7 +486,7 @@ const RichTextEditor = ({
                                 className={`p-1.5 rounded-[16px] transition-colors ${focusMode ? 'bg-black text-white' : 'text-black/40 hover:bg-black/10 hover:text-black'}`}
                                 title={focusMode ? 'Exit Focus' : 'Focus Mode'}
                             >
-                                {focusMode ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
+                                {focusMode ? <IconCollapse className="size-4" /> : <IconExpand className="size-4" />}
                             </button>
                         </div>
                     )}

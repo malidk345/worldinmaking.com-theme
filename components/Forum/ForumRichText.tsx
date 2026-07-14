@@ -12,13 +12,8 @@ import Underline from '@tiptap/extension-underline'
 import { useDropzone } from 'react-dropzone'
 
 import { AnimatePresence, motion } from 'framer-motion'
-import {
-    Bold, Italic, Strikethrough, Underline as UnderlineIcon,
-    Heading1, Heading2, List, ListOrdered, Quote, Minus,
-    Link as LinkIcon, Image as ImageIcon, Highlighter,
-    Undo2, Redo2, Code, Terminal,
-} from 'lucide-react'
-import { IconFeatures, IconX } from '@posthog/icons'
+import { IconCode, IconExternal, IconFeatures, IconImage, IconList, IconMinus, IconMinusSmall, IconMinusSquare, IconPencil, IconQuote, IconRedo, IconTerminal, IconTextWidth, IconTextWidthFixed, IconUndo, IconX } from '@posthog/icons';
+
 
 import ForumAvatar from './ForumAvatar'
 import MarkdownLogo from './MarkdownLogo'
@@ -37,7 +32,7 @@ interface ToolbarButton {
 const buttons: ToolbarButton[] = [
     {
         name: 'undo',
-        icon: <Undo2 className="size-4" />,
+        icon: <IconUndo className="size-4" />,
         tooltipContent: 'Undo',
         action: (editor) => editor.chain().focus().undo().run(),
         isActive: () => false,
@@ -45,7 +40,7 @@ const buttons: ToolbarButton[] = [
     },
     {
         name: 'redo',
-        icon: <Redo2 className="size-4" />,
+        icon: <IconRedo className="size-4" />,
         tooltipContent: 'Redo',
         action: (editor) => editor.chain().focus().redo().run(),
         isActive: () => false,
@@ -61,35 +56,35 @@ const buttons: ToolbarButton[] = [
     },
     {
         name: 'bold',
-        icon: <Bold className="size-4" />,
+        icon: <IconTextWidthFixed className="size-4" />,
         tooltipContent: 'Bold',
         action: (editor) => editor.chain().focus().toggleBold().run(),
         isActive: (editor) => editor.isActive('bold'),
     },
     {
         name: 'italic',
-        icon: <Italic className="size-4" />,
+        icon: <IconMinusSmall className="size-4" />,
         tooltipContent: 'Italic',
         action: (editor) => editor.chain().focus().toggleItalic().run(),
         isActive: (editor) => editor.isActive('italic'),
     },
     {
         name: 'underline',
-        icon: <UnderlineIcon className="size-4" />,
+        icon: <IconMinus className="size-4" />,
         tooltipContent: 'Underline',
         action: (editor) => editor.chain().focus().toggleUnderline().run(),
         isActive: (editor) => editor.isActive('underline'),
     },
     {
         name: 'strike',
-        icon: <Strikethrough className="size-4" />,
+        icon: <IconMinusSquare className="size-4" />,
         tooltipContent: 'Strikethrough',
         action: (editor) => editor.chain().focus().toggleStrike().run(),
         isActive: (editor) => editor.isActive('strike'),
     },
     {
         name: 'highlight',
-        icon: <Highlighter className="size-4" />,
+        icon: <IconPencil className="size-4" />,
         tooltipContent: 'Highlight',
         action: (editor) => editor.chain().focus().toggleHighlight().run(),
         isActive: (editor) => editor.isActive('highlight'),
@@ -104,14 +99,14 @@ const buttons: ToolbarButton[] = [
     },
     {
         name: 'h1',
-        icon: <Heading1 className="size-4" />,
+        icon: <IconTextWidth className="size-4" />,
         tooltipContent: 'Heading 1',
         action: (editor) => editor.chain().focus().toggleHeading({ level: 1 }).run(),
         isActive: (editor) => editor.isActive('heading', { level: 1 }),
     },
     {
         name: 'h2',
-        icon: <Heading2 className="size-4" />,
+        icon: <IconTextWidth className="size-4" />,
         tooltipContent: 'Heading 2',
         action: (editor) => editor.chain().focus().toggleHeading({ level: 2 }).run(),
         isActive: (editor) => editor.isActive('heading', { level: 2 }),
@@ -126,21 +121,21 @@ const buttons: ToolbarButton[] = [
     },
     {
         name: 'bulletList',
-        icon: <List className="size-4" />,
+        icon: <IconList className="size-4" />,
         tooltipContent: 'Bullet List',
         action: (editor) => editor.chain().focus().toggleBulletList().run(),
         isActive: (editor) => editor.isActive('bulletList'),
     },
     {
         name: 'orderedList',
-        icon: <ListOrdered className="size-4" />,
+        icon: <IconList className="size-4" />,
         tooltipContent: 'Ordered List',
         action: (editor) => editor.chain().focus().toggleOrderedList().run(),
         isActive: (editor) => editor.isActive('orderedList'),
     },
     {
         name: 'blockquote',
-        icon: <Quote className="size-4" />,
+        icon: <IconQuote className="size-4" />,
         tooltipContent: 'Blockquote',
         action: (editor) => editor.chain().focus().toggleBlockquote().run(),
         isActive: (editor) => editor.isActive('blockquote'),
@@ -155,21 +150,21 @@ const buttons: ToolbarButton[] = [
     },
     {
         name: 'code',
-        icon: <Code className="size-4" />,
+        icon: <IconCode className="size-4" />,
         tooltipContent: 'Inline Code',
         action: (editor) => editor.chain().focus().toggleCode().run(),
         isActive: (editor) => editor.isActive('code'),
     },
     {
         name: 'codeBlock',
-        icon: <Terminal className="size-4" />,
+        icon: <IconTerminal className="size-4" />,
         tooltipContent: 'Code Block',
         action: (editor) => editor.chain().focus().toggleCodeBlock().run(),
         isActive: (editor) => editor.isActive('codeBlock'),
     },
     {
         name: 'horizontalRule',
-        icon: <Minus className="size-4" />,
+        icon: <IconMinus className="size-4" />,
         tooltipContent: 'Horizontal Rule',
         action: (editor) => editor.chain().focus().setHorizontalRule().run(),
         isActive: () => false,
@@ -184,7 +179,7 @@ const buttons: ToolbarButton[] = [
     },
     {
         name: 'link',
-        icon: <LinkIcon className="size-4" />,
+        icon: <IconExternal className="size-4" />,
         tooltipContent: 'Link',
         action: (editor) => {
             const url = window.prompt('URL')
@@ -194,7 +189,7 @@ const buttons: ToolbarButton[] = [
     },
     {
         name: 'image',
-        icon: <ImageIcon className="size-4" />,
+        icon: <IconImage className="size-4" />,
         tooltipContent: 'Image',
         action: (editor) => {
             const url = window.prompt('Image URL')

@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useRef, useEffect } from 'react'
-import { Headphones, Volume2, Loader2 } from 'lucide-react'
+import { IconHeadphones, IconSpinner } from '@posthog/icons';
 import OSButton from 'components/OSButton'
 import Tooltip from 'components/RadixUI/Tooltip'
 
@@ -109,16 +109,16 @@ export default function AmbientPlayer() {
                     >
                         <div className="flex items-center justify-center gap-1.5 min-w-[32px] px-1 h-5">
                             {isLoading ? (
-                                <Loader2 className="size-[18px] text-black animate-spin" strokeWidth={1.5} />
+                                <IconSpinner className="size-[18px] text-black animate-spin" strokeWidth={1.5} />
                             ) : hasError ? (
-                                <Headphones className="size-[18px] text-black opacity-30" strokeWidth={1.5} />
+                                <IconHeadphones className="size-[18px] text-black opacity-30" strokeWidth={1.5} />
                             ) : isPlaying ? (
                                 <>
                                     {eqAnimation}
-                                    <Volume2 className="size-3.5 text-black" strokeWidth={1.5} />
+                                    <IconHeadphones className="size-3.5 text-black" strokeWidth={1.5} />
                                 </>
                             ) : (
-                                <Headphones className="size-[18px] text-black transition-transform group-hover/music:scale-110" strokeWidth={1.5} />
+                                <IconHeadphones className="size-[18px] text-black transition-transform group-hover/music:scale-110" strokeWidth={1.5} />
                             )}
                         </div>
                     </OSButton>

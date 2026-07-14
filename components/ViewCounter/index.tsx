@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from 'react'
-import { Eye } from 'lucide-react'
+import { IconEye } from '@posthog/icons';
 import { supabase } from 'lib/supabase'
 
 interface ViewCounterProps {
@@ -57,7 +57,7 @@ export default function ViewCounter({ idOrSlug, type, views, className = '' }: V
             className={`cursor-default flex items-center space-x-1 text-xs font-bold text-primary/40 hover:text-primary/60 transition-colors ${className}`}
             title={`${localViews} views`}
         >
-            <Eye className="w-3.5 h-3.5 opacity-75" strokeWidth={2.5} />
+            <IconEye className="w-3.5 h-3.5 opacity-75" strokeWidth={2.5} />
             <span className="font-mono tracking-tight">{localViews}</span>
         </div>
     )

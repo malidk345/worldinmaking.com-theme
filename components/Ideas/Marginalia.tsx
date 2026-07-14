@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import ScrollArea from 'components/RadixUI/ScrollArea'
-import { FileText, ExternalLink, Bookmark } from 'lucide-react'
+import { IconBookmark, IconDocument, IconExternal } from '@posthog/icons';
 
 const MOCK_NOTES = [
     {
@@ -42,7 +42,7 @@ export default function Marginalia() {
         <div className="flex flex-col h-full bg-white dark:bg-[#1a1a1a] text-black dark:text-white">
             {/* Header / Toolbar */}
             <div className="flex items-center gap-2 p-2 border-b border-black/10 dark:border-white/10 shrink-0 bg-black/5 dark:bg-white/5">
-                <Bookmark className="size-4 opacity-70 ml-2" />
+                <IconBookmark className="size-4 opacity-70 ml-2" />
                 <span className="font-semibold text-sm">Marginalia Archive</span>
                 <div className="ml-auto flex items-center gap-2">
                     <input
@@ -76,9 +76,9 @@ export default function Marginalia() {
                                         href={note.articleUrl}
                                         className="text-xs font-semibold flex items-center gap-1.5 hover:text-primary transition-colors"
                                     >
-                                        <FileText className="size-3" />
+                                        <IconDocument className="size-3" />
                                         {note.articleTitle}
-                                        <ExternalLink className="size-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        <IconExternal className="size-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                                     </a>
                                     <span className="text-[10px] opacity-50 font-mono">{note.date}</span>
                                 </div>

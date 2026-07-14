@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Monitor, Moon, Terminal, BookOpen, Coffee, Zap } from 'lucide-react'
+import { IconBolt, IconBook, IconCoffee, IconNight, IconScreen, IconTerminal } from '@posthog/icons';
 import { useApp } from 'context/App'
 import ScrollArea from 'components/RadixUI/ScrollArea'
 import OSButton from 'components/OSButton'
@@ -12,35 +12,35 @@ const STATIONS = [
         id: 'station-default',
         name: 'Standard OS',
         description: 'The default World In Making experience. Clean, balanced, functional.',
-        icon: <Monitor className="size-5" />,
+        icon: <IconScreen className="size-5" />,
         settings: { colorMode: 'light', theme: 'light', wallpaper: 'keyboard-garden' }
     },
     {
         id: 'station-night-theory',
         name: 'Night Theory',
         description: 'Dark mode optimized for deep reading. High contrast typography, muted borders.',
-        icon: <Moon className="size-5" />,
+        icon: <IconNight className="size-5" />,
         settings: { colorMode: 'dark', theme: 'dark', wallpaper: 'dark-mesh' }
     },
     {
         id: 'station-tech-doc',
         name: 'Technical Grid',
         description: 'Monospaced focus. Sharp edges, terminal aesthetics for analytical thinking.',
-        icon: <Terminal className="size-5" />,
+        icon: <IconTerminal className="size-5" />,
         settings: { colorMode: 'dark', theme: 'hacker', wallpaper: 'grid-lines' }
     },
     {
         id: 'station-cafe',
         name: 'Morning Coffee',
         description: 'Warm, low contrast light mode. Easy on the eyes for morning curation.',
-        icon: <Coffee className="size-5" />,
+        icon: <IconCoffee className="size-5" />,
         settings: { colorMode: 'light', theme: 'warm', wallpaper: 'paper-texture' }
     },
     {
         id: 'station-focus',
         name: 'Deep Focus',
         description: 'Minimalist. Hides non-essential UI elements to maximize reading comprehension.',
-        icon: <Zap className="size-5" />,
+        icon: <IconBolt className="size-5" />,
         settings: { colorMode: 'dark', theme: 'minimal', wallpaper: 'solid-black', performanceBoost: true }
     }
 ]
@@ -60,7 +60,7 @@ export default function AtmosphericStations() {
         <div className="flex flex-col h-full bg-white dark:bg-[#1a1a1a] text-black dark:text-white">
             <div className="p-4 border-b border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5">
                 <h2 className="text-lg font-bold flex items-center gap-2">
-                    <BookOpen className="size-5" />
+                    <IconBook className="size-5" />
                     Atmospheric Reading Stations
                 </h2>
                 <p className="text-xs opacity-60 mt-1">

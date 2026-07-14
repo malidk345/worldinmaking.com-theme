@@ -18,7 +18,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { useTranslation } from 'hooks/useTranslation'
 import { supabase } from '../../lib/supabase'
-import { Share, CheckCircle, FileText, Flame, Rocket, Lightbulb, PenTool, Brain, Wrench, Sparkles, LayoutTemplate, Database, CalendarHeart } from 'lucide-react'
+import { IconBrain, IconBrowser, IconCalendar, IconCheckCircle, IconDatabase, IconDocument, IconLightBulb, IconPencil, IconRocket, IconShare, IconSparkles, IconWrench } from '@posthog/icons';
 import OSButton from 'components/OSButton'
 
 import { sanitizeHtml, toSlug } from '../../utils/security'
@@ -463,25 +463,25 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
     }
 
     const statusConfig = {
-        'draft': { label: t('profile.draft'), icon: <PenTool className="size-3" />, color: 'text-primary' },
-        'published': { label: t('profile.pub'), icon: <CheckCircle className="size-3" />, color: 'text-emerald-500' },
+        'draft': { label: t('profile.draft'), icon: <IconPencil className="size-3" />, color: 'text-primary' },
+        'published': { label: t('profile.pub'), icon: <IconCheckCircle className="size-3" />, color: 'text-emerald-500' },
     }
 
     const typeConfig = {
-        'canvas': { label: 'canvas', icon: <LayoutTemplate className="size-3.5 text-blue-500" /> },
-        'list': { label: 'data list', icon: <Database className="size-3.5 text-purple-500" /> },
-        'journal': { label: 'journal', icon: <CalendarHeart className="size-3.5 text-rose-500" /> },
+        'canvas': { label: 'canvas', icon: <IconBrowser className="size-3.5 text-blue-500" /> },
+        'list': { label: 'data list', icon: <IconDatabase className="size-3.5 text-purple-500" /> },
+        'journal': { label: 'journal', icon: <IconCalendar className="size-3.5 text-rose-500" /> },
     }
 
     const ICONS = [
-        { IconNode: FileText, color: "text-blue-500" },
-        { IconNode: Flame, color: "text-orange-500" },
-        { IconNode: Rocket, color: "text-purple-500" },
-        { IconNode: Lightbulb, color: "text-yellow-500" },
-        { IconNode: PenTool, color: "text-pink-500" },
-        { IconNode: Brain, color: "text-rose-500" },
-        { IconNode: Wrench, color: "text-slate-500" },
-        { IconNode: Sparkles, color: "text-amber-400" },
+        { IconNode: IconDocument, color: "text-blue-500" },
+        { IconNode: IconRocket, color: "text-orange-500" },
+        { IconNode: IconRocket, color: "text-purple-500" },
+        { IconNode: IconLightBulb, color: "text-yellow-500" },
+        { IconNode: IconPencil, color: "text-pink-500" },
+        { IconNode: IconBrain, color: "text-rose-500" },
+        { IconNode: IconWrench, color: "text-slate-500" },
+        { IconNode: IconSparkles, color: "text-amber-400" },
     ]
 
     if (readOnly) {
@@ -496,7 +496,7 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                         <div className="flex items-center gap-2">
                             <OSButton size="sm" onClick={() => navigator.clipboard.writeText(window.location.href).then(() => addToast('node link copied', 'success')).catch(() => addToast('failed to copy node link', 'error'))}>
                                 <div className="flex items-center gap-1.5 lowercase">
-                                    <Share className="size-4" />
+                                    <IconShare className="size-4" />
                                     <span className="hidden md:inline font-semibold">share</span>
                                 </div>
                             </OSButton>

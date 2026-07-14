@@ -4,7 +4,7 @@ import React from 'react'
 import Tooltip from 'components/RadixUI/Tooltip'
 import Link from 'components/Link'
 import ZoomHover from 'components/ZoomHover'
-import { ExternalLink } from 'lucide-react'
+import { IconExternal } from '@posthog/icons';
 import type { LinkState } from 'components/Link'
 
 // basic usage
@@ -118,14 +118,14 @@ const OSButton = React.memo(React.forwardRef<HTMLButtonElement | HTMLAnchorEleme
                     >
                         {icon && iconPosition === 'left' && <span className={iconSizeClasses[size]}>{icon}</span>}
                         {children}
-                        {external && <ExternalLink className="size-3.5 opacity-50 ml-1" />}
+                        {external && <IconExternal className="size-3.5 opacity-50 ml-1" />}
                         {icon && iconPosition === 'right' && <span className={iconSizeClasses[size]}>{icon}</span>}
                     </span>
                 ) : (
                     <span className="flex items-center gap-2">
                         {icon && iconPosition === 'left' && <span className={iconSizeClasses[size]}>{icon}</span>}
                         {children}
-                        {external && <ExternalLink className="size-3.5 opacity-50" />}
+                        {external && <IconExternal className="size-3.5 opacity-50" />}
                         {icon && iconPosition === 'right' && <span className={iconSizeClasses[size]}>{icon}</span>}
                     </span>
                 )}
