@@ -70,6 +70,16 @@ function mergeSectionUpdate(currentDraft: string, targetSection: string, newCont
 }
 
 // ─── Prompt building instructions ─────────────────────────────────────────────
+const EDITORIAL_GUIDELINES = `
+=== MANDATORY EDITORIAL GUIDELINES ===
+- LANGUAGE: Write in English.
+- INTELLECTUAL VOICE: Write like an expert essayist or columnist publishing in Aeon, Wired, or The Atlantic. Use rich, precise vocabulary, mature sentence rhythm, and deep analytical reasoning.
+- NO AI CLICHES: Do not use common AI patterns, introductory fluff, or summary endings (e.g. avoid: "In this section, we will...", "Let's explore", "It is important to remember", "First, second, third", "Ultimately", "In conclusion"). Jump straight into the core argument.
+- NO TRUNCATION OR SUMMARIZATION: You MUST NOT shorten, compress, or summarize. Keep every detail, paragraph, and citation intact. The final combined essay must target 2500-3500 words of rich content.
+- DYNAMIC ILLUSTRATIONS: Whenever a visual concept fits the narrative flow, insert exactly one image placeholder using the format: ![illustration: exact descriptive search keywords for LoremFlickr (e.g., vintage mainframe computers glowing green terminal screens in dark laboratory)](). Do not output empty markdown brackets; provide vivid, explicit search keywords.
+- CITATIONS & SOURCES: Integrate facts from the provided sources and cite them inline using bracket numbers (e.g. [1], [2]).
+`;
+
 function getTaskInstructions(
     taskType: TaskType,
     topic: string,
@@ -83,12 +93,10 @@ function getTaskInstructions(
     const sourceBlock = `\n=== RESEARCH SOURCES ===\n${formattedSources}\n=== END SOURCES ===\n`;
     const personaBlock = `You are @${agentUsername}.\nYour intellectual persona: ${agentPersona}\nYour current mood: "${agentMood}"\n`;
 
-    if (taskType === 'research_dossier') {
-        return `${personaBlock}
-${sourceBlock}
-TOPIC: "${topic}"
+    let taskPrompt = "";
 
-TASK — INTRODUCTORY RESEARCH OUTLINE:
+    if (taskType === 'research_dossier') {
+        taskPrompt = `TASK — INTRODUCTORY RESEARCH OUTLINE:
 You are the Research Lead. Review the sources above and formulate a master outline.
 Your job is to produce a structured, detailed OUTLINE and KEY FACTS document that will serve as the intellectual scaffold for a long-form essay on this topic.
 
@@ -98,31 +106,22 @@ Output a document with the following sections:
 3. **Proposed Structure** — Evocative heading titles for 4 body sections (excluding Introduction) that writers will concurrently draft.
 4. **Quotes Worth Including** — 2-3 direct quotes from the sources that would be powerful.
 
-Write in English. Target 500-700 words.`;
+Target 500-700 words.`;
     }
-
-    if (taskType === 'draft_first_sections') {
-        return `${personaBlock}
-${sourceBlock}
-TOPIC: "${topic}"
-RESEARCH OUTLINE TO BUILD FROM:
+    else if (taskType === 'draft_first_sections') {
+        taskPrompt = `RESEARCH OUTLINE TO BUILD FROM:
 ${currentDraft}
 
 TASK — FIRST DRAFT (Introduction & Setup):
 You are the Lead Writer. Write the first full draft of the essay's introduction based on the research outline.
-- Write in English with an authoritative, intellectual voice
-- Jump straight into the substance with a specific, arresting opening sentence. Avoid generic fillers.
+- Jump straight into the substance with a specific, arresting opening sentence.
 - Frame the core thesis and structure.
 - Include exactly ONE image placeholder in this format: ![illustration: descriptive scene or concept in 8-12 words]()
 
 Output ONLY the introduction markdown. Target 500-800 words.`;
     }
-
-    if (taskType === 'expand_section') {
-        return `${personaBlock}
-${sourceBlock}
-TOPIC: "${topic}"
-SECTION YOU ARE WRITING: "## ${sectionTitle || 'Core Argument'}"
+    else if (taskType === 'expand_section') {
+        taskPrompt = `SECTION YOU ARE WRITING: "## ${sectionTitle || 'Core Argument'}"
 
 CURRENT DRAFT HISTORY FOR CONTEXT:
 ${currentDraft}
@@ -130,18 +129,13 @@ ${currentDraft}
 TASK — SECTION EXPANSION:
 You are the Depth Editor assigned to draft the specific section "## ${sectionTitle}".
 - Write a highly detailed, comprehensive text for this section ONLY (aim for 600-900 words of rich content).
-- Integrate facts and data from the sources. Use inline citations like [1], [2], etc.
 - Include at least one block quote (> text) from or inspired by a source.
 - Add an image placeholder if appropriate: ![illustration: descriptive scene or concept]().
 
 Output the written content for this section ONLY. Do not repeat the rest of the essay.`;
     }
-
-    if (taskType === 'peer_review_section') {
-        return `${personaBlock}
-${sourceBlock}
-TOPIC: "${topic}"
-SECTION YOU ARE AUDITING: "## ${sectionTitle}"
+    else if (taskType === 'peer_review_section') {
+        taskPrompt = `SECTION YOU ARE AUDITING: "## ${sectionTitle}"
 
 CURRENT CONTENT OF THIS SECTION:
 ${currentDraft}
@@ -154,13 +148,8 @@ You are the Devil's Advocate. Your job is to challenge the assumptions, introduc
 
 Output the complete rewritten version of this section ONLY. Do not write meta-commentary. Target 500-800 words.`;
     }
-
-    if (taskType === 'merge_and_synthesis') {
-        return `${personaBlock}
-${sourceBlock}
-TOPIC: "${topic}"
-
-CURRENT DRAFT SECTIONS:
+    else if (taskType === 'merge_and_synthesis') {
+        taskPrompt = `CURRENT DRAFT SECTIONS:
 ${currentDraft}
 
 TASK — EDITORIAL REVISION & SYNTHESIS:
@@ -170,16 +159,13 @@ You are the Synthesis Editor. Your job is to read and edit the compiled draft to
 - Smooth out tone transitions.
 - Write a truly memorable conclusion.
 - Add a "## Further Reading" section at the end with the 3-5 sources formatted as markdown links.
+- CRITICAL: Do NOT summarize the sections. Maintain their original length and detail, editing purely for style, transitions, and flow.
 
 Output the FULL REVISED essay in markdown. Target 2500-3500 words.`;
     }
-
-    // final_polish
-    return `${personaBlock}
-${sourceBlock}
-TOPIC: "${topic}"
-
-CURRENT DRAFT:
+    else {
+        // final_polish
+        taskPrompt = `CURRENT DRAFT:
 ${currentDraft}
 
 TASK — FINAL POLISH:
@@ -188,8 +174,12 @@ You are the Chief Copy Editor. This is the final pass. You have the entire docum
 - Ensure the opening hook is absolutely arresting.
 - Add a pull-quote blockquote (> "...") from the most powerful passage.
 - Add a byline at the top: *A collective paper produced by the Symposium — [Author names]*
+- CRITICAL: You must retain the full length and sections of the document. Do not summarize or truncate.
 
 Output the FINAL, PUBLICATION-READY essay in markdown.`;
+    }
+
+    return `${personaBlock}\n${sourceBlock}\nTOPIC: "${topic}"\n\n${taskPrompt}\n\n${EDITORIAL_GUIDELINES}`;
 }
 
 // ─── Main Handler ─────────────────────────────────────────────────────────────

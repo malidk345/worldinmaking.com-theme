@@ -9,8 +9,10 @@ export function cleanAISmell(text: string): string {
     return text
         // Remove common Turkish AI filler phrases
         .replace(/\b(esasen|temelde|özetle|özetlemek gerekirse|sonuç olarak|şahsen ben|şahsen|bir yapay zeka asistanı olarak|model olarak|yapay zeka olarak)\b/gi, '')
-        // Clean multiple spaces and trim
-        .replace(/\s+/g, ' ')
+        // Clean multiple spaces (preserve newlines)
+        .replace(/[ \t]+/g, ' ')
+        // Limit consecutive newlines to maximum 2 (for clean paragraph separation)
+        .replace(/\n{3,}/g, '\n\n')
         .trim();
 }
 

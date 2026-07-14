@@ -9,7 +9,6 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Loading from "components/Loading";
 import BlogPostView from "components/ReaderView/BlogPostView";
-import { getProseClasses } from "../../constants/index";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -105,24 +104,50 @@ const getMaxSteps = (collab: Collaboration | null) => {
 const IllustrationImage = ({ alt = "", src = "" }: { alt?: string; src?: string }) => {
     if (alt.startsWith("illustration:")) {
         const query = alt.replace("illustration:", "").trim().replace(/\s+/g, ",");
-        const unsplashUrl = `https://source.unsplash.com/800x400/?${encodeURIComponent(query)}`;
+        const imageUrl = `https://loremflickr.com/800/400/${encodeURIComponent(query)}`;
         return (
-            <figure className="my-6 not-prose">
+            <figure className="my-6 border border-primary/10 p-1.5 bg-primary/5 rounded-sm">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                    src={unsplashUrl}
+                    src={imageUrl}
                     alt={alt}
-                    className="w-full rounded-sm border border-primary/10 object-cover aspect-video"
+                    className="w-full rounded-sm object-cover aspect-video"
                     loading="lazy"
                 />
-                <figcaption className="text-[10px] font-mono text-secondary/60 mt-1.5 italic text-center lowercase">
-                    {query.replace(/,/g, " · ")}
+                <figcaption className="text-[9px] font-mono text-primary/50 mt-2 text-center lowercase tracking-wider">
+                    ⌁ illustration: {query.replace(/,/g, " · ")} ⌁
                 </figcaption>
             </figure>
         );
     }
     // eslint-disable-next-line @next/next/no-img-element
     return <img src={src} alt={alt} className="w-full rounded-sm" />;
+};
+
+const markdownComponents = {
+    h1: ({ children }: { children?: React.ReactNode }) => <h3 className="font-bold text-[11px] text-primary mt-6 mb-2 tracking-tight uppercase"># {children}</h3>,
+    h2: ({ children }: { children?: React.ReactNode }) => <h4 className="font-bold text-[11px] text-primary mt-4 mb-2 tracking-tight lowercase">## {children}</h4>,
+    h3: ({ children }: { children?: React.ReactNode }) => <h5 className="font-bold text-[10px] text-primary mt-3 mb-1 tracking-tight lowercase">### {children}</h5>,
+    p: ({ children }: { children?: React.ReactNode }) => <p className="text-[11px] leading-relaxed text-primary/80 mb-3 select-text">{children}</p>,
+    ul: ({ children }: { children?: React.ReactNode }) => <ul className="list-disc pl-4 mb-3 space-y-1">{children}</ul>,
+    ol: ({ children }: { children?: React.ReactNode }) => <ol className="list-decimal pl-4 mb-3 space-y-1">{children}</ol>,
+    li: ({ children }: { children?: React.ReactNode }) => <li className="text-[11px] leading-relaxed text-primary/80 select-text">{children}</li>,
+    blockquote: ({ children }: { children?: React.ReactNode }) => (
+        <blockquote className="border-l border-primary/20 pl-3 italic text-primary/60 my-4 text-[10px] leading-relaxed select-text">
+            {children}
+        </blockquote>
+    ),
+    code: ({ inline, children }: { inline?: boolean; children?: React.ReactNode }) => {
+        if (inline) {
+            return <code className="bg-primary/5 px-1 py-0.5 rounded text-[10px] font-mono">{children}</code>;
+        }
+        return (
+            <pre className="bg-primary/5 p-3 rounded overflow-x-auto text-[10px] font-mono my-3 border border-primary/10 select-text">
+                <code>{children}</code>
+            </pre>
+        );
+    },
+    img: IllustrationImage
 };
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -871,10 +896,10 @@ export default function SymposiumApp() {
                                     {steps.length > 0 && !currentDraft && (
                                         <div className="border border-primary/10 bg-accent p-4 mb-6">
                                             <div className="text-[9px] font-bold opacity-40 mb-2">research outline</div>
-                                            <div className={getProseClasses("sm")}>
+                                            <div>
                                                 <ReactMarkdown
                                                     remarkPlugins={[remarkGfm]}
-                                                    components={{ img: IllustrationImage }}
+                                                    components={markdownComponents}
                                                 >
                                                     {steps[0]?.content || ""}
                                                 </ReactMarkdown>
@@ -893,13 +918,13 @@ export default function SymposiumApp() {
                                                         className={`py-2 transition-all duration-500 border-l-2 pl-3 ${isHighlighted ? 'border-primary bg-primary/5 pl-4' : 'border-transparent'}`}
                                                     >
                                                         {s.title !== 'Introduction' && (
-                                                            <h2 className="font-bold text-sm text-primary mb-2">## {s.title}</h2>
+                                                            <h2 className="font-bold text-xs text-primary mb-2">## {s.title}</h2>
                                                         )}
-                                                        <div className={getProseClasses("base")}>
+                                                        <div>
                                                             <ReactMarkdown
                                                                 remarkPlugins={[remarkGfm]}
-                                                                components={{ img: IllustrationImage }}
-                                                            >
+                                                                components={markdownComponents}
+                                                             >
                                                                 {s.content}
                                                             </ReactMarkdown>
                                                         </div>

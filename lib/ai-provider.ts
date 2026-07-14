@@ -84,8 +84,8 @@ async function callOpenRouter(prompt: string): Promise<string> {
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) throw new Error('OPENROUTER_API_KEY is missing');
 
-    // We use openrouter/free which dynamically routes to a currently active free model
-    const model = 'openrouter/free';
+    // We use meta-llama/llama-3.3-70b-instruct for premium reasoning quality on OpenRouter
+    const model = 'meta-llama/llama-3.3-70b-instruct';
     console.log(`[AI-Provider] Sending request to OpenRouter using model: ${model}`);
 
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
