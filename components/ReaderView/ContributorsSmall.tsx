@@ -41,11 +41,11 @@ export const ContributorsSmall = ({ contributors }: { contributors?: Contributor
                                 {image ? (
                                     <CloudinaryImage
                                         width={20}
-                                        className="w-5 h-5 border border-black/40 dark:border-white/30 rounded-sm overflow-hidden"
+                                        className="w-5 h-5 border border-black/10 dark:border-white/10 rounded-full overflow-hidden"
                                         src={image}
                                     />
                                 ) : (
-                                    <div className="w-5 h-5 border border-black/40 dark:border-white/30 rounded-sm bg-accent flex items-center justify-center">
+                                    <div className="w-5 h-5 border border-black/10 dark:border-white/10 rounded-full bg-accent flex items-center justify-center">
                                         <IconUser className="size-3 text-black/60 dark:text-white/60" />
                                     </div>
                                 )}

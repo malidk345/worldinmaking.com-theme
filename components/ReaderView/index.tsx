@@ -386,7 +386,7 @@ const ReaderViewContent = React.memo(({
                     >
                         <div className={`mx-auto p-4 md:p-8 transition-all ${fullWidthContent ? 'max-w-full' : contentMaxWidthClass}`}>
                             {body.featuredImage && (
-                                <div className="mb-8 rounded-lg overflow-hidden border border-primary shadow-lg aspect-video relative">
+                                <div className="mb-8 rounded-[24px] md:rounded-[32px] overflow-hidden border border-black/5 dark:border-white/5 shadow-lg aspect-video relative">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
                                         src={body.featuredImage}
@@ -411,8 +411,8 @@ const ReaderViewContent = React.memo(({
                             )}
 
                             {(body.date || body.contributors || body.tags) && (
-                                <div className="mt-6 mx-auto max-w-2xl w-full border border-black/30 dark:border-white/25 rounded-[2px] bg-black/[0.02] dark:bg-white/[0.02] overflow-hidden">
-                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-3 sm:px-4 py-2 font-mono text-xs lowercase">
+                                <div className="mt-6 mx-auto max-w-2xl w-full border border-black/10 dark:border-white/10 rounded-[20px] md:rounded-[24px] bg-white/80 dark:bg-[#1C1C1E]/80 supports-[backdrop-filter]:backdrop-blur-[20px] overflow-hidden shadow-[0_4px_16px_rgba(0,0,0,0.02)]">
+                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 sm:px-5 py-3 font-mono text-xs lowercase">
                                         {body.contributors && (
                                             <div className="flex items-center shrink-0">
                                                 <ContributorsSmall contributors={body.contributors} />
@@ -434,20 +434,20 @@ const ReaderViewContent = React.memo(({
                                         )}
 
                                         {body.tags && body.tags.length > 0 && (
-                                            <div className="flex items-center flex-wrap gap-2 w-full mt-2 pt-2 border-t border-black/5 dark:border-white/5">
+                                            <div className="flex items-center flex-wrap gap-2 w-full mt-3 pt-3 border-t border-black/5 dark:border-white/5">
                                                 {body.tags?.map((tag) => (
                                                     tag.url && tag.url !== '#' ? (
                                                         <a
                                                             key={`${tag.label}-${tag.url}`}
                                                             href={tag.url}
-                                                            className="text-[10px] opacity-40 hover:opacity-100 transition-opacity"
+                                                            className="text-[10px] opacity-70 hover:opacity-100 transition-opacity bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 px-2.5 py-1 rounded-full"
                                                         >
                                                             #{tag.label.toLowerCase()}
                                                         </a>
                                                     ) : (
                                                         <span
                                                             key={tag.label}
-                                                            className="text-[10px] opacity-40"
+                                                            className="text-[10px] opacity-70 bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 px-2.5 py-1 rounded-full"
                                                         >
                                                             #{tag.label.toLowerCase()}
                                                         </span>
