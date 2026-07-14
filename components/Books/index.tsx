@@ -6,16 +6,7 @@ import { useToast } from "../../context/ToastContext";
 import { supabase } from "../../lib/supabase";
 import ForumAvatar from "../Forum/ForumAvatar";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Book as BookIcon,
-  Plus,
-  ChevronLeft,
-  Sparkles,
-  BookOpen,
-  CornerDownLeft,
-  X,
-  MessageSquare,
-} from "lucide-react";
+import { IconBook, IconChat, IconChevronLeft, IconPlus, IconSparkles, IconX } from '@posthog/icons';;
 
 interface Book {
   id: string;
@@ -363,7 +354,7 @@ export default function BooksApp() {
           {/* Header */}
           <div className="flex items-center justify-between mb-8 pb-4 border-b border-black/5 dark:border-white/5">
             <div className="flex items-center gap-3">
-              <BookIcon className="w-6 h-6 text-black/60 dark:text-white/60" />
+              <IconSparkles className="w-6 h-6 text-black/60 dark:text-white/60" />
               <h1 className="text-xl md:text-2xl font-black tracking-tight text-black dark:text-white">
                 books app
               </h1>
@@ -373,7 +364,7 @@ export default function BooksApp() {
                 onClick={() => setShowAddBook(true)}
                 className="flex items-center gap-1.5 px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-full text-xs font-bold hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
               >
-                <Plus className="w-4 h-4" />
+                <IconPlus className="w-4 h-4" />
                 add book
               </button>
             )}
@@ -387,7 +378,7 @@ export default function BooksApp() {
               </div>
             ) : books.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-48 text-black/40 dark:text-white/40 gap-2">
-                <BookOpen className="w-8 h-8 stroke-[1.5] text-black/20 dark:text-white/20" />
+                <IconBook className="w-8 h-8 stroke-[1.5] text-black/20 dark:text-white/20" />
                 <span className="text-xs font-bold">
                   no books in library yet.
                 </span>
@@ -408,7 +399,7 @@ export default function BooksApp() {
                           className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
                         />
                       ) : (
-                        <BookIcon className="w-8 h-8 text-black/20 dark:text-white/20" />
+                        <IconSparkles className="w-8 h-8 text-black/20 dark:text-white/20" />
                       )}
                     </div>
                     <h3 className="font-extrabold text-sm text-black dark:text-white truncate">
@@ -439,7 +430,7 @@ export default function BooksApp() {
                     onClick={() => setShowAddBook(false)}
                     className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
                   >
-                    <X className="w-4 h-4 text-black/40 dark:text-white/40" />
+                    <IconX className="w-4 h-4 text-black/40 dark:text-white/40" />
                   </button>
                 </div>
                 <div className="flex flex-col gap-1.5">
@@ -520,7 +511,7 @@ export default function BooksApp() {
                   onClick={() => setActiveBook(null)}
                   className="flex items-center gap-1.5 text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white text-xs font-bold transition-colors"
                 >
-                  <ChevronLeft className="w-4 h-4" />
+                  <IconChevronLeft className="w-4 h-4" />
                   library
                 </button>
                 <span className="text-[10px] font-black text-black/30 dark:text-white/30 tracking-wider">
@@ -541,7 +532,7 @@ export default function BooksApp() {
                     className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-black/60 dark:text-white/60 flex items-center gap-1 text-[10px] font-black"
                     title="add chapter"
                   >
-                    <Plus className="w-3.5 h-3.5" />
+                    <IconPlus className="w-3.5 h-3.5" />
                     chapter
                   </button>
                 )}
@@ -579,7 +570,7 @@ export default function BooksApp() {
                   onClick={() => setDebatePanelOpen((prev) => !prev)}
                   className={`px-2 py-1 rounded-full hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-1 text-[10px] font-black ${debatePanelOpen ? "bg-black/5 dark:bg-white/5 text-black dark:text-white" : "text-black/40 dark:text-white/40"}`}
                 >
-                  <MessageSquare className="w-3.5 h-3.5" />
+                  <IconChat className="w-3.5 h-3.5" />
                   debate
                 </button>
               </div>
@@ -593,7 +584,7 @@ export default function BooksApp() {
                 </div>
               ) : chapters.length === 0 ? (
                 <div className="flex flex-col items-center justify-center self-center text-black/40 dark:text-white/40 gap-2">
-                  <BookOpen className="w-10 h-10 text-black/20 dark:text-white/20 stroke-[1.5]" />
+                  <IconBook className="w-10 h-10 text-black/20 dark:text-white/20 stroke-[1.5]" />
                   <span className="text-xs font-bold">no content loaded.</span>
                 </div>
               ) : (
@@ -656,7 +647,7 @@ export default function BooksApp() {
               {/* Panel Header */}
               <div className="p-3 border-b border-black/5 dark:border-white/5 flex items-center justify-between shrink-0 select-none bg-white dark:bg-[#1a1a1c] rounded-tr-[32px]">
                 <div className="flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400 animate-pulse" />
+                  <IconSparkles className="w-4 h-4 text-purple-600 dark:text-purple-400 animate-pulse" />
                   <span className="text-[10px] font-black tracking-wider text-black/60 dark:text-white/60">
                     debate board
                   </span>
@@ -673,7 +664,7 @@ export default function BooksApp() {
                     onClick={() => setDebatePanelOpen(false)}
                     className="p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-black/40 dark:text-white/40 @lg:hidden transition-colors"
                   >
-                    <X className="w-4 h-4" />
+                    <IconX className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -686,7 +677,7 @@ export default function BooksApp() {
                   </div>
                 ) : comments.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-black/40 dark:text-white/40 gap-1.5 animate-fade">
-                    <MessageSquare className="w-6 h-6 stroke-[1.5]" />
+                    <IconChat className="w-6 h-6 stroke-[1.5]" />
                     <span className="text-[10px] font-bold text-center">
                       no commentary yet. trigger an agent!
                     </span>
@@ -763,7 +754,7 @@ export default function BooksApp() {
                   disabled={!user || !newComment.trim()}
                   className="p-2 rounded-full bg-black dark:bg-white text-white dark:text-black hover:scale-[1.03] active:scale-[0.97] transition-all disabled:opacity-30 disabled:scale-100"
                 >
-                  <CornerDownLeft className="w-4 h-4" />
+                  <IconSparkles className="w-4 h-4" />
                 </button>
               </form>
             </motion.div>
@@ -791,7 +782,7 @@ export default function BooksApp() {
                     onClick={() => setShowAddChapter(false)}
                     className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
                   >
-                    <X className="w-4 h-4 text-black/40 dark:text-white/40" />
+                    <IconX className="w-4 h-4 text-black/40 dark:text-white/40" />
                   </button>
                 </div>
                 <div className="flex gap-4">

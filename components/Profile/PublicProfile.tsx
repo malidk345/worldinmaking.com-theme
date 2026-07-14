@@ -10,27 +10,8 @@ import OSButton from 'components/OSButton'
 import Loading from 'components/Loading'
 import Tooltip from 'components/RadixUI/Tooltip'
 import { useTranslation } from 'hooks/useTranslation'
-import {
-    BookOpen,
-    PenLine,
-    FileText,
-    RefreshCw,
-    Share,
-    ExternalLink,
-    PanelsTopLeft,
-    ArrowUpRight,
-    Layers,
-    Trash2,
-} from 'lucide-react'
-import {
-    IconUser,
-    IconChevronLeft,
-    IconChevronRight,
-    IconSidebarOpen,
-    IconSidebarClose,
-    IconPlus,
-    IconBookmark,
-} from '@posthog/icons'
+import { IconBook, IconBookmark, IconChevronLeft, IconChevronRight, IconDocument, IconExternal, IconPlus, IconRefresh, IconShare, IconSidebarClose, IconSidebarOpen, IconSparkles, IconStack, IconTrash, IconUser } from '@posthog/icons';
+
 import '../Corpus/styles.css'
 
 interface PublicProfileProps {
@@ -190,7 +171,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
             key: `node-${node.id}`,
             title: node.title || 'Untitled Node',
             path: '/write',
-            icon: <FileText className="size-4" />,
+            icon: <IconDocument className="size-4" />,
             props: { nodeId: node.id, isCanvas: true, readOnly: !isOwner },
         })
     }, [addWindow, isOwner])
@@ -213,7 +194,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
             key: `node-${data.id}`,
             title: 'Untitled Node',
             path: '/write',
-            icon: <FileText className="size-4" />,
+            icon: <IconDocument className="size-4" />,
             props: { nodeId: data.id, isCanvas: true },
         })
     }, [addToast, addWindow, isOwner, profile, t])
@@ -238,7 +219,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
             key: `post-new-${Date.now()}`,
             title: 'Untitled Post',
             path: '/write-post',
-            icon: <BookOpen className="size-4" />,
+            icon: <IconBook className="size-4" />,
         })
     }, [addWindow, isOwner])
 
@@ -252,7 +233,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
             key: `post-editor-${post.id}`,
             title: post.title || 'Untitled Post',
             path: '/write-post',
-            icon: <BookOpen className="size-4" />,
+            icon: <IconBook className="size-4" />,
             props: { postId: post.id },
         })
     }, [addWindow, isOwner])
@@ -262,7 +243,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
             key: `node-view-${node.id}`,
             title: node.title || 'Untitled Node',
             path: `/node/${node.id}`,
-            icon: <FileText className="size-4" />,
+            icon: <IconDocument className="size-4" />,
             props: { nodeId: node.id, readOnly: true },
         })
     }, [addWindow])
@@ -594,15 +575,15 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                         <>
                             <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
                             <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-full flex items-center gap-1.5" onClick={handleAddNode}><IconPlus className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">new node</span></OSButton>} side="bottom">new node</Tooltip>
-                            <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-full flex items-center gap-1.5" onClick={handleAddPost}><BookOpen className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">new post</span></OSButton>} side="bottom">new post</Tooltip>
-                            <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-full flex items-center gap-1.5" onClick={openProfileEditor}><PenLine className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">{t('profile.edit')}</span></OSButton>} side="bottom">{t('profile.edit')}</Tooltip>
+                            <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-full flex items-center gap-1.5" onClick={handleAddPost}><IconBook className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">new post</span></OSButton>} side="bottom">new post</Tooltip>
+                            <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-full flex items-center gap-1.5" onClick={openProfileEditor}><IconSparkles className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">{t('profile.edit')}</span></OSButton>} side="bottom">{t('profile.edit')}</Tooltip>
                         </>
                     )}
                     <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
-                    <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded-full" onClick={refreshAll}><RefreshCw className={`size-[16px] opacity-70 ${refreshing ? 'animate-spin' : ''}`} /></OSButton>} side="bottom">refresh profile</Tooltip>
-                    <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded-full" onClick={() => copyLink(publicProfilePath, 'profile')}><Share className="size-[16px] opacity-70" /></OSButton>} side="bottom">share profile</Tooltip>
+                    <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded-full" onClick={refreshAll}><IconRefresh className={`size-[16px] opacity-70 ${refreshing ? 'animate-spin' : ''}`} /></OSButton>} side="bottom">refresh profile</Tooltip>
+                    <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded-full" onClick={() => copyLink(publicProfilePath, 'profile')}><IconShare className="size-[16px] opacity-70" /></OSButton>} side="bottom">share profile</Tooltip>
                     {profile.website && (
-                        <Tooltip trigger={<a href={profile.website} target="_blank" rel="noopener noreferrer"><OSButton size="sm" className="p-1.5 h-8 w-8 !rounded-full"><ExternalLink className="size-[16px] opacity-70" /></OSButton></a>} side="bottom">website</Tooltip>
+                        <Tooltip trigger={<a href={profile.website} target="_blank" rel="noopener noreferrer"><OSButton size="sm" className="p-1.5 h-8 w-8 !rounded-full"><IconExternal className="size-[16px] opacity-70" /></OSButton></a>} side="bottom">website</Tooltip>
                     )}
                 </div>
             </div>
@@ -617,7 +598,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                     {profile.avatar_url ? <img src={profile.avatar_url} alt={displayName} className="size-full object-cover" /> : <span className="text-xs font-black text-primary">{displayName.charAt(0).toUpperCase()}</span>}
                                 </div>
                                 <span className="text-sm font-bold flex-1 text-left truncate lowercase">my profile</span>
-                                <PanelsTopLeft className="size-4 text-primary/40" />
+                                <IconSparkles className="size-4 text-primary/40" />
                             </button>
 
                             <div className="space-y-1">
@@ -628,11 +609,11 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                             <span className="text-[12px] font-semibold">new node</span>
                                         </OSButton>
                                         <OSButton size="sm" className="w-full !h-9 !rounded-full !px-2.5 flex items-center justify-start gap-2" onClick={handleAddPost}>
-                                            <BookOpen className="size-[14px] opacity-70" />
+                                            <IconBook className="size-[14px] opacity-70" />
                                             <span className="text-[12px] font-semibold">new post</span>
                                         </OSButton>
                                         <OSButton size="sm" className="w-full !h-9 !rounded-full !px-2.5 flex items-center justify-start gap-2" onClick={openProfileEditor}>
-                                            <PenLine className="size-[14px] opacity-70" />
+                                            <IconSparkles className="size-[14px] opacity-70" />
                                             <span className="text-[12px] font-semibold">{t('profile.edit')}</span>
                                         </OSButton>
                                     </>
@@ -645,13 +626,13 @@ export default function PublicProfile({ username }: PublicProfileProps) {
 
                             <div className="space-y-0.5">
                                 {[
-                                    { key: 'overview', label: 'overview', icon: <PanelsTopLeft className="size-4 opacity-80" />, count: null },
-                                    { key: 'nodes-all', label: 'all nodes', icon: <Layers className="size-4 opacity-80" />, count: nodes.length },
-                                    { key: 'nodes-published', label: 'published nodes', icon: <BookOpen className="size-4 opacity-80" />, count: publishedNodeCount },
-                                    { key: 'nodes-drafts', label: 'draft nodes', icon: <PenLine className="size-4 opacity-80" />, count: draftNodeCount },
-                                    { key: 'posts-all', label: 'all posts', icon: <ArrowUpRight className="size-4 opacity-80" />, count: posts.length },
-                                    { key: 'posts-published', label: 'published posts', icon: <BookOpen className="size-4 opacity-80" />, count: publishedPostCount },
-                                    { key: 'posts-drafts', label: 'draft posts', icon: <PenLine className="size-4 opacity-80" />, count: draftPostCount },
+                                    { key: 'overview', label: 'overview', icon: <IconSparkles className="size-4 opacity-80" />, count: null },
+                                    { key: 'nodes-all', label: 'all nodes', icon: <IconStack className="size-4 opacity-80" />, count: nodes.length },
+                                    { key: 'nodes-published', label: 'published nodes', icon: <IconBook className="size-4 opacity-80" />, count: publishedNodeCount },
+                                    { key: 'nodes-drafts', label: 'draft nodes', icon: <IconSparkles className="size-4 opacity-80" />, count: draftNodeCount },
+                                    { key: 'posts-all', label: 'all posts', icon: <IconSparkles className="size-4 opacity-80" />, count: posts.length },
+                                    { key: 'posts-published', label: 'published posts', icon: <IconBook className="size-4 opacity-80" />, count: publishedPostCount },
+                                    { key: 'posts-drafts', label: 'draft posts', icon: <IconSparkles className="size-4 opacity-80" />, count: draftPostCount },
                                     { key: 'saved-posts', label: 'saved posts', icon: <IconBookmark className="size-4 opacity-80" />, count: savedPostCount },
                                 ].map((item) => (
                                     <button
@@ -690,7 +671,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                 <div className="corpus-profile-layerStack">
                                     <div className="corpus-profile-tableCard corpus-profile-cardShadow glass-card">
                                         <div className="corpus-profile-cardHeading">
-                                            {isEditingProfile ? <PenLine className="size-4" /> : <PanelsTopLeft className="size-4" />}
+                                            {isEditingProfile ? <IconSparkles className="size-4" /> : <IconSparkles className="size-4" />}
                                             <span>{isEditingProfile ? 'profile editor' : 'profile'}</span>
                                             <span className="corpus-badge" style={{ marginLeft: 'auto' }}>
                                                 <span>{isEditingProfile ? (hasProfileChanges ? 'unsaved' : 'synced') : 'public'}</span>
@@ -778,7 +759,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                     <button className="corpus-doc-tab corpus-doc-tab--active">{nodeSectionLabel} <span>{filteredNodes.length}</span></button>
                                 </div>
                                 {nodesLoading ? (
-                                    <div className="corpus-doc-empty"><RefreshCw className="size-6 animate-spin" style={{ opacity: 0.3 }} /><p>{t('profile.loading_nodes')}</p></div>
+                                    <div className="corpus-doc-empty"><IconRefresh className="size-6 animate-spin" style={{ opacity: 0.3 }} /><p>{t('profile.loading_nodes')}</p></div>
                                 ) : filteredNodes.length > 0 ? (
                                     <div className="corpus-doc-grid">
                                         {filteredNodes.map((node) => (
@@ -795,7 +776,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                             aria-label={`${t('profile.edit_node')} ${node.title}`}
                                                             title={t('profile.edit_node')}
                                                         >
-                                                            <PenLine className="size-3.5" />
+                                                            <IconSparkles className="size-3.5" />
                                                         </button>
                                                         <button
                                                             type="button"
@@ -807,17 +788,17 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                             aria-label={`${t('profile.delete_node')} ${node.title}`}
                                                             title={t('profile.delete_node')}
                                                         >
-                                                            <Trash2 className="size-3.5" />
+                                                            <IconTrash className="size-3.5" />
                                                         </button>
                                                     </div>
                                                 )}
                                                 <div className="corpus-doc-media">
                                                     <div className="corpus-doc-preview-text">{node.preview}</div>
                                                     <div className="corpus-doc-media-fade" />
-                                                    <div className="corpus-doc-badge"><BookOpen className="size-3" /><span>{node.status === 'draft' ? t('profile.draft') : t('profile.pub')}</span></div>
+                                                    <div className="corpus-doc-badge"><IconBook className="size-3" /><span>{node.status === 'draft' ? t('profile.draft') : t('profile.pub')}</span></div>
                                                 </div>
                                                 <div className="corpus-doc-info">
-                                                    <div><FileText className="size-3.5" /><span>{node.updated}</span></div>
+                                                    <div><IconDocument className="size-3.5" /><span>{node.updated}</span></div>
                                                     <h3>{node.title}</h3>
                                                     <p>{isOwner ? `${t('profile.click_to_edit')} • ${node.status === 'draft' ? t('profile.draft') : t('profile.pub')}` : t('profile.published_node')}</p>
                                                 </div>
@@ -825,7 +806,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="corpus-doc-empty"><BookOpen className="size-8" style={{ opacity: 0.2 }} /><p>{t('profile.no_nodes')}</p></div>
+                                    <div className="corpus-doc-empty"><IconBook className="size-8" style={{ opacity: 0.2 }} /><p>{t('profile.no_nodes')}</p></div>
                                 )}
                             </div>
                         )}
@@ -836,7 +817,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                     <button className="corpus-doc-tab corpus-doc-tab--active">{postSectionLabel} <span>{filteredPosts.length}</span></button>
                                 </div>
                                 {postsLoading ? (
-                                    <div className="corpus-doc-empty"><RefreshCw className="size-6 animate-spin" style={{ opacity: 0.3 }} /><p>{t('loading.posts')}</p></div>
+                                    <div className="corpus-doc-empty"><IconRefresh className="size-6 animate-spin" style={{ opacity: 0.3 }} /><p>{t('loading.posts')}</p></div>
                                 ) : filteredPosts.length > 0 ? (
                                     <div className="corpus-doc-grid">
                                         {filteredPosts.map((post) => (
@@ -853,7 +834,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                             aria-label={`${t('profile.edit_post')} ${post.title}`}
                                                             title={t('profile.edit_post')}
                                                         >
-                                                            <PenLine className="size-3.5" />
+                                                            <IconSparkles className="size-3.5" />
                                                         </button>
                                                         <button
                                                             type="button"
@@ -865,7 +846,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                             aria-label={`${t('profile.delete_post')} ${post.title}`}
                                                             title={t('profile.delete_post')}
                                                         >
-                                                            <Trash2 className="size-3.5" />
+                                                            <IconTrash className="size-3.5" />
                                                         </button>
                                                     </div>
                                                 )}
@@ -873,10 +854,10 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                                     {post.image_url ? <img src={post.image_url} alt={post.title} className="size-full object-cover" /> : <div className="corpus-doc-preview-text">{post.excerpt || t('profile.read_more')}</div>}
                                                     <div className="corpus-doc-media-fade" />
-                                                    <div className="corpus-doc-badge"><ArrowUpRight className="size-3" /><span>{post.published ? (post.is_approved ? t('profile.post') : t('profile.pending')) : t('profile.draft')}</span></div>
+                                                    <div className="corpus-doc-badge"><IconSparkles className="size-3" /><span>{post.published ? (post.is_approved ? t('profile.post') : t('profile.pending')) : t('profile.draft')}</span></div>
                                                 </div>
                                                 <div className="corpus-doc-info">
-                                                    <div><BookOpen className="size-3.5" /><span>{relativeTime(post.created_at)}</span></div>
+                                                    <div><IconBook className="size-3.5" /><span>{relativeTime(post.created_at)}</span></div>
                                                     <h3>{post.title}</h3>
                                                     <p>{isOwner ? t('profile.click_to_edit') : t('profile.open_post')}</p>
                                                 </div>
@@ -884,7 +865,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="corpus-doc-empty"><BookOpen className="size-8" style={{ opacity: 0.2 }} /><p>{t('profile.no_posts')}</p></div>
+                                    <div className="corpus-doc-empty"><IconBook className="size-8" style={{ opacity: 0.2 }} /><p>{t('profile.no_posts')}</p></div>
                                 )}
                             </div>
                         )}
@@ -895,7 +876,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                     <button className="corpus-doc-tab corpus-doc-tab--active">{t('archive.saved_posts')} <span>{savedPostCount}</span></button>
                                 </div>
                                 {savedPostsLoading ? (
-                                    <div className="corpus-doc-empty"><RefreshCw className="size-6 animate-spin" style={{ opacity: 0.3 }} /><p>{t('archive.loading_saved')}</p></div>
+                                    <div className="corpus-doc-empty"><IconRefresh className="size-6 animate-spin" style={{ opacity: 0.3 }} /><p>{t('archive.loading_saved')}</p></div>
                                 ) : savedPosts.length > 0 ? (
                                     <div className="corpus-doc-grid">
                                         {savedPosts.map((savedPost) => (
@@ -910,7 +891,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                     <div className="corpus-doc-badge"><IconBookmark className="size-3" /><span>{t('profile.saved_badge')}</span></div>
                                                 </div>
                                                 <div className="corpus-doc-info">
-                                                    <div><BookOpen className="size-3.5" /><span>{relativeTime(savedPost.saved_at)}</span></div>
+                                                    <div><IconBook className="size-3.5" /><span>{relativeTime(savedPost.saved_at)}</span></div>
                                                     <h3>{savedPost.post_title || savedPost.post_slug}</h3>
                                                     <p>{t('profile.open_saved')}</p>
                                                 </div>

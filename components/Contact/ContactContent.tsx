@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import OSButton from 'components/OSButton'
 import { supabase } from 'lib/supabase'
 import { useToast } from 'context/ToastContext'
-import { Mail, User, Send, MessageSquare } from 'lucide-react'
+import { IconChat, IconMessage, IconPerson, IconSend } from '@posthog/icons';
 import { useTranslation } from 'hooks/useTranslation'
 
 export default function ContactContent() {
@@ -54,7 +54,7 @@ export default function ContactContent() {
         return (
             <div className="flex flex-col items-center justify-center h-full p-8 text-center space-y-4 animate-in fade-in duration-500">
                 <div className="size-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 mb-2">
-                    <Send className="size-8" />
+                    <IconSend className="size-8" />
                 </div>
                 <h2 className="text-xl font-black lowercase tracking-tighter">{t('contact.sent_title')}</h2>
                 <p className="text-sm opacity-60 max-w-xs lowercase">
@@ -76,7 +76,7 @@ export default function ContactContent() {
             <div className="p-6 border-b border-primary/10 bg-accent/40 supports-[backdrop-filter]:backdrop-blur-md">
                 <div className="flex items-center gap-4 mb-3">
                     <div className="size-12 rounded-lg bg-primary border border-border shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex items-center justify-center text-primary">
-                        <Mail className="size-6 opacity-80" />
+                        <IconMessage className="size-6 opacity-80" />
                     </div>
                     <div>
                         <h2 className="text-xl font-bold tracking-tight text-primary leading-none">{t('contact.title')}</h2>
@@ -92,7 +92,7 @@ export default function ContactContent() {
                     <div className="space-y-1.5">
                         <label className="text-[13px] font-bold text-primary tracking-wide">{t('contact.name_label')}</label>
                         <div className="relative group">
-                            <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted group-focus-within:text-primary transition-colors" />
+                            <IconPerson className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted group-focus-within:text-primary transition-colors" />
                             <input
                                 type="text"
                                 required
@@ -107,7 +107,7 @@ export default function ContactContent() {
                     <div className="space-y-1.5">
                         <label className="text-[13px] font-bold text-primary tracking-wide">{t('contact.email_label')}</label>
                         <div className="relative group">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted group-focus-within:text-primary transition-colors" />
+                            <IconMessage className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted group-focus-within:text-primary transition-colors" />
                             <input
                                 type="email"
                                 required
@@ -122,7 +122,7 @@ export default function ContactContent() {
                     <div className="space-y-1.5">
                         <label className="text-[13px] font-bold text-primary tracking-wide">{t('contact.msg_label')}</label>
                         <div className="relative group">
-                            <MessageSquare className="absolute left-3 top-3.5 size-4 text-muted group-focus-within:text-primary transition-colors" />
+                            <IconChat className="absolute left-3 top-3.5 size-4 text-muted group-focus-within:text-primary transition-colors" />
                             <textarea
                                 required
                                 rows={5}
@@ -145,7 +145,7 @@ export default function ContactContent() {
                             <span>
                                 {loading ? t('contact.sending_btn') : t('contact.send_btn')}
                             </span>
-                            {!loading && <Send className="size-4 relative -top-[0.5px]" />}
+                            {!loading && <IconSend className="size-4 relative -top-[0.5px]" />}
                         </div>
                     </OSButton>
                 </div>

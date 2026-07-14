@@ -9,7 +9,7 @@ import ForumAvatar from 'components/Forum/ForumAvatar'
 import PostLexicalEditor from 'components/Forum/PostLexicalEditor'
 import OSButton from 'components/OSButton'
 import { Popover } from 'components/RadixUI/Popover'
-import { Settings, Image as ImageIcon, Link as LinkIcon, Folder, PenTool, CheckCircle } from 'lucide-react'
+import { IconCheckCircle, IconExternal, IconFolder, IconGear, IconImage, IconPencil } from '@posthog/icons';
 
 export default function PostEditor({ postId, item }: { postId?: string, item: AppWindow }) {
     const { user, profile, isAdmin } = useAuth()
@@ -145,13 +145,13 @@ export default function PostEditor({ postId, item }: { postId?: string, item: Ap
                                             ? 'bg-black/10 dark:bg-white/10 text-primary'
                                             : 'text-primary/60 hover:text-primary hover:bg-black/5 dark:hover:bg-white/5'}`}
                                 >
-                                    <Settings className="size-4" />
+                                    <IconGear className="size-4" />
                                 </button>
                             }
                         >
                             <div className="flex flex-col gap-4 lowercase">
                                 <div className="flex items-center gap-2 pb-2 border-b border-black/5 dark:border-white/5">
-                                    <Settings className="size-4 opacity-50" />
+                                    <IconGear className="size-4 opacity-50" />
                                     <span className="text-xs font-bold">post properties</span>
                                 </div>
 
@@ -168,7 +168,7 @@ export default function PostEditor({ postId, item }: { postId?: string, item: Ap
                                                         ? 'bg-white dark:bg-[#1C1C1E] text-primary shadow-sm border border-black/5 dark:border-white/5'
                                                         : 'text-primary/40 hover:text-primary'}`}
                                             >
-                                                <PenTool className="size-3" />
+                                                <IconPencil className="size-3" />
                                                 draft
                                             </button>
                                             <button
@@ -179,7 +179,7 @@ export default function PostEditor({ postId, item }: { postId?: string, item: Ap
                                                         ? 'bg-white dark:bg-[#1C1C1E] text-emerald-600 shadow-sm border border-black/5 dark:border-white/5'
                                                         : 'text-primary/40 hover:text-primary'}`}
                                             >
-                                                <CheckCircle className="size-3" />
+                                                <IconCheckCircle className="size-3" />
                                                 published
                                             </button>
                                         </div>
@@ -188,7 +188,7 @@ export default function PostEditor({ postId, item }: { postId?: string, item: Ap
                                     {/* URL Slug */}
                                     <div className="flex flex-col gap-1.5">
                                         <span className="text-[10px] font-bold text-primary/40 flex items-center gap-1">
-                                            <LinkIcon className="size-3" /> slug
+                                            <IconExternal className="size-3" /> slug
                                         </span>
                                         <input
                                             type="text"
@@ -202,7 +202,7 @@ export default function PostEditor({ postId, item }: { postId?: string, item: Ap
                                     {/* Category */}
                                     <div className="flex flex-col gap-1.5">
                                         <span className="text-[10px] font-bold text-primary/40 flex items-center gap-1">
-                                            <Folder className="size-3" /> category
+                                            <IconFolder className="size-3" /> category
                                         </span>
                                         <input
                                             type="text"
@@ -216,7 +216,7 @@ export default function PostEditor({ postId, item }: { postId?: string, item: Ap
                                     {/* Cover Image */}
                                     <div className="flex flex-col gap-1.5">
                                         <span className="text-[10px] font-bold text-primary/40 flex items-center gap-1">
-                                            <ImageIcon className="size-3" /> cover image url
+                                            <IconImage className="size-3" /> cover image url
                                         </span>
                                         <input
                                             type="text"

@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { IconNewspaper, IconUser, IconActivity, IconTerminal, IconMessage } from '@posthog/icons'
+
 import OSButton from 'components/OSButton'
-import { Edit, Save, Settings, Trash2, Plus, ArrowLeft, MessageSquare, ChevronDown, ChevronUp, Search, Hash } from 'lucide-react'
+import { IconActivity, IconArrowLeft, IconChat, IconChevronDown, IconCode, IconDownload, IconGear, IconMessage, IconNewspaper, IconPencil, IconPlus, IconSearch, IconTerminal, IconTrash, IconTriangleUp, IconUser } from '@posthog/icons';
 import RichTextEditor, { saveDraftToStorage, loadDraftFromStorage, clearDraftFromStorage } from './RichTextEditor'
 import { useAdminData, AdminPost } from '../../hooks/useAdminData'
 import { useAuth } from '../../context/AuthContext'
@@ -180,9 +180,9 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
         { id: 'overview', label: 'overview', icon: IconActivity },
         { id: 'content', label: 'content', icon: IconNewspaper },
         { id: 'comments', label: 'comments', icon: IconMessage },
-        { id: 'writerApplications', label: 'inbox', icon: MessageSquare },
+        { id: 'writerApplications', label: 'inbox', icon: IconChat },
         { id: 'users', label: 'users', icon: IconUser },
-        { id: 'settings', label: 'settings', icon: Settings },
+        { id: 'settings', label: 'settings', icon: IconGear },
     ]
 
     const handleLanguageChange = (newLang: string) => {
@@ -373,7 +373,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                         onClick={() => setFocusMode(false)}
                                         className="flex items-center gap-1 text-[11px] font-bold text-black/60 hover:text-black transition-colors lowercase whitespace-nowrap"
                                     >
-                                        <ArrowLeft className="size-3" /> exit focus
+                                        <IconArrowLeft className="size-3" /> exit focus
                                     </button>
                                     <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
                                         <input
@@ -385,7 +385,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                         />
                                         <OSButton className="rounded-full flex-shrink-0" size="sm" variant="primary" onClick={handleSavePost}>
                                             <div className="flex items-center gap-1">
-                                                <Save className="size-3" />
+                                                <IconDownload className="size-3" />
                                                 <span className="lowercase text-xs">save</span>
                                             </div>
                                         </OSButton>
@@ -412,11 +412,11 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                         }}
                                         className="flex items-center gap-1.5 text-xs font-bold text-black/60 hover:text-black transition-colors lowercase"
                                     >
-                                        <ArrowLeft className="size-3.5" /> back
+                                        <IconArrowLeft className="size-3.5" /> back
                                     </button>
                                     <OSButton className="rounded-full" size="sm" variant="primary" onClick={handleSavePost}>
                                         <div className="flex items-center gap-1">
-                                            <Save className="size-3" />
+                                            <IconDownload className="size-3" />
                                             <span className="lowercase text-xs">{editingPost ? (editingPost.isLocal ? 'publish' : 'update') : 'save'}</span>
                                         </div>
                                     </OSButton>
@@ -592,7 +592,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                 </div>
                                 <OSButton className="rounded-full !bg-black !text-white hover:!bg-black/90 shadow-lg shadow-black/10" size="sm" onClick={() => setIsCreating(true)}>
                                     <div className="flex items-center gap-1.5 px-1 py-0.5">
-                                        <Plus className="size-3.5" />
+                                        <IconPlus className="size-3.5" />
                                         <span className="text-xs font-bold lowercase">new node</span>
                                     </div>
                                 </OSButton>
@@ -678,18 +678,18 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                         >
                                                             {post.is_approved ? 'unapprove' : (
                                                                 <div className="flex items-center gap-1">
-                                                                    <Hash className="size-3" />
+                                                                    <IconCode className="size-3" />
                                                                     <span>approve</span>
                                                                 </div>
                                                             )}
                                                         </OSButton>
                                                     )}
                                                     <OSButton className="rounded-full hover:!bg-black hover:!text-white" size="xs" variant="secondary" onClick={() => handleEditClick(post)}>
-                                                        <Edit className="size-3" />
+                                                        <IconPencil className="size-3" />
                                                     </OSButton>
                                                     {!post.isLocal && (
                                                         <OSButton className="rounded-full hover:!bg-rose-50 hover:!text-rose-600" size="xs" variant="secondary" onClick={() => { if (window.confirm('permanently delete this node?')) deletePost(post.id) }}>
-                                                            <Trash2 className="size-3" />
+                                                            <IconTrash className="size-3" />
                                                         </OSButton>
                                                     )}
                                                 </div>
@@ -741,7 +741,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
 
                             {!writerApplicationsLoading && writerApplications.length === 0 && (
                                 <div className="text-center py-20">
-                                    <MessageSquare className="size-12 text-black/5 mx-auto mb-4" />
+                                    <IconChat className="size-12 text-black/5 mx-auto mb-4" />
                                     <p className="text-xs font-bold text-black/40 lowercase italic">no active transmissions</p>
                                 </div>
                             )}
@@ -837,7 +837,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                         {/* Search + Filter Bar */}
                         <div className="flex gap-2 mb-4 flex-shrink-0">
                             <div className="flex-1 relative">
-                                <Search className="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-black/30" />
+                                <IconSearch className="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-black/30" />
                                 <input
                                     type="text"
                                     value={commentSearchQuery}
@@ -903,21 +903,21 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                             onClick={() => setExpandedPostId(isExpanded ? null : cp.id)}
                                                             className={`flex items-center gap-1.5 text-[10px] font-black px-2 py-1 rounded-full transition-all ${isExpanded ? 'bg-black text-white' : 'bg-neutral-50 text-black/40 hover:bg-neutral-100'}`}
                                                         >
-                                                            <MessageSquare className="size-3" />
+                                                            <IconChat className="size-3" />
                                                             {postReplies.length}
-                                                            {isExpanded ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
+                                                            {isExpanded ? <IconTriangleUp className="size-3" /> : <IconChevronDown className="size-3" />}
                                                         </button>
                                                         <OSButton className="rounded-full" size="xs" variant="secondary" onClick={() => {
                                                             setEditingCommentId(cp.id)
                                                             setEditingCommentContent(cp.content)
                                                             setEditingCommentTitle(cp.title)
                                                         }}>
-                                                            <Edit className="size-3" />
+                                                            <IconPencil className="size-3" />
                                                         </OSButton>
                                                         <OSButton className="rounded-full" size="xs" variant="secondary" onClick={() => {
                                                             if (window.confirm('delete this community post?')) deleteCommunityPost(cp.id)
                                                         }}>
-                                                            <Trash2 className="size-3 text-rose-500/50 hover:text-rose-500" />
+                                                            <IconTrash className="size-3 text-rose-500/50 hover:text-rose-500" />
                                                         </OSButton>
                                                     </div>
                                                 </div>
@@ -979,7 +979,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                                         <OSButton className="rounded-full" size="xs" variant="secondary" onClick={() => {
                                                                             if (window.confirm('delete this reply?')) deleteCommunityReply(reply.id)
                                                                         }}>
-                                                                            <Trash2 className="size-2.5 text-rose-400" />
+                                                                            <IconTrash className="size-2.5 text-rose-400" />
                                                                         </OSButton>
                                                                     </div>
                                                                 </div>
@@ -1041,12 +1041,12 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                             setEditingCommentId(reply.id)
                                                             setEditingCommentContent(reply.content)
                                                         }}>
-                                                            <Edit className="size-3" />
+                                                            <IconPencil className="size-3" />
                                                         </OSButton>
                                                         <OSButton className="rounded-full" size="xs" variant="secondary" onClick={() => {
                                                             if (window.confirm('permanently delete this reply?')) deleteCommunityReply(reply.id)
                                                         }}>
-                                                            <Trash2 className="size-3 text-rose-500/50 hover:text-rose-500" />
+                                                            <IconTrash className="size-3 text-rose-500/50 hover:text-rose-500" />
                                                         </OSButton>
                                                     </div>
                                                 </div>
@@ -1068,7 +1068,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                         </div>
                         <div className="border border-black/5 dark:border-white/5 rounded-[24px] bg-white dark:bg-[#1C1C1E] shadow-sm flex-1 flex items-center justify-center">
                             <div className="text-center p-8">
-                                <Settings className="size-10 text-black/5 mx-auto mb-4" />
+                                <IconGear className="size-10 text-black/5 mx-auto mb-4" />
                                 <div className="text-black/30 text-xs font-bold lowercase">
                                     system preferences coming in orbital update
                                 </div>

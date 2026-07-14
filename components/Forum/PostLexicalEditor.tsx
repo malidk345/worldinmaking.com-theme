@@ -21,22 +21,7 @@ import { $createParagraphNode } from "lexical";
 import { INSERT_ORDERED_LIST_COMMAND, INSERT_UNORDERED_LIST_COMMAND, REMOVE_LIST_COMMAND } from "@lexical/list";
 import { TOGGLE_LINK_COMMAND } from "@lexical/link";
 
-import { 
-    Bold, 
-    Italic, 
-    Underline, 
-    Strikethrough, 
-    Heading1, 
-    Heading2, 
-    List, 
-    ListOrdered, 
-    Quote, 
-    Code, 
-    Link as LinkIcon,
-    AlignLeft,
-    AlignCenter,
-    AlignRight
-} from "lucide-react";
+import { IconCode, IconDocument, IconExternal, IconList, IconMinus, IconMinusSmall, IconMinusSquare, IconQuote, IconTextWidth, IconTextWidthFixed } from '@posthog/icons';;
 
 // Theme configuration matching iOS 26 premium, minimalist design
 const theme = {
@@ -215,7 +200,7 @@ function CustomToolbar() {
                 className={buttonClass(isBold)}
                 title="bold"
             >
-                <Bold className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
+                <IconTextWidthFixed className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
             </button>
             <button
                 type="button"
@@ -223,7 +208,7 @@ function CustomToolbar() {
                 className={buttonClass(isItalic)}
                 title="italic"
             >
-                <Italic className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
+                <IconMinusSmall className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
             </button>
             <button
                 type="button"
@@ -231,7 +216,7 @@ function CustomToolbar() {
                 className={buttonClass(isUnderline)}
                 title="underline"
             >
-                <Underline className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
+                <IconMinus className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
             </button>
             <button
                 type="button"
@@ -239,7 +224,7 @@ function CustomToolbar() {
                 className={buttonClass(isStrikethrough)}
                 title="strikethrough"
             >
-                <Strikethrough className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
+                <IconMinusSquare className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
             </button>
 
             <span className="w-[1px] h-4 bg-zinc-200 dark:bg-zinc-800 mx-1.5" />
@@ -251,7 +236,7 @@ function CustomToolbar() {
                 className={buttonClass(activeBlock === "h1")}
                 title="heading 1"
             >
-                <Heading1 className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
+                <IconTextWidth className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
             </button>
             <button
                 type="button"
@@ -259,7 +244,7 @@ function CustomToolbar() {
                 className={buttonClass(activeBlock === "h2")}
                 title="heading 2"
             >
-                <Heading2 className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
+                <IconTextWidth className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
             </button>
             <button
                 type="button"
@@ -267,7 +252,7 @@ function CustomToolbar() {
                 className={buttonClass(activeBlock === "bullet" || activeBlock === "unordered-list")}
                 title="bullet list"
             >
-                <List className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
+                <IconList className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
             </button>
             <button
                 type="button"
@@ -275,7 +260,7 @@ function CustomToolbar() {
                 className={buttonClass(activeBlock === "number" || activeBlock === "ordered-list")}
                 title="numbered list"
             >
-                <ListOrdered className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
+                <IconList className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
             </button>
             <button
                 type="button"
@@ -283,7 +268,7 @@ function CustomToolbar() {
                 className={buttonClass(activeBlock === "quote")}
                 title="quote"
             >
-                <Quote className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
+                <IconQuote className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
             </button>
             <button
                 type="button"
@@ -291,7 +276,7 @@ function CustomToolbar() {
                 className={buttonClass(activeBlock === "code")}
                 title="code block"
             >
-                <Code className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
+                <IconCode className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
             </button>
 
             <span className="w-[1px] h-4 bg-zinc-200 dark:bg-zinc-800 mx-1.5" />
@@ -303,7 +288,7 @@ function CustomToolbar() {
                 className={buttonClass(false)}
                 title="link"
             >
-                <LinkIcon className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
+                <IconExternal className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
             </button>
             <button
                 type="button"
@@ -311,7 +296,7 @@ function CustomToolbar() {
                 className={buttonClass(false)}
                 title="align left"
             >
-                <AlignLeft className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
+                <IconDocument className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
             </button>
             <button
                 type="button"
@@ -319,7 +304,7 @@ function CustomToolbar() {
                 className={buttonClass(false)}
                 title="align center"
             >
-                <AlignCenter className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
+                <IconDocument className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
             </button>
             <button
                 type="button"
@@ -327,7 +312,7 @@ function CustomToolbar() {
                 className={buttonClass(false)}
                 title="align right"
             >
-                <AlignRight className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
+                <IconDocument className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
             </button>
         </div>
     );

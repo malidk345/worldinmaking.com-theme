@@ -1,6 +1,6 @@
 import * as React from 'react'
 import * as Menubar from '@radix-ui/react-menubar'
-import { ChevronRight as IconChevronRight } from 'lucide-react'
+import { IconChevronRight } from '@posthog/icons';
 import Link from 'components/Link'
 import ScrollArea from './ScrollArea'
 import KeyboardShortcut from 'components/KeyboardShortcut'

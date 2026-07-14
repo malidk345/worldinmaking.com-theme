@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronRight } from 'lucide-react'
+import { IconChevronRight } from '@posthog/icons';
 import OSButton from 'components/OSButton'
 import Tooltip from 'components/RadixUI/Tooltip'
 
@@ -64,7 +64,7 @@ export default function SidePanel({
                                     {showCloseButton && (
                                         <Tooltip trigger={
                                             <OSButton onClick={onClose} size="sm" variant="ghost" className="px-1 shadow-none border-none hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors">
-                                                <ChevronRight className="size-5" />
+                                                <IconChevronRight className="size-5" />
                                             </OSButton>
                                         }>
                                             Hide sidebar

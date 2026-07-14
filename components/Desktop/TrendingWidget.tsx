@@ -2,16 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import {
-    RefreshCw,
-    ChevronLeft,
-    ChevronRight,
-    LayoutGrid,
-    Eye,
-    FileText,
-    MessageCircle,
-    Bell,
-} from 'lucide-react'
+import { IconApps, IconChevronLeft, IconChevronRight, IconDocument, IconEye, IconNotification, IconRefresh, IconSparkles } from '@posthog/icons';
 import { supabase } from 'lib/supabase'
 import { useApp } from 'context/App'
 
@@ -141,11 +132,11 @@ export default function TrendingWidget() {
                 <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1.5">
                         {activeTab === 'blog' ? (
-                            <FileText className="w-3.5 h-3.5 text-primary" />
+                            <IconDocument className="w-3.5 h-3.5 text-primary" />
                         ) : activeTab === 'community' ? (
-                            <MessageCircle className="w-3.5 h-3.5 text-primary" />
+                            <IconSparkles className="w-3.5 h-3.5 text-primary" />
                         ) : (
-                            <Bell className="w-3.5 h-3.5 text-primary" />
+                            <IconNotification className="w-3.5 h-3.5 text-primary" />
                         )}
                         <span className="text-[12px] font-bold text-primary lowercase tracking-tight">
                             {activeTab === 'blog' ? 'trending posts' : activeTab === 'community' ? 'trending entries' : 'updates'}
@@ -158,15 +149,15 @@ export default function TrendingWidget() {
                         {(currentPage * itemsPerPage) + 1}-{Math.min((currentPage + 1) * itemsPerPage, currentPosts.length)} of {currentPosts.length}
                     </span>
                     <div className="flex items-center gap-2">
-                        <RefreshCw
+                        <IconRefresh
                             className={`w-3 h-3 opacity-60 cursor-pointer hover:opacity-100 mr-1 ${loading ? 'animate-spin' : ''}`}
                             onClick={fetchTopPosts}
                         />
-                        <ChevronLeft
+                        <IconChevronLeft
                             className={`w-3.5 h-3.5 cursor-pointer hover:opacity-100 ${currentPage === 0 ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
                             onClick={() => setCurrentPage(0)}
                         />
-                        <ChevronRight
+                        <IconChevronRight
                             className={`w-3.5 h-3.5 cursor-pointer hover:opacity-100 ${currentPage >= totalPages - 1 ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
                             onClick={() => setCurrentPage(prev => prev + 1)}
                         />
@@ -184,7 +175,7 @@ export default function TrendingWidget() {
                             : 'text-primary/70 hover:bg-black/5 dark:hover:bg-white/5 border border-transparent'
                     }`}
                 >
-                    <FileText className="w-3.5 h-3.5" />
+                    <IconDocument className="w-3.5 h-3.5" />
                     <span>posts</span>
                 </button>
 
@@ -196,7 +187,7 @@ export default function TrendingWidget() {
                             : 'text-primary/70 hover:bg-black/5 dark:hover:bg-white/5 border border-transparent'
                     }`}
                 >
-                    <MessageCircle className="w-3.5 h-3.5" />
+                    <IconSparkles className="w-3.5 h-3.5" />
                     <span>entries</span>
                 </button>
 
@@ -208,7 +199,7 @@ export default function TrendingWidget() {
                             : 'text-primary/70 hover:bg-black/5 dark:hover:bg-white/5 border border-transparent'
                     }`}
                 >
-                    <Bell className="w-3.5 h-3.5" />
+                    <IconNotification className="w-3.5 h-3.5" />
                     <span>updates</span>
                 </button>
             </div>
@@ -229,7 +220,7 @@ export default function TrendingWidget() {
                         <div className="mr-2.5 flex-shrink-0">
                             {activeTab === 'updates' ? (
                                 <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center border border-primary/5">
-                                    <Bell className="w-3 h-3 text-primary" />
+                                    <IconNotification className="w-3 h-3 text-primary" />
                                 </div>
                             ) : post.avatar_url ? (
                                 /* eslint-disable-next-line @next/next/no-img-element */
@@ -256,7 +247,7 @@ export default function TrendingWidget() {
                         <div className="flex items-center gap-3 flex-shrink-0">
                             {activeTab !== 'updates' && (
                                 <div className="flex items-center gap-1 text-[10px] font-bold text-primary opacity-30 lowercase">
-                                    <Eye className="w-3 h-3" />
+                                    <IconEye className="w-3 h-3" />
                                     <span>{post.view_count || 0}</span>
                                 </div>
                             )}
@@ -280,7 +271,7 @@ export default function TrendingWidget() {
                     )}
                 </div>
                 <div className="flex items-center">
-                    <LayoutGrid className="w-3.5 h-3.5" />
+                    <IconApps className="w-3.5 h-3.5" />
                 </div>
             </div>
         </motion.div>

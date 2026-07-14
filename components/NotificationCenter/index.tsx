@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bell, X, MessageSquare, Newspaper } from 'lucide-react'
+import { IconChat, IconNewspaper, IconNotification, IconX } from '@posthog/icons';
 import { supabase } from 'lib/supabase'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -86,7 +86,7 @@ export default function NotificationCenter() {
                 className={`!px-1 group/notif relative translate-y-[2px] transition-all ${isOpen ? 'bg-primary/5 dark:bg-white/10' : ''}`}
             >
                 <div className="relative px-1 h-5 flex items-center justify-center">
-                    <Bell className={`size-[18px] text-black transition-transform group-hover/notif:scale-110 ${hasUnread ? 'animate-wiggle' : ''}`} strokeWidth={1.5} />
+                    <IconNotification className={`size-[18px] text-black transition-transform group-hover/notif:scale-110 ${hasUnread ? 'animate-wiggle' : ''}`} strokeWidth={1.5} />
                     {hasUnread && (
                         <span className="absolute top-0 right-0 size-2 bg-blue-primary rounded-full border border-accent shadow-sm" />
                     )}
@@ -118,7 +118,7 @@ export default function NotificationCenter() {
                                     onClick={() => setIsOpen(false)}
                                     className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded transition-colors text-primary"
                                 >
-                                    <X className="size-3 opacity-40" />
+                                    <IconX className="size-3 opacity-40" />
                                 </button>
                             </div>
 
@@ -126,7 +126,7 @@ export default function NotificationCenter() {
                                 <div className="p-1.5 space-y-0.5">
                                     {notifications.length === 0 ? (
                                         <div className="py-10 text-center">
-                                            <Bell className="size-6 mx-auto opacity-10 mb-2" />
+                                            <IconNotification className="size-6 mx-auto opacity-10 mb-2" />
                                             <p className="text-[11px] opacity-40">no recent activities</p>
                                         </div>
                                     ) : (
@@ -137,9 +137,9 @@ export default function NotificationCenter() {
                                             >
                                                 <div className="size-7 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-blue-primary/10 transition-colors">
                                                     {notif.type === 'post' ? (
-                                                        <Newspaper className="size-3.5 text-blue-primary opacity-60" />
+                                                        <IconNewspaper className="size-3.5 text-blue-primary opacity-60" />
                                                     ) : (
-                                                        <MessageSquare className="size-3.5 text-blue-primary opacity-60" />
+                                                        <IconChat className="size-3.5 text-blue-primary opacity-60" />
                                                     )}
                                                 </div>
                                                 <div className="flex-1 min-w-0">

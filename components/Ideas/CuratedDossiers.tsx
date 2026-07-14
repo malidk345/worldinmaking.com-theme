@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import ScrollArea from 'components/RadixUI/ScrollArea'
-import { Folder, FolderOpen, FileText } from 'lucide-react'
+import { IconDocument, IconFolder, IconFolderOpen } from '@posthog/icons';
 import { motion, AnimatePresence } from 'framer-motion'
 
 const MOCK_DOSSIERS = [
@@ -47,7 +47,7 @@ export default function CuratedDossiers() {
             {/* Sidebar (Dossier List) */}
             <div className="w-64 border-r border-black/10 dark:border-white/10 flex flex-col bg-black/5 dark:bg-white/5 shrink-0">
                 <div className="p-3 border-b border-black/10 dark:border-white/10 flex items-center gap-2">
-                    <Folder className="size-4" />
+                    <IconFolder className="size-4" />
                     <span className="font-semibold text-sm">My Dossiers</span>
                 </div>
                 <ScrollArea className="flex-1 p-2">
@@ -63,9 +63,9 @@ export default function CuratedDossiers() {
                                 }`}
                             >
                                 {activeDossier === dossier.id ? (
-                                    <FolderOpen className="size-4 shrink-0" />
+                                    <IconFolderOpen className="size-4 shrink-0" />
                                 ) : (
-                                    <Folder className="size-4 shrink-0 opacity-70" />
+                                    <IconFolder className="size-4 shrink-0 opacity-70" />
                                 )}
                                 <span className="truncate flex-1">{dossier.title}</span>
                                 <span className="text-[10px] opacity-50 px-1.5 py-0.5 bg-black/10 dark:bg-white/10 rounded-full">
@@ -92,7 +92,7 @@ export default function CuratedDossiers() {
                             {/* Dossier Header */}
                             <div className="p-6 border-b border-black/10 dark:border-white/10">
                                 <h2 className="text-2xl font-bold font-serif mb-2 flex items-center gap-3">
-                                    <FolderOpen className="size-6 text-primary" />
+                                    <IconFolderOpen className="size-6 text-primary" />
                                     {MOCK_DOSSIERS.find(d => d.id === activeDossier)?.title}
                                 </h2>
                                 <p className="text-sm opacity-70">
@@ -109,7 +109,7 @@ export default function CuratedDossiers() {
                                             className="group border border-black/10 dark:border-white/10 p-4 rounded-sm hover:shadow-md hover:border-primary/50 transition-all cursor-pointer bg-black/[0.02] dark:bg-white/[0.02]"
                                         >
                                             <div className="flex items-start justify-between mb-3">
-                                                <FileText className="size-5 opacity-60 group-hover:text-primary transition-colors" />
+                                                <IconDocument className="size-5 opacity-60 group-hover:text-primary transition-colors" />
                                                 <span className="text-[10px] opacity-40 font-mono">{file.date}</span>
                                             </div>
                                             <h3 className="text-sm font-medium line-clamp-2 leading-tight group-hover:text-primary transition-colors">
@@ -131,7 +131,7 @@ export default function CuratedDossiers() {
                     </AnimatePresence>
                 ) : (
                     <div className="flex-1 flex flex-col items-center justify-center text-center opacity-40 p-8">
-                        <Folder className="size-16 mb-4 opacity-20" />
+                        <IconFolder className="size-16 mb-4 opacity-20" />
                         <h3 className="text-lg font-medium mb-2">No Dossier Selected</h3>
                         <p className="text-sm max-w-sm">Select a dossier from the sidebar to view your curated collections, or create a new one to start organizing.</p>
                     </div>

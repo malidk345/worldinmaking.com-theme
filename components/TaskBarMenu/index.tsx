@@ -2,15 +2,8 @@
 
 import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import {
-    IconSearch,
-    IconUser,
-    IconChevronDown,
-    IconBolt,
-    IconApps,
-    IconGlobe
-} from '@posthog/icons'
-import { Settings, Info, FileText, BookOpen, Newspaper, MessageSquare, RotateCw, LogOut, LogIn } from 'lucide-react'
+
+import { IconApps, IconBolt, IconBook, IconChat, IconChevronDown, IconDocument, IconGear, IconGlobe, IconInfo, IconLeave, IconNewspaper, IconPerson, IconRefresh, IconSearch, IconUser } from '@posthog/icons';
 import { useApp } from '../../context/App'
 import { useAuth } from '../../context/AuthContext'
 import MenuBar, { MenuItemType } from 'components/RadixUI/MenuBar'
@@ -101,7 +94,7 @@ export default function TaskBarMenu() {
         {
             type: 'item' as const,
             label: t('menu.about_title'),
-            icon: <Info className="size-4 opacity-70" />,
+            icon: <IconInfo className="size-4 opacity-70" />,
             onClick: () => addWindow({
                 key: 'about',
                 title: t('menu.about_title'),
@@ -139,12 +132,12 @@ export default function TaskBarMenu() {
         {
             type: 'submenu' as const,
             label: t('posts.title'),
-            icon: <FileText className="size-4 opacity-70" />,
+            icon: <IconDocument className="size-4 opacity-70" />,
             items: [
-                { type: 'item' as const, label: t('menu.all_posts'), icon: <FileText className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'posts-all', title: t('menu.all_posts'), path: '/posts' }) },
-                { type: 'item' as const, label: t('menu.blueprints'), icon: <BookOpen className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'blueprints', title: t('menu.blueprints'), path: '/blueprints' }) },
+                { type: 'item' as const, label: t('menu.all_posts'), icon: <IconDocument className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'posts-all', title: t('menu.all_posts'), path: '/posts' }) },
+                { type: 'item' as const, label: t('menu.blueprints'), icon: <IconBook className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'blueprints', title: t('menu.blueprints'), path: '/blueprints' }) },
                 { type: 'separator' as const },
-                { type: 'item' as const, label: t('menu.newspaper'), icon: <Newspaper className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'posts', title: t('menu.newspaper'), element: <PostsView />, path: '/posts-newspaper' }) },
+                { type: 'item' as const, label: t('menu.newspaper'), icon: <IconNewspaper className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'posts', title: t('menu.newspaper'), element: <PostsView />, path: '/posts-newspaper' }) },
             ]
         },
 
@@ -152,21 +145,21 @@ export default function TaskBarMenu() {
         {
             type: 'submenu' as const,
             label: t('menu.community'),
-            icon: <MessageSquare className="size-4 opacity-70" />,
+            icon: <IconChat className="size-4 opacity-70" />,
             items: [
-                { type: 'item' as const, label: t('menu.forums'), icon: <MessageSquare className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'questions', title: 'Questions', path: '/questions' }) },
+                { type: 'item' as const, label: t('menu.forums'), icon: <IconChat className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'questions', title: 'Questions', path: '/questions' }) },
             ]
         },
 
         {
             type: 'submenu' as const,
             label: t('menu.ideas'),
-            icon: <BookOpen className="size-4 opacity-70" />,
+            icon: <IconBook className="size-4 opacity-70" />,
             items: [
-                { type: 'item' as const, label: t('menu.marginalia'), icon: <BookOpen className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'marginalia', path: '/ideas/marginalia', title: 'Marginalia Archive', element: <Marginalia /> }) },
-                { type: 'item' as const, label: t('menu.dossiers'), icon: <FileText className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'dossiers', path: '/ideas/dossiers', title: 'Curated Dossiers', element: <CuratedDossiers /> }) },
-                { type: 'item' as const, label: t('menu.stations'), icon: <Settings className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'stations', path: '/ideas/stations', title: 'Atmospheric Stations', element: <AtmosphericStations /> }) },
-                { type: 'item' as const, label: t('menu.transmissions'), icon: <MessageSquare className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'transmissions', path: '/ideas/transmissions', title: 'Ephemeral Transmissions', element: <EphemeralTransmissions /> }) },
+                { type: 'item' as const, label: t('menu.marginalia'), icon: <IconBook className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'marginalia', path: '/ideas/marginalia', title: 'Marginalia Archive', element: <Marginalia /> }) },
+                { type: 'item' as const, label: t('menu.dossiers'), icon: <IconDocument className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'dossiers', path: '/ideas/dossiers', title: 'Curated Dossiers', element: <CuratedDossiers /> }) },
+                { type: 'item' as const, label: t('menu.stations'), icon: <IconGear className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'stations', path: '/ideas/stations', title: 'Atmospheric Stations', element: <AtmosphericStations /> }) },
+                { type: 'item' as const, label: t('menu.transmissions'), icon: <IconChat className="size-4 opacity-70" />, onClick: () => addWindow({ key: 'transmissions', path: '/ideas/transmissions', title: 'Ephemeral Transmissions', element: <EphemeralTransmissions /> }) },
             ]
         },
 
@@ -176,17 +169,17 @@ export default function TaskBarMenu() {
         {
             type: 'item' as const,
             label: t('menu.system_settings'),
-            icon: <Settings className="size-4 opacity-70" />,
+            icon: <IconGear className="size-4 opacity-70" />,
             onClick: () => addWindow({
                 key: 'system-settings',
                 title: t('menu.system_settings'),
-                icon: <Settings className="size-4" />,
+                icon: <IconGear className="size-4" />,
                 path: '/settings',
                 element: <SystemSettings />,
                 size: { width: 680, height: 520 }
             })
         },
-        { type: 'item' as const, label: t('menu.force_restart'), icon: <RotateCw className="size-4 opacity-70" />, onClick: () => window.location.reload() },
+        { type: 'item' as const, label: t('menu.force_restart'), icon: <IconRefresh className="size-4 opacity-70" />, onClick: () => window.location.reload() },
 
         // Admin
         ...(isAdmin ? [
@@ -199,7 +192,7 @@ export default function TaskBarMenu() {
                     key: 'admin-dashboard',
                     title: t('menu.admin_dashboard'),
                     path: '/admin',
-                    icon: <Settings className="size-4 text-purple-500" />,
+                    icon: <IconGear className="size-4 text-purple-500" />,
                     element: <AdminPanel />,
                     size: { width: 1100, height: 750 }
                 })
@@ -220,14 +213,14 @@ export default function TaskBarMenu() {
             {
                 type: 'item' as const,
                 label: t('menu.sign_out'),
-                icon: <LogOut className="size-4 opacity-70" />,
+                icon: <IconLeave className="size-4 opacity-70" />,
                 onClick: () => signOut()
             }
         ] : [
             {
                 type: 'item' as const,
                 label: t('menu.sign_in'),
-                icon: <LogIn className="size-4 opacity-70" />,
+                icon: <IconPerson className="size-4 opacity-70" />,
                 onClick: () => addWindow({
                     key: 'login',
                     path: '/login',

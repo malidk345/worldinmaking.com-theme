@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react'
-import { RefreshCw } from 'lucide-react'
+import { IconRefresh } from '@posthog/icons';
 
 interface LoadingProps {
     className?: string
@@ -17,7 +17,7 @@ export default function Loading({ className = '', fullScreen = false, label }: L
     return (
         <div className={containerClasses}>
             <div className="flex flex-col items-center justify-center gap-3 text-primary/50 lowercase">
-                <RefreshCw className="size-5 animate-spin opacity-30" />
+                <IconRefresh className="size-5 animate-spin opacity-30" />
                 {label ? <p className="m-0 text-xs font-black tracking-wide">{label}</p> : null}
             </div>
         </div>

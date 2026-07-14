@@ -6,7 +6,7 @@ import type { AppWindow as AppWindowType } from '../../context/Window'
 import SidePanel from 'components/SidePanel'
 import ScrollArea from 'components/RadixUI/ScrollArea'
 import OSButton from 'components/OSButton'
-import { X, LayoutGrid, MonitorDot, Trash2 } from 'lucide-react'
+import { IconApps, IconScreen, IconTrash, IconX } from '@posthog/icons';
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function ActiveWindowsPanel() {
@@ -80,7 +80,7 @@ export default function ActiveWindowsPanel() {
                                     >
                                         <div className={`size-5 rounded-full flex items-center justify-center shrink-0 ${focusedWindow?.key === w.key ? 'bg-white/10' : 'bg-primary/10'
                                             } ${w.minimized ? 'opacity-40 grayscale' : ''}`}>
-                                            {w.icon || <LayoutGrid className={`size-3.5 ${focusedWindow?.key === w.key ? 'text-black dark:text-white' : 'text-primary'}`} />}
+                                            {w.icon || <IconApps className={`size-3.5 ${focusedWindow?.key === w.key ? 'text-black dark:text-white' : 'text-primary'}`} />}
                                         </div>
                                         <span className={`flex-1 text-left truncate tracking-tight ${w.minimized ? 'italic opacity-60' : ''}`}>
                                             {w.title || 'untitled'}
@@ -97,7 +97,7 @@ export default function ActiveWindowsPanel() {
                                         }}
                                         className="absolute right-2 top-1/2 -translate-y-1/2 size-6 flex items-center justify-center bg-red-500/10 text-red-600 hover:bg-red-500 hover:text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 z-10"
                                     >
-                                        <X className="size-3.5" />
+                                        <IconX className="size-3.5" />
                                     </button>
                                 </motion.div>
                             ))}
@@ -106,7 +106,7 @@ export default function ActiveWindowsPanel() {
                         {totalWindows === 0 && (
                             <div className="flex flex-col items-center justify-center py-16 text-primary/40 text-center gap-4">
                                 <div className="size-14 rounded-full bg-primary/5 border border-primary/10 flex items-center justify-center mb-2">
-                                    <MonitorDot className="size-6 opacity-40" />
+                                    <IconScreen className="size-6 opacity-40" />
                                 </div>
                                 <div>
                                     <p className="font-mono text-xs font-black m-0 tracking-widest uppercase text-primary/60">no active tasks</p>
@@ -135,7 +135,7 @@ export default function ActiveWindowsPanel() {
                                 closeActiveWindowsPanel()
                             }}
                         >
-                            <Trash2 className="size-3.5 opacity-60 group-hover:opacity-100" />
+                            <IconTrash className="size-3.5 opacity-60 group-hover:opacity-100" />
                             <span>kill all processes</span>
                         </OSButton>
                     </div>

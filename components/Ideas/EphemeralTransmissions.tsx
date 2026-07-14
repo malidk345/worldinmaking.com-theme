@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useRef } from 'react'
-import { Send, Terminal, Clock } from 'lucide-react'
+import { IconClock, IconSend, IconTerminal } from '@posthog/icons';
 import ScrollArea from 'components/RadixUI/ScrollArea'
 import OSButton from 'components/OSButton'
 
@@ -78,11 +78,11 @@ export default function EphemeralTransmissions() {
             {/* Header */}
             <div className="p-3 border-b border-[#00ff00]/30 flex items-center justify-between bg-[#000000]">
                 <div className="flex items-center gap-2">
-                    <Terminal className="size-4" />
+                    <IconTerminal className="size-4" />
                     <span className="font-bold tracking-widest uppercase text-xs">Signal_Stream // 24h</span>
                 </div>
                 <div className="flex items-center gap-1 text-[#00ff00]/50 text-xs">
-                    <Clock className="size-3" />
+                    <IconClock className="size-3" />
                     <span>Auto-purge active</span>
                 </div>
             </div>
@@ -128,7 +128,7 @@ export default function EphemeralTransmissions() {
                         onClick={handleSend}
                         className="bg-[#00ff00]/10 text-[#00ff00] border-[#00ff00]/30 hover:bg-[#00ff00]/20 h-fit self-end"
                     >
-                        <Send className="size-4" />
+                        <IconSend className="size-4" />
                     </OSButton>
                 </div>
             </div>
