@@ -103,27 +103,27 @@ export default function NotificationCenter() {
                         />
                         
                         <motion.div
-                            initial={{ opacity: 0, y: -4 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -4 }}
-                            transition={{ duration: 0.15, ease: 'easeOut' }}
-                            className="absolute right-0 top-full mt-2 w-72 max-h-[420px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-[0_12px_44px_-12px_rgba(0,0,0,0.25)] z-[9999] flex flex-col overflow-hidden rounded-md lowercase font-mono"
+                            initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+                            className="absolute right-0 top-full mt-2 w-72 max-h-[420px] bg-white dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 shadow-[0_12px_44px_-12px_rgba(0,0,0,0.25)] z-[9999] flex flex-col overflow-hidden rounded-[24px] lowercase font-mono"
                         >
-                            <div className="px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-zinc-50 dark:bg-zinc-800/50">
+                            <div className="px-4 py-3 border-b border-black/5 dark:border-white/5 flex items-center justify-between bg-zinc-50/50 dark:bg-white/5">
                                 <div className="flex items-center gap-2">
                                     <div className="size-1.5 rounded-full bg-blue-primary animate-pulse" />
                                     <h3 className="font-bold text-[10px] tracking-widest opacity-50 uppercase">activity</h3>
                                 </div>
                                 <button 
                                     onClick={() => setIsOpen(false)}
-                                    className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded transition-colors text-primary"
+                                    className="p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors text-primary"
                                 >
                                     <IconX className="size-3 opacity-40" />
                                 </button>
                             </div>
 
                             <ScrollArea className="flex-1 min-h-0">
-                                <div className="p-1.5 space-y-0.5">
+                                <div className="p-2 space-y-1">
                                     {notifications.length === 0 ? (
                                         <div className="py-10 text-center">
                                             <IconNotification className="size-6 mx-auto opacity-10 mb-2" />
@@ -133,13 +133,13 @@ export default function NotificationCenter() {
                                         notifications.map((notif) => (
                                             <div 
                                                 key={notif.id}
-                                                className="p-2.5 rounded hover:bg-zinc-800/10 dark:hover:bg-white/5 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 transition-all cursor-pointer group flex gap-3"
+                                                className="p-2.5 rounded-[16px] hover:bg-black/5 dark:hover:bg-white/5 border border-transparent hover:border-black/5 dark:hover:border-white/5 transition-all cursor-pointer group flex gap-3"
                                             >
-                                                <div className="size-7 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-blue-primary/10 transition-colors">
+                                                <div className="size-8 rounded-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-blue-primary/10 transition-colors">
                                                     {notif.type === 'post' ? (
-                                                        <IconNewspaper className="size-3.5 text-blue-primary opacity-60" />
+                                                        <IconNewspaper className="size-4 text-blue-primary opacity-60" />
                                                     ) : (
-                                                        <IconChat className="size-3.5 text-blue-primary opacity-60" />
+                                                        <IconChat className="size-4 text-blue-primary opacity-60" />
                                                     )}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
@@ -157,7 +157,7 @@ export default function NotificationCenter() {
                                 </div>
                             </ScrollArea>
 
-                            <div className="px-3 py-2 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 flex items-center justify-center">
+                            <div className="px-4 py-2.5 border-t border-black/5 dark:border-white/5 bg-zinc-50/50 dark:bg-white/5 flex items-center justify-center">
                                 <p className="text-[9px] font-bold opacity-30 tracking-widest lowercase">system online</p>
                             </div>
                         </motion.div>
