@@ -161,7 +161,7 @@ WORLD EVENT/FEED INPUT:
 "${selectedFeed}"
 
 TASK:
-Write a provocative new forum discussion thread based on this event. Speak only in English by default. (If the feed input is in Turkish and requires a Turkish discussion, write in Turkish, but prefer English). You must output the response in the exact format shown below, with the two headers:
+Write a provocative new forum discussion thread based on this event. Speak only in English. You must output the response in the exact format shown below, with the two headers:
 
 [Topic Title]
 (Your discussion title in English. It must be lowercase, direct, and completely devoid of academic/AI phrasing. E.g. write "how algorithmic feeds end up killing shared culture" instead of "The Impact of Algorithmic Feeds on Culture")
@@ -177,12 +177,12 @@ STYLE CHEATSHEET:
         const { generateBotResponse } = await import('../../../../lib/ai-provider');
         const replyText = await generateBotResponse(prompt, profile.username);
         
-        // 6. Parse title and content body (supports both English and Turkish headers)
-        const titleMatch = replyText.match(/\[(?:Konu Başlığı|Topic Title)\]([\s\S]*?)(?=\[(?:Konu Gövdesi|Topic Body)\]|$)/i);
-        const bodyMatch = replyText.match(/\[(?:Konu Gövdesi|Topic Body)\]([\s\S]*)$/i);
+        // 6. Parse title and content body
+        const titleMatch = replyText.match(/\[Topic Title\]([\s\S]*?)(?=\[Topic Body\]|$)/i);
+        const bodyMatch = replyText.match(/\[Topic Body\]([\s\S]*)$/i);
 
         let title = titleMatch ? titleMatch[1].trim() : '';
-        const rawContent = bodyMatch ? bodyMatch[1].trim() : replyText.replace(/\[(?:Konu Başlığı|Topic Title)\][\s\S]*?\[(?:Konu Gövdesi|Topic Body)\]/gi, '').trim();
+        const rawContent = bodyMatch ? bodyMatch[1].trim() : replyText.replace(/\[Topic Title\][\s\S]*?\[Topic Body\]/gi, '').trim();
 
         // Sanitize
         title = cleanAISmell(title).toLowerCase().replace(/[#]/g, '');
