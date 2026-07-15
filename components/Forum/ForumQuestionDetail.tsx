@@ -21,7 +21,8 @@ export default function ForumQuestionDetail({ question }: ForumQuestionDetailPro
                 description={description}
                 url={`/questions/${question.permalink}`}
             />
-            <div className="h-full overflow-y-auto custom-scrollbar bg-white dark:bg-[#121214] text-primary">
+            {/* iOS 26 Aesthetic Updates: Removing solid bg colors here to allow outer wrapper/window to style the background or handle translucent styling if needed, matching modern minimalistic aesthetics */}
+            <div className="h-full overflow-y-auto custom-scrollbar bg-gray-50 dark:bg-gray-900 text-primary">
                 <div className="max-w-7xl mx-auto px-0 lg:px-4 py-0 lg:py-6">
                     <div className="flex gap-8">
                         {/* Sidebar */}

@@ -43,7 +43,7 @@ export default function ForumReplies({
                         {isInForum ? (
                             <div className="flex w-full gap-3 items-center">
                                 <div className="w-[40px] shrink-0 flex justify-center items-center">
-                                    <div className="flex items-center -space-x-1 bg-white dark:bg-[#121214] py-0.5 px-1 rounded-full border border-primary/5">
+                                    <div className="flex items-center -space-x-1 py-0.5 px-1 rounded-full bg-white dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 shadow-sm">
                                         {avatars.map((avatar, index) => (
                                             <ForumAvatar key={index} image={avatar as string} className="w-[16px] h-[16px] border border-primary/20" />
                                         ))}
@@ -51,7 +51,7 @@ export default function ForumReplies({
                                 </div>
                                 <div className="flex-grow min-w-0">
                                     <button
-                                        className="text-xs font-semibold text-[#000080] dark:text-[#66b2ff] hover:underline lowercase"
+                                        className="text-xs font-semibold text-primary/60 hover:text-primary transition-colors lowercase"
                                         onClick={() => onToggleExpanded(true)}
                                     >
                                         view {replyCount - 1} other {replyCount - 1 === 1 ? 'reply' : 'replies'}
@@ -79,7 +79,7 @@ export default function ForumReplies({
                             <div className="flex w-full gap-3">
                                 <div className="w-[40px] shrink-0 flex justify-center items-start pt-1.5">
                                     <ForumAvatar
-                                        className="size-8 rounded-full border border-black/10 dark:border-white/10 bg-white dark:bg-[#121214]"
+                                        className="size-8 rounded-full border border-black/10 dark:border-white/10 bg-white dark:bg-[#1C1C1E] shadow-sm"
                                         image={replies[replies.length - 1].profile.avatar}
                                     />
                                 </div>
@@ -125,7 +125,7 @@ export default function ForumReplies({
                                 <div className="flex w-full gap-3">
                                     <div className="w-[40px] shrink-0 flex justify-center items-start pt-1.5">
                                         <ForumAvatar
-                                            className="size-8 rounded-full border border-black/10 dark:border-white/10 bg-white dark:bg-[#121214]"
+                                            className="size-8 rounded-full border border-black/10 dark:border-white/10 bg-white dark:bg-[#1C1C1E] shadow-sm"
                                             image={reply.profile.avatar}
                                         />
                                     </div>
