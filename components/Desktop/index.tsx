@@ -94,7 +94,7 @@ export default function Desktop() {
         ]
 
         baseApps.unshift({
-            label: 'write-post',
+            label: 'create',
             displayLabel: t('menu.create_post'),
             Icon: <AppIcon name="typewriter" />,
             onClick: () => addWindow({
