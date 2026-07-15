@@ -131,31 +131,31 @@ Write a reply to the discussion thread. You are responding directly to @${target
 TWO-STAGE CHAIN-OF-THOUGHT INSTRUCTIONS:
 You MUST output your response in the exact format shown below, with the two headers:
 
-[İç Ses Analizi]
-(Provide a brief private inner monologue. You may write this section in English or Turkish. Analyze the target user's argument. Decide your response strategy based on your mood, your persona, and affinity.
+[Inner Thoughts Analysis]
+(Provide a brief private inner monologue. You must write this section in English. Analyze the target user's argument. Decide your response strategy based on your mood, your persona, and affinity.
 If the target is a bot, you MUST decide an affinity adjustment based on this interaction. Include a line at the end: "[Affinity Update]: +0.1" (if supportive) or "[Affinity Update]: -0.1" (if confrontational or disagreeing). If no change is needed, write "[Affinity Update]: 0.0".
 Additionally, decide whether to like (upvote) or dislike (downvote) the target post/reply. If you support, agree, or like the argument, include a line: "[Vote Update]: +1". If you strongly disagree, oppose, or dislike it, include: "[Vote Update]: -1". Otherwise, write: "[Vote Update]: 0".)
 
-[Ham Metin]
+[Raw Text]
 (Your actual reply text. Do NOT use lists, bullet points, headings, bold styling, or polite filler introductions.
-Speak only in English by default. If the discussion history or the target user (@${targetUser.username}) is writing in Turkish, you must reply in Turkish to match their language.
+Speak only in English.
 If the target user is a real human (is_bot is FALSE), you MUST mention them by typing @${targetUser.username} and challenge their argument directly, identifying logical flaws or theoretical loopholes. Avoid politeness.
 If the target user is a bot, reply casually. Output under 120 words.)
 
 STYLE CHEATSHEET:
 - Lowercase preferences, raw/direct arguments.
-- Forbid AI transition cliches ("essentially", "basically", "in summary", "esasen", "temelde"). Jump straight into the point.`;
+- Forbid AI transition cliches ("essentially", "basically", "in summary"). Jump straight into the point.`;
 
         console.log(`[Respond API] Generating content for @${profile.username} responding to @${targetUser.username}...`);
         const { generateBotResponse } = await import('../../../../lib/ai-provider');
         const replyText = await generateBotResponse(prompt, profile.username);
         
         // 8. Parse CoT and reply body
-        const cotMatch = replyText.match(/\[İç Ses Analizi\]([\s\S]*?)(?=\[Ham Metin\]|$)/i);
-        const textMatch = replyText.match(/\[Ham Metin\]([\s\S]*)$/i);
+        const cotMatch = replyText.match(/\[Inner Thoughts Analysis\]([\s\S]*?)(?=\[Raw Text\]|$)/i);
+        const textMatch = replyText.match(/\[Raw Text\]([\s\S]*)$/i);
 
         const innerThoughts = cotMatch ? cotMatch[1].trim() : '';
-        const rawContent = textMatch ? textMatch[1].trim() : replyText.replace(/\[İç Ses Analizi\][\s\S]*?\[Ham Metin\]/gi, '').trim();
+        const rawContent = textMatch ? textMatch[1].trim() : replyText.replace(/\[Inner Thoughts Analysis\][\s\S]*?\[Raw Text\]/gi, '').trim();
 
         const cleanedContent = cleanAISmell(rawContent);
 

@@ -42,8 +42,8 @@ function parseDraftSections(draft: string): DraftSection[] {
 
 function mergeSectionUpdate(currentDraft: string, targetSection: string, newContent: string): string {
     const sections = parseDraftSections(currentDraft);
-    const isNew = targetSection.startsWith('YENİ:') || targetSection.startsWith('NEW:');
-    const cleanTitle = targetSection.replace(/^(YENİ:|NEW:)\s*/i, '').trim();
+    const isNew = targetSection.startsWith('NEW:');
+    const cleanTitle = targetSection.replace(/^NEW:\s*/i, '').trim();
 
     if (isNew || !sections.some(s => s.title.toLowerCase() === cleanTitle.toLowerCase())) {
         return currentDraft.trim() + `\n\n## ${cleanTitle}\n\n${newContent}\n`;
@@ -383,12 +383,12 @@ Task at hand: "${taskType}" ${targetSectionTitle ? `on section "## ${targetSecti
 TASK:
 Formulate a single focused search query (3-6 keywords) to look up fresh web information / data to ground your upcoming writing.
 Output in the exact format:
-[Sorgu]
+[Search Query]
 your search query keywords here`;
 
         const { generateBotResponse } = await import('../../../../../lib/ai-provider');
         const searchReply = await generateBotResponse(searchPrompt, profile.username);
-        const searchQueryMatch = searchReply.match(/\[Sorgu\]([\s\S]*)$/i);
+        const searchQueryMatch = searchReply.match(/\[Search Query\]([\s\S]*)$/i);
         const searchQuery = searchQueryMatch ? searchQueryMatch[1].trim() : collaboration.title;
 
         console.log(`[Symposium Blackboard] Bot @${profile.username} generated JIT Search Query: "${searchQuery}"`);
@@ -436,10 +436,10 @@ your search query keywords here`;
         const formatSuffix = `\n\n---
 CHAIN-OF-THOUGHT FORMAT (mandatory):
 
-[İç Ses]
+[Inner Thoughts]
 (Write your private reasoning in 3-5 sentences. What is the current state of the section/draft? What improvements will you make?)
 
-[Makale]
+[Article]
 (Your complete output — the written content in markdown)`;
         const fullPrompt = `${instructions}${formatSuffix}`;
 
@@ -447,8 +447,8 @@ CHAIN-OF-THOUGHT FORMAT (mandatory):
         const replyText = await generateBotResponse(fullPrompt, profile.username);
 
         // Parse response
-        const thoughtsMatch = replyText.match(/\[İç Ses\]([\s\S]*?)(?=\[Makale\]|$)/i);
-        const contentMatch = replyText.match(/\[Makale\]([\s\S]*)$/i);
+        const thoughtsMatch = replyText.match(/\[Inner Thoughts\]([\s\S]*?)(?=\[Article\]|$)/i);
+        const contentMatch = replyText.match(/\[Article\]([\s\S]*)$/i);
 
         const innerThoughts = thoughtsMatch ? thoughtsMatch[1].trim() : '';
         const rawContent = contentMatch ? contentMatch[1].trim() : replyText;
