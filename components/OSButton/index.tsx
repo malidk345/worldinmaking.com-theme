@@ -57,30 +57,14 @@ const OSButton = React.memo(React.forwardRef<HTMLButtonElement | HTMLAnchorEleme
         ref
     ) => {
         const baseClasses =
-            'relative items-center rounded-full border text-primary transition-colors transition-[font-size,line-height,padding] transition-50 hover:transition-none disabled:text-muted disabled:cursor-not-allowed select-none'
+            'relative items-center justify-center font-bold tracking-tight rounded-full transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.96] active:translate-y-0'
 
-        const parentSizeClasses = {
-            xs: 'border-px top-[0px] rounded-full',
-            sm: 'border-[1.5px] top-[0px] rounded-full',
-            md: 'border-[1.5px] top-[0px] rounded-full',
-            lg: 'border-[1.5px] top-[0px] rounded-full',
-            xl: 'border-[1.5px] top-[0px] rounded-full',
-        }
-
-        const childSizeClasses = {
-            xs: 'px-1.5 py-0.5 text-[11px] gap-0.5 rounded-full translate-y-[-1px] hover:translate-y-[-2px] active:translate-y-[0px] border-[1.5px] -mx-px group-disabled:hover:!translate-y-[-1px]',
-            sm: 'px-2 py-0.5 text-xs gap-1 rounded-full translate-y-[-2px] hover:translate-y-[-3px] active:translate-y-[0px] border-[1.5px] mx-[-1.5px] group-disabled:hover:!translate-y-[-2px]',
-            md: 'px-2.5 py-1 gap-1 rounded-full text-[13px] translate-y-[-2px] hover:translate-y-[-3px] active:translate-y-[0px] border-[1.5px] mx-[-1.5px] group-disabled:hover:!translate-y-[-2px]',
-            lg: 'px-3 py-1.5 text-[15px] gap-1 rounded-full translate-y-[-2px] hover:translate-y-[-4px] active:translate-y-[0px] border-[1.5px] mx-[-1.5px] group-disabled:hover:!translate-y-[-2px]',
-            xl: 'px-4 py-2 text-base gap-1.5 rounded-full translate-y-[-2px] hover:translate-y-[-4px] active:translate-y-[0px] border-[1.5px] mx-[-1.5px] group-disabled:hover:!translate-y-[-2px]',
-        }
-
-        const simpleSizeClasses = {
-            xs: 'px-1.5 py-0.5 text-[11px] gap-0.5',
-            sm: 'px-2 py-0.5 text-xs gap-1',
-            md: 'px-2.5 py-1 gap-1 text-[13px]',
-            lg: 'px-3 py-1.5 text-[15px] gap-1',
-            xl: 'px-4 py-2 text-base gap-1.5',
+        const sizeClasses = {
+            xs: 'px-2.5 py-1.5 text-[11px] gap-1',
+            sm: 'px-3 py-1.5 text-xs gap-1',
+            md: 'px-4 py-2 text-[13px] gap-1.5',
+            lg: 'px-5 py-2.5 text-[15px] gap-1.5',
+            xl: 'px-6 py-3 text-base gap-2',
         }
 
         const iconSizeClasses = {
@@ -92,51 +76,27 @@ const OSButton = React.memo(React.forwardRef<HTMLButtonElement | HTMLAnchorEleme
         }
 
         const variantClasses = {
-            default: `bg-transparent border-transparent ${active
-                ? 'bg-accent/50 dark:bg-accent border-primary'
-                : 'hover:border-primary'
-                }`,
-            primary: {
-                parent: 'bg-button-shadow dark:bg-button-shadow-dark border-button-border text-primary text-center group disabled:opacity-50 disabled:cursor-not-allowed',
-                child: 'flex items-center justify-center bg-accent text-primary border-button-border font-bold active:transition-all active:duration-100',
-            },
-            secondary: {
-                parent: 'bg-primary dark:bg-button-secondary-shadow-dark text-primary border-primary text-center group disabled:opacity-50 disabled:cursor-not-allowed',
-                child: 'flex items-center justify-center bg-accent dark:bg-accent text-primary border-primary font-bold active:transition-all active:duration-100',
-            },
-            underline: 'underline border-transparent hover:no-underline !p-0',
-            underlineOnHover: 'hover:underline border-transparent !p-0',
-            ghost: 'bg-transparent border-transparent hover:bg-accent',
+            default: `bg-transparent text-[#1d1d1f] dark:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] hover:scale-[1.04] ${active ? 'bg-black/[0.04] dark:bg-white/[0.06]' : ''}`,
+            primary: 'bg-[#1d1d1f] text-[#fdfdf8] dark:bg-[#fdfdf8] dark:text-[#1d1d1f] shadow-[0_4px_14px_rgba(0,0,0,0.15)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.2)] hover:scale-[1.04] hover:-translate-y-0.5',
+            secondary: `bg-white dark:bg-[#1C1C1E] text-[#1d1d1f] dark:text-white border border-black/5 dark:border-white/5 shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)] hover:scale-[1.04] hover:-translate-y-0.5 ${active ? 'bg-gray-50 dark:bg-[#2C2C2E]' : ''}`,
+            underline: 'underline border-transparent hover:no-underline !p-0 !bg-transparent text-[#1d1d1f] dark:text-white hover:scale-100 active:scale-100 active:translate-y-0',
+            underlineOnHover: 'hover:underline border-transparent !p-0 !bg-transparent text-[#1d1d1f] dark:text-white hover:scale-100 active:scale-100 active:translate-y-0',
+            ghost: `bg-transparent text-[#1d1d1f] dark:text-white hover:bg-black/[0.05] dark:hover:bg-white/[0.08] ${active ? 'bg-black/[0.05] dark:bg-white/[0.08]' : ''}`,
         }
 
         const buttonContent = (
-            <>
-                {variant === 'primary' || variant === 'secondary' ? (
-                    <span
-                        className={`${variantClasses[variant].child} ${childSizeClasses[size]} ${width === 'full' ? 'w-full' : ''
-                            }`}
-                    >
-                        {icon && iconPosition === 'left' && <span className={iconSizeClasses[size]}>{icon}</span>}
-                        {children}
-                        {external && <IconExternal className="size-3.5 opacity-50 ml-1" />}
-                        {icon && iconPosition === 'right' && <span className={iconSizeClasses[size]}>{icon}</span>}
-                    </span>
-                ) : (
-                    <span className="flex items-center gap-2">
-                        {icon && iconPosition === 'left' && <span className={iconSizeClasses[size]}>{icon}</span>}
-                        {children}
-                        {external && <IconExternal className="size-3.5 opacity-50" />}
-                        {icon && iconPosition === 'right' && <span className={iconSizeClasses[size]}>{icon}</span>}
-                    </span>
-                )}
-            </>
+            <span className="flex items-center justify-center gap-[inherit]">
+                {icon && iconPosition === 'left' && <span className={iconSizeClasses[size]}>{icon}</span>}
+                {children}
+                {external && <IconExternal className="size-3.5 opacity-50 ml-1" />}
+                {icon && iconPosition === 'right' && <span className={iconSizeClasses[size]}>{icon}</span>}
+            </span>
         )
 
-        const commonClasses = `${baseClasses} ${width === 'full' ? 'flex w-full' : 'inline-flex'} ${variant === 'primary' || variant === 'secondary'
-            ? `${parentSizeClasses[size]} ${variantClasses[variant].parent}`
-            : `${simpleSizeClasses[size]} ${variantClasses[variant as keyof typeof variantClasses]
-            } ${disabled ? 'disabled:hover:bg-transparent' : ''}`
-            } ${align === 'center' ? 'justify-center' : 'justify-start text-left'} ${className}`
+        // Determine if variant is simple link style which doesn't need flex/padding from sizeClasses
+        const isLinkVariant = variant === 'underline' || variant === 'underlineOnHover';
+
+        const commonClasses = `${baseClasses} ${width === 'full' ? 'flex w-full' : 'inline-flex'} ${!isLinkVariant ? sizeClasses[size] : ''} ${variantClasses[variant as keyof typeof variantClasses]} ${align === 'center' ? 'text-center' : 'text-left'} ${className}`
 
         const buttonElement = asLink ? (
             <Link to={to || ''} className={commonClasses} state={state} ref={ref as React.Ref<HTMLAnchorElement>}>
