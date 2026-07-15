@@ -57,14 +57,14 @@ const OSButton = React.memo(React.forwardRef<HTMLButtonElement | HTMLAnchorEleme
         ref
     ) => {
         const baseClasses =
-            'relative items-center justify-center font-medium rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.98]'
+            'relative items-center justify-center font-bold tracking-tight rounded-full transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.96] active:translate-y-0'
 
         const sizeClasses = {
-            xs: 'px-2 py-1 text-[11px] gap-1',
-            sm: 'px-2.5 py-1 text-xs gap-1',
-            md: 'px-3 py-1.5 text-[13px] gap-1.5',
-            lg: 'px-4 py-2 text-[15px] gap-1.5',
-            xl: 'px-5 py-2.5 text-base gap-2',
+            xs: 'px-2.5 py-1.5 text-[11px] gap-1',
+            sm: 'px-3 py-1.5 text-xs gap-1',
+            md: 'px-4 py-2 text-[13px] gap-1.5',
+            lg: 'px-5 py-2.5 text-[15px] gap-1.5',
+            xl: 'px-6 py-3 text-base gap-2',
         }
 
         const iconSizeClasses = {
@@ -76,12 +76,12 @@ const OSButton = React.memo(React.forwardRef<HTMLButtonElement | HTMLAnchorEleme
         }
 
         const variantClasses = {
-            default: `bg-transparent text-primary border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 ${active ? 'bg-black/5 dark:bg-white/5 border-black/20 dark:border-white/20' : ''}`,
-            primary: 'bg-[#1d1d1f] text-[#fdfdf8] dark:bg-[#fdfdf8] dark:text-[#1d1d1f] border border-black/10 dark:border-white/10 shadow-sm hover:scale-[1.02]',
-            secondary: `bg-black/5 dark:bg-white/10 text-primary border border-transparent hover:bg-black/10 dark:hover:bg-white/20 ${active ? 'bg-black/10 dark:bg-white/20' : ''}`,
-            underline: 'underline border-transparent hover:no-underline !p-0 !bg-transparent text-primary hover:scale-100 active:scale-100',
-            underlineOnHover: 'hover:underline border-transparent !p-0 !bg-transparent text-primary hover:scale-100 active:scale-100',
-            ghost: `bg-transparent text-primary border border-transparent hover:bg-black/5 dark:hover:bg-white/5 ${active ? 'bg-black/5 dark:bg-white/5' : ''}`,
+            default: `bg-transparent text-[#1d1d1f] dark:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] hover:scale-[1.04] ${active ? 'bg-black/[0.04] dark:bg-white/[0.06]' : ''}`,
+            primary: 'bg-[#1d1d1f] text-[#fdfdf8] dark:bg-[#fdfdf8] dark:text-[#1d1d1f] shadow-[0_4px_14px_rgba(0,0,0,0.15)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.2)] hover:scale-[1.04] hover:-translate-y-0.5',
+            secondary: `bg-white dark:bg-[#1C1C1E] text-[#1d1d1f] dark:text-white border border-black/5 dark:border-white/5 shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)] hover:scale-[1.04] hover:-translate-y-0.5 ${active ? 'bg-gray-50 dark:bg-[#2C2C2E]' : ''}`,
+            underline: 'underline border-transparent hover:no-underline !p-0 !bg-transparent text-[#1d1d1f] dark:text-white hover:scale-100 active:scale-100 active:translate-y-0',
+            underlineOnHover: 'hover:underline border-transparent !p-0 !bg-transparent text-[#1d1d1f] dark:text-white hover:scale-100 active:scale-100 active:translate-y-0',
+            ghost: `bg-transparent text-[#1d1d1f] dark:text-white hover:bg-black/[0.05] dark:hover:bg-white/[0.08] ${active ? 'bg-black/[0.05] dark:bg-white/[0.08]' : ''}`,
         }
 
         const buttonContent = (
