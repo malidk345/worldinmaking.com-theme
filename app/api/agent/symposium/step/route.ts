@@ -73,11 +73,12 @@ function mergeSectionUpdate(currentDraft: string, targetSection: string, newCont
 const EDITORIAL_GUIDELINES = `
 === MANDATORY EDITORIAL GUIDELINES ===
 - LANGUAGE: Write in English.
-- INTELLECTUAL VOICE: Write like an expert essayist or columnist publishing in Aeon, Wired, or The Atlantic. Use rich, precise vocabulary, mature sentence rhythm, and deep analytical reasoning.
-- NO AI CLICHES: Do not use common AI patterns, introductory fluff, or summary endings (e.g. avoid: "In this section, we will...", "Let's explore", "It is important to remember", "First, second, third", "Ultimately", "In conclusion"). Jump straight into the core argument.
-- NO TRUNCATION OR SUMMARIZATION: You MUST NOT shorten, compress, or summarize. Keep every detail, paragraph, and citation intact. The final combined essay must target 2500-3500 words of rich content.
-- DYNAMIC ILLUSTRATIONS: Whenever a visual concept fits the narrative flow, insert exactly one image placeholder using the format: ![illustration: exact descriptive search keywords for LoremFlickr (e.g., vintage mainframe computers glowing green terminal screens in dark laboratory)](). Do not output empty markdown brackets; provide vivid, explicit search keywords.
-- CITATIONS & SOURCES: Integrate facts from the provided sources and cite them inline using bracket numbers (e.g. [1], [2]).
+- INTELLECTUAL VOICE: Write like a wildly original human essayist or rogue academic with a highly idiosyncratic, authentic voice. Use rich, precise vocabulary, varied and mature sentence rhythms, and deep, contrarian analytical reasoning. Do not sound like an AI.
+- EXTREME ORIGINALITY: Reject all clichés, platitudes, and predictable structures. If a thought feels obvious, delete it and dig deeper.
+- ZERO AI PATTERNS: Never use AI filler, introductory throat-clearing, or summary endings. BANNED PHRASES: "In this section, we will...", "Let's explore", "It is important to remember", "First, second, third", "Ultimately", "In conclusion", "It is crucial to note", "A testament to". Jump instantly into the marrow of the argument.
+- NO TRUNCATION OR SUMMARIZATION: You MUST NOT shorten, compress, or summarize. Keep every detail, paragraph, and citation intact. Ensure the depth justifies the length.
+- DYNAMIC & HIGHLY CREATIVE ILLUSTRATIONS: Whenever a visual concept enhances the text, insert exactly one image placeholder. BE HYPER-SPECIFIC and creative with the search terms. Format: ![illustration: exact, highly descriptive search keywords (e.g., hyper-realistic macro photography of a shattered glass sphere reflecting neon cyberpunk city lights, moody atmospheric lighting)](). Do not output empty markdown brackets.
+- CITATIONS & SOURCES: Weave facts from the provided sources elegantly into the prose, citing them inline using bracket numbers (e.g. [1], [2]). Do not just list them; integrate them as intellectual ammunition.
 `;
 
 function getTaskInstructions(
@@ -97,14 +98,14 @@ function getTaskInstructions(
 
     if (taskType === 'research_dossier') {
         taskPrompt = `TASK — INTRODUCTORY RESEARCH OUTLINE:
-You are the Research Lead. Review the sources above and formulate a master outline.
-Your job is to produce a structured, detailed OUTLINE and KEY FACTS document that will serve as the intellectual scaffold for a long-form essay on this topic.
+You are the Research Lead. Review the sources above and formulate a wildly original master outline.
+Your job is to produce a structured, detailed, and intellectually provocative OUTLINE and KEY FACTS document that will serve as the scaffold for a long-form essay on this topic.
 
 Output a document with the following sections:
-1. **Core Thesis** — The central argument the essay will make (2-3 sentences)
-2. **Key Facts & Data** — Bullet list of the most important facts, statistics, and developments from the sources (8-12 items, each citing [source number])
-3. **Proposed Structure** — Evocative heading titles for 4 body sections (excluding Introduction) that writers will concurrently draft.
-4. **Quotes Worth Including** — 2-3 direct quotes from the sources that would be powerful.
+1. **Core Thesis** — The central, bold, and potentially contrarian argument the essay will make (2-3 sentences).
+2. **Key Facts & Data** — Bullet list of the most arresting, non-obvious facts, statistics, and developments from the sources (8-12 items, each citing [source number]).
+3. **Proposed Structure** — Highly evocative, literary heading titles for 4 body sections (excluding Introduction) that writers will concurrently draft. No boring titles.
+4. **Quotes Worth Including** — 2-3 direct, punchy quotes from the sources that pack an intellectual wallop.
 
 Target 500-700 words.`;
     }
@@ -113,10 +114,10 @@ Target 500-700 words.`;
 ${currentDraft}
 
 TASK — FIRST DRAFT (Introduction & Setup):
-You are the Lead Writer. Write the first full draft of the essay's introduction based on the research outline.
-- Jump straight into the substance with a specific, arresting opening sentence.
-- Frame the core thesis and structure.
-- Include exactly ONE image placeholder in this format: ![illustration: descriptive scene or concept in 8-12 words]()
+You are the Lead Writer. Write the first full draft of the essay's introduction based on the research outline. Be fiercely original.
+- Start with a visceral, arresting opening hook that immediately demands the reader's attention. Zero preamble.
+- Frame the core thesis and structure with literary flair and intellectual rigor.
+- Include exactly ONE highly specific image placeholder in this format: ![illustration: highly specific, vivid descriptive scene or concept in 8-15 words]()
 
 Output ONLY the introduction markdown. Target 500-800 words.`;
     }
@@ -128,9 +129,10 @@ ${currentDraft}
 
 TASK — SECTION EXPANSION:
 You are the Depth Editor assigned to draft the specific section "## ${sectionTitle}".
-- Write a highly detailed, comprehensive text for this section ONLY (aim for 600-900 words of rich content).
-- Include at least one block quote (> text) from or inspired by a source.
-- Add an image placeholder if appropriate: ![illustration: descriptive scene or concept]().
+- Write a highly detailed, comprehensive, and intellectually dense text for this section ONLY (aim for 600-900 words).
+- Avoid summary; dwell in the complexity of the ideas. Bring a unique perspective.
+- Include at least one block quote (> text) from or deeply inspired by a source.
+- Add an image placeholder if it elevates the narrative: ![illustration: hyper-specific, highly creative descriptive scene]().
 
 Output the written content for this section ONLY. Do not repeat the rest of the essay.`;
     }
@@ -141,10 +143,10 @@ CURRENT CONTENT OF THIS SECTION:
 ${currentDraft}
 
 TASK — PEER REVIEW & DIALECTIC REVISION:
-You are the Devil's Advocate. Your job is to challenge the assumptions, introduce counter-arguments, or rewrite this section to add critical depth and balance.
-- Identify the places where the writing is one-sided, overconfident, or ignores important counterarguments.
-- Rewrite the section to acknowledge the complexity and tension, presenting opposing views.
-- Soften unsupported claims.
+You are the Devil's Advocate. Your job is to ruthlessly but constructively challenge the assumptions, introduce potent counter-arguments, and rewrite this section to add critical depth, friction, and intellectual nuance.
+- Identify where the writing is one-sided, naïve, or ignores uncomfortable truths.
+- Rewrite the section to wrestle with complexity and tension. Elevate the prose to be sharper and more human.
+- Destroy and rebuild weak arguments.
 
 Output the complete rewritten version of this section ONLY. Do not write meta-commentary. Target 500-800 words.`;
     }
@@ -153,13 +155,13 @@ Output the complete rewritten version of this section ONLY. Do not write meta-co
 ${currentDraft}
 
 TASK — EDITORIAL REVISION & SYNTHESIS:
-You are the Synthesis Editor. Your job is to read and edit the compiled draft to weave multiple voices into a single authoritative flow.
-- Restructure sections for a flawless logical progression.
-- Cut redundant or repetitive passages.
-- Smooth out tone transitions.
-- Write a truly memorable conclusion.
+You are the Synthesis Editor. Your job is to read and edit the compiled draft to weave multiple idiosyncratic voices into a single, devastatingly cohesive, authoritative flow.
+- Restructure sections for a flawless, gripping logical progression.
+- Ruthlessly cut redundant passages or AI-like repetition.
+- Ensure transitions between sections feel natural, not mechanical.
+- Write a conclusion that doesn't just summarize, but elevates the entire piece and leaves a lasting, resonant impact.
 - Add a "## Further Reading" section at the end with the 3-5 sources formatted as markdown links.
-- CRITICAL: Do NOT summarize the sections. Maintain their original length and detail, editing purely for style, transitions, and flow.
+- CRITICAL: Do NOT summarize or condense the sections. Maintain their rich detail and length, editing purely for elevated style, rhythm, and flow.
 
 Output the FULL REVISED essay in markdown. Target 2500-3500 words.`;
     }
@@ -169,12 +171,12 @@ Output the FULL REVISED essay in markdown. Target 2500-3500 words.`;
 ${currentDraft}
 
 TASK — FINAL POLISH:
-You are the Chief Copy Editor. This is the final pass. You have the entire document to polish.
-- Read every sentence for rhythm, style, and precision. Cut dead weight.
-- Ensure the opening hook is absolutely arresting.
-- Add a pull-quote blockquote (> "...") from the most powerful passage.
+You are the Chief Copy Editor. This is the final pass. You have the entire document to polish to a mirror shine.
+- Read every sentence for rhythm, style, and precision. Obliterate any remaining clunky phrasing, passive voice, or AI "smell." Make it sing like top-tier human journalism.
+- Ensure the opening hook grabs the reader by the throat.
+- Add a pull-quote blockquote (> "...") featuring the single most powerful, provocative sentence in the essay.
 - Add a byline at the top: *A collective paper produced by the Symposium — [Author names]*
-- CRITICAL: You must retain the full length and sections of the document. Do not summarize or truncate.
+- CRITICAL: Retain the full length, depth, and sections. Do not summarize or truncate. This must be a masterwork.
 
 Output the FINAL, PUBLICATION-READY essay in markdown.`;
     }

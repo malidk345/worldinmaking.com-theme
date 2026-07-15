@@ -106,22 +106,25 @@ const IllustrationImage = ({ alt = "", src = "" }: { alt?: string; src?: string 
         const query = alt.replace("illustration:", "").trim().replace(/\s+/g, ",");
         const imageUrl = `https://loremflickr.com/800/400/${encodeURIComponent(query)}`;
         return (
-            <figure className="my-6 border border-primary/10 p-1.5 bg-primary/5 rounded-sm">
+            <figure className="my-8 overflow-hidden rounded-[24px] bg-primary/5 border border-primary/10 shadow-sm relative group">
+                <div className="absolute inset-0 bg-black/5 dark:bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10 pointer-events-none" />
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                     src={imageUrl}
                     alt={alt}
-                    className="w-full rounded-sm object-cover aspect-video"
+                    className="w-full object-cover aspect-video hover:scale-105 transition-transform duration-700 ease-out"
                     loading="lazy"
                 />
-                <figcaption className="text-[9px] font-mono text-primary/50 mt-2 text-center lowercase tracking-wider">
-                    ⌁ illustration: {query.replace(/,/g, " · ")} ⌁
+                <figcaption className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black/80 to-transparent z-20">
+                    <div className="text-[9px] font-mono text-white/90 text-center lowercase tracking-wider">
+                        ⌁ {query.replace(/,/g, " · ")} ⌁
+                    </div>
                 </figcaption>
             </figure>
         );
     }
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={src} alt={alt} className="w-full rounded-sm" />;
+    return <img src={src} alt={alt} className="w-full rounded-[24px] my-6 shadow-sm border border-primary/5" />;
 };
 
 const markdownComponents = {
@@ -470,21 +473,21 @@ export default function SymposiumApp() {
     // ─────────────────────────────────────────────────────────────────────────
     if (!activeCollab) {
         return (
-            <div className="absolute inset-0 flex flex-col text-primary bg-primary overflow-hidden font-mono lowercase text-xs">
-                <div className="flex-grow flex min-h-0 relative bg-primary">
-                    <ScrollArea className="size-full">
+            <div className="absolute inset-0 flex flex-col text-primary bg-white dark:bg-[#1C1C1E] overflow-hidden font-mono lowercase text-xs rounded-[32px] m-1 shadow-xl ring-1 ring-black/5 dark:ring-white/10">
+                <div className="flex-grow flex min-h-0 relative rounded-[32px]">
+                    <ScrollArea className="size-full rounded-[32px]">
                         <div className="w-full max-w-3xl mx-auto py-8 px-4 sm:px-6">
 
                             {/* Header */}
-                            <div className="flex items-center justify-between mb-6 border-b border-primary/10 pb-4">
+                            <div className="flex items-center justify-between mb-6 pb-4">
                                 <div className="flex items-center gap-2">
-                                    <span className="font-bold text-primary/40">$</span>
-                                    <h1 className="font-bold text-[13px]">symposium</h1>
-                                    <span className="opacity-30 text-[10px]">{"// collective autonomous papers"}</span>
+                                    <span className="font-bold text-primary/40 text-lg">⌬</span>
+                                    <h1 className="font-bold text-[15px]">symposium</h1>
+                                    <span className="opacity-30 text-[10px] ml-2">{"// autonomous papers"}</span>
                                 </div>
                                 <button
                                     onClick={() => setShowModal(true)}
-                                    className="text-[10px] font-bold border border-primary/20 px-3 py-1.5 hover:bg-accent transition-colors"
+                                    className="text-[10px] font-bold border border-primary/10 bg-primary/5 px-4 py-1.5 rounded-full hover:bg-primary/10 active:scale-95 transition-all"
                                 >
                                     + new paper
                                 </button>
@@ -494,13 +497,13 @@ export default function SymposiumApp() {
                             {loadingCollabs ? (
                                 <Loading label="loading symposiums..." />
                             ) : collaborations.length === 0 ? (
-                                <div className="py-16 text-center text-secondary/50 border border-primary/10 bg-accent">
+                                <div className="py-16 text-center text-secondary/50 border border-primary/10 bg-primary/5 rounded-[24px]">
                                     <div className="text-2xl mb-2 opacity-20">⌬</div>
                                     <p className="font-bold">no papers yet</p>
                                     <p className="opacity-50 mt-1">start a new symposium to watch agents collaborate</p>
                                 </div>
                             ) : (
-                                <ul className="m-0 p-0 list-none">
+                                <ul className="m-0 p-0 list-none space-y-2">
                                     {collaborations.map(c => {
                                         const stepsCompleted = c.step_count || 0;
                                         const totalSteps = getMaxSteps(c);
@@ -508,12 +511,12 @@ export default function SymposiumApp() {
                                         return (
                                             <li
                                                 key={c.id}
-                                                className="border-b border-primary/10 last:border-0 py-2 group cursor-pointer"
+                                                className="group cursor-pointer bg-primary/5 hover:bg-primary/10 border border-primary/5 rounded-[18px] transition-all duration-300"
                                                 onClick={() => setActiveCollab(c)}
                                             >
-                                                <div className="flex items-start gap-3 px-2 sm:px-4 hover:bg-black/5 dark:hover:bg-white/5 transition-all">
+                                                <div className="flex items-start gap-3 p-4">
                                                     <div className="flex-grow flex flex-col min-w-0">
-                                                        <div className="flex items-center gap-2 mb-1 opacity-40">
+                                                        <div className="flex items-center gap-2 mb-1.5 opacity-50">
                                                             <span className="text-[9px] font-bold">
                                                                 [{dayjs.utc(c.created_at).format("YY.MM.DD")}]
                                                             </span>
@@ -558,26 +561,26 @@ export default function SymposiumApp() {
 
                 {/* ── New Symposium Modal ── */}
                 {showModal && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-md p-4">
                         <form
                             onSubmit={handleStart}
-                            className="bg-primary border border-primary/20 w-full max-w-lg shadow-2xl font-mono lowercase"
+                            className="bg-white dark:bg-[#1C1C1E] border border-primary/10 w-full max-w-lg shadow-2xl font-mono lowercase rounded-[32px] overflow-hidden"
                         >
                             {/* Modal header */}
-                            <div className="flex items-center justify-between px-4 py-2.5 border-b border-primary/10">
+                            <div className="flex items-center justify-between px-6 py-4 border-b border-primary/5">
                                 <div className="flex items-center gap-2">
-                                    <span className="opacity-30">$</span>
-                                    <span className="font-bold text-[11px]">new autonomous symposium</span>
+                                    <span className="opacity-40 text-lg">⌬</span>
+                                    <span className="font-bold text-[12px]">new autonomous symposium</span>
                                 </div>
-                                <button type="button" onClick={() => setShowModal(false)} className="opacity-30 hover:opacity-100 text-sm">
+                                <button type="button" onClick={() => setShowModal(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-primary/5 hover:bg-primary/10 opacity-70 hover:opacity-100 transition-all text-sm">
                                     ✕
                                 </button>
                             </div>
 
-                            <div className="p-4 space-y-4">
+                            <div className="p-6 space-y-6">
                                 {/* Topic */}
                                 <div>
-                                    <label className="text-[9px] font-bold opacity-40 block mb-1">topic / thesis</label>
+                                    <label className="text-[10px] font-bold opacity-50 block mb-2 ml-1">topic / thesis</label>
                                     <input
                                         type="text"
                                         required
@@ -586,61 +589,61 @@ export default function SymposiumApp() {
                                         onChange={e => setNewTitle(e.target.value)}
                                         onBlur={() => newTitle.trim() && fetchResearch(newTitle)}
                                         placeholder="e.g. the geopolitics of ai compute"
-                                        className="w-full bg-accent border border-primary/10 px-3 py-2 text-xs text-primary focus:outline-none focus:border-primary/30 placeholder:opacity-30"
+                                        className="w-full bg-primary/5 border border-primary/10 px-4 py-3 rounded-[16px] text-xs text-primary focus:outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/10 placeholder:opacity-30 transition-all"
                                     />
                                 </div>
 
                                 {/* Context */}
                                 <div>
-                                    <label className="text-[9px] font-bold opacity-40 block mb-1">
-                                        context / angle <span className="opacity-50">(optional)</span>
+                                    <label className="text-[10px] font-bold opacity-50 block mb-2 ml-1">
+                                        context / angle <span className="opacity-40 font-normal">(optional)</span>
                                     </label>
                                     <textarea
                                         value={newDescription}
                                         onChange={e => setNewDescription(e.target.value)}
                                         placeholder="specific angles, questions, or perspectives you want explored..."
                                         rows={2}
-                                        className="w-full bg-accent border border-primary/10 px-3 py-2 text-xs text-primary focus:outline-none focus:border-primary/30 placeholder:opacity-30 resize-none"
+                                        className="w-full bg-primary/5 border border-primary/10 px-4 py-3 rounded-[16px] text-xs text-primary focus:outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/10 placeholder:opacity-30 resize-none transition-all"
                                     />
                                 </div>
 
                                 {/* Settings */}
-                                <div className="grid grid-cols-2 gap-4 border-t border-b border-primary/10 py-3">
-                                    <div className="space-y-1">
-                                        <label className="text-[9px] font-bold opacity-40 block">collaboration mode</label>
+                                <div className="grid grid-cols-2 gap-4 border-t border-b border-primary/5 py-4">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold opacity-50 block ml-1">collaboration mode</label>
                                         <div className="flex gap-2">
                                             <button
                                                 type="button"
                                                 onClick={() => setIsContinuous(true)}
-                                                className={`text-[10px] px-2 py-1 border flex-1 ${isContinuous ? 'border-primary bg-primary/10 font-bold' : 'border-primary/20 opacity-60'}`}
+                                                className={`text-[10px] px-3 py-1.5 rounded-full flex-1 transition-all ${isContinuous ? 'bg-primary text-inverse font-bold shadow-md' : 'bg-primary/5 border border-primary/10 opacity-70 hover:opacity-100'}`}
                                             >
-                                                board loom (14 tasks)
+                                                loom (14)
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => setIsContinuous(false)}
-                                                className={`text-[10px] px-2 py-1 border flex-1 ${!isContinuous ? 'border-primary bg-primary/10 font-bold' : 'border-primary/20 opacity-60'}`}
+                                                className={`text-[10px] px-3 py-1.5 rounded-full flex-1 transition-all ${!isContinuous ? 'bg-primary text-inverse font-bold shadow-md' : 'bg-primary/5 border border-primary/10 opacity-70 hover:opacity-100'}`}
                                             >
-                                                standard (6)
+                                                basic (6)
                                             </button>
                                         </div>
                                     </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[9px] font-bold opacity-40 block">execution pipeline</label>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold opacity-50 block ml-1">execution pipeline</label>
                                         <div className="flex gap-2">
                                             <button
                                                 type="button"
                                                 onClick={() => setRunInBackground(true)}
-                                                className={`text-[10px] px-2 py-1 border flex-1 ${runInBackground ? 'border-primary bg-primary/10 font-bold' : 'border-primary/20 opacity-60'}`}
+                                                className={`text-[10px] px-3 py-1.5 rounded-full flex-1 transition-all ${runInBackground ? 'bg-primary text-inverse font-bold shadow-md' : 'bg-primary/5 border border-primary/10 opacity-70 hover:opacity-100'}`}
                                             >
-                                                autonomous worker
+                                                worker
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => setRunInBackground(false)}
-                                                className={`text-[10px] px-2 py-1 border flex-1 ${!runInBackground ? 'border-primary bg-primary/10 font-bold' : 'border-primary/20 opacity-60'}`}
+                                                className={`text-[10px] px-3 py-1.5 rounded-full flex-1 transition-all ${!runInBackground ? 'bg-primary text-inverse font-bold shadow-md' : 'bg-primary/5 border border-primary/10 opacity-70 hover:opacity-100'}`}
                                             >
-                                                run live cascade
+                                                live cascade
                                             </button>
                                         </div>
                                     </div>
@@ -648,16 +651,17 @@ export default function SymposiumApp() {
 
                                 {/* Research preview */}
                                 {loadingResearch && (
-                                    <div className="text-[10px] opacity-40 animate-pulse">fetching sources...</div>
+                                    <div className="text-[10px] opacity-40 animate-pulse text-center">fetching research sources...</div>
                                 )}
                                 {sources.length > 0 && (
-                                    <div className="border border-primary/10 bg-accent p-3 space-y-2">
-                                        <div className="text-[9px] font-bold opacity-40">
-                                            {sources.length} sources found — agents will read these
+                                    <div className="border border-primary/10 bg-primary/5 rounded-[16px] p-4 space-y-3">
+                                        <div className="text-[10px] font-bold opacity-50 flex items-center gap-1.5">
+                                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                            {sources.length} sources found
                                         </div>
                                         {sources.slice(0, 4).map((s, i) => (
                                             <div key={i} className="flex items-start gap-2">
-                                                <span className="opacity-30 text-[9px] shrink-0">[{i + 1}]</span>
+                                                <span className="opacity-30 text-[9px] shrink-0 pt-0.5">[{i + 1}]</span>
                                                 <div className="min-w-0">
                                                     <div className="text-[10px] font-bold truncate">{s.title}</div>
                                                     <div className="text-[9px] opacity-40">{s.source}</div>
@@ -679,20 +683,20 @@ export default function SymposiumApp() {
                                 </div>
 
                                 {/* Actions */}
-                                <div className="flex gap-2 pt-1">
-                                    <button
-                                        type="submit"
-                                        disabled={isCreating || !newTitle.trim()}
-                                        className="flex-1 bg-primary text-inverse font-bold text-[11px] py-2 hover:opacity-80 active:scale-[0.98] transition-all disabled:opacity-30"
-                                    >
-                                        {isCreating ? "starting..." : "start symposium →"}
-                                    </button>
+                                <div className="flex gap-3 pt-2">
                                     <button
                                         type="button"
                                         onClick={() => setShowModal(false)}
-                                        className="flex-1 bg-accent border border-primary/10 font-bold text-[11px] py-2 hover:bg-primary/5 transition-all"
+                                        className="flex-1 bg-primary/5 border border-primary/10 font-bold text-[11px] py-3 rounded-full hover:bg-primary/10 transition-all active:scale-95"
                                     >
                                         cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={isCreating || !newTitle.trim()}
+                                        className="flex-[2] bg-primary text-inverse font-bold text-[11px] py-3 rounded-full hover:opacity-90 active:scale-95 transition-all disabled:opacity-40 disabled:scale-100 shadow-md"
+                                    >
+                                        {isCreating ? "starting..." : "start symposium →"}
                                     </button>
                                 </div>
                             </div>
@@ -720,34 +724,34 @@ export default function SymposiumApp() {
     const completedTasks = tasks.filter(t => t.status === "completed");
 
     return (
-        <div className="absolute inset-0 flex text-primary bg-primary overflow-hidden font-mono lowercase text-xs">
+        <div className="absolute inset-0 flex text-primary bg-white dark:bg-[#1C1C1E] overflow-hidden font-mono lowercase text-xs rounded-[32px] m-1 shadow-xl ring-1 ring-black/5 dark:ring-white/10">
 
             {/* ── Left sidebar: steps timeline ── */}
-            <div className="w-52 shrink-0 border-r border-primary/10 flex flex-col h-full bg-accent hidden @md:flex">
-                <div className="px-3 py-2.5 border-b border-primary/10">
+            <div className="w-56 shrink-0 border-r border-primary/5 flex flex-col h-full bg-primary/[0.02] hidden @md:flex rounded-l-[32px]">
+                <div className="px-4 py-4 border-b border-primary/5">
                     <button
                         onClick={() => setActiveCollab(null)}
-                        className="text-[10px] font-bold opacity-40 hover:opacity-100 transition-opacity"
+                        className="text-[10px] font-bold opacity-50 hover:opacity-100 transition-opacity flex items-center gap-1 bg-primary/5 px-3 py-1.5 rounded-full hover:bg-primary/10"
                     >
-                        ← symposium
+                        ← back to symposiums
                     </button>
                 </div>
-                <div className="px-3 py-2.5 border-b border-primary/10">
-                    <div className="text-[11px] font-bold line-clamp-2">{activeCollab.title}</div>
-                    <div className="text-[9px] opacity-40 mt-0.5">
-                        {completedTasks.length} tasks completed
+                <div className="px-4 py-4 border-b border-primary/5">
+                    <div className="text-[12px] font-bold line-clamp-2 leading-tight">{activeCollab.title}</div>
+                    <div className="text-[10px] opacity-50 mt-1">
+                        {completedTasks.length} / {tasks.length || getMaxSteps(activeCollab)} tasks done
                     </div>
                     {/* Progress */}
-                    <div className="mt-2 h-0.5 bg-primary/10">
+                    <div className="mt-3 h-1 bg-primary/10 rounded-full overflow-hidden">
                         <div
-                            className="h-full bg-primary/40 transition-all duration-500"
+                            className="h-full bg-primary transition-all duration-500"
                             style={{ width: `${tasks.length > 0 ? Math.round((completedTasks.length / tasks.length) * 100) : 0}%` }}
                         />
                     </div>
                 </div>
 
                 <ScrollArea className="flex-1">
-                    <div className="p-3 space-y-2">
+                    <div className="p-4 space-y-3">
                         {/* Running indicator */}
                         {isRunning && (
                             <div className="text-[9px] opacity-50 animate-pulse mb-2">
@@ -759,31 +763,32 @@ export default function SymposiumApp() {
                             const p = getProfile(step);
                             const isExpanded = expandedThoughts.has(step.id);
                             return (
-                                <div key={step.id} className="border-l-2 border-primary/10 pl-2">
-                                    <div className="flex items-center gap-1.5 mb-1">
+                                <div key={step.id} className="border-l-2 border-primary/10 pl-3 relative">
+                                    <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-primary/20 border-2 border-white dark:border-[#1C1C1E]" />
+                                    <div className="flex items-center gap-2 mb-1.5">
                                         {p?.avatar_url ? (
                                             // eslint-disable-next-line @next/next/no-img-element
-                                            <img src={p.avatar_url} alt="" className="w-4 h-4 rounded-sm object-cover border border-primary/10 shrink-0" />
+                                            <img src={p.avatar_url} alt="" className="w-5 h-5 rounded-full object-cover border border-primary/10 shrink-0" />
                                         ) : (
-                                            <div className="w-4 h-4 bg-primary/10 rounded-sm shrink-0 flex items-center justify-center text-[7px]">
+                                            <div className="w-5 h-5 bg-primary/10 rounded-full shrink-0 flex items-center justify-center text-[8px] font-bold">
                                                 {p?.username?.[0]?.toUpperCase() || "?"}
                                             </div>
                                         )}
-                                        <span className="text-[9px] font-bold truncate">@{p?.username}</span>
+                                        <span className="text-[10px] font-bold truncate">@{p?.username}</span>
                                     </div>
-                                    <div className="text-[8px] opacity-40 mb-1">
+                                    <div className="text-[9px] opacity-50 mb-1.5">
                                         {STEP_LABELS[step.step_type] || step.step_type}
                                     </div>
                                     {step.inner_thoughts && (
                                         <>
                                             <button
                                                 onClick={() => toggleThoughts(step.id)}
-                                                className="text-[8px] opacity-30 hover:opacity-70 transition-opacity"
+                                                className="text-[9px] opacity-40 hover:opacity-80 transition-opacity bg-primary/5 px-2 py-0.5 rounded-full"
                                             >
-                                                {isExpanded ? "▲ hide" : "▼ inner thoughts"}
+                                                {isExpanded ? "▲ hide thoughts" : "▼ inner thoughts"}
                                             </button>
                                             {isExpanded && (
-                                                <p className="text-[8px] opacity-40 italic leading-relaxed mt-1 select-text">
+                                                <p className="text-[9px] opacity-60 italic leading-relaxed mt-2 select-text bg-primary/5 p-2 rounded-[8px]">
                                                     {step.inner_thoughts}
                                                 </p>
                                             )}
@@ -818,24 +823,24 @@ export default function SymposiumApp() {
             {/* ── Center: Document & Kanban Board ── */}
             <div className="flex-1 flex flex-col h-full min-w-0">
                 {/* Toolbar */}
-                <div className="h-9 border-b border-primary/10 flex items-center justify-between px-4 shrink-0 bg-accent select-none">
+                <div className="h-14 border-b border-primary/5 flex items-center justify-between px-4 shrink-0 bg-primary/[0.02] select-none rounded-tr-[32px]">
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => setActiveCollab(null)}
-                            className="text-[10px] font-bold opacity-30 hover:opacity-100 transition-opacity @md:hidden"
+                            className="text-[10px] font-bold opacity-50 hover:opacity-100 transition-opacity @md:hidden bg-primary/5 px-3 py-1.5 rounded-full"
                         >
                             ← back
                         </button>
-                        <div className="flex items-center border border-primary/10 p-0.5 rounded bg-primary/5">
+                        <div className="flex items-center p-1 rounded-full bg-primary/5 border border-primary/5">
                             <button
                                 onClick={() => setViewMode("paper")}
-                                className={`px-2 py-0.5 rounded-sm text-[9px] font-bold transition-all ${viewMode === "paper" ? "bg-primary text-inverse" : "opacity-50 hover:opacity-85"}`}
+                                className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all duration-300 ${viewMode === "paper" ? "bg-primary text-inverse shadow-sm" : "opacity-60 hover:opacity-100 hover:bg-primary/5"}`}
                             >
                                 paper draft
                             </button>
                             <button
                                 onClick={() => setViewMode("blackboard")}
-                                className={`px-2 py-0.5 rounded-sm text-[9px] font-bold transition-all ${viewMode === "blackboard" ? "bg-primary text-inverse" : "opacity-50 hover:opacity-85"}`}
+                                className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all duration-300 ${viewMode === "blackboard" ? "bg-primary text-inverse shadow-sm" : "opacity-60 hover:opacity-100 hover:bg-primary/5"}`}
                             >
                                 blackboard kanban
                             </button>
@@ -845,14 +850,14 @@ export default function SymposiumApp() {
                     {/* Simulated Cursors */}
                     <div className="flex items-center gap-3">
                         {isRunning && activeStepAuthor && (
-                            <div className="flex items-center gap-1.5 text-[9px] opacity-50 bg-primary/5 px-2 py-0.5 border border-primary/10">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                                <span className="font-bold">@{activeStepAuthor.username}</span>
-                                <span>is writing/editing section...</span>
+                            <div className="flex items-center gap-2 text-[10px] bg-primary/5 px-3 py-1.5 rounded-full border border-primary/5">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                                <span className="font-bold opacity-80">@{activeStepAuthor.username}</span>
+                                <span className="opacity-50">is writing...</span>
                             </div>
                         )}
                         {isCompleted && (
-                            <span className="text-[9px] opacity-40">● published to posts</span>
+                            <span className="text-[10px] font-bold opacity-50 bg-primary/5 px-3 py-1.5 rounded-full">● published to posts</span>
                         )}
                     </div>
 
@@ -860,7 +865,7 @@ export default function SymposiumApp() {
                         {!isCompleted && !isRunning && (
                             <button
                                 onClick={triggerSingleStep}
-                                className="text-[9px] font-bold border border-primary/20 px-2 py-0.5 hover:bg-primary hover:text-inverse transition-colors"
+                                className="text-[10px] font-bold bg-primary/10 border border-primary/10 px-4 py-1.5 rounded-full hover:bg-primary hover:text-inverse transition-all active:scale-95"
                             >
                                 trigger next task →
                             </button>
@@ -871,32 +876,35 @@ export default function SymposiumApp() {
                 {/* Main View Render */}
                 {viewMode === "paper" ? (
                     <ScrollArea className="flex-grow">
-                        <div className="w-full max-w-2xl mx-auto py-8 px-4 sm:px-8">
+                        <div className="w-full max-w-2xl mx-auto py-10 px-6 sm:px-8">
                             {loadingSteps ? (
                                 <Loading label="loading collaboration..." />
                             ) : (
                                 <>
                                     {/* Title */}
-                                    <h1 className="font-bold text-base text-primary mb-1" style={{ fontFamily: "inherit", fontVariant: "normal" }}>
+                                    <h1 className="font-bold text-xl text-primary mb-2 tracking-tight" style={{ fontFamily: "inherit", fontVariant: "normal" }}>
                                         {activeCollab.title}
                                     </h1>
                                     {activeCollab.topic_description && (
-                                        <p className="text-[10px] opacity-40 italic mb-6">{activeCollab.topic_description}</p>
+                                        <p className="text-[11px] opacity-50 italic mb-8 border-l-2 border-primary/20 pl-3">{activeCollab.topic_description}</p>
                                     )}
 
                                     {/* No content yet */}
                                     {!currentDraft && steps.length === 0 && (
-                                        <div className="py-16 text-center opacity-20">
-                                            <div className="text-3xl mb-2">⌬</div>
-                                            <div className="text-[10px]">waiting for agents to start writing...</div>
+                                        <div className="py-20 text-center opacity-30">
+                                            <div className="text-4xl mb-4">⌬</div>
+                                            <div className="text-[11px] font-bold">waiting for agents to start writing...</div>
                                         </div>
                                     )}
 
                                     {/* Research outline (step 1) */}
                                     {steps.length > 0 && !currentDraft && (
-                                        <div className="border border-primary/10 bg-accent p-4 mb-6">
-                                            <div className="text-[9px] font-bold opacity-40 mb-2">research outline</div>
-                                            <div>
+                                        <div className="border border-primary/10 bg-primary/5 rounded-[24px] p-6 mb-8 shadow-sm">
+                                            <div className="text-[10px] font-bold opacity-50 mb-4 flex items-center gap-2">
+                                                <span className="w-2 h-2 rounded-full bg-primary/30" />
+                                                research outline
+                                            </div>
+                                            <div className="prose prose-sm prose-primary dark:prose-invert">
                                                 <ReactMarkdown
                                                     remarkPlugins={[remarkGfm]}
                                                     components={markdownComponents}
@@ -909,18 +917,18 @@ export default function SymposiumApp() {
 
                                     {/* Living Section-Based Modular Canvas */}
                                     {currentDraft && (
-                                        <div className="space-y-4">
+                                        <div className="space-y-6">
                                             {sections.map((s, idx) => {
                                                 const isHighlighted = highlightedSection && s.title.toLowerCase() === highlightedSection.toLowerCase();
                                                 return (
                                                     <div 
                                                         key={idx} 
-                                                        className={`py-2 transition-all duration-500 border-l-2 pl-3 ${isHighlighted ? 'border-primary bg-primary/5 pl-4' : 'border-transparent'}`}
+                                                        className={`py-4 transition-all duration-500 rounded-[24px] px-2 sm:px-4 ${isHighlighted ? 'bg-primary/5 ring-1 ring-primary/10 shadow-sm' : ''}`}
                                                     >
                                                         {s.title !== 'Introduction' && (
-                                                            <h2 className="font-bold text-xs text-primary mb-2">## {s.title}</h2>
+                                                            <h2 className="font-bold text-sm text-primary mb-3">## {s.title}</h2>
                                                         )}
-                                                        <div>
+                                                        <div className="prose prose-sm prose-primary dark:prose-invert leading-relaxed">
                                                             <ReactMarkdown
                                                                 remarkPlugins={[remarkGfm]}
                                                                 components={markdownComponents}
@@ -936,7 +944,7 @@ export default function SymposiumApp() {
 
                                     {/* Open in posts */}
                                     {isCompleted && activeCollab.post_id && (
-                                        <div className="mt-8 pt-4 border-t border-primary/10">
+                                        <div className="mt-12 pt-8 border-t border-primary/10 flex justify-center">
                                             <button
                                                 onClick={async () => {
                                                     const { data: post } = await supabase
@@ -953,9 +961,9 @@ export default function SymposiumApp() {
                                                         });
                                                     }
                                                 }}
-                                                className="text-[10px] font-bold border border-primary/20 px-3 py-1.5 hover:bg-accent transition-colors"
+                                                className="text-[11px] font-bold bg-primary text-inverse px-6 py-2.5 rounded-full hover:opacity-90 active:scale-95 transition-all shadow-md flex items-center gap-2"
                                             >
-                                                open in posts →
+                                                open published paper →
                                             </button>
                                         </div>
                                     )}
@@ -965,89 +973,93 @@ export default function SymposiumApp() {
                     </ScrollArea>
                 ) : (
                     // Kanban Blackboard View
-                    <div className="flex-grow flex min-h-0 relative select-none bg-primary/5">
-                        <div className="absolute inset-0 grid grid-cols-3 p-3 gap-3 overflow-hidden">
+                    <div className="flex-grow flex min-h-0 relative select-none bg-primary/[0.02] p-4 sm:p-6">
+                        <div className="absolute inset-0 grid grid-cols-3 gap-4 sm:gap-6 px-4 sm:px-6 py-4 overflow-hidden">
                             
                             {/* To Do Column */}
-                            <div className="flex flex-col h-full bg-accent border border-primary/10 rounded">
-                                <div className="px-3 py-2 border-b border-primary/10 flex items-center justify-between shrink-0 bg-primary/5">
-                                    <span className="font-bold text-[10px]">todo tasks</span>
-                                    <span className="text-[9px] bg-primary/10 px-1 py-0.5 rounded opacity-60">{todoTasks.length}</span>
+                            <div className="flex flex-col h-full bg-white dark:bg-[#1C1C1E] border border-primary/5 shadow-sm rounded-[24px]">
+                                <div className="px-4 py-3 border-b border-primary/5 flex items-center justify-between shrink-0">
+                                    <span className="font-bold text-[11px] opacity-60">todo tasks</span>
+                                    <span className="text-[10px] bg-primary/5 px-2 py-0.5 rounded-full font-bold">{todoTasks.length}</span>
                                 </div>
                                 <ScrollArea className="flex-1">
-                                    <div className="p-2 space-y-2">
+                                    <div className="p-3 space-y-3">
                                         {todoTasks.map(t => (
-                                            <div key={t.id} className="p-2 border border-primary/10 bg-primary shadow-sm rounded space-y-1">
-                                                <div className="text-[10px] font-bold">{TASK_LABELS[t.task_name] || t.task_name}</div>
+                                            <div key={t.id} className="p-3 border border-primary/10 bg-primary/[0.02] hover:bg-primary/5 transition-colors rounded-[16px] space-y-1.5">
+                                                <div className="text-[11px] font-bold">{TASK_LABELS[t.task_name] || t.task_name}</div>
                                                 {t.section_title && (
-                                                    <div className="text-[9px] opacity-60 italic">section: &ldquo;{t.section_title}&rdquo;</div>
+                                                    <div className="text-[10px] opacity-60 italic">section: &ldquo;{t.section_title}&rdquo;</div>
                                                 )}
-                                                <div className="text-[8px] opacity-30 mt-1">unassigned</div>
+                                                <div className="text-[9px] opacity-40 mt-2 font-bold">unassigned</div>
                                             </div>
                                         ))}
                                         {todoTasks.length === 0 && (
-                                            <div className="py-8 text-center text-[9px] opacity-35 italic">no pending tasks</div>
+                                            <div className="py-12 text-center text-[10px] opacity-30 italic">no pending tasks</div>
                                         )}
                                     </div>
                                 </ScrollArea>
                             </div>
 
                             {/* In Progress Column */}
-                            <div className="flex flex-col h-full bg-accent border border-primary/10 rounded">
-                                <div className="px-3 py-2 border-b border-primary/10 flex items-center justify-between shrink-0 bg-primary/5">
-                                    <span className="font-bold text-[10px]">in progress</span>
-                                    <span className="text-[9px] bg-primary/10 px-1 py-0.5 rounded opacity-60">{inProgressTasks.length}</span>
+                            <div className="flex flex-col h-full bg-white dark:bg-[#1C1C1E] border border-primary/5 shadow-sm rounded-[24px]">
+                                <div className="px-4 py-3 border-b border-primary/5 flex items-center justify-between shrink-0">
+                                    <span className="font-bold text-[11px] opacity-60">in progress</span>
+                                    <span className="text-[10px] bg-primary/5 px-2 py-0.5 rounded-full font-bold">{inProgressTasks.length}</span>
                                 </div>
                                 <ScrollArea className="flex-1">
-                                    <div className="p-2 space-y-2">
+                                    <div className="p-3 space-y-3">
                                         {inProgressTasks.map(t => {
                                             const p = getProfile(t);
                                             return (
-                                                <div key={t.id} className="p-2 border border-emerald-500/30 bg-primary shadow-sm rounded space-y-2 relative overflow-hidden">
-                                                    <div className="absolute top-0 right-0 w-1.5 h-1.5 bg-emerald-500 rounded-bl-sm animate-pulse" />
-                                                    <div>
-                                                        <div className="text-[10px] font-bold text-primary">{TASK_LABELS[t.task_name] || t.task_name}</div>
+                                                <div key={t.id} className="p-3 border border-emerald-500/20 bg-emerald-500/5 shadow-sm rounded-[16px] space-y-2 relative overflow-hidden transition-all">
+                                                    <div className="absolute top-2 right-2 w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                                                    <div className="pr-4">
+                                                        <div className="text-[11px] font-bold text-primary">{TASK_LABELS[t.task_name] || t.task_name}</div>
                                                         {t.section_title && (
-                                                            <div className="text-[9px] opacity-60 italic">section: &ldquo;{t.section_title}&rdquo;</div>
+                                                            <div className="text-[10px] opacity-60 italic mt-0.5">section: &ldquo;{t.section_title}&rdquo;</div>
                                                         )}
                                                     </div>
-                                                    <div className="flex items-center gap-1.5 pt-1 border-t border-primary/5">
-                                                        {p?.avatar_url && (
+                                                    <div className="flex items-center gap-2 pt-2 border-t border-emerald-500/10">
+                                                        {p?.avatar_url ? (
                                                             // eslint-disable-next-line @next/next/no-img-element
-                                                            <img src={p.avatar_url} alt="" className="w-3.5 h-3.5 rounded-sm object-cover border border-primary/10" />
+                                                            <img src={p.avatar_url} alt="" className="w-5 h-5 rounded-full object-cover border border-primary/10" />
+                                                        ) : (
+                                                            <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[8px] font-bold">
+                                                                {p?.username?.[0]?.toUpperCase()}
+                                                            </div>
                                                         )}
-                                                        <span className="text-[9px] font-bold text-primary opacity-80">@{p?.username || 'bot'} working...</span>
+                                                        <span className="text-[10px] font-bold text-primary opacity-80">@{p?.username || 'bot'} working...</span>
                                                     </div>
                                                 </div>
                                             );
                                         })}
                                         {inProgressTasks.length === 0 && (
-                                            <div className="py-8 text-center text-[9px] opacity-35 italic">no active tasks in progress</div>
+                                            <div className="py-12 text-center text-[10px] opacity-30 italic">no active tasks</div>
                                         )}
                                     </div>
                                 </ScrollArea>
                             </div>
 
                             {/* Completed Column */}
-                            <div className="flex flex-col h-full bg-accent border border-primary/10 rounded">
-                                <div className="px-3 py-2 border-b border-primary/10 flex items-center justify-between shrink-0 bg-primary/5">
-                                    <span className="font-bold text-[10px]">completed</span>
-                                    <span className="text-[9px] bg-primary/10 px-1 py-0.5 rounded opacity-60">{completedTasks.length}</span>
+                            <div className="flex flex-col h-full bg-white dark:bg-[#1C1C1E] border border-primary/5 shadow-sm rounded-[24px]">
+                                <div className="px-4 py-3 border-b border-primary/5 flex items-center justify-between shrink-0">
+                                    <span className="font-bold text-[11px] opacity-60">completed</span>
+                                    <span className="text-[10px] bg-primary/5 px-2 py-0.5 rounded-full font-bold">{completedTasks.length}</span>
                                 </div>
                                 <ScrollArea className="flex-1">
-                                    <div className="p-2 space-y-2">
+                                    <div className="p-3 space-y-3">
                                         {completedTasks.map(t => {
                                             const p = getProfile(t);
                                             return (
-                                                <div key={t.id} className="p-2 border border-primary/5 bg-primary/45 shadow-sm rounded space-y-1.5 opacity-70">
+                                                <div key={t.id} className="p-3 border border-primary/5 bg-primary/[0.03] rounded-[16px] space-y-2 opacity-60 hover:opacity-100 transition-opacity">
                                                     <div>
-                                                        <div className="text-[10px] font-bold line-through">{TASK_LABELS[t.task_name] || t.task_name}</div>
+                                                        <div className="text-[11px] font-bold line-through decoration-primary/30">{TASK_LABELS[t.task_name] || t.task_name}</div>
                                                         {t.section_title && (
-                                                            <div className="text-[9px] opacity-50 italic">section: &ldquo;{t.section_title}&rdquo;</div>
+                                                            <div className="text-[10px] opacity-70 italic mt-0.5">section: &ldquo;{t.section_title}&rdquo;</div>
                                                         )}
                                                     </div>
                                                     {p && (
-                                                        <div className="flex items-center gap-1 pt-1 text-[8px] opacity-40">
+                                                        <div className="flex items-center gap-1.5 pt-2 border-t border-primary/5 text-[9px] font-bold opacity-70">
                                                             <span>by @{p.username}</span>
                                                         </div>
                                                     )}
@@ -1055,7 +1067,7 @@ export default function SymposiumApp() {
                                             );
                                         })}
                                         {completedTasks.length === 0 && (
-                                            <div className="py-8 text-center text-[9px] opacity-35 italic">no completed tasks yet</div>
+                                            <div className="py-12 text-center text-[10px] opacity-30 italic">no completed tasks yet</div>
                                         )}
                                     </div>
                                 </ScrollArea>
@@ -1067,22 +1079,22 @@ export default function SymposiumApp() {
 
                 {/* Loom Control & Steering Bar */}
                 {!isCompleted && (
-                    <div className="border-t border-primary/10 bg-accent px-4 py-2.5 flex items-center gap-3 shrink-0">
+                    <div className="border-t border-primary/5 bg-primary/[0.02] px-4 py-3 flex items-center gap-3 shrink-0">
                         <div className="flex-1 flex items-center gap-2">
-                            <span className="text-[9px] opacity-40 shrink-0 select-none">steer:</span>
+                            <span className="text-[10px] font-bold opacity-50 shrink-0 select-none ml-2">steer:</span>
                             <input
                                 type="text"
                                 value={steerInput}
                                 onChange={e => setSteerInput(e.target.value)}
                                 disabled={isRunning}
                                 placeholder="guide the agents (e.g. focus more on geopolitical conflicts)..."
-                                className="w-full bg-primary border border-primary/10 px-2.5 py-1 text-xs text-primary focus:outline-none placeholder:opacity-30 disabled:opacity-50"
+                                className="w-full bg-primary/5 border border-primary/10 px-4 py-2 rounded-full text-xs text-primary focus:outline-none focus:ring-2 focus:ring-primary/10 placeholder:opacity-40 disabled:opacity-50 transition-all"
                             />
                         </div>
                         <button
                             onClick={triggerSingleStep}
                             disabled={isRunning}
-                            className="bg-primary text-inverse font-bold px-3 py-1.5 text-[9px] hover:opacity-85 disabled:opacity-30 transition-opacity"
+                            className="bg-primary text-inverse font-bold px-5 py-2 rounded-full text-[10px] hover:opacity-90 disabled:opacity-40 active:scale-95 transition-all shadow-sm"
                         >
                             {isRunning ? "thinking..." : "loom turn →"}
                         </button>
@@ -1092,13 +1104,13 @@ export default function SymposiumApp() {
 
             {/* ── Right Panel: Revision History / Loom Commits ── */}
             {currentDraft && (
-                <div className="w-56 shrink-0 border-l border-primary/10 flex flex-col h-full bg-accent hidden @xl:flex select-none">
-                    <div className="p-3 border-b border-primary/10">
-                        <div className="text-[10px] font-bold opacity-40">loom edit history</div>
-                        <div className="text-[8px] opacity-30 mt-0.5">bot contributions and highlights</div>
+                <div className="w-56 shrink-0 border-l border-primary/5 flex flex-col h-full bg-primary/[0.02] hidden @xl:flex select-none rounded-r-[32px]">
+                    <div className="p-4 border-b border-primary/5">
+                        <div className="text-[11px] font-bold opacity-60">loom edit history</div>
+                        <div className="text-[9px] opacity-40 mt-1">bot contributions and highlights</div>
                     </div>
                     <ScrollArea className="flex-grow">
-                        <div className="p-2 space-y-1.5">
+                        <div className="p-3 space-y-2">
                             {steps.slice(1).map((step, idx) => {
                                 const p = getProfile(step);
                                 // Parse edited section title if content starts with ##
@@ -1110,16 +1122,22 @@ export default function SymposiumApp() {
                                     <div
                                         key={step.id}
                                         onClick={() => setHighlightedSection(isCurrentHighlight ? null : sectionTitle)}
-                                        className={`p-2 border cursor-pointer transition-all ${isCurrentHighlight ? 'border-primary bg-primary/5 font-bold' : 'border-primary/5 hover:border-primary/20 bg-primary/5'}`}
+                                        className={`p-3 border rounded-[16px] cursor-pointer transition-all duration-300 ${isCurrentHighlight ? 'border-primary/20 bg-primary/10 shadow-sm' : 'border-primary/5 hover:border-primary/15 bg-primary/5'}`}
                                     >
-                                        <div className="flex items-center justify-between mb-1">
-                                            <span className="text-[9px] font-bold text-primary">commit #{idx + 1}</span>
-                                            <span className="text-[8px] opacity-40">{STEP_LABELS[step.step_type] || step.step_type}</span>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-[10px] font-bold text-primary">commit #{idx + 1}</span>
+                                            <span className="text-[9px] opacity-50">{STEP_LABELS[step.step_type] || step.step_type}</span>
                                         </div>
-                                        <div className="text-[10px] truncate">
-                                            @{p?.username || 'bot'} revised section:
+                                        <div className="flex items-center gap-1.5 mb-1">
+                                            {p?.avatar_url && (
+                                                 // eslint-disable-next-line @next/next/no-img-element
+                                                <img src={p.avatar_url} alt="" className="w-4 h-4 rounded-full object-cover" />
+                                            )}
+                                            <div className="text-[10px] opacity-80 truncate">
+                                                @{p?.username || 'bot'} edited:
+                                            </div>
                                         </div>
-                                        <div className="text-[9px] font-bold opacity-60 mt-0.5 truncate">
+                                        <div className="text-[10px] font-bold opacity-70 truncate ml-5">
                                             &ldquo;{sectionTitle}&rdquo;
                                         </div>
                                     </div>
