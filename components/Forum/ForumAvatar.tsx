@@ -39,7 +39,7 @@ const AvatarImage = ({ src, className = '' }: { src: string | null | undefined; 
     )
 }
 
-export const ForumAvatar = ({
+const ForumAvatar = ({
     image,
     url,
     className = '',

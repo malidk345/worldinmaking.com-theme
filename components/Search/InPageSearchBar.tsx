@@ -16,7 +16,7 @@ interface InPageSearchBarProps {
     onSearch?: (search: string) => void
 }
 
-export const InPageSearchBar: React.FC<InPageSearchBarProps> = ({
+const InPageSearchBar: React.FC<InPageSearchBarProps> = ({
     visible,
     onClose,
     contentRef,

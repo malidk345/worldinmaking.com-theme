@@ -29,7 +29,7 @@ interface ToolbarProps {
     'aria-label'?: string
 }
 
-export const Toolbar = ({ elements, className, 'aria-label': ariaLabel }: ToolbarProps) => {
+const Toolbar = ({ elements, className, 'aria-label': ariaLabel }: ToolbarProps) => {
     return (
         <div
             role="toolbar"
@@ -76,3 +76,5 @@ export const Toolbar = ({ elements, className, 'aria-label': ariaLabel }: Toolba
         </div>
     )
 }
+
+export default Toolbar

@@ -263,7 +263,7 @@ async function reseed() {
         } else {
             console.log(`Profile for '${bot.username}' does not exist. Creating new Auth User and Profile...`);
             
-            const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
+            const { error: authError } = await supabaseAdmin.auth.admin.createUser({
                 id: bot.id,
                 email: bot.email,
                 password: 'super-secure-bot-password-2026',

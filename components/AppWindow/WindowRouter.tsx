@@ -21,7 +21,7 @@ import { supabase } from '../../lib/supabase'
 import { IconBrain, IconBrowser, IconCalendar, IconCheckCircle, IconDatabase, IconDocument, IconLightBulb, IconPencil, IconRocket, IconShare, IconSparkles, IconWrench } from '@posthog/icons';
 import OSButton from 'components/OSButton'
 
-import { sanitizeHtml, toSlug } from '../../utils/security'
+import { sanitizeHtml } from '../../utils/security'
 import BlueprintsExplorer from 'components/Blueprints/BlueprintsExplorer'
 import BlueprintPostView from 'components/Blueprints/BlueprintPostView'
 import ArchiveExplorer from 'components/ArchiveExplorer'
@@ -403,14 +403,14 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
     const [title, setTitle] = useState('untitled node')
     const [content, setContent] = useState('')
     const [saving, setSaving] = useState(false)
-    const [saved, setSaved] = useState(false)
+
     const [nodeStatus, setNodeStatus] = useState<'draft' | 'published'>('draft')
 
     const [coverImage, setCoverImage] = useState<string | null>(null)
     const [iconIndex, setIconIndex] = useState<number>(0)
     const [theme, setTheme] = useState<'default' | 'yellow' | 'green' | 'blue'>('default')
     const [nodeType, setNodeType] = useState<'canvas' | 'list' | 'journal'>('canvas')
-    const [, setTags] = useState<string[]>([])
+
 
     // Load existing node from Supabase when nodeId is provided
     useEffect(() => {
@@ -448,9 +448,9 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
             addToast(t('appwindow.save_failed') + ': ' + error.message, 'error')
         } else {
             setNodeStatus(publishStatus)
-            setSaved(true)
+
             addToast(publishStatus === 'published' ? t('appwindow.publish_success') : t('appwindow.draft_success'), 'success')
-            setTimeout(() => setSaved(false), 2500)
+
         }
         setSaving(false)
     }

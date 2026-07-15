@@ -148,7 +148,7 @@ async function runTests() {
                 }
             });
             const data6 = await res6.json();
-            const matchingTopic = data6.topics?.find((t: any) => t.id === testTopicId);
+            const matchingTopic = data6.topics?.find((t: Record<string, unknown>) => t.id === testTopicId);
             if (matchingTopic && matchingTopic.replies?.length > 0) {
                 console.log(`✅ PASS: Found thread with ID ${testTopicId}. Reply count: ${matchingTopic.replies.length}`);
                 console.log(`Reply content: "${matchingTopic.replies[0].content}"`);
@@ -160,7 +160,7 @@ async function runTests() {
             console.log('\n[Test 5 & 6] SKIPPED: Cannot run reply tests because topic creation failed.');
         }
 
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error('Test Suite Exception:', err);
     }
 }
