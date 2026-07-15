@@ -1,280 +1,206 @@
-import React, { useState, useEffect } from 'react'
-import { useAuth } from 'context/AuthContext'
-import { useToast } from 'context/ToastContext'
-import { useTranslation } from 'hooks/useTranslation'
-import { supabase } from 'lib/supabase'
-import { toSlug } from 'utils/security'
-import { AppWindow } from 'context/Window'
-import ForumAvatar from 'components/Forum/ForumAvatar'
-import PostLexicalEditor from 'components/Forum/PostLexicalEditor'
-import OSButton from 'components/OSButton'
-import { Popover } from 'components/RadixUI/Popover'
-import { IconCheckCircle, IconExternal, IconFolder, IconGear, IconImage, IconPencil } from '@posthog/icons';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { formatDistanceToNow } from 'date-fns';
+import { Plus, PanelLeft, Moon, Sun, Trash2, SlidersHorizontal } from 'lucide-react';
 
-export default function PostEditor({ postId, item }: { postId?: string, item: AppWindow }) {
-    const { user, profile, isAdmin } = useAuth()
-    const { addToast } = useToast()
-    const { t } = useTranslation()
-    const [currentPostId, setCurrentPostId] = useState<string | undefined>(postId)
-    const [title, setTitle] = useState('')
-    const [slug, setSlug] = useState('')
-    const [excerpt, setExcerpt] = useState('')
-    const [content, setContent] = useState('')
-    const [imageUrl, setImageUrl] = useState('')
-    const [category, setCategory] = useState('')
-    const [published, setPublished] = useState(false)
-    const [saving, setSaving] = useState(false)
-    const [saved, setSaved] = useState(false)
-    const [settingsOpen, setSettingsOpen] = useState(false)
+import { useDocuments } from '@/hooks/use-documents';
+import { useEditorSettings } from '@/hooks/use-editor-settings';
+import { useTheme } from '@/components/theme-provider';
+import { Editor } from '@/components/editor/editor';
+import { SettingsPanel } from '@/components/editor/settings-panel';
+import { Button } from '@/components/ui/button';
+import { NoiseOverlay } from '@/components/noise-overlay';
+import { cn } from '@/lib/utils';
+import { AppWindow } from 'context/Window';
 
-    useEffect(() => {
-        if (!currentPostId) return
-        const load = async () => {
-            const { data } = await supabase
-                .from('posts')
-                .select('id, title, slug, excerpt, content, image_url, published, category')
-                .eq('id', currentPostId)
-                .single()
+export default function PostEditor({ postId, item }: { postId?: string, item?: AppWindow }) {
+  const { theme, setTheme } = useTheme();
+  const {
+    documents, activeDocId, setActiveDocId,
+    createDocument, updateDocument, deleteDocument,
+    activeDocument, isLoaded
+  } = useDocuments();
+  const { settings, updateSettings, loaded: settingsLoaded } = useEditorSettings();
 
-            if (data) {
-                setTitle(data.title || '')
-                setSlug(data.slug || '')
-                setExcerpt(data.excerpt || '')
-                setContent(data.content || '')
-                setImageUrl(data.image_url || '')
-                setCategory(data.category || '')
-                setPublished(Boolean(data.published))
-            }
-        }
-        load()
-    }, [currentPostId])
-
-    const handleSavePost = async (nextPublished: boolean) => {
-        if (!user || !profile?.username) {
-            addToast(t('appwindow.login_required_posts'), 'error')
-            return
-        }
-
-        const finalTitle = title.trim() || 'untitled post'
-        const finalSlug = toSlug(slug || finalTitle)
-        const finalExcerpt = (excerpt || content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 150)).trim()
-
-        setSaving(true)
-
-        const postPayload = {
-            title: finalTitle,
-            slug: finalSlug,
-            content,
-            excerpt: finalExcerpt || null,
-            image_url: imageUrl || null,
-            category: category || 'General',
-            published: nextPublished,
-            author: profile.username,
-            author_avatar: profile.avatar_url || '',
-            is_approved: isAdmin,
-        }
-
-        if (currentPostId) {
-            const { error } = await supabase
-                .from('posts')
-                .update(postPayload)
-                .eq('id', currentPostId)
-
-            if (error) {
-                addToast(`${t('appwindow.post_save_failed')}: ${error.message}`, 'error')
-                setSaving(false)
-                return
-            }
-        } else {
-            const { data, error } = await supabase
-                .from('posts')
-                .insert(postPayload)
-                .select('id')
-                .single()
-
-            if (error || !data) {
-                addToast(`${t('appwindow.post_create_failed')}: ${error?.message || 'unknown error'}`, 'error')
-                setSaving(false)
-                return
-            }
-
-            setCurrentPostId(data.id as string)
-        }
-
-        setPublished(nextPublished)
-        setSaved(true)
-        addToast(nextPublished ? t('appwindow.post_published') : t('appwindow.draft_success'), 'success')
-        setTimeout(() => setSaved(false), 2500)
-        setSaving(false)
-        setSettingsOpen(false)
+  // Load initial postId on mount / changes
+  useEffect(() => {
+    if (postId && isLoaded) {
+      setActiveDocId(postId);
     }
+  }, [postId, isLoaded, setActiveDocId]);
 
-    return (
-        <div className="flex flex-col size-full overflow-hidden text-black bg-white dark:bg-[#1C1C1E] transition-colors duration-500">
-            <aside className="sticky top-0 z-50 shrink-0">
-                <div id={`window-inner-header-${item.key}`} className="pointer-events-auto" />
-            </aside>
-            <div className="flex-col relative w-full flex-1 flex min-h-0">
-                {/* Header Bar */}
-                <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-black/5 dark:border-white/5 shrink-0 bg-white/70 dark:bg-[#1C1C1E]/70 backdrop-blur-md z-10">
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full overflow-hidden border border-black/10 dark:border-white/10 shadow-sm shrink-0">
-                            <ForumAvatar className="w-full h-full" image={profile?.avatar_url} />
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="text-xs font-bold text-primary lowercase">@{profile?.username || 'writer'}</span>
-                            <span className="text-[10px] font-medium text-primary/50 lowercase">
-                                {saved ? 'saved just now' : (currentPostId ? 'editing post' : 'new post')}
-                            </span>
-                        </div>
-                    </div>
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-                    <div className="flex items-center gap-2">
-                        <Popover
-                            open={settingsOpen}
-                            onOpenChange={setSettingsOpen}
-                            dataScheme="light" // Using light scheme as it uses Tailwind for dark mode
-                            sideOffset={8}
-                            align="end"
-                            className="outline-none"
-                            contentClassName="w-[300px] bg-white dark:bg-[#2C2C2E] border border-black/5 dark:border-white/5 rounded-2xl p-4 shadow-xl text-primary"
-                            trigger={
-                                <button
-                                    className={`p-2 rounded-full transition-all duration-200 outline-none
-                                        ${settingsOpen
-                                            ? 'bg-black/10 dark:bg-white/10 text-primary'
-                                            : 'text-primary/60 hover:text-primary hover:bg-black/5 dark:hover:bg-white/5'}`}
-                                >
-                                    <IconGear className="size-4" />
-                                </button>
-                            }
-                        >
-                            <div className="flex flex-col gap-4 lowercase">
-                                <div className="flex items-center gap-2 pb-2 border-b border-black/5 dark:border-white/5">
-                                    <IconGear className="size-4 opacity-50" />
-                                    <span className="text-xs font-bold">post properties</span>
-                                </div>
+  useEffect(() => { setMounted(true); }, []);
 
-                                <div className="flex flex-col gap-3">
-                                    {/* Status Toggle */}
-                                    <div className="flex flex-col gap-1.5">
-                                        <span className="text-[10px] font-bold text-primary/40">status</span>
-                                        <div className="flex bg-black/5 dark:bg-white/5 p-1 rounded-full border border-black/5 dark:border-white/5">
-                                            <button
-                                                type="button"
-                                                onClick={() => setPublished(false)}
-                                                className={`flex-1 py-1.5 rounded-full text-[10px] font-bold transition-all duration-300 flex items-center justify-center gap-1.5
-                                                    ${!published
-                                                        ? 'bg-white dark:bg-[#1C1C1E] text-primary shadow-sm border border-black/5 dark:border-white/5'
-                                                        : 'text-primary/40 hover:text-primary'}`}
-                                            >
-                                                <IconPencil className="size-3" />
-                                                draft
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => setPublished(true)}
-                                                className={`flex-1 py-1.5 rounded-full text-[10px] font-bold transition-all duration-300 flex items-center justify-center gap-1.5
-                                                    ${published
-                                                        ? 'bg-white dark:bg-[#1C1C1E] text-emerald-600 shadow-sm border border-black/5 dark:border-white/5'
-                                                        : 'text-primary/40 hover:text-primary'}`}
-                                            >
-                                                <IconCheckCircle className="size-3" />
-                                                published
-                                            </button>
-                                        </div>
-                                    </div>
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) setSidebarOpen(false);
+      else setSidebarOpen(true);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
-                                    {/* URL Slug */}
-                                    <div className="flex flex-col gap-1.5">
-                                        <span className="text-[10px] font-bold text-primary/40 flex items-center gap-1">
-                                            <IconExternal className="size-3" /> slug
-                                        </span>
-                                        <input
-                                            type="text"
-                                            value={slug}
-                                            onChange={(e) => setSlug(toSlug(e.target.value))}
-                                            placeholder="my-post-url"
-                                            className="bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-xl px-3 py-2 text-[11px] font-bold text-primary outline-none placeholder:text-primary/30 focus:bg-white dark:focus:bg-[#1C1C1E] focus:border-black/10 dark:focus:border-white/10 shadow-inner w-full transition-all duration-300"
-                                        />
-                                    </div>
+  if (!isLoaded || !mounted || !settingsLoaded) return null;
 
-                                    {/* Category */}
-                                    <div className="flex flex-col gap-1.5">
-                                        <span className="text-[10px] font-bold text-primary/40 flex items-center gap-1">
-                                            <IconFolder className="size-3" /> category
-                                        </span>
-                                        <input
-                                            type="text"
-                                            value={category}
-                                            onChange={(e) => setCategory(e.target.value)}
-                                            placeholder="e.g. technology"
-                                            className="bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-xl px-3 py-2 text-[11px] font-bold text-primary outline-none placeholder:text-primary/30 focus:bg-white dark:focus:bg-[#1C1C1E] focus:border-black/10 dark:focus:border-white/10 shadow-inner w-full transition-all duration-300"
-                                        />
-                                    </div>
+  return (
+    <div className="flex w-full h-full overflow-hidden bg-background relative selection:bg-primary/20 font-sans flex-col">
+      {item?.key && (
+        <aside className="sticky top-0 z-[100] shrink-0 w-full">
+          <div id={`window-inner-header-${item.key}`} className="pointer-events-auto" />
+        </aside>
+      )}
+      
+      <div className="flex flex-1 w-full overflow-hidden relative">
+        <NoiseOverlay />
 
-                                    {/* Cover Image */}
-                                    <div className="flex flex-col gap-1.5">
-                                        <span className="text-[10px] font-bold text-primary/40 flex items-center gap-1">
-                                            <IconImage className="size-3" /> cover image url
-                                        </span>
-                                        <input
-                                            type="text"
-                                            value={imageUrl}
-                                            onChange={(e) => setImageUrl(e.target.value.trim())}
-                                            placeholder="https://images.unsplash.com/..."
-                                            className="bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-xl px-3 py-2 text-[11px] font-bold text-primary outline-none placeholder:text-primary/30 focus:bg-white dark:focus:bg-[#1C1C1E] focus:border-black/10 dark:focus:border-white/10 shadow-inner w-full transition-all duration-300"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </Popover>
+      {/* Mobile sidebar backdrop */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black/20 dark:bg-black/40 backdrop-blur-sm z-40 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+      </AnimatePresence>
 
-                        <OSButton
-                            size="sm"
-                            variant="primary"
-                            disabled={saving || !title.trim()}
-                            onClick={() => handleSavePost(published)}
-                            className="rounded-full px-4 h-8"
-                        >
-                            <span className="lowercase font-bold text-xs">{saving ? 'saving...' : 'save'}</span>
-                        </OSButton>
-                    </div>
+      {/* Sidebar */}
+      <AnimatePresence initial={false}>
+        {sidebarOpen && (
+          <motion.div
+            initial={{ x: -300, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -300, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 380, damping: 36 }}
+            className={cn(
+              'fixed md:relative z-50 h-full w-[260px] shrink-0',
+              'glass-panel border-y-0 border-l-0 border-r border-border/40',
+              'flex flex-col shadow-2xl md:shadow-none'
+            )}
+          >
+            {/* Sidebar header */}
+            <div className="h-12 flex items-center justify-between px-4 border-b border-border/25 shrink-0">
+              <div className="font-semibold text-sm tracking-tight flex items-center gap-2 text-foreground">
+                <div className="w-5 h-5 rounded-md bg-foreground flex items-center justify-center shadow-sm">
+                  <div className="w-2 h-2 bg-background rounded-full" />
                 </div>
-
-                {/* Main Editor Content */}
-                <div className="flex-1 flex flex-col min-h-0 overflow-y-auto no-scrollbar">
-                    <div className="w-full max-w-3xl mx-auto px-5 sm:px-7 pt-6 sm:pt-10 flex flex-col gap-2 shrink-0">
-                        <input
-                            type="text"
-                            value={title}
-                            onChange={(e) => {
-                                setTitle(e.target.value)
-                                if (!currentPostId) setSlug(toSlug(e.target.value))
-                            }}
-                            placeholder="Post Title"
-                            className="w-full bg-transparent border-none px-0 py-0 text-3xl sm:text-4xl text-primary font-black outline-none placeholder:text-primary/20 tracking-tight"
-                        />
-                        <textarea
-                            value={excerpt}
-                            onChange={(e) => setExcerpt(e.target.value)}
-                            placeholder="Add a brief excerpt or subtitle..."
-                            className="w-full bg-transparent border-none px-0 py-2 text-sm sm:text-base text-primary/60 outline-none placeholder:text-primary/30 resize-none lowercase"
-                            rows={1}
-                            style={{ minHeight: '40px' }}
-                        />
-                    </div>
-
-                    <div className="flex-1 max-w-3xl w-full mx-auto pb-20">
-                        <PostLexicalEditor
-                            initialValue={content}
-                            onChange={(val: string) => setContent(val)}
-                            placeholder="start typing your story here..."
-                            className="!border-none !shadow-none !bg-transparent !rounded-none flex-1 min-h-[500px]"
-                        />
-                    </div>
-                </div>
+                Craft
+              </div>
+              <div className="flex items-center gap-0.5">
+                <Button
+                  variant="ghost" size="iconSm"
+                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                  className="rounded-full w-7 h-7 hover:bg-black/5 dark:hover:bg-white/10"
+                >
+                  {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+                </Button>
+                <Button
+                  variant="ghost" size="iconSm"
+                  onClick={() => setSettingsOpen(v => !v)}
+                  className={cn('rounded-full w-7 h-7 hover:bg-black/5 dark:hover:bg-white/10', settingsOpen && 'bg-black/5 dark:bg-white/10')}
+                >
+                  <SlidersHorizontal size={14} />
+                </Button>
+                <Button
+                  variant="ghost" size="iconSm"
+                  onClick={() => createDocument()}
+                  className="rounded-full w-7 h-7 hover:bg-black/5 dark:hover:bg-white/10"
+                >
+                  <Plus size={15} />
+                </Button>
+              </div>
             </div>
-        </div>
-    )
+
+            {/* Document list */}
+            <div className="flex-1 overflow-y-auto py-2 px-2 custom-scrollbar space-y-0.5">
+              {documents.length === 0 ? (
+                <div className="text-center px-4 py-10 text-xs text-muted-foreground/50">
+                  No documents yet.
+                  <br />
+                  <button
+                    onClick={() => createDocument()}
+                    className="mt-2 text-primary/70 hover:text-primary underline-offset-2 hover:underline"
+                  >
+                    Create one
+                  </button>
+                </div>
+              ) : (
+                documents.map(doc => (
+                  <div
+                    key={doc.id}
+                    data-testid={`doc-item-${doc.id}`}
+                    onClick={() => { setActiveDocId(doc.id); if (window.innerWidth < 768) setSidebarOpen(false); }}
+                    className={cn(
+                      'group relative flex flex-col p-2.5 rounded-xl cursor-pointer transition-all border border-transparent',
+                      activeDocId === doc.id
+                        ? 'bg-black/6 dark:bg-white/10 border-black/5 dark:border-white/8'
+                        : 'hover:bg-black/4 dark:hover:bg-white/5'
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="font-medium text-xs truncate flex-1 text-foreground/85 leading-relaxed">
+                        {doc.title || 'Untitled'}
+                      </span>
+                      <button
+                        data-testid={`btn-delete-doc-${doc.id}`}
+                        onClick={e => { e.stopPropagation(); deleteDocument(doc.id); }}
+                        className="opacity-0 group-hover:opacity-100 shrink-0 p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                        aria-label="Delete"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                    <span className="text-[11px] text-muted-foreground/50 mt-0.5">
+                      {formatDistanceToNow(doc.updatedAt, { addSuffix: true })}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Main area */}
+      <div className="flex-1 flex flex-col relative min-w-0">
+        {/* Sidebar toggle */}
+        {!sidebarOpen && (
+          <div className="absolute top-3 left-3 z-30">
+            <motion.div initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.05 }}>
+              <Button
+                variant="glass" size="icon"
+                onClick={() => setSidebarOpen(true)}
+                className="rounded-xl shadow-sm h-9 w-9 text-foreground/70 hover:text-foreground"
+              >
+                <PanelLeft size={16} />
+              </Button>
+            </motion.div>
+          </div>
+        )}
+
+        <Editor
+          key={activeDocId || 'empty'}
+          document={activeDocument || null}
+          onChange={updates => activeDocId && updateDocument(activeDocId, updates)}
+          sidebarOpen={sidebarOpen}
+          settings={settings}
+        />
+      </div>
+
+      {/* Settings panel */}
+      <SettingsPanel
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        settings={settings}
+        onUpdate={updateSettings}
+      />
+      </div>
+    </div>
+  );
 }
