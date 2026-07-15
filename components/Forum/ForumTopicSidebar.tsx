@@ -47,7 +47,7 @@ export default function ForumTopicSidebar({
     return (
         <aside className="w-full sticky top-10">
             <ul className="m-0 p-0 list-none space-y-1.5">
-                <li className="grid grid-cols-12 px-3 py-1.5 items-center text-secondary !text-[10px] bg-accent/30 rounded-lg uppercase font-bold tracking-wider mb-2">
+                <li className="grid grid-cols-12 px-3 py-1.5 items-center text-secondary !text-[10px] bg-accent/30 rounded-full uppercase font-bold tracking-wider mb-2">
                     <div className="col-span-9">Topics</div>
                     <div className="col-span-3 text-right">Last active</div>
                 </li>
@@ -56,7 +56,7 @@ export default function ForumTopicSidebar({
                     <div className="mb-1">
                         <button
                             onClick={() => handleChannelClick(null)}
-                            className={`group flex items-center w-full text-left px-3 py-2 rounded-xl border border-transparent transition-all duration-300 hover:scale-[1.02] hover:bg-accent/40 hover:border-primary/5 active:scale-[0.98] ${!activeChannelId ? 'bg-accent/80 border-primary/10 active-sidebar-item shadow-sm shadow-black/5' : ''}`}
+                            className={`group flex items-center w-full text-left px-3 py-2 rounded-[24px] border border-transparent transition-all duration-300 hover:scale-[1.02] hover:bg-gray-50 dark:hover:bg-[#1C1C1E] active:scale-[0.98] ${!activeChannelId ? 'bg-gray-50 dark:bg-gray-900 shadow-sm border border-black/5 dark:border-white/5 active-sidebar-item' : ''}`}
                         >
                             <div className="grid grid-cols-12 items-center w-full">
                                 <div className="col-span-9 flex items-center space-x-2.5">
@@ -74,7 +74,7 @@ export default function ForumTopicSidebar({
                             <div key={channel.id} className="mb-1">
                                 <button
                                     onClick={() => handleChannelClick(channel.id, channel.slug)}
-                                    className={`group flex items-center w-full text-left px-3 py-2 rounded-xl border border-transparent transition-all duration-300 hover:scale-[1.02] hover:bg-accent/40 hover:border-primary/5 active:scale-[0.98] ${isActive ? 'bg-accent/80 border-primary/10 active-sidebar-item shadow-sm shadow-black/5' : ''}`}
+                                    className={`group flex items-center w-full text-left px-3 py-2 rounded-[24px] border border-transparent transition-all duration-300 hover:scale-[1.02] hover:bg-gray-50 dark:hover:bg-[#1C1C1E] active:scale-[0.98] ${isActive ? 'bg-gray-50 dark:bg-gray-900 shadow-sm border border-black/5 dark:border-white/5 active-sidebar-item' : ''}`}
                                 >
                                     <div className="grid grid-cols-12 items-center w-full">
                                         <div className="col-span-9 flex items-center space-x-2.5">

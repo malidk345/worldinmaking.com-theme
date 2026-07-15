@@ -22,17 +22,17 @@ const Skeleton = () => {
     return (
         <div className="grid grid-cols-12 items-center w-full mt-4">
             <div className="col-span-12 md:col-span-8 flex items-center space-x-4">
-                <div className="w-5 flex-shrink-0" />
-                <div className="w-full space-y-1">
-                    <div className="animate-pulse bg-accent h-[18px] rounded-md w-2/3" />
-                    <div className="animate-pulse bg-accent h-[18px] rounded-md" />
+                <div className="animate-pulse bg-accent h-7 w-7 rounded-full flex-shrink-0" />
+                <div className="w-full space-y-1.5">
+                    <div className="animate-pulse bg-accent h-[18px] rounded-[18px] w-2/3" />
+                    <div className="animate-pulse bg-accent h-[18px] rounded-[18px] w-full" />
                 </div>
             </div>
             <div className="hidden md:flex md:col-span-1 items-start justify-center h-full">
-                <div className="animate-pulse bg-accent h-[18px] rounded-md w-[18px]" />
+                <div className="animate-pulse bg-accent h-[18px] rounded-[18px] w-[18px]" />
             </div>
             <div className="hidden md:flex md:col-span-3 items-start justify-center h-full">
-                <div className="animate-pulse bg-accent h-[18px] rounded-md w-full" />
+                <div className="animate-pulse bg-accent h-[18px] rounded-[18px] w-full" />
             </div>
         </div>
     )
@@ -75,11 +75,11 @@ const Row = React.memo(({
     const activeAt = replies.length > 0 ? replies[replies.length - 1].createdAt : createdAt
 
     return (
-        <div className="py-2.5">
+        <div className="py-1">
             <Link
                 to={`/questions/${permalink}`}
                 newWindow
-                className="group flex items-center relative px-2 py-1.5 -mt-1.5 mx-[-2px] -mb-3 rounded active:bg-light dark:active:bg-dark border-primary border-b-3 border-transparent hover:border hover:translate-y-[-1px] active:translate-y-[1px] active:transition-all active:before:h-[2px] active:before:bg-light dark:active:before:bg-dark active:before:absolute active:before:content-[''] active:before:top-[-3px] active:before:left-0 active:before:right-0 !no-underline"
+                className="group flex items-center relative px-3 py-2.5 mx-[-12px] rounded-[24px] hover:bg-gray-50 dark:hover:bg-[#1C1C1E] active:scale-[0.99] transition-all duration-200 !no-underline"
             >
                 <div className="grid grid-cols-12 items-center w-full">
                     <div className="col-span-12 md:col-span-8 flex items-center space-x-3.5">
@@ -146,8 +146,8 @@ const ForumQuestionsTable = React.memo(({
     showBody,
 }: ForumQuestionsTableProps) => {
     return (
-        <ul className="m-0 p-0 list-none">
-            <li className="grid grid-cols-12 pl-2 pr-3 py-1.5 items-center text-secondary !text-sm bg-accent rounded">
+        <ul className="m-0 p-0 list-none relative">
+            <li className="grid grid-cols-12 pl-3 pr-3 py-1.5 mb-2 items-center text-secondary !text-sm bg-accent rounded-full">
                 <div className="col-span-12 md:col-span-8 pl-[42px]">Question / Topic</div>
                 <div className="hidden md:block md:col-span-1 text-center">Replies</div>
                 <div className="hidden md:block md:col-span-3">{sortBy === 'activity' ? 'Last active' : 'Created'}</div>
@@ -157,7 +157,7 @@ const ForumQuestionsTable = React.memo(({
                 <li className="py-16 text-center text-secondary/70 text-sm font-bold">No discussions found.</li>
             ) : (
                 questions.map((question) => (
-                    <li key={question.id} className="list-none px-[2px] divide-y divide-primary">
+                    <li key={question.id} className="list-none px-3 border-b border-primary/5 last:border-b-0">
                         <Row
                             question={question}
                             sortBy={sortBy}

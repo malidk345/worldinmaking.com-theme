@@ -96,7 +96,7 @@ export default function ForumReplyCard({ reply, postId, isInForum = false, quest
                 </Link>
 
                 {repliedToUsername && (
-                    <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider bg-white/40 dark:bg-black/30 backdrop-blur-[2px] text-primary/80 px-2.5 py-0.5 rounded-full border border-primary/10 shadow-sm shadow-black/[0.02] font-mono">
+                    <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider bg-gray-50 dark:bg-gray-900 text-primary/80 px-2.5 py-0.5 rounded-full border border-black/5 dark:border-white/5 font-mono">
                         <span className="opacity-60 lowercase font-mono">reply to</span>
                         <Link 
                             to={`/profile/${repliedToUsername}`} 

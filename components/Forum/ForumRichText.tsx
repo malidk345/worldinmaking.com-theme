@@ -434,12 +434,12 @@ export default function ForumRichText({
     if (!editor) return null
 
     return (
-        <div className={`relative bg-white/60 dark:bg-black/60 supports-[backdrop-filter]:backdrop-blur-[60px] rounded-[24px] border border-black/5 dark:border-white/5 shadow-inner flex flex-col overflow-hidden w-full max-w-full min-w-0 ${expandHeight ? 'flex-1 h-full min-h-0' : ''} ${wrapperClassName}`} {...getRootProps()}>
+        <div className={`relative bg-gray-50 dark:bg-gray-900 rounded-[24px] border border-black/5 dark:border-white/5 shadow-inner flex flex-col overflow-hidden w-full max-w-full min-w-0 ${expandHeight ? 'flex-1 h-full min-h-0' : ''} ${wrapperClassName}`} {...getRootProps()}>
             <input className="hidden" {...getInputProps()} />
 
             {/* Toolbar - iOS 26 Style - Always visible, scrollable */}
             <div
-                className={`not-prose flex items-center p-1.5 md:p-2 ${boxed ? `border-b ${borderClass}/50` : `border-b ${borderClass}/30`} bg-white/50 dark:bg-black/50 overflow-hidden`}
+                className={`not-prose flex items-center p-1.5 md:p-2 ${boxed ? `border-b ${borderClass}/50` : `border-b ${borderClass}/30`} bg-white/50 dark:bg-black/20 overflow-hidden`}
             >
                 <div className="flex items-center gap-0.5 w-full overflow-x-auto no-scrollbar pb-0.5 -mb-0.5">
                     {buttons.map((button) => {
@@ -478,7 +478,7 @@ export default function ForumRichText({
             </div>
 
             {/* Editor Area */}
-            <div className={`relative bg-transparent transition-colors duration-300 ease-in-out focus-within:bg-white/80 dark:focus-within:bg-black/80 ${expandHeight ? 'flex-grow flex flex-col min-h-0 h-full' : 'min-h-[120px]'}`}>
+            <div className={`relative bg-transparent transition-colors duration-300 ease-in-out focus-within:bg-white dark:focus-within:bg-black ${expandHeight ? 'flex-grow flex flex-col min-h-0 h-full' : 'min-h-[120px]'}`}>
                 <div className={`relative h-full ${expandHeight ? 'flex-grow flex flex-col min-h-0 h-full' : ''}`}>
                     {mentions && (
                         <AnimatePresence>
@@ -498,7 +498,7 @@ export default function ForumRichText({
                 </div>
 
                 {isDragActive && (
-                    <div className="bg-white/80 dark:bg-black/80 supports-[backdrop-filter]:backdrop-blur-[40px] z-10 flex items-center justify-center absolute w-full h-full inset-0 p-4">
+                    <div className="bg-white/90 dark:bg-black/90 supports-[backdrop-filter]:backdrop-blur-[40px] z-10 flex items-center justify-center absolute w-full h-full inset-0 p-4">
                         <div className="border-2 border-dashed border-primary/20 rounded-[16px] w-full h-full flex items-center justify-center bg-black/5 dark:bg-white/5">
                             <p className="m-0 font-bold lowercase text-primary/60">drop image here</p>
                         </div>
@@ -507,7 +507,7 @@ export default function ForumRichText({
             </div>
 
             {/* Bottom Bar */}
-            <div className="flex justify-between items-center p-2 md:p-3 border-t border-black/5 dark:border-white/5 bg-white/40 dark:bg-black/40">
+            <div className="flex justify-between items-center p-2 md:p-3 border-t border-black/5 dark:border-white/5 bg-white/50 dark:bg-black/20">
                 <div className="flex gap-2 items-center">
                     {cta ? (typeof cta === 'function' ? cta() : cta) : <div />}
                 </div>

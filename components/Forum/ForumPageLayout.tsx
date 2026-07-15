@@ -71,13 +71,13 @@ export default function ForumPageLayout({
                                     </span>
                                 )}
                             </div>
-                            <div className="flex items-center bg-accent p-1 rounded-md border border-primary/70">
+                            <div className="flex items-center bg-accent p-1 rounded-full border border-primary/10">
                                 {(['newest', 'activity', 'popular'] as const).map((sort) => (
                                     <button
                                         key={sort}
                                         onClick={() => setSortBy(sort)}
-                                        className={`px-3 py-1 text-[10px] font-black tracking-tight transition-all rounded-md lowercase ${sortBy === sort
-                                            ? 'bg-primary text-primary border border-primary'
+                                        className={`px-3 py-1 text-[10px] font-black tracking-tight transition-all rounded-full lowercase ${sortBy === sort
+                                            ? 'bg-white dark:bg-[#1C1C1E] text-primary shadow-sm border border-black/5 dark:border-white/5'
                                             : 'text-secondary hover:text-primary'
                                             }`}
                                     >
@@ -88,7 +88,7 @@ export default function ForumPageLayout({
                         </div>
 
                         {/* Questions list */}
-                        <div className="relative mb-8 lg:bg-white lg:dark:bg-[#121214] lg:border lg:border-primary/10 lg:shadow-sm lg:rounded-2xl lg:p-6">
+                        <div className="relative mb-8 lg:bg-white lg:dark:bg-[#121214] lg:border lg:border-primary/10 lg:shadow-sm lg:rounded-[32px] lg:p-6">
                             {loading && questions.length === 0 ? (
                                 <div className="py-20 text-center">
                                     <div className="text-[11px] font-bold lowercase opacity-20 tracking-widest">polling...</div>
