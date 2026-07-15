@@ -13,7 +13,7 @@ import { useTranslation } from 'hooks/useTranslation'
 
 export default function Desktop() {
     const { addWindow, siteSettings, archivedItems } = useApp()
-    const { user } = useAuth()
+    useAuth()
     const [rendered, setRendered] = useState(false)
     const { t } = useTranslation()
 

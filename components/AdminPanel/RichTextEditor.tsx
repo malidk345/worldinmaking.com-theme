@@ -18,7 +18,7 @@ import 'highlight.js/styles/github.css' // Light mode theme to prevent white tex
 
 import { IconApps, IconBookmark, IconCheckCircle, IconCollapse, IconDownload, IconEllipsis, IconExpand, IconExternal, IconGear, IconImage, IconList, IconMinus, IconMinusSmall, IconPencil, IconQuote, IconRedo, IconSpinner, IconTerminal, IconTextWidth, IconTextWidthFixed, IconUndo, IconWarning } from '@posthog/icons';
 
-import { Toolbar, ToolbarElement } from 'components/RadixUI/Toolbar'
+import Toolbar, { ToolbarElement } from 'components/RadixUI/Toolbar'
 import { Toolkit } from '../Toolkit'
 import { useApp } from '../../context/App'
 import OSButton from 'components/OSButton'

@@ -18,7 +18,7 @@ import {
 import Tooltip from 'components/RadixUI/Tooltip'
 import { useApp } from 'context/App'
 import { useWindow } from 'context/Window'
-import { InPageSearchBar } from 'components/Search/InPageSearchBar'
+import InPageSearchBar from 'components/Search/InPageSearchBar'
 import { LanguageSelector } from './LanguageSelector'
 import KeyboardShortcut from 'components/KeyboardShortcut'
 

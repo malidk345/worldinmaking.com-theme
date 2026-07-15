@@ -123,7 +123,7 @@ async function runWorker() {
             return;
         }
 
-        const bots = rawBots.map((b: any) => {
+        const bots = rawBots.map((b: Record<string, unknown>) => {
             const profile = Array.isArray(b.profiles) ? b.profiles[0] : b.profiles;
             return {
                 id: b.id,
@@ -159,8 +159,8 @@ async function runWorker() {
                 } else {
                     console.error(`[Worker] Failed to advance symposium:`, stepData.error || stepData.message);
                 }
-            } catch (err: any) {
-                console.error(`[Worker] Exception advancing symposium:`, err?.message || err);
+            } catch (err: unknown) {
+                console.error(`[Worker] Exception advancing symposium:`, (err as Error)?.message || err);
             }
             await sleep(2000);
         } else {
@@ -240,8 +240,8 @@ your 1-sentence topic description here`;
                     } else {
                         console.error(`[Worker] [Symposium Launch] Creation failed:`, createData.error);
                     }
-                } catch (e: any) {
-                    console.error('[Worker] [Symposium Launch] Exception:', e?.message || e);
+                } catch (e: unknown) {
+                    console.error('[Worker] [Symposium Launch] Exception:', (e as Error)?.message || e);
                 }
                 await sleep(2000);
             }
@@ -267,11 +267,11 @@ your 1-sentence topic description here`;
         const { determineAgentAction, executeGhostBrowsing, shouldAgentRespond } = await import('../lib/agent-orchestrator');
 
         for (const bot of awakeBots) {
-            const action = await determineAgentAction(bot.id);
+            const action = await determineAgentAction(bot.id as string);
             console.log(`\n[Worker] [Decision] Bot ${bot.username} decided to perform: "${action}"`);
 
             if (action === 'ghost_browsing') {
-                await executeGhostBrowsing(bot.id);
+                await executeGhostBrowsing(bot.id as string);
             } 
             else if (action === 'post_creation') {
                 console.log(`[Worker] [Action] Triggering autonomous thread creation for ${bot.username}...`);
@@ -282,7 +282,7 @@ your 1-sentence topic description here`;
                             'Content-Type': 'application/json',
                             'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`
                         },
-                        body: JSON.stringify({ agentId: bot.id })
+                        body: JSON.stringify({ agentId: bot.id as string })
                     });
                     const data = await res.json();
                     if (res.ok && data.success) {
@@ -309,7 +309,7 @@ your 1-sentence topic description here`;
 
                     if (activeTopics.length === 0) {
                         console.log(`[Worker] [Action] No active topics found. Falling back to ghost browsing...`);
-                        await executeGhostBrowsing(bot.id);
+                        await executeGhostBrowsing(bot.id as string);
                         continue;
                     }
 
@@ -318,9 +318,9 @@ your 1-sentence topic description here`;
                     if (action === 'mention_challenge') {
                         const botIds = new Set(bots.map(b => b.id));
                         // Find topics where author is not a bot OR any replier is not a bot
-                        const humanParticipatedTopics = activeTopics.filter((t: any) => {
-                            const isAuthorHuman = !botIds.has(t.authorId);
-                            const hasHumanReplier = t.replies?.some((r: any) => !botIds.has(r.authorId));
+                        const humanParticipatedTopics = activeTopics.filter((t: Record<string, unknown>) => {
+                            const isAuthorHuman = !botIds.has(t.authorId as string as string);
+                            const hasHumanReplier = (t.replies as Record<string, unknown>[])?.some((r: Record<string, unknown>) => !botIds.has(r.authorId as string as string));
                             return isAuthorHuman || hasHumanReplier;
                         });
 
@@ -337,7 +337,7 @@ your 1-sentence topic description here`;
                     }
 
                     // Check shouldAgentRespond
-                    const canRespond = await shouldAgentRespond(bot.id, Number(selectedTopic.id));
+                    const canRespond = await shouldAgentRespond(bot.id as string, Number(selectedTopic.id));
                     if (canRespond) {
                         console.log(`[Worker] [Action] Triggering respond API for ${bot.username} on thread ${selectedTopic.id}...`);
                         const res = await fetch(`${siteUrl}/api/agent/respond`, {
@@ -346,7 +346,7 @@ your 1-sentence topic description here`;
                                 'Content-Type': 'application/json',
                                 'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`
                             },
-                            body: JSON.stringify({ agentId: bot.id, threadId: selectedTopic.id })
+                            body: JSON.stringify({ agentId: bot.id as string, threadId: selectedTopic.id })
                         });
                         const data = await res.json();
                         if (res.ok && data.success) {
@@ -357,7 +357,7 @@ your 1-sentence topic description here`;
                         }
                     } else {
                         console.log(`[Worker] [Action] shouldAgentRespond returned FALSE for ${bot.username} on thread ${selectedTopic.id}. Falling back to ghost browsing.`);
-                        await executeGhostBrowsing(bot.id);
+                        await executeGhostBrowsing(bot.id as string);
                     }
                 } catch (e) {
                     console.error(`[Worker] [Action] Error replying for ${bot.username}:`, e);
@@ -383,7 +383,7 @@ your 1-sentence topic description here`;
             .limit(3);
 
         if (blogPostsError) {
-            console.error('[Worker] Error fetching recent blog posts:', blogPostsError.message);
+            console.error('[Worker] Error fetching recent blog posts:', blogPostsError?.message);
         }
 
         // 2. Fetch recent canvas nodes
@@ -395,7 +395,7 @@ your 1-sentence topic description here`;
             .limit(3);
 
         if (canvasNodesError) {
-            console.error('[Worker] Error fetching recent canvas nodes:', canvasNodesError.message);
+            console.error('[Worker] Error fetching recent canvas nodes:', canvasNodesError?.message);
         }
 
         // 3. Combine targets
@@ -439,7 +439,7 @@ your 1-sentence topic description here`;
                     if (Math.random() < 0.20 && awakeBotsForBlog.length > 0) {
                         const randomBot = awakeBotsForBlog[Math.floor(Math.random() * awakeBotsForBlog.length)];
                         const { voteOnBlogPost } = await import('../lib/agent-orchestrator');
-                        await voteOnBlogPost(randomBot.id, target.slug, 1);
+                        await voteOnBlogPost(randomBot.id as string, target.slug, 1);
                     }
                 } catch (viewErr) {
                     console.error('[Worker] Error incrementing blog post view/like:', viewErr);
@@ -516,7 +516,7 @@ EXAMPLES FOR ARTICLE COMMENTS:
                         try {
                             const { voteOnBlogPost } = await import('../lib/agent-orchestrator');
                             const randomRating = Math.floor(Math.random() * 3) + 3; // 3, 4, or 5
-                            await voteOnBlogPost(selectedBot.id, target.slug, randomRating);
+                            await voteOnBlogPost(selectedBot.id as string, target.slug, randomRating);
                         } catch (voteErr) {
                             console.error(`[Worker] Failed to upvote blog article ${target.slug}:`, voteErr);
                         }
@@ -613,7 +613,7 @@ EXAMPLES FOR ARTICLE COMMENTS:
 
                     // Prepare context
                     const commentProfile = Array.isArray(comment.profiles) ? comment.profiles[0] : comment.profiles;
-                    const commentAuthorName = (commentProfile as any)?.username || 'anonymous';
+                    const commentAuthorName = (commentProfile as Record<string, unknown>)?.username || 'anonymous';
                     
                     let historyText = `[ARTICLE CONTEXT] Title: ${target.title}\nContent excerpt: ${target.content.slice(0, 500)}...\n\n`;
                     historyText += `[PARENT COMMENT] ${commentAuthorName} commented:\n${comment.content}\n\n`;
@@ -621,7 +621,7 @@ EXAMPLES FOR ARTICLE COMMENTS:
                         historyText += `[DISCUSSION HISTORY]:\n`;
                         replyList.forEach(r => {
                             const rProfile = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
-                            const rAuthorName = (rProfile as any)?.username || 'anonymous';
+                            const rAuthorName = (rProfile as Record<string, unknown>)?.username || 'anonymous';
                             historyText += `- ${rAuthorName}: ${r.content}\n`;
                         });
                     }
@@ -675,8 +675,8 @@ EXAMPLES FOR COMMENT REPLIES:
 
         console.log('\n[Worker] Workflow finished successfully.');
 
-    } catch (err: any) {
-        console.error('[Worker] Exception encountered in workflow:', err?.message || err);
+    } catch (err: unknown) {
+        console.error('[Worker] Exception encountered in workflow:', (err as Error)?.message || err);
     }
 }
 

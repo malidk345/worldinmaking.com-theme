@@ -76,7 +76,7 @@ const FileColumn: React.FC<FileColumnProps> = ({ items, selectedId, onSelect }) 
     )
 }
 
-export const FileMenu: React.FC<{ initialPath?: IMenu[]; menu: IMenu[] }> = ({ initialPath = [], menu }) => {
+const FileMenu: React.FC<{ initialPath?: IMenu[]; menu: IMenu[] }> = ({ initialPath = [], menu }) => {
     const router = useRouter()
     const { appWindow } = useWindow()
     // const { compact, isMobile } = context || { compact: false, isMobile: false }

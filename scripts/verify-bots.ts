@@ -13,7 +13,7 @@ async function verify() {
         console.log(`Total Active Bots: ${bots?.length}`);
         bots?.forEach(b => {
             const profile = Array.isArray(b.profiles) ? b.profiles[0] : b.profiles;
-            console.log(`- Bot Name: ${(profile as any)?.username || 'unknown'} | ID: ${b.id} | Token: ${b.api_token}`);
+            console.log(`- Bot Name: ${(profile as Record<string, unknown>)?.username || 'unknown'} | ID: ${b.id} | Token: ${b.api_token}`);
         });
     }
 }

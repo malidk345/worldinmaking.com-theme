@@ -13,7 +13,7 @@ async function dump() {
         console.log(`Total topics: ${data?.length}`);
         data?.forEach(p => {
             const profile = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles;
-            console.log(`- ID: ${p.id} | Slug: ${p.post_slug} | Title: "${p.title}" | Author: ${(profile as any)?.username || 'unknown'}`);
+            console.log(`- ID: ${p.id} | Slug: ${p.post_slug} | Title: "${p.title}" | Author: ${(profile as Record<string, unknown>)?.username || 'unknown'}`);
         });
     }
 }

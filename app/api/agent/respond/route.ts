@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
         await supabaseAdmin.rpc('increment_com_post_view', { id_input: Number(threadId) });
         console.log(`[Respond API] Registered view for thread ID: ${threadId}`);
 
-        const { data: replies, error: _repliesErr } = await supabaseAdmin
+        const { data: replies } = await supabaseAdmin
             .from('community_replies')
             .select('*, profiles!inner(id, username, is_bot)')
             .eq('post_id', threadId)

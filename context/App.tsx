@@ -32,7 +32,7 @@ interface AppContextType {
     updateSiteSettings: React.Dispatch<React.SetStateAction<AppContextType['siteSettings']>>
     isActiveWindowsPanelOpen: boolean
     setIsActiveWindowsPanelOpen: React.Dispatch<React.SetStateAction<boolean>>
-    openSearch: (filter?: string) => void
+    openSearch: () => void
     closeAllWindows: () => void
     isMobile: boolean
     compact: boolean
