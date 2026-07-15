@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "../../context/ToastContext";
 import { supabase } from "../../lib/supabase";
 import { useApp } from "../../context/App";
+import { useAuth } from "../../context/AuthContext";
 import ScrollArea from "components/RadixUI/ScrollArea";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -157,6 +159,7 @@ const markdownComponents = {
 export default function SymposiumApp() {
     const { addToast } = useToast();
     const { addWindow } = useApp();
+    const { isAdmin } = useAuth();
 
     const [collaborations, setCollaborations] = useState<Collaboration[]>([]);
     const [activeCollab, setActiveCollab] = useState<Collaboration | null>(null);
@@ -485,12 +488,14 @@ export default function SymposiumApp() {
                                     <h1 className="font-bold text-[15px]">symposium</h1>
                                     <span className="opacity-30 text-[10px] ml-2">{"// autonomous papers"}</span>
                                 </div>
-                                <button
-                                    onClick={() => setShowModal(true)}
-                                    className="text-[10px] font-bold border border-primary/10 bg-primary/5 px-4 py-1.5 rounded-full hover:bg-primary/10 active:scale-95 transition-all"
-                                >
-                                    + new paper
-                                </button>
+                                {isAdmin && (
+                                    <button
+                                        onClick={() => setShowModal(true)}
+                                        className="text-[10px] font-bold border border-primary/10 bg-primary/5 px-4 py-1.5 rounded-full hover:bg-primary/10 active:scale-95 transition-all"
+                                    >
+                                        + new paper
+                                    </button>
+                                )}
                             </div>
 
                             {/* Collaborations list */}
@@ -560,9 +565,20 @@ export default function SymposiumApp() {
                 </div>
 
                 {/* ── New Symposium Modal ── */}
+                <AnimatePresence>
                 {showModal && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-md p-4">
-                        <form
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 supports-[backdrop-filter]:backdrop-blur-[20px] p-4"
+                        style={{ willChange: 'auto' }}
+                    >
+                        <motion.form
+                            initial={{ scale: 0.95, opacity: 0, y: 10 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0, y: 10 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
                             onSubmit={handleStart}
                             className="bg-white dark:bg-[#1C1C1E] border border-primary/10 w-full max-w-lg shadow-2xl font-mono lowercase rounded-[32px] overflow-hidden"
                         >
@@ -700,9 +716,10 @@ export default function SymposiumApp() {
                                     </button>
                                 </div>
                             </div>
-                        </form>
-                    </div>
+                        </motion.form>
+                    </motion.div>
                 )}
+                </AnimatePresence>
             </div>
         );
     }
@@ -862,7 +879,7 @@ export default function SymposiumApp() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        {!isCompleted && !isRunning && (
+                        {!isCompleted && !isRunning && isAdmin && (
                             <button
                                 onClick={triggerSingleStep}
                                 className="text-[10px] font-bold bg-primary/10 border border-primary/10 px-4 py-1.5 rounded-full hover:bg-primary hover:text-inverse transition-all active:scale-95"
@@ -984,15 +1001,17 @@ export default function SymposiumApp() {
                                 </div>
                                 <ScrollArea className="flex-1">
                                     <div className="p-3 space-y-3">
+                                        <AnimatePresence mode="popLayout">
                                         {todoTasks.map(t => (
-                                            <div key={t.id} className="p-3 border border-primary/10 bg-primary/[0.02] hover:bg-primary/5 transition-colors rounded-[16px] space-y-1.5">
+                                            <motion.div layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ type: "spring", stiffness: 400, damping: 30 }} key={t.id} className="p-3 border border-primary/10 bg-primary/[0.02] hover:bg-primary/5 transition-colors rounded-[16px] space-y-1.5">
                                                 <div className="text-[11px] font-bold">{TASK_LABELS[t.task_name] || t.task_name}</div>
                                                 {t.section_title && (
                                                     <div className="text-[10px] opacity-60 italic">section: &ldquo;{t.section_title}&rdquo;</div>
                                                 )}
                                                 <div className="text-[9px] opacity-40 mt-2 font-bold">unassigned</div>
-                                            </div>
+                                            </motion.div>
                                         ))}
+                                        </AnimatePresence>
                                         {todoTasks.length === 0 && (
                                             <div className="py-12 text-center text-[10px] opacity-30 italic">no pending tasks</div>
                                         )}
@@ -1008,10 +1027,11 @@ export default function SymposiumApp() {
                                 </div>
                                 <ScrollArea className="flex-1">
                                     <div className="p-3 space-y-3">
+                                        <AnimatePresence mode="popLayout">
                                         {inProgressTasks.map(t => {
                                             const p = getProfile(t);
                                             return (
-                                                <div key={t.id} className="p-3 border border-emerald-500/20 bg-emerald-500/5 shadow-sm rounded-[16px] space-y-2 relative overflow-hidden transition-all">
+                                                <motion.div layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ type: "spring", stiffness: 400, damping: 30 }} key={t.id} className="p-3 border border-emerald-500/20 bg-emerald-500/5 shadow-sm rounded-[16px] space-y-2 relative overflow-hidden transition-all">
                                                     <div className="absolute top-2 right-2 w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
                                                     <div className="pr-4">
                                                         <div className="text-[11px] font-bold text-primary">{TASK_LABELS[t.task_name] || t.task_name}</div>
@@ -1030,9 +1050,10 @@ export default function SymposiumApp() {
                                                         )}
                                                         <span className="text-[10px] font-bold text-primary opacity-80">@{p?.username || 'bot'} working...</span>
                                                     </div>
-                                                </div>
+                                                </motion.div>
                                             );
                                         })}
+                                        </AnimatePresence>
                                         {inProgressTasks.length === 0 && (
                                             <div className="py-12 text-center text-[10px] opacity-30 italic">no active tasks</div>
                                         )}
@@ -1048,10 +1069,11 @@ export default function SymposiumApp() {
                                 </div>
                                 <ScrollArea className="flex-1">
                                     <div className="p-3 space-y-3">
+                                        <AnimatePresence mode="popLayout">
                                         {completedTasks.map(t => {
                                             const p = getProfile(t);
                                             return (
-                                                <div key={t.id} className="p-3 border border-primary/5 bg-primary/[0.03] rounded-[16px] space-y-2 opacity-60 hover:opacity-100 transition-opacity">
+                                                <motion.div layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ type: "spring", stiffness: 400, damping: 30 }} key={t.id} className="p-3 border border-primary/5 bg-primary/[0.03] rounded-[16px] space-y-2 opacity-60 hover:opacity-100 transition-opacity">
                                                     <div>
                                                         <div className="text-[11px] font-bold line-through decoration-primary/30">{TASK_LABELS[t.task_name] || t.task_name}</div>
                                                         {t.section_title && (
@@ -1063,9 +1085,10 @@ export default function SymposiumApp() {
                                                             <span>by @{p.username}</span>
                                                         </div>
                                                     )}
-                                                </div>
+                                                </motion.div>
                                             );
                                         })}
+                                        </AnimatePresence>
                                         {completedTasks.length === 0 && (
                                             <div className="py-12 text-center text-[10px] opacity-30 italic">no completed tasks yet</div>
                                         )}
@@ -1078,7 +1101,7 @@ export default function SymposiumApp() {
                 )}
 
                 {/* Loom Control & Steering Bar */}
-                {!isCompleted && (
+                {!isCompleted && isAdmin && (
                     <div className="border-t border-primary/5 bg-primary/[0.02] px-4 py-3 flex items-center gap-3 shrink-0">
                         <div className="flex-1 flex items-center gap-2">
                             <span className="text-[10px] font-bold opacity-50 shrink-0 select-none ml-2">steer:</span>
