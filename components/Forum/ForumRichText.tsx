@@ -283,7 +283,7 @@ const MentionProfiles = ({ onSelect, onClose, search = '' }: { onSelect?: (profi
             animate={{ opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 300, damping: 25 } }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             style={{ willChange: 'auto' }}
-            className="absolute left-2 top-2 z-50 w-[240px] max-h-[200px] flex flex-col bg-white/80 dark:bg-black/80 supports-[backdrop-filter]:backdrop-blur-[60px] border border-black/10 dark:border-white/10 rounded-[20px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] overflow-hidden"
+            className="absolute left-2 top-2 z-50 w-[240px] max-h-[200px] flex flex-col bg-white/80 dark:bg-black/80 supports-[backdrop-filter]:backdrop-blur-[20px] border border-black/10 dark:border-white/10 rounded-[20px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] overflow-hidden"
         >
             <div className="flex justify-between items-center px-3 py-2 border-b border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5">
                 <span className="text-[10px] font-bold lowercase opacity-50 tracking-wider">mentions</span>
@@ -339,7 +339,7 @@ export default function ForumRichText({
             }),
             Image.configure({
                 HTMLAttributes: {
-                    class: 'rounded-md max-w-full h-auto my-4 border border-primary/20',
+                    class: 'rounded-[12px] max-w-full h-auto my-4 border border-primary/20',
                 },
             }),
             CharacterCount,
@@ -434,7 +434,7 @@ export default function ForumRichText({
     if (!editor) return null
 
     return (
-        <div className={`relative bg-white/60 dark:bg-black/60 supports-[backdrop-filter]:backdrop-blur-[60px] rounded-[24px] border border-black/5 dark:border-white/5 shadow-inner flex flex-col overflow-hidden w-full max-w-full min-w-0 ${expandHeight ? 'flex-1 h-full min-h-0' : ''} ${wrapperClassName}`} {...getRootProps()}>
+        <div className={`relative bg-white/60 dark:bg-black/60 supports-[backdrop-filter]:backdrop-blur-[20px] rounded-[24px] border border-black/5 dark:border-white/5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex flex-col overflow-hidden w-full max-w-full min-w-0 ${expandHeight ? 'flex-1 h-full min-h-0' : ''} ${wrapperClassName}`} {...getRootProps()}>
             <input className="hidden" {...getInputProps()} />
 
             {/* Toolbar - iOS 26 Style - Always visible, scrollable */}
@@ -456,7 +456,7 @@ export default function ForumRichText({
                             <button
                                 key={button.name}
                                 type="button"
-                                className={`p-1.5 md:p-2 rounded-xl flex items-center justify-center transition-all duration-200 shrink-0
+                                className={`p-1.5 md:p-2 rounded-[16px] flex items-center justify-center transition-all duration-200 shrink-0
                                     ${isActive
                                         ? 'bg-black text-white dark:bg-white dark:text-black shadow-sm'
                                         : isDisabled
@@ -498,7 +498,7 @@ export default function ForumRichText({
                 </div>
 
                 {isDragActive && (
-                    <div className="bg-white/80 dark:bg-black/80 supports-[backdrop-filter]:backdrop-blur-[40px] z-10 flex items-center justify-center absolute w-full h-full inset-0 p-4">
+                    <div className="bg-white/80 dark:bg-black/80 supports-[backdrop-filter]:backdrop-blur-[20px] z-10 flex items-center justify-center absolute w-full h-full inset-0 p-4">
                         <div className="border-2 border-dashed border-primary/20 rounded-[16px] w-full h-full flex items-center justify-center bg-black/5 dark:bg-white/5">
                             <p className="m-0 font-bold lowercase text-primary/60">drop image here</p>
                         </div>

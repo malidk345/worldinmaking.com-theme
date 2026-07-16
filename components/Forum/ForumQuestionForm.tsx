@@ -61,7 +61,7 @@ export default function ForumQuestionForm({ isInForum = false, archived = false,
                     animate={{ opacity: 1, height: 'auto', scale: 1 }}
                     exit={{ opacity: 0, height: 0, scale: 0.95 }}
                     transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                    className={`relative bg-white dark:bg-[#1C1C1E] rounded-[20px] p-2.5 md:p-3 border border-gray-100 dark:border-gray-800 shadow-md overflow-hidden w-full max-w-full min-w-0 ${className} ${archived ? 'opacity-25 pointer-events-none' : ''}`}
+                    className={`relative bg-white dark:bg-[#1C1C1E] rounded-[24px] p-2.5 md:p-3 border border-gray-100 dark:border-gray-800 shadow-[0_8px_24px_rgba(0,0,0,0.08)] overflow-hidden w-full max-w-full min-w-0 ${className} ${archived ? 'opacity-25 pointer-events-none' : ''}`}
                 >
                     <div className="flex items-start gap-2 md:gap-3 mb-3">
                         <div className="w-[32px] h-[32px] md:w-[36px] md:h-[36px] rounded-full overflow-hidden shrink-0 mt-0.5 border border-black/10 dark:border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">

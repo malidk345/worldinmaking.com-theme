@@ -74,7 +74,7 @@ export const TableOfContents = ({ tableOfContents, contentRef, title = 'Content'
                                 id={navItem.url}
                                 label={navItem.value.toLowerCase()}
                                 className={`
-                                    group/toc-item block py-1.5 px-3 rounded-md transition-all duration-200 relative
+                                    group/toc-item block py-1.5 px-3 rounded-[12px] transition-all duration-200 relative
                                     ${isTopLevel
                                         ? 'text-[11px] font-medium text-black dark:text-white hover:text-black dark:hover:text-white hover:bg-burnt-orange/8'
                                         : 'text-[10px] font-normal text-black dark:text-white hover:text-black dark:hover:text-white hover:bg-accent/40'

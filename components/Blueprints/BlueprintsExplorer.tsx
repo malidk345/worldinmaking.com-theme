@@ -73,7 +73,7 @@ export default function BlueprintsExplorer() {
                                                     <li 
                                                         key={post.id}
                                                         onClick={() => handlePostClick(post)}
-                                                        className="text-[12px] opacity-70 hover:opacity-100 cursor-pointer flex items-center gap-2 group py-1.5 px-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-xl transition-colors"
+                                                        className="text-[12px] opacity-70 hover:opacity-100 cursor-pointer flex items-center gap-2 group py-1.5 px-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-[16px] transition-colors"
                                                     >
                                                         <IconChevronRight className="size-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                                                         {post.title}

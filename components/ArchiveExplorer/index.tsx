@@ -127,12 +127,12 @@ export default function ArchiveExplorer() {
     return (
         <div className="h-full flex flex-col font-sans text-primary select-none p-4 bg-transparent">
             {/* Header / Breadcrumb navigation */}
-            <header className="flex-shrink-0 flex items-center justify-between px-3 py-2 mb-4 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5 shadow-sm">
+            <header className="flex-shrink-0 flex items-center justify-between px-3 py-2 mb-4 bg-black/5 dark:bg-white/5 rounded-[16px] border border-black/5 dark:border-white/5 shadow-sm">
                 <div className="flex items-center gap-2 pl-1">
                     {currentFolder !== 'root' && (
                         <button 
                             onClick={() => setCurrentFolder('root')}
-                            className="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-primary transition-all cursor-pointer flex items-center justify-center"
+                            className="p-1 rounded-[16px] hover:bg-black/5 dark:hover:bg-white/10 text-primary transition-all cursor-pointer flex items-center justify-center"
                         >
                             <IconChevronLeft className="size-3.5" />
                         </button>
@@ -157,12 +157,12 @@ export default function ArchiveExplorer() {
                     {currentFolder === 'saved-posts' && user && (
                         <button 
                             onClick={() => { setRefreshing(true); fetchSavedPosts(); }}
-                            className={`p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-all cursor-pointer ${refreshing ? 'animate-spin' : ''}`}
+                            className={`p-1 rounded-[16px] hover:bg-black/5 dark:hover:bg-white/10 transition-all cursor-pointer ${refreshing ? 'animate-spin' : ''}`}
                         >
                             <IconRefresh className="size-3" />
                         </button>
                     )}
-                    <span className="bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-lg border border-black/5 dark:border-white/5">
+                    <span className="bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-[16px] border border-black/5 dark:border-white/5">
                         {currentFolder === 'root' && `${archivedApps.length + (user ? savedPosts.length : 0)} ${t('archive.items')}`}
                         {currentFolder === 'apps' && `${archivedApps.length} ${t('archive.apps')}`}
                         {currentFolder === 'saved-posts' && (user ? `${savedPosts.length} ${t('archive.posts')}` : t('archive.locked'))}
@@ -179,9 +179,9 @@ export default function ArchiveExplorer() {
                         {/* Folder A: Applications */}
                         <div 
                             onClick={() => setCurrentFolder('apps')}
-                            className="group flex flex-col p-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-black/5 dark:border-white/5 hover:border-black/10 dark:hover:border-white/10 hover:bg-white dark:hover:bg-black cursor-pointer transition-all duration-200 shadow-sm"
+                            className="group flex flex-col p-4 rounded-[24px] bg-gray-50 dark:bg-gray-900 border border-black/5 dark:border-white/5 hover:border-black/10 dark:hover:border-white/10 hover:bg-white dark:hover:bg-black cursor-pointer transition-all duration-200 shadow-sm"
                         >
-                            <div className="size-10 rounded-xl bg-black/5 dark:bg-white/10 flex items-center justify-center shrink-0 mb-3 border border-black/5 dark:border-white/5">
+                            <div className="size-10 rounded-[16px] bg-black/5 dark:bg-white/10 flex items-center justify-center shrink-0 mb-3 border border-black/5 dark:border-white/5">
                                 <AppIcon name="folder" className="size-7 grayscale opacity-50 dark:opacity-60 transition-all duration-300 group-hover:scale-105 group-hover:opacity-85" />
                             </div>
                             <div>
@@ -195,9 +195,9 @@ export default function ArchiveExplorer() {
                         {/* Folder B: Saved Posts */}
                         <div 
                             onClick={() => setCurrentFolder('saved-posts')}
-                            className="group flex flex-col p-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-black/5 dark:border-white/5 hover:border-black/10 dark:hover:border-white/10 hover:bg-white dark:hover:bg-black cursor-pointer transition-all duration-200 shadow-sm"
+                            className="group flex flex-col p-4 rounded-[24px] bg-gray-50 dark:bg-gray-900 border border-black/5 dark:border-white/5 hover:border-black/10 dark:hover:border-white/10 hover:bg-white dark:hover:bg-black cursor-pointer transition-all duration-200 shadow-sm"
                         >
-                            <div className="size-10 rounded-xl bg-black/5 dark:bg-white/10 flex items-center justify-center shrink-0 mb-3 border border-black/5 dark:border-white/5">
+                            <div className="size-10 rounded-[16px] bg-black/5 dark:bg-white/10 flex items-center justify-center shrink-0 mb-3 border border-black/5 dark:border-white/5">
                                 <AppIcon name="doc" className="size-7 grayscale opacity-50 dark:opacity-60 transition-all duration-300 group-hover:scale-105 group-hover:opacity-85" />
                             </div>
                             <div>
@@ -224,9 +224,9 @@ export default function ArchiveExplorer() {
                                 {archivedApps.map((app) => (
                                     <div
                                         key={app.label}
-                                        className="flex items-center gap-3 p-3 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-black/5 dark:border-white/5 hover:bg-white dark:hover:bg-black transition-all duration-200 shadow-sm"
+                                        className="flex items-center gap-3 p-3 rounded-[24px] bg-gray-50 dark:bg-gray-900 border border-black/5 dark:border-white/5 hover:bg-white dark:hover:bg-black transition-all duration-200 shadow-sm"
                                     >
-                                        <div className="size-10 bg-black/5 dark:bg-white/10 rounded-xl flex items-center justify-center shrink-0 border border-black/5 dark:border-white/5">
+                                        <div className="size-10 bg-black/5 dark:bg-white/10 rounded-[16px] flex items-center justify-center shrink-0 border border-black/5 dark:border-white/5">
                                             <AppIcon name={app.iconName} className="size-6.5 grayscale opacity-60" />
                                         </div>
                                         <div className="flex-1 min-w-0">
@@ -261,8 +261,8 @@ export default function ArchiveExplorer() {
                     <>
                         {!user ? (
                             <div className="h-full flex flex-col items-center justify-center text-center p-4 min-h-[200px] justify-self-center max-w-[260px] w-full animate-fadeIn">
-                                <div className="w-full p-6 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-black/5 dark:border-white/5 shadow-sm flex flex-col items-center text-center">
-                                    <div className="size-11 rounded-xl bg-black/5 dark:bg-white/10 flex items-center justify-center mb-3 text-primary border border-black/5 dark:border-white/5">
+                                <div className="w-full p-6 rounded-[24px] bg-gray-50 dark:bg-gray-900 border border-black/5 dark:border-white/5 shadow-sm flex flex-col items-center text-center">
+                                    <div className="size-11 rounded-[16px] bg-black/5 dark:bg-white/10 flex items-center justify-center mb-3 text-primary border border-black/5 dark:border-white/5">
                                         <IconLock className="size-5 grayscale opacity-60" />
                                     </div>
                                     <h4 className="font-bold text-[12.5px] text-primary lowercase mb-1">{t('archive.auth_required')}</h4>
@@ -293,10 +293,10 @@ export default function ArchiveExplorer() {
                                 {savedPosts.map((post) => (
                                     <div
                                         key={post.post_slug}
-                                        className="flex items-center justify-between p-2.5 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-black/5 dark:border-white/5 hover:bg-white dark:hover:bg-black transition-all duration-200 shadow-sm"
+                                        className="flex items-center justify-between p-2.5 rounded-[24px] bg-gray-50 dark:bg-gray-900 border border-black/5 dark:border-white/5 hover:bg-white dark:hover:bg-black transition-all duration-200 shadow-sm"
                                     >
                                         <div className="flex items-center gap-3 min-w-0 flex-1 pr-3">
-                                            <div className="size-9 rounded-xl bg-black/5 dark:bg-white/10 flex items-center justify-center shrink-0 border border-black/5 dark:border-white/5 shadow-sm">
+                                            <div className="size-9 rounded-[16px] bg-black/5 dark:bg-white/10 flex items-center justify-center shrink-0 border border-black/5 dark:border-white/5 shadow-sm">
                                                 <AppIcon name="doc" className="size-5.5 grayscale opacity-60" />
                                             </div>
                                             <div className="min-w-0">

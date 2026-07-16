@@ -115,7 +115,7 @@ export default function ForumQuestionCard({
         return (
             <div className="flex flex-col w-full text-primary">
                 {question.archived && (
-                    <div className="m-4 mb-0 bg-primary border border-black p-4 rounded text-center">
+                    <div className="m-4 mb-0 bg-primary border border-black p-4 rounded-[14px] text-center">
                         <p className="font-bold text-base !m-0 !p-0 lowercase">the following thread has been archived.</p>
                         <p className="!text-sm !m-0 text-balance opacity-60 lowercase">
                             it&apos;s likely out of date, no longer relevant, or the answer has been added to our documentation.
@@ -197,7 +197,7 @@ export default function ForumQuestionCard({
     return (
         <div className="flex flex-col w-full text-primary">
             {question.archived && (
-                <div className="m-4 mb-0 bg-primary border border-black p-4 rounded text-center">
+                <div className="m-4 mb-0 bg-primary border border-black p-4 rounded-[14px] text-center">
                     <p className="font-bold text-base !m-0 !p-0 lowercase">the following thread has been archived.</p>
                     <p className="!text-sm !m-0 text-balance opacity-60 lowercase">
                         it&apos;s likely out of date, no longer relevant, or the answer has been added to our documentation.
@@ -206,7 +206,7 @@ export default function ForumQuestionCard({
             )}
 
             {/* Standard Forum Thread Layout with Continuous Left Vertical Timeline Line */}
-            <div className={`flex w-full gap-3 relative ${isInForum ? 'pt-4 px-4 pb-4 sm:pt-6 sm:pl-6 sm:pr-8 bg-transparent sm:bg-white/60 sm:dark:bg-[#121214]/40 sm:backdrop-blur-md border-none sm:border sm:border-primary/10 rounded-none sm:rounded-[24px] md:sm:rounded-[32px] shadow-none sm:shadow-sm sm:shadow-black/5' : ''}`}>
+            <div className={`flex w-full gap-3 relative ${isInForum ? 'pt-4 px-4 pb-4 sm:pt-6 sm:pl-6 sm:pr-8 bg-transparent sm:bg-white/60 sm:dark:bg-[#121214]/40 sm:backdrop-blur-[20px] border-none sm:border sm:border-black/5 dark:border-white/5 rounded-none sm:rounded-[24px] md:sm:rounded-[32px] shadow-none sm:shadow-[0_4px_16px_rgba(0,0,0,0.06)] sm:shadow-black/5' : ''}`}>
                 
                 {/* Left Timeline Column: Main Avatar & Vertical Line */}
                 <div className="w-[40px] shrink-0 flex flex-col items-center relative">

@@ -47,13 +47,13 @@ export default function ForumMarkdown({
             components={{
                 p: ({ children }) => <p className="text-black dark:text-white !m-0 pb-1.5 last:pb-0 text-[13px] leading-[1.4] tracking-tight">{children}</p>,
                 pre: ({ children }) => (
-                    <pre className="whitespace-pre-wrap text-[11px] leading-normal my-2 p-2 bg-black/5 dark:bg-white/5 rounded border border-black/5 dark:border-white/5">
+                    <pre className="whitespace-pre-wrap text-[11px] leading-normal my-2 p-2 bg-black/5 dark:bg-white/5 rounded-[12px] border border-black/5 dark:border-white/5">
                         {children}
                     </pre>
                 ),
                 code({ className, children, ...props }: React.HTMLAttributes<HTMLElement> & { className?: string; children?: React.ReactNode }) {
                     return (
-                        <code className={`${className} break-all inline-block text-[11.5px] bg-black/5 dark:bg-white/5 px-1 py-0.5 rounded font-mono`} {...props}>
+                        <code className={`${className} break-all inline-block text-[11.5px] bg-black/5 dark:bg-white/5 px-1 py-0.5 rounded-[12px] font-mono`} {...props}>
                             {children}
                         </code>
                     )
@@ -74,7 +74,7 @@ export default function ForumMarkdown({
                         const query = altText.replace('illustration:', '').trim();
                         const imageUrl = props.src || `https://loremflickr.com/800/400/${encodeURIComponent(query.replace(/\s+/g, ','))}`;
                         return (
-                            <span className="block my-3 overflow-hidden rounded-md border border-black/5 dark:border-white/5 relative group max-w-full">
+                            <span className="block my-3 overflow-hidden rounded-[12px] border border-black/5 dark:border-white/5 relative group max-w-full">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
                                     src={imageUrl}
@@ -86,7 +86,7 @@ export default function ForumMarkdown({
                         );
                     }
                     // eslint-disable-next-line @next/next/no-img-element
-                    return <img {...props} alt={altText} className="rounded-md max-w-full h-auto my-3" />;
+                    return <img {...props} alt={altText} className="rounded-[12px] max-w-full h-auto my-3" />;
                 },
             }}
         >
