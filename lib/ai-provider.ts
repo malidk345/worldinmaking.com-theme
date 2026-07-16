@@ -62,7 +62,8 @@ async function callGroq(prompt: string): Promise<string> {
         body: JSON.stringify({
             model,
             messages: [{ role: 'user', content: prompt }],
-            temperature: 0.7
+            temperature: 0.7,
+            max_tokens: 4096
         })
     });
 
@@ -99,7 +100,8 @@ async function callOpenRouter(prompt: string): Promise<string> {
         body: JSON.stringify({
             model,
             messages: [{ role: 'user', content: prompt }],
-            temperature: 0.7
+            temperature: 0.7,
+            max_tokens: 4096
         })
     });
 
@@ -134,7 +136,7 @@ async function callHuggingFace(prompt: string): Promise<string> {
             model,
             messages: [{ role: 'user', content: prompt }],
             temperature: 0.7,
-            max_tokens: 500
+            max_tokens: 2048
         })
     });
 

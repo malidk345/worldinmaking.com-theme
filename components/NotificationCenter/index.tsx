@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { IconChat, IconNewspaper, IconNotification, IconX } from '@posthog/icons';
+import { IconChat, IconNewspaper, IconX } from '@posthog/icons';
 import { supabase } from 'lib/supabase'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -18,6 +18,47 @@ interface Notification {
     type: 'post' | 'comment' | 'system'
     timestamp: string
     link?: string
+}
+
+const IconNotificationWithBadge = ({ 
+    hasUnread, 
+    className = '', 
+    ...props 
+}: { 
+    hasUnread: boolean; 
+    className?: string; 
+    [key: string]: any 
+}) => {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            className={className}
+            {...props}
+        >
+            {/* Box path */}
+            <path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M4.75 4.5C4.61193 4.5 4.5 4.61193 4.5 4.75V19.25C4.5 19.3881 4.61193 19.5 4.75 19.5H19.25C19.3881 19.5 19.5 19.3881 19.5 19.25V12.25C19.5 11.8358 19.8358 11.5 20.25 11.5C20.6642 11.5 21 11.8358 21 12.25V19.25C21 20.2165 20.2165 21 19.25 21H4.75C3.7835 21 3 20.2165 3 19.25V4.75C3 3.7835 3.7835 3 4.75 3H12.25C12.6642 3 13 3.75 13 3.75C13 4.16421 12.6642 4.5 12.25 4.5H4.75Z"
+            />
+            {/* Circle ring */}
+            <path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M19.7678 4.23223C18.7915 3.25592 17.2085 3.25592 16.2322 4.23223C15.2559 5.20854 15.2559 6.79146 16.2322 7.76777C17.2085 8.74408 18.7915 8.74408 19.7678 7.76777C20.7441 6.79146 20.7441 5.20854 19.7678 4.23223ZM15.1716 3.17157C16.7337 1.60948 19.2663 1.60948 20.8284 3.17157C22.3905 4.73367 22.3905 7.26633 20.8284 8.82843C19.2663 10.3905 16.7337 10.3905 15.1716 8.82843C13.6095 7.26633 13.6095 4.73367 15.1716 3.17157Z"
+            />
+            {/* If hasUnread is true, fill the circle with the current color */}
+            {hasUnread && (
+                <circle
+                    cx="18"
+                    cy="6"
+                    r="1.77"
+                    fill="currentColor"
+                />
+            )}
+        </svg>
+    )
 }
 
 export default function NotificationCenter() {
@@ -86,10 +127,7 @@ export default function NotificationCenter() {
                 className={`!px-1 group/notif relative translate-y-[2px] transition-all ${isOpen ? 'bg-primary/5 dark:bg-white/10' : ''}`}
             >
                 <div className="relative px-1 h-5 flex items-center justify-center">
-                    <IconNotification className={`size-[18px] text-black transition-transform group-hover/notif:scale-110 ${hasUnread ? 'animate-wiggle' : ''}`} strokeWidth={1.5} />
-                    {hasUnread && (
-                        <span className="absolute top-0 right-0 size-2 bg-blue-primary rounded-full border border-accent shadow-sm" />
-                    )}
+                    <IconNotificationWithBadge hasUnread={hasUnread} className={`size-[18px] text-black transition-transform group-hover/notif:scale-110 ${hasUnread ? 'animate-wiggle' : ''}`} />
                 </div>
             </OSButton>
 
@@ -126,7 +164,7 @@ export default function NotificationCenter() {
                                 <div className="p-1.5 space-y-0.5">
                                     {notifications.length === 0 ? (
                                         <div className="py-10 text-center">
-                                            <IconNotification className="size-6 mx-auto opacity-10 mb-2" />
+                                            <IconNotificationWithBadge hasUnread={false} className="size-6 mx-auto opacity-10 mb-2" />
                                             <p className="text-[11px] opacity-40">no recent activities</p>
                                         </div>
                                     ) : (

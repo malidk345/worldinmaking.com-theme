@@ -224,6 +224,33 @@ const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
                             components={{
                                 img: ({ src, alt, title }: { src?: string; alt?: string; title?: string }) => {
                                     let finalSrc = src || '';
+                                    const altText = alt || '';
+
+                                    if (altText.startsWith('illustration:')) {
+                                        const query = altText.replace('illustration:', '').trim();
+                                        const imageUrl = finalSrc || `https://loremflickr.com/800/400/${encodeURIComponent(query.replace(/\s+/g, ','))}`;
+                                        return (
+                                            <figure className="my-10 overflow-hidden rounded-[24px] bg-primary/5 border border-primary/10 shadow-lg relative group">
+                                                <div className="absolute inset-0 bg-black/5 dark:bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10 pointer-events-none" />
+                                                <CloudinaryImage
+                                                    src={imageUrl}
+                                                    alt={altText}
+                                                    title={title}
+                                                    className="w-full aspect-video hover:scale-105 transition-transform duration-700 ease-out"
+                                                    imgClassName="object-cover w-full h-auto"
+                                                    width={1200}
+                                                    height={675}
+                                                    priority={false}
+                                                />
+                                                <figcaption className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black/80 to-transparent z-20">
+                                                    <div className="text-[10px] font-mono text-white/90 text-center lowercase tracking-wider">
+                                                        ⌁ {query} ⌁
+                                                    </div>
+                                                </figcaption>
+                                            </figure>
+                                        );
+                                    }
+
                                     if (finalSrc.startsWith('/storage/v1/object/public/')) {
                                         const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, '') || '';
                                         // Replace '/public/' with '/render/image/public/' and append transformation params
@@ -234,7 +261,7 @@ const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
                                     return (
                                         <CloudinaryImage
                                             src={finalSrc}
-                                            alt={alt || 'Blog post image'}
+                                            alt={altText || 'Blog post image'}
                                             title={title}
                                                 className="my-10 rounded-[18px] md:rounded-[24px] border border-black/5 dark:border-white/5 shadow-lg overflow-hidden"
                                             imgClassName="object-contain w-full h-auto"

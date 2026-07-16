@@ -68,10 +68,25 @@ export default function ForumMarkdown({
                         {children}
                     </a>
                 ),
-                img: (props) => (
+                img: (props) => {
+                    const altText = props.alt || '';
+                    if (altText.startsWith('illustration:')) {
+                        const query = altText.replace('illustration:', '').trim();
+                        const imageUrl = props.src || `https://loremflickr.com/800/400/${encodeURIComponent(query.replace(/\s+/g, ','))}`;
+                        return (
+                            <span className="block my-3 overflow-hidden rounded-md border border-black/5 dark:border-white/5 relative group max-w-full">
+                                <img
+                                    src={imageUrl}
+                                    alt={altText}
+                                    className="w-full max-w-full object-cover aspect-video hover:scale-105 transition-transform duration-700 ease-out"
+                                    loading="lazy"
+                                />
+                            </span>
+                        );
+                    }
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img {...props} alt={props.alt || ''} className="rounded-md max-w-full h-auto my-3" />
-                ),
+                    return <img {...props} alt={altText} className="rounded-md max-w-full h-auto my-3" />;
+                },
             }}
         >
             {content}

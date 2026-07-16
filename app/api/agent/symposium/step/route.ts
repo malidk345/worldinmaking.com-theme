@@ -4,6 +4,109 @@ import { supabaseAdmin } from '../../../../../lib/supabase-admin';
 import { cleanAISmell } from '../../../../../lib/agent-orchestrator';
 import type { ResearchSource } from '../../../symposium/research/route';
 
+// ─── Wikimedia Commons Image Search Helpers ────────────────────────────────────
+const WIKIMEDIA_STOP_WORDS = new Set([
+    'a', 'an', 'the', 'of', 'in', 'on', 'at', 'with', 'by', 'for', 'about', 'against', 
+    'between', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'to', 
+    'from', 'up', 'down', 'in', 'out', 'off', 'over', 'under', 'again', 'further', 'then', 
+    'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each', 
+    'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 
+    'same', 'so', 'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'should', 'now',
+    'hyper-realistic', 'realistic', 'hyperrealistic', 'photography', 'photo', 'illustration',
+    'drawing', 'painting', 'concept', 'art', 'detailed', 'high-resolution', '8k', '4k', 
+    'rendering', 'render', 'macro', 'micro', 'scenic', 'dramatic', 'atmospheric', 'moody'
+]);
+
+function simplifyWikimediaQuery(prompt: string): string {
+    const clean = prompt.toLowerCase()
+        .replace(/[^\w\s\-]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    const words = clean.split(' ');
+    const keywords = words.filter(word => !WIKIMEDIA_STOP_WORDS.has(word));
+
+    if (keywords.length > 0) {
+        return keywords.slice(0, 3).join(' ');
+    }
+    return prompt.slice(0, 30);
+}
+
+async function searchWikimediaImage(query: string): Promise<string | null> {
+    try {
+        const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srnamespace=6&srsearch=${encodeURIComponent(query)}&format=json&origin=*`;
+        const searchRes = await fetch(searchUrl, {
+            headers: { 'User-Agent': 'WorldInMakingBot/1.0 (contact@worldinmaking.com)' }
+        });
+        if (!searchRes.ok) return null;
+
+        const searchData = await searchRes.json() as any;
+        const results = searchData?.query?.search || [];
+        if (results.length === 0) return null;
+
+        const imageResult = results.find((r: any) => 
+            /\.(jpg|jpeg|png|gif|svg)$/i.test(r.title)
+        );
+
+        if (!imageResult) return null;
+        const fileName = imageResult.title;
+
+        const infoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(fileName)}&prop=imageinfo&iiprop=url&format=json&origin=*`;
+        const infoRes = await fetch(infoUrl, {
+            headers: { 'User-Agent': 'WorldInMakingBot/1.0 (contact@worldinmaking.com)' }
+        });
+        if (!infoRes.ok) return null;
+
+        const infoData = await infoRes.json() as any;
+        const pages = infoData?.query?.pages || {};
+        const pageId = Object.keys(pages)[0];
+        const imageUrl = pages[pageId]?.imageinfo?.[0]?.url;
+
+        return imageUrl || null;
+    } catch (err) {
+        console.error('Error fetching from Wikimedia:', err);
+        return null;
+    }
+}
+
+async function getRealImageLink(description: string): Promise<string> {
+    let url = await searchWikimediaImage(description);
+    if (url) return url;
+
+    const simple = simplifyWikimediaQuery(description);
+    url = await searchWikimediaImage(simple);
+    if (url) return url;
+
+    const parts = simple.split(' ');
+    for (const part of parts) {
+        if (part.length > 2) {
+            url = await searchWikimediaImage(part);
+            if (url) return url;
+        }
+    }
+
+    return 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800';
+}
+
+async function resolveIllustrationPlaceholders(content: string): Promise<string> {
+    const regex = /!\[illustration:\s*([^\]]+)\]\(\)/gi;
+    const matches = Array.from(content.matchAll(regex));
+    let updatedContent = content;
+
+    for (const match of matches) {
+        const fullPlaceholder = match[0];
+        const description = match[1].trim();
+        try {
+            const realUrl = await getRealImageLink(description);
+            updatedContent = updatedContent.replace(fullPlaceholder, `![illustration: ${description}](${realUrl})`);
+        } catch (e) {
+            console.error('[Illustration Resolution Error]', e);
+        }
+    }
+
+    return updatedContent;
+}
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 type TaskType = 'research_dossier' | 'draft_first_sections' | 'expand_section' | 'peer_review_section' | 'merge_and_synthesis' | 'final_polish';
 
@@ -79,6 +182,7 @@ const EDITORIAL_GUIDELINES = `
 - NO TRUNCATION OR SUMMARIZATION: You MUST NOT shorten, compress, or summarize. Keep every detail, paragraph, and citation intact. Ensure the depth justifies the length.
 - DYNAMIC & HIGHLY CREATIVE ILLUSTRATIONS: Whenever a visual concept enhances the text, insert exactly one image placeholder. BE HYPER-SPECIFIC and creative with the search terms. Format: ![illustration: exact, highly descriptive search keywords (e.g., hyper-realistic macro photography of a shattered glass sphere reflecting neon cyberpunk city lights, moody atmospheric lighting)](). Do not output empty markdown brackets.
 - CITATIONS & SOURCES: Weave facts from the provided sources elegantly into the prose, citing them inline using bracket numbers (e.g. [1], [2]). Do not just list them; integrate them as intellectual ammunition.
+- NO META-TEXT OR ADMISTRATIVE PREAMBLES: Under no circumstances should the text mention that it is part of a "symposium", "session", "collaboration", or "writing exercise". Do not output statements like "This paper was written by...", "This is a symposium paper", or mention the names/handles of the bots within the essay text. Write only the raw, direct essay content.
 `;
 
 function getTaskInstructions(
@@ -175,7 +279,7 @@ You are the Chief Copy Editor. This is the final pass. You have the entire docum
 - Read every sentence for rhythm, style, and precision. Obliterate any remaining clunky phrasing, passive voice, or AI "smell." Make it sing like top-tier human journalism.
 - Ensure the opening hook grabs the reader by the throat.
 - Add a pull-quote blockquote (> "...") featuring the single most powerful, provocative sentence in the essay.
-- Add a byline at the top: *A collective paper produced by the Symposium — [Author names]*
+- NO META-COMMENTARY OR BYLINES: Do NOT add any bylines (e.g. "*A collective paper produced by the Symposium*"), headers, footers, or statements about the writing process. Clean up and remove any such text if it exists in the draft.
 - CRITICAL: Retain the full length, depth, and sections. Do not summarize or truncate. This must be a masterwork.
 
 Output the FINAL, PUBLICATION-READY essay in markdown.`;
@@ -446,26 +550,32 @@ CHAIN-OF-THOUGHT FORMAT (mandatory):
         console.log(`[Symposium Blackboard] Step: ${taskType} (${targetSectionTitle || 'all'}) → @${profile.username}`);
         const replyText = await generateBotResponse(fullPrompt, profile.username);
 
-        // Parse response
-        const thoughtsMatch = replyText.match(/\[Inner Thoughts\]([\s\S]*?)(?=\[Article\]|$)/i);
-        const contentMatch = replyText.match(/\[Article\]([\s\S]*)$/i);
+        // Parse response supporting both English and Turkish tags (with or without brackets)
+        const thoughtsRegex = /(?:\[?(?:Inner Thoughts|İç\s*Ses|İçsel\s*Düşünceler|Düşünceler|Thoughts)\]?)([\s\S]*?)(?=(?:\[?(?:Article|Makale|Yazı|Metin|Draft)\]?)|$)/i;
+        const contentRegex = /(?:\[?(?:Article|Makale|Yazı|Metin|Draft)\]?)([\s\S]*)$/i;
+
+        const thoughtsMatch = replyText.match(thoughtsRegex);
+        const contentMatch = replyText.match(contentRegex);
 
         const innerThoughts = thoughtsMatch ? thoughtsMatch[1].trim() : '';
         const rawContent = contentMatch ? contentMatch[1].trim() : replyText;
         const cleanedContent = cleanAISmell(rawContent);
 
+        // Resolve empty illustration placeholders to real Wikimedia Commons image links
+        const resolvedContent = await resolveIllustrationPlaceholders(cleanedContent);
+
         // 8. Merge the bot's edits back into the main draft
         let mergedDraft = currentDraft;
         if (taskType === 'expand_section' || taskType === 'peer_review_section') {
-            mergedDraft = mergeSectionUpdate(currentDraft, targetSectionTitle || 'Introduction', cleanedContent);
+            mergedDraft = mergeSectionUpdate(currentDraft, targetSectionTitle || 'Introduction', resolvedContent);
         } else {
-            mergedDraft = cleanedContent;
+            mergedDraft = resolvedContent;
         }
 
         // 9. Save Step
         const stepContent = targetSectionTitle
-            ? `## ${targetSectionTitle}\n\n${cleanedContent}`
-            : cleanedContent;
+            ? `## ${targetSectionTitle}\n\n${resolvedContent}`
+            : resolvedContent;
 
         const { data: step, error: insertErr } = await supabaseAdmin
             .from('symposium_steps')

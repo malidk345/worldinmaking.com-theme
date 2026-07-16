@@ -105,8 +105,8 @@ const getMaxSteps = (collab: Collaboration | null) => {
 // ─── Image Renderer ───────────────────────────────────────────────────────────
 const IllustrationImage = ({ alt = "", src = "" }: { alt?: string; src?: string }) => {
     if (alt.startsWith("illustration:")) {
-        const query = alt.replace("illustration:", "").trim().replace(/\s+/g, ",");
-        const imageUrl = `https://loremflickr.com/800/400/${encodeURIComponent(query)}`;
+        const query = alt.replace("illustration:", "").trim();
+        const imageUrl = src || `https://loremflickr.com/800/400/${encodeURIComponent(query.replace(/\s+/g, ","))}`;
         return (
             <figure className="my-8 overflow-hidden rounded-[24px] bg-primary/5 border border-primary/10 shadow-sm relative group">
                 <div className="absolute inset-0 bg-black/5 dark:bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10 pointer-events-none" />
@@ -119,7 +119,7 @@ const IllustrationImage = ({ alt = "", src = "" }: { alt?: string; src?: string 
                 />
                 <figcaption className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black/80 to-transparent z-20">
                     <div className="text-[9px] font-mono text-white/90 text-center lowercase tracking-wider">
-                        ⌁ {query.replace(/,/g, " · ")} ⌁
+                        ⌁ {query} ⌁
                     </div>
                 </figcaption>
             </figure>
