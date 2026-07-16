@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';

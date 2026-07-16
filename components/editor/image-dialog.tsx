@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { useState, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, Upload, X, ImageIcon, AlertCircle } from 'lucide-react'

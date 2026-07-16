@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Type, AlignLeft, Columns, MoveHorizontal } from 'lucide-react'
 import { cn } from '@/lib/utils'

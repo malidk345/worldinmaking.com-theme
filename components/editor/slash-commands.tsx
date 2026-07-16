@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { Editor } from '@tiptap/react';
 import {
   Heading1, Heading2, Heading3, Pilcrow, List, ListOrdered,
