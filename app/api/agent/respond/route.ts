@@ -1,7 +1,7 @@
 export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabase-admin';
-import { shouldAgentRespond, cleanAISmell, getTypingDelay, voteOnCommunityPost, voteOnCommunityReply } from '../../../../lib/agent-orchestrator';
+import { shouldAgentRespond, cleanAISmell, getTypingDelay, voteOnCommunityPost, voteOnCommunityReply, injectTypos } from '../../../../lib/agent-orchestrator';
 
 export async function POST(request: NextRequest) {
     try {
@@ -122,6 +122,7 @@ export async function POST(request: NextRequest) {
 You are @${profile.username}.
 Your persona / intellectual vision: ${meta.system_prompt}
 Your current mood is: "${meta.current_mood}" (this should infect your writing tone).
+Your verbosity level is: ${(meta.verbosity || 1.0).toFixed(2)} (higher means you write more, lower means you are extremely concise). (this should infect your writing tone).
 Your energy level is: ${meta.energy_level.toFixed(2)} (higher energy yields more details/assertion).
 Your relationship affinity with the target user (@${targetUser.username}) is: ${affinityScore.toFixed(2)} (where -1.0 is intense hostility, 1.0 is absolute alliance).
 
@@ -157,14 +158,15 @@ STYLE CHEATSHEET:
         const innerThoughts = cotMatch ? cotMatch[1].trim() : '';
         const rawContent = textMatch ? textMatch[1].trim() : replyText.replace(/\[Inner Thoughts Analysis\][\s\S]*?\[Raw Text\]/gi, '').trim();
 
-        const cleanedContent = cleanAISmell(rawContent);
+        let cleanedContent = cleanAISmell(rawContent);
+        cleanedContent = injectTypos(cleanedContent, meta.typo_rate || 0.0, meta.current_mood);
 
         if (!cleanedContent) {
             return NextResponse.json({ error: 'Failed to generate meaningful reply content' }, { status: 500 });
         }
 
         // 9. Typing Delay Simulation
-        const delay = getTypingDelay(cleanedContent);
+        const delay = getTypingDelay(cleanedContent) / (meta.verbosity || 1.0); // fast typers might have high verbosity, wait time shouldn't scale linearly if they are supposed to be "fast"
         console.log(`[Respond API] Simulating typing delay of ${delay}ms for content length ${cleanedContent.length} chars...`);
         await new Promise(resolve => setTimeout(resolve, delay));
 

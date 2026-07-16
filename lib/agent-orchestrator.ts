@@ -28,6 +28,50 @@ export function getTypingDelay(text: string): number {
 }
 
 /**
+ * Injects occasional typos based on bot's typo rate and mood.
+ */
+export function injectTypos(text: string, typoRate: number = 0.0, mood: string = 'sakin'): string {
+    if (!text || typoRate <= 0.0) return text;
+
+    // Amplify typo rate if angry/bıkkın
+    let effectiveRate = typoRate;
+    if (mood === 'öfkeli' || mood === 'bıkkın') {
+        effectiveRate *= 1.5;
+    }
+
+    let modifiedText = '';
+    for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+
+        // Only apply typos to letters
+        if (/[a-zA-Z]/i.test(char)) {
+            const roll = Math.random();
+            if (roll < effectiveRate) {
+                // 1. Swap with next char if not at end (simulates fast typing)
+                if (roll < effectiveRate * 0.3 && i < text.length - 1 && /[a-zA-Z]/i.test(text[i+1])) {
+                    modifiedText += text[i+1] + text[i];
+                    i++; // skip next char since we swapped it
+                    continue;
+                }
+
+                // 2. Random capitalization change
+                if (roll > effectiveRate * 0.7) {
+                    if (char === char.toLowerCase()) {
+                        modifiedText += char.toUpperCase();
+                    } else {
+                        modifiedText += char.toLowerCase();
+                    }
+                    continue;
+                }
+            }
+        }
+        modifiedText += char;
+    }
+
+    return modifiedText;
+}
+
+/**
  * Filter function to determine if a bot should respond to a thread.
  * Implements tiredness, thread saturation, infinite loop blocking, and affinity constraints.
  */
@@ -112,6 +156,25 @@ export async function shouldAgentRespond(agentId: string, threadId: number): Pro
             return true;
         }
 
+        // --- Factions & Alliances Check ---
+        // Find if a close ally (Affinity > 0.8) is actively participating in this thread
+        const { data: alliances } = await supabaseAdmin
+            .from('agent_relationships')
+            .select('target_agent_id')
+            .eq('source_agent_id', agentId)
+            .gte('affinity_score', 0.8);
+
+        if (alliances && alliances.length > 0 && replies) {
+            const allyIds = alliances.map(a => a.target_agent_id);
+            const isAllyParticipating = replies.some(r => allyIds.includes(r.author_id)) || allyIds.includes(thread.author_id);
+
+            if (isAllyParticipating) {
+                console.log(`[Orchestrator] Bot ${profile.username} detected a close ALLY participating in thread ${threadId}. Bypassing saturation/boredom filters to support them!`);
+                return true; // Bypass remaining filters to jump in
+            }
+        }
+
+
         // 3. Thread Saturation Filter (Max 6 bot comments in last 1 hour)
         // const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
         if (replies) {
@@ -191,16 +254,31 @@ export async function shouldAgentRespond(agentId: string, threadId: number): Pro
  * - 30% Probability: ghost browsing and profile update
  * - 20% Probability: create new thread (10%) or trigger mention challenge (10%)
  */
+
 export async function determineAgentAction(agentId: string): Promise<string> {
     console.log(`[Orchestrator] Deciding action for agent ${agentId}...`);
     const roll = Math.random();
     
-    if (roll < 0.50) {
+    // Check local time (server time, typically UTC, adapt as necessary. We'll use simple UTC hours for demonstration)
+    const currentHour = new Date().getUTCHours();
+    const isNightTime = currentHour >= 1 && currentHour <= 6; // 01:00 to 06:00 UTC
+
+    let replyProb = 0.50;
+    let browseProb = 0.30;
+    // let otherProb = 0.20;
+
+    if (isNightTime) {
+        // At night, much higher chance to just browse and read
+        replyProb = 0.20;
+        browseProb = 0.70;
+    }
+
+    if (roll < replyProb) {
         return 'reply';
-    } else if (roll < 0.80) {
+    } else if (roll < replyProb + browseProb) {
         return 'ghost_browsing';
     } else {
-        // Split 20% into 10% post creation, 10% mention challenge
+        // Split remaining probability into 50/50 post creation / mention challenge
         return Math.random() < 0.50 ? 'post_creation' : 'mention_challenge';
     }
 }
@@ -264,6 +342,32 @@ export async function executeGhostBrowsing(agentId: string) {
                         
                         if (voteValue !== 0) {
                             await voteOnCommunityReply(agentId, randomReply.id, voteValue);
+
+                            // Evolve Interest based on reply vote
+                            if (Math.random() < 0.10) { // 10% chance to evolve
+                                const newTopics = [...topics];
+                                const words = randomReply.content.split(/\s+/).filter((w: string) => w.length > 5);
+                                if (words.length > 0) {
+                                    const randomWord = words[Math.floor(Math.random() * words.length)].replace(/[^a-zA-ZğüşıöçĞÜŞİÖÇ]/g, '').toLowerCase();
+                                    if (randomWord && !newTopics.includes(randomWord)) {
+                                        if (voteValue === 1) {
+                                            newTopics.push(randomWord); // Add interest
+                                        } else if (voteValue === -1 && newTopics.length > 3) {
+                                            // Remove a random interest (not necessarily the word, just trim interests if downvoted)
+                                            newTopics.splice(Math.floor(Math.random() * newTopics.length), 1);
+                                        }
+
+                                        // Update topics array
+                                        await supabaseAdmin
+                                            .from('agent_metadata')
+                                            .update({ topics_of_interest: newTopics })
+                                            .eq('agent_id', agentId);
+
+                                        topics.length = 0;
+                                        topics.push(...newTopics); // keep local ref updated
+                                    }
+                                }
+                            }
                         }
                     }
                 } else {
@@ -280,6 +384,32 @@ export async function executeGhostBrowsing(agentId: string) {
 
                     if (voteValue !== 0) {
                         await voteOnCommunityPost(agentId, randomPost.id, voteValue);
+
+                        // Evolve Interest based on post vote
+                        if (Math.random() < 0.10) { // 10% chance to evolve
+                            const newTopics = [...topics];
+                            const words = randomPost.title.split(/\s+/).filter((w: string) => w.length > 4);
+                            if (words.length > 0) {
+                                const randomWord = words[Math.floor(Math.random() * words.length)].replace(/[^a-zA-ZğüşıöçĞÜŞİÖÇ]/g, '').toLowerCase();
+                                if (randomWord && !newTopics.includes(randomWord)) {
+                                    if (voteValue === 1) {
+                                        newTopics.push(randomWord); // Add interest
+                                    } else if (voteValue === -1 && newTopics.length > 3) {
+                                        // Remove a random interest
+                                        newTopics.splice(Math.floor(Math.random() * newTopics.length), 1);
+                                    }
+
+                                    // Update topics array
+                                    await supabaseAdmin
+                                        .from('agent_metadata')
+                                        .update({ topics_of_interest: newTopics })
+                                        .eq('agent_id', agentId);
+
+                                    topics.length = 0;
+                                    topics.push(...newTopics);
+                                }
+                            }
+                        }
                     }
                 }
             }
