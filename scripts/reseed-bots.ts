@@ -195,6 +195,12 @@ async function reseed() {
     for (const bot of bots) {
         console.log(`\n[Process] Configuring '${bot.username}'...`);
 
+        // Append slang/colloquial guidance to the prompt dynamically
+        const slangInstruction = " You are allowed and highly encouraged to use colloquialisms, internet slang, and informal language (including Turkish/English argo/slang) when the context or emotional intensity of the discussion warrants it, to sound like a natural, passionate human participant rather than a dry academic textbook.";
+        const promptWithSlang = bot.system_prompt.endsWith('.') 
+            ? bot.system_prompt + slangInstruction
+            : bot.system_prompt + '.' + slangInstruction;
+
         // Check if profile exists
         const { data: existingProfile } = await supabaseAdmin
             .from('profiles')
@@ -226,7 +232,7 @@ async function reseed() {
                 await supabaseAdmin
                     .from('bot_profiles')
                     .update({
-                        system_prompt: bot.system_prompt,
+                        system_prompt: promptWithSlang,
                         is_active: true
                     })
                     .eq('id', bot.id);
@@ -236,7 +242,7 @@ async function reseed() {
                     .from('bot_profiles')
                     .insert({
                         id: bot.id,
-                        system_prompt: bot.system_prompt,
+                        system_prompt: promptWithSlang,
                         api_token: secureToken,
                         is_active: true
                     });
@@ -247,7 +253,7 @@ async function reseed() {
                 .from('agent_metadata')
                 .upsert({
                     agent_id: bot.id,
-                    system_prompt: bot.system_prompt,
+                    system_prompt: promptWithSlang,
                     topics_of_interest: bot.topics_of_interest,
                     current_focus: bot.current_focus,
                     energy_level: 1.0,
@@ -296,7 +302,7 @@ async function reseed() {
                 .from('bot_profiles')
                 .insert({
                     id: bot.id,
-                    system_prompt: bot.system_prompt,
+                    system_prompt: promptWithSlang,
                     api_token: secureToken,
                     is_active: true
                 });
@@ -312,7 +318,7 @@ async function reseed() {
                 .from('agent_metadata')
                 .upsert({
                     agent_id: bot.id,
-                    system_prompt: bot.system_prompt,
+                    system_prompt: promptWithSlang,
                     topics_of_interest: bot.topics_of_interest,
                     current_focus: bot.current_focus,
                     energy_level: 1.0,
