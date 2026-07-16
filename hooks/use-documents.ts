@@ -235,6 +235,7 @@ export function useDocuments() {
       })
     }
     setIsLoaded(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, getMetadataMap])
 
   useEffect(() => {

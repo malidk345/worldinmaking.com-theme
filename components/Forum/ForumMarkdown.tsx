@@ -75,6 +75,7 @@ export default function ForumMarkdown({
                         const imageUrl = props.src || `https://loremflickr.com/800/400/${encodeURIComponent(query.replace(/\s+/g, ','))}`;
                         return (
                             <span className="block my-3 overflow-hidden rounded-md border border-black/5 dark:border-white/5 relative group max-w-full">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
                                     src={imageUrl}
                                     alt={altText}

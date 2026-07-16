@@ -55,6 +55,7 @@ export default function Desktop() {
                 displayLabel: profile?.username || user.email || t('menu.profile'),
                 Icon: profile?.avatar_url ? (
                     <div className="size-10 rounded-full overflow-hidden border border-primary/10 shadow-sm flex items-center justify-center bg-accent">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
                     </div>
                 ) : (
