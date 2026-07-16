@@ -90,7 +90,7 @@ export default function PostEditor({ postId, item }: { postId?: string, item?: A
                 <div className="w-5 h-5 rounded-md bg-foreground flex items-center justify-center shadow-sm">
                   <div className="w-2 h-2 bg-background rounded-full" />
                 </div>
-                Craft
+                Notes
               </div>
               <div className="flex items-center gap-0.5">
                 <Button

@@ -1,5 +1,10 @@
 
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap');
+
 @theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  --font-serif: 'Lora', Georgia, "Times New Roman", serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   --font-apple: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-apple-code: "SF Mono", SFMono-Regular, Consolas, monospace;
 }
@@ -1322,177 +1327,98 @@ button::-moz-focus-inner,
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
 }
 
+/* Editor settings — font size */
+.editor-size-sm .ProseMirror { font-size: 14px; }
+.editor-size-md .ProseMirror { font-size: 16px; }
+.editor-size-lg .ProseMirror { font-size: 19px; }
+
+/* Editor settings — line height */
+.editor-lh-tight   .ProseMirror { line-height: 1.55; }
+.editor-lh-normal  .ProseMirror { line-height: 1.75; }
+.editor-lh-relaxed .ProseMirror { line-height: 2.1; }
+
+/* Tiptap styles */
 .craft-prose {
-  outline: none;
-  min-height: 500px;
-  line-height: 1.75;
-  color: rgb(var(--text-primary));
+  @apply outline-none min-h-[300px] leading-relaxed;
+  color: rgb(var(--text-primary, 30, 41, 59));
 }
-
 .ProseMirror {
-  outline: none;
-  min-height: 500px;
-  line-height: 1.75;
-  color: rgb(var(--text-primary));
+  @apply outline-none min-h-[300px] leading-relaxed;
   font-size: 16px;
+  color: rgb(var(--text-primary, 30, 41, 59));
 }
-
 .ProseMirror p {
-  margin-bottom: 1rem;
+  @apply mb-4;
 }
-
 .ProseMirror h1 {
-  font-size: 2.25rem;
-  font-weight: 700;
-  font-family: var(--font-apple);
-  margin-top: 2rem;
-  margin-bottom: 1rem;
-  letter-spacing: -0.025em;
+  @apply text-4xl font-bold font-sans mt-8 mb-4 tracking-tight;
 }
-
 .ProseMirror h2 {
-  font-size: 1.875rem;
-  font-weight: 600;
-  font-family: var(--font-apple);
-  margin-top: 2rem;
-  margin-bottom: 1rem;
-  letter-spacing: -0.025em;
+  @apply text-3xl font-semibold font-sans mt-8 mb-4 tracking-tight;
 }
-
 .ProseMirror h3 {
-  font-size: 1.5rem;
-  font-weight: 500;
-  font-family: var(--font-apple);
-  margin-top: 1.5rem;
-  margin-bottom: 0.75rem;
-  letter-spacing: -0.025em;
+  @apply text-2xl font-medium font-sans mt-6 mb-3 tracking-tight;
 }
-
 .ProseMirror ul {
-  list-style-type: disc;
-  list-style-position: inside;
-  margin-bottom: 1rem;
-  padding-left: 1rem;
+  @apply list-disc list-inside mb-4 pl-4;
 }
-
 .ProseMirror ol {
-  list-style-type: decimal;
-  list-style-position: inside;
-  margin-bottom: 1rem;
-  padding-left: 1rem;
+  @apply list-decimal list-inside mb-4 pl-4;
 }
-
 .ProseMirror blockquote {
-  border-left-width: 4px;
-  border-left-color: rgba(var(--primary-rgb), 0.2);
-  padding-left: 1rem;
-  font-style: italic;
-  color: rgb(var(--text-muted));
-  margin-top: 1.5rem;
-  margin-bottom: 1.5rem;
+  @apply border-l-4 border-primary/20 pl-4 italic my-6;
+  color: rgb(var(--text-secondary, 100, 116, 139));
 }
-
 .ProseMirror pre {
-  background-color: rgba(var(--primary-rgb), 0.05);
-  padding: 1rem;
-  border-radius: 0.75rem;
-  font-family: var(--font-code);
-  font-size: 0.875rem;
-  overflow-x: auto;
-  margin-top: 1.5rem;
-  margin-bottom: 1.5rem;
-  border: 1px solid rgba(var(--primary-rgb), 0.1);
+  @apply bg-muted/50 p-4 rounded-xl font-mono text-sm overflow-x-auto my-6 border border-border/50;
 }
-
 .ProseMirror code {
-  background-color: rgba(var(--primary-rgb), 0.05);
-  padding-left: 0.375rem;
-  padding-right: 0.375rem;
-  padding-top: 0.125rem;
-  padding-bottom: 0.125rem;
-  border-radius: 0.375rem;
-  font-family: var(--font-code);
-  font-size: 0.875rem;
-  color: rgb(var(--text-primary));
+  @apply bg-muted/50 px-1.5 py-0.5 rounded-md font-mono text-sm text-primary;
 }
-
 .ProseMirror a {
-  color: rgb(var(--text-primary));
-  text-decoration: underline;
-  text-underline-offset: 4px;
-  text-decoration-color: rgba(var(--primary-rgb), 0.3);
-  transition: all 150ms ease;
+  @apply text-primary underline underline-offset-4 decoration-primary/30 hover:decoration-primary transition-colors cursor-pointer;
 }
-
-.ProseMirror a:hover {
-  text-decoration-color: rgb(var(--text-primary));
-}
-
 .ProseMirror hr {
-  border-top-width: 1px;
-  border-color: rgba(var(--primary-rgb), 0.1);
-  margin-top: 2rem;
-  margin-bottom: 2rem;
+  @apply border-t border-border/50 my-8;
 }
 
 /* Task list (to-do) */
 .ProseMirror ul[data-type="taskList"] {
-  list-style-type: none;
-  padding-left: 0;
+  @apply list-none pl-0;
 }
-
 .ProseMirror ul[data-type="taskList"] li {
-  display: flex;
-  align-items: start;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  @apply flex items-start gap-2 mb-2;
 }
-
 .ProseMirror ul[data-type="taskList"] li > label {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-  margin-top: 3px;
+  @apply flex items-center shrink-0 mt-[3px];
 }
-
 .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"] {
-  width: 1rem;
-  height: 1rem;
-  border-radius: 0.25rem;
-  cursor: pointer;
+  @apply w-4 h-4 rounded cursor-pointer accent-primary;
 }
-
 .ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div {
-  text-decoration: line-through;
-  color: rgba(var(--primary-rgb), 0.5);
+  @apply line-through;
+  opacity: 0.5;
 }
-
 .ProseMirror ul[data-type="taskList"] li > div {
-  flex: 1;
+  @apply flex-1;
 }
 
 /* Images */
 .ProseMirror img {
-  max-width: 100%;
-  border-radius: 1rem;
-  margin-top: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(var(--primary-rgb), 0.1);
+  @apply max-w-full rounded-2xl my-6 shadow-sm border border-border/20;
 }
-
 .ProseMirror img.ProseMirror-selectednode {
-  outline: 2px solid rgba(var(--primary-rgb), 0.5);
+  @apply ring-2 ring-primary/50;
 }
 
 /* Placeholder extension */
 .ProseMirror p.is-editor-empty:first-child::before {
-  color: rgb(var(--text-muted));
+  color: var(--color-muted-foreground, #86868b);
   content: attr(data-placeholder);
   float: left;
   height: 0;
   pointer-events: none;
-  font-family: var(--font-apple);
+  font-family: var(--font-sans);
 }
 
 /* Focus outline hide */

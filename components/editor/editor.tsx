@@ -170,7 +170,7 @@ export function Editor({ document, onChange, sidebarOpen, settings }: EditorProp
 
       {/* Slim header — title only */}
       <div className={cn(
-        'flex-none h-12 border-b border-border/20 flex items-center px-5 gap-3 bg-background/50 backdrop-blur-sm transition-all',
+        'flex-none h-12 border-b border-border/20 flex items-center px-5 gap-3 bg-white/50 dark:bg-zinc-950/50 backdrop-blur-sm transition-all',
         !sidebarOpen ? 'pl-16' : ''
       )}>
         <input
@@ -216,7 +216,7 @@ export function Editor({ document, onChange, sidebarOpen, settings }: EditorProp
       </div>
 
       {/* Canvas */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
+      <div className="flex-1 overflow-y-auto custom-scrollbar bg-white dark:bg-zinc-950">
         <div className={cn('mx-auto pt-10 pb-40 px-6 md:px-10 transition-all duration-300', WIDTH_MAP[settings.contentWidth])}>
           {/* Document title in canvas — compact */}
           <input
