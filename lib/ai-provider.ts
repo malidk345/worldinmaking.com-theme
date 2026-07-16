@@ -24,13 +24,13 @@ function getProviderOrder(botName: string): AIProvider[] {
     }
 }
 
-async function getFetchFn(): Promise<any> {
+async function getFetchFn(): Promise<typeof fetch> {
     if (typeof process !== 'undefined' && !process.env.NEXT_RUNTIME) {
         try {
             const req = eval('require');
             const res = req('node-fetch');
-            return res.default || res;
-        } catch (e) {
+            return (res.default || res) as unknown as typeof fetch;
+        } catch {
             // fallback
         }
     }

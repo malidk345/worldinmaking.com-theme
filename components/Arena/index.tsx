@@ -1,10 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "../../context/ToastContext";
 import { supabase } from "../../lib/supabase";
-import { useAuth } from "../../context/AuthContext";
 import ScrollArea from "components/RadixUI/ScrollArea";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -56,7 +54,6 @@ interface DebateTurn {
 
 export default function ArenaApp() {
     const { addToast } = useToast();
-    const { user } = useAuth();
     const [loading, setLoading] = useState(true);
     const [activeDebate, setActiveDebate] = useState<Debate | null>(null);
     const [turns, setTurns] = useState<DebateTurn[]>([]);
@@ -115,8 +112,8 @@ export default function ArenaApp() {
                 setActiveDebate(null);
                 setTurns([]);
             }
-        } catch (err: any) {
-            console.error("Error fetching arena data:", err.message);
+        } catch (err) {
+            console.error("Error fetching arena data:", err instanceof Error ? err.message : String(err));
             addToast("failed to load arena", "error");
         } finally {
             setLoading(false);
@@ -344,7 +341,7 @@ export default function ArenaApp() {
                         </div>
                     ) : (
                         <div className="max-w-2xl mx-auto space-y-8 pb-12">
-                            {turns.map((turn, index) => {
+                            {turns.map((turn) => {
                                 const isD1 = turn.speaker_id === activeDebate.duelist_1_id;
                                 const isD2 = turn.speaker_id === activeDebate.duelist_2_id;
                                 const isInter = turn.is_interjection;
