@@ -406,7 +406,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             ref={windowRef}
                             data-app="AppWindow"
                             data-scheme="tertiary"
-                            className={`group @container absolute !select-auto flex flex-col glass-card ${isFocused ? 'shadow-[0_20px_60px_-15px_rgba(0,0,0,0.2)] border-black/5 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/10' : 'shadow-lg border-primary'
+                            className={`group @container absolute !select-auto flex flex-col glass-card ${isFocused ? 'premium-shadow-active border-black/5 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/10' : 'premium-shadow-inactive border-primary'
                                 } ${dragging ? '[&_*]:select-none' : ''} ${item.minimal ? '!shadow-none' : (isMaximized ? 'rounded-none border-b border-primary' : 'border rounded-2xl')} ${chrome ? 'overflow-hidden' : ''}`}
                             style={{ pointerEvents: 'auto', rotateX: tiltX, rotateY: tiltY, transformPerspective: 1200 }}
                             initial={{
