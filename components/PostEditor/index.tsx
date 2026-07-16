@@ -48,7 +48,7 @@ export default function PostEditor({ postId, item }: { postId?: string, item?: A
   if (!isLoaded || !mounted || !settingsLoaded) return null;
 
   return (
-    <div className="flex w-full h-full overflow-hidden bg-background relative selection:bg-primary/20 font-sans flex-col">
+    <div className="flex w-full h-full overflow-hidden bg-background relative selection:bg-primary/20 font-sans flex-col post-editor-root">
       {item?.key && (
         <aside className="sticky top-0 z-[100] shrink-0 w-full">
           <div id={`window-inner-header-${item.key}`} className="pointer-events-auto" />
