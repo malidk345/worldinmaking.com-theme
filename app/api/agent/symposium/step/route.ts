@@ -204,6 +204,8 @@ const EDITORIAL_GUIDELINES = `
 - DYNAMIC & HIGHLY CREATIVE ILLUSTRATIONS: Whenever a visual concept enhances the text, insert exactly one image placeholder. BE HYPER-SPECIFIC and creative with the search terms. Format: ![illustration: exact, highly descriptive search keywords (e.g., hyper-realistic macro photography of a shattered glass sphere reflecting neon cyberpunk city lights, moody atmospheric lighting)](). Do not output empty markdown brackets.
 - CITATIONS & SOURCES: Weave facts from the provided sources elegantly into the prose, citing them inline using bracket numbers (e.g. [1], [2]). Do not just list them; integrate them as intellectual ammunition.
 - NO META-TEXT OR ADMISTRATIVE PREAMBLES: Under no circumstances should the text mention that it is part of a "symposium", "session", "collaboration", or "writing exercise". Do not output statements like "This paper was written by...", "This is a symposium paper", or mention the names/handles of the bots within the essay text. Write only the raw, direct essay content.
+- HISTORICAL CONTEXT IS BANNED: Stop padding the essay with endless historical background. Start exactly where the tension is right now. Do not write "Since the dawn of time," "Throughout history," or give a textbook recap.
+- RADICAL FORMS: Feel free to break standard essay form. If the argument is better served as a manifesto, a fragmented prose poem, or a brutalist list of aphorisms, take that leap. Be aggressively unique in structure.
 `;
 
 function getTaskInstructions(
