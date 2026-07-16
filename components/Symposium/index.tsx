@@ -31,7 +31,7 @@ interface Collaboration {
     id: string;
     title: string;
     topic_description?: string;
-    status: "drafting" | "reviewing" | "completed";
+    status: "drafting" | "reviewing" | "awaiting_approval" | "completed";
     current_draft?: string;
     research_context?: ResearchSource[];
     post_id?: string;
@@ -187,6 +187,7 @@ export default function SymposiumApp() {
     // Research state
     const [sources, setSources] = useState<ResearchSource[]>([]);
     const [loadingResearch, setLoadingResearch] = useState(false);
+    const [isPublishing, setIsPublishing] = useState(false);
 
 
 
@@ -205,6 +206,45 @@ export default function SymposiumApp() {
     }, [addToast]);
 
     useEffect(() => { fetchCollaborations(); }, [fetchCollaborations]);
+
+    const handleApprove = async (collaborationId: string) => {
+        setIsPublishing(true);
+        try {
+            const res = await fetch("/api/agent/symposium/approve", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ collaborationId })
+            });
+
+            if (!res.ok) {
+                const data = await res.json() as { error?: string };
+                throw new Error(data.error || "failed to approve draft");
+            }
+
+            const result = await res.json() as { success: boolean; postId: string };
+            if (result.success) {
+                addToast("symposium paper approved and published!", "success");
+
+                // Update active collaboration local state to completed and set post_id
+                setActiveCollab(prev => {
+                    if (!prev || prev.id !== collaborationId) return prev;
+                    return {
+                        ...prev,
+                        status: "completed",
+                        post_id: result.postId
+                    };
+                });
+
+                // Refresh collaborations list
+                fetchCollaborations();
+            }
+        } catch (e: any) {
+            console.error("Approve failed", e);
+            addToast(e.message || "failed to publish paper", "error");
+        } finally {
+            setIsPublishing(false);
+        }
+    };
 
     // ── Fetch steps for active collaboration ───────────────────────────────
     const fetchSteps = useCallback(async (collabId: string) => {
@@ -526,7 +566,13 @@ export default function SymposiumApp() {
                                                                 [{dayjs.utc(c.created_at).format("YY.MM.DD")}]
                                                             </span>
                                                             <span className="text-[9px]">
-                                                                {c.status === "completed" ? "● published" : `○ ${c.status}`}
+                                                                {c.status === "completed" ? (
+                                                                    "● published"
+                                                                ) : c.status === "awaiting_approval" ? (
+                                                                    <span className="text-amber-600 dark:text-amber-400 font-bold">● awaiting review</span>
+                                                                ) : (
+                                                                    `○ ${c.status}`
+                                                                )}
                                                             </span>
                                                             {c.is_autonomous && (
                                                                 <span className="text-[8px] bg-emerald-500/10 text-emerald-500 px-1 py-0.5 rounded">autonomous blackboard</span>
@@ -876,6 +922,9 @@ export default function SymposiumApp() {
                         {isCompleted && (
                             <span className="text-[10px] font-bold opacity-50 bg-primary/5 px-3 py-1.5 rounded-full">● published to posts</span>
                         )}
+                        {activeCollab.status === "awaiting_approval" && (
+                            <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-3 py-1.5 rounded-full">● awaiting approval</span>
+                        )}
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -904,6 +953,28 @@ export default function SymposiumApp() {
                                     </h1>
                                     {activeCollab.topic_description && (
                                         <p className="text-[11px] opacity-50 italic mb-8 border-l-2 border-primary/20 pl-3">{activeCollab.topic_description}</p>
+                                    )}
+
+                                    {/* Awaiting Approval Banner */}
+                                    {activeCollab.status === "awaiting_approval" && (
+                                        <div className="border border-amber-500/20 bg-amber-500/5 dark:bg-amber-500/10 rounded-[24px] p-5 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+                                            <div>
+                                                <div className="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest flex items-center gap-1.5 mb-1">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                                    draft awaiting review
+                                                </div>
+                                                <p className="text-[11px] opacity-60">The AI agents have finished drafting the symposium paper. Review the text below and approve it to publish it officially.</p>
+                                            </div>
+                                            <button
+                                                onClick={async () => {
+                                                    await handleApprove(activeCollab.id);
+                                                }}
+                                                disabled={isPublishing}
+                                                className="text-[11px] font-bold bg-amber-600 dark:bg-amber-500 text-white hover:bg-amber-700 dark:hover:bg-amber-600 px-5 py-2.5 rounded-full shadow-md active:scale-95 transition-all flex items-center gap-1.5 shrink-0"
+                                            >
+                                                {isPublishing ? "publishing..." : "approve & publish ✓"}
+                                            </button>
+                                        </div>
                                     )}
 
                                     {/* No content yet */}

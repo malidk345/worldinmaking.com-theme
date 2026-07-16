@@ -49,13 +49,24 @@ function parseRssItems(xml: string, sourceName: string): ResearchSource[] {
     return items;
 }
 
-// ─── DuckDuckGo Search ────────────────────────────────────────────────────────
+function cleanHtml(text: string): string {
+    return text
+        .replace(/<[^>]*>/g, '')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#x27;/g, "'")
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
 async function fetchDuckDuckGo(query: string): Promise<ResearchSource[]> {
     try {
         const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
         const res = await fetch(url, {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             },
             signal: AbortSignal.timeout(6000),
@@ -64,29 +75,28 @@ async function fetchDuckDuckGo(query: string): Promise<ResearchSource[]> {
         const html = await res.text();
 
         const results: ResearchSource[] = [];
-        // DuckDuckGo HTML parser using regex
-        const matches = html.matchAll(/<div class="result__body">([\s\S]*?)<\/div>/gi);
-
-        for (const match of matches) {
-            const body = match[1];
-            const titleMatch = body.match(/<a class="result__snip"[^>]*>([\s\S]*?)<\/a>/i) ||
-                               body.match(/<a class="result__link"[^>]*>([\s\S]*?)<\/a>/i);
-            const linkMatch = body.match(/href="([^"]+)"/i);
-            const snippetMatch = body.match(/<a class="result__snippet"[^>]*>([\s\S]*?)<\/a>/i);
-
-            if (titleMatch && linkMatch) {
-                const title = titleMatch[1].replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
-                let resultUrl = linkMatch[1];
+        const blocks = html.split('<h2 class="result__title">');
+        
+        for (let i = 1; i < blocks.length; i++) {
+            const block = blocks[i];
+            
+            // Extract title and URL from result__a
+            const aMatch = block.match(/<a\s+[^>]*?class="result__a"[^>]*?href="([^"]+?)"[^>]*?>([\s\S]*?)<\/a>/);
+            // Extract snippet
+            const snippetMatch = block.match(/<a\s+[^>]*?class="result__snippet"[^>]*?>([\s\S]*?)<\/a>/);
+            
+            if (aMatch && snippetMatch) {
+                const rawUrl = aMatch[1];
+                const title = cleanHtml(aMatch[2]);
+                const excerpt = cleanHtml(snippetMatch[1]).slice(0, 400);
+                
+                let resultUrl = rawUrl;
                 if (resultUrl.startsWith('//')) resultUrl = 'https:' + resultUrl;
-                // Parse duckduckgo redirect url if present
                 if (resultUrl.includes('uddg=')) {
                     const uMatch = resultUrl.match(/uddg=([^&]+)/);
                     if (uMatch) resultUrl = decodeURIComponent(uMatch[1]);
                 }
-                const excerpt = snippetMatch
-                    ? snippetMatch[1].replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim().slice(0, 400)
-                    : title;
-
+                
                 results.push({
                     title,
                     url: resultUrl,

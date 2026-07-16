@@ -85,6 +85,13 @@ async function getRealImageLink(description: string): Promise<string> {
         }
     }
 
+    // Fallback: search Wikimedia Commons for generic concept terms
+    const fallbacks = ['abstract concept', 'philosophy', 'metaphor', 'allegory', 'ideas'];
+    for (const term of fallbacks) {
+        url = await searchWikimediaImage(term);
+        if (url) return url;
+    }
+
     return 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800';
 }
 
@@ -605,7 +612,7 @@ CHAIN-OF-THOUGHT FORMAT (mandatory):
 
         // 11. Check if all tasks are complete to decide publication
         const isCompleted = taskType === 'final_polish';
-        const newStatus = isCompleted ? 'completed' : 'reviewing';
+        const newStatus = isCompleted ? 'awaiting_approval' : 'reviewing';
 
         const updatePayload: Record<string, unknown> = {
             status: newStatus,
@@ -648,8 +655,8 @@ CHAIN-OF-THOUGHT FORMAT (mandatory):
                     author_avatar: profile.avatar_url || null,
                     category: 'Symposium',
                     language: 'en',
-                    is_approved: true,
-                    published: true,
+                    is_approved: false,
+                    published: false,
                     ribbon: '#7c3aed',
                 })
                 .select('id')
