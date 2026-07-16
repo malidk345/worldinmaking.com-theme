@@ -55,22 +55,22 @@ interface BotBehavior {
 }
 
 const botBehaviors: Record<string, BotBehavior> = {
-    Sofia: { sleepStart: 23, sleepEnd: 7, activityRate: 0.8 },
-    Marcus: { sleepStart: 22, sleepEnd: 8, activityRate: 0.4 }, // Stoic, posts less
-    Rhizome: { sleepStart: 0, sleepEnd: 9, activityRate: 0.9 },   // Night owl, posts more
-    Gaia: { sleepStart: 23, sleepEnd: 7, activityRate: 0.7 },
-    Cyber_Sisyphus: { sleepStart: 1, sleepEnd: 8, activityRate: 0.75 },
-    Chroma_Ghost: { sleepStart: 2, sleepEnd: 10, activityRate: 0.85 },
-    Duty_Bound: { sleepStart: 23, sleepEnd: 8, activityRate: 0.6 },
-    Aria: { sleepStart: 22, sleepEnd: 7, activityRate: 0.5 },
-    Leo: { sleepStart: 0, sleepEnd: 8, activityRate: 0.8 },
-    Lucas: { sleepStart: 23, sleepEnd: 7, activityRate: 0.7 },
-    Hyperion: { sleepStart: 5, sleepEnd: 11, activityRate: 0.85 },
-    Sartre: { sleepStart: 3, sleepEnd: 10, activityRate: 0.6 },
-    Lyotard: { sleepStart: 0, sleepEnd: 7, activityRate: 0.7 },
-    Arendt: { sleepStart: 23, sleepEnd: 7, activityRate: 0.75 },
-    Kieran_Grey: { sleepStart: 23, sleepEnd: 7, activityRate: 0.65 },
-    Selena_Cross: { sleepStart: 1, sleepEnd: 8, activityRate: 0.8 }
+    Marx: { sleepStart: 23, sleepEnd: 7, activityRate: 0.8 },
+    Nietzsche: { sleepStart: 2, sleepEnd: 9, activityRate: 0.5 },
+    Deleuze: { sleepStart: 1, sleepEnd: 9, activityRate: 0.85 },
+    Spinoza: { sleepStart: 22, sleepEnd: 6, activityRate: 0.6 },
+    Heidegger: { sleepStart: 23, sleepEnd: 7, activityRate: 0.5 },
+    Baudrillard: { sleepStart: 2, sleepEnd: 10, activityRate: 0.75 },
+    Althusser: { sleepStart: 23, sleepEnd: 7, activityRate: 0.7 },
+    Derrida: { sleepStart: 0, sleepEnd: 8, activityRate: 0.75 },
+    Weber: { sleepStart: 22, sleepEnd: 6, activityRate: 0.65 },
+    Adorno: { sleepStart: 23, sleepEnd: 8, activityRate: 0.55 },
+    Zizek: { sleepStart: 3, sleepEnd: 9, activityRate: 0.9 },
+    Sartre: { sleepStart: 2, sleepEnd: 9, activityRate: 0.75 },
+    Lenin: { sleepStart: 23, sleepEnd: 7, activityRate: 0.85 },
+    Arendt: { sleepStart: 23, sleepEnd: 7, activityRate: 0.7 },
+    Hegel: { sleepStart: 22, sleepEnd: 7, activityRate: 0.65 },
+    Rand: { sleepStart: 23, sleepEnd: 7, activityRate: 0.75 }
 };
 
 function isBotAwakeAndActive(username: string): boolean {

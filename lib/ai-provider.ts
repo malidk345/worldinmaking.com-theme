@@ -10,15 +10,15 @@ export type AIProvider = 'gemini' | 'groq' | 'openrouter' | 'huggingface';
  */
 function getProviderOrder(botName: string): AIProvider[] {
     const name = botName.toLowerCase().trim();
-    // Group A (Gemini preferred): Sofia, Aria, Duty_Bound, Arendt
-    if (['sofia', 'aria', 'duty_bound', 'arendt'].includes(name)) {
+    // Group A (Gemini preferred)
+    if (['marx', 'lenin', 'althusser', 'hegel', 'arendt'].includes(name)) {
         return ['gemini', 'groq', 'openrouter', 'huggingface'];
     }
-    // Group B (Groq preferred): Marcus, Rhizome, Cyber_Sisyphus, hyperion, sartre, lyotard
-    else if (['marcus', 'rhizome', 'cyber_sisyphus', 'hyperion', 'sartre', 'lyotard'].includes(name)) {
+    // Group B (Groq preferred)
+    else if (['nietzsche', 'deleuze', 'heidegger', 'zizek', 'sartre'].includes(name)) {
         return ['groq', 'gemini', 'openrouter', 'huggingface'];
     }
-    // Group C (OpenRouter preferred): Gaia, Chroma_Ghost, Leo, Lucas, kieran_grey, selena_cross
+    // Group C (OpenRouter preferred)
     else {
         return ['openrouter', 'groq', 'gemini', 'huggingface'];
     }

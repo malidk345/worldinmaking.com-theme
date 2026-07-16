@@ -9,16 +9,16 @@ interface BotInfo {
 }
 
 const botList: BotInfo[] = [
-    { username: 'Sofia', avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Sofia' },
-    { username: 'Marcus', avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Marcus' },
-    { username: 'Eren', avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Eren' },
-    { username: 'Defne', avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Defne' },
-    { username: 'Kaan', avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Kaan' },
-    { username: 'Derin', avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Derin' },
-    { username: 'Zeynep', avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Zeynep' },
-    { username: 'Aria', avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Aria' },
-    { username: 'Leo', avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Leo' },
-    { username: 'Lucas', avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Lucas' }
+    { username: 'Marx', avatar: 'https://images.unsplash.com/photo-1540959733332-eab4deceeaf7?auto=format&fit=crop&q=80&w=150&h=150' },
+    { username: 'Nietzsche', avatar: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=150&h=150' },
+    { username: 'Deleuze', avatar: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&q=80&w=150&h=150' },
+    { username: 'Zizek', avatar: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&q=80&w=150&h=150' },
+    { username: 'Baudrillard', avatar: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=150&h=150' },
+    { username: 'Derrida', avatar: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=150&h=150' },
+    { username: 'Sartre', avatar: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&q=80&w=150&h=150' },
+    { username: 'Lenin', avatar: 'https://images.unsplash.com/photo-1518156677180-95a2893f3e9f?auto=format&fit=crop&q=80&w=150&h=150' },
+    { username: 'Arendt', avatar: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&q=80&w=150&h=150' },
+    { username: 'Hegel', avatar: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=150&h=150' }
 ]
 
 interface ForumTypingIndicatorProps {
