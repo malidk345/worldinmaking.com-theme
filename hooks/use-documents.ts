@@ -112,7 +112,7 @@ export function useDocuments() {
               ...d,
               folderId: d.folderId || meta.folderId || null,
               pinned: Boolean(d.pinned || meta.pinned),
-              icon: d.icon || meta.icon || '📄',
+              icon: d.icon || meta.icon || 'file-text',
               preview: d.preview || meta.preview || extractPreview(d.content),
               coverImage: d.coverImage || meta.coverImage || undefined,
             }
@@ -136,7 +136,7 @@ export function useDocuments() {
           const welcomeId = crypto.randomUUID()
           const welcome: Document = {
             id: welcomeId,
-            title: 'Welcome to Craft (Local Mode)',
+            title: 'Welcome to WIM Editor',
             content: {
               type: 'doc',
               content: [
@@ -145,7 +145,7 @@ export function useDocuments() {
                 { type: 'paragraph', content: [{ type: 'text', text: 'Press ' }, { type: 'text', marks: [{ type: 'code' }], text: '⌘ K' }, { type: 'text', text: ' for the command palette.' }] },
               ],
             },
-            folderId: null, pinned: false, icon: '✨', preview: '',
+            folderId: null, pinned: false, icon: 'sparkles', preview: '',
             createdAt: Date.now(), updatedAt: Date.now(),
           }
           welcome.preview = extractPreview(welcome.content)
@@ -198,7 +198,7 @@ export function useDocuments() {
           // Merge metadata from localStorage
           folderId: meta.folderId || null,
           pinned: Boolean(meta.pinned),
-          icon: meta.icon || '📄',
+          icon: meta.icon || 'file-text',
           preview: meta.preview || extractPreview(contentObj),
           coverImage: meta.coverImage || p.image_url || undefined,
           excerpt: p.excerpt || '',
@@ -249,7 +249,7 @@ export function useDocuments() {
       image_url: '',
       folderId,
       pinned: false,
-      icon: '📄',
+      icon: 'file-text',
       preview: '',
     }
 
@@ -258,7 +258,7 @@ export function useDocuments() {
     metaMap[newId] = {
       folderId,
       pinned: false,
-      icon: '📄',
+      icon: 'file-text',
       preview: '',
       coverImage: undefined
     }
@@ -441,7 +441,7 @@ export function useDocuments() {
   }, [updateDocument])
 
   // ── Folders ────────────────────────────────────────
-  const createFolder = useCallback((name: string, emoji = '📁') => {
+  const createFolder = useCallback((name: string, emoji = 'folder') => {
     const folder: Folder = { id: crypto.randomUUID(), name, emoji, createdAt: Date.now() }
     const newFolders = [...folders, folder]
     saveFolders(newFolders)

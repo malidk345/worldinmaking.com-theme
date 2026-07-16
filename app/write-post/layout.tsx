@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "Craft Editor | World in Making",
+    title: "wim editör | World in Making",
     description: "Write, organize, and publish rich-text posts.",
 };
 

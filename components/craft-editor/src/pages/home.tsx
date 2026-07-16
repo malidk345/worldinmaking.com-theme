@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { NoiseOverlay } from '@/components/noise-overlay';
 import { cn } from '@/lib/utils';
 
-const EMOJIS = ['📄', '📝', '📑', '📋', '📌', '⭐', '🔥', '💡', '⚡', '🚀', '🌱', '💼', '🏠', '🎓', '📖', '✨'];
+import { DOC_ICONS, RenderIcon } from '@/components/editor/icons';
 
 export default function Home() {
   const { theme, setTheme } = useTheme();
@@ -136,7 +136,7 @@ export default function Home() {
                 <div className="w-5 h-5 rounded-md bg-foreground flex items-center justify-center shadow-sm">
                   <div className="w-2 h-2 bg-background rounded-full" />
                 </div>
-                Craft
+                wim editör
               </div>
               <div className="flex items-center gap-0.5">
                 <Button variant="ghost" size="iconSm" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="rounded-full w-7 h-7 hover:bg-black/5 dark:hover:bg-white/10">
@@ -225,7 +225,7 @@ export default function Home() {
                           className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-xl text-xs font-medium text-foreground/70 hover:text-foreground hover:bg-black/4 dark:hover:bg-white/6 transition-all"
                         >
                           {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                          <span className="text-sm">{folder.emoji}</span>
+                          <RenderIcon name={folder.emoji} size={14} className="text-foreground/75 shrink-0" />
                           <span className="flex-1 text-left truncate">{folder.name}</span>
                           <span className="text-[10px] text-muted-foreground/50">{fDocs.length}</span>
                         </button>
@@ -379,9 +379,9 @@ export default function Home() {
           style={{ top: iconPicker.y, left: iconPicker.x }}
           onClick={e => e.stopPropagation()}
         >
-          {EMOJIS.map(e => (
-            <button key={e} onClick={() => { setDocumentIcon(iconPicker.id, e); setIconPicker(null); }} className="w-8 h-8 rounded-xl text-lg hover:bg-black/5 dark:hover:bg-white/8 transition-colors">
-              {e}
+          {DOC_ICONS.map(e => (
+            <button key={e} onClick={() => { setDocumentIcon(iconPicker.id, e); setIconPicker(null); }} className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/8 transition-colors">
+              <RenderIcon name={e} size={14} className="text-foreground/75" />
             </button>
           ))}
         </div>
@@ -398,7 +398,7 @@ export default function Home() {
           </button>
           {folders.map(f => (
             <button key={f.id} onClick={() => { moveDocument(movePicker.id, f.id); setMovePicker(null); }} className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs text-foreground/70 hover:text-foreground hover:bg-black/5 dark:hover:bg-white/8 transition-all">
-              <span>{f.emoji}</span> {f.name}
+              <RenderIcon name={f.emoji} size={13} className="text-foreground/60 shrink-0" /> {f.name}
             </button>
           ))}
         </div>
@@ -425,7 +425,7 @@ function DocItem({
             onClick={onIconClick}
             className="text-sm leading-none hover:scale-110 transition-transform"
           >
-            {doc.pinned ? <Pin size={12} className="text-amber-500 mt-0.5" /> : doc.icon}
+            {doc.pinned ? <Pin size={12} className="text-amber-500 mt-0.5" /> : <RenderIcon name={doc.icon} size={13} className="text-foreground/75 mt-0.5" />}
           </button>
           <div className="min-w-0 flex-1">
             <span className="font-medium text-xs truncate text-foreground/85 leading-relaxed block">

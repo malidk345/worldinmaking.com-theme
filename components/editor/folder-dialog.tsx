@@ -2,8 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Folder, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
-
-const EMOJIS = ['📁', '📂', '📓', '📔', '🗂️', '📚', '🗃️', '📑', '🗒️', '🏠', '💼', '🎯', '⚡', '🔥', '💡', '❤️', '🌱', '🚀', '🔒', '📌']
+import { FOLDER_ICONS, RenderIcon } from './icons'
 
 interface FolderDialogProps {
   open: boolean
@@ -17,7 +16,7 @@ interface FolderDialogProps {
 
 export function FolderDialog({
   open, onClose, onConfirm,
-  initialName = '', initialEmoji = '📁', title = 'New Folder', confirmLabel = 'Create',
+  initialName = '', initialEmoji = 'folder', title = 'New Folder', confirmLabel = 'Create',
 }: FolderDialogProps) {
   const [name, setName] = useState(initialName)
   const [emoji, setEmoji] = useState(initialEmoji)
@@ -56,9 +55,9 @@ export function FolderDialog({
               <div className="relative group">
                 <button
                   type="button"
-                  className="w-10 h-10 rounded-xl bg-black/5 dark:bg-white/8 flex items-center justify-center text-2xl hover:bg-black/10 transition-colors"
+                  className="w-10 h-10 rounded-xl bg-black/5 dark:bg-white/8 flex items-center justify-center hover:bg-black/10 transition-colors animate-in fade-in"
                 >
-                  {emoji}
+                  <RenderIcon name={emoji} size={18} className="text-foreground/80" />
                 </button>
               </div>
               <input
@@ -72,19 +71,19 @@ export function FolderDialog({
               />
             </div>
 
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Emoji</p>
-            <div className="grid grid-cols-5 gap-1.5 mb-4">
-              {EMOJIS.map(e => (
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Folder Icon</p>
+            <div className="grid grid-cols-6 gap-1.5 mb-4">
+              {FOLDER_ICONS.map(e => (
                 <button
                   key={e}
                   type="button"
                   onClick={() => setEmoji(e)}
                   className={cn(
-                    'w-12 h-10 rounded-xl text-xl flex items-center justify-center transition-all',
+                    'w-10 h-10 rounded-xl flex items-center justify-center transition-all',
                     emoji === e ? 'bg-black/8 dark:bg-white/12 ring-1 ring-foreground/20' : 'hover:bg-black/5 dark:hover:bg-white/6'
                   )}
                 >
-                  {e}
+                  <RenderIcon name={e} size={14} className="text-foreground/75" />
                 </button>
               ))}
             </div>
