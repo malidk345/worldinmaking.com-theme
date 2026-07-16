@@ -219,21 +219,23 @@ export function useDocuments() {
       })
 
       setDocuments(mapped)
-      if (mapped.length > 0 && !activeDocId) {
-        let queryDocId = null
+      // Only auto-select on first load (activeDocId is null)
+      // We read activeDocId directly here via closure — removing it from
+      // dep array prevents re-fetching every time the active doc changes
+      setActiveDocId(prev => {
+        if (prev) return prev // already set — don't override
+        if (mapped.length === 0) return null
+        let queryDocId: string | null = null
         if (typeof window !== 'undefined') {
           const params = new URLSearchParams(window.location.search)
           queryDocId = params.get('postId') || params.get('id')
         }
-        if (queryDocId && mapped.some(d => d.id === queryDocId)) {
-          setActiveDocId(queryDocId)
-        } else {
-          setActiveDocId(mapped[0].id)
-        }
-      }
+        if (queryDocId && mapped.some(d => d.id === queryDocId)) return queryDocId
+        return mapped[0].id
+      })
     }
     setIsLoaded(true)
-  }, [user?.id, activeDocId, getMetadataMap])
+  }, [user?.id, getMetadataMap])
 
   useEffect(() => {
     loadDocuments()
@@ -249,6 +251,8 @@ export function useDocuments() {
   // Create new draft
   const createDocument = useCallback(async (folderId: string | null = null) => {
     const newId = crypto.randomUUID()
+    // Use timestamp + random to guarantee unique slug
+    const uniqueSuffix = Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
     const newDoc: Document = {
       id: newId,
       title: 'Untitled',
@@ -256,7 +260,7 @@ export function useDocuments() {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       published: false,
-      slug: 'untitled-' + Math.floor(Math.random() * 100000),
+      slug: 'untitled-' + uniqueSuffix,
       category: 'General',
       image_url: '',
       folderId,
