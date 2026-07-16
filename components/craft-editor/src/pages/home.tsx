@@ -288,6 +288,7 @@ export default function Home() {
           settings={settings}
           focusMode={settings.focusMode}
           onEditorReady={ed => { editorRef.current = ed; }}
+          onCreateDocument={() => createDocument()}
         />
       </div>
 

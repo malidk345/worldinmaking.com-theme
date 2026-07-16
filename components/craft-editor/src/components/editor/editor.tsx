@@ -48,6 +48,7 @@ interface EditorProps {
   settings: EditorSettings;
   focusMode: boolean;
   onEditorReady?: (editor: EditorInstance) => void;
+  onCreateDocument?: () => void;
 }
 
 // ── Cover image component ──────────────────────────────────────────────
@@ -111,7 +112,7 @@ function AddCoverPrompt({ onAdd }: { onAdd: (src: string) => void }) {
 }
 
 // ── Main editor ────────────────────────────────────────────────────────
-export function Editor({ document, onChange, sidebarOpen, settings, focusMode, onEditorReady }: EditorProps) {
+export function Editor({ document, onChange, sidebarOpen, settings, focusMode, onEditorReady, onCreateDocument }: EditorProps) {
   const [isSaved, setIsSaved] = useState(true);
   const [showImageDialog, setShowImageDialog] = useState(false);
   const [showEmbedDialog, setShowEmbedDialog] = useState(false);
@@ -191,7 +192,7 @@ export function Editor({ document, onChange, sidebarOpen, settings, focusMode, o
   if (!document) {
     return (
       <div className="flex-1 flex items-center justify-center h-full">
-        <div className="text-center space-y-4">
+        <div className="text-center space-y-5">
           <div className="w-20 h-20 mx-auto rounded-3xl bg-foreground/5 flex items-center justify-center">
             <div className="w-8 h-12 rounded-md border-2 border-foreground/20" />
           </div>
@@ -199,6 +200,16 @@ export function Editor({ document, onChange, sidebarOpen, settings, focusMode, o
             <p className="text-base font-medium text-foreground/50">No document selected</p>
             <p className="text-sm text-muted-foreground/50 mt-1">Create a new document to start writing.</p>
           </div>
+          {onCreateDocument && (
+            <button
+              type="button"
+              onClick={onCreateDocument}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-foreground text-background text-sm font-semibold shadow-lg hover:opacity-90 active:scale-95 transition-all duration-150"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              New document
+            </button>
+          )}
         </div>
       </div>
     );

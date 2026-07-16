@@ -285,10 +285,8 @@ export function useDocuments() {
     }
 
     // Supabase mode
-    if (!profile?.username) {
-      addToast('Missing profile name to sync draft', 'error')
-      return null
-    }
+    const authorName = profile?.username || user.email || user.id
+    const authorAvatar = profile?.avatar_url || ''
 
     const { error } = await supabase
       .from('posts')
@@ -300,8 +298,8 @@ export function useDocuments() {
         excerpt: '',
         category: newDoc.category,
         published: newDoc.published,
-        author: profile.username,
-        author_avatar: profile.avatar_url || '',
+        author: authorName,
+        author_avatar: authorAvatar,
         is_approved: isAdmin,
         author_id: user.id,
       })
