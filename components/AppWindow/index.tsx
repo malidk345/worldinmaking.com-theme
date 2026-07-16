@@ -407,7 +407,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             data-app="AppWindow"
                             data-scheme="tertiary"
                             className={`group @container absolute !select-auto flex flex-col glass-card ${isFocused ? 'premium-shadow-active border-black/5 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/10' : 'premium-shadow-inactive border-primary'
-                                } ${dragging ? '[&_*]:select-none' : ''} ${item.minimal ? '!shadow-none' : (isMaximized ? 'rounded-none border-b border-primary' : 'border rounded-[32px]')} ${chrome ? 'overflow-hidden' : ''}`}
+                                } ${dragging ? '[&_*]:select-none' : ''} ${item.minimal ? '!shadow-none' : (isMaximized ? 'rounded-none border-b border-primary' : 'border rounded-2xl')} ${chrome ? 'overflow-hidden' : ''}`}
                             style={{ pointerEvents: 'auto', rotateX: tiltX, rotateY: tiltY, transformPerspective: 1200 }}
                             initial={{
                                 scale: 0.08,
@@ -677,14 +677,14 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             )}
 
                             {/* Spotlight effect layered over window */}
-                            <div className="pointer-events-none absolute inset-0 z-50 rounded-[32px] opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                            <div className="pointer-events-none absolute inset-0 z-50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                                  style={{
                                     background: `radial-gradient(800px circle at var(--mouse-x) var(--mouse-y), rgba(255,255,255,0.06), transparent 40%)`, backgroundAttachment: "fixed"
                                  }}
                             />
 
                             <div className="w-full flex-1 flex flex-col bg-transparent min-h-0 relative px-1.5 has-[+div:empty]:pb-1.5">
-                                <div className="w-full h-full bg-white/80 dark:bg-accent-dark/80 backdrop-blur-3xl-safe flex-1 overflow-hidden relative shadow-[0_0_0_1px_rgba(0,0,0,0.05)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.05)] border border-black/10 dark:border-white/10 rounded-[32px]">
+                                <div className="w-full h-full bg-white/80 dark:bg-accent-dark/80 backdrop-blur-3xl-safe flex-1 overflow-hidden relative shadow-[0_0_0_1px_rgba(0,0,0,0.05)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.05)] border border-black/10 dark:border-white/10 rounded-2xl">
                                     {(!animating || rendered) && (
                                         item.key === 'home' ? <HomeControl /> : <WindowRouter item={item} />
                                     )}
