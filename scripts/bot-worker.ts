@@ -49,50 +49,31 @@ async function randomDelay(minSec = 10, maxSec = 30) {
 }
 
 interface BotBehavior {
-    sleepStart: number; // Hour (0-23)
-    sleepEnd: number;   // Hour (0-23)
     activityRate: number; // 0.0 to 1.0 (probability of acting when active)
 }
 
 const botBehaviors: Record<string, BotBehavior> = {
-    Marx: { sleepStart: 23, sleepEnd: 7, activityRate: 0.8 },
-    Nietzsche: { sleepStart: 2, sleepEnd: 9, activityRate: 0.5 },
-    Deleuze: { sleepStart: 1, sleepEnd: 9, activityRate: 0.85 },
-    Spinoza: { sleepStart: 22, sleepEnd: 6, activityRate: 0.6 },
-    Heidegger: { sleepStart: 23, sleepEnd: 7, activityRate: 0.5 },
-    Baudrillard: { sleepStart: 2, sleepEnd: 10, activityRate: 0.75 },
-    Althusser: { sleepStart: 23, sleepEnd: 7, activityRate: 0.7 },
-    Derrida: { sleepStart: 0, sleepEnd: 8, activityRate: 0.75 },
-    Weber: { sleepStart: 22, sleepEnd: 6, activityRate: 0.65 },
-    Adorno: { sleepStart: 23, sleepEnd: 8, activityRate: 0.55 },
-    Zizek: { sleepStart: 3, sleepEnd: 9, activityRate: 0.9 },
-    Sartre: { sleepStart: 2, sleepEnd: 9, activityRate: 0.75 },
-    Lenin: { sleepStart: 23, sleepEnd: 7, activityRate: 0.85 },
-    Arendt: { sleepStart: 23, sleepEnd: 7, activityRate: 0.7 },
-    Hegel: { sleepStart: 22, sleepEnd: 7, activityRate: 0.65 },
-    Rand: { sleepStart: 23, sleepEnd: 7, activityRate: 0.75 }
+    Marx: { activityRate: 0.8 },
+    Nietzsche: { activityRate: 0.5 },
+    Deleuze: { activityRate: 0.85 },
+    Spinoza: { activityRate: 0.6 },
+    Heidegger: { activityRate: 0.5 },
+    Baudrillard: { activityRate: 0.75 },
+    Althusser: { activityRate: 0.7 },
+    Derrida: { activityRate: 0.75 },
+    Weber: { activityRate: 0.65 },
+    Adorno: { activityRate: 0.55 },
+    Zizek: { activityRate: 0.9 },
+    Sartre: { activityRate: 0.75 },
+    Lenin: { activityRate: 0.85 },
+    Arendt: { activityRate: 0.7 },
+    Hegel: { activityRate: 0.65 },
+    Rand: { activityRate: 0.75 }
 };
 
 function isBotAwakeAndActive(username: string): boolean {
-    const behavior = botBehaviors[username] || { sleepStart: 23, sleepEnd: 7, activityRate: 0.7 };
+    const behavior = botBehaviors[username] || { activityRate: 0.7 };
     
-    // Get current hour in Turkey timezone (GMT+3)
-    const tzOffset = 3;
-    const utcDate = new Date();
-    const localHour = (utcDate.getUTCHours() + tzOffset) % 24;
-
-    let isSleeping = false;
-    if (behavior.sleepStart < behavior.sleepEnd) {
-        isSleeping = localHour >= behavior.sleepStart && localHour < behavior.sleepEnd;
-    } else {
-        isSleeping = localHour >= behavior.sleepStart || localHour < behavior.sleepEnd;
-    }
-
-    if (isSleeping) {
-        console.log(`[Worker] [Schedule] ${username} is sleeping (Local Hour: ${localHour}:00, Sleep Window: ${behavior.sleepStart}:00-${behavior.sleepEnd}:00)`);
-        return false;
-    }
-
     const roll = Math.random();
     if (roll > behavior.activityRate) {
         console.log(`[Worker] [Schedule] ${username} decided not to participate this round (Activity Rate: ${behavior.activityRate}, Roll: ${roll.toFixed(2)})`);
