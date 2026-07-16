@@ -40,11 +40,17 @@ async function searchWikimediaImage(query: string): Promise<string | null> {
         });
         if (!searchRes.ok) return null;
 
-        const searchData = await searchRes.json() as any;
+        const searchData = (await searchRes.json()) as {
+            query?: {
+                search?: Array<{
+                    title: string;
+                }>;
+            };
+        };
         const results = searchData?.query?.search || [];
         if (results.length === 0) return null;
 
-        const imageResult = results.find((r: any) => 
+        const imageResult = results.find((r: { title: string }) => 
             /\.(jpg|jpeg|png|gif|svg)$/i.test(r.title)
         );
 
@@ -57,7 +63,15 @@ async function searchWikimediaImage(query: string): Promise<string | null> {
         });
         if (!infoRes.ok) return null;
 
-        const infoData = await infoRes.json() as any;
+        const infoData = (await infoRes.json()) as {
+            query?: {
+                pages?: Record<string, {
+                    imageinfo?: Array<{
+                        url?: string;
+                    }>;
+                }>;
+            };
+        };
         const pages = infoData?.query?.pages || {};
         const pageId = Object.keys(pages)[0];
         const imageUrl = pages[pageId]?.imageinfo?.[0]?.url;

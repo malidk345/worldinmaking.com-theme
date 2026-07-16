@@ -238,9 +238,10 @@ export default function SymposiumApp() {
                 // Refresh collaborations list
                 fetchCollaborations();
             }
-        } catch (e: any) {
-            console.error("Approve failed", e);
-            addToast(e.message || "failed to publish paper", "error");
+        } catch (e) {
+            const err = e as Error;
+            console.error("Approve failed", err);
+            addToast(err.message || "failed to publish paper", "error");
         } finally {
             setIsPublishing(false);
         }

@@ -355,10 +355,11 @@ export const AppLink = ({
         }
 
         if (React.isValidElement(iconToRender)) {
-            const originalClass = (iconToRender.props as any).className || '';
+            const element = iconToRender as React.ReactElement<{ className?: string }>;
+            const originalClass = element.props.className || '';
             const finalColor = color ? `text-${color}` : '';
             const mergedClass = `${parentIcon ? '' : finalColor} ${className || ''} ${originalClass}`.replace(/\s+/g, ' ').trim();
-            return React.cloneElement(iconToRender as React.ReactElement<{ className?: string }>, {
+            return React.cloneElement(element, {
                 className: mergedClass,
             })
         }
@@ -376,9 +377,10 @@ export const AppLink = ({
         }
 
         if (React.isValidElement(Icon)) {
-            const originalClass = (Icon.props as any).className || '';
+            const element = Icon as React.ReactElement<{ className?: string }>;
+            const originalClass = element.props.className || '';
             const mergedClass = `${getChildIconClasses()} ${originalClass}`.replace(/\s+/g, ' ').trim();
-            return React.cloneElement(Icon as React.ReactElement<{ className?: string }>, {
+            return React.cloneElement(element, {
                 className: mergedClass,
             })
         }

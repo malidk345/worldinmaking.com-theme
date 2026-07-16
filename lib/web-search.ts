@@ -12,7 +12,7 @@ function decodeDdgUrl(url: string): string {
         if (match && match[1]) {
             return decodeURIComponent(match[1]);
         }
-    } catch (e) {}
+    } catch {}
     return url;
 }
 

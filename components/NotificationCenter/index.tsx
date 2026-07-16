@@ -24,10 +24,8 @@ const IconNotificationWithBadge = ({
     hasUnread, 
     className = '', 
     ...props 
-}: { 
+}: React.SVGProps<SVGSVGElement> & { 
     hasUnread: boolean; 
-    className?: string; 
-    [key: string]: any 
 }) => {
     return (
         <svg
