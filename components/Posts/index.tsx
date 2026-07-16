@@ -66,7 +66,7 @@ const PostsView = React.memo(() => {
                 <ScrollArea className="size-full">
                     <div className="w-full max-w-3xl mx-auto py-8 px-4 sm:px-6">
                         {sortedRoadmaps.length === 0 ? (
-                            <div className="py-16 text-center text-secondary/70 text-sm font-bold bg-accent rounded border border-primary/10">
+                            <div className="py-16 text-center text-secondary/70 text-sm font-bold bg-accent rounded-[16px] border border-primary/10">
                                 {t('posts.empty')}
                             </div>
                         ) : (

@@ -323,7 +323,7 @@ const ReaderViewContent = React.memo(({
                                                 {[...Array(5)].map((_, i) => (
                                                     <div key={i} className="flex items-center gap-2 animate-pulse">
                                                         <div className="w-[3px] h-3 rounded-full bg-primary-text/5" />
-                                                        <div className="h-3 rounded bg-primary-text/5 flex-1" style={{ width: `${60 + Math.random() * 30}%` }} />
+                                                        <div className="h-3 rounded-[12px] bg-primary-text/5 flex-1" style={{ width: `${60 + Math.random() * 30}%` }} />
                                                     </div>
                                                 ))}
                                             </div>
@@ -488,7 +488,7 @@ const ReaderViewContent = React.memo(({
                             </div>
 
                             {showAbout && (
-                                <div className="mt-16 p-6 bg-accent/10 rounded-lg border border-primary/20 italic text-lg leading-relaxed">
+                                <div className="mt-16 p-6 bg-accent/10 rounded-[24px] border border-primary/20 italic text-lg leading-relaxed">
                                     PostHog is an all-in-one developer platform for building successful products. We provide product analytics, web analytics, session replay, and more to help you debug your code and ship features faster.
                                 </div>
                             )}

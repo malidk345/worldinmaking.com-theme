@@ -56,7 +56,7 @@ export default function ForumTopicSidebar({
                     <div className="mb-1">
                         <button
                             onClick={() => handleChannelClick(null)}
-                            className={`group flex items-center w-full text-left px-3 py-2 rounded-[16px] border border-transparent transition-all duration-300 hover:scale-[1.02] hover:bg-accent/40 hover:border-primary/5 active:scale-[0.98] ${!activeChannelId ? 'bg-accent/80 border-primary/10 active-sidebar-item shadow-sm shadow-black/5' : ''}`}
+                            className={`group flex items-center w-full text-left px-3 py-2 rounded-[16px] border border-transparent transition-all duration-300 hover:scale-[1.02] hover:bg-accent/40 hover:border-black/5 dark:border-white/5 active:scale-[0.98] ${!activeChannelId ? 'bg-accent/80 border-black/5 dark:border-white/5 active-sidebar-item shadow-[0_4px_16px_rgba(0,0,0,0.06)] shadow-black/5' : ''}`}
                         >
                             <div className="grid grid-cols-12 items-center w-full">
                                 <div className="col-span-9 flex items-center space-x-2.5">
@@ -74,7 +74,7 @@ export default function ForumTopicSidebar({
                             <div key={channel.id} className="mb-1">
                                 <button
                                     onClick={() => handleChannelClick(channel.id, channel.slug)}
-                                    className={`group flex items-center w-full text-left px-3 py-2 rounded-[16px] border border-transparent transition-all duration-300 hover:scale-[1.02] hover:bg-accent/40 hover:border-primary/5 active:scale-[0.98] ${isActive ? 'bg-accent/80 border-primary/10 active-sidebar-item shadow-sm shadow-black/5' : ''}`}
+                                    className={`group flex items-center w-full text-left px-3 py-2 rounded-[16px] border border-transparent transition-all duration-300 hover:scale-[1.02] hover:bg-accent/40 hover:border-black/5 dark:border-white/5 active:scale-[0.98] ${isActive ? 'bg-accent/80 border-black/5 dark:border-white/5 active-sidebar-item shadow-[0_4px_16px_rgba(0,0,0,0.06)] shadow-black/5' : ''}`}
                                 >
                                     <div className="grid grid-cols-12 items-center w-full">
                                         <div className="col-span-9 flex items-center space-x-2.5">

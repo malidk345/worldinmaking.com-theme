@@ -192,7 +192,7 @@ function CustomToolbar() {
     `;
 
     return (
-        <div className="flex flex-wrap items-center gap-1 p-1.5 border-b border-zinc-200/50 dark:border-zinc-800/50 bg-white/70 dark:bg-[#1C1C1E]/70 backdrop-blur-md sticky top-0 z-10 select-none">
+        <div className="flex flex-wrap items-center gap-1 p-1.5 border-b border-zinc-200/50 dark:border-zinc-800/50 bg-white/70 dark:bg-[#1C1C1E]/70 backdrop-blur-[20px] sticky top-0 z-10 select-none">
             {/* Inline Formatting */}
             <button
                 type="button"
