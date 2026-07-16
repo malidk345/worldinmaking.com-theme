@@ -210,6 +210,8 @@ body {
   font-variant-ligatures: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Prevent pink/white flash on iOS overscroll */
+  background-color: rgb(var(--bg, 240 240 245));
 }
 
 /* Custom Scrollbar — PostHog inspired, minimalist and non-intrusive */
@@ -905,7 +907,7 @@ mark {
     position: fixed;
     margin: 0;
     padding: 0;
-    background-color: rgb(var(--accent)) !important;
+    background-color: rgb(var(--bg, 240 240 245)) !important;
   }
 
   body {
@@ -914,6 +916,7 @@ mark {
     word-wrap: break-word;
     position: fixed;
     inset: 0;
+    background-color: rgb(var(--bg, 240 240 245)) !important;
   }
 
   p {

@@ -1,10 +1,18 @@
 import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import 'highlight.js/styles/github.css';
 import { WebSiteJsonLd } from "../components/SEO/JsonLd";
 import { AppProvider } from "../context/App";
 import { AuthProvider } from "../context/AuthContext";
 import { ToastProvider } from "../context/ToastContext";
+
+const inter = Inter({
+    subsets: ['latin'],
+    weight: ['400', '500', '600', '700'],
+    display: 'swap',
+    variable: '--font-inter',
+});
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://worldinmaking.com";
 
@@ -58,7 +66,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
     themeColor: [
         { media: '(prefers-color-scheme: light)', color: '#F0F0F5' },
-        { media: '(prefers-color-scheme: dark)', color: '#1E1E23' }
+        { media: '(prefers-color-scheme: dark)', color: '#0F0F14' }
     ],
     width: 'device-width',
     initialScale: 1,
@@ -75,15 +83,10 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="en">
+        <html lang="en" className={inter.variable}>
             <head>
                 <meta name="apple-mobile-web-app-capable" content="yes" />
-                <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-
-                <link rel="preconnect" href="https://fonts.googleapis.com" />
-                <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-                <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+                <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
             </head>
             <body className="antialiased apple-body">
                 <WebSiteJsonLd
