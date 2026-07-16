@@ -2,6 +2,7 @@
 
 import React from 'react'
 import Home from 'components/craft-editor/src/pages/home'
+import '../../components/editor/editor.css'
 
 export default function WritePostPage() {
     return (

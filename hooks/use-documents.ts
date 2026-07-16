@@ -240,7 +240,7 @@ export function useDocuments() {
     const newDoc: Document = {
       id: newId,
       title: 'Untitled',
-      content: '',
+      content: { type: 'doc', content: [] },
       createdAt: Date.now(),
       updatedAt: Date.now(),
       published: false,
@@ -284,7 +284,7 @@ export function useDocuments() {
         id: newDoc.id,
         title: newDoc.title,
         slug: newDoc.slug,
-        content: '',
+        content: JSON.stringify({ type: 'doc', content: [] }),
         excerpt: '',
         category: newDoc.category,
         published: newDoc.published,
@@ -364,14 +364,14 @@ export function useDocuments() {
     }
 
     const finalSlug = doc.slug || toSlug(doc.title)
-    const rawContent = typeof doc.content === 'object' ? JSON.stringify(doc.content) : doc.content
+    const rawContent = typeof doc.content === 'object' ? JSON.stringify(doc.content) : (doc.content || '{"type":"doc","content":[]}')
 
     const { error } = await supabase
       .from('posts')
       .update({
         title: doc.title,
         slug: finalSlug,
-        content: rawContent || '',
+        content: rawContent || '{"type":"doc","content":[]}',
         excerpt: doc.title || '',
         image_url: extractedImage || null,
         published: doc.published ?? false,
