@@ -215,13 +215,8 @@ export default function PublicProfile({ username }: PublicProfileProps) {
 
     const handleAddPost = useCallback(() => {
         if (!isOwner) return
-        addWindow({
-            key: `post-new-${Date.now()}`,
-            title: 'Untitled Post',
-            path: '/write-post',
-            icon: <IconBook className="size-4" />,
-        })
-    }, [addWindow, isOwner])
+        window.open('/write-post', '_blank')
+    }, [isOwner])
 
     const handleOpenPost = useCallback((post: PostItem) => {
         openPost(post)
@@ -229,14 +224,8 @@ export default function PublicProfile({ username }: PublicProfileProps) {
 
     const handleEditPost = useCallback((post: PostItem) => {
         if (!isOwner) return
-        addWindow({
-            key: `post-editor-${post.id}`,
-            title: post.title || 'Untitled Post',
-            path: '/write-post',
-            icon: <IconBook className="size-4" />,
-            props: { postId: post.id },
-        })
-    }, [addWindow, isOwner])
+        window.open(`/write-post?postId=${post.id}`, '_blank')
+    }, [isOwner])
 
     const openNodeView = useCallback((node: NodeDoc) => {
         addWindow({

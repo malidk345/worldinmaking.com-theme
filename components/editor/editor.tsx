@@ -1,5 +1,4 @@
-/* eslint-disable */
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor, EditorContent, Editor as EditorInstance } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Underline from '@tiptap/extension-underline';
@@ -16,98 +15,145 @@ import TaskItem from '@tiptap/extension-task-item';
 import Superscript from '@tiptap/extension-superscript';
 import Subscript from '@tiptap/extension-subscript';
 import CharacterCount from '@tiptap/extension-character-count';
+import { Table } from '@tiptap/extension-table';
+import { TableRow } from '@tiptap/extension-table-row';
+import { TableHeader } from '@tiptap/extension-table-header';
+import { TableCell } from '@tiptap/extension-table-cell';
+import { Youtube } from '@tiptap/extension-youtube';
 import { common, createLowlight } from 'lowlight';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { EditorBubbleMenu } from './bubble-menu';
 import { SlashCommand, suggestion } from './slash-extension';
 import { ImageDialog } from './image-dialog';
+import { EmbedDialog } from './embed-dialog';
+import { PublishPanel } from './publish-panel';
+import { CalloutExtension } from './callout-extension';
 import { Document } from '@/hooks/use-documents';
 import { EditorSettings } from '@/hooks/use-editor-settings';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Globe, ImageIcon, Trash2, CheckCircle2 } from 'lucide-react';
 
 const lowlight = createLowlight(common);
 
-const FONT_MAP = {
-  system: 'font-sans',
-  serif: 'font-serif',
-  mono: 'font-mono',
-};
-const SIZE_MAP = {
-  sm: 'editor-size-sm',
-  md: 'editor-size-md',
-  lg: 'editor-size-lg',
-};
-const LH_MAP = {
-  tight: 'editor-lh-tight',
-  normal: 'editor-lh-normal',
-  relaxed: 'editor-lh-relaxed',
-};
-const WIDTH_MAP = {
-  narrow: 'max-w-xl',
-  normal: 'max-w-2xl',
-  wide: 'max-w-4xl',
-};
+const FONT_MAP = { system: 'font-sans', serif: 'font-serif', mono: 'font-mono' };
+const SIZE_MAP = { sm: 'editor-size-sm', md: 'editor-size-md', lg: 'editor-size-lg' };
+const LH_MAP = { tight: 'editor-lh-tight', normal: 'editor-lh-normal', relaxed: 'editor-lh-relaxed' };
+const WIDTH_MAP = { narrow: 'max-w-xl', normal: 'max-w-2xl', wide: 'max-w-4xl' };
 
 interface EditorProps {
   document: Document | null;
   onChange: (updates: Partial<Document>) => void;
   sidebarOpen: boolean;
   settings: EditorSettings;
+  focusMode: boolean;
+  onEditorReady?: (editor: EditorInstance) => void;
 }
 
-export function Editor({ document, onChange, sidebarOpen, settings }: EditorProps) {
+// ── Cover image component ──────────────────────────────────────────────
+function CoverImage({ src, onRemove, onReplace }: { src: string; onRemove: () => void; onReplace: (s: string) => void }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const processFile = useCallback((file: File) => {
+    if (!file.type.startsWith('image/') || file.size > 8 * 1024 * 1024) return;
+    const reader = new FileReader();
+    reader.onload = e => onReplace(e.target?.result as string);
+    reader.readAsDataURL(file);
+  }, [onReplace]);
+
+  return (
+    <div className="relative group w-full h-52 rounded-2xl overflow-hidden mb-7 border border-border/20 bg-black/5 dark:bg-white/5">
+      <img src={src} alt="Cover" className="w-full h-full object-cover" />
+      {/* hover controls */}
+      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/35 transition-colors flex items-end justify-end gap-2 p-3 opacity-0 group-hover:opacity-100">
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          className="flex items-center gap-1.5 text-xs font-medium text-white bg-black/50 hover:bg-black/70 rounded-xl px-3 py-1.5 backdrop-blur-sm transition-colors"
+        >
+          <ImageIcon size={11} /> Replace
+        </button>
+        <button
+          type="button"
+          onClick={onRemove}
+          className="flex items-center gap-1.5 text-xs font-medium text-white bg-black/50 hover:bg-red-600/80 rounded-xl px-3 py-1.5 backdrop-blur-sm transition-colors"
+        >
+          <Trash2 size={11} /> Remove
+        </button>
+      </div>
+      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) processFile(f); }} />
+    </div>
+  );
+}
+
+// ── "Add cover" prompt ────────────────────────────────────────────────
+function AddCoverPrompt({ onAdd }: { onAdd: (src: string) => void }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const processFile = useCallback((file: File) => {
+    if (!file.type.startsWith('image/') || file.size > 8 * 1024 * 1024) return;
+    const reader = new FileReader();
+    reader.onload = e => onAdd(e.target?.result as string);
+    reader.readAsDataURL(file);
+  }, [onAdd]);
+
+  return (
+    <div className="flex items-center gap-1.5 mb-4 opacity-0 group-hover/canvas:opacity-100 transition-opacity">
+      <button
+        type="button"
+        onClick={() => fileRef.current?.click()}
+        className="flex items-center gap-1.5 text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors px-1 rounded-lg"
+      >
+        <ImageIcon size={12} />
+        Add cover image
+      </button>
+      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) processFile(f); }} />
+    </div>
+  );
+}
+
+// ── Main editor ────────────────────────────────────────────────────────
+export function Editor({ document, onChange, sidebarOpen, settings, focusMode, onEditorReady }: EditorProps) {
   const [isSaved, setIsSaved] = useState(true);
   const [showImageDialog, setShowImageDialog] = useState(false);
+  const [showEmbedDialog, setShowEmbedDialog] = useState(false);
+  const [showPublishPanel, setShowPublishPanel] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
-  // Listen for slash-command image trigger
   useEffect(() => {
-    const handler = () => setShowImageDialog(true);
-    window.addEventListener('craft:openImageDialog', handler);
-    return () => window.removeEventListener('craft:openImageDialog', handler);
+    const img = () => setShowImageDialog(true);
+    const emb = () => setShowEmbedDialog(true);
+    window.addEventListener('craft:openImageDialog', img);
+    window.addEventListener('craft:openEmbedDialog', emb);
+    return () => { window.removeEventListener('craft:openImageDialog', img); window.removeEventListener('craft:openEmbedDialog', emb); };
   }, []);
 
+  // Close publish panel when document changes
+  useEffect(() => { setShowPublishPanel(false); }, [document?.id]);
+
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
-      StarterKit.configure({
-        codeBlock: false,
-        heading: { levels: [1, 2, 3] },
-        underline: false,
-        link: false,
-      }),
-      Placeholder.configure({
-        placeholder: 'Start writing… or type / for commands',
-      }),
+      StarterKit.configure({ codeBlock: false, heading: { levels: [1, 2, 3] }, underline: false, link: false }),
+      Placeholder.configure({ placeholder: 'Start writing… or type / for commands' }),
       Underline,
-      TextAlign.configure({
-        types: ['heading', 'paragraph'],
-        alignments: ['left', 'center', 'right', 'justify'],
-      }),
+      TextAlign.configure({ types: ['heading', 'paragraph'], alignments: ['left', 'center', 'right', 'justify'] }),
       Highlight.configure({ multicolor: true }),
       Typography,
       TextStyle,
       Color,
       CodeBlockLowlight.configure({ lowlight }),
-      Link.configure({
-        openOnClick: false,
-        autolink: true,
-        HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' },
-      }),
+      Link.configure({ openOnClick: false, autolink: true, HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' } }),
       Image.configure({ inline: false, allowBase64: true }),
-      TaskList,
-      TaskItem.configure({ nested: true }),
-      Superscript,
-      Subscript,
+      TaskList, TaskItem.configure({ nested: true }),
+      Superscript, Subscript,
       CharacterCount,
+      Table.configure({ resizable: true }),
+      TableRow, TableHeader, TableCell,
+      Youtube.configure({ inline: false, modestBranding: true, width: 640, height: 360 }),
+      CalloutExtension,
       SlashCommand.configure({ suggestion }),
     ],
     content: document?.content || '',
-    editorProps: {
-      attributes: {
-        class: 'craft-prose focus:outline-none',
-      },
-    },
+    editorProps: { attributes: { class: 'craft-prose focus:outline-none' } },
     onUpdate: ({ editor }) => {
       setIsSaved(false);
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
@@ -118,8 +164,8 @@ export function Editor({ document, onChange, sidebarOpen, settings }: EditorProp
     },
   });
 
-  // Swap content when document changes
   const currentDocIdRef = useRef(document?.id);
+  const editorRef = useRef<EditorInstance | null>(null);
   useEffect(() => {
     if (editor && document) {
       if (currentDocIdRef.current !== document.id) {
@@ -131,14 +177,16 @@ export function Editor({ document, onChange, sidebarOpen, settings }: EditorProp
   }, [editor, document]);
 
   useEffect(() => {
-    return () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current); };
-  }, []);
-
-  const insertImage = (src: string, alt?: string) => {
-    if (editor) {
-      editor.chain().focus().setImage({ src, alt: alt ?? '' }).run();
+    if (editor && editor !== editorRef.current) {
+      editorRef.current = editor;
+      if (onEditorReady) onEditorReady(editor);
     }
-  };
+  }, [editor, onEditorReady]);
+
+  useEffect(() => () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current); }, []);
+
+  const insertImage = (src: string, alt?: string) => editor?.chain().focus().setImage({ src, alt: alt ?? '' }).run();
+  const insertEmbed = (id: string) => editor?.chain().focus().setYoutubeVideo({ src: id }).run();
 
   if (!document) {
     return (
@@ -157,90 +205,102 @@ export function Editor({ document, onChange, sidebarOpen, settings }: EditorProp
   }
 
   const wordCount = editor?.storage.characterCount?.words() ?? 0;
+  const goal = settings.wordCountGoal;
+  const progress = goal ? Math.min(100, Math.round((wordCount / goal) * 100)) : 0;
+  const isPublished = !!document.published;
 
   return (
     <div className={cn('relative w-full h-full flex flex-col overflow-hidden', FONT_MAP[settings.fontFamily], SIZE_MAP[settings.fontSize], LH_MAP[settings.lineHeight])}>
       {editor && <EditorBubbleMenu editor={editor} onInsertImage={() => setShowImageDialog(true)} />}
-
-      <ImageDialog
-        open={showImageDialog}
-        onClose={() => setShowImageDialog(false)}
-        onInsert={insertImage}
+      <ImageDialog open={showImageDialog} onClose={() => setShowImageDialog(false)} onInsert={insertImage} />
+      <EmbedDialog open={showEmbedDialog} onClose={() => setShowEmbedDialog(false)} onInsert={insertEmbed} />
+      <PublishPanel
+        open={showPublishPanel}
+        onClose={() => setShowPublishPanel(false)}
+        document={document}
+        onUpdate={onChange}
       />
 
-      {/* Slim header — title only */}
+      {/* Header */}
       <div className={cn(
-        'flex-none h-12 border-b border-border/20 flex items-center px-5 gap-3 bg-white/50 dark:bg-zinc-950/50 backdrop-blur-sm transition-all',
-        !sidebarOpen ? 'pl-16' : ''
+        'flex-none h-12 border-b border-border/20 flex items-center px-5 gap-3 bg-background/50 backdrop-blur-sm transition-all duration-300',
+        focusMode && 'opacity-0 h-0 border-none overflow-hidden',
+        !sidebarOpen && !focusMode ? 'pl-16' : ''
       )}>
         <input
-          type="text"
-          value={document.title}
-          onChange={e => {
-            setIsSaved(false);
-            onChange({ title: e.target.value });
-            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-            saveTimeoutRef.current = setTimeout(() => setIsSaved(true), 800);
-          }}
+          type="text" value={document.title}
+          onChange={e => { setIsSaved(false); onChange({ title: e.target.value }); if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current); saveTimeoutRef.current = setTimeout(() => setIsSaved(true), 800); }}
           className="flex-1 text-sm font-semibold bg-transparent outline-none border-none placeholder:text-muted-foreground/30 text-foreground"
-          placeholder="Untitled"
-          data-testid="input-document-title"
+          placeholder="Untitled" data-testid="input-document-title"
         />
+
+        {/* Publish button */}
         <button
           type="button"
-          onClick={() => {
-            onChange({ published: !document.published });
-          }}
+          onClick={() => setShowPublishPanel(v => !v)}
           className={cn(
-            "text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded transition-all select-none hover:opacity-85 shrink-0",
-            document.published 
-              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25" 
-              : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25"
+            'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 shrink-0',
+            showPublishPanel
+              ? 'bg-foreground text-background'
+              : isPublished
+                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/25'
+                : 'bg-foreground/8 dark:bg-white/10 text-foreground/70 hover:text-foreground hover:bg-foreground/12'
           )}
         >
-          {document.published ? 'Live' : 'Draft'}
+          {isPublished ? <CheckCircle2 size={12} /> : <Globe size={12} />}
+          {isPublished ? 'Published' : 'Publish'}
         </button>
-        <AnimatePresence mode="wait">
-          <motion.span
-            key={isSaved ? 'saved' : 'saving'}
-            initial={{ opacity: 0, y: 3 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -3 }}
-            transition={{ duration: 0.15 }}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground/50 shrink-0 select-none"
-          >
-            <span className={cn('w-1.5 h-1.5 rounded-full transition-colors', isSaved ? 'bg-green-400/80' : 'bg-amber-400 animate-pulse')} />
-            {isSaved ? 'Saved' : 'Saving…'}
-          </motion.span>
-        </AnimatePresence>
       </div>
 
       {/* Canvas */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar bg-white dark:bg-zinc-950">
-        <div className={cn('mx-auto pt-10 pb-40 px-6 md:px-10 transition-all duration-300', WIDTH_MAP[settings.contentWidth])}>
-          {/* Document title in canvas — compact */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className={cn('group/canvas mx-auto pt-10 pb-40 px-6 md:px-10 transition-all duration-300', WIDTH_MAP[settings.contentWidth])}>
+
+          {/* Cover image */}
+          {document.coverImage ? (
+            <CoverImage
+              src={document.coverImage}
+              onRemove={() => onChange({ coverImage: undefined })}
+              onReplace={src => onChange({ coverImage: src })}
+            />
+          ) : (
+            <AddCoverPrompt onAdd={src => onChange({ coverImage: src })} />
+          )}
+
           <input
-            type="text"
-            value={document.title}
-            onChange={e => {
-              setIsSaved(false);
-              onChange({ title: e.target.value });
-              if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-              saveTimeoutRef.current = setTimeout(() => setIsSaved(true), 800);
-            }}
+            type="text" value={document.title}
+            onChange={e => { setIsSaved(false); onChange({ title: e.target.value }); if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current); saveTimeoutRef.current = setTimeout(() => setIsSaved(true), 800); }}
             className="w-full text-2xl md:text-3xl font-bold bg-transparent outline-none border-none placeholder:text-muted-foreground/20 text-foreground tracking-tight font-sans mb-6 block"
-            placeholder="Untitled"
-            data-testid="input-document-title-canvas"
+            placeholder="Untitled" data-testid="input-document-title-canvas"
           />
           <EditorContent editor={editor} />
         </div>
       </div>
 
-      {/* Bottom word count */}
-      <div className="absolute bottom-5 right-6 pointer-events-none select-none">
+      {/* Bottom status bar */}
+      <div className={cn('absolute bottom-5 right-6 pointer-events-none select-none flex items-center gap-2 transition-all duration-300', focusMode && 'opacity-0')}>
+        {goal > 0 && (
+          <span className="text-xs text-muted-foreground/50 bg-background/60 backdrop-blur-md px-2.5 py-1 rounded-lg border border-border/20 flex items-center gap-1.5">
+            <span className="w-12 h-1 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+              <span className="h-full bg-primary/60 rounded-full transition-all" style={{ width: `${progress}%` }} />
+            </span>
+            {wordCount}/{goal}
+          </span>
+        )}
         <span className="text-xs text-muted-foreground/40 bg-background/60 backdrop-blur-md px-2.5 py-1 rounded-lg border border-border/20">
           {wordCount} {wordCount === 1 ? 'word' : 'words'}
         </span>
+        {/* Saved indicator */}
+        <AnimatePresence mode="wait">
+          <motion.span
+            key={isSaved ? 'saved' : 'saving'}
+            initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -3 }} transition={{ duration: 0.15 }}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground/40 bg-background/60 backdrop-blur-md px-2.5 py-1 rounded-lg border border-border/20"
+          >
+            <span className={cn('w-1.5 h-1.5 rounded-full transition-colors', isSaved ? 'bg-green-400/70' : 'bg-amber-400 animate-pulse')} />
+            {isSaved ? 'Saved' : 'Saving…'}
+          </motion.span>
+        </AnimatePresence>
       </div>
     </div>
   );

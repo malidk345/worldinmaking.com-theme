@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { Extension } from '@tiptap/core';
 import Suggestion from '@tiptap/suggestion';
 import { ReactRenderer } from '@tiptap/react';

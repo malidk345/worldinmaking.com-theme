@@ -23,6 +23,7 @@ import { Toolkit } from '../Toolkit'
 import { useApp } from '../../context/App'
 import OSButton from 'components/OSButton'
 import { Popover } from 'components/RadixUI/Popover'
+import { CalloutType } from 'components/editor/callout-extension'
 
 // Initialize lowlight for code blocks
 const lowlight = createLowlight(common)
@@ -32,7 +33,9 @@ import { Node, mergeAttributes } from '@tiptap/core'
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         callout: {
-            setCallout: () => ReturnType
+            setCallout: (attrs?: { type: CalloutType }) => ReturnType
+            toggleCallout: (attrs?: { type: CalloutType }) => ReturnType
+            unsetCallout: () => ReturnType
         }
         references: {
             insertReferences: () => ReturnType

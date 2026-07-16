@@ -429,7 +429,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
                 title: getTitleFromPath('/posts'),
                 element: <PostsView />
             }) */
-        } else {
+        } else if (path !== '/write-post') {
             // If we're on a specific path, open that window
             addWindow({
                 key: `window-${path}`,

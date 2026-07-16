@@ -27,7 +27,6 @@ import BlueprintPostView from 'components/Blueprints/BlueprintPostView'
 import ArchiveExplorer from 'components/ArchiveExplorer'
 import ForumAvatar from 'components/Forum/ForumAvatar'
 import ForumRichText from 'components/Forum/ForumRichText'
-import PostEditor from 'components/PostEditor'
 import SymposiumApp from 'components/Symposium'
 
 interface AdaptablePost {
@@ -163,10 +162,7 @@ function WindowRouterInner({ item }: { item: AppWindow }) {
         return <WriteRouteView nodeId={item.props?.nodeId as string | undefined} item={item} readOnly={Boolean(item.props?.readOnly)} />
     }
 
-    // /write-post (User Post Editor)
-    if (path === '/write-post') {
-        return <PostEditor postId={item.props?.postId as string | undefined} item={item} />
-    }
+
 
     // /symposium (Collective AI Thinking Space)
     if (path === '/symposium') {
