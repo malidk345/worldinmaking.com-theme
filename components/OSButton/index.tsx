@@ -57,7 +57,7 @@ const OSButton = React.memo(React.forwardRef<HTMLButtonElement | HTMLAnchorEleme
         ref
     ) => {
         const baseClasses =
-            'relative items-center justify-center font-bold tracking-tight rounded-full transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.96] active:translate-y-0'
+            'relative items-center justify-center font-bold tracking-tight rounded-full transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.98] active:translate-y-0'
 
         const sizeClasses = {
             xs: 'px-2.5 py-1.5 text-[11px] gap-1',
