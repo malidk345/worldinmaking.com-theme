@@ -339,7 +339,7 @@ export default function ForumRichText({
             }),
             Image.configure({
                 HTMLAttributes: {
-                    class: 'rounded-md max-w-full h-auto my-4 border border-primary/20',
+                    class: 'rounded-[12px] max-w-full h-auto my-4 border border-primary/20',
                 },
             }),
             CharacterCount,
@@ -456,7 +456,7 @@ export default function ForumRichText({
                             <button
                                 key={button.name}
                                 type="button"
-                                className={`p-1.5 md:p-2 rounded-xl flex items-center justify-center transition-all duration-200 shrink-0
+                                className={`p-1.5 md:p-2 rounded-[16px] flex items-center justify-center transition-all duration-200 shrink-0
                                     ${isActive
                                         ? 'bg-black text-white dark:bg-white dark:text-black shadow-sm'
                                         : isDisabled

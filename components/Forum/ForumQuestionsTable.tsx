@@ -24,15 +24,15 @@ const Skeleton = () => {
             <div className="col-span-12 md:col-span-8 flex items-center space-x-4">
                 <div className="w-5 flex-shrink-0" />
                 <div className="w-full space-y-1">
-                    <div className="animate-pulse bg-accent h-[18px] rounded-md w-2/3" />
-                    <div className="animate-pulse bg-accent h-[18px] rounded-md" />
+                    <div className="animate-pulse bg-accent h-[18px] rounded-[12px] w-2/3" />
+                    <div className="animate-pulse bg-accent h-[18px] rounded-[12px]" />
                 </div>
             </div>
             <div className="hidden md:flex md:col-span-1 items-start justify-center h-full">
-                <div className="animate-pulse bg-accent h-[18px] rounded-md w-[18px]" />
+                <div className="animate-pulse bg-accent h-[18px] rounded-[12px] w-[18px]" />
             </div>
             <div className="hidden md:flex md:col-span-3 items-start justify-center h-full">
-                <div className="animate-pulse bg-accent h-[18px] rounded-md w-full" />
+                <div className="animate-pulse bg-accent h-[18px] rounded-[12px] w-full" />
             </div>
         </div>
     )

@@ -115,7 +115,7 @@ export default function ForumQuestionCard({
         return (
             <div className="flex flex-col w-full text-primary">
                 {question.archived && (
-                    <div className="m-4 mb-0 bg-primary border border-black p-4 rounded text-center">
+                    <div className="m-4 mb-0 bg-primary border border-black p-4 rounded-[14px] text-center">
                         <p className="font-bold text-base !m-0 !p-0 lowercase">the following thread has been archived.</p>
                         <p className="!text-sm !m-0 text-balance opacity-60 lowercase">
                             it&apos;s likely out of date, no longer relevant, or the answer has been added to our documentation.
@@ -197,7 +197,7 @@ export default function ForumQuestionCard({
     return (
         <div className="flex flex-col w-full text-primary">
             {question.archived && (
-                <div className="m-4 mb-0 bg-primary border border-black p-4 rounded text-center">
+                <div className="m-4 mb-0 bg-primary border border-black p-4 rounded-[14px] text-center">
                     <p className="font-bold text-base !m-0 !p-0 lowercase">the following thread has been archived.</p>
                     <p className="!text-sm !m-0 text-balance opacity-60 lowercase">
                         it&apos;s likely out of date, no longer relevant, or the answer has been added to our documentation.

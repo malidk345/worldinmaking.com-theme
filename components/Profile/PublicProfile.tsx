@@ -581,7 +581,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                 {isOwner && (
                     <div className={`shrink-0 flex flex-col border-r border-primary/5 bg-[#fafcfc] dark:bg-black/10 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${sidebarOpen ? 'w-64 opacity-100 translate-x-0' : 'w-0 opacity-0 -translate-x-full absolute h-full pointer-events-none'}`}>
                         <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-4 min-w-[256px]">
-                            <button className="flex items-center gap-2 w-full hover:bg-black/5 dark:hover:bg-white/5 p-1.5 rounded-2xl transition-colors">
+                            <button className="flex items-center gap-2 w-full hover:bg-black/5 dark:hover:bg-white/5 p-1.5 rounded-[24px] transition-colors">
                                 <div className="size-6 overflow-hidden rounded bg-primary/10 flex items-center justify-center shrink-0 shadow-sm border border-primary/10">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     {profile.avatar_url ? <img src={profile.avatar_url} alt={displayName} className="size-full object-cover" /> : <span className="text-xs font-black text-primary">{displayName.charAt(0).toUpperCase()}</span>}
@@ -607,7 +607,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                         </OSButton>
                                     </>
                                 ) : (
-                                    <div className="rounded-2xl border border-primary/10 bg-black/5 dark:bg-white/5 px-2.5 py-2 text-[11px] font-bold lowercase text-primary/60">
+                                    <div className="rounded-[24px] border border-primary/10 bg-black/5 dark:bg-white/5 px-2.5 py-2 text-[11px] font-bold lowercase text-primary/60">
                                         editing profile… save and cancel are below
                                     </div>
                                 )}
@@ -630,7 +630,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                             setIsEditingProfile(false)
                                             setActiveSection(item.key as typeof activeSection)
                                         }}
-                                        className={`flex items-center gap-2.5 w-full p-1.5 px-2.5 rounded-2xl transition-colors font-medium text-[13px] ${activeSection === item.key ? 'bg-black/5 dark:bg-white/10 text-primary font-bold' : 'hover:bg-black/5 dark:hover:bg-white/5 text-primary/70 hover:text-primary'}`}
+                                        className={`flex items-center gap-2.5 w-full p-1.5 px-2.5 rounded-[24px] transition-colors font-medium text-[13px] ${activeSection === item.key ? 'bg-black/5 dark:bg-white/10 text-primary font-bold' : 'hover:bg-black/5 dark:hover:bg-white/5 text-primary/70 hover:text-primary'}`}
                                     >
                                         {item.icon}
                                         <span>{item.label}</span>

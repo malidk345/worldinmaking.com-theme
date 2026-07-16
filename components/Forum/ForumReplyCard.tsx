@@ -108,12 +108,12 @@ export default function ForumReplyCard({ reply, postId, isInForum = false, quest
                 )}
 
                 {isAuthor && (
-                    <span className="bg-accent text-primary text-[10px] px-1.5 py-0.5 rounded font-bold lowercase tracking-widest ml-1">
+                    <span className="bg-accent text-primary text-[10px] px-1.5 py-0.5 rounded-[14px] font-bold lowercase tracking-widest ml-1">
                         author
                     </span>
                 )}
                 {isAI && (
-                    <span className="bg-accent text-primary text-[10px] px-1.5 py-0.5 rounded font-bold lowercase tracking-widest ml-1">
+                    <span className="bg-accent text-primary text-[10px] px-1.5 py-0.5 rounded-[14px] font-bold lowercase tracking-widest ml-1">
                         AI
                     </span>
                 )}

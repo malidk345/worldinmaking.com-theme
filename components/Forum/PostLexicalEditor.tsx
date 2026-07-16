@@ -45,7 +45,7 @@ const theme = {
         italic: "italic",
         underline: "underline decoration-zinc-400",
         strikethrough: "line-through decoration-zinc-400",
-        code: "apple-code bg-zinc-100 dark:bg-zinc-800 rounded px-1 py-0.5",
+        code: "apple-code bg-zinc-100 dark:bg-zinc-800 rounded-[12px] px-1 py-0.5",
     },
     link: "text-zinc-950 dark:text-zinc-50 underline decoration-zinc-400 hover:decoration-zinc-950 cursor-pointer transition-colors duration-150 font-bold",
 };
@@ -186,7 +186,7 @@ function CustomToolbar() {
     };
 
     const buttonClass = (active: boolean) => `
-        p-1.5 sm:p-2 rounded-lg text-zinc-400 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 
+        p-1.5 sm:p-2 rounded-[16px] text-zinc-400 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200
         hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all duration-200 active:scale-95
         ${active ? "!text-zinc-950 dark:!text-zinc-50 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 shadow-sm" : "border border-transparent"}
     `;
@@ -333,7 +333,7 @@ export default function PostLexicalEditor({
 }: PostLexicalEditorProps) {
     return (
         <LexicalComposer initialConfig={initialConfig}>
-            <div className={`relative flex flex-col w-full h-full min-h-0 bg-white dark:bg-[#1C1C1E] border border-black/5 dark:border-white/5 rounded-2xl shadow-sm overflow-hidden group focus-within:border-black/10 dark:focus-within:border-white/10 transition-all duration-300 ${className}`}>
+            <div className={`relative flex flex-col w-full h-full min-h-0 bg-white dark:bg-[#1C1C1E] border border-black/5 dark:border-white/5 rounded-[24px] shadow-sm overflow-hidden group focus-within:border-black/10 dark:focus-within:border-white/10 transition-all duration-300 ${className}`}>
                 {/* Formatting Toolbar */}
                 <CustomToolbar />
 
