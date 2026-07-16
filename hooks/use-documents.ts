@@ -11,9 +11,18 @@ export interface Folder {
   createdAt: number
 }
 
+export interface DocumentMeta {
+  folderId: string | null
+  pinned: boolean
+  icon: string
+  preview: string
+  coverImage?: string
+}
+
 export interface Document {
   id: string
   title: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   content: any // TipTap JSON or HTML
   folderId: string | null
   pinned: boolean
@@ -34,13 +43,16 @@ export interface Document {
 export type SortOrder = 'updated' | 'created' | 'name'
 
 // Extract plain-text preview from TipTap JSON
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractPreview(content: any): string {
   if (!content) return ''
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const walk = (node: any): string => {
     if (node?.text) return node.text
     if (node?.content) return node.content.map(walk).join('')
     return ''
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const nodes: any[] = content?.content ?? []
   for (const node of nodes) {
     const text = walk(node).trim()
@@ -83,7 +95,7 @@ export function useDocuments() {
   }, [])
 
   // Helper to load and save metadata map from/to localStorage
-  const getMetadataMap = useCallback((): Record<string, any> => {
+  const getMetadataMap = useCallback((): Record<string, DocumentMeta> => {
     try {
       const stored = localStorage.getItem(META_KEY)
       return stored ? JSON.parse(stored) : {}
@@ -92,7 +104,7 @@ export function useDocuments() {
     }
   }, [])
 
-  const saveMetadataMap = useCallback((map: Record<string, any>) => {
+  const saveMetadataMap = useCallback((map: Record<string, DocumentMeta>) => {
     localStorage.setItem(META_KEY, JSON.stringify(map))
   }, [])
 
@@ -305,40 +317,8 @@ export function useDocuments() {
     return newDoc
   }, [user, profile, isAdmin, addToast, getMetadataMap, saveMetadataMap])
 
-  // Update existing document
-  const updateDocument = useCallback(async (id: string, updates: Partial<Document>) => {
-    setDocuments(prev =>
-      prev.map(doc => {
-        if (doc.id === id) {
-          const nextPreview = updates.content !== undefined ? extractPreview(updates.content) : (updates.preview !== undefined ? updates.preview : doc.preview)
-          const updated = { ...doc, ...updates, preview: nextPreview, updatedAt: Date.now() }
-          
-          // Update metadata map locally
-          const metaMap = getMetadataMap()
-          metaMap[id] = {
-            ...metaMap[id],
-            folderId: updated.folderId,
-            pinned: updated.pinned,
-            icon: updated.icon,
-            preview: nextPreview,
-            coverImage: updated.coverImage
-          }
-          saveMetadataMap(metaMap)
-
-          // Sync to database if logged in
-          if (user?.id) {
-            syncToSupabase(updated)
-          }
-          
-          return updated
-        }
-        return doc
-      })
-    )
-  }, [user?.id, getMetadataMap, saveMetadataMap])
-
   // Sync state to Supabase
-  const syncToSupabase = async (doc: Document) => {
+  const syncToSupabase = useCallback(async (doc: Document) => {
     if (!user?.id) return
 
     // Use coverImage as image_url or extract first image url from content if exists
@@ -349,6 +329,7 @@ export function useDocuments() {
         const match = content.match(/<img[^>]+src="([^">]+)"/)
         if (match) extractedImage = match[1]
       } else if (typeof content === 'object') {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const findImage = (node: any): string => {
           if (node.type === 'image' && node.attrs?.src) return node.attrs.src
           if (node.content && Array.isArray(node.content)) {
@@ -382,7 +363,39 @@ export function useDocuments() {
     if (error) {
       console.error('Failed to sync changes with Supabase:', error.message)
     }
-  }
+  }, [user?.id])
+
+  // Update existing document
+  const updateDocument = useCallback(async (id: string, updates: Partial<Document>) => {
+    setDocuments(prev =>
+      prev.map(doc => {
+        if (doc.id === id) {
+          const nextPreview = updates.content !== undefined ? extractPreview(updates.content) : (updates.preview !== undefined ? updates.preview : doc.preview)
+          const updated = { ...doc, ...updates, preview: nextPreview, updatedAt: Date.now() }
+          
+          // Update metadata map locally
+          const metaMap = getMetadataMap()
+          metaMap[id] = {
+            ...metaMap[id],
+            folderId: updated.folderId,
+            pinned: updated.pinned,
+            icon: updated.icon,
+            preview: nextPreview,
+            coverImage: updated.coverImage
+          }
+          saveMetadataMap(metaMap)
+
+          // Sync to database if logged in
+          if (user?.id) {
+            syncToSupabase(updated)
+          }
+          
+          return updated
+        }
+        return doc
+      })
+    )
+  }, [user?.id, getMetadataMap, saveMetadataMap, syncToSupabase])
 
   // Delete document
   const deleteDocument = useCallback(async (id: string) => {
