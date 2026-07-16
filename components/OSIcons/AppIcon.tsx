@@ -208,6 +208,7 @@ export interface IconImageProps extends IconProps {
     className?: string
 }
 
+
 export const IconImage = ({ url, className }: IconImageProps) => (
     <BaseIcon viewBox="0 0 40 40" width="100%" height="100%" className={`size-10 ${className ? className : ''}`}>
         <image width="40" height="40" href={url} />
@@ -248,6 +249,7 @@ export const AppIcon = ({ name, className, ...props }: AppIconProps) => {
             observer.disconnect()
         }
     }, [])
+
 
     const getIconUrl = (iconName: AppIconName): string => {
         const iconVariants = PRODUCT_ICON_MAP[iconName] as AppIconVariants

@@ -476,9 +476,9 @@ export default function SymposiumApp() {
     // ─────────────────────────────────────────────────────────────────────────
     if (!activeCollab) {
         return (
-            <div className="absolute inset-0 flex flex-col text-primary bg-white dark:bg-[#1C1C1E] overflow-hidden font-mono lowercase text-xs rounded-[32px] m-1 shadow-xl ring-1 ring-black/5 dark:ring-white/10">
-                <div className="flex-grow flex min-h-0 relative rounded-[32px]">
-                    <ScrollArea className="size-full rounded-[32px]">
+            <div className="absolute inset-0 flex flex-col text-primary overflow-hidden font-mono lowercase text-xs">
+                <div className="flex-grow flex min-h-0 relative">
+                    <ScrollArea className="size-full">
                         <div className="w-full max-w-3xl mx-auto py-8 px-4 sm:px-6">
 
                             {/* Header */}
@@ -741,10 +741,10 @@ export default function SymposiumApp() {
     const completedTasks = tasks.filter(t => t.status === "completed");
 
     return (
-        <div className="absolute inset-0 flex text-primary bg-white dark:bg-[#1C1C1E] overflow-hidden font-mono lowercase text-xs rounded-[32px] m-1 shadow-xl ring-1 ring-black/5 dark:ring-white/10">
+        <div className="absolute inset-0 flex text-primary overflow-hidden font-mono lowercase text-xs">
 
             {/* ── Left sidebar: steps timeline ── */}
-            <div className="w-56 shrink-0 border-r border-primary/5 flex flex-col h-full bg-primary/[0.02] hidden @md:flex rounded-l-[32px]">
+            <div className="w-56 shrink-0 border-r border-primary/5 flex flex-col h-full bg-primary/[0.02] hidden @md:flex">
                 <div className="px-4 py-4 border-b border-primary/5">
                     <button
                         onClick={() => setActiveCollab(null)}
@@ -840,7 +840,7 @@ export default function SymposiumApp() {
             {/* ── Center: Document & Kanban Board ── */}
             <div className="flex-1 flex flex-col h-full min-w-0">
                 {/* Toolbar */}
-                <div className="h-14 border-b border-primary/5 flex items-center justify-between px-4 shrink-0 bg-primary/[0.02] select-none rounded-tr-[32px]">
+                <div className="h-14 border-b border-primary/5 flex items-center justify-between px-4 shrink-0 bg-primary/[0.02] select-none">
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => setActiveCollab(null)}
@@ -1127,7 +1127,7 @@ export default function SymposiumApp() {
 
             {/* ── Right Panel: Revision History / Loom Commits ── */}
             {currentDraft && (
-                <div className="w-56 shrink-0 border-l border-primary/5 flex flex-col h-full bg-primary/[0.02] hidden @xl:flex select-none rounded-r-[32px]">
+                <div className="w-56 shrink-0 border-l border-primary/5 flex flex-col h-full bg-primary/[0.02] hidden @xl:flex select-none">
                     <div className="p-4 border-b border-primary/5">
                         <div className="text-[11px] font-bold opacity-60">loom edit history</div>
                         <div className="text-[9px] opacity-40 mt-1">bot contributions and highlights</div>

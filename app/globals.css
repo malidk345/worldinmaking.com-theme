@@ -928,6 +928,8 @@ mark {
 
   * {
     font-variant-ligatures: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   html {
@@ -952,15 +954,30 @@ mark {
     word-wrap: break-word;
     position: fixed;
     inset: 0;
+    /* Advanced typography rendering */
+    font-optical-sizing: auto;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11", "kern", "liga";
   }
 
   p {
     font-variant-numeric: proportional-nums;
   }
 
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
   .dark body {
     background-color: rgb(var(--accent)) !important;
     color: rgb(var(--text-primary));
+    /* Prevent dark mode glow bloat: slightly thin text in dark mode */
+    font-weight: 380;
+  }
+
+  .dark strong,
+  .dark b {
+    font-weight: 680;
   }
 
   code {

@@ -13,7 +13,7 @@ import { useTranslation } from 'hooks/useTranslation'
 
 export default function Desktop() {
     const { addWindow, siteSettings, archivedItems } = useApp()
-    useAuth()
+    const { user, profile } = useAuth()
     const [rendered, setRendered] = useState(false)
     const { t } = useTranslation()
 
@@ -50,10 +50,36 @@ export default function Desktop() {
                     path: '/questions'
                 })
             },
-            {
+            user ? {
+                label: 'profile',
+                displayLabel: profile?.username || user.email || t('menu.profile'),
+                Icon: profile?.avatar_url ? (
+                    <div className="size-10 rounded-full overflow-hidden border border-primary/10 shadow-sm flex items-center justify-center bg-accent">
+                        <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                    </div>
+                ) : (
+                    <AppIcon name="contact" />
+                ),
+                onClick: () => {
+                    if (profile?.username) {
+                        addWindow({
+                            key: `profile-${profile.username}`,
+                            path: `/profile/${profile.username}`,
+                            title: t('menu.profile'),
+                            size: { width: 900, height: 680 },
+                        })
+                    } else {
+                        addWindow({
+                            key: 'profile',
+                            path: '/profile',
+                            title: t('menu.profile')
+                        })
+                    }
+                }
+            } : {
                 label: 'login',
                 displayLabel: t('menu.sign_in'),
-                Icon: <AppIcon name="posthog" />,
+                Icon: <AppIcon name="invite" />,
                 onClick: () => addWindow({
                     key: 'login',
                     path: '/login',
@@ -94,14 +120,14 @@ export default function Desktop() {
         ]
 
         baseApps.unshift({
-            label: 'write-post',
+            label: 'editor',
             displayLabel: t('menu.create_post'),
             Icon: <AppIcon name="typewriter" />,
             onClick: () => window.open('/write-post', '_blank')
         })
 
         return baseApps
-    }, [addWindow, t])
+    }, [addWindow, t, user, profile])
 
     const visibleApps = useMemo(() => {
         return apps.filter(app => app.label === 'archive' || !archivedItems.includes(app.label))
