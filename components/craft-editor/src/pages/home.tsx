@@ -46,6 +46,33 @@ export default function Home() {
 
   useEffect(() => { setMounted(true); }, []);
 
+  // Dynamic theme-color meta tag updater for seamless mobile browser integration
+  useEffect(() => {
+    if (!mounted) return;
+    
+    // Select or create the meta tag
+    let meta = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement | null;
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.name = 'theme-color';
+      document.head.appendChild(meta);
+    }
+
+    // Determine target color based on sidebar state and theme
+    const isDark = theme === 'dark';
+    let targetColor = '';
+    
+    if (sidebarOpen && window.innerWidth < 768) {
+      // Sidebar color
+      targetColor = isDark ? '#18181b' : '#fafafa';
+    } else {
+      // Editor / canvas background color
+      targetColor = isDark ? '#0f172a' : '#fdfcfb';
+    }
+    
+    meta.setAttribute('content', targetColor);
+  }, [sidebarOpen, theme, mounted]);
+
   useEffect(() => {
     const handleResize = () => { if (window.innerWidth < 768) setSidebarOpen(false); else setSidebarOpen(true); };
     handleResize();
@@ -127,11 +154,12 @@ export default function Home() {
             className={cn(
               'fixed md:relative z-50 h-full w-[270px] shrink-0',
               'glass-panel border-y-0 border-l-0 border-r border-border/40',
-              'flex flex-col shadow-2xl md:shadow-none'
+              'flex flex-col shadow-2xl md:shadow-none',
+              'sidebar-safe-area'
             )}
           >
-            {/* Header */}
-            <div className="h-12 flex items-center justify-between px-3 border-b border-border/25 shrink-0">
+            {/* Header — extends into status bar on mobile */}
+            <div className="flex items-center justify-between px-3 border-b border-border/25 shrink-0 sidebar-header">
               <div className="font-semibold text-sm tracking-tight flex items-center gap-2 text-foreground">
                 <div className="w-5 h-5 rounded-md bg-foreground flex items-center justify-center shadow-sm">
                   <div className="w-2 h-2 bg-background rounded-full" />
@@ -260,7 +288,7 @@ export default function Home() {
             </div>
 
             {/* Sidebar footer / ⌘K hint */}
-            <div className="px-3 py-2 border-t border-border/20 flex items-center justify-between text-[10px] text-muted-foreground/40">
+            <div className="px-3 py-2 border-t border-border/20 flex items-center justify-between text-[10px] text-muted-foreground/40 sidebar-footer">
               <span className="flex items-center gap-1"><Command size={10} /> K palette</span>
               <span>{documents.length} docs</span>
             </div>

@@ -210,8 +210,6 @@ body {
   font-variant-ligatures: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* Prevent pink/white flash on iOS overscroll */
-  background-color: rgb(var(--bg, 240 240 245));
 }
 
 /* Custom Scrollbar — PostHog inspired, minimalist and non-intrusive */
@@ -907,7 +905,7 @@ mark {
     position: fixed;
     margin: 0;
     padding: 0;
-    background-color: rgb(var(--bg, 240 240 245)) !important;
+    background-color: rgb(var(--accent)) !important;
   }
 
   body {
@@ -916,7 +914,6 @@ mark {
     word-wrap: break-word;
     position: fixed;
     inset: 0;
-    background-color: rgb(var(--bg, 240 240 245)) !important;
   }
 
   p {
@@ -1602,5 +1599,45 @@ button::-moz-focus-inner,
 
 .dark .noise-overlay {
   opacity: 0.025;
+}
+
+/* Mobile PWA status bar & safe area integrations */
+@media (max-width: 767px) {
+  .sidebar-safe-area {
+    padding-top: env(safe-area-inset-top, 0px) !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+    background: rgba(240, 240, 245, 0.85) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-right: 1px solid rgba(50, 50, 50, 0.12) !important;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05) !important;
+  }
+  
+  .dark .sidebar-safe-area {
+    background: rgba(30, 30, 35, 0.88) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2) !important;
+  }
+  
+  .sidebar-header {
+    height: calc(3.5rem + env(safe-area-inset-top, 0px)) !important;
+    padding-top: env(safe-area-inset-top, 0px) !important;
+    background: transparent !important;
+    border-bottom: 1px solid rgba(50, 50, 50, 0.08) !important;
+  }
+  
+  .dark .sidebar-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  }
+
+  .sidebar-footer {
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px)) !important;
+    background: transparent !important;
+    border-top: 1px solid rgba(50, 50, 50, 0.08) !important;
+  }
+  
+  .dark .sidebar-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+  }
 }
 
