@@ -27,7 +27,7 @@ import BlueprintPostView from 'components/Blueprints/BlueprintPostView'
 import ArchiveExplorer from 'components/ArchiveExplorer'
 import ForumAvatar from 'components/Forum/ForumAvatar'
 import ForumRichText from 'components/Forum/ForumRichText'
-import SymposiumApp from 'components/Symposium'
+import ArenaApp from 'components/Arena'
 
 interface AdaptablePost {
     id: number | string
@@ -164,9 +164,9 @@ function WindowRouterInner({ item }: { item: AppWindow }) {
 
 
 
-    // /symposium (Collective AI Thinking Space)
-    if (path === '/symposium') {
-        return <SymposiumApp />
+    // /arena (Weekly Philosophical Arena)
+    if (path === '/arena') {
+        return <ArenaApp />
     }
 
     // Fallback for any other path

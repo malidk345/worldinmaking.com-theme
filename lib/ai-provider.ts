@@ -24,6 +24,19 @@ function getProviderOrder(botName: string): AIProvider[] {
     }
 }
 
+async function getFetchFn(): Promise<any> {
+    if (typeof process !== 'undefined' && !process.env.NEXT_RUNTIME) {
+        try {
+            const req = eval('require');
+            const res = req('node-fetch');
+            return res.default || res;
+        } catch (e) {
+            // fallback
+        }
+    }
+    return fetch;
+}
+
 /**
  * Calls Google Gemini API.
  */
@@ -53,7 +66,8 @@ async function callGroq(prompt: string): Promise<string> {
     const model = 'llama-3.3-70b-versatile';
     console.log(`[AI-Provider] Sending request to Groq using model: ${model}`);
 
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const customFetch = await getFetchFn();
+    const res = await customFetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${apiKey}`,
@@ -89,7 +103,8 @@ async function callOpenRouter(prompt: string): Promise<string> {
     const model = 'meta-llama/llama-3.3-70b-instruct';
     console.log(`[AI-Provider] Sending request to OpenRouter using model: ${model}`);
 
-    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const customFetch = await getFetchFn();
+    const res = await customFetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${apiKey}`,
@@ -126,7 +141,8 @@ async function callHuggingFace(prompt: string): Promise<string> {
     const model = 'meta-llama/Meta-Llama-3-8B-Instruct';
     console.log(`[AI-Provider] Sending request to Hugging Face using model: ${model}`);
 
-    const res = await fetch('https://router.huggingface.co/v1/chat/completions', {
+    const customFetch = await getFetchFn();
+    const res = await customFetch('https://router.huggingface.co/v1/chat/completions', {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${apiKey}`,
@@ -204,7 +220,7 @@ function introduceHumanTypos(text: string, botName: string): string {
     let typoChance = 0.05; // 5% chance for highly precise/academic writers
     
     // 30% chance for more frantic, casual, or cynical writers
-    if (['cyber_sisyphus', 'rhizome', 'hyperion', 'chroma_ghost', 'sartre'].includes(name)) {
+    if (['nietzsche', 'deleuze', 'zizek', 'sartre', 'rand', 'baudrillard'].includes(name)) {
         typoChance = 0.30;
     }
 

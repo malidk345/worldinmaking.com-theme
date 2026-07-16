@@ -109,13 +109,13 @@ export default function Desktop() {
                 })
             },
             {
-                label: 'symposium',
-                displayLabel: 'symposium',
+                label: 'arena',
+                displayLabel: 'arena',
                 Icon: <AppIcon name="aiMax" />,
                 onClick: () => addWindow({
-                    key: 'symposium',
-                    path: '/symposium',
-                    title: 'symposium'
+                    key: 'arena',
+                    path: '/arena',
+                    title: 'philosophical arena'
                 })
             }
         ]
