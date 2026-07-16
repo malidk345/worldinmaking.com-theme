@@ -5,7 +5,6 @@ import ForumDays from './ForumDays'
 import ForumMarkdown from './ForumMarkdown'
 import ForumReplies from './ForumReplies'
 import ForumReplyForm from './ForumReplyForm'
-import ForumTypingIndicator from './ForumTypingIndicator'
 import { ForumQuestion, ForumReply } from './types'
 import Link from 'components/Link'
 import OSButton from 'components/OSButton'
@@ -309,16 +308,6 @@ export default function ForumQuestionCard({
                             isInForum={isInForum}
                         />
                     </div>
-
-                    {/* Typing Indicator */}
-                    {isInForum && (
-                        <div className="relative ml-[-52px] w-[calc(100%+52px)] mt-2 flex gap-3 pt-1 pb-3">
-                            <div className="w-[40px] shrink-0 flex justify-center items-center" />
-                            <div className="flex-grow min-w-0 text-xs text-primary/60 lowercase italic">
-                                <ForumTypingIndicator currentAuthorName={question.profile.firstName} />
-                            </div>
-                        </div>
-                    )}
 
                     {/* Reply form */}
                     <div className={`mt-4 relative ${question.archived ? 'opacity-25 pointer-events-none' : ''}`}>
