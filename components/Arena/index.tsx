@@ -57,14 +57,12 @@ export default function ArenaApp() {
     const [loading, setLoading] = useState(true);
     const [activeDebate, setActiveDebate] = useState<Debate | null>(null);
     const [turns, setTurns] = useState<DebateTurn[]>([]);
-    const [userVote, setUserVote] = useState<number | null>(null); // null, 1 (duelist 1), 2 (duelist 2)
+    const [userVote, setUserVote] = useState<number | null>(null);
     const [votes, setVotes] = useState({ duelist1: 50, duelist2: 50 });
     const timelineEndRef = useRef<HTMLDivElement>(null);
 
-    // Fetch active debate and its turns
     const fetchData = useCallback(async () => {
         try {
-            // 1. Fetch active debate
             const { data: debateData, error: debateErr } = await supabase
                 .from("debates")
                 .select(`
@@ -83,20 +81,17 @@ export default function ArenaApp() {
                 const debate = debateData as unknown as Debate;
                 setActiveDebate(debate);
 
-                // Initialize mock votes based on LocalStorage or random baseline
                 const storedVote = localStorage.getItem(`vote-debate-${debate.id}`);
                 if (storedVote) {
                     setUserVote(parseInt(storedVote));
                 }
 
-                // Generates organic looking vote splits
                 const baseline = Math.floor(Math.sin(parseInt(debate.id.slice(0, 8), 16) || 1) * 15) + 50;
                 setVotes({
                     duelist1: baseline,
                     duelist2: 100 - baseline
                 });
 
-                // 2. Fetch turns for this debate
                 const { data: turnsData, error: turnsErr } = await supabase
                     .from("debate_turns")
                     .select(`
@@ -124,7 +119,6 @@ export default function ArenaApp() {
         fetchData();
     }, [fetchData]);
 
-    // Realtime subscriptions for debate turns
     useEffect(() => {
         if (!activeDebate) return;
 
@@ -139,7 +133,6 @@ export default function ArenaApp() {
                     filter: `debate_id=eq.${activeDebate.id}`
                 },
                 async (payload) => {
-                    // Fetch speaker profile for the new turn
                     const { data: profile } = await supabase
                         .from("profiles")
                         .select("id, username, avatar_url")
@@ -168,7 +161,6 @@ export default function ArenaApp() {
         };
     }, [activeDebate, addToast]);
 
-    // Scroll to bottom on new turns
     useEffect(() => {
         setTimeout(() => {
             timelineEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -178,7 +170,6 @@ export default function ArenaApp() {
     const handleVote = (candidate: 1 | 2) => {
         if (!activeDebate) return;
         if (userVote === candidate) {
-            // Undo vote
             setUserVote(null);
             localStorage.removeItem(`vote-debate-${activeDebate.id}`);
             setVotes((prev) => ({
@@ -187,7 +178,6 @@ export default function ArenaApp() {
             }));
             addToast("vote removed", "info");
         } else {
-            // Cast or change vote
             const oldVote = userVote;
             setUserVote(candidate);
             localStorage.setItem(`vote-debate-${activeDebate.id}`, candidate.toString());
@@ -201,7 +191,7 @@ export default function ArenaApp() {
 
     if (loading) {
         return (
-            <div className="flex h-full items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div className="flex h-full items-center justify-center bg-primary">
                 <Loading />
             </div>
         );
@@ -209,13 +199,13 @@ export default function ArenaApp() {
 
     if (!activeDebate) {
         return (
-            <div className="flex h-full items-center justify-center bg-[#070709] p-8 text-center text-primary/60">
-                <div>
-                    <div className="text-3xl mb-2">✦</div>
-                    <p className="text-xs font-mono lowercase tracking-wide">
-                        no active philosophical arena debate currently running.
+            <div className="flex h-full items-center justify-center bg-primary p-8 text-center">
+                <div className="space-y-2">
+                    <div className="text-3xl text-primary/30">✦</div>
+                    <p className="text-xs font-medium lowercase tracking-wide text-secondary">
+                        no active arena debate running.
                     </p>
-                    <p className="text-[10px] text-primary/40 mt-1 lowercase">
+                    <p className="text-[10px] text-primary/40 lowercase">
                         check back later for the next weekly confrontation.
                     </p>
                 </div>
@@ -229,87 +219,120 @@ export default function ArenaApp() {
     const d2Percent = 100 - d1Percent;
 
     return (
-        <div className="flex flex-col h-full bg-[#050507] text-primary select-none overflow-hidden font-sans">
-            {/* Header / Info Panel */}
-            <div className="p-4 border-b border-white/5 bg-black/40 backdrop-blur-md flex flex-col gap-1.5 z-10 shrink-0">
-                <div className="flex justify-between items-start gap-4">
-                    <div>
-                        <span className="text-[8px] font-mono text-emerald-500 uppercase tracking-widest bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
-                            live debate
-                        </span>
-                        <h2 className="text-base font-bold tracking-tight lowercase mt-1.5">{activeDebate.title}</h2>
+        <div className="flex flex-col h-full bg-primary text-primary select-none overflow-hidden font-sans">
+
+            {/* Header */}
+            <div className="shrink-0 px-5 pt-4 pb-3 border-b border-primary/[0.07] bg-primary/80 backdrop-blur-xl">
+                <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                        {/* Live badge */}
+                        <div className="inline-flex items-center gap-1.5 mb-2">
+                            <span className="relative flex size-1.5">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green opacity-75" />
+                                <span className="relative inline-flex rounded-full size-1.5 bg-green" />
+                            </span>
+                            <span className="text-[9px] font-semibold uppercase tracking-[0.15em] text-green">
+                                live debate
+                            </span>
+                        </div>
+                        <h2 className="text-sm font-bold tracking-tight lowercase text-primary leading-tight">
+                            {activeDebate.title}
+                        </h2>
                         {activeDebate.description && (
-                            <p className="text-[10px] text-primary/60 lowercase mt-0.5">{activeDebate.description}</p>
+                            <p className="text-[10px] text-secondary mt-0.5 lowercase leading-relaxed">
+                                {activeDebate.description}
+                            </p>
                         )}
                     </div>
-                    <div className="text-right font-mono text-[9px] shrink-0 lowercase text-primary/40">
+                    <div className="text-right text-[9px] font-medium shrink-0 lowercase text-primary/40 tabular-nums mt-0.5">
                         ends {dayjs(activeDebate.end_date).fromNow()}
                     </div>
                 </div>
 
-                {/* Sources list */}
+                {/* Sources */}
                 {activeDebate.research_context && activeDebate.research_context.length > 0 && (
-                    <div className="mt-2.5 pt-2.5 border-t border-white/5 flex gap-2 overflow-x-auto pb-1 max-w-full">
-                        <span className="text-[9px] font-mono text-primary/40 lowercase pt-0.5 shrink-0">context sources:</span>
-                        {activeDebate.research_context.map((source, index) => (
+                    <div className="mt-3 pt-3 border-t border-primary/[0.06] flex gap-2 overflow-x-auto pb-0.5">
+                        <span className="text-[9px] font-medium text-primary/35 lowercase pt-px shrink-0">sources:</span>
+                        {activeDebate.research_context.map((source, i) => (
                             <a
-                                key={index}
+                                key={i}
                                 href={source.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-[9px] font-mono bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded border border-white/5 text-primary/60 hover:text-primary transition shrink-0 max-w-[200px] truncate"
+                                className="text-[9px] font-medium bg-accent hover:bg-primary/[0.06] px-2 py-0.5 rounded-full border border-primary/[0.08] text-secondary hover:text-primary transition-colors shrink-0 max-w-[180px] truncate"
                             >
-                                ⌁ {source.title.toLowerCase()}
+                                {source.title.toLowerCase()}
                             </a>
                         ))}
                     </div>
                 )}
             </div>
 
-            {/* Duelists Stance / Voting */}
-            <div className="px-6 py-4 border-b border-white/5 bg-black/20 shrink-0">
-                <div className="grid grid-cols-2 gap-8 items-center relative">
+            {/* Duelists Panel */}
+            <div className="shrink-0 px-5 py-4 border-b border-primary/[0.07] bg-accent/40">
+                <div className="grid grid-cols-2 gap-6 items-center relative">
+
                     {/* Duelist 1 */}
-                    <div className="flex items-center gap-4">
-                        <ForumAvatar image={duelist1?.avatar_url} className="size-14 rounded-[16px] border border-white/10 shrink-0" />
-                        <div>
-                            <span className="text-[9px] font-mono text-blue-400 lowercase">duelist one</span>
-                            <h3 className="text-sm font-bold lowercase">@{duelist1?.username}</h3>
+                    <div className="flex items-center gap-3">
+                        <div className="shrink-0">
+                            <ForumAvatar
+                                image={duelist1?.avatar_url}
+                                className="size-12 rounded-[14px]"
+                            />
+                        </div>
+                        <div className="min-w-0">
+                            <span className="text-[8px] font-semibold uppercase tracking-[0.12em] text-blue-2 block mb-0.5">
+                                duelist ①
+                            </span>
+                            <h3 className="text-xs font-bold lowercase truncate text-primary">
+                                @{duelist1?.username}
+                            </h3>
                             <button
                                 onClick={() => handleVote(1)}
-                                className={`mt-1.5 text-[9px] font-mono px-2 py-0.5 rounded border transition-colors ${
+                                className={`mt-1.5 text-[9px] font-semibold px-2.5 py-1 rounded-full border transition-all duration-200 ${
                                     userVote === 1
-                                        ? "bg-blue-500/20 text-blue-400 border-blue-500/30"
-                                        : "bg-white/5 border-white/10 text-primary/60 hover:text-primary hover:bg-white/10"
+                                        ? "bg-blue-2/10 text-blue-2 border-blue-2/20"
+                                        : "bg-primary/[0.04] border-primary/[0.08] text-secondary hover:text-primary hover:bg-primary/[0.08] hover:border-primary/[0.12]"
                                 }`}
                             >
-                                {userVote === 1 ? "✓ supported" : "support stance"}
+                                {userVote === 1 ? "✓ supported" : "support"}
                             </button>
                         </div>
                     </div>
 
                     {/* Duelist 2 */}
-                    <div className="flex items-center gap-4 justify-end text-right">
-                        <div>
-                            <span className="text-[9px] font-mono text-amber-400 lowercase">duelist two</span>
-                            <h3 className="text-sm font-bold lowercase">@{duelist2?.username}</h3>
-                            <button
-                                onClick={() => handleVote(2)}
-                                className={`mt-1.5 text-[9px] font-mono px-2 py-0.5 rounded border transition-colors ${
-                                    userVote === 2
-                                        ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
-                                        : "bg-white/5 border-white/10 text-primary/60 hover:text-primary hover:bg-white/10"
-                                }`}
-                            >
-                                {userVote === 2 ? "✓ supported" : "support stance"}
-                            </button>
+                    <div className="flex items-center gap-3 justify-end text-right">
+                        <div className="min-w-0">
+                            <span className="text-[8px] font-semibold uppercase tracking-[0.12em] text-salmon block mb-0.5">
+                                duelist ②
+                            </span>
+                            <h3 className="text-xs font-bold lowercase truncate text-primary">
+                                @{duelist2?.username}
+                            </h3>
+                            <div className="flex justify-end">
+                                <button
+                                    onClick={() => handleVote(2)}
+                                    className={`mt-1.5 text-[9px] font-semibold px-2.5 py-1 rounded-full border transition-all duration-200 ${
+                                        userVote === 2
+                                            ? "bg-salmon/10 text-salmon border-salmon/20"
+                                            : "bg-primary/[0.04] border-primary/[0.08] text-secondary hover:text-primary hover:bg-primary/[0.08] hover:border-primary/[0.12]"
+                                    }`}
+                                >
+                                    {userVote === 2 ? "✓ supported" : "support"}
+                                </button>
+                            </div>
                         </div>
-                        <ForumAvatar image={duelist2?.avatar_url} className="size-14 rounded-[16px] border border-white/10 shrink-0" />
+                        <div className="shrink-0">
+                            <ForumAvatar
+                                image={duelist2?.avatar_url}
+                                className="size-12 rounded-[14px]"
+                            />
+                        </div>
                     </div>
 
-                    {/* VS Indicator */}
+                    {/* VS */}
                     <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
-                        <span className="bg-[#050507] border border-white/5 size-8 rounded-full flex items-center justify-center font-mono text-[10px] text-primary/40 uppercase shadow-md">
+                        <span className="bg-primary border border-primary/[0.1] size-7 rounded-full flex items-center justify-center text-[9px] font-bold text-primary/35 uppercase shadow-sm">
                             vs
                         </span>
                     </div>
@@ -317,127 +340,136 @@ export default function ArenaApp() {
 
                 {/* Vote Bar */}
                 <div className="mt-4">
-                    <div className="flex justify-between text-[9px] font-mono text-primary/40 lowercase mb-1">
-                        <span>{d1Percent}% support</span>
-                        <span>{d2Percent}% support</span>
+                    <div className="flex justify-between text-[9px] font-medium text-secondary lowercase mb-1.5 tabular-nums">
+                        <span>{d1Percent}%</span>
+                        <span>{d2Percent}%</span>
                     </div>
-                    <div className="w-full h-1.5 rounded-full bg-white/5 overflow-hidden flex">
-                        <div className="h-full bg-blue-500/70 transition-all duration-500" style={{ width: `${d1Percent}%` }} />
-                        <div className="h-full bg-amber-500/70 transition-all duration-500" style={{ width: `${d2Percent}%` }} />
+                    <div className="w-full h-1 rounded-full bg-primary/[0.06] overflow-hidden flex">
+                        <div
+                            className="h-full rounded-full bg-blue-2/50 transition-all duration-500"
+                            style={{ width: `${d1Percent}%` }}
+                        />
+                        <div
+                            className="h-full rounded-full bg-salmon/50 transition-all duration-500"
+                            style={{ width: `${d2Percent}%` }}
+                        />
                     </div>
                 </div>
             </div>
 
-            {/* Discussion Timeline */}
-            <div className="flex-grow min-h-0 bg-gradient-to-b from-[#050507] to-[#030304] relative">
-                {/* Visual grid background */}
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
+            {/* Debate Timeline */}
+            <div className="flex-grow min-h-0 bg-primary relative">
+                <ScrollArea className="h-full select-text">
+                    <div className="px-5 py-5">
+                        {turns.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center min-h-[200px] text-center py-16">
+                                <span className="text-xl animate-pulse text-primary/20">✦</span>
+                                <span className="text-[9px] font-medium lowercase tracking-wide mt-3 text-primary/30">
+                                    arena initialized. awaiting opening remarks...
+                                </span>
+                            </div>
+                        ) : (
+                            <div className="max-w-2xl mx-auto space-y-6 pb-8">
+                                {turns.map((turn) => {
+                                    const isD1 = turn.speaker_id === activeDebate.duelist_1_id;
+                                    const isD2 = turn.speaker_id === activeDebate.duelist_2_id;
+                                    const isInter = turn.is_interjection;
 
-                <ScrollArea className="h-full p-6 select-text">
-                    {turns.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-full text-center text-primary/30 py-20">
-                            <span className="text-xl animate-pulse">✦</span>
-                            <span className="text-[9px] font-mono lowercase tracking-wide mt-2">arena initialized. awaiting the opening remarks...</span>
-                        </div>
-                    ) : (
-                        <div className="max-w-2xl mx-auto space-y-8 pb-12">
-                            {turns.map((turn) => {
-                                const isD1 = turn.speaker_id === activeDebate.duelist_1_id;
-                                const isD2 = turn.speaker_id === activeDebate.duelist_2_id;
-                                const isInter = turn.is_interjection;
+                                    return (
+                                        <div
+                                            key={turn.id}
+                                            className={`flex flex-col ${
+                                                isInter
+                                                    ? "items-center"
+                                                    : isD1
+                                                        ? "items-start"
+                                                        : "items-end"
+                                            }`}
+                                        >
+                                            {/* Interjection */}
+                                            {isInter ? (
+                                                <div className="w-full max-w-lg rounded-[18px] border border-salmon/15 bg-salmon/[0.04] p-4 relative">
+                                                    <div className="absolute top-2.5 right-3">
+                                                        <span className="text-[7px] font-semibold uppercase tracking-[0.15em] text-salmon border border-salmon/20 bg-salmon/[0.07] px-1.5 py-0.5 rounded-full">
+                                                            interjection
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex gap-3 items-start">
+                                                        <ForumAvatar
+                                                            image={turn.speaker?.avatar_url}
+                                                            className="size-7 rounded-[8px] shrink-0"
+                                                        />
+                                                        <div className="flex-grow min-w-0 pr-16">
+                                                            <span className="text-[10px] font-semibold text-salmon lowercase block mb-1">
+                                                                @{turn.speaker?.username}
+                                                            </span>
 
-                                return (
-                                    <div
-                                        key={turn.id}
-                                        className={`flex flex-col ${
-                                            isInter 
-                                                ? "items-center" 
-                                                : isD1 
-                                                    ? "items-start" 
-                                                    : "items-end"
-                                        }`}
-                                    >
-                                        {/* Interjection Banner */}
-                                        {isInter ? (
-                                            <div className="w-full max-w-lg bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 rounded-[16px] p-4 relative group transition-all duration-300">
-                                                <div className="absolute top-2 right-3 flex items-center gap-1">
-                                                    <span className="text-[7px] font-mono text-red-500 uppercase tracking-widest border border-red-500/20 bg-red-500/10 px-1 py-0.5 rounded">
-                                                        interjection
-                                                    </span>
+                                                            {turn.inner_thoughts && (
+                                                                <details className="mb-1.5 outline-none">
+                                                                    <summary className="text-[9px] font-medium text-primary/30 hover:text-primary/50 cursor-pointer select-none lowercase outline-none">
+                                                                        internal deliberations
+                                                                    </summary>
+                                                                    <p className="text-[9px] leading-relaxed text-secondary/60 bg-accent/60 p-2.5 rounded-[10px] mt-1 border border-primary/[0.06] select-text italic">
+                                                                        {turn.inner_thoughts}
+                                                                    </p>
+                                                                </details>
+                                                            )}
+
+                                                            <div className="text-xs leading-relaxed text-primary select-text prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                                                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                                    {turn.content}
+                                                                </ReactMarkdown>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div className="flex gap-3 items-start">
+                                            ) : (
+                                                /* Duelist Post */
+                                                <div className={`w-full max-w-[88%] flex gap-3 items-start ${isD2 ? "flex-row-reverse" : ""}`}>
                                                     <ForumAvatar
                                                         image={turn.speaker?.avatar_url}
-                                                        className="size-7 rounded-[8px] border border-white/10 shrink-0"
+                                                        className="size-8 rounded-[10px] shrink-0 mt-0.5"
                                                     />
                                                     <div className="flex-grow min-w-0">
-                                                        <span className="text-[10px] font-mono text-red-400 lowercase block">
-                                                            @{turn.speaker?.username} interrupted the debate
-                                                        </span>
-                                                        
+                                                        <div className={`flex items-baseline gap-2 mb-1.5 ${isD2 ? "justify-end" : ""}`}>
+                                                            <span className={`text-[10px] font-bold lowercase ${isD1 ? "text-blue-2" : "text-salmon"}`}>
+                                                                @{turn.speaker?.username}
+                                                            </span>
+                                                            <span className="text-[8px] font-medium text-primary/30 tabular-nums">
+                                                                {dayjs(turn.created_at).fromNow()}
+                                                            </span>
+                                                        </div>
+
                                                         {turn.inner_thoughts && (
-                                                            <details className="mt-1 outline-none group/thoughts">
-                                                                <summary className="text-[9px] font-mono text-primary/30 hover:text-primary/50 cursor-pointer select-none lowercase outline-none">
-                                                                    show internal deliberations
+                                                            <details className={`mb-1.5 outline-none ${isD2 ? "text-right" : ""}`}>
+                                                                <summary className="text-[8px] font-medium text-primary/30 hover:text-primary/50 cursor-pointer select-none lowercase outline-none">
+                                                                    deliberations
                                                                 </summary>
-                                                                <p className="text-[9px] font-mono leading-relaxed text-red-300/40 bg-black/30 p-2 rounded mt-1 border border-white/5 select-text italic">
+                                                                <p className="text-[9px] leading-relaxed text-secondary/60 bg-accent/60 p-2.5 rounded-[10px] mt-1 border border-primary/[0.06] select-text italic text-left">
                                                                     {turn.inner_thoughts}
                                                                 </p>
                                                             </details>
                                                         )}
 
-                                                        <div className="text-xs leading-relaxed text-primary/80 mt-2 select-text whitespace-pre-wrap font-sans">
+                                                        <div className={`p-3.5 rounded-[18px] border text-xs leading-relaxed select-text prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 ${
+                                                            isD1
+                                                                ? "bg-blue-2/[0.05] border-blue-2/[0.1] rounded-tl-[4px]"
+                                                                : "bg-salmon/[0.05] border-salmon/[0.1] rounded-tr-[4px]"
+                                                        }`}>
                                                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                                                 {turn.content}
                                                             </ReactMarkdown>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        ) : (
-                                            /* Primary Duelist Post */
-                                            <div className={`w-full max-w-xl flex gap-3.5 items-start ${isD2 ? "flex-row-reverse" : ""}`}>
-                                                <ForumAvatar
-                                                    image={turn.speaker?.avatar_url}
-                                                    className="size-9 rounded-[10px] border border-white/10 shrink-0 mt-1"
-                                                />
-                                                <div className="flex-grow min-w-0">
-                                                    <div className={`flex items-baseline gap-2 ${isD2 ? "justify-end" : ""}`}>
-                                                        <span className="text-xs font-bold lowercase">@{turn.speaker?.username}</span>
-                                                        <span className="text-[8px] font-mono text-primary/30">{dayjs(turn.created_at).fromNow()}</span>
-                                                    </div>
-
-                                                    {turn.inner_thoughts && (
-                                                        <details className={`mt-0.5 outline-none group/thoughts ${isD2 ? "text-right" : ""}`}>
-                                                            <summary className="text-[8px] font-mono text-primary/30 hover:text-primary/50 cursor-pointer select-none lowercase outline-none">
-                                                                show internal deliberations
-                                                            </summary>
-                                                            <p className="text-[9px] font-mono leading-relaxed text-primary/40 bg-black/30 p-2 rounded mt-1 border border-white/5 select-text italic text-left">
-                                                                {turn.inner_thoughts}
-                                                            </p>
-                                                        </details>
-                                                    )}
-
-                                                    <div
-                                                        className={`mt-2 p-4 rounded-[20px] border text-xs leading-relaxed select-text font-sans ${
-                                                            isD1
-                                                                ? "bg-blue-500/5 border-blue-500/10 text-primary/95"
-                                                                : "bg-amber-500/5 border-amber-500/10 text-primary/95"
-                                                        }`}
-                                                    >
-                                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                                            {turn.content}
-                                                        </ReactMarkdown>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                            <div ref={timelineEndRef} />
-                        </div>
-                    )}
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                                <div ref={timelineEndRef} />
+                            </div>
+                        )}
+                    </div>
                 </ScrollArea>
             </div>
         </div>
