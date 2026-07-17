@@ -28,6 +28,7 @@ import ArchiveExplorer from 'components/ArchiveExplorer'
 import ForumAvatar from 'components/Forum/ForumAvatar'
 import ForumRichText from 'components/Forum/ForumRichText'
 import ArenaApp from 'components/Arena'
+import PostEditor from 'components/craft-editor/src/pages/home'
 
 interface AdaptablePost {
     id: number | string
@@ -106,6 +107,15 @@ function WindowRouterInner({ item }: { item: AppWindow }) {
     const blogMatch = path.match(/^\/(blog|posts)\/([^/]+)/)
     if (blogMatch) {
         return <BlogRouteView slug={blogMatch[2]} />
+    }
+
+    // /write-post
+    if (path.startsWith('/write-post')) {
+        return (
+            <div className="size-full overflow-hidden bg-background post-editor-root font-sans relative">
+                <PostEditor />
+            </div>
+        )
     }
 
     // /blueprints
