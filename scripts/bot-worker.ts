@@ -406,6 +406,33 @@ your 1-sentence topic description here`;
 
         console.log(`[Worker] Found ${targets.length} comment targets (articles & nodes)`);
 
+        // Batch fetch comments for all targets to prevent N+1 queries
+        const targetSlugs = targets.map(t => t.slug);
+        let allComments: Record<string, unknown>[] = [];
+
+        if (targetSlugs.length > 0) {
+            const { data: fetchedComments, error: commentsBatchError } = await supabaseAdmin
+                .from('community_posts')
+                .select('id, author_id, title, content, created_at, post_slug, profiles(id, username)')
+                .in('post_slug', targetSlugs);
+
+            if (commentsBatchError) {
+                console.error(`[Worker] Error batch fetching comments for targets:`, commentsBatchError.message);
+                // Exit early to prevent acting on missing data
+                return;
+            } else {
+                allComments = fetchedComments || [];
+            }
+        }
+
+        // Group comments by post_slug
+        const commentsBySlug = allComments.reduce((acc: Record<string, typeof allComments>, comment: typeof allComments[0]) => {
+            const slug = comment.post_slug as string;
+            if (!acc[slug]) acc[slug] = [];
+            acc[slug].push(comment);
+            return acc;
+        }, {});
+
         for (const target of targets) {
             console.log(`\n[Worker] [Comment Section] Processing ${target.type}: "${target.title}" (Slug: ${target.slug})`);
 
@@ -427,18 +454,7 @@ your 1-sentence topic description here`;
                 }
             }
 
-            // Fetch comments on this target slug
-            const { data: comments, error: commentsError } = await supabaseAdmin
-                .from('community_posts')
-                .select('id, author_id, title, content, created_at, profiles(id, username)')
-                .eq('post_slug', target.slug);
-
-            if (commentsError) {
-                console.error(`[Worker] Error fetching comments for ${target.slug}:`, commentsError.message);
-                continue;
-            }
-
-            const commentList = comments || [];
+            const commentList = commentsBySlug[target.slug] || [];
             console.log(`[Worker] Found ${commentList.length} comment thread(s) under target`);
 
             if (commentList.length === 0) {
@@ -525,13 +541,15 @@ EXAMPLES FOR ARTICLE COMMENTS:
 
                 // Group replies by post_id
                 const repliesByPostId = (allReplies || []).reduce((acc: Record<string, typeof allReplies[0][]>, reply: typeof allReplies[0]) => {
-                    if (!acc[reply.post_id]) acc[reply.post_id] = [];
-                    acc[reply.post_id].push(reply);
+                    const postId = reply.post_id as string;
+                    if (!acc[postId]) acc[postId] = [];
+                    acc[postId].push(reply);
                     return acc;
                 }, {});
 
                 for (const comment of commentList) {
-                    const replyList = repliesByPostId[comment.id] || [];
+                    const commentId = comment.id as string;
+                    const replyList = repliesByPostId[commentId] || [];
 
                     // Cap the thread replies at 6 to prevent infinite growth
                     if (replyList.length >= 6) {
@@ -544,11 +562,11 @@ EXAMPLES FOR ARTICLE COMMENTS:
                     let lastContent = '';
                     if (replyList.length > 0) {
                         const lastReply = replyList[replyList.length - 1];
-                        lastAuthorId = lastReply.author_id;
-                        lastContent = lastReply.content || '';
+                        lastAuthorId = (lastReply.author_id as string) || '';
+                        lastContent = (lastReply.content as string) || '';
                     } else {
-                        lastAuthorId = comment.author_id;
-                        lastContent = comment.content || '';
+                        lastAuthorId = (comment.author_id as string) || '';
+                        lastContent = (comment.content as string) || '';
                     }
 
                     // 2. Filter eligible bots (awake/active and not the last author)
@@ -583,9 +601,9 @@ EXAMPLES FOR ARTICLE COMMENTS:
                     if (!selectedBot && replyList.length >= 1) {
                         let parentAuthorId = '';
                         if (replyList.length >= 2) {
-                            parentAuthorId = replyList[replyList.length - 2].author_id;
+                            parentAuthorId = (replyList[replyList.length - 2].author_id as string) || '';
                         } else {
-                            parentAuthorId = comment.author_id;
+                            parentAuthorId = (comment.author_id as string) || '';
                         }
 
                         const parentBot = eligibleBots.find(b => b.id === parentAuthorId);
@@ -609,7 +627,7 @@ EXAMPLES FOR ARTICLE COMMENTS:
                     historyText += `[PARENT COMMENT] ${commentAuthorName} commented:\n${comment.content}\n\n`;
                     if (replyList.length > 0) {
                         historyText += `[DISCUSSION HISTORY]:\n`;
-                        replyList.forEach(r => {
+                        replyList.forEach((r: typeof allReplies[0]) => {
                             const rProfile = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
                             const rAuthorName = (rProfile as Record<string, unknown>)?.username || 'anonymous';
                             historyText += `- ${rAuthorName}: ${r.content}\n`;
