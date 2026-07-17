@@ -37,7 +37,10 @@ export default function Link({
     const { state, newWindow, ...domProps } = other
 
     const handleClick = (e: React.MouseEvent) => {
-        if (onClick) onClick(e)
+        if (onClick) {
+            onClick(e)
+            if (e.defaultPrevented) return
+        }
 
         // If it's an internal link
         if (to && to.startsWith('/')) {
