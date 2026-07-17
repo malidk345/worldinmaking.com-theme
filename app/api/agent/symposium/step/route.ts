@@ -103,19 +103,31 @@ async function getRealImageLink(description: string): Promise<string> {
 
     const validParts = simple.split(' ').filter(p => p.length > 2);
     if (validParts.length > 0) {
-        const partPromises = validParts.map(part => searchWikimediaImage(part));
-        for (const p of partPromises) {
-            url = await p;
+        try {
+            url = await Promise.any(
+                validParts.map(part => searchWikimediaImage(part).then(res => {
+                    if (res) return res;
+                    throw new Error("not found");
+                }))
+            );
             if (url) return url;
+        } catch {
+            // all failed
         }
     }
 
     // Fallback: search Wikimedia Commons for generic concept terms
     const fallbacks = ['abstract concept', 'philosophy', 'metaphor', 'allegory', 'ideas'];
-    const fallbackPromises = fallbacks.map(term => searchWikimediaImage(term));
-    for (const p of fallbackPromises) {
-        url = await p;
+    try {
+        url = await Promise.any(
+            fallbacks.map(term => searchWikimediaImage(term).then(res => {
+                if (res) return res;
+                throw new Error("not found");
+            }))
+        );
         if (url) return url;
+    } catch {
+        // all failed
     }
 
     return 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800';
