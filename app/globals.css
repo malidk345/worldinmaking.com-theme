@@ -993,11 +993,11 @@ mark {
   }
 
   .bg-primary-glass {
-    background-color: color-mix(in srgb, var(--color-accent) 75%, transparent) !important;
+    background-color: rgba(var(--wallpaper-bg-rgb), 0.75) !important;
   }
 
   .bg-taskbar-glass {
-    background-color: color-mix(in srgb, var(--color-accent) 50%, transparent) !important;
+    background-color: rgba(var(--wallpaper-bg-rgb), 0.50) !important;
   }
 
   .text-primary {

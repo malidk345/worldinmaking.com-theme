@@ -226,6 +226,9 @@ export default function Desktop() {
                     }}
                 />
             </div>
+            
+            {/* Top and Bottom Gradient Blend Overlay to match browser theme background */}
+            <div className="absolute inset-0 pointer-events-none z-[1] bg-[linear-gradient(to_bottom,var(--color-accent)_0%,transparent_12%,transparent_88%,var(--color-accent)_100%)]" />
 
 
             <nav className="fixed top-24 left-6 sm:left-10 right-6 sm:right-auto pointer-events-none z-10">
