@@ -59,6 +59,7 @@ export default function ArenaApp() {
     const [turns, setTurns] = useState<DebateTurn[]>([]);
     const [userVote, setUserVote] = useState<number | null>(null);
     const [votes, setVotes] = useState({ duelist1: 50, duelist2: 50 });
+    const [isPanelOpen, setIsPanelOpen] = useState(false);
     const timelineEndRef = useRef<HTMLDivElement>(null);
 
     const fetchData = useCallback(async () => {
@@ -222,7 +223,7 @@ export default function ArenaApp() {
         <div className="flex flex-col h-full bg-white dark:bg-[#121214] text-primary select-none overflow-hidden font-sans">
 
             {/* Header */}
-            <div className="shrink-0 px-5 pt-4 pb-3 border-b border-black/5 dark:border-white/5 bg-white/80 dark:bg-[#121214]/80 backdrop-blur-xl">
+            <div className="shrink-0 px-4 py-3 sm:px-5 sm:pt-4 sm:pb-3 border-b border-black/5 dark:border-white/5 bg-white/90 dark:bg-[#121214]/90 supports-[backdrop-filter]:backdrop-blur-[20px]">
                 <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
                         {/* Live badge */}
@@ -244,8 +245,16 @@ export default function ArenaApp() {
                             </p>
                         )}
                     </div>
-                    <div className="text-right text-[9px] font-medium shrink-0 lowercase text-primary/40 tabular-nums mt-0.5">
-                        ends {dayjs(activeDebate.end_date).fromNow()}
+                    <div className="flex flex-col items-end gap-1.5 shrink-0 mt-0.5">
+                        <div className="text-[9px] font-medium lowercase text-primary/40 tabular-nums">
+                            ends {dayjs(activeDebate.end_date).fromNow()}
+                        </div>
+                        <button
+                            onClick={() => setIsPanelOpen(!isPanelOpen)}
+                            className="text-[9px] font-medium lowercase text-primary/50 hover:text-primary transition-colors border border-black/10 dark:border-white/10 px-2 py-0.5 rounded-full"
+                        >
+                            {isPanelOpen ? "gizle" : "detaylar"}
+                        </button>
                     </div>
                 </div>
 
@@ -269,11 +278,12 @@ export default function ArenaApp() {
             </div>
 
             {/* Duelists Panel */}
-            <div className="shrink-0 px-5 py-4 border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02]">
-                <div className="grid grid-cols-2 gap-6 items-center relative">
+            {isPanelOpen && (
+                <div className="shrink-0 px-5 py-4 border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02]">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 relative w-full">
 
                     {/* Duelist 1 */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
                         <div className="shrink-0">
                             <ForumAvatar
                                 image={duelist1?.avatar_url}
@@ -301,7 +311,7 @@ export default function ArenaApp() {
                     </div>
 
                     {/* Duelist 2 */}
-                    <div className="flex items-center gap-3 justify-end text-right">
+                    <div className="flex items-center justify-start sm:justify-end gap-2.5 sm:gap-3 w-full sm:w-auto text-left sm:text-right flex-row-reverse sm:flex-row">
                         <div className="min-w-0">
                             <span className="text-[8px] font-semibold uppercase tracking-[0.12em] text-primary block mb-0.5">
                                 duelist ②
@@ -339,12 +349,12 @@ export default function ArenaApp() {
                 </div>
 
                 {/* Vote Bar */}
-                <div className="mt-4">
+                <div className="mt-4 sm:mt-5 w-full max-w-md mx-auto">
                     <div className="flex justify-between text-[9px] font-medium text-secondary lowercase mb-1.5 tabular-nums">
                         <span>{d1Percent}%</span>
                         <span>{d2Percent}%</span>
                     </div>
-                    <div className="w-full h-1 rounded-full bg-primary/[0.06] overflow-hidden flex">
+                    <div className="w-full h-1.5 rounded-full bg-black/5 dark:bg-white/5 overflow-hidden flex">
                         <div
                             className="h-full rounded-full bg-black/50 dark:bg-white/50 transition-all duration-500"
                             style={{ width: `${d1Percent}%` }}
@@ -356,6 +366,7 @@ export default function ArenaApp() {
                     </div>
                 </div>
             </div>
+            )}
 
             {/* Debate Timeline */}
             <div className="flex-grow min-h-0 bg-white dark:bg-[#121214] relative">
@@ -409,13 +420,13 @@ export default function ArenaApp() {
                                                                     <summary className="text-[9px] font-medium text-primary/30 hover:text-primary/50 cursor-pointer select-none lowercase outline-none">
                                                                         internal deliberations
                                                                     </summary>
-                                                                    <p className="text-[9px] leading-relaxed text-secondary/60 bg-accent/60 p-2.5 rounded-[10px] mt-1 border border-black/5 dark:border-white/5 select-text italic">
+                                                                    <p className="text-[9px] leading-relaxed text-secondary/60 bg-accent/60 p-2 rounded-[12px] mt-1 border border-black/5 dark:border-white/5 select-text italic">
                                                                         {turn.inner_thoughts}
                                                                     </p>
                                                                 </details>
                                                             )}
 
-                                                            <div className="text-xs leading-relaxed text-primary select-text prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                                                            <div className="text-[11px] leading-snug text-primary select-text prose prose-sm prose-p:text-[11px] prose-headings:text-[12px] prose-li:text-[11px] max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
                                                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                                                     {turn.content}
                                                                 </ReactMarkdown>
@@ -445,16 +456,16 @@ export default function ArenaApp() {
                                                                 <summary className="text-[8px] font-medium text-primary/30 hover:text-primary/50 cursor-pointer select-none lowercase outline-none">
                                                                     deliberations
                                                                 </summary>
-                                                                <p className="text-[9px] leading-relaxed text-secondary/60 bg-accent/60 p-2.5 rounded-[10px] mt-1 border border-black/5 dark:border-white/5 select-text italic text-left">
+                                                                <p className="text-[9px] leading-relaxed text-secondary/60 bg-accent/60 p-2 rounded-[12px] mt-1 border border-black/5 dark:border-white/5 select-text italic text-left">
                                                                     {turn.inner_thoughts}
                                                                 </p>
                                                             </details>
                                                         )}
 
-                                                        <div className={`p-3.5 rounded-[18px] border text-xs leading-relaxed select-text prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 ${
+                                                        <div className={`px-3.5 py-2.5 rounded-[20px] border text-[11px] leading-snug select-text prose prose-sm prose-p:text-[11px] prose-headings:text-[12px] prose-li:text-[11px] max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 ${
                                                             isD1
-                                                                ? "bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 rounded-tl-[4px]"
-                                                                : "bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 rounded-tr-[4px]"
+                                                                ? "bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 rounded-tl-[6px]"
+                                                                : "bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 rounded-tr-[6px]"
                                                         }`}>
                                                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                                                 {turn.content}
