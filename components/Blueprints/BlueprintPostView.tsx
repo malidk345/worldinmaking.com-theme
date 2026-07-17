@@ -19,7 +19,7 @@ export default function BlueprintPostView({ slug }: { slug: string }) {
     }, [slug, getPostBySlug])
 
     if (loading) return <Loading fullScreen label="loading technical layout" />
-    if (!post) return <div className="p-8 text-center lowercase">blueprint not found</div>
+    if (!post) return <div className="p-8 text-center lowercase text-black/50 dark:text-white/50 font-mono text-sm">blueprint not found</div>
 
     return (
         <div className="absolute inset-0 overflow-auto bg-transparent">
@@ -35,11 +35,11 @@ export default function BlueprintPostView({ slug }: { slug: string }) {
             >
                 {post.content_html ? (
                     <div 
-                        className="w-full h-full prose prose-sm md:prose-base dark:prose-invert max-w-3xl mx-auto p-6 md:p-12 blueprint-prose"
+                        className="w-full h-full prose prose-sm md:prose-base dark:prose-invert max-w-3xl mx-auto p-6 md:p-12 blueprint-prose text-black/80 dark:text-white/80 transition-all duration-[400ms] ease-[cubic-bezier(0.25,1,0.5,1)]"
                         dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content_html) }} 
                     />
                 ) : (
-                    <div className="prose prose-sm md:prose-base dark:prose-invert max-w-3xl mx-auto p-6 md:p-12 blueprint-prose">
+                    <div className="prose prose-sm md:prose-base dark:prose-invert max-w-3xl mx-auto p-6 md:p-12 blueprint-prose text-black/80 dark:text-white/80 transition-all duration-[400ms] ease-[cubic-bezier(0.25,1,0.5,1)]">
                         {post.content_markdown}
                     </div>
                 )}
