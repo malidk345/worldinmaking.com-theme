@@ -1,0 +1,60 @@
+   ▲ Next.js 15.5.12
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.0.2:3000
+
+ ✓ Starting...
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+ ✓ Ready in 2s
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 2.1s (174 modules)
+ ○ Compiling /posts/[slug] ...
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (155kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (106kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (250kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+ ✓ Compiled /posts/[slug] in 21.9s (3932 modules)
+[WARNING] Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
+[Supabase] Environment variables missing! Database features will be unavailable.
+ ⨯ TypeError: Cannot read properties of undefined (reading 'bind')
+    at (ssr)/./node_modules/.pnpm/isomorphic-dompurify@3.18.0/node_modules/isomorphic-dompurify/dist/browser.mjs (.next-dev/server/app/posts/[slug]/page.js:7602:1)
+    at __webpack_require__ (.next-dev/server/edge-runtime-webpack.js:37:33)
+    at fn (.next-dev/server/edge-runtime-webpack.js:338:21)
+    at eval (webpack-internal:///(ssr)/./utils/security.ts:10:78)
+    at (ssr)/./utils/security.ts (.next-dev/server/app/posts/[slug]/page.js:17214:1)
+    at __webpack_require__ (.next-dev/server/edge-runtime-webpack.js:37:33)
+    at fn (.next-dev/server/edge-runtime-webpack.js:338:21)
+    at eval (webpack-internal:///(ssr)/./hooks/useCommunity.ts:11:73)
+    at (ssr)/./hooks/useCommunity.ts (.next-dev/server/app/posts/[slug]/page.js:3739:1) {
+  digest: '219263625'
+}
+ GET /posts/how-to-do-seo/ 500 in 23822ms
+ ○ Compiling /blueprints/post/[slug] ...
+ ✓ Compiled /blueprints/post/[slug] in 2.6s (3843 modules)
+[WARNING] Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
+[Supabase] Environment variables missing! Database features will be unavailable.
+ ⨯ TypeError: Cannot read properties of undefined (reading 'bind')
+    at (ssr)/./node_modules/.pnpm/isomorphic-dompurify@3.18.0/node_modules/isomorphic-dompurify/dist/browser.mjs (.next-dev/server/app/blueprints/post/[slug]/page.js:7298:1)
+    at __webpack_require__ (.next-dev/server/edge-runtime-webpack.js:37:33)
+    at fn (.next-dev/server/edge-runtime-webpack.js:323:21)
+    at eval (webpack-internal:///(ssr)/./utils/security.ts:10:78)
+    at (ssr)/./utils/security.ts (.next-dev/server/app/blueprints/post/[slug]/page.js:16910:1)
+    at __webpack_require__ (.next-dev/server/edge-runtime-webpack.js:37:33)
+    at fn (.next-dev/server/edge-runtime-webpack.js:323:21)
+    at eval (webpack-internal:///(ssr)/./hooks/useCommunity.ts:11:73)
+    at (ssr)/./hooks/useCommunity.ts (.next-dev/server/app/blueprints/post/[slug]/page.js:3435:1) {
+  digest: '219263625'
+}
+ GET /blueprints/post/designing-for-ios-26/ 500 in 5408ms
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (155kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (106kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (250kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+ ○ Compiling /blueprints ...
+ ✓ Compiled /blueprints in 24.4s (4658 modules)
+[WARNING] Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
+[Supabase] Environment variables missing! Database features will be unavailable.
+ GET /blueprints/ 200 in 29457ms
+ GET /blueprints/ 200 in 310ms
+ GET /blueprints/ 200 in 244ms

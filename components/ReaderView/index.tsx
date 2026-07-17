@@ -470,7 +470,7 @@ const ReaderViewContent = React.memo(({
                                 >
                                     <article
                                         ref={contentRef}
-                                        className={`reader-view-content-container @container/reader-content-container ${getProseClasses(
+                                        className={`reader-view-content-container @container/reader-content-container bg-white dark:bg-[#121214] rounded-[24px] md:rounded-[32px] p-6 md:p-10 md:px-12 border border-black/5 dark:border-white/5 mt-6 mb-8 shadow-sm ${getProseClasses(
                                             proseSize
                                         )} max-w-none relative`}
                                         style={{ fontSize: '15px' }}
