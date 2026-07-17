@@ -550,6 +550,7 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                         <button
                             onClick={() => setCoverImage(null)}
                             className="absolute top-4 right-4 bg-black/60 text-white text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity supports-[backdrop-filter]:backdrop-blur-md font-bold lowercase"
+                            aria-label="remove cover"
                         >
                             remove cover
                         </button>
