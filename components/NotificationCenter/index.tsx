@@ -139,63 +139,65 @@ export default function NotificationCenter() {
                         />
                         
                         <motion.div
-                            initial={{ opacity: 0, y: -4 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -4 }}
-                            transition={{ duration: 0.15, ease: 'easeOut' }}
-                            className="absolute right-0 top-full mt-2 w-72 max-h-[420px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-[0_12px_44px_-12px_rgba(0,0,0,0.25)] z-[9999] flex flex-col overflow-hidden rounded-md lowercase font-mono"
+                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                            transition={{ type: "spring", stiffness: 500, damping: 30, mass: 1 }}
+                            className="absolute right-0 top-full mt-3 w-80 max-h-[460px] bg-white/70 dark:bg-black/60 border border-black/5 dark:border-white/10 shadow-[0_16px_40px_-12px_rgba(0,0,0,0.2),0_1px_4px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.4)] supports-[backdrop-filter]:backdrop-blur-3xl z-[9999] flex flex-col overflow-hidden rounded-[32px] font-sans tracking-tight text-primary"
                         >
-                            <div className="px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-zinc-50 dark:bg-zinc-800/50">
+                            <div className="px-5 py-4 border-b border-black/5 dark:border-white/10 flex items-center justify-between bg-transparent">
                                 <div className="flex items-center gap-2">
-                                    <div className="size-1.5 rounded-full bg-blue-primary animate-pulse" />
-                                    <h3 className="font-bold text-[10px] tracking-widest opacity-50 uppercase">activity</h3>
+                                    <h2 className="text-[15px] font-semibold tracking-tight m-0 capitalize">notifications</h2>
+                                    <div className="size-1.5 rounded-full bg-blue-500 animate-pulse ml-1 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
                                 </div>
                                 <button 
                                     onClick={() => setIsOpen(false)}
-                                    className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded transition-colors text-primary"
+                                    className="p-1.5 hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors text-primary"
                                 >
-                                    <IconX className="size-3 opacity-40" />
+                                    <IconX className="size-4 opacity-50" />
                                 </button>
                             </div>
 
-                            <ScrollArea className="flex-1 min-h-0">
-                                <div className="p-1.5 space-y-0.5">
+                            <ScrollArea className="flex-1 min-h-0 px-2 py-2">
+                                <div className="flex flex-col gap-1.5">
                                     {notifications.length === 0 ? (
-                                        <div className="py-10 text-center">
-                                            <IconNotificationWithBadge hasUnread={false} className="size-6 mx-auto opacity-10 mb-2" />
-                                            <p className="text-[11px] opacity-40">no recent activities</p>
+                                        <div className="py-16 text-center flex flex-col items-center justify-center gap-4">
+                                            <div className="size-14 rounded-full bg-primary/5 border border-primary/10 flex items-center justify-center mb-2">
+                                                <IconNotificationWithBadge hasUnread={false} className="size-6 opacity-40 text-primary" />
+                                            </div>
+                                            <div>
+                                                <p className="font-mono text-xs font-black m-0 tracking-widest uppercase text-primary/60">all caught up</p>
+                                                <p className="text-[10px] m-0 mt-1.5 max-w-[180px] mx-auto leading-relaxed lowercase text-primary/40">no new activities to display.</p>
+                                            </div>
                                         </div>
                                     ) : (
                                         notifications.map((notif) => (
-                                            <div 
+                                            <a
                                                 key={notif.id}
-                                                className="p-2.5 rounded hover:bg-zinc-800/10 dark:hover:bg-white/5 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 transition-all cursor-pointer group flex gap-3"
+                                                href={notif.link || '#'}
+                                                className="w-full flex items-center gap-3 px-3.5 py-3 rounded-[24px] text-[13px] transition-all duration-300 border border-transparent hover:border-black/10 dark:hover:border-white/10 bg-black/5 dark:bg-white/5 hover:bg-white/90 dark:hover:bg-white/10 text-primary hover:shadow-[0_4px_24px_rgba(0,0,0,0.06)] group/item"
                                             >
-                                                <div className="size-7 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-blue-primary/10 transition-colors">
+                                                <div className="size-9 rounded-full bg-white dark:bg-black border border-black/10 dark:border-white/10 flex items-center justify-center shrink-0 group-hover/item:scale-105 transition-transform duration-300 shadow-sm">
                                                     {notif.type === 'post' ? (
-                                                        <IconNewspaper className="size-3.5 text-blue-primary opacity-60" />
+                                                        <IconNewspaper className="size-4 text-blue-500 opacity-80" />
                                                     ) : (
-                                                        <IconChat className="size-3.5 text-blue-primary opacity-60" />
+                                                        <IconChat className="size-4 text-purple-500 opacity-80" />
                                                     )}
                                                 </div>
-                                                <div className="flex-1 min-w-0">
+                                                <div className="flex-1 min-w-0 text-left">
                                                     <div className="flex items-center justify-between mb-0.5">
-                                                        <span className="text-[9px] font-bold tracking-wider opacity-30">{notif.title}</span>
-                                                        <span className="text-[9px] opacity-30">{dayjs(notif.timestamp).fromNow()}</span>
+                                                        <span className="text-[10px] font-bold tracking-wider opacity-40 uppercase">{notif.title}</span>
+                                                        <span className="text-[10px] opacity-40 font-medium">{dayjs(notif.timestamp).fromNow()}</span>
                                                     </div>
-                                                    <p className="text-[12px] font-bold leading-snug line-clamp-2 text-primary group-hover:text-blue-primary transition-colors pr-1">
+                                                    <p className="text-[13px] font-medium leading-snug line-clamp-2 text-primary pr-1">
                                                         {notif.description}
                                                     </p>
                                                 </div>
-                                            </div>
+                                            </a>
                                         ))
                                     )}
                                 </div>
                             </ScrollArea>
-
-                            <div className="px-3 py-2 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 flex items-center justify-center">
-                                <p className="text-[9px] font-bold opacity-30 tracking-widest lowercase">system online</p>
-                            </div>
                         </motion.div>
                     </>
                 )}
