@@ -178,8 +178,8 @@ describe('feed-parser', () => {
                 guid: 'http://example.com/fetched'
             });
 
-            assert.equal((global.fetch as any).mock.calls.length, 1);
-            const callArgs = (global.fetch as any).mock.calls[0].arguments;
+            assert.equal((global.fetch as unknown as { mock: { calls: { arguments: unknown[] }[] } }).mock.calls.length, 1);
+            const callArgs = (global.fetch as unknown as { mock: { calls: { arguments: unknown[] }[] } }).mock.calls[0].arguments;
             assert.equal(callArgs[0], 'http://example.com/feed.xml');
             assert.equal(callArgs[1]?.headers['User-Agent'], 'Mozilla/5.0 (compatible; WorldInMakingBot/1.0)');
         });
