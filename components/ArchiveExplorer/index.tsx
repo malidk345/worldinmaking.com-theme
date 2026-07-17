@@ -133,6 +133,7 @@ export default function ArchiveExplorer() {
                         <button 
                             onClick={() => setCurrentFolder('root')}
                             className="p-1 rounded-[16px] hover:bg-black/5 dark:hover:bg-white/10 text-primary transition-all cursor-pointer flex items-center justify-center"
+                            aria-label={t('archive.breadcrumb')}
                         >
                             <IconChevronLeft className="size-3.5" />
                         </button>
@@ -158,6 +159,7 @@ export default function ArchiveExplorer() {
                         <button 
                             onClick={() => { setRefreshing(true); fetchSavedPosts(); }}
                             className={`p-1 rounded-[16px] hover:bg-black/5 dark:hover:bg-white/10 transition-all cursor-pointer ${refreshing ? 'animate-spin' : ''}`}
+                            aria-label={t('archive.loading_saved')}
                         >
                             <IconRefresh className="size-3" />
                         </button>
