@@ -1697,4 +1697,46 @@ button::-moz-focus-inner,
     border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
   }
 }
+
+/* App window scrollbar overrides - PostHog style */
+[data-app='AppWindow'] *::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+[data-app='AppWindow'] *::-webkit-scrollbar-track {
+  background: transparent;
+  box-shadow: none;
+}
+
+[data-app='AppWindow'] *::-webkit-scrollbar-track:vertical {
+  margin-block: 6px 6px;
+}
+
+[data-app='AppWindow'] *::-webkit-scrollbar-track:horizontal {
+  margin-inline: 6px 6px;
+}
+
+[data-app='AppWindow'] *::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+  border-radius: 9999px;
+}
+
+.dark [data-app='AppWindow'] *::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+[data-app='AppWindow'] *::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.35);
+}
+
+.dark [data-app='AppWindow'] *::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.35);
+}
+
+[data-app='AppWindow'] *::-webkit-scrollbar-corner {
+  background: transparent;
+}
 

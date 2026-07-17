@@ -43,11 +43,11 @@ function colorize(text, code) {
 }
 
 if (!cmd || cmd === 'log') {
-    console.log(colorize('\n🔍 PostHog son 100 commit (UI ile ilgili olanlar vurgulanır)\n', '36'))
+    console.log(colorize('\n🔍 PostHog son 10 commit (UI ile ilgili olanlar vurgulanır)\n', '36'))
 
-    const log = run('git log posthog/main --oneline -100 --no-merges')
+    const log = run('git -C .posthog-temp log --oneline -100 --no-merges')
     if (!log) {
-        console.log(colorize('❌ posthog remote bulunamadı. Önce fetch yapın: node posthog-watch.mjs fetch', '31'))
+        console.log(colorize('❌ .posthog-temp bulunamadı. Önce fetch yapın: node posthog-watch.mjs fetch', '31'))
         process.exit(1)
     }
 
@@ -75,11 +75,11 @@ if (!cmd || cmd === 'log') {
     console.log(colorize(`\n📦 Commit: ${sha}\n`, '36'))
 
     // Commit mesajı
-    const msg = run(`git show posthog/main~0 --format="%s%n%b" --name-status -- 2>/dev/null || git show ${sha} --format="%s%n%b" --name-status`)
-    console.log(run(`git show ${sha} --stat --format="Author: %an (%ae)%nDate:   %ai%n%nMessage: %s%n%n%b"`))
+    const msg = run(`git -C .posthog-temp show ${sha}~0 --format="%s%n%b" --name-status -- 2>/dev/null || git -C .posthog-temp show ${sha} --format="%s%n%b" --name-status`)
+    console.log(run(`git -C .posthog-temp show ${sha} --stat --format="Author: %an (%ae)%nDate:   %ai%n%nMessage: %s%n%n%b"`))
 
     console.log(colorize('\nDeğişen dosyalar:', '33'))
-    const files = run(`git show ${sha} --name-only --format=""`)
+    const files = run(`git -C .posthog-temp show ${sha} --name-only --format=""`)
     files.split('\n').filter(Boolean).forEach(f => {
         const isUI = isUICommit(f) || f.includes('component') || f.includes('style') || f.includes('css')
         console.log(`  ${isUI ? colorize('🎨', '33') : '  '} ${f}`)
@@ -94,7 +94,7 @@ if (!cmd || cmd === 'log') {
     if (!sha || !file) { console.log('Kullanım: node posthog-watch.mjs diff <sha> <dosya>'); process.exit(1) }
 
     console.log(colorize(`\n📝 Diff: ${file} @ ${sha}\n`, '36'))
-    console.log(run(`git show ${sha} -- "${file}"`))
+    console.log(run(`git -C .posthog-temp show ${sha} -- "${file}"`))
 
 } else if (cmd === 'view') {
     const sha = args[1]
@@ -102,11 +102,11 @@ if (!cmd || cmd === 'log') {
     if (!sha || !file) { console.log('Kullanım: node posthog-watch.mjs view <sha> <dosya>'); process.exit(1) }
 
     console.log(colorize(`\n📄 PostHog'da ${file} @ ${sha}\n`, '36'))
-    console.log(run(`git show ${sha}:"${file}"`))
+    console.log(run(`git -C .posthog-temp show ${sha}:"${file}"`))
 
 } else if (cmd === 'fetch') {
     console.log(colorize('\n🔄 PostHog remote güncelleniyor...\n', '36'))
-    console.log(run('git fetch posthog --depth=100 --no-tags'))
+    console.log(run('git -C .posthog-temp pull origin master --depth=10 --no-tags'))
     console.log(colorize('✅ Güncellendi!\n', '32'))
 
 } else if (cmd === 'compare') {
@@ -115,7 +115,7 @@ if (!cmd || cmd === 'log') {
     if (!file) { console.log('Kullanım: node posthog-watch.mjs compare <posthog-dosya-yolu>'); process.exit(1) }
     console.log(colorize(`\n🔀 PostHog vs Bizim kod: ${file}\n`, '36'))
     // PostHog'un dosyasını temp'e yaz
-    const content = run(`git show posthog/main:"${file}"`)
+    const content = run(`git -C .posthog-temp show HEAD:"${file}"`)
     console.log(colorize('--- PostHog versiyonu ---\n', '33'))
     console.log(content.slice(0, 3000) + (content.length > 3000 ? '\n... (kesildi)' : ''))
 

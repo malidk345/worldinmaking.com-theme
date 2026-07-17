@@ -77,6 +77,7 @@ interface ReaderViewProps {
         slug: string
         title: string
     }
+    className?: string
 }
 
 
@@ -100,6 +101,7 @@ const ReaderViewContent = React.memo(({
     availableLanguages,
     commentThreadSlug,
     bookmarkMeta,
+    className = '',
 }: ReaderViewProps) => {
     const {
         isNavVisible,
@@ -302,7 +304,7 @@ const ReaderViewContent = React.memo(({
     }
 
     return (
-        <div data-scheme="primary" className="w-full h-full flex flex-col bg-primary text-primary overflow-hidden">
+        <div data-scheme="primary" className={`w-full h-full flex flex-col bg-primary text-primary overflow-hidden ${className}`}>
             <div data-scheme="secondary" className="bg-primary flex w-full flex-grow min-h-0 relative">
                 {/* LEFT SIDEBAR CONTENT DEFINITION */}
                 {(() => {
@@ -459,7 +461,7 @@ const ReaderViewContent = React.memo(({
                                 </div>
                             )}
 
-                            <div className="reader-content-container" onClick={handleContentClick}>
+                            <div className="reader-content-container overflow-x-hidden" onClick={handleContentClick}>
                                 <div
                                     className={`@container [&>*:not(.OSTable):not(.Table)]:mx-auto [&>*:not(.OSTable):not(.Table)]:transition-all [&>span:not(.OSTable):not(.Table)]:block ${proseSize === 'lg'
                                         ? '[&>*:not(.OSTable):not(.Table)]:max-w-full'
