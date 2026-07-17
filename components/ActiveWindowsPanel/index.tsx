@@ -96,6 +96,7 @@ export default function ActiveWindowsPanel() {
                                             closeWindow(w)
                                         }}
                                         className="absolute right-2 top-1/2 -translate-y-1/2 size-6 flex items-center justify-center bg-red-500/10 text-red-600 hover:bg-red-500 hover:text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 z-10"
+                                        aria-label="close window"
                                     >
                                         <IconX className="size-3.5" />
                                     </button>
