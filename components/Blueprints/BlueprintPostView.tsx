@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useBlueprints, BlueprintPost } from 'hooks/useBlueprints'
 import Loading from 'components/Loading'
-import { sanitizeHtml } from 'utils/security'
+import { sanitizeHtml, sanitizeCss } from 'utils/security'
 
 export default function BlueprintPostView({ slug }: { slug: string }) {
     const { getPostBySlug } = useBlueprints()
@@ -24,7 +24,7 @@ export default function BlueprintPostView({ slug }: { slug: string }) {
     return (
         <div className="absolute inset-0 overflow-auto bg-transparent">
             {post.custom_css && (
-                <style dangerouslySetInnerHTML={{ __html: post.custom_css }} />
+                <style dangerouslySetInnerHTML={{ __html: sanitizeCss(post.custom_css) }} />
             )}
             
             <motion.div
