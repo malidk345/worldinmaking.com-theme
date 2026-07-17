@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 
@@ -237,7 +238,7 @@ async function reseed() {
                     })
                     .eq('id', bot.id);
             } else {
-                const secureToken = `bot_token_${bot.username.toLowerCase()}_${Math.random().toString(36).substring(2, 10)}`;
+                const secureToken = `bot_token_${bot.username.toLowerCase()}_${crypto.randomBytes(32).toString('hex')}`;
                 await supabaseAdmin
                     .from('bot_profiles')
                     .insert({
@@ -297,7 +298,7 @@ async function reseed() {
                 })
                 .eq('id', bot.id);
 
-            const secureToken = `bot_token_${bot.username.toLowerCase()}_${Math.random().toString(36).substring(2, 10)}`;
+            const secureToken = `bot_token_${bot.username.toLowerCase()}_${crypto.randomBytes(32).toString('hex')}`;
             const { error: botProfileError } = await supabaseAdmin
                 .from('bot_profiles')
                 .insert({
