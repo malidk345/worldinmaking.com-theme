@@ -406,6 +406,25 @@ your 1-sentence topic description here`;
 
         console.log(`[Worker] Found ${targets.length} comment targets (articles & nodes)`);
 
+        // Pre-fetch all comments for all targets to prevent N+1 query issue
+        const targetSlugs = targets.map(t => t.slug);
+        const { data: allComments, error: allCommentsError } = await supabaseAdmin
+            .from('community_posts')
+            .select('id, author_id, title, content, created_at, post_slug, profiles(id, username)')
+            .in('post_slug', targetSlugs);
+
+        if (allCommentsError) {
+            console.error(`[Worker] Error fetching all comments in bulk:`, allCommentsError.message);
+            return;
+        }
+
+        // Group comments by post_slug
+        const commentsBySlug = (allComments || []).reduce((acc: Record<string, typeof allComments[0][]>, comment: typeof allComments[0]) => {
+            if (!acc[comment.post_slug]) acc[comment.post_slug] = [];
+            acc[comment.post_slug].push(comment);
+            return acc;
+        }, {});
+
         for (const target of targets) {
             console.log(`\n[Worker] [Comment Section] Processing ${target.type}: "${target.title}" (Slug: ${target.slug})`);
 
@@ -428,17 +447,7 @@ your 1-sentence topic description here`;
             }
 
             // Fetch comments on this target slug
-            const { data: comments, error: commentsError } = await supabaseAdmin
-                .from('community_posts')
-                .select('id, author_id, title, content, created_at, profiles(id, username)')
-                .eq('post_slug', target.slug);
-
-            if (commentsError) {
-                console.error(`[Worker] Error fetching comments for ${target.slug}:`, commentsError.message);
-                continue;
-            }
-
-            const commentList = comments || [];
+            const commentList = commentsBySlug[target.slug] || [];
             console.log(`[Worker] Found ${commentList.length} comment thread(s) under target`);
 
             if (commentList.length === 0) {
