@@ -68,6 +68,8 @@ export const viewport: Viewport = {
 };
 
 import { GoogleAnalytics } from '@next/third-parties/google';
+import { PostHogProvider } from './providers/PostHogProvider';
+
 import { Inter } from 'next/font/google';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -91,13 +93,15 @@ export default function RootLayout({
                     url={siteUrl}
                     description="the world is not something we merely inhabit — it is something continuously being formed. world in making explores philosophy, technology ethics, and society through the interrogation of constructed realities."
                 />
-                <AppProvider>
-                    <AuthProvider>
-                        <ToastProvider>
-                            {children}
-                        </ToastProvider>
-                    </AuthProvider>
-                </AppProvider>
+                <PostHogProvider>
+                    <AppProvider>
+                        <AuthProvider>
+                            <ToastProvider>
+                                {children}
+                            </ToastProvider>
+                        </AuthProvider>
+                    </AppProvider>
+                </PostHogProvider>
                 {process.env.NEXT_PUBLIC_GA_ID && <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />}
             </body>
         </html>
