@@ -11,7 +11,8 @@
     "lint": "eslint",
     "postinstall": "patch-package",
     "pages:build": "npx @cloudflare/next-on-pages@1",
-    "bot:worker": "tsx scripts/bot-worker.ts"
+    "bot:worker": "tsx scripts/bot-worker.ts",
+    "test": "tsx --test tests/**/*.test.ts"
   },
   "pnpm": {
     "overrides": {
