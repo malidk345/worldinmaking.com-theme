@@ -84,7 +84,7 @@ const PostsView = React.memo(() => {
                                         <li key={roadmap.id} className="font-mono text-xs lowercase py-2 group">
                                             <Link
                                                 to={getPostHref((isTr && roadmap.translations?.['tr']?.slug) ? roadmap.translations['tr'].slug : roadmap.slug)}
-                                                className="flex !no-underline items-start gap-3 p-4 bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 rounded-[24px] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] cursor-pointer transition-all shadow-[0_2px_8px_rgba(0,0,0,0.02)]"
+                                                className="flex !no-underline items-start gap-3 p-4 bg-white/40 dark:bg-black/70 supports-[backdrop-filter]:backdrop-blur-[25px] supports-[backdrop-filter]:backdrop-saturate-[190%] border border-black/5 dark:border-white/5 rounded-[24px] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] cursor-pointer transition-all duration-[250ms] ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.97] active:brightness-95 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15),0_4px_24px_rgba(0,0,0,0.02)]"
                                                 onClick={(e) => {
                                                     e.preventDefault()
                                                     handleRoadmapClick(roadmap)
@@ -92,7 +92,7 @@ const PostsView = React.memo(() => {
                                             >
                                                 <div className="flex-grow flex flex-col min-w-0">
                                                     {/* Author / Profile Area at Top */}
-                                                    <div className="flex items-center gap-2 mb-2 opacity-50">
+                                                    <div className="flex items-center gap-2 mb-2 text-black/50 dark:text-white/50">
                                                         <div className="size-5 shrink-0 border border-black/10 dark:border-white/10 bg-primary/5 rounded-full overflow-hidden flex items-center justify-center">
                                                             {roadmap.authorAvatar ? (
                                                                 // eslint-disable-next-line @next/next/no-img-element
@@ -102,14 +102,14 @@ const PostsView = React.memo(() => {
                                                             )}
                                                         </div>
                                                         <span className="text-[10px] font-bold">@{teamName.toLowerCase()}</span>
-                                                        <span className="text-[9px] opacity-60 ml-1">[{dayjs.utc(roadmap.date).format('YY.MM.DD')}]</span>
+                                                        <span className="text-[9px] text-black/60 dark:text-white/60 ml-1">[{dayjs.utc(roadmap.date).format('YY.MM.DD')}]</span>
                                                     </div>
 
                                                     <span className="text-primary font-bold group-hover:!text-black dark:group-hover:!text-white leading-tight break-words text-[13px]">
                                                         {displayTitle}
                                                     </span>
                                                     {displayDescription && (
-                                                        <span className="opacity-50 text-[10px] mt-0.5 leading-snug line-clamp-6 italic">
+                                                        <span className="text-black/50 dark:text-white/50 text-[10px] mt-0.5 leading-snug line-clamp-6 italic">
                                                             <span>{'//'}</span> {displayDescription}
                                                         </span>
                                                     )}
@@ -126,7 +126,7 @@ const PostsView = React.memo(() => {
                                                     )}
                                                 </div>
 
-                                                <span className="opacity-30 shrink-0 text-[10px] font-bold tracking-tighter ml-auto pt-1">
+                                                <span className="text-black/30 dark:text-white/30 shrink-0 text-[10px] font-bold tracking-tighter ml-auto pt-1">
                                                     {computedReadTime}
                                                 </span>
                                             </Link>
