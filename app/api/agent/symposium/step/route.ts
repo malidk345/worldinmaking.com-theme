@@ -2,7 +2,7 @@ export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../../lib/supabase-admin';
 import { cleanAISmell } from '../../../../../lib/agent-orchestrator';
-import type { ResearchSource } from '../../../symposium/research/route';
+import type { ResearchSource } from '../../../../../lib/symposium-types';
 
 // ─── Wikimedia Commons Image Search Helpers ────────────────────────────────────
 const WIKIMEDIA_STOP_WORDS = new Set([
