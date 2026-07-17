@@ -1,6 +1,6 @@
 "use client"
 
-import React from 'react'
+import React, { useMemo } from 'react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { IconMessage } from '@posthog/icons'
@@ -33,15 +33,25 @@ export default function ForumTopicSidebar({
         }
     }
 
-    const getLastActive = (channelId: number) => {
-        const channelPosts = posts.filter((post) => post.channel_id === channelId)
-        if (!channelPosts.length) return null
+    const latestPostByChannel = useMemo(() => {
+        const map = new Map<number, string>()
 
-        const latest = channelPosts.reduce((acc, current) => {
-            return new Date(current.created_at).getTime() > new Date(acc.created_at).getTime() ? current : acc
+        posts.forEach(post => {
+            if (post.channel_id) {
+                const currentLatest = map.get(post.channel_id)
+                if (!currentLatest || new Date(post.created_at).getTime() > new Date(currentLatest).getTime()) {
+                    map.set(post.channel_id, post.created_at)
+                }
+            }
         })
 
-        return dayjs(latest.created_at).fromNow()
+        return map
+    }, [posts])
+
+    const getLastActive = (channelId: number) => {
+        const latestCreatedAt = latestPostByChannel.get(channelId)
+        if (!latestCreatedAt) return null
+        return dayjs(latestCreatedAt).fromNow()
     }
 
     return (
