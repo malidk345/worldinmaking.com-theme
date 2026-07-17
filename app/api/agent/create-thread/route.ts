@@ -75,45 +75,21 @@ export async function POST(request: NextRequest) {
                     const shuffledFeeds = [...activeFeeds].sort(() => Math.random() - 0.5);
                     const botInterests = meta.topics_of_interest || [];
 
-                    // Pass 1: Try to find a fresh item matching the bot's topics of interest
-                    for (const feed of shuffledFeeds) {
-                        try {
-                            const { fetchAndParseFeed } = await import('../../../../lib/feed-parser');
-                            const items = await fetchAndParseFeed(feed.url);
+                    // Process feeds in chunks concurrently
+                    const CHUNK_SIZE = 4;
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const allFreshItems: Array<{ item: any, feed: any }> = [];
 
-                            if (items && items.length > 0) {
-                                const { data: processed } = await supabaseAdmin
-                                    .from('processed_rss_items')
-                                    .select('guid')
-                                    .eq('feed_id', feed.id);
+                    for (let i = 0; i < shuffledFeeds.length; i += CHUNK_SIZE) {
+                        const chunk = shuffledFeeds.slice(i, i + CHUNK_SIZE);
 
-                                const processedGuids = new Set(processed?.map((p: { guid: string }) => p.guid) || []);
-                                const freshItems = items.filter(item => !processedGuids.has(item.guid));
-                                
-                                const interestedItems = freshItems.filter(item => {
-                                    const itemText = item.title.toLowerCase();
-                                    return botInterests.some((topic: string) => itemText.includes(topic.toLowerCase()));
-                                });
+                        const chunkResults = await Promise.all(
+                            chunk.map(async (feed) => {
+                                try {
+                                    const { fetchAndParseFeed } = await import('../../../../lib/feed-parser');
+                                    const items = await fetchAndParseFeed(feed.url);
+                                    if (!items || items.length === 0) return { feed, freshItems: [], interestedItems: [] };
 
-                                if (interestedItems.length > 0) {
-                                    chosenItem = interestedItems[Math.floor(Math.random() * interestedItems.length)];
-                                    chosenFeed = feed;
-                                    break;
-                                }
-                            }
-                        } catch (e) {
-                            console.error(`[Create-Thread API] Error checking feed ${feed.title} in Pass 1:`, e);
-                        }
-                    }
-
-                    // Pass 2: Fall back to ANY fresh item across all feeds if no interest match found
-                    if (!chosenItem) {
-                        for (const feed of shuffledFeeds) {
-                            try {
-                                const { fetchAndParseFeed } = await import('../../../../lib/feed-parser');
-                                const items = await fetchAndParseFeed(feed.url);
-
-                                if (items && items.length > 0) {
                                     const { data: processed } = await supabaseAdmin
                                         .from('processed_rss_items')
                                         .select('guid')
@@ -122,16 +98,44 @@ export async function POST(request: NextRequest) {
                                     const processedGuids = new Set(processed?.map((p: { guid: string }) => p.guid) || []);
                                     const freshItems = items.filter(item => !processedGuids.has(item.guid));
 
-                                    if (freshItems.length > 0) {
-                                        chosenItem = freshItems[Math.floor(Math.random() * freshItems.length)];
-                                        chosenFeed = feed;
-                                        break;
-                                    }
+                                    const interestedItems = freshItems.filter(item => {
+                                        const itemText = item.title.toLowerCase();
+                                        return botInterests.some((topic: string) => itemText.includes(topic.toLowerCase()));
+                                    });
+
+                                    return { feed, freshItems, interestedItems };
+                                } catch (e) {
+                                    const feedName = feed && typeof feed === 'object' && 'title' in feed ? (feed as {title: string}).title : feed.url;
+                                    console.error(`[Create-Thread API] Error checking feed ${feedName}:`, e);
+                                    return { feed, freshItems: [], interestedItems: [] };
                                 }
-                            } catch (e) {
-                                console.error(`[Create-Thread API] Error checking feed ${feed.title} in Pass 2:`, e);
+                            })
+                        );
+
+                        // Check if we found an item matching interests (Pass 1 equivalent)
+                        for (const result of chunkResults) {
+                            if (result.interestedItems.length > 0) {
+                                chosenItem = result.interestedItems[Math.floor(Math.random() * result.interestedItems.length)];
+                                chosenFeed = result.feed;
+                                break;
                             }
                         }
+
+                        if (chosenItem) break;
+
+                        // Accumulate all fresh items for fallback (Pass 2 equivalent)
+                        for (const result of chunkResults) {
+                            if (result.freshItems.length > 0) {
+                                allFreshItems.push(...result.freshItems.map((item) => ({ item, feed: result.feed })));
+                            }
+                        }
+                    }
+
+                    // Fallback to ANY fresh item across all feeds if no interest match found
+                    if (!chosenItem && allFreshItems.length > 0) {
+                        const pick = allFreshItems[Math.floor(Math.random() * allFreshItems.length)];
+                        chosenItem = pick.item;
+                        chosenFeed = pick.feed;
                     }
                 }
             } catch (rssErr) {
