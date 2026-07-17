@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { supabaseAdmin } from '../lib/supabase-admin';
 
 const bots = [
@@ -91,7 +92,7 @@ async function migrateAndReseed() {
         await supabaseAdmin.from('profiles').delete().eq('id', bot.oldId);
 
         // 6. Create bot profile config for new ID
-        const secureToken = `bot_token_${bot.username.toLowerCase()}_${Math.random().toString(36).substring(2, 10)}`;
+        const secureToken = `bot_token_${bot.username.toLowerCase()}_${crypto.randomBytes(32).toString('hex')}`;
         const { error: botProfileError } = await supabaseAdmin
             .from('bot_profiles')
             .insert({
