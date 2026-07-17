@@ -992,6 +992,10 @@ mark {
     background-color: rgb(var(--bg));
   }
 
+  .bg-primary-glass {
+    background-color: rgb(var(--bg) / 0.75);
+  }
+
   .text-primary {
     color: rgb(var(--text-primary));
   }

@@ -686,7 +686,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             />
 
                             <div className="w-full flex-1 flex flex-col bg-transparent min-h-0 relative px-1.5 has-[+div:empty]:pb-1.5">
-                                <div className={`w-full h-full flex-1 overflow-hidden relative shadow-[0_0_0_1px_rgba(0,0,0,0.05)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.05)] border border-black/10 dark:border-white/10 rounded-2xl ${siteSettings.heaterMode ? 'bg-white/80 dark:bg-zinc-900/70 backdrop-blur-xl' : 'bg-white dark:bg-zinc-900'}`}>
+                                <div className="w-full h-full flex-1 overflow-hidden relative shadow-[0_0_0_1px_rgba(0,0,0,0.05)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.05)] border border-black/10 dark:border-white/10 rounded-2xl bg-transparent">
                                     {(!animating || rendered) && (
                                         item.key === 'home' ? <HomeControl /> : <WindowRouter item={item} />
                                     )}
