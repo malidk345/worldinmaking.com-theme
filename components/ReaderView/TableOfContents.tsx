@@ -29,7 +29,8 @@ const ElementScrollLink = ({
   className,
   element,
   style,
-}: ElementScrollLinkProps) => {
+  isActive,
+}: ElementScrollLinkProps & { isActive?: boolean }) => {
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     const targetElement = document.getElementById(id.replace("#", ""));
@@ -53,7 +54,10 @@ const ElementScrollLink = ({
 
   return (
     <a href={id} onClick={handleClick} className={className} style={style}>
-      {label}
+      <div
+        className={`w-1.5 h-1.5 rounded-full transition-colors flex-shrink-0 ${isActive ? "bg-black/40 dark:bg-white/40" : "bg-black/10 dark:bg-white/10 group-hover:bg-black/20 dark:group-hover:bg-white/20"}`}
+      />
+      <span className="truncate">{label}</span>
     </a>
   );
 };
@@ -111,11 +115,11 @@ export const TableOfContents = ({
                 id={navItem.url}
                 label={navItem.value.toLowerCase()}
                 className={`
-                                    block py-2 px-3 rounded-[12px] transition-all duration-200 relative
-                                    ${isTopLevel ? "text-[13px] font-medium" : "text-[12px] font-normal"}
+                                    flex items-center gap-2 py-1.5 px-2.5 rounded-[12px] transition-all duration-200 relative
+                                    ${isTopLevel ? "text-[12px] font-medium" : "text-[11px] font-normal"}
                                     ${
                                       activeId === navItem.url
-                                        ? "text-black dark:text-white bg-white dark:bg-[#1C1C1E] shadow-sm border border-black/5 dark:border-white/5"
+                                        ? "text-black dark:text-white bg-white/40 dark:bg-[#1C1C1E]/60 backdrop-blur-[20px] shadow-sm border border-black/5 dark:border-white/5 supports-[backdrop-filter]:backdrop-blur-[20px]"
                                         : "text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 border border-transparent"
                                     }
                                     active:scale-[0.98]

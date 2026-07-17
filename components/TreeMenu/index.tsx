@@ -105,11 +105,11 @@ function TreeMenuItem({
 
   // Premium styling for the item container with accent indicator
   const itemClass = `
-        group flex w-full justify-between items-center relative py-2 px-3
-        text-[13px] leading-tight font-medium rounded-[12px] transition-all duration-200 cursor-pointer
+        group flex w-full justify-between items-center relative py-1.5 px-2.5
+        text-[12px] leading-tight font-medium rounded-[12px] transition-all duration-200 cursor-pointer
         ${
           active
-            ? "text-black dark:text-white bg-white dark:bg-[#1C1C1E] shadow-sm border border-black/5 dark:border-white/5"
+            ? "text-black dark:text-white bg-white/40 dark:bg-[#1C1C1E]/60 backdrop-blur-[20px] shadow-sm border border-black/5 dark:border-white/5 supports-[backdrop-filter]:backdrop-blur-[20px]"
             : "text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 border border-transparent"
         }
         active:scale-[0.98]
@@ -186,8 +186,15 @@ function TreeMenuItem({
           style={paddingLeftStyle}
           onClick={() => onClick(item)}
         >
-          <span className="flex items-center gap-2">
-            <span>{item.name.toLowerCase()}</span>
+          <span className="flex items-center gap-2 min-w-0">
+            {item.icon ? (
+              <span className="opacity-60 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                {item.icon}
+              </span>
+            ) : (
+              <div className="w-1.5 h-1.5 rounded-full bg-black/20 dark:bg-white/20 group-hover:bg-black/40 dark:group-hover:bg-white/40 transition-colors flex-shrink-0" />
+            )}
+            <span className="truncate">{item.name}</span>
           </span>
         </Link>
       ) : (
