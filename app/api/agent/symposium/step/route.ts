@@ -2,7 +2,17 @@ export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../../lib/supabase-admin';
 import { cleanAISmell } from '../../../../../lib/agent-orchestrator';
-import type { ResearchSource } from '../../../../../lib/symposium-types';
+
+export interface ResearchSource {
+    url: string;
+    title: string;
+    excerpt?: string;
+    snippet?: string;
+    source?: string;
+    score?: number;
+    publishedDate?: string;
+    author?: string;
+}
 
 // ─── Wikimedia Commons Image Search Helpers ────────────────────────────────────
 const WIKIMEDIA_STOP_WORDS = new Set([
@@ -91,11 +101,11 @@ async function getRealImageLink(description: string): Promise<string> {
     url = await searchWikimediaImage(simple);
     if (url) return url;
 
-    const parts = simple.split(' ').filter(p => p.length > 2);
-    if (parts.length > 0) {
+    const validParts = simple.split(' ').filter(p => p.length > 2);
+    if (validParts.length > 0) {
         try {
             url = await Promise.any(
-                parts.map(async (part) => {
+                validParts.map(async (part) => {
                     const res = await searchWikimediaImage(part);
                     if (res) return res;
                     throw new Error('Not found');
