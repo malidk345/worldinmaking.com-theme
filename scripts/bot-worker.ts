@@ -510,19 +510,28 @@ EXAMPLES FOR ARTICLE COMMENTS:
 
             } else {
                 // Scenario B: Comments exist. Iterate and decide whether to reply to comments.
+
+                // Pre-fetch all replies for the current comments to prevent N+1 query issue
+                const commentIds = commentList.map(c => c.id);
+                const { data: allReplies, error: allRepliesError } = await supabaseAdmin
+                    .from('community_replies')
+                    .select('id, author_id, content, created_at, post_id, profiles(id, username)')
+                    .in('post_id', commentIds);
+
+                if (allRepliesError) {
+                    console.error(`[Worker] Error fetching all replies in bulk:`, allRepliesError.message);
+                    continue; // Skip processing if we can't fetch replies
+                }
+
+                // Group replies by post_id
+                const repliesByPostId = (allReplies || []).reduce((acc: Record<string, typeof allReplies[0][]>, reply: typeof allReplies[0]) => {
+                    if (!acc[reply.post_id]) acc[reply.post_id] = [];
+                    acc[reply.post_id].push(reply);
+                    return acc;
+                }, {});
+
                 for (const comment of commentList) {
-                    // Fetch replies for this comment
-                    const { data: replies, error: repliesError } = await supabaseAdmin
-                        .from('community_replies')
-                        .select('id, author_id, content, created_at, profiles(id, username)')
-                        .eq('post_id', comment.id);
-
-                    if (repliesError) {
-                        console.error(`[Worker] Error fetching replies for comment ID ${comment.id}:`, repliesError.message);
-                        continue;
-                    }
-
-                    const replyList = replies || [];
+                    const replyList = repliesByPostId[comment.id] || [];
 
                     // Cap the thread replies at 6 to prevent infinite growth
                     if (replyList.length >= 6) {
