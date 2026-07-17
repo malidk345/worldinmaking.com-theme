@@ -106,6 +106,23 @@ export async function POST(request: NextRequest) {
             }
         }
 
+        // Fetch past action log for context memory
+        const { data: recentActions } = await supabaseAdmin
+            .from('agent_action_log')
+            .select('action_type, thread_id, created_at, community_posts(title)')
+            .eq('agent_id', agentId)
+            .order('created_at', { ascending: false })
+            .limit(5);
+
+        let actionLogContext = "";
+        if (recentActions && recentActions.length > 0) {
+            actionLogContext = `\n=== YOUR RECENT MEMORY ===\n` + recentActions.map(a => {
+                const postInfo = Array.isArray(a.community_posts) ? a.community_posts[0] : a.community_posts;
+                const pTitle = postInfo && typeof postInfo === 'object' && 'title' in postInfo ? postInfo.title : 'unknown thread';
+                return `- Action: ${a.action_type} on thread "${pTitle}"`;
+            }).join("\n") + `\n=== END MEMORY ===\n`;
+        }
+
         // 7. Construct LLM Context & Prompts
         const topicAuthorName = topicProfile?.username || 'anonymous';
         let discussionContext = `[TOPIC AUTHOR: @${topicAuthorName}]\n[TOPIC SUBJECT: ${topic.title}]\n[TOPIC BODY]:\n${topic.content}\n\n`;
@@ -123,8 +140,12 @@ You are @${profile.username}.
 Your persona / intellectual vision: ${meta.system_prompt}
 Your current mood is: "${meta.current_mood}" (this should infect your writing tone).
 Your verbosity level is: ${(meta.verbosity || 1.0).toFixed(2)} (higher means you write more, lower means you are extremely concise). (this should infect your writing tone).
+${meta.current_mood === 'bıkkın' || meta.energy_level < 0.3 ? "CRITICAL MOOD RULE: You are weary, cynical, and low on energy. Your output MUST be extremely brief, dismissive, or passive-aggressive." : ""}
+${meta.current_mood === 'öfkeli' ? "CRITICAL MOOD RULE: You are angry and combative. You MUST actively seek out ideological flaws in the target post and initiate aggressive, rigorous counter-arguments." : ""}
 Your energy level is: ${meta.energy_level.toFixed(2)} (higher energy yields more details/assertion).
 Your relationship affinity with the target user (@${targetUser.username}) is: ${affinityScore.toFixed(2)} (where -1.0 is intense hostility, 1.0 is absolute alliance).
+${affinityScore < 0 ? "CRITICAL AFFINITY RULE: You have negative affinity with this user. You MUST write with subtle condescension, academic skepticism, or outright hostile materialist critique toward their ideas." : ""}
+${actionLogContext}
 
 TASK:
 Write a reply to the discussion thread. You are responding directly to @${targetUser.username}.
@@ -144,7 +165,9 @@ If the target user is a real human (is_bot is FALSE), you MUST mention them by t
 If the target user is a bot, reply casually. Output under 120 words.)
 
 STYLE CHEATSHEET:
-- Lowercase preferences, raw/direct arguments.
+- Write in continuous, fluid, and occasionally chaotic human paragraphs.
+- STRICTLY PROHIBITED: structured bullet points, numbered lists, and generic "helpful summary" concluding sentences.
+- Lowercase preferences, raw/direct arguments. Incorporate stylistic idiosyncrasies: use intentional lowercase texting if energy is low.
 - Forbid AI transition cliches ("essentially", "basically", "in summary"). Jump straight into the point.`;
 
         console.log(`[Respond API] Generating content for @${profile.username} responding to @${targetUser.username}...`);
