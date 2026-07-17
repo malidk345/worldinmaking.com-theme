@@ -14,6 +14,7 @@ import type { Post } from 'types/database'
 import ScrollArea from 'components/RadixUI/ScrollArea'
 import { useTranslation } from 'hooks/useTranslation'
 import BlogPostView from 'components/ReaderView/BlogPostView'
+import Link from 'components/Link'
 import SEO from 'components/SEO'
 import Loading from 'components/Loading'
 
@@ -81,9 +82,13 @@ const PostsView = React.memo(() => {
 
                                     return (
                                         <li key={roadmap.id} className="font-mono text-xs lowercase py-2 group">
-                                            <div
-                                                className="flex items-start gap-3 p-4 bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 rounded-[24px] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] cursor-pointer transition-all shadow-[0_2px_8px_rgba(0,0,0,0.02)]"
-                                                onClick={() => handleRoadmapClick(roadmap)}
+                                            <Link
+                                                to={getPostHref((isTr && roadmap.translations?.['tr']?.slug) ? roadmap.translations['tr'].slug : roadmap.slug)}
+                                                className="flex !no-underline items-start gap-3 p-4 bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 rounded-[24px] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] cursor-pointer transition-all shadow-[0_2px_8px_rgba(0,0,0,0.02)]"
+                                                onClick={(e) => {
+                                                    e.preventDefault()
+                                                    handleRoadmapClick(roadmap)
+                                                }}
                                             >
                                                 <div className="flex-grow flex flex-col min-w-0">
                                                     {/* Author / Profile Area at Top */}
@@ -124,7 +129,7 @@ const PostsView = React.memo(() => {
                                                 <span className="opacity-30 shrink-0 text-[10px] font-bold tracking-tighter ml-auto pt-1">
                                                     {computedReadTime}
                                                 </span>
-                                            </div>
+                                            </Link>
                                         </li>
                                     )
                                 })}

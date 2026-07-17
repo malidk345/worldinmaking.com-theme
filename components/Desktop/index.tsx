@@ -23,6 +23,7 @@ export default function Desktop() {
                 label: 'home',
                 displayLabel: t('menu.home'),
                 Icon: <AppIcon name="compass" />,
+                url: '/',
                 onClick: () => addWindow({
                     key: 'home',
                     path: '/',
@@ -33,6 +34,7 @@ export default function Desktop() {
                 label: 'posts',
                 displayLabel: t('posts.title'),
                 Icon: <AppIcon name="forums" />,
+                url: '/posts',
                 onClick: () => addWindow({
                     key: 'posts',
                     path: '/posts',
@@ -44,6 +46,7 @@ export default function Desktop() {
                 label: 'community',
                 displayLabel: t('menu.community'),
                 Icon: <AppIcon name="games" />,
+                url: '/questions',
                 onClick: () => addWindow({
                     key: 'questions',
                     title: t('menu.community'),
@@ -61,6 +64,7 @@ export default function Desktop() {
                 ) : (
                     <AppIcon name="contact" />
                 ),
+                url: profile?.username ? `/profile/${profile.username}` : '/profile',
                 onClick: () => {
                     if (profile?.username) {
                         addWindow({
@@ -81,6 +85,7 @@ export default function Desktop() {
                 label: 'login',
                 displayLabel: t('menu.sign_in'),
                 Icon: <AppIcon name="invite" />,
+                url: '/login',
                 onClick: () => addWindow({
                     key: 'login',
                     path: '/login',
@@ -91,6 +96,7 @@ export default function Desktop() {
                 label: 'contact',
                 displayLabel: t('contact.title'),
                 Icon: <AppIcon name="contact" />,
+                url: '/contact',
                 onClick: () => addWindow({
                     key: 'contact',
                     path: '/contact',
@@ -101,6 +107,7 @@ export default function Desktop() {
                 label: 'archive',
                 displayLabel: t('archive.breadcrumb'),
                 Icon: <AppIcon name="folder" />,
+                url: '/archive',
                 onClick: () => addWindow({
                     key: 'archive',
                     path: '/archive',
@@ -112,6 +119,7 @@ export default function Desktop() {
                 label: 'arena',
                 displayLabel: 'arena',
                 Icon: <AppIcon name="aiMax" />,
+                url: '/arena',
                 onClick: () => addWindow({
                     key: 'arena',
                     path: '/arena',
@@ -124,6 +132,7 @@ export default function Desktop() {
             label: 'editor',
             displayLabel: t('menu.create_post'),
             Icon: <AppIcon name="typewriter" />,
+            url: '/write-post',
             onClick: () => window.open('/write-post', '_blank')
         })
 
