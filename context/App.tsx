@@ -28,6 +28,7 @@ interface AppContextType {
         wallpaper: string
         screensaverDisabled: boolean
         performanceBoost: boolean
+        heaterMode: boolean
     }
     updateSiteSettings: React.Dispatch<React.SetStateAction<AppContextType['siteSettings']>>
     isActiveWindowsPanelOpen: boolean
@@ -62,7 +63,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         cursor: 'default',
         wallpaper: 'keyboard-garden',
         screensaverDisabled: true,
-        performanceBoost: false
+        performanceBoost: false,
+        heaterMode: true,
     })
 
     const [archivedItems, setArchivedItems] = useState<string[]>([])
@@ -121,6 +123,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         if (saved) {
             setSiteSettings(prev => ({ ...prev, colorMode: saved }))
         }
+        // Restore heaterMode from localStorage (default: true = frosted glass on)
+        const savedHeater = localStorage.getItem('heaterMode')
+        if (savedHeater !== null) {
+            setSiteSettings(prev => ({ ...prev, heaterMode: savedHeater !== 'false' }))
+        }
     }, [])
 
     // Saving theme choice
@@ -128,6 +135,12 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         if (typeof window === 'undefined') return
         localStorage.setItem('colorMode', siteSettings.colorMode)
     }, [siteSettings.colorMode])
+
+    // Saving heaterMode choice
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        localStorage.setItem('heaterMode', String(siteSettings.heaterMode))
+    }, [siteSettings.heaterMode])
 
     const constraintsRef = useRef<HTMLDivElement>(null)
     const taskbarRef = useRef<HTMLDivElement>(null)

@@ -27,6 +27,7 @@ import { ToggleGroup } from '../RadixUI/ToggleGroup'
 import HomeControl from 'components/Home/Control'
 import WindowRouter from 'components/AppWindow/WindowRouter'
 import KeyboardShortcut from 'components/KeyboardShortcut'
+import { getWindowSurfaceBg, getSurfaceMotionLayer } from '../../constants/frostedSurfaces'
 
 const snapThreshold = -50
 
@@ -92,6 +93,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
     const [resizing, setResizing] = useState(false)
     const [localSize, setLocalSize] = useState(item.size)
     const [localPos, setLocalPos] = useState(item.position)
+    const isCompositorActive = animating || dragging || leftDragResizing || closing
 
     useEffect(() => {
         if (windowRef.current) {
@@ -406,7 +408,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             ref={windowRef}
                             data-app="AppWindow"
                             data-scheme="tertiary"
-                            className={`group @container absolute !select-auto flex flex-col glass-card ${isFocused ? 'premium-shadow-active border-black/5 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/10' : 'premium-shadow-inactive border-primary'
+                            className={`group @container absolute !select-auto flex flex-col ${getWindowSurfaceBg(siteSettings.heaterMode)} ${getSurfaceMotionLayer(siteSettings.heaterMode, isCompositorActive)} ${isFocused ? 'premium-shadow-active border-black/5 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/10' : 'premium-shadow-inactive border-primary'
                                 } ${dragging ? '[&_*]:select-none' : ''} ${item.minimal ? '!shadow-none' : (isMaximized ? 'rounded-none border-b border-primary' : 'border rounded-2xl')} ${chrome ? 'overflow-hidden' : ''}`}
                             style={{ pointerEvents: 'auto', rotateX: tiltX, rotateY: tiltY, transformPerspective: 1200 }}
                             initial={{
@@ -684,7 +686,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             />
 
                             <div className="w-full flex-1 flex flex-col bg-transparent min-h-0 relative px-1.5 has-[+div:empty]:pb-1.5">
-                                <div className="w-full h-full bg-white/80 dark:bg-accent-dark/80 backdrop-blur-3xl-safe flex-1 overflow-hidden relative shadow-[0_0_0_1px_rgba(0,0,0,0.05)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.05)] border border-black/10 dark:border-white/10 rounded-2xl">
+                                <div className={`w-full h-full flex-1 overflow-hidden relative shadow-[0_0_0_1px_rgba(0,0,0,0.05)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.05)] border border-black/10 dark:border-white/10 rounded-2xl ${siteSettings.heaterMode ? 'bg-white/80 dark:bg-zinc-900/70 backdrop-blur-xl' : 'bg-white dark:bg-zinc-900'}`}>
                                     {(!animating || rendered) && (
                                         item.key === 'home' ? <HomeControl /> : <WindowRouter item={item} />
                                     )}

@@ -23,6 +23,7 @@ import AmbientPlayer from 'components/AmbientPlayer'
 import NotificationCenter from 'components/NotificationCenter'
 import { useTranslation } from 'hooks/useTranslation'
 import { LanguageSelector } from 'components/OSChrome/LanguageSelector'
+import { getTaskbarSurfaceBg, getTaskbarMotionLayer } from '../../constants/frostedSurfaces'
 
 export default function TaskBarMenu() {
     const {
@@ -277,7 +278,7 @@ export default function TaskBarMenu() {
                 ref={taskbarRef}
                 id="taskbar"
                 data-scheme="primary"
-                className="w-full bg-accent/90 supports-[backdrop-filter]:backdrop-blur-[20px] border-b border-primary top-0 z-[9999] flex justify-between pl-0.5 pr-2 items-center"
+                className={`w-full ${getTaskbarSurfaceBg()} ${getTaskbarMotionLayer(isAnimating)} border-b border-primary top-0 z-[9999] flex justify-between pl-0.5 pr-2 items-center`}
             >
                 <div className="flex items-center gap-2 px-3 py-1 pointer-events-none">
                     <svg viewBox="0 0 32 32" className="size-5 fill-current text-black dark:text-white">

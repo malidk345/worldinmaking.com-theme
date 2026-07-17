@@ -46,6 +46,27 @@ export default function SystemSettings() {
                 {/* Wallpaper selection removed as per user request (only Keyboard Garden remains) */}
 
                 <section className="pt-6 border-t border-primary/10">
+                    <h2 className="text-sm font-bold opacity-60 mb-4 tracking-tight">transparency</h2>
+                    <div className="flex items-center justify-between p-4 bg-accent/10 rounded border border-primary/20">
+                        <div>
+                            <div className="font-bold text-sm">reduce transparency</div>
+                            <div className="text-[11px] opacity-60">
+                                {siteSettings.heaterMode
+                                    ? 'frosted glass is active — windows use backdrop blur'
+                                    : 'solid panels, less GPU — no backdrop blur'}
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => updateSiteSettings(prev => ({ ...prev, heaterMode: !prev.heaterMode }))}
+                            className={`relative w-10 h-6 rounded-full transition-colors duration-200 focus:outline-none ${!siteSettings.heaterMode ? 'bg-primary' : 'bg-primary/20'}`}
+                            aria-label="toggle reduce transparency"
+                        >
+                            <span className={`absolute top-1 left-1 size-4 rounded-full bg-white shadow transition-transform duration-200 ${!siteSettings.heaterMode ? 'translate-x-4' : 'translate-x-0'}`} />
+                        </button>
+                    </div>
+                </section>
+
+                <section className="pt-6 border-t border-primary/10">
                     <div className="flex items-center justify-between p-4 bg-accent/10 rounded border border-primary/20">
                         <div>
                             <div className="font-bold text-sm">{t('sys.dynamic')}</div>
