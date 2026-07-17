@@ -191,7 +191,7 @@ export default function ArenaApp() {
 
     if (loading) {
         return (
-            <div className="flex h-full items-center justify-center bg-primary">
+            <div className="flex h-full items-center justify-center bg-white dark:bg-black">
                 <Loading />
             </div>
         );
@@ -199,13 +199,13 @@ export default function ArenaApp() {
 
     if (!activeDebate) {
         return (
-            <div className="flex h-full items-center justify-center bg-primary p-8 text-center">
+            <div className="flex h-full items-center justify-center bg-white dark:bg-black p-8 text-center">
                 <div className="space-y-2">
-                    <div className="text-3xl text-primary/30">✦</div>
-                    <p className="text-xs font-medium lowercase tracking-wide text-secondary">
+                    <div className="text-3xl text-black/30 dark:text-white/30">✦</div>
+                    <p className="text-xs font-medium lowercase tracking-wide text-black/60 dark:text-white/60">
                         no active arena debate running.
                     </p>
-                    <p className="text-[10px] text-primary/40 lowercase">
+                    <p className="text-[10px] text-black/40 dark:text-white/40 lowercase">
                         check back later for the next weekly confrontation.
                     </p>
                 </div>
@@ -219,10 +219,10 @@ export default function ArenaApp() {
     const d2Percent = 100 - d1Percent;
 
     return (
-        <div className="flex flex-col h-full bg-white dark:bg-[#121214] text-primary select-none overflow-hidden font-sans">
+        <div className="flex flex-col h-full bg-white dark:bg-[#121214] text-black dark:text-white select-none overflow-hidden font-sans">
 
             {/* Header */}
-            <div className="shrink-0 px-5 pt-4 pb-3 border-b border-black/5 dark:border-white/5 bg-white/80 dark:bg-[#121214]/80 backdrop-blur-xl">
+            <div className="shrink-0 px-5 pt-4 pb-3 border-b border-black/[0.08] dark:border-white/[0.08] bg-white/40 dark:bg-[#0A0A0C]/70 backdrop-blur-[25px] saturate-[190%] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)]">
                 <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
                         {/* Live badge */}
@@ -235,31 +235,31 @@ export default function ArenaApp() {
                                 live debate
                             </span>
                         </div>
-                        <h2 className="text-sm font-bold tracking-tight lowercase text-primary leading-tight">
+                        <h2 className="text-sm font-bold tracking-tight lowercase text-black dark:text-white leading-tight">
                             {activeDebate.title}
                         </h2>
                         {activeDebate.description && (
-                            <p className="text-[10px] text-secondary mt-0.5 lowercase leading-relaxed">
+                            <p className="text-[10px] text-black/60 dark:text-white/60 mt-0.5 lowercase leading-relaxed">
                                 {activeDebate.description}
                             </p>
                         )}
                     </div>
-                    <div className="text-right text-[9px] font-medium shrink-0 lowercase text-primary/40 tabular-nums mt-0.5">
+                    <div className="text-right text-[9px] font-medium shrink-0 lowercase text-black/40 dark:text-white/40 tabular-nums mt-0.5">
                         ends {dayjs(activeDebate.end_date).fromNow()}
                     </div>
                 </div>
 
                 {/* Sources */}
                 {activeDebate.research_context && activeDebate.research_context.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-black/5 dark:border-white/5 flex gap-2 overflow-x-auto pb-0.5">
-                        <span className="text-[9px] font-medium text-primary/35 lowercase pt-px shrink-0">sources:</span>
+                    <div className="mt-3 pt-3 border-t border-black/[0.05] dark:border-white/[0.05] flex gap-2 overflow-x-auto pb-0.5">
+                        <span className="text-[9px] font-medium text-black/35 dark:text-white/35 lowercase pt-px shrink-0">sources:</span>
                         {activeDebate.research_context.map((source, i) => (
                             <a
                                 key={i}
                                 href={source.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-[9px] font-medium bg-accent hover:bg-primary/[0.06] px-2 py-0.5 rounded-full border border-black/10 dark:border-white/10 text-secondary hover:text-primary transition-colors shrink-0 max-w-[180px] truncate"
+                                className="text-[9px] font-medium bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 px-2 py-0.5 rounded-full border border-black/[0.08] dark:border-white/[0.08] text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-all duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.97] shrink-0 max-w-[180px] truncate"
                             >
                                 {source.title.toLowerCase()}
                             </a>
@@ -269,7 +269,7 @@ export default function ArenaApp() {
             </div>
 
             {/* Duelists Panel */}
-            <div className="shrink-0 px-5 py-4 border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02]">
+            <div className="shrink-0 px-5 py-4 border-b border-black/[0.08] dark:border-white/[0.08] bg-black/[0.02] dark:bg-white/[0.02] transition-all duration-400 ease-[cubic-bezier(0.25,1,0.5,1)]">
                 <div className="grid grid-cols-2 gap-6 items-center relative">
 
                     {/* Duelist 1 */}
@@ -281,18 +281,18 @@ export default function ArenaApp() {
                             />
                         </div>
                         <div className="min-w-0">
-                            <span className="text-[8px] font-semibold uppercase tracking-[0.12em] text-primary block mb-0.5">
+                            <span className="text-[8px] font-semibold uppercase tracking-[0.12em] text-black/80 dark:text-white/80 block mb-0.5">
                                 duelist ①
                             </span>
-                            <h3 className="text-xs font-bold lowercase truncate text-primary">
+                            <h3 className="text-xs font-bold lowercase truncate text-black dark:text-white">
                                 @{duelist1?.username}
                             </h3>
                             <button
                                 onClick={() => handleVote(1)}
-                                className={`mt-1.5 text-[9px] font-semibold px-2.5 py-1 rounded-full border transition-all duration-200 ${
+                                className={`mt-1.5 text-[9px] font-semibold px-2.5 py-1 rounded-full border transition-all duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.97] ${
                                     userVote === 1
-                                        ? "bg-black/5 dark:bg-white/5 text-primary border-black/10 dark:border-white/10"
-                                        : "bg-transparent border-black/10 dark:border-white/10 text-secondary hover:text-primary hover:bg-primary/[0.08] hover:border-primary/[0.12]"
+                                        ? "bg-black/5 dark:bg-white/5 text-black dark:text-white border-black/[0.08] dark:border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)]"
+                                        : "bg-transparent border-black/[0.08] dark:border-white/[0.08] text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 hover:border-black/15 dark:hover:border-white/15"
                                 }`}
                             >
                                 {userVote === 1 ? "✓ supported" : "support"}
@@ -303,19 +303,19 @@ export default function ArenaApp() {
                     {/* Duelist 2 */}
                     <div className="flex items-center gap-3 justify-end text-right">
                         <div className="min-w-0">
-                            <span className="text-[8px] font-semibold uppercase tracking-[0.12em] text-primary block mb-0.5">
+                            <span className="text-[8px] font-semibold uppercase tracking-[0.12em] text-black/80 dark:text-white/80 block mb-0.5">
                                 duelist ②
                             </span>
-                            <h3 className="text-xs font-bold lowercase truncate text-primary">
+                            <h3 className="text-xs font-bold lowercase truncate text-black dark:text-white">
                                 @{duelist2?.username}
                             </h3>
                             <div className="flex justify-end">
                                 <button
                                     onClick={() => handleVote(2)}
-                                    className={`mt-1.5 text-[9px] font-semibold px-2.5 py-1 rounded-full border transition-all duration-200 ${
+                                    className={`mt-1.5 text-[9px] font-semibold px-2.5 py-1 rounded-full border transition-all duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.97] ${
                                         userVote === 2
-                                            ? "bg-black/5 dark:bg-white/5 text-primary border-black/10 dark:border-white/10"
-                                            : "bg-transparent border-black/10 dark:border-white/10 text-secondary hover:text-primary hover:bg-primary/[0.08] hover:border-primary/[0.12]"
+                                            ? "bg-black/5 dark:bg-white/5 text-black dark:text-white border-black/[0.08] dark:border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)]"
+                                            : "bg-transparent border-black/[0.08] dark:border-white/[0.08] text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 hover:border-black/15 dark:hover:border-white/15"
                                     }`}
                                 >
                                     {userVote === 2 ? "✓ supported" : "support"}
@@ -332,7 +332,7 @@ export default function ArenaApp() {
 
                     {/* VS */}
                     <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
-                        <span className="bg-primary border border-black/10 dark:border-white/10 size-7 rounded-full flex items-center justify-center text-[9px] font-bold text-primary/35 uppercase shadow-sm">
+                        <span className="bg-white/40 dark:bg-[#1C1C1E]/70 backdrop-blur-[25px] saturate-[190%] border border-black/[0.08] dark:border-white/[0.08] size-7 rounded-full flex items-center justify-center text-[9px] font-bold text-black/60 dark:text-white/60 uppercase shadow-[0_8px_30px_rgb(0,0,0,0.04),0_20px_40px_rgb(0,0,0,0.04),inset_0_1px_0_0_rgba(255,255,255,0.15)] transition-all duration-400 ease-[cubic-bezier(0.25,1,0.5,1)]">
                             vs
                         </span>
                     </div>
@@ -340,17 +340,17 @@ export default function ArenaApp() {
 
                 {/* Vote Bar */}
                 <div className="mt-4">
-                    <div className="flex justify-between text-[9px] font-medium text-secondary lowercase mb-1.5 tabular-nums">
+                    <div className="flex justify-between text-[9px] font-medium text-black/60 dark:text-white/60 lowercase mb-1.5 tabular-nums">
                         <span>{d1Percent}%</span>
                         <span>{d2Percent}%</span>
                     </div>
-                    <div className="w-full h-1 rounded-full bg-primary/[0.06] overflow-hidden flex">
+                    <div className="w-full h-1 rounded-full bg-black/5 dark:bg-white/5 overflow-hidden flex">
                         <div
-                            className="h-full rounded-full bg-black/50 dark:bg-white/50 transition-all duration-500"
+                            className="h-full rounded-full bg-black/80 dark:bg-white/80 transition-all duration-400 ease-[cubic-bezier(0.25,1,0.5,1)]"
                             style={{ width: `${d1Percent}%` }}
                         />
                         <div
-                            className="h-full rounded-full bg-black/20 dark:bg-white/20 transition-all duration-500"
+                            className="h-full rounded-full bg-black/40 dark:bg-white/40 transition-all duration-400 ease-[cubic-bezier(0.25,1,0.5,1)]"
                             style={{ width: `${d2Percent}%` }}
                         />
                     </div>
@@ -358,13 +358,13 @@ export default function ArenaApp() {
             </div>
 
             {/* Debate Timeline */}
-            <div className="flex-grow min-h-0 bg-white dark:bg-[#121214] relative">
+            <div className="flex-grow min-h-0 bg-white dark:bg-black relative transition-all duration-400 ease-[cubic-bezier(0.25,1,0.5,1)]">
                 <ScrollArea className="h-full select-text">
                     <div className="px-5 py-5">
                         {turns.length === 0 ? (
                             <div className="flex flex-col items-center justify-center min-h-[200px] text-center py-16">
-                                <span className="text-xl animate-pulse text-primary/20">✦</span>
-                                <span className="text-[9px] font-medium lowercase tracking-wide mt-3 text-primary/30">
+                                <span className="text-xl animate-pulse text-black/20 dark:text-white/20">✦</span>
+                                <span className="text-[9px] font-medium lowercase tracking-wide mt-3 text-black/30 dark:text-white/30">
                                     arena initialized. awaiting opening remarks...
                                 </span>
                             </div>
@@ -388,9 +388,9 @@ export default function ArenaApp() {
                                         >
                                             {/* Interjection */}
                                             {isInter ? (
-                                                <div className="w-full max-w-lg rounded-[18px] border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 p-4 relative">
+                                                <div className="w-full max-w-lg rounded-[24px] border border-black/[0.08] dark:border-white/[0.08] bg-white/40 dark:bg-[#1C1C1E]/70 backdrop-blur-[25px] saturate-[190%] p-4 relative shadow-[0_8px_30px_rgb(0,0,0,0.04),0_20px_40px_rgb(0,0,0,0.04),inset_0_1px_0_0_rgba(255,255,255,0.15)] transition-all duration-400 ease-[cubic-bezier(0.25,1,0.5,1)]">
                                                     <div className="absolute top-2.5 right-3">
-                                                        <span className="text-[7px] font-semibold uppercase tracking-[0.15em] text-primary border border-black/10 dark:border-white/10 bg-transparent px-1.5 py-0.5 rounded-full">
+                                                        <span className="text-[7px] font-semibold uppercase tracking-[0.15em] text-black/60 dark:text-white/60 border border-black/[0.08] dark:border-white/[0.08] bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded-full">
                                                             interjection
                                                         </span>
                                                     </div>
@@ -400,22 +400,22 @@ export default function ArenaApp() {
                                                             className="size-7 rounded-[8px] shrink-0"
                                                         />
                                                         <div className="flex-grow min-w-0 pr-16">
-                                                            <span className="text-[10px] font-semibold text-primary lowercase block mb-1">
+                                                            <span className="text-[10px] font-semibold text-black/80 dark:text-white/80 lowercase block mb-1">
                                                                 @{turn.speaker?.username}
                                                             </span>
 
                                                             {turn.inner_thoughts && (
                                                                 <details className="mb-1.5 outline-none">
-                                                                    <summary className="text-[9px] font-medium text-primary/30 hover:text-primary/50 cursor-pointer select-none lowercase outline-none">
+                                                                    <summary className="text-[9px] font-medium text-black/40 dark:text-white/40 hover:text-black/70 dark:hover:text-white/70 cursor-pointer select-none lowercase outline-none transition-all duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.97]">
                                                                         internal deliberations
                                                                     </summary>
-                                                                    <p className="text-[9px] leading-relaxed text-secondary/60 bg-accent/60 p-2.5 rounded-[10px] mt-1 border border-black/5 dark:border-white/5 select-text italic">
+                                                                    <p className="text-[9px] leading-relaxed text-black/60 dark:text-white/60 bg-black/5 dark:bg-white/5 p-2.5 rounded-[12px] mt-1 border border-black/[0.05] dark:border-white/[0.05] select-text italic">
                                                                         {turn.inner_thoughts}
                                                                     </p>
                                                                 </details>
                                                             )}
 
-                                                            <div className="text-xs leading-relaxed text-primary select-text prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                                                            <div className="text-xs leading-relaxed text-black/90 dark:text-white/90 select-text prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
                                                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                                                     {turn.content}
                                                                 </ReactMarkdown>
@@ -432,29 +432,29 @@ export default function ArenaApp() {
                                                     />
                                                     <div className="flex-grow min-w-0">
                                                         <div className={`flex items-baseline gap-2 mb-1.5 ${isD2 ? "justify-end" : ""}`}>
-                                                            <span className={`text-[10px] font-bold lowercase ${isD1 ? "text-primary" : "text-primary"}`}>
+                                                            <span className={`text-[10px] font-bold lowercase text-black/80 dark:text-white/80`}>
                                                                 @{turn.speaker?.username}
                                                             </span>
-                                                            <span className="text-[8px] font-medium text-primary/30 tabular-nums">
+                                                            <span className="text-[8px] font-medium text-black/40 dark:text-white/40 tabular-nums">
                                                                 {dayjs(turn.created_at).fromNow()}
                                                             </span>
                                                         </div>
 
                                                         {turn.inner_thoughts && (
                                                             <details className={`mb-1.5 outline-none ${isD2 ? "text-right" : ""}`}>
-                                                                <summary className="text-[8px] font-medium text-primary/30 hover:text-primary/50 cursor-pointer select-none lowercase outline-none">
+                                                                <summary className="text-[8px] font-medium text-black/40 dark:text-white/40 hover:text-black/70 dark:hover:text-white/70 cursor-pointer select-none lowercase outline-none transition-all duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.97]">
                                                                     deliberations
                                                                 </summary>
-                                                                <p className="text-[9px] leading-relaxed text-secondary/60 bg-accent/60 p-2.5 rounded-[10px] mt-1 border border-black/5 dark:border-white/5 select-text italic text-left">
+                                                                <p className="text-[9px] leading-relaxed text-black/60 dark:text-white/60 bg-black/5 dark:bg-white/5 p-2.5 rounded-[12px] mt-1 border border-black/[0.05] dark:border-white/[0.05] select-text italic text-left">
                                                                     {turn.inner_thoughts}
                                                                 </p>
                                                             </details>
                                                         )}
 
-                                                        <div className={`p-3.5 rounded-[18px] border text-xs leading-relaxed select-text prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 ${
+                                                        <div className={`p-3.5 rounded-[20px] border text-xs leading-relaxed select-text prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 text-black/90 dark:text-white/90 shadow-[0_8px_30px_rgb(0,0,0,0.04),0_20px_40px_rgb(0,0,0,0.04),inset_0_1px_0_0_rgba(255,255,255,0.15)] transition-all duration-400 ease-[cubic-bezier(0.25,1,0.5,1)] ${
                                                             isD1
-                                                                ? "bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 rounded-tl-[4px]"
-                                                                : "bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 rounded-tr-[4px]"
+                                                                ? "bg-white/40 dark:bg-[#1C1C1E]/70 backdrop-blur-[25px] saturate-[190%] border-black/[0.08] dark:border-white/[0.08] rounded-tl-[6px]"
+                                                                : "bg-white/40 dark:bg-[#1C1C1E]/70 backdrop-blur-[25px] saturate-[190%] border-black/[0.08] dark:border-white/[0.08] rounded-tr-[6px]"
                                                         }`}>
                                                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                                                 {turn.content}
