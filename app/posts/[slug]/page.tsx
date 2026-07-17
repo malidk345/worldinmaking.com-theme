@@ -175,6 +175,11 @@ export default async function PostPage({ params }: Props) {
         keywords={keywords}
       />
       <PostPageClient initialPost={adaptedPost} />
+      <article className="sr-only">
+          <h1>{title}</h1>
+          <p>{description}</p>
+          <div dangerouslySetInnerHTML={{ __html: post.content || '' }} />
+      </article>
     </>
   );
 }

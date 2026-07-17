@@ -446,6 +446,10 @@ export const AppLink = ({
                         if (hasDragged) {
                             e.preventDefault()
                             e.stopPropagation()
+                        } else if (onClick) {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            onClick()
                         }
                     }}
                 >
