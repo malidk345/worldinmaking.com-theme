@@ -61,6 +61,17 @@ export function stripHtmlTags(input: string | null | undefined): string {
 }
 
 /**
+ * Sanitize CSS to prevent XSS breakouts when used in <style dangerouslySetInnerHTML>.
+ * This function removes the `<` character entirely, as it is not used in valid CSS
+ * (unlike `>`, which is the child combinator), making it impossible to inject HTML tags like `</style>`.
+ */
+export function sanitizeCss(css: string | null | undefined): string {
+    if (typeof css !== 'string') return '';
+
+    return css.replace(/</g, '');
+}
+
+/**
  * Sanitize plain text (non-HTML) by escaping all HTML entities.
  * Use this for fields like titles/subjects that should not contain HTML.
  */

@@ -284,9 +284,10 @@ Duelist 2: @${d2Config.username}
             contextText += `[RESEARCH CONTEXT SOURCES]
 Use and refer to these sources to construct factually grounded, strong arguments:
 `;
-            debate.research_context.forEach((src: any, index: number) => {
-                contextText += `${index + 1}. "${src.title}" (Source: ${src.source})
-Excerpt: ${src.excerpt}
+            debate.research_context.forEach((src: unknown, index: number) => {
+                const source = src as { title?: string; source?: string; excerpt?: string };
+                contextText += `${index + 1}. "${source.title || ''}" (Source: ${source.source || ''})
+Excerpt: ${source.excerpt || ''}
 `;
             });
             contextText += `\n`;
@@ -388,8 +389,8 @@ your actual response markdown content`;
             }
         }
 
-    } catch (err: any) {
-        console.error('[Debate Worker] Exception occurred in worker:', err.message || err);
+    } catch (err: unknown) {
+        console.error('[Debate Worker] Exception occurred in worker:', (err as Error)?.message || err);
     }
 }
 
