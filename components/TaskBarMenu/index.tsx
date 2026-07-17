@@ -25,7 +25,7 @@ import { useTranslation } from 'hooks/useTranslation'
 import { LanguageSelector } from 'components/OSChrome/LanguageSelector'
 import { getTaskbarSurfaceBg, getTaskbarMotionLayer } from '../../constants/frostedSurfaces'
 
-export default function TaskBarMenu() {
+export default function TaskBarMenu({ isMaximized }: { isMaximized?: boolean }) {
     const {
         windows,
         openSearch,
@@ -278,7 +278,7 @@ export default function TaskBarMenu() {
                 ref={taskbarRef}
                 id="taskbar"
                 data-scheme="primary"
-                className={`w-full ${getTaskbarSurfaceBg()} ${getTaskbarMotionLayer(isAnimating)} border-b border-primary top-0 z-[9999] flex justify-between pl-0.5 pr-2 items-center`}
+                className={`w-full ${getTaskbarSurfaceBg()} ${getTaskbarMotionLayer(isAnimating)} border border-black/10 dark:border-white/10 ${isMaximized ? 'rounded-t-lg rounded-b-none border-b-0 shadow-none' : 'rounded-lg shadow-md'} z-[9999] flex justify-between pl-1 pr-2 py-0.5 items-center`}
             >
                 <div className="flex items-center gap-2 px-3 py-1 pointer-events-none">
                     <svg viewBox="0 0 32 32" className="size-5 fill-current text-black dark:text-white">

@@ -79,8 +79,36 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
         return base
     }, [item.sizeConstraints, constraintsRef])
 
-    const size = item.size
-    const position = item.position
+    const bounds = useMemo(() => {
+        if (!constraintsRef.current) return null
+        return constraintsRef.current.getBoundingClientRect()
+    }, [constraintsRef])
+
+    const size = useMemo(() => {
+        if (!bounds) return item.size
+        const maxWidth = bounds.width
+        const maxHeight = bounds.height
+        const isMax = item.size.width >= maxWidth - 5 && item.size.height >= maxHeight - 5
+        return {
+            width: isMax ? maxWidth : Math.min(item.size.width, maxWidth),
+            height: isMax ? maxHeight : Math.min(item.size.height, maxHeight)
+        }
+    }, [item.size, bounds])
+
+    const position = useMemo(() => {
+        if (!bounds) return item.position
+        const maxWidth = bounds.width
+        const maxHeight = bounds.height
+        const isMax = item.size.width >= maxWidth - 5 && item.size.height >= maxHeight - 5
+        if (isMax) return { x: 0, y: 0 }
+        
+        const maxX = Math.max(0, maxWidth - size.width)
+        const maxY = Math.max(0, maxHeight - size.height)
+        return {
+            x: Math.max(0, Math.min(item.position.x, maxX)),
+            y: Math.max(0, Math.min(item.position.y, maxY))
+        }
+    }, [item.position, item.size, size, bounds])
     const [snapIndicator, setSnapIndicator] = useState<'left' | 'right' | null>(null)
     const windowRef = useRef<HTMLDivElement>(null)
     const [rendered, setRendered] = useState(false)
@@ -408,8 +436,8 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             ref={windowRef}
                             data-app="AppWindow"
                             data-scheme="tertiary"
-                            className={`group @container absolute !select-auto flex flex-col ${getWindowSurfaceBg(siteSettings.heaterMode)} ${getSurfaceMotionLayer(siteSettings.heaterMode, isCompositorActive)} ${isFocused ? 'premium-shadow-active border-black/5 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/10' : 'premium-shadow-inactive border-primary'
-                                } ${dragging ? '[&_*]:select-none' : ''} ${item.minimal ? '!shadow-none' : (isMaximized ? 'rounded-none border-b border-primary' : 'border rounded-2xl')} ${chrome ? 'overflow-hidden' : ''}`}
+                            className={`group @container absolute !select-auto flex flex-col ${getWindowSurfaceBg(siteSettings.heaterMode)} ${getSurfaceMotionLayer(siteSettings.heaterMode, isCompositorActive)} ${isMaximized ? 'shadow-none' : (isFocused ? 'premium-shadow-active border-black/5 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/10' : 'premium-shadow-inactive border-black/10 dark:border-white/10')
+                                } ${dragging ? '[&_*]:select-none' : ''} ${item.minimal ? '!shadow-none' : (isMaximized ? 'rounded-t-none rounded-b-lg border border-t-0 border-black/10 dark:border-white/10' : 'border rounded-lg border-black/10 dark:border-white/10')} ${chrome ? 'overflow-hidden' : ''}`}
                             style={{ pointerEvents: 'auto', rotateX: tiltX, rotateY: tiltY, transformPerspective: 1200 }}
                             initial={{
                                 scale: 0.08,
@@ -685,8 +713,8 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                  }}
                             />
 
-                            <div className="w-full flex-1 flex flex-col bg-transparent min-h-0 relative px-1.5 has-[+div:empty]:pb-1.5">
-                                <div className="w-full h-full flex-1 overflow-hidden relative shadow-[0_0_0_1px_rgba(0,0,0,0.05)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.05)] border border-black/10 dark:border-white/10 rounded-2xl bg-transparent">
+                            <div className={`w-full flex-1 flex flex-col bg-transparent min-h-0 relative ${isMaximized ? 'px-0 pb-0' : 'px-1.5 has-[+div:empty]:pb-1.5'}`}>
+                                <div className={`w-full h-full flex-1 overflow-hidden relative shadow-[0_0_0_1px_rgba(0,0,0,0.05)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.05)] bg-transparent ${isMaximized ? 'border-0 rounded-t-none rounded-b-lg' : 'border border-black/10 dark:border-white/10 rounded-lg'}`}>
                                     {(!animating || rendered) && (
                                         item.key === 'home' ? <HomeControl /> : <WindowRouter item={item} />
                                     )}

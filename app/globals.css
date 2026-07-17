@@ -996,6 +996,10 @@ mark {
     background-color: rgb(var(--bg) / 0.75);
   }
 
+  .bg-taskbar-glass {
+    background-color: rgb(var(--bg) / 0.50);
+  }
+
   .text-primary {
     color: rgb(var(--text-primary));
   }
@@ -1742,5 +1746,11 @@ button::-moz-focus-inner,
 
 [data-app='AppWindow'] *::-webkit-scrollbar-corner {
   background: transparent;
+}
+
+/* Force WebKit backdrop-filter support for backdrop-blur-xl */
+.backdrop-blur-xl {
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
 }
 

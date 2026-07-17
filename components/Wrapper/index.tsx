@@ -35,9 +35,25 @@ export default function Wrapper() {
     }, []);
 
 
+    const hasMaximizedWindow = React.useMemo(() => {
+        if (!constraintsRef.current) return false
+        const bounds = constraintsRef.current.getBoundingClientRect()
+        const maxWidth = bounds.width
+        const maxHeight = bounds.height
+        return windows.some(w => {
+            if (w.minimized) return false
+            return (
+                w.size.width >= maxWidth - 5 &&
+                w.size.height >= maxHeight - 5 &&
+                Math.abs(w.position.x) <= 5 &&
+                Math.abs(w.position.y) <= 5
+            )
+        })
+    }, [windows, constraintsRef])
+
     return (
-        <div className="fixed inset-0 size-full flex flex-col select-none overflow-hidden skin-classic:font-sans">
-            <TaskBarMenu />
+        <div className="fixed inset-0 size-full flex flex-col select-none overflow-hidden skin-classic:font-sans p-1.5 gap-0 bg-transparent">
+            <TaskBarMenu isMaximized={hasMaximizedWindow} />
             <div ref={constraintsRef} className="flex-grow relative overflow-hidden">
                 <Desktop />
 

@@ -124,10 +124,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
             setSiteSettings(prev => ({ ...prev, colorMode: saved }))
         }
         // Restore heaterMode from localStorage (default: true = frosted glass on)
-        const savedHeater = localStorage.getItem('heaterMode')
-        if (savedHeater !== null) {
-            setSiteSettings(prev => ({ ...prev, heaterMode: savedHeater !== 'false' }))
-        }
+        // Force true to resolve stuck localStorage state causing glassmorphism to be disabled
+        setSiteSettings(prev => ({ ...prev, heaterMode: true }))
     }, [])
 
     // Saving theme choice

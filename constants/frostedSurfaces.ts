@@ -3,22 +3,22 @@
 // heaterMode = false → solid opaque bg, no blur (Reduce transparency mode)
 
 /** Solid window bg — no blur */
-export const WINDOW_BG = 'bg-primary transform-gpu'
+export const WINDOW_BG = 'bg-white dark:bg-zinc-900 transform-gpu'
 
 /** Frosted glass window bg — default when heaterMode is on */
 export const HEATER_WINDOW_BG =
-    'bg-primary-glass backdrop-blur-xl transform-gpu'
+    'bg-white/65 dark:bg-zinc-900/65 backdrop-blur-xl transform-gpu'
 
 /** Panel bg (sidebars, overlays) — solid */
-export const PANEL_BG = 'bg-primary transform-gpu'
+export const PANEL_BG = 'bg-white dark:bg-zinc-900 transform-gpu'
 
 /** Frosted panel bg — default when heaterMode is on */
 export const HEATER_PANEL_BG =
-    'bg-primary-glass backdrop-blur-xl transform-gpu'
+    'bg-white/65 dark:bg-zinc-900/65 backdrop-blur-xl transform-gpu'
 
 /** Taskbar — always has a subtle blur regardless of heaterMode */
 export const TASKBAR_BG =
-    'bg-accent/90 supports-[backdrop-filter]:backdrop-blur-[20px] transform-gpu'
+    'bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl transform-gpu'
 
 /** GPU layer hint for surfaces in motion */
 export const MOTION_LAYER = 'will-change-transform'

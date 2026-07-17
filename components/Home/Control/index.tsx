@@ -4,7 +4,7 @@ import React from 'react'
 
 export default function HomeControl() {
     return (
-        <div className="w-full h-full flex flex-col items-center justify-center bg-primary text-primary p-6 md:p-12 text-left font-mono lowercase selection:bg-black selection:text-white dark:selection:bg-white dark:selection:text-black">
+        <div className="w-full h-full flex flex-col items-center justify-center bg-transparent text-primary p-6 md:p-12 text-left font-mono lowercase selection:bg-black selection:text-white dark:selection:bg-white dark:selection:text-black">
             <div className="max-w-2xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
                 <div className="space-y-2">
                     <h1 className="text-4xl font-black tracking-tighter">worldinmaking (wim)</h1>

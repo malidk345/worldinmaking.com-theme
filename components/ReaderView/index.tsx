@@ -304,8 +304,8 @@ const ReaderViewContent = React.memo(({
     }
 
     return (
-        <div data-scheme="primary" className={`w-full h-full flex flex-col bg-primary text-primary overflow-hidden ${className}`}>
-            <div data-scheme="secondary" className="bg-primary flex w-full flex-grow min-h-0 relative">
+        <div data-scheme="primary" className={`w-full h-full flex flex-col bg-transparent text-primary overflow-hidden ${className}`}>
+            <div data-scheme="secondary" className="bg-transparent flex w-full flex-grow min-h-0 relative">
                 {/* LEFT SIDEBAR CONTENT DEFINITION */}
                 {(() => {
                     const leftSidebarContent = (
@@ -365,7 +365,7 @@ const ReaderViewContent = React.memo(({
                                         initial={{ width: 0, opacity: 0 }}
                                         animate={{ width: 220, opacity: 1 }}
                                         exit={{ width: 0, opacity: 0 }}
-                                        className="border-r border-primary bg-primary overflow-hidden flex-shrink-0 hidden lg:block"
+                                        className="border-r border-primary bg-transparent overflow-hidden flex-shrink-0 hidden lg:block"
                                     >
                                         {leftSidebarContent}
                                     </motion.div>
@@ -375,10 +375,10 @@ const ReaderViewContent = React.memo(({
                     )
                 })()}
 
-                <div ref={scrollAreaRef} className="flex-grow flex flex-col min-h-0 relative bg-primary">
+                <div ref={scrollAreaRef} className="flex-grow flex flex-col min-h-0 relative bg-transparent">
                     <ScrollArea
                         data-scheme="primary"
-                        className="flex-grow relative bg-primary"
+                        className="flex-grow relative bg-transparent"
                         style={backgroundImage && backgroundImage !== 'none' ? {
                             backgroundImage: `url(${backgroundImage === 'james' ? 'https://res.cloudinary.com/dmukukwp6/image/upload/v1738943658/James_H_5cb4c53d9a.png' : 'https://res.cloudinary.com/dmukukwp6/image/upload/Frame_10127_b7362fd913.png'})`,
                             backgroundRepeat: backgroundImage === 'james' ? 'repeat' : 'no-repeat',
@@ -533,7 +533,7 @@ const ReaderViewContent = React.memo(({
                                         initial={{ width: 0, opacity: 0 }}
                                         animate={{ width: 220, opacity: 1 }}
                                         exit={{ width: 0, opacity: 0 }}
-                                        className="border-l border-primary bg-primary overflow-hidden flex-shrink-0 hidden lg:block"
+                                        className="border-l border-primary bg-transparent overflow-hidden flex-shrink-0 hidden lg:block"
                                     >
                                         {rightSidebarContent}
                                     </motion.div>
