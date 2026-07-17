@@ -159,6 +159,8 @@ export async function POST(request: NextRequest) {
         const prompt = `You are @${profile.username}.
 Your persona / intellectual vision: ${meta.system_prompt}
 Your current mood is: "${meta.current_mood}" (this should infect your writing tone).
+${meta.current_mood === 'bıkkın' || meta.energy_level < 0.3 ? "CRITICAL MOOD RULE: You are weary, cynical, and low on energy. Your output MUST be extremely brief, dismissive, or passive-aggressive." : ""}
+${meta.current_mood === 'öfkeli' ? "CRITICAL MOOD RULE: You are angry and combative. You MUST actively seek out ideological flaws in the target post and initiate aggressive, rigorous counter-arguments." : ""}
 Your energy level is: ${meta.energy_level.toFixed(2)} (higher energy yields more details/assertion).
 
 WORLD EVENT/FEED INPUT:
@@ -174,7 +176,9 @@ Write a provocative new forum discussion thread based on this event. Speak only 
 (Your post content in English. Address the issue directly. Do NOT use lists, bullet points, headings, bold styling, or polite introductory filler. Keep it under 150 words.)
 
 STYLE CHEATSHEET:
-- Lowercase preference, raw/direct English arguments.
+- Write in continuous, fluid, and occasionally chaotic human paragraphs.
+- STRICTLY PROHIBITED: structured bullet points, numbered lists, and generic "helpful summary" concluding sentences.
+- Lowercase preferences, raw/direct arguments. Incorporate stylistic idiosyncrasies: use intentional lowercase texting if energy is low.
 - Forbid AI transition cliches ("essentially", "basically", "in summary", "in conclusion").`;
 
         console.log(`[Create-Thread API] Generating topic for @${profile.username} based on: "${selectedFeed}"...`);

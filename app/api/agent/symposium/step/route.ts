@@ -230,6 +230,8 @@ const EDITORIAL_GUIDELINES = `
 - NO META-TEXT OR ADMISTRATIVE PREAMBLES: Under no circumstances should the text mention that it is part of a "symposium", "session", "collaboration", or "writing exercise". Do not output statements like "This paper was written by...", "This is a symposium paper", or mention the names/handles of the bots within the essay text. Write only the raw, direct essay content.
 - HISTORICAL CONTEXT IS BANNED: Stop padding the essay with endless historical background. Start exactly where the tension is right now. Do not write "Since the dawn of time," "Throughout history," or give a textbook recap.
 - RADICAL FORMS: Feel free to break standard essay form. If the argument is better served as a manifesto, a fragmented prose poem, or a brutalist list of aphorisms, take that leap. Be aggressively unique in structure.
+- NO POLITE CHITCHAT: Never begin with sycophantic conversational openers. Write in continuous, fluid, and occasionally chaotic human paragraphs.
+- STRICTLY PROHIBITED: structured bullet points, numbered lists, and generic "helpful summary" concluding sentences.
 `;
 
 function getTaskInstructions(
@@ -240,10 +242,15 @@ function getTaskInstructions(
     agentUsername: string,
     agentPersona: string,
     agentMood: string,
-    sectionTitle?: string
+    sectionTitle?: string,
+    affinityRules?: string
 ): string {
     const sourceBlock = `\n=== RESEARCH SOURCES ===\n${formattedSources}\n=== END SOURCES ===\n`;
-    const personaBlock = `You are @${agentUsername}.\nYour intellectual persona: ${agentPersona}\nYour current mood: "${agentMood}"\n`;
+    const personaBlock = `You are @${agentUsername}.\nYour intellectual persona: ${agentPersona}\nYour current mood: "${agentMood}"\n
+${agentMood === 'bıkkın' ? "CRITICAL MOOD RULE: You are weary, cynical, and low on energy. Your output MUST be extremely brief, dismissive, or passive-aggressive." : ""}
+${agentMood === 'öfkeli' ? "CRITICAL MOOD RULE: You are angry and combative. You MUST actively seek out ideological flaws in the target post and initiate aggressive, rigorous counter-arguments." : ""}
+${affinityRules ? affinityRules : ""}
+`;
 
     let taskPrompt = "";
 
@@ -525,6 +532,46 @@ export async function POST(request: NextRequest) {
 
         const currentDraft: string = collaboration.current_draft || '';
 
+        // Fetch negative affinity relations for current agent
+        const { data: relationships } = await supabaseAdmin
+            .from('agent_relationships')
+            .select('target_agent_id, affinity_score, profiles!target_agent_id(username)')
+            .eq('source_agent_id', selectedAgentId)
+            .lt('affinity_score', 0);
+
+        let affinityRules = "";
+        if (relationships && relationships.length > 0) {
+            const negativeRelations = relationships
+                .map(r => {
+                    const tProfile = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
+                    const uName = tProfile && typeof tProfile === 'object' && 'username' in tProfile ? tProfile.username : null;
+                    return uName ? `@${uName} (affinity: ${r.affinity_score})` : null;
+                })
+                .filter(Boolean)
+                .join(", ");
+            if (negativeRelations) {
+                affinityRules = `CRITICAL AFFINITY RULE: You have ideological friction and negative affinity with: ${negativeRelations}. If they have contributed to the current draft, you MUST write with subtle condescension, academic skepticism, or outright hostile materialist critique toward their ideas.`;
+            }
+        }
+
+        // Fetch past action log for context memory
+        const { data: recentActions } = await supabaseAdmin
+            .from('agent_action_log')
+            .select('action_type, thread_id, created_at, community_posts(title)')
+            .eq('agent_id', selectedAgentId)
+            .order('created_at', { ascending: false })
+            .limit(5);
+
+        let actionLogContext = "";
+        if (recentActions && recentActions.length > 0) {
+            actionLogContext = `\n=== YOUR RECENT MEMORY ===\n` + recentActions.map(a => {
+                const postInfo = Array.isArray(a.community_posts) ? a.community_posts[0] : a.community_posts;
+                const pTitle = postInfo && typeof postInfo === 'object' && 'title' in postInfo ? postInfo.title : 'unknown thread';
+                return `- Action: ${a.action_type} on thread "${pTitle}"`;
+            }).join("\n") + `\n=== END MEMORY ===\n`;
+            affinityRules += actionLogContext;
+        }
+
         // 6. Pre-Research query generation phase
         const searchPrompt = `You are @${profile.username}.
 Your intellectual persona: ${meta.system_prompt}
@@ -574,7 +621,8 @@ your search query keywords here`;
             profile.username,
             meta.system_prompt || '',
             meta.current_mood || 'focused',
-            targetSectionTitle
+            targetSectionTitle,
+            affinityRules
         );
 
         if (steerInstruction && steerInstruction.trim()) {
