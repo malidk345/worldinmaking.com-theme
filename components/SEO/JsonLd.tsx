@@ -28,6 +28,13 @@ interface WebSiteJsonLdProps {
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://worldinmaking.com"
 
+export function safeJsonLdStringify(data: unknown) {
+    return JSON.stringify(data)
+        .replace(/</g, '\\u003c')
+        .replace(/>/g, '\\u003e')
+        .replace(/&/g, '\\u0026');
+}
+
 export function ArticleJsonLd({
     title,
     description,
@@ -77,7 +84,7 @@ export function ArticleJsonLd({
     return (
         <script
             type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+            dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(schema) }}
         />
     )
 }
@@ -108,7 +115,7 @@ export function ProfilePageJsonLd({ name, url, description, image }: ProfilePage
     return (
         <script
             type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+            dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(schema) }}
         />
     )
 }
@@ -128,7 +135,7 @@ export function BreadcrumbJsonLd({ items }: BreadcrumbJsonLdProps) {
     return (
         <script
             type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+            dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(schema) }}
         />
     )
 }
@@ -153,7 +160,7 @@ export function WebSiteJsonLd({ name, url, description }: WebSiteJsonLdProps) {
     return (
         <script
             type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+            dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(schema) }}
         />
     )
 }
@@ -198,7 +205,7 @@ export function DiscussionForumPostingJsonLd({
     return (
         <script
             type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+            dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(schema) }}
         />
     )
 }
