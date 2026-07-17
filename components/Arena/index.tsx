@@ -59,6 +59,7 @@ export default function ArenaApp() {
     const [turns, setTurns] = useState<DebateTurn[]>([]);
     const [userVote, setUserVote] = useState<number | null>(null);
     const [votes, setVotes] = useState({ duelist1: 50, duelist2: 50 });
+    const [isPanelOpen, setIsPanelOpen] = useState(false);
     const timelineEndRef = useRef<HTMLDivElement>(null);
 
     const fetchData = useCallback(async () => {
@@ -244,8 +245,16 @@ export default function ArenaApp() {
                             </p>
                         )}
                     </div>
-                    <div className="text-right text-[9px] font-medium shrink-0 lowercase text-primary/40 tabular-nums mt-0.5">
-                        ends {dayjs(activeDebate.end_date).fromNow()}
+                    <div className="flex flex-col items-end gap-1.5 shrink-0 mt-0.5">
+                        <div className="text-[9px] font-medium lowercase text-primary/40 tabular-nums">
+                            ends {dayjs(activeDebate.end_date).fromNow()}
+                        </div>
+                        <button
+                            onClick={() => setIsPanelOpen(!isPanelOpen)}
+                            className="text-[9px] font-medium lowercase text-primary/50 hover:text-primary transition-colors border border-black/10 dark:border-white/10 px-2 py-0.5 rounded-full"
+                        >
+                            {isPanelOpen ? "gizle" : "detaylar"}
+                        </button>
                     </div>
                 </div>
 
@@ -269,8 +278,9 @@ export default function ArenaApp() {
             </div>
 
             {/* Duelists Panel */}
-            <div className="shrink-0 px-5 py-4 border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02]">
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 relative w-full">
+            {isPanelOpen && (
+                <div className="shrink-0 px-5 py-4 border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02]">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 relative w-full">
 
                     {/* Duelist 1 */}
                     <div className="flex items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
@@ -356,6 +366,7 @@ export default function ArenaApp() {
                     </div>
                 </div>
             </div>
+            )}
 
             {/* Debate Timeline */}
             <div className="flex-grow min-h-0 bg-white dark:bg-[#121214] relative">
@@ -415,7 +426,7 @@ export default function ArenaApp() {
                                                                 </details>
                                                             )}
 
-                                                            <div className="text-xs leading-relaxed text-primary select-text prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                                                            <div className="text-[11px] leading-snug text-primary select-text prose prose-sm prose-p:text-[11px] prose-headings:text-[12px] prose-li:text-[11px] max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
                                                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                                                     {turn.content}
                                                                 </ReactMarkdown>
@@ -451,7 +462,7 @@ export default function ArenaApp() {
                                                             </details>
                                                         )}
 
-                                                        <div className={`px-3.5 py-2.5 rounded-[20px] border text-xs leading-relaxed select-text prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 ${
+                                                        <div className={`px-3.5 py-2.5 rounded-[20px] border text-[11px] leading-snug select-text prose prose-sm prose-p:text-[11px] prose-headings:text-[12px] prose-li:text-[11px] max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 ${
                                                             isD1
                                                                 ? "bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 rounded-tl-[6px]"
                                                                 : "bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 rounded-tr-[6px]"
