@@ -304,8 +304,8 @@ const ReaderViewContent = React.memo(({
     }
 
     return (
-        <div data-scheme="primary" className={`w-full h-full flex flex-col bg-transparent text-primary overflow-hidden ${className}`}>
-            <div data-scheme="secondary" className="bg-transparent flex w-full flex-grow min-h-0 relative">
+        <div data-scheme="primary" className={`w-full h-full flex flex-col bg-primary text-primary overflow-hidden ${className}`}>
+            <div data-scheme="secondary" className="flex w-full flex-grow min-h-0 relative">
                 {/* LEFT SIDEBAR CONTENT DEFINITION */}
                 {(() => {
                     const leftSidebarContent = (
@@ -375,10 +375,10 @@ const ReaderViewContent = React.memo(({
                     )
                 })()}
 
-                <div ref={scrollAreaRef} className="flex-grow flex flex-col min-h-0 relative bg-transparent">
+                <div ref={scrollAreaRef} className="flex-grow flex flex-col min-h-0 relative">
                     <ScrollArea
                         data-scheme="primary"
-                        className="flex-grow relative bg-transparent"
+                        className="flex-grow relative"
                         style={backgroundImage && backgroundImage !== 'none' ? {
                             backgroundImage: `url(${backgroundImage === 'james' ? 'https://res.cloudinary.com/dmukukwp6/image/upload/v1738943658/James_H_5cb4c53d9a.png' : 'https://res.cloudinary.com/dmukukwp6/image/upload/Frame_10127_b7362fd913.png'})`,
                             backgroundRepeat: backgroundImage === 'james' ? 'repeat' : 'no-repeat',

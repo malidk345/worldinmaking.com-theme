@@ -124,7 +124,7 @@ export default function FooterBar({
     }, [appWindow?.key])
 
     const content = (
-        <div data-scheme="tertiary" className={`flex w-full items-center px-1.5 py-0.5 select-none gap-2 justify-between ${footerTarget ? 'bg-transparent' : 'bg-primary border-t border-primary'}`}>
+        <div data-scheme="tertiary" className={`flex w-full items-center px-1.5 py-0.5 select-none gap-2 justify-between ${footerTarget ? 'bg-primary' : 'bg-primary border-t border-primary'}`}>
 
             {/* LEFT SECTION: Sidebar, Nav, Separator, Bookmark, Comment */}
             <div className="flex items-center gap-1 flex-shrink-0">
