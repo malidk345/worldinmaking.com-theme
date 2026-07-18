@@ -153,7 +153,7 @@ export default function Home() {
             transition={{ type: 'spring', stiffness: 380, damping: 36 }}
             className={cn(
               'fixed md:relative z-50 h-full w-[270px] shrink-0',
-              'glass-panel border-y-0 border-l-0 border-r border-border/40',
+              'bg-background/90 supports-[backdrop-filter]:backdrop-blur-[40px] border-y-0 border-l-0 border-r border-border/40',
               'flex flex-col shadow-2xl md:shadow-none',
               'sidebar-safe-area'
             )}
