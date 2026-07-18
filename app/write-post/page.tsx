@@ -13,7 +13,7 @@ export default function WritePostPage() {
     }, [])
 
     return (
-        <main className="h-[100dvh] w-screen overflow-hidden bg-background post-editor-root font-sans">
+        <main className="size-full overflow-hidden bg-background post-editor-root font-sans">
             <Home />
         </main>
     )

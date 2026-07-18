@@ -20,6 +20,7 @@ import { useTranslation } from 'hooks/useTranslation'
 import { supabase } from '../../lib/supabase'
 import { IconBrain, IconBrowser, IconCalendar, IconCheckCircle, IconDatabase, IconDocument, IconLightBulb, IconPencil, IconRocket, IconShare, IconSparkles, IconWrench } from '@posthog/icons';
 import OSButton from 'components/OSButton'
+import WritePostPage from 'app/write-post/page'
 
 import { sanitizeHtml } from '../../utils/security'
 import BlueprintsExplorer from 'components/Blueprints/BlueprintsExplorer'
@@ -158,6 +159,10 @@ function WindowRouterInner({ item }: { item: AppWindow }) {
     }
 
     // /write (New Node / Canvas Experience)
+    if (path === '/write-post') {
+        return <WritePostPage />
+    }
+
     if (path === '/write') {
         return <WriteRouteView nodeId={item.props?.nodeId as string | undefined} item={item} readOnly={Boolean(item.props?.readOnly)} />
     }
