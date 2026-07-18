@@ -43,11 +43,45 @@ export function stripMarkdown(markdown: string | null | undefined): string {
     return text;
 }
 
+export type ExcerptOptions = {
+    length?: number;
+    query?: string;
+};
+
 /**
- * Convert markdown to plain text with limit
+ * Convert markdown to plain text with limit.
+ * Optionally extracts a snippet surrounding a search query.
  */
-export function getExcerpt(markdown: string | null | undefined, length = 150): string {
-    const text = stripMarkdown(markdown);
+export function getExcerpt(markdown: string | null | undefined, optionsOrLength?: number | ExcerptOptions): string {
+    const text = stripMarkdown(markdown).replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!text) return '';
+
+    let length = 150;
+    let query = '';
+
+    if (typeof optionsOrLength === 'number') {
+        length = optionsOrLength;
+    } else if (optionsOrLength) {
+        length = optionsOrLength.length || 150;
+        query = optionsOrLength.query || '';
+    }
+
+    if (query) {
+        const lowerText = text.toLowerCase();
+        const lowerQuery = query.toLowerCase();
+        const idx = lowerText.indexOf(lowerQuery);
+
+        if (idx !== -1) {
+            const start = Math.max(0, idx - 40);
+            const end = Math.min(text.length, idx + query.length + 80);
+            let excerpt = text.slice(start, end);
+
+            if (start > 0) excerpt = '...' + excerpt;
+            if (end < text.length) excerpt = excerpt + '...';
+            return excerpt;
+        }
+    }
+
     if (text.length <= length) return text;
     return text.slice(0, length).trim() + '...';
 }
