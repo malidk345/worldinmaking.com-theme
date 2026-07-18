@@ -22,7 +22,7 @@ export type MenuItemType = {
     mobileDestination?: string | false // Mobile-specific destination URL or false to omit from mobile menu
 }
 
-export type MenuType = {
+type MenuType = {
     trigger: React.ReactNode
     bold?: boolean
     items: MenuItemType[]
