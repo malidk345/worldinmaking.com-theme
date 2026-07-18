@@ -7,7 +7,10 @@ import '../../components/editor/editor.css'
 
 export default function WritePostPage() {
     useEffect(() => {
-        document.body.classList.add('post-editor-root')
+        const isDesktop = document.querySelector('[data-app="Desktop"]') !== null
+        if (!isDesktop) {
+            document.body.classList.add('post-editor-root')
+        }
         return () => {
             document.body.classList.remove('post-editor-root')
         }
