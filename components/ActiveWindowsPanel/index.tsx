@@ -4,7 +4,7 @@ import React, { useEffect } from 'react'
 import { useApp } from '../../context/App'
 import type { AppWindow as AppWindowType } from '../../context/Window'
 import OSButton from 'components/OSButton'
-import { IconApps, IconScreen, IconTrash, IconX } from '@posthog/icons';
+import { IconScreen, IconTrash } from '@posthog/icons';
 import { motion, AnimatePresence } from 'framer-motion'
 
 const overlayVariants = {
@@ -42,9 +42,7 @@ export default function ActiveWindowsPanel() {
         windows,
         isActiveWindowsPanelOpen,
         setIsActiveWindowsPanelOpen,
-        focusedWindow,
         bringToFront,
-        closeWindow,
         closeAllWindows,
     } = useApp()
 
@@ -67,10 +65,6 @@ export default function ActiveWindowsPanel() {
         }
     }, [isActiveWindowsPanelOpen, closeActiveWindowsPanel])
 
-    const handleWindowClick = (appWindow: AppWindowType) => {
-        bringToFront(appWindow)
-        closeActiveWindowsPanel()
-    }
 
     const totalWindows = windows.length
 
@@ -123,60 +117,8 @@ export default function ActiveWindowsPanel() {
                                     }
                                 }}
                             >
-                                <AnimatePresence mode="popLayout">
-                                    {windows.map((w) => {
-                                        const isFocused = focusedWindow?.key === w.key
-                                        return (
-                                            <motion.div
-                                                key={w.key}
-                                                layout
-                                                variants={itemVariants}
-                                                className="relative group"
-                                            >
-                                                <button
-                                                    onClick={() => handleWindowClick(w)}
-                                                    className={`relative flex flex-col items-center justify-center w-[140px] h-[140px] sm:w-[160px] sm:h-[160px] p-4 rounded-[32px] transition-all duration-300 active:scale-[0.96] border shadow-[0_8px_32px_rgba(0,0,0,0.12),inset_0_1px_0_0_rgba(255,255,255,0.15)] ${
-                                                        isFocused
-                                                            ? 'bg-white/90 dark:bg-white/10 text-black dark:text-white border-black/10 dark:border-white/20 scale-105 shadow-[0_16px_48px_rgba(0,0,0,0.2),inset_0_1px_0_0_rgba(255,255,255,0.3)]'
-                                                            : 'bg-white/40 dark:bg-black/40 hover:bg-white/60 dark:hover:bg-white/10 text-black/80 dark:text-white/80 border-white/20 dark:border-white/10 hover:border-black/10 dark:hover:border-white/20'
-                                                    }`}
-                                                >
-                                                    <div className={`size-16 sm:size-20 rounded-[24px] flex items-center justify-center mb-3 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2)] ${
-                                                        isFocused ? 'bg-black/5 dark:bg-white/10' : 'bg-black/5 dark:bg-white/5'
-                                                    } ${w.minimized ? 'opacity-40 grayscale' : ''}`}>
-                                                        {w.icon ? (
-                                                            <div className="scale-150 sm:scale-[2]">
-                                                                {w.icon}
-                                                            </div>
-                                                        ) : (
-                                                            <IconApps className={`size-8 sm:size-10 ${isFocused ? 'text-black dark:text-white' : 'text-black/60 dark:text-white/60'}`} />
-                                                        )}
-                                                    </div>
+                                {/* Windows are now rendered directly on the desktop layout and scaled down */}
 
-                                                    <span className={`w-full text-center text-sm font-semibold truncate tracking-tight px-2 ${w.minimized ? 'italic opacity-60' : ''}`}>
-                                                        {w.title || 'untitled'}
-                                                    </span>
-
-                                                    {w.minimized && (
-                                                        <span className="absolute bottom-3 text-[9px] uppercase tracking-widest opacity-80 font-black px-2 py-0.5 rounded-full bg-black/10 dark:bg-white/10 text-black dark:text-white">
-                                                            min
-                                                        </span>
-                                                    )}
-                                                </button>
-
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation()
-                                                        closeWindow(w)
-                                                    }}
-                                                    className="absolute -top-3 -right-3 size-8 flex items-center justify-center bg-red-500 text-white shadow-lg rounded-full opacity-0 scale-50 group-hover:opacity-100 group-hover:scale-100 hover:bg-red-600 transition-all duration-[250ms] ease-[cubic-bezier(0.16,1,0.3,1)] z-10"
-                                                >
-                                                    <IconX className="size-4" />
-                                                </button>
-                                            </motion.div>
-                                        )
-                                    })}
-                                </AnimatePresence>
                             </div>
                         )}
 

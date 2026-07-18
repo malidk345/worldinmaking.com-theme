@@ -11,7 +11,8 @@ export default function Wrapper() {
     const {
         windows,
         constraintsRef,
-        siteSettings
+        siteSettings,
+        isActiveWindowsPanelOpen
     } = useApp()
 
     useEffect(() => {
@@ -80,10 +81,10 @@ export default function Wrapper() {
             <div ref={constraintsRef} className="flex-grow relative overflow-hidden">
                 <Desktop />
 
-                    {windows.map((item) => {
+                    {windows.map((item, idx) => {
                         return (
                             <div
-                                style={{ zIndex: item.zIndex, position: 'absolute', inset: 0, pointerEvents: 'none' }}
+                                style={{ zIndex: isActiveWindowsPanelOpen ? 10001 + idx : item.zIndex, position: 'absolute', inset: 0, pointerEvents: 'none' }}
                                 key={item.key}
                             >
                                 <AppWindow item={item} key={item.key} />
