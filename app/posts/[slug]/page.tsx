@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ArticleJsonLd } from "components/SEO/JsonLd";
 import PostPageClient from "./page-client";
+import { sanitizeHtml } from "utils/security";
 
 export const runtime = 'edge';
 
@@ -178,7 +179,7 @@ export default async function PostPage({ params }: Props) {
       <article className="sr-only">
           <h1>{title}</h1>
           <p>{description}</p>
-          <div dangerouslySetInnerHTML={{ __html: post.content || '' }} />
+          <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content || '') }} />
       </article>
     </>
   );
