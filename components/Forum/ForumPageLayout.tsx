@@ -25,24 +25,33 @@ export default function ForumPageLayout({
     const [sortBy, setSortBy] = useState<'newest' | 'activity' | 'popular'>('newest')
 
     const sortedQuestions = useMemo(() => {
-        return [...questions].sort((a, b) => {
+        // ⚡ Bolt: Pre-calculate sorting values to prevent $O(N \log N)$ repeated Date parsing during sort.
+        // O(N) map reduces expensive Date instantiations.
+        const mappedQuestions = questions.map((q) => {
+            const createdAtTime = new Date(q.createdAt).getTime()
+            const latestActivityTime = q.replies.length > 0
+                ? new Date(q.replies[q.replies.length - 1].createdAt).getTime()
+                : createdAtTime
+            const totalVotes = q.replies.reduce((sum, r) => sum + r.upvotes, 0)
+
+            return {
+                question: q,
+                createdAtTime,
+                latestActivityTime,
+                totalVotes
+            }
+        })
+
+        return mappedQuestions.sort((a, b) => {
             if (sortBy === 'newest') {
-                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                return b.createdAtTime - a.createdAtTime
             }
             if (sortBy === 'activity') {
-                const aLatest = a.replies.length > 0
-                    ? new Date(a.replies[a.replies.length - 1].createdAt).getTime()
-                    : new Date(a.createdAt).getTime()
-                const bLatest = b.replies.length > 0
-                    ? new Date(b.replies[b.replies.length - 1].createdAt).getTime()
-                    : new Date(b.createdAt).getTime()
-                return bLatest - aLatest
+                return b.latestActivityTime - a.latestActivityTime
             }
             // popular
-            const aVotes = a.replies.reduce((sum, r) => sum + r.upvotes, 0)
-            const bVotes = b.replies.reduce((sum, r) => sum + r.upvotes, 0)
-            return bVotes - aVotes
-        })
+            return b.totalVotes - a.totalVotes
+        }).map(m => m.question)
     }, [questions, sortBy])
 
     return (
