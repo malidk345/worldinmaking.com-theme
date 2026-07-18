@@ -106,7 +106,7 @@ const OSButton = React.memo(React.forwardRef<HTMLButtonElement | HTMLAnchorEleme
         }
 
         const buttonElement = asLink ? (
-            <Link to={to || ''} className={commonClasses} state={state} ref={ref as React.Ref<HTMLAnchorElement>} {...(elementProps as React.AnchorHTMLAttributes<HTMLAnchorElement>)}>
+            <Link to={to || ''} className={commonClasses} state={state} ref={ref as React.Ref<HTMLAnchorElement>} {...(elementProps as Record<string, unknown>)}>
                 {buttonContent}
             </Link>
         ) : (
