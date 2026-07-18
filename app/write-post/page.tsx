@@ -2,6 +2,7 @@
 
 import React, { useEffect } from 'react'
 import Home from 'components/craft-editor/src/pages/home'
+import { ThemeProvider } from 'components/craft-editor/src/components/theme-provider'
 import '../../components/editor/editor.css'
 
 export default function WritePostPage() {
@@ -13,8 +14,10 @@ export default function WritePostPage() {
     }, [])
 
     return (
-        <main className="size-full overflow-hidden bg-background post-editor-root font-sans">
-            <Home />
+        <main className="size-full overflow-hidden bg-white dark:bg-black post-editor-root font-sans">
+            <ThemeProvider defaultTheme="system" storageKey="craft-ui-theme">
+                <Home />
+            </ThemeProvider>
         </main>
     )
 }
