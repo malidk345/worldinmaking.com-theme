@@ -57,7 +57,7 @@ const OSButton = React.memo(React.forwardRef<HTMLButtonElement | HTMLAnchorEleme
         ref
     ) => {
         const baseClasses =
-            'relative items-center justify-center font-bold tracking-tight rounded-full transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.98] active:translate-y-0'
+            'relative items-center justify-center font-bold tracking-tight rounded-full transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.98] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20'
 
         const sizeClasses = {
             xs: 'px-2.5 py-1.5 text-[11px] gap-1',
@@ -98,8 +98,15 @@ const OSButton = React.memo(React.forwardRef<HTMLButtonElement | HTMLAnchorEleme
 
         const commonClasses = `${baseClasses} ${width === 'full' ? 'flex w-full' : 'inline-flex'} ${!isLinkVariant ? sizeClasses[size] : ''} ${variantClasses[variant as keyof typeof variantClasses]} ${align === 'center' ? 'text-center' : 'text-left'} ${className}`
 
+        // Automatically derive aria-label from tooltip if it's a string and not already provided
+        const ariaLabel = props['aria-label'] || (typeof tooltip === 'string' ? tooltip : undefined)
+        const elementProps = {
+            ...props,
+            'aria-label': ariaLabel,
+        }
+
         const buttonElement = asLink ? (
-            <Link to={to || ''} className={commonClasses} state={state} ref={ref as React.Ref<HTMLAnchorElement>}>
+            <Link to={to || ''} className={commonClasses} state={state} ref={ref as React.Ref<HTMLAnchorElement>} {...(elementProps as Record<string, unknown>)}>
                 {buttonContent}
             </Link>
         ) : (
@@ -109,7 +116,7 @@ const OSButton = React.memo(React.forwardRef<HTMLButtonElement | HTMLAnchorEleme
                 onClick={onClick}
                 disabled={disabled}
                 ref={ref as React.Ref<HTMLButtonElement>}
-                {...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)}
+                {...(elementProps as React.ButtonHTMLAttributes<HTMLButtonElement>)}
             >
                 {buttonContent}
             </button>
