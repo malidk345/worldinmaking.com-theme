@@ -185,22 +185,3 @@ export const getPostBySlug = async (slug: string): Promise<Post | null> => {
     }
 };
 
-export const getPostById = async (id: string): Promise<Post | null> => {
-    try {
-        const { data, error } = await supabase
-            .from('posts')
-            .select('*')
-            .eq('id', id)
-            .single();
-
-        if (error) {
-            logger.error('[getPostById] Error:', error);
-            return null;
-        }
-
-        return adaptPost(data as unknown as DBPost);
-    } catch (e) {
-        logger.error('[getPostById] Exception:', e);
-        return null;
-    }
-};
