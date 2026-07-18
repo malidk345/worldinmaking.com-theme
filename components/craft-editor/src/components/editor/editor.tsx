@@ -238,7 +238,7 @@ export function Editor({ document, onChange, sidebarOpen, settings, focusMode, o
         focusMode && 'opacity-0 h-0 border-none overflow-hidden',
         !sidebarOpen && !focusMode ? 'pl-16' : ''
       )}>
-
+        <div className="flex-1" />
 
         {/* Publish button */}
         <button
