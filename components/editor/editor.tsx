@@ -239,28 +239,29 @@ export function Editor({ document, onChange, sidebarOpen, settings, focusMode, o
         !sidebarOpen && !focusMode ? 'pl-16' : ''
       )}>
         <div className="flex-1" />
-
-        {/* Publish button */}
-        <button
-          type="button"
-          onClick={() => setShowPublishPanel(v => !v)}
-          className={cn(
-            'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 shrink-0',
-            showPublishPanel
-              ? 'bg-foreground text-background'
-              : isPublished
-                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/25'
-                : 'bg-foreground/8 dark:bg-white/10 text-foreground/70 hover:text-foreground hover:bg-foreground/12'
-          )}
-        >
-          {isPublished ? <CheckCircle2 size={12} /> : <Globe size={12} />}
-          {isPublished ? 'Published' : 'Publish'}
-        </button>
       </div>
 
       {/* Canvas */}
       <div className="flex-1 overflow-y-auto custom-scrollbar">
-        <div className={cn('group/canvas mx-auto pt-10 pb-40 px-6 md:px-10 transition-all duration-300', WIDTH_MAP[settings.contentWidth])}>
+        <div className={cn('group/canvas mx-auto pt-10 pb-40 px-6 md:px-10 transition-all duration-300 relative', WIDTH_MAP[settings.contentWidth])}>
+          {/* Publish button in canvas - positioned on left as requested */}
+          <div className="absolute top-10 -left-6 md:-left-32 z-10 transition-all duration-300">
+            <button
+              type="button"
+              onClick={() => setShowPublishPanel(v => !v)}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 shrink-0 shadow-sm',
+                showPublishPanel
+                  ? 'bg-foreground text-background'
+                  : isPublished
+                    ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/25'
+                    : 'bg-foreground/8 dark:bg-white/10 text-foreground/70 hover:text-foreground hover:bg-foreground/12'
+              )}
+            >
+              {isPublished ? <CheckCircle2 size={12} /> : <Globe size={12} />}
+              {isPublished ? 'Published' : 'Publish'}
+            </button>
+          </div>
 
           {/* Cover image */}
           {document.coverImage ? (
