@@ -238,12 +238,7 @@ export function Editor({ document, onChange, sidebarOpen, settings, focusMode, o
         focusMode && 'opacity-0 h-0 border-none overflow-hidden',
         !sidebarOpen && !focusMode ? 'pl-16' : ''
       )}>
-        <input
-          type="text" value={document.title}
-          onChange={e => { setIsSaved(false); onChange({ title: e.target.value }); if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current); saveTimeoutRef.current = setTimeout(() => setIsSaved(true), 800); }}
-          className="flex-1 text-sm font-semibold bg-transparent outline-none border-none placeholder:text-muted-foreground/30 text-foreground"
-          placeholder="Untitled" data-testid="input-document-title"
-        />
+
 
         {/* Publish button */}
         <button

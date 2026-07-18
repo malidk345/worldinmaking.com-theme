@@ -133,7 +133,12 @@ export default function Desktop() {
             displayLabel: t('menu.create_post'),
             Icon: <AppIcon name="typewriter" />,
             url: '/write-post',
-            onClick: () => window.open('/write-post', '_blank')
+            onClick: () => addWindow({
+                    key: 'write-post',
+                    path: '/write-post',
+                    title: t('menu.create_post'),
+                    size: { width: 1000, height: 700 }
+                })
         })
 
         return baseApps
