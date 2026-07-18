@@ -93,15 +93,13 @@ export const useCommunity = () => {
 
         try {
             // First try fetching from the stats view (ideal for new vote system)
-            const response = await (async () => {
-                let q = supabase.from('community_posts_with_stats').select('*, profiles(id, username, avatar_url)')
-                if (postId) q = q.eq('id', Number(postId))
-                else if (slug) q = q.or(`post_slug.eq.${slug},title.ilike.comment_${slug}_%`)
-                else if (channelId) {
-                    q = q.eq('channel_id', channelId).is('post_slug', null).not('title', 'ilike', 'comment_%')
-                }
-                return q.order('created_at', { ascending: false });
-            })();
+            const q = supabase.from('community_posts_with_stats').select('*, profiles(id, username, avatar_url)')
+            if (postId) q.eq('id', Number(postId))
+            else if (slug) q.or(`post_slug.eq.${slug},title.ilike.comment_${slug}_%`)
+            else if (channelId) {
+                q.eq('channel_id', channelId).is('post_slug', null).not('title', 'ilike', 'comment_%')
+            }
+            const response = await q.order('created_at', { ascending: false });
             
             let data = response.data;
             const error = response.error;
@@ -109,11 +107,11 @@ export const useCommunity = () => {
             // Fallback to direct table if view doesn't exist yet
             if (error) {
                 logger.warn('[useCommunity] Stats view not found, falling back to direct table:', error.message);
-                let q = supabase.from('community_posts').select('*, profiles(id, username, avatar_url), community_replies(count), community_likes(count)')
-                if (postId) q = q.eq('id', Number(postId))
-                else if (slug) q = q.or(`post_slug.eq.${slug},title.ilike.comment_${slug}_%`)
+                const q = supabase.from('community_posts').select('*, profiles(id, username, avatar_url), community_replies(count), community_likes(count)')
+                if (postId) q.eq('id', Number(postId))
+                else if (slug) q.or(`post_slug.eq.${slug},title.ilike.comment_${slug}_%`)
                 else if (channelId) {
-                    q = q.eq('channel_id', channelId).is('post_slug', null).not('title', 'ilike', 'comment_%')
+                    q.eq('channel_id', channelId).is('post_slug', null).not('title', 'ilike', 'comment_%')
                 }
                 const fallback = await q.order('created_at', { ascending: false });
                 if (fallback.error) throw fallback.error;
