@@ -304,7 +304,7 @@ const ReaderViewContent = React.memo(({
     }
 
     return (
-        <div data-scheme="primary" className={`w-full h-full flex flex-col bg-transparent text-primary overflow-hidden ${className}`}>
+        <div data-scheme="primary" className={`w-full h-full flex flex-col bg-white dark:bg-[#151515] text-primary overflow-hidden ${className}`}>
             <div data-scheme="secondary" className="bg-transparent flex w-full flex-grow min-h-0 relative">
                 {/* LEFT SIDEBAR CONTENT DEFINITION */}
                 {(() => {
