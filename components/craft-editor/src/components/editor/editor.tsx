@@ -234,33 +234,28 @@ export function Editor({ document, onChange, sidebarOpen, settings, focusMode, o
 
       {/* Header */}
       <div className={cn(
-        'flex-none h-12 border-b border-border/20 flex items-center px-5 gap-3 bg-background/50 backdrop-blur-sm transition-all duration-300',
+        'flex-none h-12 flex items-center px-5 gap-3 bg-background transition-all duration-300',
         focusMode && 'opacity-0 h-0 border-none overflow-hidden',
         !sidebarOpen && !focusMode ? 'pl-16' : ''
       )}>
-        <input
-          type="text" value={document.title}
-          onChange={e => { setIsSaved(false); onChange({ title: e.target.value }); if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current); saveTimeoutRef.current = setTimeout(() => setIsSaved(true), 800); }}
-          className="flex-1 text-sm font-semibold bg-transparent outline-none border-none placeholder:text-muted-foreground/30 text-foreground"
-          placeholder="Untitled" data-testid="input-document-title"
-        />
-
-        {/* Publish button */}
+        {/* Publish button - moved to left, added frame/border */}
         <button
           type="button"
           onClick={() => setShowPublishPanel(v => !v)}
           className={cn(
-            'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 shrink-0',
+            'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 shrink-0 border',
             showPublishPanel
-              ? 'bg-foreground text-background'
+              ? 'bg-foreground text-background border-transparent'
               : isPublished
-                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/25'
-                : 'bg-foreground/8 dark:bg-white/10 text-foreground/70 hover:text-foreground hover:bg-foreground/12'
+                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20'
+                : 'bg-background border-border/40 text-foreground/70 hover:text-foreground hover:bg-muted/50'
           )}
         >
           {isPublished ? <CheckCircle2 size={12} /> : <Globe size={12} />}
           {isPublished ? 'Published' : 'Publish'}
         </button>
+
+        {/* The document title is removed here as per user request to have one title */}
       </div>
 
       {/* Canvas */}
