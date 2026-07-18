@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 import OSButton from 'components/OSButton'
@@ -126,6 +126,20 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
     const [editingCommentTitle, setEditingCommentTitle] = useState('')
     const [expandedPostId, setExpandedPostId] = useState<number | null>(null)
     const [commentSearchQuery, setCommentSearchQuery] = useState('')
+
+    // Precompute grouped community replies for O(1) lookup
+    const groupedCommunityReplies = useMemo(() => {
+        const grouped: Record<number, typeof communityReplies> = {}
+        for (const reply of communityReplies) {
+            if (reply.post_id) {
+                if (!grouped[reply.post_id]) {
+                    grouped[reply.post_id] = []
+                }
+                grouped[reply.post_id].push(reply)
+            }
+        }
+        return grouped
+    }, [communityReplies])
 
     // Fetch initial overview data
     useEffect(() => {
@@ -874,7 +888,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                 ) : (
                                     filteredCommunityPosts.map(cp => {
                                         const isEditing = editingCommentId === cp.id && commentFilter === 'posts'
-                                        const postReplies = communityReplies.filter(r => r.post_id === cp.id)
+                                        const postReplies = groupedCommunityReplies[cp.id] || []
                                         const isExpanded = expandedPostId === cp.id
 
                                         return (
