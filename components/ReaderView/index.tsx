@@ -463,7 +463,7 @@ const ReaderViewContent = React.memo(({
 
                             <div className="reader-content-container overflow-x-hidden" onClick={handleContentClick}>
                                 <div
-                                    className={`@container [&>*:not(.OSTable):not(.Table)]:mx-auto [&>*:not(.OSTable):not(.Table)]:transition-all [&>span:not(.OSTable):not(.Table)]:block ${proseSize === 'lg'
+                                    className={`@container mx-auto mt-8 p-6 md:p-10 rounded-[24px] bg-white/80 dark:bg-[#1C1C1E]/80 supports-[backdrop-filter]:backdrop-blur-[20px] border border-black/5 dark:border-white/5 shadow-[0_4px_16px_rgba(0,0,0,0.02)]  [&>*:not(.OSTable):not(.Table)]:mx-auto [&>*:not(.OSTable):not(.Table)]:transition-all [&>span:not(.OSTable):not(.Table)]:block ${proseSize === 'lg'
                                         ? '[&>*:not(.OSTable):not(.Table)]:max-w-full'
                                         : '[&>*:not(.OSTable):not(.Table)]:max-w-2xl'
                                         }`}
