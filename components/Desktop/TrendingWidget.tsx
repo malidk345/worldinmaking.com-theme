@@ -150,16 +150,28 @@ export default function TrendingWidget() {
                     </span>
                     <div className="flex items-center gap-2">
                         <IconRefresh
-                            className={`w-3 h-3 opacity-60 cursor-pointer hover:opacity-100 mr-1 ${loading ? 'animate-spin' : ''}`}
+                            role="button"
+                            aria-label="Refresh top posts"
+                            tabIndex={0}
+                            className={`w-3 h-3 opacity-60 cursor-pointer hover:opacity-100 mr-1 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20 ${loading ? 'animate-spin' : ''}`}
                             onClick={fetchTopPosts}
+                            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && fetchTopPosts()}
                         />
                         <IconChevronLeft
-                            className={`w-3.5 h-3.5 cursor-pointer hover:opacity-100 ${currentPage === 0 ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
+                            role="button"
+                            aria-label="Previous page"
+                            tabIndex={currentPage === 0 ? -1 : 0}
+                            className={`w-3.5 h-3.5 cursor-pointer hover:opacity-100 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20 ${currentPage === 0 ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
                             onClick={() => setCurrentPage(0)}
+                            onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && currentPage !== 0) setCurrentPage(0) }}
                         />
                         <IconChevronRight
-                            className={`w-3.5 h-3.5 cursor-pointer hover:opacity-100 ${currentPage >= totalPages - 1 ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
+                            role="button"
+                            aria-label="Next page"
+                            tabIndex={currentPage >= totalPages - 1 ? -1 : 0}
+                            className={`w-3.5 h-3.5 cursor-pointer hover:opacity-100 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20 ${currentPage >= totalPages - 1 ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
                             onClick={() => setCurrentPage(prev => prev + 1)}
+                            onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && currentPage < totalPages - 1) setCurrentPage(prev => prev + 1) }}
                         />
                     </div>
                 </div>
@@ -209,8 +221,11 @@ export default function TrendingWidget() {
                 {currentPosts.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage).map((post) => (
                     <div
                         key={`${post.type}-${post.id}`}
+                        role={activeTab !== 'updates' ? 'button' : undefined}
+                        tabIndex={activeTab !== 'updates' ? 0 : undefined}
                         onClick={() => activeTab !== 'updates' && handleOpen(post)}
-                        className={`group flex items-center px-3 py-2 border border-transparent transition-all duration-200 rounded-[14px] ${
+                        onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && activeTab !== 'updates') handleOpen(post) }}
+                        className={`group flex items-center px-3 py-2 border border-transparent transition-all duration-200 rounded-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20 ${
                             activeTab === 'updates'
                                 ? 'cursor-default'
                                 : 'cursor-pointer hover:bg-black/5 dark:hover:bg-white/10 hover:border-black/5 dark:hover:border-white/5'
