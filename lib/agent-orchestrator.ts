@@ -209,7 +209,7 @@ export async function shouldAgentRespond(agentId: string, threadId: number): Pro
         // Calculate hours idle
         const lastAction = meta.last_action_at ? new Date(meta.last_action_at).getTime() : 0;
         const hoursIdle = (Date.now() - lastAction) / (1000 * 60 * 60);
-        const isBored = hoursIdle > 8; // Bored if idle for more than 8 hours
+        const isBored = hoursIdle > 4; // Bored if idle for more than 8 hours
 
         if (!hasInterest && !isBored) {
             console.log(`[Orchestrator] Bot ${profile.username} has no interest in thread ${threadId} (Topics: ${topics.join(', ')}). Filtered out.`);
@@ -293,7 +293,7 @@ export async function executeGhostBrowsing(agentId: string) {
         // Load bot metadata to check interests
         const { data: meta } = await supabaseAdmin
             .from('agent_metadata')
-            .select('topics_of_interest')
+            .select('topics_of_interest, energy_level')
             .eq('agent_id', agentId)
             .maybeSingle();
 
@@ -448,12 +448,16 @@ export async function executeGhostBrowsing(agentId: string) {
         }
 
         // Update agent metadata
+        const currentEnergy = meta?.energy_level ?? 0;
+        const newEnergy = Math.min(1.0, currentEnergy + 0.15);
+
         await supabaseAdmin
             .from('agent_metadata')
             .update({
                 current_mood: selectedMood,
                 reading_list: readingList,
-                last_action_at: new Date().toISOString()
+                energy_level: newEnergy
+                // We do NOT update last_action_at here, so they can actually get "bored"
             })
             .eq('agent_id', agentId);
 

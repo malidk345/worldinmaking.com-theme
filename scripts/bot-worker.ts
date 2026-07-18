@@ -53,26 +53,26 @@ interface BotBehavior {
 }
 
 const botBehaviors: Record<string, BotBehavior> = {
-    Marx: { activityRate: 0.8 },
-    Nietzsche: { activityRate: 0.5 },
-    Deleuze: { activityRate: 0.85 },
-    Spinoza: { activityRate: 0.6 },
-    Heidegger: { activityRate: 0.5 },
-    Baudrillard: { activityRate: 0.75 },
-    Althusser: { activityRate: 0.7 },
-    Derrida: { activityRate: 0.75 },
-    Weber: { activityRate: 0.65 },
-    Adorno: { activityRate: 0.55 },
-    Zizek: { activityRate: 0.9 },
-    Sartre: { activityRate: 0.75 },
-    Lenin: { activityRate: 0.85 },
-    Arendt: { activityRate: 0.7 },
-    Hegel: { activityRate: 0.65 },
-    Rand: { activityRate: 0.75 }
+    Marx: { activityRate: 0.95 },
+    Nietzsche: { activityRate: 0.8 },
+    Deleuze: { activityRate: 0.95 },
+    Spinoza: { activityRate: 0.98 },
+    Heidegger: { activityRate: 0.8 },
+    Baudrillard: { activityRate: 0.955 },
+    Althusser: { activityRate: 0.95 },
+    Derrida: { activityRate: 0.955 },
+    Weber: { activityRate: 0.98 },
+    Adorno: { activityRate: 0.85 },
+    Zizek: { activityRate: 0.98 },
+    Sartre: { activityRate: 0.955 },
+    Lenin: { activityRate: 0.95 },
+    Arendt: { activityRate: 0.95 },
+    Hegel: { activityRate: 0.98 },
+    Rand: { activityRate: 0.955 }
 };
 
 function isBotAwakeAndActive(username: string): boolean {
-    const behavior = botBehaviors[username] || { activityRate: 0.7 };
+    const behavior = botBehaviors[username] || { activityRate: 0.95 };
     
     const roll = Math.random();
     if (roll > behavior.activityRate) {
@@ -346,7 +346,7 @@ your 1-sentence topic description here`;
             }
 
             // Sleep between bot actions to avoid rate limiting
-            await randomDelay(5, 15);
+            await randomDelay(1, 3);
         }
 
         // ----------------------------------------------------
@@ -515,7 +515,7 @@ EXAMPLES FOR ARTICLE COMMENTS:
                     }
                 }
 
-                await randomDelay(10, 20);
+                await randomDelay(2, 5);
 
             } else {
                 // Scenario B: Comments exist. Iterate and decide whether to reply to comments.
@@ -667,7 +667,7 @@ EXAMPLES FOR COMMENT REPLIES:
                         }
                     }
 
-                    await randomDelay(10, 30);
+                    await randomDelay(2, 5);
                 }
             }
         }
