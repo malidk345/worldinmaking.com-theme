@@ -103,22 +103,21 @@ export const useCommunity = () => {
                 return q.order('created_at', { ascending: false });
             })();
             
-            let data = response.data;
-            const error = response.error;
-
             // Fallback to direct table if view doesn't exist yet
-            if (error) {
-                logger.warn('[useCommunity] Stats view not found, falling back to direct table:', error.message);
+            const fallbackResponse = response.error ? await (async () => {
+                logger.warn('[useCommunity] Stats view not found, falling back to direct table:', response.error.message);
                 let q = supabase.from('community_posts').select('*, profiles(id, username, avatar_url), community_replies(count), community_likes(count)')
                 if (postId) q = q.eq('id', Number(postId))
                 else if (slug) q = q.or(`post_slug.eq.${slug},title.ilike.comment_${slug}_%`)
                 else if (channelId) {
                     q = q.eq('channel_id', channelId).is('post_slug', null).not('title', 'ilike', 'comment_%')
                 }
-                const fallback = await q.order('created_at', { ascending: false });
-                if (fallback.error) throw fallback.error;
-                data = fallback.data;
-            }
+                return q.order('created_at', { ascending: false });
+            })() : null;
+
+            if (fallbackResponse?.error) throw fallbackResponse.error;
+
+            const data = fallbackResponse ? fallbackResponse.data : response.data;
 
             return ((data || []) as unknown as DBCommunityPost[]).map((p) => ({
                 ...p,
@@ -144,19 +143,16 @@ export const useCommunity = () => {
                 .eq('post_id', postId)
                 .order('created_at', { ascending: true });
             
-            let data = response.data;
-            const error = response.error;
+            // Fallback for replies if view doesn't exist
+            const fallbackResponse = response.error ? await supabase
+                .from('community_replies')
+                .select('*, profiles(id, username, avatar_url)')
+                .eq('post_id', postId)
+                .order('created_at', { ascending: true }) : null;
 
-            if (error) {
-                // Fallback for replies if view doesn't exist
-                const fallback = await supabase
-                    .from('community_replies')
-                    .select('*, profiles(id, username, avatar_url)')
-                    .eq('post_id', postId)
-                    .order('created_at', { ascending: true });
-                if (fallback.error) throw fallback.error;
-                data = fallback.data;
-            }
+            if (fallbackResponse?.error) throw fallbackResponse.error;
+
+            const data = fallbackResponse ? fallbackResponse.data : response.data;
 
             return ((data || []) as unknown as DBCommunityReply[]).map((r) => ({
                 ...r,
