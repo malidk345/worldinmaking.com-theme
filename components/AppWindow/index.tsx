@@ -60,7 +60,10 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
         constraintsRef,
         siteSettings,
         closeWindow,
-        taskbarRef
+        taskbarRef,
+        windows,
+        isActiveWindowsPanelOpen,
+        setIsActiveWindowsPanelOpen
     } = useApp()
 
     const controls = useDragControls()
@@ -109,6 +112,46 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
             y: Math.max(0, Math.min(item.position.y, maxY))
         }
     }, [item.position, item.size, size, bounds])
+
+    const activePanelIndex = useMemo(() => windows.findIndex(w => w.key === item.key), [windows, item.key]);
+    const totalWindows = windows.length;
+
+    const missionControlLayout = useMemo(() => {
+        if (!isActiveWindowsPanelOpen || activePanelIndex === -1 || typeof window === 'undefined') return null;
+
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+        const padding = 80; // edge padding
+
+        const availableW = screenWidth - padding * 2;
+        const availableH = screenHeight - padding * 2 - 80; // minus taskbar and extra space
+
+        const cols = Math.ceil(Math.sqrt(totalWindows));
+        const rows = Math.ceil(totalWindows / cols);
+
+        const cellW = availableW / cols;
+        const cellH = availableH / rows;
+
+        const col = activePanelIndex % cols;
+        const row = Math.floor(activePanelIndex / cols);
+
+        const cx = padding + col * cellW + cellW / 2;
+        const cy = padding + row * cellH + cellH / 2;
+
+        const maxW = cellW * 0.85;
+        const maxH = cellH * 0.85;
+
+        const scaleX = maxW / size.width;
+        const scaleY = maxH / size.height;
+        let scale = Math.min(scaleX, scaleY, 0.45);
+        if (scale < 0.1) scale = 0.1;
+
+        const targetX = cx - size.width / 2;
+        const targetY = cy - size.height / 2;
+
+        return { x: targetX, y: targetY, scale };
+    }, [isActiveWindowsPanelOpen, activePanelIndex, totalWindows, size.width, size.height]);
+
     const [snapIndicator, setSnapIndicator] = useState<'left' | 'right' | null>(null)
     const windowRef = useRef<HTMLDivElement>(null)
     const [rendered, setRendered] = useState(false)
@@ -438,7 +481,13 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             data-scheme="tertiary"
                             className={`group @container absolute !select-auto flex flex-col ${getWindowSurfaceBg(siteSettings.heaterMode)} ${getSurfaceMotionLayer(siteSettings.heaterMode, isCompositorActive)} ${isMaximized ? 'shadow-none' : (isFocused ? 'premium-shadow-active border-black/5 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/10' : 'premium-shadow-inactive border-black/10 dark:border-white/10')
                                 } ${dragging ? '[&_*]:select-none' : ''} ${item.minimal ? '!shadow-none' : (isMaximized ? 'rounded-t-none rounded-b-lg border border-t-0 border-black/10 dark:border-white/10' : 'border rounded-lg border-black/10 dark:border-white/10')} ${chrome ? 'overflow-hidden' : ''}`}
-                            style={{ pointerEvents: 'auto', rotateX: tiltX, rotateY: tiltY, transformPerspective: 1200 }}
+                            style={{
+                                pointerEvents: 'auto',
+                                rotateX: isActiveWindowsPanelOpen ? 0 : tiltX,
+                                rotateY: isActiveWindowsPanelOpen ? 0 : tiltY,
+                                transformPerspective: 1200,
+                                zIndex: isActiveWindowsPanelOpen ? 10001 + activePanelIndex : undefined
+                            }}
                             initial={{
                                 scale: 0.08,
                                 x: item.fromOrigin?.x || windowPosition.x,
@@ -448,9 +497,9 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             }}
                             onUpdate={(latest) => { if (latest.x !== undefined) motionX.set(latest.x as number); if (latest.y !== undefined) motionY.set(latest.y as number); }}
                             animate={{
-                                scale: 1,
-                                x: Math.round(resizing ? localPos.x : position.x),
-                                y: Math.round(resizing ? localPos.y : position.y),
+                                scale: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.scale : 1,
+                                x: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.x : Math.round(resizing ? localPos.x : position.x),
+                                y: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.y : Math.round(resizing ? localPos.y : position.y),
                                 width: resizing ? localSize.width : size.width,
                                 height: resizing ? localSize.height : size.height,
                             }}
@@ -509,7 +558,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                 }
                             }
                             onPointerDownCapture={handleMouseDown}
-                            drag={!item.fixedSize}
+                            drag={isActiveWindowsPanelOpen ? false : !item.fixedSize}
                             dragControls={controls}
                             dragListener={false}
                             dragMomentum={false}
@@ -789,6 +838,44 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                         </div>
                                     </motion.div>
                                 </>
+                            )}
+
+                            {isActiveWindowsPanelOpen && missionControlLayout && (
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    className="absolute inset-0 z-[99999] cursor-pointer group/mission rounded-lg flex items-center justify-center bg-black/10 dark:bg-black/40 hover:bg-black/0 dark:hover:bg-white/5 transition-colors"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        bringToFront(item);
+                                        setIsActiveWindowsPanelOpen(false);
+                                    }}
+                                >
+                                    <div className="absolute inset-0 border-[4px] border-transparent group-hover/mission:border-white/20 dark:group-hover/mission:border-white/20 rounded-lg pointer-events-none transition-colors" />
+                                    <div
+                                        className="absolute -top-12 -right-12 z-10"
+                                        style={{ transform: `scale(${1 / missionControlLayout.scale})` }}
+                                    >
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                closeWindow(item);
+                                            }}
+                                            className="size-12 flex items-center justify-center bg-red-500 text-white shadow-xl rounded-full opacity-0 scale-50 group-hover/mission:opacity-100 group-hover/mission:scale-100 hover:bg-red-600 transition-all duration-[250ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
+                                        >
+                                            <IconX className="size-6" />
+                                        </button>
+                                    </div>
+                                    {item.title && (
+                                        <div
+                                            className="absolute -bottom-20 left-1/2 -translate-x-1/2 px-6 py-3 bg-black/60 dark:bg-black/80 backdrop-blur-md rounded-full text-white font-semibold shadow-lg pointer-events-none whitespace-nowrap opacity-0 group-hover/mission:opacity-100 transition-opacity"
+                                            style={{ transform: `translateX(-50%) scale(${1 / missionControlLayout.scale})` }}
+                                        >
+                                            {item.title}
+                                        </div>
+                                    )}
+                                </motion.div>
                             )}
                         </motion.div>
                     </>
