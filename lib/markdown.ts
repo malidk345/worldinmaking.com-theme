@@ -10,10 +10,10 @@ export function stripMarkdown(markdown: string | null | undefined): string {
         // Remove bold/italic
         .replace(/(\*\*|__)(.*?)\1/g, '$2')
         .replace(/(\*|_)(.*?)\1/g, '$2')
-        // Remove links
-        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
         // Remove images
         .replace(/!\[([^\]]*)\]\([^)]+\)/g, '')
+        // Remove links
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
         // Remove blockquotes
         .replace(/^>\s+/gm, '')
         // Remove code blocks
