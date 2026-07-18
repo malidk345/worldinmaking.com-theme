@@ -4,6 +4,17 @@ import PostPageClient from "./page-client";
 
 export const runtime = 'edge';
 
+function sanitizeString(input: string | null | undefined): string {
+    if (typeof input !== 'string') return '';
+    return input
+        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+        .replace(/<(object|embed|base|link|meta|style)\b[^<]*(?:(?!<\/\1>)<[^<]*)*<\/\1>/gi, '')
+        .replace(/<(script|object|embed|base|link|meta|style)\b[^>]*>/gi, '')
+        .replace(/\s+on\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]*)/gi, ' ')
+        .replace(/(javascript|vbscript|data):/gi, (match) => `_target_${match}`)
+        .trim();
+}
+
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://worldinmaking.com";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
@@ -178,7 +189,7 @@ export default async function PostPage({ params }: Props) {
       <article className="sr-only">
           <h1>{title}</h1>
           <p>{description}</p>
-          <div dangerouslySetInnerHTML={{ __html: post.content || '' }} />
+          <div dangerouslySetInnerHTML={{ __html: sanitizeString(post.content || '') }} />
       </article>
     </>
   );
