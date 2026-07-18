@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ArticleJsonLd } from "components/SEO/JsonLd";
 import PostPageClient from "./page-client";
+import { getExcerpt } from "../../../lib/markdown";
 
 export const runtime = 'edge';
 
@@ -66,22 +67,6 @@ async function getPost(slug: string) {
   }
 }
 
-function stripHtml(htmlStr: string): string {
-  return htmlStr.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
-}
-
-interface Post {
-  title?: string;
-  excerpt?: string;
-  content?: string;
-}
-
-function getExcerpt(post: Post): string {
-  if (post.excerpt) return stripHtml(post.excerpt).slice(0, 160);
-  if (post.content) return stripHtml(post.content).slice(0, 160) + "...";
-  return "Read this article on World in Making.";
-}
-
 type Props = {
   params: Promise<{ slug: string }>;
 };
@@ -98,7 +83,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const title = post.title || slug;
-  const description = getExcerpt(post);
+  const description = getExcerpt(post.excerpt || post.content, 160) || "Read this article on World in Making.";
   const postUrl = `${siteUrl}/posts/${slug}/`;
   const imageUrl = post.image_url || undefined;
   const keywords = post.tags ? (Array.isArray(post.tags) ? post.tags : post.tags.split(",")) : [];
@@ -160,7 +145,7 @@ export default async function PostPage({ params }: Props) {
   }
 
   const title = post.title || slug;
-  const description = getExcerpt(post);
+  const description = getExcerpt(post.excerpt || post.content, 160) || "Read this article on World in Making.";
   const postUrl = `${siteUrl}/posts/${slug}/`;
   const authorName = post.author || "World in Making";
   const keywords = post.tags ? (Array.isArray(post.tags) ? post.tags : post.tags.split(",")) : [];
