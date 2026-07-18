@@ -150,16 +150,30 @@ export default function TrendingWidget() {
                     </span>
                     <div className="flex items-center gap-2">
                         <IconRefresh
-                            className={`w-3 h-3 opacity-60 cursor-pointer hover:opacity-100 mr-1 ${loading ? 'animate-spin' : ''}`}
+                            className={`w-3 h-3 opacity-60 cursor-pointer hover:opacity-100 mr-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-sm ${loading ? 'animate-spin' : ''}`}
                             onClick={fetchTopPosts}
+                            role="button"
+                            aria-label="Refresh top posts"
+                            tabIndex={0}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fetchTopPosts(); } }}
                         />
                         <IconChevronLeft
-                            className={`w-3.5 h-3.5 cursor-pointer hover:opacity-100 ${currentPage === 0 ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
+                            className={`w-3.5 h-3.5 cursor-pointer hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-sm ${currentPage === 0 ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
                             onClick={() => setCurrentPage(0)}
+                            role="button"
+                            aria-label="Previous page"
+                            tabIndex={currentPage === 0 ? -1 : 0}
+                            aria-disabled={currentPage === 0}
+                            onKeyDown={(e) => { if (currentPage !== 0 && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setCurrentPage(0); } }}
                         />
                         <IconChevronRight
-                            className={`w-3.5 h-3.5 cursor-pointer hover:opacity-100 ${currentPage >= totalPages - 1 ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
+                            className={`w-3.5 h-3.5 cursor-pointer hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-sm ${currentPage >= totalPages - 1 ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
                             onClick={() => setCurrentPage(prev => prev + 1)}
+                            role="button"
+                            aria-label="Next page"
+                            tabIndex={currentPage >= totalPages - 1 ? -1 : 0}
+                            aria-disabled={currentPage >= totalPages - 1}
+                            onKeyDown={(e) => { if (currentPage < totalPages - 1 && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setCurrentPage(prev => prev + 1); } }}
                         />
                     </div>
                 </div>
