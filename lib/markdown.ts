@@ -42,12 +42,3 @@ export function stripMarkdown(markdown: string | null | undefined): string {
 
     return text;
 }
-
-/**
- * Convert markdown to plain text with limit
- */
-export function getExcerpt(markdown: string | null | undefined, length = 150): string {
-    const text = stripMarkdown(markdown);
-    if (text.length <= length) return text;
-    return text.slice(0, length).trim() + '...';
-}
