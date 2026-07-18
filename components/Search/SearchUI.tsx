@@ -7,6 +7,8 @@ import { IconSearch } from '@posthog/icons'
 import { usePosts } from '../../hooks/usePosts'
 import type { Post } from '../../types/database'
 import { useTranslation } from '../../hooks/useTranslation'
+import { getExcerpt } from '../../lib/markdown'
+
 
 // Simple local search function
 function searchPosts(allPosts: Post[], query: string) {
@@ -26,17 +28,6 @@ function searchPosts(allPosts: Post[], query: string) {
     }).slice(0, 20) // Limit results
 }
 
-function getExcerpt(content: string, query: string, maxLen = 120): string {
-    const lower = content.toLowerCase()
-    const idx = lower.indexOf(query.toLowerCase())
-    if (idx === -1) return content.slice(0, maxLen).replace(/\n/g, ' ').replace(/[#*_`]/g, '') + '...'
-    const start = Math.max(0, idx - 40)
-    const end = Math.min(content.length, idx + query.length + 80)
-    let excerpt = content.slice(start, end).replace(/\n/g, ' ').replace(/[#*_`]/g, '')
-    if (start > 0) excerpt = '...' + excerpt
-    if (end < content.length) excerpt = excerpt + '...'
-    return excerpt
-}
 
 export const WindowSearchUI = ({ initialFilter }: { initialFilter?: string }) => {
     const { addWindow, updateWindow } = useApp()
@@ -132,7 +123,7 @@ export const WindowSearchUI = ({ initialFilter }: { initialFilter?: string }) =>
                                             {post.title}
                                         </h4>
                                         <p className="text-[13px] leading-snug tracking-tight text-secondary m-0 mt-1 line-clamp-2 opacity-70">
-                                            {getExcerpt(post.content, query)}
+                                            {getExcerpt(post.content, { length: 120, query })}
                                         </p>
                                         <div className="flex items-center gap-2 mt-2">
                                             {post.date && (
