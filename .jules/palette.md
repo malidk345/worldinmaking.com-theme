@@ -1,3 +1,3 @@
-## 2024-07-18 - [Add focus visible styles to OSButton]
-**Learning:** `OSButton` component lacks clear visual focus states, reducing keyboard accessibility. This app requires `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20` for standard focus rings.
-**Action:** Always ensure custom button components have proper focus rings explicitly set since default browser rings can be subtle or overridden.
+## 2024-03-24 - Accessibility improvements in TrendingWidget
+**Learning:** Raw SVG icons and div list elements frequently lack keyboard focus indicators and handlers, making them completely inaccessible to keyboard users, even if they have `onClick` events.
+**Action:** Always wrap interactive SVG icons in `<button>` tags when possible, or apply the full suite of `role="button"`, `aria-label`, `tabIndex`, and `onKeyDown` attributes when using raw SVGs or divs as buttons. Don't forget `focus-visible` styling for visual clarity.
