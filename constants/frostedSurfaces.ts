@@ -30,7 +30,8 @@ export const getWindowSurfaceBg = (heaterMode?: boolean) =>
 export const getPanelSurfaceBg = (heaterMode?: boolean) =>
     heaterMode ? HEATER_PANEL_BG : PANEL_BG
 
-export const getTaskbarSurfaceBg = () => TASKBAR_BG
+export const getTaskbarSurfaceBg = (heaterMode?: boolean) =>
+    heaterMode ? HEATER_WINDOW_BG : WINDOW_BG
 
 export const getSurfaceMotionLayer = (heaterMode?: boolean, active?: boolean) =>
     active ? (heaterMode ? HEATER_MOTION_LAYER : MOTION_LAYER) : ''
