@@ -46,6 +46,7 @@ export default function CommentSection({
         permalink: p.id.toString(),
         subject: p.title.startsWith('comment_') ? '' : p.title,
         body: p.content,
+        innerThoughts: p.inner_thoughts,
         createdAt: p.created_at,
         profile: {
             id: p.profiles?.id || 0,

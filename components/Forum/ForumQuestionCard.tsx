@@ -5,7 +5,9 @@ import ForumDays from './ForumDays'
 import ForumMarkdown from './ForumMarkdown'
 import ForumReplies from './ForumReplies'
 import ForumThoughts from './ForumThoughts'
+import ForumSourceContext from './ForumSourceContext'
 import ForumReplyForm from './ForumReplyForm'
+import { extractForumMeta } from './extractForumMeta'
 import { ForumQuestion, ForumReply } from './types'
 import Link from 'components/Link'
 import OSButton from 'components/OSButton'
@@ -37,6 +39,7 @@ export default function ForumQuestionCard({
     const [isEditing, setIsEditing] = useState(false)
     const [userVote, setUserVote] = useState(0)
     const [totalVotes, setTotalVotes] = useState(question.upvotes || 0)
+    const questionMeta = extractForumMeta(question.body)
 
     useEffect(() => {
         if (expanded || isComment) {
@@ -155,10 +158,13 @@ export default function ForumQuestionCard({
                         )}
 
                         <div className="question-content text-sm [&_p]:!my-1 [&_p]:!text-sm">
-                            {question.innerThoughts && (
-                                <ForumThoughts thoughts={question.innerThoughts} />
-                            )}
-                            <ForumMarkdown>{question.body}</ForumMarkdown>
+                            <div className="mb-1 flex flex-wrap items-start gap-2">
+                                {question.innerThoughts && (
+                                    <ForumThoughts thoughts={question.innerThoughts} />
+                                )}
+                                <ForumSourceContext sources={questionMeta.sourceContexts} />
+                            </div>
+                            <ForumMarkdown>{questionMeta.content}</ForumMarkdown>
                         </div>
 
                         <div className="flex items-center gap-2 mt-1.5">
@@ -187,10 +193,21 @@ export default function ForumQuestionCard({
                                         <ForumDays created={reply.createdAt} />
                                     </div>
                                     <div className="text-sm [&_p]:!my-0.5 [&_p]:!text-xs pl-[26px]">
-                                        {reply.innerThoughts && (
-                                            <ForumThoughts thoughts={reply.innerThoughts} />
-                                        )}
-                                        <ForumMarkdown>{reply.body}</ForumMarkdown>
+                                        {(() => {
+                                            const replyMeta = extractForumMeta(reply.body)
+
+                                            return (
+                                                <>
+                                                    <div className="mb-1 flex flex-wrap items-start gap-2">
+                                                        {reply.innerThoughts && (
+                                                            <ForumThoughts thoughts={reply.innerThoughts} />
+                                                        )}
+                                                        <ForumSourceContext sources={replyMeta.sourceContexts} />
+                                                    </div>
+                                                    <ForumMarkdown>{replyMeta.content}</ForumMarkdown>
+                                                </>
+                                            )
+                                        })()}
                                     </div>
                                 </div>
                             ))}
@@ -272,10 +289,13 @@ export default function ForumQuestionCard({
                             )}
 
                             <div className="question-content text-sm leading-relaxed">
-                                {question.innerThoughts && (
-                                    <ForumThoughts thoughts={question.innerThoughts} />
-                                )}
-                                <ForumMarkdown>{question.body}</ForumMarkdown>
+                                <div className="mb-1 flex flex-wrap items-start gap-2">
+                                    {question.innerThoughts && (
+                                        <ForumThoughts thoughts={question.innerThoughts} />
+                                    )}
+                                    <ForumSourceContext sources={questionMeta.sourceContexts} />
+                                </div>
+                                <ForumMarkdown>{questionMeta.content}</ForumMarkdown>
                             </div>
                         </div>
 

@@ -78,6 +78,48 @@ interface DBCommunityReply {
     total_votes?: number;
 }
 
+async function mergePostThoughts(posts: DBCommunityPost[]): Promise<DBCommunityPost[]> {
+    const missingIds = posts
+        .filter((post) => post.inner_thoughts === undefined)
+        .map((post) => post.id)
+
+    if (missingIds.length === 0) return posts
+
+    const { data, error } = await supabase
+        .from('community_posts')
+        .select('id, inner_thoughts')
+        .in('id', missingIds)
+
+    if (error || !data) return posts
+
+    const thoughtsById = new Map(data.map((post) => [post.id, post.inner_thoughts]))
+    return posts.map((post) => ({
+        ...post,
+        inner_thoughts: post.inner_thoughts ?? thoughtsById.get(post.id),
+    }))
+}
+
+async function mergeReplyThoughts(replies: DBCommunityReply[]): Promise<DBCommunityReply[]> {
+    const missingIds = replies
+        .filter((reply) => reply.inner_thoughts === undefined)
+        .map((reply) => reply.id)
+
+    if (missingIds.length === 0) return replies
+
+    const { data, error } = await supabase
+        .from('community_replies')
+        .select('id, inner_thoughts')
+        .in('id', missingIds)
+
+    if (error || !data) return replies
+
+    const thoughtsById = new Map(data.map((reply) => [reply.id, reply.inner_thoughts]))
+    return replies.map((reply) => ({
+        ...reply,
+        inner_thoughts: reply.inner_thoughts ?? thoughtsById.get(reply.id),
+    }))
+}
+
 export const useCommunity = () => {
     const { addToast } = useToast();
     const { mutate } = useSWRConfig();
@@ -124,7 +166,9 @@ export const useCommunity = () => {
                 return fallback.data;
             })();
 
-            return ((data || []) as unknown as DBCommunityPost[]).map((p) => ({
+            const mergedPosts = await mergePostThoughts((data || []) as unknown as DBCommunityPost[])
+
+            return mergedPosts.map((p) => ({
                 ...p,
                 profiles: Array.isArray(p.profiles) ? p.profiles[0] : p.profiles,
                 _count: {
@@ -161,7 +205,9 @@ export const useCommunity = () => {
                 return fallback.data;
             })();
 
-            return ((data || []) as unknown as DBCommunityReply[]).map((r) => ({
+            const mergedReplies = await mergeReplyThoughts((data || []) as unknown as DBCommunityReply[])
+
+            return mergedReplies.map((r) => ({
                 ...r,
                 profiles: Array.isArray(r.profiles) ? r.profiles[0] : r.profiles,
                 upvotes: r.total_votes || 0

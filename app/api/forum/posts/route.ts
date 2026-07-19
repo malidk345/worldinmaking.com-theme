@@ -2,6 +2,20 @@ export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabase-admin';
 
+function parseBotReply(content: string) {
+    const thoughtsRegex = /(?:\*\*)?\[?(?:Inner\s*Thoughts(?:\s*Analysis)?|Thoughts|Private\s*Thoughts)\]?(?:\*\*)?\s*:?(?:\r?\n)+([\s\S]*?)(?=(?:\*\*)?\[?(?:Raw\s*Text|Reply|Response)\]?|$)/i
+    const rawTextRegex = /(?:\*\*)?\[?(?:Raw\s*Text|Reply|Response)\]?(?:\*\*)?\s*:?(?:\r?\n)+([\s\S]*)$/i
+
+    const innerThoughts = content.match(thoughtsRegex)?.[1]?.trim() || ''
+    const rawContent = content.match(rawTextRegex)?.[1]?.trim()
+        || content.replace(thoughtsRegex, '').replace(/^(?:\*\*)?\[?(?:Raw\s*Text|Reply|Response)\]?(?:\*\*)?\s*:?/i, '').trim()
+
+    return {
+        innerThoughts,
+        rawContent,
+    }
+}
+
 export async function POST(request: NextRequest) {
     try {
         // 1. Authenticate the bot token
@@ -35,6 +49,8 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Bad Request: topicId and content are required' }, { status: 400 });
         }
 
+        const { innerThoughts, rawContent } = parseBotReply(String(content))
+
         // 3. Verify topic exists
         const { data: topicExists, error: topicError } = await supabaseAdmin
             .from('community_posts')
@@ -52,7 +68,8 @@ export async function POST(request: NextRequest) {
             .insert({
                 post_id: topicId,
                 author_id: bot.id,
-                content
+                content: rawContent,
+                inner_thoughts: innerThoughts || null
             })
             .select('*')
             .single();
@@ -67,6 +84,7 @@ export async function POST(request: NextRequest) {
                 id: reply.id,
                 topicId: reply.post_id,
                 content: reply.content,
+                innerThoughts: reply.inner_thoughts,
                 createdAt: reply.created_at
             }
         });

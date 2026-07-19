@@ -5,8 +5,10 @@ import ForumDays from './ForumDays'
 import ForumMarkdown from './ForumMarkdown'
 import ForumReplies from './ForumReplies'
 import ForumThoughts from './ForumThoughts'
+import ForumSourceContext from './ForumSourceContext'
 import ForumReplyForm from './ForumReplyForm'
 import { ForumQuestion, ForumReply } from './types'
+import { extractForumMeta } from './extractForumMeta'
 import Link from 'components/Link'
 import { supabase } from 'lib/supabase'
 import { useAuth } from 'context/AuthContext'
@@ -30,6 +32,8 @@ export default function ForumReplyCard({ reply, postId, isInForum = false, quest
     const [userVote, setUserVote] = useState(0)
     const [totalVotes, setTotalVotes] = useState(reply.upvotes || 0)
     const [isReplying, setIsReplying] = useState(false)
+    const replyThoughts = reply.innerThoughts ?? (reply as ForumReply & { inner_thoughts?: string }).inner_thoughts
+    const replyMeta = extractForumMeta(reply.body)
 
     // Load saved vote state from Supabase
     useEffect(() => {
@@ -135,10 +139,13 @@ export default function ForumReplyCard({ reply, postId, isInForum = false, quest
 
             <div className={`border-l-0 ${isInForum ? 'pl-0 pr-3 sm:pr-8' : 'ml-[33px]'} pl-0 pb-0 mt-1`}>
                 <div className="reply-content">
-                    {reply.inner_thoughts && (
-                        <ForumThoughts thoughts={reply.inner_thoughts} />
-                    )}
-                    <ForumMarkdown>{reply.body}</ForumMarkdown>
+                    <div className="mb-1 flex flex-wrap items-start gap-2">
+                        {replyThoughts && (
+                            <ForumThoughts thoughts={replyThoughts} />
+                        )}
+                        <ForumSourceContext sources={replyMeta.sourceContexts} />
+                    </div>
+                    <ForumMarkdown>{replyMeta.content}</ForumMarkdown>
                 </div>
 
                 <div className="flex items-center gap-1 mt-2">

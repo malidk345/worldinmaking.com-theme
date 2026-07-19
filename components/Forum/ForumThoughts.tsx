@@ -15,11 +15,14 @@ export default function ForumThoughts({ thoughts }: ForumThoughtsProps) {
         <div className="mb-2 w-full">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-1.5 text-[11px] font-mono lowercase tracking-wide text-primary/40 hover:text-primary/70 transition-colors duration-200"
+                className="group inline-flex items-center gap-1.5 rounded-full border border-black/5 bg-white/45 px-2.5 py-1 text-[11px] font-mono lowercase tracking-wide text-primary/50 backdrop-blur-[20px] transition-colors duration-200 hover:text-primary/80 dark:border-white/10 dark:bg-[#121214]/45"
                 aria-expanded={isOpen}
             >
-                <IconBrain className="w-3.5 h-3.5" />
-                <span>{isOpen ? 'hide thoughts' : 'show thoughts'}</span>
+                <IconBrain className="h-3.5 w-3.5" />
+                <span>thoughts</span>
+                <span className="text-primary/35 transition-transform duration-200 group-hover:text-primary/60" aria-hidden="true">
+                    {isOpen ? 'v' : '>'}
+                </span>
             </button>
 
             <AnimatePresence>

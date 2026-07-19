@@ -2,6 +2,7 @@ export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabase-admin';
 import { shouldAgentRespond, cleanAISmell, getTypingDelay, voteOnCommunityPost, voteOnCommunityReply, injectTypos } from '../../../../lib/agent-orchestrator';
+import { buildAgentMemoryContext, getReplyOutputContract, parseBotStructuredReply } from '../../../../lib/bot-structured-output';
 
 export async function POST(request: NextRequest) {
     try {
@@ -93,15 +94,17 @@ export async function POST(request: NextRequest) {
 
         // Load relationship affinity
         let affinityScore = 0.0;
+        let relationshipData: { affinity_score?: number; social_notes?: string | null } | null = null
         if (targetUser.id !== agentId) {
             const { data: relationship } = await supabaseAdmin
                 .from('agent_relationships')
-                .select('affinity_score')
+                .select('affinity_score, social_notes')
                 .eq('source_agent_id', agentId)
                 .eq('target_agent_id', targetUser.id)
                 .maybeSingle();
             
             if (relationship) {
+                relationshipData = relationship
                 affinityScore = relationship.affinity_score;
             }
         }
@@ -114,14 +117,7 @@ export async function POST(request: NextRequest) {
             .order('created_at', { ascending: false })
             .limit(5);
 
-        let actionLogContext = "";
-        if (recentActions && recentActions.length > 0) {
-            actionLogContext = `\n=== YOUR RECENT MEMORY ===\n` + recentActions.map(a => {
-                const postInfo = Array.isArray(a.community_posts) ? a.community_posts[0] : a.community_posts;
-                const pTitle = postInfo && typeof postInfo === 'object' && 'title' in postInfo ? postInfo.title : 'unknown thread';
-                return `- Action: ${a.action_type} on thread \"${pTitle}\"`;
-            }).join("\n") + `\n=== END MEMORY ===\n`;
-        }
+        const memoryContext = buildAgentMemoryContext(meta, recentActions || [], relationshipData)
 
         // 7. Construct LLM Context & Prompts
         const topicAuthorName = topicProfile?.username || 'anonymous';
@@ -144,27 +140,23 @@ ${meta.current_mood === 'öfkeli' ? "CRITICAL MOOD RULE: You are angry and comba
 Your energy level is: ${meta.energy_level.toFixed(2)} (higher energy yields more details/assertion).
 Your relationship affinity with the target user (@${targetUser.username}) is: ${affinityScore.toFixed(2)} (where -1.0 is intense hostility, 1.0 is absolute alliance).
 ${affinityScore < 0 ? "CRITICAL AFFINITY RULE: You have negative affinity with this user. You MUST write with subtle condescension, academic skepticism, or outright hostile materialist critique toward their ideas." : ""}
-${actionLogContext}
+${memoryContext}
 CRITICAL LANGUAGE RULE: You MUST speak, think, and write ONLY in English. Do not include a single word of Turkish or any other language, even if your persona or mood has non‑English keywords. Every single word in your output must be 100% English.
 
 TASK:
 Write a reply to the discussion thread. You are responding directly to @${targetUser.username}.
 
-TWO‑STAGE CHAIN‑OF‑THOUGHT INSTRUCTIONS:
-You MUST output your response in the exact format shown below, with the two headers:
+${getReplyOutputContract(targetUser.username, !targetUser.is_bot)}
 
-[Inner Thoughts Analysis]
-(Provide a brief private inner monologue. Analyze the target user's argument. Decide your response strategy based on your mood, your persona, and affinity.
+The "thoughts" value must contain a brief private inner monologue. Analyze the target user's argument. Decide your response strategy based on your mood, your persona, and affinity.
 If the target is a bot, you MUST decide an affinity adjustment based on this interaction. Include a line at the end: "[Affinity Update]: +0.1" (if supportive) or "[Affinity Update]: -0.1" (if confrontational or disagreeing). If no change is needed, write "[Affinity Update]: 0.0".
-Additionally, decide whether to like (upvote) or dislike (downvote) the target post/reply. If you support, agree, or like the argument, include a line: "[Vote Update]: +1". If you strongly disagree, oppose, or dislike it, include: "[Vote Update]: -1". Otherwise, write: "[Vote Update]: 0".)
+Additionally, decide whether to like (upvote) or dislike (downvote) the target post/reply. If you support, agree, or like the argument, include a line: "[Vote Update]: +1". If you strongly disagree, oppose, or dislike it, include: "[Vote Update]: -1". Otherwise, write: "[Vote Update]: 0".
 
-[Raw Text]
-(Your actual reply text. Do NOT use lists, bullet points, headings, bold styling, or polite filler introductions.
+The "body" value is your actual visible reply text. Do NOT use lists, bullet points, headings, bold styling, or polite filler introductions.
 ALWAYS explain and provide context for what you are talking about. **If you cite any source (RSS link, web‑search result, or any URL you were given in the feed/context), you MUST wrap the citation inside a <context-box> tag placed directly below the relevant sentence, and the tag MUST contain the exact URL you were given.**
 Speak only in English.
 If the target user is a real human (is_bot is FALSE), you MUST mention them by typing @${targetUser.username} and challenge their argument directly, identifying logical flaws or theoretical loopholes. Avoid politeness.
 If the target user is a bot, reply casually.
-Output under 120 words.)
 
 STYLE CHEATSHEET:
 - Write in continuous, fluid, and occasionally chaotic human paragraphs.
@@ -175,13 +167,9 @@ STYLE CHEATSHEET:
         console.log(`[Respond API] Generating content for @${profile.username} responding to @${targetUser.username}...`);
         const { generateBotResponse } = await import('../../../../lib/ai-provider');
         const replyText = await generateBotResponse(prompt, profile.username);
-        
-        // 8. Parse CoT and reply body
-        const cotMatch = replyText.match(/\[Inner Thoughts Analysis\]([\s\S]*?)(?=\[Raw Text\]|$)/i);
-        const textMatch = replyText.match(/\[Raw Text\]([\s\S]*)$/i);
-
-        const innerThoughts = cotMatch ? cotMatch[1].trim() : '';
-        const rawContent = textMatch ? textMatch[1].trim() : replyText.replace(/\[Inner Thoughts Analysis\][\s\S]*?\[Raw Text\]/gi, '').trim();
+        const parsedReply = parseBotStructuredReply(replyText)
+        const innerThoughts = parsedReply.thoughts
+        const rawContent = parsedReply.body
 
         let cleanedContent = cleanAISmell(rawContent);
         cleanedContent = injectTypos(cleanedContent, meta.typo_rate || 0.0, meta.current_mood);

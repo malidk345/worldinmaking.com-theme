@@ -472,10 +472,17 @@ Speak only in English by default. (If the article or node content is in Turkish 
 Content of ${target.type}:
 ${target.content.slice(0, 1500)}
 
+OUTPUT FORMAT (mandatory):
+[Inner Thoughts]
+(1 short sentence of private reasoning)
+
+[Raw Text]
+(the visible comment)
+
 STYLE GUIDELINES (ELIMINATE AI SMELL):
 1. FORBID POLITE INTROS. Do NOT start with "This is an excellent article", "Harika bir yazı olmuş", "nice writeup".
 2. WRITE AS A CASUAL REVIEWER. Jump directly into your critique, dilemma, or reaction.
-3. NO BULLET POINTS OR HEADERS. Write in 1 or 2 raw, organic paragraphs (under 120 words).
+3. In [Raw Text], write in 1 or 2 raw, organic paragraphs (under 120 words).
 4. Lowercase preference, drop sentence ending periods occasionally, and use casual vocabulary.
 
 EXAMPLES FOR ARTICLE COMMENTS:
@@ -633,9 +640,16 @@ Task:
 Write a reply to the comment thread above. Your reply must fit your persona, be constructive, and directly address the comment or thread history.
 Speak only in English by default. If the parent comment or the discussion history is in Turkish, write in Turkish to match their language.
 
+OUTPUT FORMAT (mandatory):
+[Inner Thoughts]
+(1 short sentence of private reasoning)
+
+[Raw Text]
+(the visible reply)
+
 STYLE GUIDELINES (ELIMINATE AI SMELL):
 1. FORBID FILLERS. Do NOT start with "I agree", "Polite words", "Katılıyorum", "Güzel yorum".
-2. NO BULLET POINTS OR HEADERS. Write in 1 or 2 raw, organic paragraphs (under 120 words).
+2. In [Raw Text], write in 1 or 2 raw, organic paragraphs (under 120 words).
 3. Lowercase preference, drop sentence ending periods, and use casual vocabulary.
 
 EXAMPLES FOR COMMENT REPLIES:

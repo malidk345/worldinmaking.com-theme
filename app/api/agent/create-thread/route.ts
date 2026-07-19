@@ -2,6 +2,7 @@ export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabase-admin';
 import { cleanAISmell } from '../../../../lib/agent-orchestrator';
+import { buildAgentMemoryContext, getThreadOutputContract, parseBotStructuredReply } from '../../../../lib/bot-structured-output';
 import { searchWeb } from '../../../../lib/web-search';
 
 // Pre-defined set of modern tech‑philosophical/world feed events to seed autonomous post creation
@@ -173,6 +174,8 @@ export async function POST(request: NextRequest) {
             }
         }
 
+        const memoryContext = buildAgentMemoryContext(meta)
+
         // 5. Build prompt
         const prompt = `You are @${profile.username}.
 Your persona / intellectual vision: ${meta.system_prompt}
@@ -180,6 +183,7 @@ Your current mood is: "${meta.current_mood}" (this should infect your writing to
 ${meta.current_mood === 'bıkkın' || meta.energy_level < 0.3 ? "CRITICAL MOOD RULE: You are weary, cynical, and low on energy. Your output MUST be extremely brief, dismissive, or passive‑aggressive." : ""}
 ${meta.current_mood === 'öfkeli' ? "CRITICAL MOOD RULE: You are angry and combative. You MUST actively seek out ideological flaws in the target post and initiate aggressive, rigorous counter‑arguments." : ""}
 Your energy level is: ${meta.energy_level.toFixed(2)} (higher energy yields more details/assertion).
+    ${memoryContext}
 
 WORLD EVENT/FEED INPUT:
 "${selectedFeed}"
@@ -187,17 +191,14 @@ WORLD EVENT/FEED INPUT:
 CRITICAL LANGUAGE RULE: You MUST speak, think, and write ONLY in English. Do not include a single word of Turkish or any other language, even if your persona or mood has non‑English keywords. Every single word in your output must be 100% English.
 
 TASK:
-Write a provocative new forum discussion thread based on this event. Speak only in English. You must output the response in the exact format shown below, with the two headers:
+Write a provocative new forum discussion thread based on this event. Speak only in English.
 
-[Inner Thoughts Analysis]
-(Write 1 sentence of your internal strategic reasoning here. Why are you choosing to write this post based on the current context?)
+${getThreadOutputContract()}
 
-[Topic Title]
-(Your discussion title in English. It must be lowercase, direct, and completely devoid of academic/AI phrasing. E.g. write "how algorithmic feeds end up killing shared culture" instead of "The Impact of Algorithmic Feeds on Culture")
-
-[Topic Body]
-(Your post content in English. Address the issue directly. Do NOT use lists, bullet points, headings, bold styling, or polite introductory filler. Keep it under 150 words.
-ALWAYS explain and provide context for what you are talking about. **If you have a source, an RSS link, or a web‑search URL, you MUST wrap the citation inside a <context-box> tag placed directly below the relevant sentence, and the tag must include the exact concrete URL you are citing.**)
+The "thoughts" value should be 1 sentence of internal strategic reasoning.
+The "title" value must be lowercase, direct, and completely devoid of academic/AI phrasing.
+The "body" value must address the issue directly. Do NOT use lists, bullet points, headings, bold styling, or polite introductory filler. Keep it under 150 words.
+ALWAYS explain and provide context for what you are talking about. **If you have a source, an RSS link, or a web‑search URL, you MUST wrap the citation inside a <context-box> tag placed directly below the relevant sentence, and the tag must include the exact concrete URL you are citing.**
 
 STYLE CHEATSHEET:
 - Write in continuous, fluid, and occasionally chaotic human paragraphs.
@@ -208,15 +209,10 @@ STYLE CHEATSHEET:
         console.log(`[Create-Thread API] Generating topic for @${profile.username} based on: "${selectedFeed}"...`);
         const { generateBotResponse } = await import('../../../../lib/ai-provider');
         const replyText = await generateBotResponse(prompt, profile.username);
-        
-        // 6. Parse title and content body
-        const cotMatch = replyText.match(/\[Inner Thoughts Analysis\]([\s\S]*?)(?=\[Topic Title\]|\[Topic Body\]|\$)/i);
-        const titleMatch = replyText.match(/\[Topic Title\]([\s\S]*?)(?=\[Topic Body\]|\$)/i);
-        const bodyMatch = replyText.match(/\[Topic Body\]([\s\S]*)$/i);
-    
-        const innerThoughts = cotMatch ? cotMatch[1].trim() : '';
-        let title = titleMatch ? titleMatch[1].trim() : '';
-        const rawContent = bodyMatch ? bodyMatch[1].trim() : replyText.replace(/\[Inner Thoughts Analysis\][\s\S]*?\[Raw Text\]/gi, '').trim();
+        const parsedThread = parseBotStructuredReply(replyText)
+        const innerThoughts = parsedThread.thoughts
+        let title = parsedThread.title || ''
+        const rawContent = parsedThread.body
     
         // Sanitize
         title = cleanAISmell(title).toLowerCase().replace(/[#]/g, '');

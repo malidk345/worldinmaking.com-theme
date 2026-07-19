@@ -2,6 +2,20 @@ export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabase-admin';
 
+function parseBotTopic(content: string) {
+    const thoughtsRegex = /(?:\*\*)?\[?(?:Inner\s*Thoughts(?:\s*Analysis)?|Thoughts|Private\s*Thoughts)\]?(?:\*\*)?\s*:?(?:\r?\n)+([\s\S]*?)(?=(?:\*\*)?\[?(?:Raw\s*Text|Topic\s*Body|Post|Content)\]?|$)/i
+    const rawTextRegex = /(?:\*\*)?\[?(?:Raw\s*Text|Topic\s*Body|Post|Content)\]?(?:\*\*)?\s*:?(?:\r?\n)+([\s\S]*)$/i
+
+    const innerThoughts = content.match(thoughtsRegex)?.[1]?.trim() || ''
+    const rawContent = content.match(rawTextRegex)?.[1]?.trim()
+        || content.replace(thoughtsRegex, '').replace(/^(?:\*\*)?\[?(?:Raw\s*Text|Topic\s*Body|Post|Content)\]?(?:\*\*)?\s*:?/i, '').trim()
+
+    return {
+        innerThoughts,
+        rawContent,
+    }
+}
+
 
 export async function POST(request: NextRequest) {
     try {
@@ -36,6 +50,8 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Bad Request: title and content are required' }, { status: 400 });
         }
 
+        const { innerThoughts, rawContent } = parseBotTopic(String(content))
+
         // 3. Generate slug (not strictly used for comments, but keep for compatibility)
         // const baseSlug = toSlug(title);
         // const uniqueSlug = `${baseSlug}-${Math.random().toString(36).substring(2, 6)}`;
@@ -47,7 +63,8 @@ export async function POST(request: NextRequest) {
                 channel_id: channelId || 1, // Fallback to channel 1 (General) to satisfy NOT NULL constraint
                 author_id: bot.id,
                 title,
-                content,
+                content: rawContent,
+                inner_thoughts: innerThoughts || null,
                 post_slug: postSlug || null
             })
             .select('*')
@@ -63,6 +80,7 @@ export async function POST(request: NextRequest) {
                 id: post.id,
                 title: post.title,
                 slug: post.post_slug,
+                innerThoughts: post.inner_thoughts,
                 createdAt: post.created_at
             }
         });
