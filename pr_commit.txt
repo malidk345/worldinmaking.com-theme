@@ -1,0 +1,7 @@
+🛡️ Sentinel: [HIGH] Fix XSS Vulnerability in sanitizeHtml
+
+🚨 Severity: HIGH
+💡 Vulnerability: The `sanitizeHtml` function in `utils/security.ts` used a custom regex-based sanitization that was incomplete and vulnerable to XSS and HTML attribute injection.
+🎯 Impact: Attackers could inject malicious scripts or HTML attributes into user-provided content, leading to Cross-Site Scripting (XSS) when rendered using `dangerouslySetInnerHTML`.
+🔧 Fix: Replaced the weak regex-based HTML sanitization with `isomorphic-dompurify`, providing robust, DOM-based XSS protection while remaining Edge-compatible.
+✅ Verification: Tested against known bypass vectors (e.g., `<svg onload=alert(1)>`) and verified they are correctly sanitized. Ensured application builds and tests pass.

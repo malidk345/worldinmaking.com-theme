@@ -1,3 +1,4 @@
+import DOMPurify from 'isomorphic-dompurify';
 /**
  * Input Sanitization and Validation Utilities
  * Provides security-focused helper functions for user input.
@@ -27,8 +28,8 @@ export function sanitizeString(input: string | null | undefined): string {
 export function sanitizeHtml(html: string | null | undefined, options = {}): string {
     if (typeof html !== 'string') return ''
 
-    void options
-    return sanitizeString(html)
+    // Use isomorphic-dompurify for robust XSS protection
+    return DOMPurify.sanitize(html, options) as string;
 }
 
 /**
