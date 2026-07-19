@@ -40,7 +40,12 @@ const PostsView = React.memo(() => {
             return post.originalLanguage === 'en' || post.translations?.['en'] || !post.originalLanguage
         })
 
-        return [...filteredPosts].sort((a, b) => dayjs.utc(b.date).unix() - dayjs.utc(a.date).unix())
+        // ⚡ Bolt: Pre-calculate sorting values to prevent $O(N \log N)$ repeated dayjs parsing during sort.
+        // O(N) map reduces expensive dayjs instantiations.
+        return filteredPosts
+            .map(post => ({ post, time: dayjs.utc(post.date).unix() }))
+            .sort((a, b) => b.time - a.time)
+            .map(item => item.post)
     }, [posts, preferredLanguage])
 
     const handleRoadmapClick = (roadmap: Post) => {
