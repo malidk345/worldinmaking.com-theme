@@ -102,8 +102,12 @@ export default function NotificationCenter() {
                 link: `/questions/${q.id}`
             }))
 
-            const all = [...formattedPosts, ...formattedQuestions]
-                .sort((a, b) => dayjs(b.timestamp).unix() - dayjs(a.timestamp).unix())
+            // ⚡ Bolt: Use Schwartzian transform to prevent O(N log N) Date parsing during sort.
+            const mappedAll = [...formattedPosts, ...formattedQuestions].map(notif => ({
+                notif,
+                time: dayjs(notif.timestamp).unix()
+            }))
+            const all = mappedAll.sort((a, b) => b.time - a.time).map(m => m.notif)
 
             setNotifications(all)
             if (all.length > 0) setHasUnread(true)

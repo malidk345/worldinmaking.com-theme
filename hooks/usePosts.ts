@@ -128,7 +128,12 @@ const postsFetcher = async () => {
     const adaptedDbPosts = dbData.map(adaptPost).filter(Boolean) as Post[];
 
     // Final sort by date
-    return adaptedDbPosts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    // ⚡ Bolt: Use Schwartzian transform to prevent O(N log N) Date parsing during sort.
+    const mappedPosts = adaptedDbPosts.map(post => ({
+        post,
+        time: new Date(post.date).getTime()
+    }));
+    return mappedPosts.sort((a, b) => b.time - a.time).map(m => m.post);
 };
 
 export const usePosts = () => {
