@@ -31,7 +31,8 @@ export default function TaskBarMenu({ isMaximized }: { isMaximized?: boolean }) 
         openSearch,
         setIsActiveWindowsPanelOpen,
         taskbarRef,
-        addWindow
+        addWindow,
+        siteSettings
     } = useApp()
     const { user, profile, isAdmin, signOut, updateProfile } = useAuth()
     const { t, lang } = useTranslation()
@@ -278,7 +279,7 @@ export default function TaskBarMenu({ isMaximized }: { isMaximized?: boolean }) 
                 ref={taskbarRef}
                 id="taskbar"
                 data-scheme="primary"
-                className={`w-full ${getTaskbarSurfaceBg()} ${getTaskbarMotionLayer(isAnimating)} border border-black/10 dark:border-white/10 ${isMaximized ? 'rounded-t-lg rounded-b-none border-b-0 shadow-none' : 'rounded-lg shadow-md'} z-[30000] flex justify-between pl-1 pr-2 py-0.5 items-center`}
+                className={`w-full ${getTaskbarSurfaceBg(siteSettings.heaterMode)} ${getTaskbarMotionLayer(isAnimating)} border border-black/10 dark:border-white/10 ${isMaximized ? 'rounded-t-lg rounded-b-none border-b-0 shadow-none' : 'rounded-lg shadow-md'} z-[30000] flex justify-between pl-1 pr-2 py-0.5 items-center`}
             >
                 <div className="flex items-center gap-2 px-3 py-1 pointer-events-none">
                     <svg viewBox="0 0 32 32" className="size-5 fill-current text-black dark:text-white">
