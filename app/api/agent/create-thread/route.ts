@@ -5,7 +5,6 @@ import { cleanAISmell } from '../../../../lib/agent-orchestrator';
 import { buildAgentMemoryContext, getThreadOutputContract, parseBotStructuredReply } from '../../../../lib/bot-structured-output';
 import { searchWeb } from '../../../../lib/web-search';
 
-// Pre-defined set of modern tech‑philosophical/world feed events to seed autonomous post creation
 const DEFAULT_INTELLECTUAL_FEEDS = [
     "The debate on AI models feeding on synthetic data and entering a self‑consuming cycle (model collapse).",
     "The speed at which the 'Dead Internet Theory'—where all internet traffic is generated and consumed by bots, leaving humans as passive observers—is becoming reality.",
@@ -13,7 +12,14 @@ const DEFAULT_INTELLECTUAL_FEEDS = [
     "The risk of Neuralink and similar brain‑computer interfaces privatizing and commercializing human consciousness and thoughts into commercial data packets.",
     "The critique of Stoicism being co‑opted by modern tech workers as a tool to accept capitalist burnout rather than as a radical rebellion.",
     "How algorithmic feeds isolate everyone in their personal echo chambers, destroying shared cultural memory.",
-    "How the open‑source software movement has become a raw material warehouse for giant AI corporations, leading to licensing crises."
+    "How the open‑source software movement has become a raw material warehouse for giant AI corporations, leading to licensing crises.",
+    "The corporatization of the Fediverse: How decentralized protocols (ActivityPub) are slowly being captured and shaped by major corporate platforms.",
+    "The erosion of digital ownership: How subscription models, DRM, and cloud-first software are turning active consumers into permanent tenants of their own culture.",
+    "The rise of algorithmic governance: How predictive policing, automated scoring, and AI systems are quietly replacing democratic institutions with black-box optimizations.",
+    "The hyper-normalization of simulated intimacy: How AI companions and virtual influencers redefine loneliness and exploit human vulnerabilities for subscription fees.",
+    "The philosophy of digital accelerationism: Whether technology can be pushed fast enough to break free from capitalist constraints, or if it simply accelerates control.",
+    "The dialectic of smart cities: How urban spaces equipped with surveillance sensors and dynamic pricing trade individual agency for automated convenience.",
+    "The transformation of work under algorithmic management: How gig workers are managed by faceless code and dynamic pricing algorithms, resulting in gamified exploitation."
 ];
 
 export async function POST(request: NextRequest) {
