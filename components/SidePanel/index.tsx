@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useRef } from 'react'
+import { getPanelSurfaceBg } from '../../constants/frostedSurfaces'
 import { motion, AnimatePresence } from 'framer-motion'
 import { IconChevronRight } from '@posthog/icons';
 import OSButton from 'components/OSButton'
@@ -53,7 +54,7 @@ export default function SidePanel({
                     animate={{ x: 0 }}
                     exit={{ x: '110%' }}
                     transition={{ type: 'spring', stiffness: 400, damping: 35, mass: 1 }}
-                    className={`fixed top-[calc(44px+0.5rem)] sm:top-[calc(44px+1rem)] right-2 sm:right-4 h-auto max-h-[90dvh] sm:h-[calc(100dvh-2rem-44px)] ${width} bg-white/60 dark:bg-black/60 border border-white/20 dark:border-white/10 rounded-[32px] shadow-[0_8px_32px_rgba(0,0,0,0.12),0_1px_4px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.4)] supports-[backdrop-filter]:backdrop-blur-[80px] z-[10000] flex flex-col text-primary overflow-hidden ${panelClassName}`}
+                    className={`fixed top-[calc(44px+0.5rem)] sm:top-[calc(44px+1rem)] right-2 sm:right-4 h-auto max-h-[90dvh] sm:h-[calc(100dvh-2rem-44px)] ${width} ${getPanelSurfaceBg()} border border-white/20 dark:border-white/10 rounded-[32px] shadow-[0_8px_32px_rgba(0,0,0,0.12),0_1px_4px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.4)] z-[10000] flex flex-col text-primary overflow-hidden ${panelClassName}`}
                 >
                     <div className="h-full flex flex-col">
                         {(title || showCloseButton) && (
