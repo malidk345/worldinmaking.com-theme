@@ -1,4 +1,7 @@
 import type { Metadata, Viewport } from "next";
+import '@fontsource-variable/ibm-plex-sans';
+import '@fontsource-variable/ibm-plex-sans/wght-italic.css';
+import '@fontsource/source-code-pro';
 import "./globals.css";
 import 'highlight.js/styles/github.css';
 import { WebSiteJsonLd } from "../components/SEO/JsonLd";
@@ -68,9 +71,6 @@ export const viewport: Viewport = {
 };
 
 import { GoogleAnalytics } from '@next/third-parties/google';
-import { Inter } from 'next/font/google';
-
-const inter = Inter({ subsets: ['latin'] });
 
 export default function RootLayout({
     children,
@@ -85,7 +85,7 @@ export default function RootLayout({
 
                 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
             </head>
-            <body className={`antialiased apple-body ${inter.className}`}>
+            <body className={`antialiased apple-body`}>
                 <WebSiteJsonLd
                     name="world in making"
                     url={siteUrl}
