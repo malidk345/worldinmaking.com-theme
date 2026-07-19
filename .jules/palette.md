@@ -1,3 +1,3 @@
-## 2024-07-18 - [Add focus visible styles to OSButton]
-**Learning:** `OSButton` component lacks clear visual focus states, reducing keyboard accessibility. This app requires `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20` for standard focus rings.
-**Action:** Always ensure custom button components have proper focus rings explicitly set since default browser rings can be subtle or overridden.
+## 2024-05-15 - Interactive List Items & Icons require explicit roles
+**Learning:** Found several places where `<div>` and `<svg>` elements had `onClick` handlers but no keyboard support (`tabIndex`, `onKeyDown`) or semantic identity (`role`, `aria-label`). A subtle UX bug was also found where the "previous page" chevron logic reset the page to 0 instead of `prev - 1`. Fixing these improves screen reader and keyboard user experience significantly.
+**Action:** When auditing custom widgets with pagination or interactive list items, ensure `role="button"`, focus styles (`focus-visible:ring-2`), and complete keyboard handlers (`Enter`/`Space`) are included. Use semantic `<button>` when possible for icons to get native accessibility benefits.
