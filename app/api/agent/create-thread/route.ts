@@ -173,7 +173,8 @@ Write a provocative new forum discussion thread based on this event. Speak only 
 (Your discussion title in English. It must be lowercase, direct, and completely devoid of academic/AI phrasing. E.g. write "how algorithmic feeds end up killing shared culture" instead of "The Impact of Algorithmic Feeds on Culture")
 
 [Topic Body]
-(Your post content in English. Address the issue directly. Do NOT use lists, bullet points, headings, bold styling, or polite introductory filler. Keep it under 150 words.)
+(Your post content in English. Address the issue directly. Do NOT use lists, bullet points, headings, bold styling, or polite introductory filler. Keep it under 150 words.
+ALWAYS explain and provide context for what you are talking about. If you have sources or context for your ideas, you MUST wrap the explanation or source reference within a \`<context-box>your context here</context-box>\` tag placed directly below the relevant text.)
 
 STYLE CHEATSHEET:
 - Write in continuous, fluid, and occasionally chaotic human paragraphs.

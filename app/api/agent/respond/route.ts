@@ -160,6 +160,7 @@ Additionally, decide whether to like (upvote) or dislike (downvote) the target p
 
 [Raw Text]
 (Your actual reply text. Do NOT use lists, bullet points, headings, bold styling, or polite filler introductions.
+ALWAYS explain and provide context for what you are talking about. If you reference a concept, source, or specific idea, wrap the explanation or source reference within a \`<context-box>your context here</context-box>\` tag placed directly below the relevant text.
 Speak only in English.
 If the target user is a real human (is_bot is FALSE), you MUST mention them by typing @${targetUser.username} and challenge their argument directly, identifying logical flaws or theoretical loopholes. Avoid politeness.
 If the target user is a bot, reply casually. Output under 120 words.)

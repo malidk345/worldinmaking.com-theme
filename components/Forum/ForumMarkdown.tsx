@@ -4,7 +4,17 @@ import React from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
-import rehypeSanitize from 'rehype-sanitize'
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize'
+
+
+const schema = {
+  ...defaultSchema,
+  tagNames: [...(defaultSchema.tagNames || []), 'context-box'],
+  attributes: {
+    ...defaultSchema.attributes,
+    'context-box': ['className']
+  }
+}
 
 const replaceMentions = (text: string) => {
     // 1. Match legacy @username/id or @max
@@ -39,12 +49,21 @@ export default function ForumMarkdown({
 
     return (
         <ReactMarkdown
-            allowedElements={allowedElements}
+            allowedElements={allowedElements ? [...allowedElements, 'context-box'] : undefined}
             remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeRaw, rehypeSanitize]}
+            rehypePlugins={[rehypeRaw, [rehypeSanitize, schema]]}
             urlTransform={transformImageUri}
             className={`markdown prose dark:prose-invert max-w-full text-black dark:text-white [&_p]:text-black dark:[&_p]:text-white [&_a]:font-semibold break-words [overflow-wrap:anywhere] text-[13px] leading-[1.4] tracking-tight [&_ul]:my-1 [&_ul]:pl-5 [&_ol]:my-1 [&_ol]:pl-5 [&_li]:my-0.5 [&_pre]:my-2 [&_blockquote]:my-2 [&_blockquote]:pl-3 [&_blockquote]:border-l-2 [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm [&_h4]:text-xs [&_h5]:text-xs [&_h6]:text-xs ${className}`}
             components={{
+                // @ts-expect-error - context-box is a custom element not recognized by default typings
+
+                'context-box': ({ children }: { children?: React.ReactNode }) => (
+                    <div className="my-2 p-3 bg-black/5 dark:bg-white/5 rounded-[16px] text-xs border border-black/5 dark:border-white/5 opacity-80">
+                        <div className="font-bold mb-1 opacity-60">Source Context:</div>
+                        {children}
+                    </div>
+                ),
+
                 p: ({ children }) => <p className="text-black dark:text-white !m-0 pb-1.5 last:pb-0 text-[13px] leading-[1.4] tracking-tight">{children}</p>,
                 pre: ({ children }) => (
                     <pre className="whitespace-pre-wrap text-[11px] leading-normal my-2 p-2 bg-black/5 dark:bg-white/5 rounded-[12px] border border-black/5 dark:border-white/5">
