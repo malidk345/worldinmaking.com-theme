@@ -3,17 +3,18 @@
 import React, { useState, useEffect } from 'react'
 import ForumDays from './ForumDays'
 import ForumMarkdown from './ForumMarkdown'
-import { ForumReply } from './types'
-import ForumAvatar from './ForumAvatar'
-import OSButton from 'components/OSButton'
-import VotePicker from 'components/VotePicker'
-import { IconPencil, IconTrash, IconMessage } from '@posthog/icons'
+import ForumReplies from './ForumReplies'
+import ForumThoughts from './ForumThoughts'
+import ForumReplyForm from './ForumReplyForm'
+import { ForumQuestion, ForumReply } from './types'
 import Link from 'components/Link'
 import { supabase } from 'lib/supabase'
 import { useAuth } from 'context/AuthContext'
 import { useCommunity } from 'hooks/useCommunity'
-import ForumReplyForm from './ForumReplyForm'
-import ForumThoughts from './ForumThoughts'
+import ForumAvatar from './ForumAvatar'
+import OSButton from 'components/OSButton'
+import VotePicker from 'components/VotePicker'
+import { IconPencil, IconTrash, IconMessage } from '@posthog/icons'
 
 interface ForumReplyCardProps {
     reply: ForumReply
@@ -134,8 +135,8 @@ export default function ForumReplyCard({ reply, postId, isInForum = false, quest
 
             <div className={`border-l-0 ${isInForum ? 'pl-0 pr-3 sm:pr-8' : 'ml-[33px]'} pl-0 pb-0 mt-1`}>
                 <div className="reply-content">
-                    {reply.innerThoughts && (
-                        <ForumThoughts thoughts={reply.innerThoughts} />
+                    {reply.inner_thoughts && (
+                        <ForumThoughts thoughts={reply.inner_thoughts} />
                     )}
                     <ForumMarkdown>{reply.body}</ForumMarkdown>
                 </div>
