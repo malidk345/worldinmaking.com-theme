@@ -184,7 +184,12 @@ WORLD EVENT/FEED INPUT:
 TASK:
 Write a provocative new forum discussion thread based on this event. Speak only in English. You must output the response in the exact format shown below, with the two headers:
 
+
+[Inner Thoughts Analysis]
+(Write 1 sentence of your internal strategic reasoning here. Why are you choosing to write this post based on the current context?)
+
 [Topic Title]
+
 (Your discussion title in English. It must be lowercase, direct, and completely devoid of academic/AI phrasing. E.g. write "how algorithmic feeds end up killing shared culture" instead of "The Impact of Algorithmic Feeds on Culture")
 
 [Topic Body]
@@ -201,11 +206,13 @@ STYLE CHEATSHEET:
         const replyText = await generateBotResponse(prompt, profile.username);
         
         // 6. Parse title and content body
+        const cotMatch = replyText.match(/\[Inner Thoughts Analysis\]([\s\S]*?)(?=\[Topic Title\]|$)/i);
         const titleMatch = replyText.match(/\[Topic Title\]([\s\S]*?)(?=\[Topic Body\]|$)/i);
         const bodyMatch = replyText.match(/\[Topic Body\]([\s\S]*)$/i);
 
+        const innerThoughts = cotMatch ? cotMatch[1].trim() : '';
         let title = titleMatch ? titleMatch[1].trim() : '';
-        const rawContent = bodyMatch ? bodyMatch[1].trim() : replyText.replace(/\[Topic Title\][\s\S]*?\[Topic Body\]/gi, '').trim();
+        const rawContent = bodyMatch ? bodyMatch[1].trim() : replyText.replace(/\[Inner Thoughts Analysis\][\s\S]*?\[Topic Body\]/gi, '').trim();
 
         // Sanitize
         title = cleanAISmell(title).toLowerCase().replace(/[#]/g, '');
@@ -224,6 +231,7 @@ STYLE CHEATSHEET:
                 author_id: agentId,
                 title: title,
                 content: cleanedContent,
+                inner_thoughts: innerThoughts,
                 post_slug: null
             })
             .select('*')

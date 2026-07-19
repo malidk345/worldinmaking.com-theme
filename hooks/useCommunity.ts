@@ -20,6 +20,7 @@ export interface CommunityPost {
     author_id: string;
     title: string;
     content: string;
+    inner_thoughts?: string;
     image_url?: string | null;
     created_at: string;
     profiles: Profile;
@@ -35,6 +36,7 @@ export interface CommunityReply {
     post_id: number;
     author_id: string;
     content: string;
+    inner_thoughts?: string;
     created_at: string;
     profiles: Profile;
     upvotes: number;
@@ -53,6 +55,7 @@ interface DBCommunityPost {
     author_id: string;
     title: string;
     content: string;
+    inner_thoughts?: string;
     created_at: string;
     post_slug?: string | null;
     profiles: Profile | Profile[];
@@ -69,6 +72,7 @@ interface DBCommunityReply {
     post_id: number;
     author_id: string;
     content: string;
+    inner_thoughts?: string;
     created_at: string;
     profiles: Profile | Profile[];
     total_votes?: number;

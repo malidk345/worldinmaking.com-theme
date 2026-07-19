@@ -34,6 +34,7 @@ interface AdaptablePost {
     id: number | string
     title: string
     content?: string
+    inner_thoughts?: string
     created_at: string
     author_id?: string | number
     profiles?: { username?: string; avatar_url?: string } | { username?: string; avatar_url?: string }[]
@@ -48,6 +49,7 @@ const adaptPost = (p: AdaptablePost) => {
         permalink: p.id.toString(),
         subject: p.title,
         body: p.content || '',
+        innerThoughts: p.inner_thoughts,
         createdAt: p.created_at,
         profile: {
             id: p.author_id || 0,

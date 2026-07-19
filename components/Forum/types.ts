@@ -23,6 +23,7 @@ export interface ForumTopicGroup {
 export interface ForumReply {
     id: number | string
     body: string
+    innerThoughts?: string
     createdAt: string
     profile: ForumProfile
     isAI?: boolean
@@ -38,6 +39,7 @@ export interface ForumQuestion {
     permalink: string
     subject: string
     body: string
+    innerThoughts?: string
     createdAt: string
     profile: ForumProfile
     replies: ForumReply[]

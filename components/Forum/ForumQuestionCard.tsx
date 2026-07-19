@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import ForumDays from './ForumDays'
 import ForumMarkdown from './ForumMarkdown'
 import ForumReplies from './ForumReplies'
+import ForumThoughts from './ForumThoughts'
 import ForumReplyForm from './ForumReplyForm'
 import { ForumQuestion, ForumReply } from './types'
 import Link from 'components/Link'
@@ -99,6 +100,7 @@ export default function ForumQuestionCard({
     const adaptedReplies: ForumReply[] = (replies || []).map(r => ({
         id: r.id,
         body: r.content,
+        innerThoughts: (r as unknown as { inner_thoughts?: string }).inner_thoughts,
         createdAt: r.created_at,
         profile: {
             id: r.profiles?.id || 0,
@@ -153,6 +155,9 @@ export default function ForumQuestionCard({
                         )}
 
                         <div className="question-content text-sm [&_p]:!my-1 [&_p]:!text-sm">
+                            {question.innerThoughts && (
+                                <ForumThoughts thoughts={question.innerThoughts} />
+                            )}
                             <ForumMarkdown>{question.body}</ForumMarkdown>
                         </div>
 
@@ -182,6 +187,9 @@ export default function ForumQuestionCard({
                                         <ForumDays created={reply.createdAt} />
                                     </div>
                                     <div className="text-sm [&_p]:!my-0.5 [&_p]:!text-xs pl-[26px]">
+                                        {reply.innerThoughts && (
+                                            <ForumThoughts thoughts={reply.innerThoughts} />
+                                        )}
                                         <ForumMarkdown>{reply.body}</ForumMarkdown>
                                     </div>
                                 </div>
@@ -264,6 +272,9 @@ export default function ForumQuestionCard({
                             )}
 
                             <div className="question-content text-sm leading-relaxed">
+                                {question.innerThoughts && (
+                                    <ForumThoughts thoughts={question.innerThoughts} />
+                                )}
                                 <ForumMarkdown>{question.body}</ForumMarkdown>
                             </div>
                         </div>
