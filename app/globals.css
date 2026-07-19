@@ -465,18 +465,18 @@ mark {
   --breakpoint-2xl: 1536px;
 
   /* Colors */
-  --color-light-1: #FDFDF8;
-  --color-light-2: #EEEFE9;
-  --color-light-3: #E5E7E0;
-  --color-light-4: #D2D3CC;
-  --color-light-5: #C8CAC1;
-  --color-light-6: #BFC1B7;
-  --color-light-7: #B6B7AF;
-  --color-light-8: #D0D1C9;
-  --color-light-9: #73756B;
-  --color-light-10: #9EA096;
-  --color-light-11: #4D4F46;
-  --color-light-12: #23251D;
+  --color-light-1: #FFFFFF;
+  --color-light-2: #F5F5F5;
+  --color-light-3: #E5E5E5;
+  --color-light-4: #D4D4D4;
+  --color-light-5: #C8C8C8;
+  --color-light-6: #BFBFBF;
+  --color-light-7: #B6B6B6;
+  --color-light-8: #D1D1D1;
+  --color-light-9: #737373;
+  --color-light-10: #A0A0A0;
+  --color-light-11: #4F4F4F;
+  --color-light-12: #252525;
   --color-light-white: #fff;
   --color-light-black: #000;
 
@@ -528,7 +528,7 @@ mark {
   --color-salmon: #F35454;
   --color-seagreen: #30ABC6;
   --color-sky-blue: #2EA2D3;
-  --color-tan: #EEEFE9;
+  --color-tan: #F5F5F5;
   --color-teal: #29DBBB;
   --color-teal-2: #6BC0B3;
   --color-teal-2-dark: #34796F;
@@ -547,7 +547,7 @@ mark {
   --color-muted: rgb(var(--text-muted));
   --color-input: rgb(var(--input-border));
   --color-accent: rgb(var(--accent));
-  --color-accent-light: #e5e7e0;
+  --color-accent-light: #E5E5E5;
   --color-accent-dark: #232429;
 
   --color-text-primary: rgb(var(--text-primary));

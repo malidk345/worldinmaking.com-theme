@@ -303,7 +303,7 @@ export function Editor({ document, onChange, sidebarOpen, settings, focusMode, o
             initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -3 }} transition={{ duration: 0.15 }}
             className="flex items-center gap-1.5 text-xs text-muted-foreground/40 bg-background/60 backdrop-blur-md px-2.5 py-1 rounded-lg border border-border/20"
           >
-            <span className={cn('w-1.5 h-1.5 rounded-full transition-colors', isSaved ? 'bg-green-400/70' : 'bg-amber-400 animate-pulse')} />
+            <span className={cn('w-1.5 h-1.5 rounded-full transition-colors', isSaved ? 'bg-green-400/70' : 'bg-gray-400 animate-pulse')} />
             {isSaved ? 'Saved' : 'Saving…'}
           </motion.span>
         </AnimatePresence>

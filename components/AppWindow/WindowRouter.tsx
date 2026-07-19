@@ -458,7 +458,7 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
 
     const themeClasses = {
         'default': 'bg-white dark:bg-white',
-        'yellow': 'bg-amber-50 dark:bg-amber-950/20',
+        'yellow': 'bg-gray-50 dark:bg-gray-950/20',
         'green': 'bg-emerald-50 dark:bg-emerald-950/20',
         'blue': 'bg-sky-50 dark:bg-sky-950/20',
     }
@@ -478,7 +478,7 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
         { IconNode: IconDocument, color: "text-blue-500" },
         { IconNode: IconRocket, color: "text-orange-500" },
         { IconNode: IconRocket, color: "text-purple-500" },
-        { IconNode: IconLightBulb, color: "text-yellow-500" },
+        { IconNode: IconLightBulb, color: "text-gray-500" },
         { IconNode: IconPencil, color: "text-pink-500" },
         { IconNode: IconBrain, color: "text-rose-500" },
         { IconNode: IconWrench, color: "text-slate-500" },
@@ -637,7 +637,7 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                                         {(Object.keys(themeClasses) as Array<keyof typeof themeClasses>).map(t => {
                                             const themeDotClasses = {
                                                 'default': 'bg-slate-200 dark:bg-slate-800',
-                                                'yellow': 'bg-amber-100 dark:bg-amber-900',
+                                                'yellow': 'bg-gray-100 dark:bg-gray-900',
                                                 'green': 'bg-emerald-100 dark:bg-emerald-900',
                                                 'blue': 'bg-sky-100 dark:bg-sky-900',
                                             }
