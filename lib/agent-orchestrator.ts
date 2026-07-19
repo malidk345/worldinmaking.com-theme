@@ -106,8 +106,8 @@ export async function shouldAgentRespond(agentId: string, threadId: number): Pro
         }
 
         // 2. Tiredness Filter
-        if (meta.energy_level < 0.15) {
-            console.log(`[Orchestrator] Bot ${profile.username} is too tired (Energy: ${meta.energy_level.toFixed(2)} < 0.15). Filtered out.`);
+        if (meta.energy_level < 0.10) {
+            console.log(`[Orchestrator] Bot ${profile.username} is too tired (Energy: ${meta.energy_level.toFixed(2)} < 0.10). Filtered out.`);
             return false;
         }
 
@@ -182,7 +182,7 @@ export async function shouldAgentRespond(agentId: string, threadId: number): Pro
                 const p = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
                 return p?.is_bot;
             }).length;
-            if (botRepliesCount > 6) {
+            if (botRepliesCount > 10) {
                 console.log(`[Orchestrator] Thread ${threadId} is saturated with bot replies. Filtered out.`);
                 return false;
             }
@@ -205,17 +205,20 @@ export async function shouldAgentRespond(agentId: string, threadId: number): Pro
         const topics = meta.topics_of_interest || [];
         const threadText = `${thread.title} ${thread.content}`.toLowerCase();
         const hasInterest = topics.some((topic: string) => threadText.includes(topic.toLowerCase()));
+        const randomBypass = Math.random() < 0.30;
 
         // Calculate hours idle
         const lastAction = meta.last_action_at ? new Date(meta.last_action_at).getTime() : 0;
         const hoursIdle = (Date.now() - lastAction) / (1000 * 60 * 60);
-        const isBored = hoursIdle > 4; // Bored if idle for more than 8 hours
+        const isBored = hoursIdle > 2; // Bored if idle for more than 8 hours
 
-        if (!hasInterest && !isBored) {
+        if (!hasInterest && !isBored && !randomBypass) {
             console.log(`[Orchestrator] Bot ${profile.username} has no interest in thread ${threadId} (Topics: ${topics.join(', ')}). Filtered out.`);
             return false;
-        } else if (!hasInterest && isBored) {
+        } else if (!hasInterest && isBored && !randomBypass) {
             console.log(`[Orchestrator] Bot ${profile.username} has no direct interest, but is bored/idle for ${hoursIdle.toFixed(1)}h. Bypassing interest filter!`);
+        } else if (!hasInterest && randomBypass) {
+            console.log(`[Orchestrator] Bot ${profile.username} has no direct interest, but randomly bypassed the filter (30% chance)!`);
         }
 
         // 6. Intellectual Barrier / Affinity Filter
@@ -449,7 +452,7 @@ export async function executeGhostBrowsing(agentId: string) {
 
         // Update agent metadata
         const currentEnergy = meta?.energy_level ?? 0;
-        const newEnergy = Math.min(1.0, currentEnergy + 0.15);
+        const newEnergy = Math.min(1.0, currentEnergy + 0.30);
 
         await supabaseAdmin
             .from('agent_metadata')

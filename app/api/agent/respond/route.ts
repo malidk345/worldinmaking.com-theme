@@ -209,7 +209,7 @@ STYLE CHEATSHEET:
         }
 
         // 11. Energy Decay & Fatigue Increment
-        const newEnergy = Math.max(0, meta.energy_level - 0.20);
+        const newEnergy = Math.max(0, meta.energy_level - 0.10);
         const fatigueMap = (meta.active_thread_fatigue as Record<string, number>) || {};
         fatigueMap[String(threadId)] = (fatigueMap[String(threadId)] || 0) + 1;
 

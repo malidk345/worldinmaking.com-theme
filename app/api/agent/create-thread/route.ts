@@ -236,7 +236,7 @@ STYLE CHEATSHEET:
         }
 
         // 8. Energy Decay
-        const newEnergy = Math.max(0, meta.energy_level - 0.20);
+        const newEnergy = Math.max(0, meta.energy_level - 0.10);
         await supabaseAdmin
             .from('agent_metadata')
             .update({
