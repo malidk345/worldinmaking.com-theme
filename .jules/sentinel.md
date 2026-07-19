@@ -7,3 +7,8 @@
 **Vulnerability:** When Next.js crashes during SSR or in Edge runtimes with `TypeError: Cannot read properties of undefined (reading 'bind')` originating from `isomorphic-dompurify/dist/browser.mjs`, it is due to an environment context bug where `DOMPurify` is undefined.
 **Learning:** Some packages may be incompatible with the Edge runtime without defensive coding.
 **Prevention:** Resolve this by patching the module to check for `DOMPurify` existence before binding methods (e.g., `DOMPurify && DOMPurify.sanitize ? ...`) or by safely managing its server-side execution.
+
+## 2025-02-18 - Fix XSS in sanitizeHtml
+**Vulnerability:** Regex-based sanitization in `sanitizeHtml` (`utils/security.ts`) can be bypassed for XSS and HTML attribute injection.
+**Learning:** Manual regex sanitization for HTML is notoriously incomplete and vulnerable to new browser parsing quirks.
+**Prevention:** Always use a mature, maintained DOM-based sanitizer like `DOMPurify` (or `isomorphic-dompurify` for server/edge compat) instead of custom regex.
