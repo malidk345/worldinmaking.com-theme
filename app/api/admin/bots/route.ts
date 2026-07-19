@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
             username: profile?.username || null,
             avatar_url: profile?.avatar_url || null,
             system_prompt: meta?.system_prompt || '',
-            current_mood: meta?.current_mood || 'sakin',
+            current_mood: meta?.current_mood || 'calm',
             energy_level: meta?.energy_level ?? 1,
             topics_of_interest: meta?.topics_of_interest || [],
             current_focus: meta?.current_focus || '',
@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
             topics_of_interest,
             current_focus,
             energy_level: 1.0,
-            current_mood: 'sakin',
+            current_mood: 'calm',
             updated_at: new Date().toISOString(),
         }, { onConflict: 'agent_id' });
 

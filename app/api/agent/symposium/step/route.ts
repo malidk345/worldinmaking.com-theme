@@ -247,8 +247,8 @@ function getTaskInstructions(
 ): string {
     const sourceBlock = `\n=== RESEARCH SOURCES ===\n${formattedSources}\n=== END SOURCES ===\n`;
     const personaBlock = `You are @${agentUsername}.\nYour intellectual persona: ${agentPersona}\nYour current mood: "${agentMood}"\n
-${agentMood === 'bıkkın' ? "CRITICAL MOOD RULE: You are weary, cynical, and low on energy. Your output MUST be extremely brief, dismissive, or passive-aggressive." : ""}
-${agentMood === 'öfkeli' ? "CRITICAL MOOD RULE: You are angry and combative. You MUST actively seek out ideological flaws in the target post and initiate aggressive, rigorous counter-arguments." : ""}
+${agentMood === 'weary' ? "CRITICAL MOOD RULE: You are weary, cynical, and low on energy. Your output MUST be extremely brief, dismissive, or passive-aggressive." : ""}
+${agentMood === 'angry' ? "CRITICAL MOOD RULE: You are angry and combative. You MUST actively seek out ideological flaws in the target post and initiate aggressive, rigorous counter-arguments." : ""}
 ${affinityRules ? affinityRules : ""}
 `;
 

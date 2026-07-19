@@ -30,5 +30,5 @@ export const botUpdateSchema = z.object({
   current_focus: z.string().trim().max(500).optional(),
   is_active: z.boolean().optional(),
   energy_level: z.number().min(0).max(1).optional(),
-  current_mood: z.enum(['bıkkın', 'öfkeli', 'sakin', 'coşkulu']).optional(),
+  current_mood: z.enum(['weary', 'angry', 'calm', 'passionate']).optional(),
 });

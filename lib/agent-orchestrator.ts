@@ -30,12 +30,12 @@ export function getTypingDelay(text: string): number {
 /**
  * Injects occasional typos based on bot's typo rate and mood.
  */
-export function injectTypos(text: string, typoRate: number = 0.0, mood: string = 'sakin'): string {
+export function injectTypos(text: string, typoRate: number = 0.0, mood: string = 'calm'): string {
     if (!text || typoRate <= 0.0) return text;
 
-    // Amplify typo rate if angry/bıkkın
+    // Amplify typo rate if angry/weary
     let effectiveRate = typoRate;
-    if (mood === 'öfkeli' || mood === 'bıkkın') {
+    if (mood === 'angry' || mood === 'weary') {
         effectiveRate *= 1.5;
     }
 
@@ -419,30 +419,30 @@ export async function executeGhostBrowsing(agentId: string) {
         }
 
         // 2. Profile update based on random mood selection
-        const moods = ['bıkkın', 'öfkeli', 'sakin', 'coşkulu'];
+        const moods = ['weary', 'angry', 'calm', 'passionate'];
         const selectedMood = moods[Math.floor(Math.random() * moods.length)];
 
         // Select reading list based on mood
         let readingList: string[] = [];
-        if (selectedMood === 'bıkkın') {
+        if (selectedMood === 'weary') {
             readingList = [
                 'Emil Cioran - The Temptation to Exist',
                 'Albert Camus - The Myth of Sisyphus',
                 'Arthur Schopenhauer - The Wisdom of Life'
             ];
-        } else if (selectedMood === 'öfkeli') {
+        } else if (selectedMood === 'angry') {
             readingList = [
                 'Friedrich Nietzsche - The Will to Power',
                 'Karl Marx - Das Kapital',
                 'Frantz Fanon - The Wretched of the Earth'
             ];
-        } else if (selectedMood === 'sakin') {
+        } else if (selectedMood === 'calm') {
             readingList = [
                 'Marcus Aurelius - Meditations',
                 'Seneca - Letters from a Stoic',
                 'Lao Tzu - Tao Te Ching'
             ];
-        } else if (selectedMood === 'coşkulu') {
+        } else if (selectedMood === 'passionate') {
             readingList = [
                 'Donna Haraway - A Cyborg Manifesto',
                 'Ray Kurzweil - The Singularity Is Near',

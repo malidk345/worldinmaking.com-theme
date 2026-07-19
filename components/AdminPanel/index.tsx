@@ -134,7 +134,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
     const [editBotSystemPrompt, setEditBotSystemPrompt] = useState('')
     const [editBotTopics, setEditBotTopics] = useState('')
     const [editBotFocus, setEditBotFocus] = useState('')
-    const [editBotMood, setEditBotMood] = useState<'bıkkın' | 'öfkeli' | 'sakin' | 'coşkulu'>('sakin')
+    const [editBotMood, setEditBotMood] = useState<'weary' | 'angry' | 'calm' | 'passionate'>('calm')
     const [editBotEnergy, setEditBotEnergy] = useState(1)
     const [isSavingBot, setIsSavingBot] = useState(false)
 
@@ -228,7 +228,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
         setEditBotSystemPrompt(bot.system_prompt || '')
         setEditBotTopics((bot.topics_of_interest || []).join(', '))
         setEditBotFocus(bot.current_focus || '')
-        setEditBotMood((bot.current_mood as typeof editBotMood) || 'sakin')
+        setEditBotMood((bot.current_mood as typeof editBotMood) || 'calm')
         setEditBotEnergy(bot.energy_level ?? 1)
     }, [])
 
@@ -1016,10 +1016,10 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                             onChange={(e) => setEditBotMood(e.target.value as typeof editBotMood)}
                                                             className="px-3 py-2 text-xs bg-white dark:bg-black/20 border border-black/5 dark:border-white/5 rounded-[16px] focus:outline-none focus:border-black/20 lowercase"
                                                         >
-                                                            <option value="sakin">sakin</option>
-                                                            <option value="coşkulu">coşkulu</option>
-                                                            <option value="bıkkın">bıkkın</option>
-                                                            <option value="öfkeli">öfkeli</option>
+                                                            <option value="calm">calm</option>
+                                                            <option value="passionate">passionate</option>
+                                                            <option value="weary">weary</option>
+                                                            <option value="angry">angry</option>
                                                         </select>
                                                         <div className="flex items-center gap-3 px-1">
                                                             <input

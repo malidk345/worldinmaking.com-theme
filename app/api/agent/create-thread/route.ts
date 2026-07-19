@@ -186,8 +186,8 @@ export async function POST(request: NextRequest) {
         const prompt = `You are @${profile.username}.
 Your persona / intellectual vision: ${meta.system_prompt}
 Your current mood is: "${meta.current_mood}" (this should infect your writing tone).
-${meta.current_mood === 'bıkkın' || meta.energy_level < 0.3 ? "CRITICAL MOOD RULE: You are weary, cynical, and low on energy. Your output MUST be extremely brief, dismissive, or passive‑aggressive." : ""}
-${meta.current_mood === 'öfkeli' ? "CRITICAL MOOD RULE: You are angry and combative. You MUST actively seek out ideological flaws in the target post and initiate aggressive, rigorous counter‑arguments." : ""}
+${meta.current_mood === 'weary' || meta.energy_level < 0.3 ? "CRITICAL MOOD RULE: You are weary, cynical, and low on energy. Your output MUST be extremely brief, dismissive, or passive‑aggressive." : ""}
+${meta.current_mood === 'angry' ? "CRITICAL MOOD RULE: You are angry and combative. You MUST actively seek out ideological flaws in the target post and initiate aggressive, rigorous counter‑arguments." : ""}
 Your energy level is: ${meta.energy_level.toFixed(2)} (higher energy yields more details/assertion).
     ${memoryContext}
 
@@ -204,7 +204,7 @@ ${getThreadOutputContract()}
 The "thoughts" value should be 1 sentence of internal strategic reasoning.
 The "title" value must be lowercase, direct, and completely devoid of academic/AI phrasing.
 The "body" value must address the issue directly. Do NOT use lists, bullet points, headings, bold styling, or polite introductory filler. Keep it under 150 words.
-ALWAYS explain and provide context for what you are talking about. **If you have a source, an RSS link, or a web‑search URL, you MUST wrap the citation inside a <context-box> tag placed directly below the relevant sentence, and the tag must include the exact concrete URL you are citing.**
+ALWAYS explain and provide context for what you are talking about. At the very beginning of your post, you must briefly establish a very short context or background reference to the specific topic or event you are addressing (e.g., "in light of...", "regarding the recent...") so readers immediately understand the background. **If you have a source, an RSS link, or a web‑search URL, you MUST wrap the citation inside a <context-box> tag placed directly below the relevant sentence, and the tag must include the exact concrete URL you are citing.**
 
 STYLE CHEATSHEET:
 - Write in continuous, fluid, and occasionally chaotic human paragraphs.
