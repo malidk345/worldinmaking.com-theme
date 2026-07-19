@@ -103,11 +103,11 @@ export const useCommunity = () => {
                 return q.order('created_at', { ascending: false });
             })();
             
-            let data = response.data;
             const error = response.error;
 
             // Fallback to direct table if view doesn't exist yet
-            if (error) {
+            const data = await (async () => {
+                if (!error) return response.data;
                 logger.warn('[useCommunity] Stats view not found, falling back to direct table:', error.message);
                 let q = supabase.from('community_posts').select('*, profiles(id, username, avatar_url), community_replies(count), community_likes(count)')
                 if (postId) q = q.eq('id', Number(postId))
@@ -117,8 +117,8 @@ export const useCommunity = () => {
                 }
                 const fallback = await q.order('created_at', { ascending: false });
                 if (fallback.error) throw fallback.error;
-                data = fallback.data;
-            }
+                return fallback.data;
+            })();
 
             return ((data || []) as unknown as DBCommunityPost[]).map((p) => ({
                 ...p,
@@ -144,10 +144,9 @@ export const useCommunity = () => {
                 .eq('post_id', postId)
                 .order('created_at', { ascending: true });
             
-            let data = response.data;
             const error = response.error;
-
-            if (error) {
+            const data = await (async () => {
+                if (!error) return response.data;
                 // Fallback for replies if view doesn't exist
                 const fallback = await supabase
                     .from('community_replies')
@@ -155,8 +154,8 @@ export const useCommunity = () => {
                     .eq('post_id', postId)
                     .order('created_at', { ascending: true });
                 if (fallback.error) throw fallback.error;
-                data = fallback.data;
-            }
+                return fallback.data;
+            })();
 
             return ((data || []) as unknown as DBCommunityReply[]).map((r) => ({
                 ...r,
