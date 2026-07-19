@@ -579,7 +579,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
 
             <div className="flex flex-1 min-h-0 overflow-hidden relative bg-white/80 dark:bg-black/80 supports-[backdrop-filter]:backdrop-blur-[60px]">
                 {isOwner && (
-                    <div className={`shrink-0 flex flex-col border-r border-primary/5 bg-[#fafcfc] dark:bg-black/10 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${sidebarOpen ? 'w-64 opacity-100 translate-x-0' : 'w-0 opacity-0 -translate-x-full absolute h-full pointer-events-none'}`}>
+                    <div className={`shrink-0 flex flex-col border-r border-primary/5 bg-[#ffffff] dark:bg-black/10 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${sidebarOpen ? 'w-64 opacity-100 translate-x-0' : 'w-0 opacity-0 -translate-x-full absolute h-full pointer-events-none'}`}>
                         <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-4 min-w-[256px]">
                             <button className="flex items-center gap-2 w-full hover:bg-black/5 dark:hover:bg-white/5 p-1.5 rounded-[24px] transition-colors">
                                 <div className="size-6 overflow-hidden rounded bg-primary/10 flex items-center justify-center shrink-0 shadow-sm border border-primary/10">

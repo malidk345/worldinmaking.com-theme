@@ -454,7 +454,7 @@ function DocItem({
             onClick={onIconClick}
             className="text-sm leading-none hover:scale-110 transition-transform"
           >
-            {doc.pinned ? <Pin size={12} className="text-amber-500 mt-0.5" /> : <RenderIcon name={doc.icon} size={13} className="text-foreground/75 mt-0.5" />}
+            {doc.pinned ? <Pin size={12} className="text-gray-500 mt-0.5" /> : <RenderIcon name={doc.icon} size={13} className="text-foreground/75 mt-0.5" />}
           </button>
           <div className="min-w-0 flex-1">
             <span className="font-medium text-xs truncate text-foreground/85 leading-relaxed block">

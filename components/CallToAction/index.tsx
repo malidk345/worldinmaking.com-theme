@@ -93,7 +93,7 @@ const secondary = cntl`
 `
 
 const outline = cntl`
-    border-yellow
+    border-gray-200
     bg-white
     text-primary
     hover:text-primary
@@ -121,7 +121,7 @@ const containerTypes = {
         !no-underline
     `,
     outline: cntl`
-        bg-yellow/50
+        bg-white/50
         border-dark/30
         dark:bg-white/10
         dark:border-white/20

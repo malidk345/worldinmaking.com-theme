@@ -656,7 +656,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                         <span className="text-[13px] font-bold text-black/90 lowercase group-hover:text-black transition-colors">{post.title}</span>
                                                         <div className="flex gap-1 items-center">
                                                             {!post.published && (
-                                                                <span className="bg-amber-50 text-amber-700 text-[8px] px-1.5 py-0.5 rounded-full font-black border border-amber-200/50 lowercase tracking-wider">draft</span>
+                                                                <span className="bg-gray-50 text-gray-700 text-[8px] px-1.5 py-0.5 rounded-full font-black border border-gray-200/50 lowercase tracking-wider">draft</span>
                                                             )}
                                                             {post.published && !post.is_approved && (
                                                                 <span className="bg-purple-50 text-purple-700 text-[8px] px-1.5 py-0.5 rounded-full font-black border border-purple-200/50 lowercase tracking-wider animate-pulse">awaiting approval</span>
@@ -687,7 +687,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                             size="xs"
                                                             variant="secondary"
                                                             onClick={() => approvePost(post.id, !post.is_approved)}
-                                                            className={post.is_approved ? 'hover:!bg-amber-50 hover:!text-amber-600' : 'hover:!bg-emerald-50 hover:!text-emerald-600 !border-emerald-200 !text-emerald-700 !bg-emerald-50/30'}
+                                                            className={post.is_approved ? 'hover:!bg-gray-50 hover:!text-gray-600' : 'hover:!bg-emerald-50 hover:!text-emerald-600 !border-emerald-200 !text-emerald-700 !bg-emerald-50/30'}
                                                             title={post.is_approved ? 'revoke approval' : 'approve publication'}
                                                         >
                                                             {post.is_approved ? 'unapprove' : (

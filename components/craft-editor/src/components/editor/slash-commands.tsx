@@ -129,7 +129,7 @@ export const getSlashCommands = () => [
     title: 'Warning Callout',
     description: 'Yellow warning box.',
     searchTerms: ['callout', 'warning', 'alert'],
-    icon: <AlertTriangle size={18} className="text-amber-500" />,
+    icon: <AlertTriangle size={18} className="text-gray-500" />,
     command: ({ editor, range }: { editor: Editor; range: any }) => {
       editor.chain().focus().deleteRange(range).setCallout({ type: 'warning' }).run();
     },

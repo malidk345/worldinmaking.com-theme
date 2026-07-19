@@ -81,7 +81,7 @@ const Input = ({
                         <label htmlFor={inputId} className={`${labelSizeClasses[size]}`}>
                             <span>
                                 {label}
-                                {required && <span className="text-red dark:text-yellow ml-0.5">*</span>}
+                                {required && <span className="text-red dark:text-white ml-0.5">*</span>}
                             </span>
                             {tooltip && (
                                 <span>
@@ -96,7 +96,7 @@ const Input = ({
                         {actionButton && (
                             <button
                                 {...actionButton}
-                                className={`text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed text-red dark:text-yellow ${actionButton.className || ''
+                                className={`text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed text-red dark:text-white ${actionButton.className || ''
                                     }`}
                             >
                                 {actionButton.label}
@@ -108,7 +108,7 @@ const Input = ({
             )}
             <div className={`relative ${direction === 'column' ? 'w-full' : 'flex-1'}`}>
                 <input
-                    className={`bg-gray-50 dark:bg-gray-900 border border-black/10 dark:border-white/10 rounded-[18px] ring-0 outline-none focus:border-black/20 dark:focus:border-white/20 focus:bg-white dark:focus:bg-black transition-all duration-200 ${touched && error ? 'border-red dark:border-yellow' : ''
+                    className={`bg-gray-50 dark:bg-gray-900 border border-black/10 dark:border-white/10 rounded-[18px] ring-0 outline-none focus:border-black/20 dark:focus:border-white/20 focus:bg-white dark:focus:bg-black transition-all duration-200 ${touched && error ? 'border-red dark:border-white/20' : ''
                         } ${sizeClasses[size]} ${widthClasses[width]} ${showClearButton && value ? 'pr-10' : ''
                         } ${className}`}
                     type={type}
@@ -128,7 +128,7 @@ const Input = ({
                         <IconX className="w-4 h-4 text-muted" />
                     </button>
                 )}
-                {touched && error && <p className="text-sm text-red dark:text-yellow m-0 mt-1">{error}</p>}
+                {touched && error && <p className="text-sm text-red dark:text-white m-0 mt-1">{error}</p>}
             </div>
         </div>
     )

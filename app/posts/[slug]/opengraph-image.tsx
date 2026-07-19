@@ -81,11 +81,11 @@ export default async function Image({ params }: { params: { slug: string } }) {
           flexDirection: 'column',
           alignItems: 'flex-start',
           justifyContent: 'center',
-          backgroundColor: '#FDFDF8', // light-1
+          backgroundColor: '#FFFFFF', // light-1
           backgroundImage: 'radial-gradient(circle at 25px 25px, #D2D3CC 2%, transparent 0%), radial-gradient(circle at 75px 75px, #D2D3CC 2%, transparent 0%)',
           backgroundSize: '100px 100px',
           padding: '80px',
-          border: '24px solid #E5E7E0', // light-3
+          border: '24px solid #E5E5E5', // light-3
         }}
       >
         <div
