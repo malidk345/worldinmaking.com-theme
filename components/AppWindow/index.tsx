@@ -480,7 +480,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             data-app="AppWindow"
                             data-scheme="tertiary"
                             className={`group @container absolute !select-auto flex flex-col ${getWindowSurfaceBg(siteSettings.heaterMode)} ${getSurfaceMotionLayer(siteSettings.heaterMode, isCompositorActive)} ${isMaximized ? 'shadow-none' : (isFocused ? 'premium-shadow-active border-black/5 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/10' : 'premium-shadow-inactive border-black/10 dark:border-white/10')
-                                } ${dragging ? '[&_*]:select-none' : ''} ${item.minimal ? '!shadow-none' : (isMaximized ? 'rounded-t-none rounded-b-lg border border-t-0 border-black/10 dark:border-white/10' : 'border rounded-lg border-black/10 dark:border-white/10')} ${chrome ? 'overflow-hidden' : ''}`}
+                                } ${dragging ? '[&_*]:select-none' : ''} ${item.minimal ? '!shadow-none' : (isMaximized ? 'rounded-t-none rounded-b-lg border border-t-0 border-black/10 dark:border-white/10' : 'border rounded-lg border-black/10 dark:border-white/10')} ${chrome ? 'overflow-hidden' : ''} transition-[border-radius,box-shadow,border-color,background-color] duration-[400ms] ease-[cubic-bezier(0.25,1,0.5,1)]`}
                             style={{
                                 pointerEvents: 'auto',
                                 rotateX: isActiveWindowsPanelOpen ? 0 : tiltX,
@@ -517,43 +517,35 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             transition={
                                 siteSettings.performanceBoost ? { duration: 0 } : {
                                     type: "spring",
-                                    stiffness: 350,
-                                    damping: 25,
+                                    stiffness: 300,
+                                    damping: 30,
                                     mass: 0.8,
                                     scale: {
                                         type: "spring",
-                                        stiffness: 350,
-                                        damping: 25,
+                                        stiffness: 300,
+                                        damping: 30,
                                         mass: 0.8,
-                                        delay: 0.05
+                                        delay: 0.02
                                     },
                                     width: {
-                                        duration: dragging ? 0 : undefined,
-                                        type: dragging ? false : "spring",
-                                        stiffness: 350,
-                                        damping: 25,
-                                        mass: 0.8
+                                        duration: dragging ? 0 : 0.4,
+                                        type: dragging ? false : "tween",
+                                        ease: [0.25, 1, 0.5, 1]
                                     },
                                     height: {
-                                        duration: dragging ? 0 : undefined,
-                                        type: dragging ? false : "spring",
-                                        stiffness: 350,
-                                        damping: 25,
-                                        mass: 0.8
+                                        duration: dragging ? 0 : 0.4,
+                                        type: dragging ? false : "tween",
+                                        ease: [0.25, 1, 0.5, 1]
                                     },
                                     x: {
-                                        duration: dragging ? 0 : undefined,
-                                        type: dragging ? false : "spring",
-                                        stiffness: 350,
-                                        damping: 25,
-                                        mass: 0.8
+                                        duration: dragging ? 0 : 0.4,
+                                        type: dragging ? false : "tween",
+                                        ease: [0.25, 1, 0.5, 1]
                                     },
                                     y: {
-                                        duration: dragging ? 0 : undefined,
-                                        type: dragging ? false : "spring",
-                                        stiffness: 350,
-                                        damping: 25,
-                                        mass: 0.8
+                                        duration: dragging ? 0 : 0.4,
+                                        type: dragging ? false : "tween",
+                                        ease: [0.25, 1, 0.5, 1]
                                     }
                                 }
                             }
@@ -762,8 +754,8 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                  }}
                             />
 
-                            <div className={`w-full flex-1 flex flex-col bg-transparent min-h-0 relative ${isMaximized ? 'px-0 pb-0' : 'px-1.5 has-[+div:empty]:pb-1.5'}`}>
-                                <div className={`w-full h-full flex-1 overflow-hidden relative shadow-[0_0_0_1px_rgba(0,0,0,0.05)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.05)] bg-transparent ${isMaximized ? 'border-0 rounded-t-none rounded-b-lg' : 'border border-black/10 dark:border-white/10 rounded-lg'}`}>
+                            <div className={`w-full flex-1 flex flex-col bg-transparent min-h-0 relative ${isMaximized ? 'px-0 pb-0' : 'px-1.5 has-[+div:empty]:pb-1.5'} transition-[padding] duration-[400ms] ease-[cubic-bezier(0.25,1,0.5,1)]`}>
+                                <div className={`w-full h-full flex-1 overflow-hidden relative shadow-[0_0_0_1px_rgba(0,0,0,0.05)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.05)] bg-transparent ${isMaximized ? 'border-0 rounded-t-none rounded-b-lg' : 'border border-black/10 dark:border-white/10 rounded-lg'} transition-[border-radius,border-width,border-color] duration-[400ms] ease-[cubic-bezier(0.25,1,0.5,1)]`}>
                                     {(!animating || rendered) && (
                                         item.key === 'home' ? <HomeControl /> : <WindowRouter item={item} />
                                     )}
