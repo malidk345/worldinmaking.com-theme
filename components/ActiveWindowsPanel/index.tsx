@@ -71,7 +71,7 @@ export default function ActiveWindowsPanel() {
             {isActiveWindowsPanelOpen && (
                 <>
                     <motion.div
-                        className="fixed inset-0 z-[10000] bg-white/10 dark:bg-black/10 supports-[backdrop-filter]:backdrop-blur-[10px] supports-[backdrop-filter]:saturate-[190%]"
+                        className="fixed inset-0 z-[10000] bg-black/20 dark:bg-black/40 backdrop-blur-md"
                         variants={overlayVariants}
                         initial="hidden"
                         animate="visible"

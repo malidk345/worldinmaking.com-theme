@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from 'react'
+import { getWindowSurfaceBg } from '../../constants/frostedSurfaces'
 import ForumPageLayout from 'components/Forum/ForumPageLayout'
 import ForumQuestionDetail from 'components/Forum/ForumQuestionDetail'
 import AdminPanel from 'components/AdminPanel'
@@ -561,7 +562,7 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                     </div>
                 )}                {/* Main Node Content Area */}
                 <div className="w-full max-w-4xl mx-auto px-2 sm:px-6 pb-4 sm:pb-6 flex-1 flex flex-col min-h-0 pt-4 sm:pt-6 gap-3">
-                    <div className="relative bg-white/40 dark:bg-black/40 supports-[backdrop-filter]:backdrop-blur-[40px] rounded-[24px] md:rounded-[32px] p-3 sm:p-6 border border-black/5 dark:border-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.04)] flex flex-col gap-3 sm:gap-4 flex-1 h-full min-h-0">
+                    <div className={`relative ${getWindowSurfaceBg()} rounded-[24px] md:rounded-[32px] p-3 sm:p-6 border border-black/5 dark:border-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.04)] flex flex-col gap-3 sm:gap-4 flex-1 h-full min-h-0`}>
                         {/* Meta Bar */}
                         <div className="flex items-center justify-between pb-2 border-b border-black/5 dark:border-white/5 select-none">
                             <div className="flex items-center gap-2">

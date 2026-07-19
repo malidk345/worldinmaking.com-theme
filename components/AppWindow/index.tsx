@@ -479,7 +479,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             ref={windowRef}
                             data-app="AppWindow"
                             data-scheme="tertiary"
-                            className={`group @container absolute !select-auto flex flex-col ${getWindowSurfaceBg(siteSettings.heaterMode)} ${getSurfaceMotionLayer(siteSettings.heaterMode, isCompositorActive)} ${isMaximized ? 'shadow-none' : (isFocused ? 'premium-shadow-active border-black/5 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/10' : 'premium-shadow-inactive border-black/10 dark:border-white/10')
+                            className={`group @container absolute !select-auto flex flex-col ${getWindowSurfaceBg()} ${getSurfaceMotionLayer(isCompositorActive)} ${isMaximized ? 'shadow-none' : (isFocused ? 'premium-shadow-active border-black/5 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/10' : 'premium-shadow-inactive border-black/10 dark:border-white/10')
                                 } ${dragging ? '[&_*]:select-none' : ''} ${item.minimal ? '!shadow-none' : (isMaximized ? 'rounded-t-none rounded-b-lg border border-t-0 border-black/10 dark:border-white/10' : 'border rounded-lg border-black/10 dark:border-white/10')} ${chrome ? 'overflow-hidden' : ''}`}
                             style={{
                                 pointerEvents: 'auto',
