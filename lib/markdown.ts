@@ -42,3 +42,10 @@ export function stripMarkdown(markdown: string | null | undefined): string {
 
     return text;
 }
+
+export function getExcerpt(markdown: string | null | undefined, length: number = 150): string {
+    if (!markdown) return '';
+    const plainText = stripMarkdown(markdown);
+    if (plainText.length <= length) return plainText;
+    return plainText.substring(0, length).trimEnd() + '...';
+}

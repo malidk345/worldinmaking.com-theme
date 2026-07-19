@@ -442,7 +442,7 @@ export const AppLink = ({
                     to={url}
                     {...(external ? { externalNoIcon: true } : { state: { newWindow: true } })}
                     className={`${commonClassName} ${orientationClassName}`}
-                    onClick={(e) => {
+                    onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
                         if (hasDragged) {
                             e.preventDefault()
                             e.stopPropagation()

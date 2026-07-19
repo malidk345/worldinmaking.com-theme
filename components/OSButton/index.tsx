@@ -99,7 +99,13 @@ const OSButton = React.memo(React.forwardRef<HTMLButtonElement | HTMLAnchorEleme
         const commonClasses = `${baseClasses} ${width === 'full' ? 'flex w-full' : 'inline-flex'} ${!isLinkVariant ? sizeClasses[size] : ''} ${variantClasses[variant as keyof typeof variantClasses]} ${align === 'center' ? 'text-center' : 'text-left'} ${className}`
 
         const buttonElement = asLink ? (
-            <Link to={to || ''} className={commonClasses} state={state} ref={ref as React.Ref<HTMLAnchorElement>}>
+            <Link
+                to={to || ''}
+                className={commonClasses}
+                state={state}
+                ref={ref as React.Ref<HTMLAnchorElement>}
+                {...(props as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
+            >
                 {buttonContent}
             </Link>
         ) : (

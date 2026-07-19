@@ -10,7 +10,7 @@ export interface LinkState {
     [key: string]: unknown
 }
 
-export interface Props {
+export interface Props extends Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> {
     to: string
     children: React.ReactNode
     className?: string
@@ -18,43 +18,44 @@ export interface Props {
     externalNoIcon?: boolean
     state?: LinkState
     newWindow?: boolean
-    onClick?: (e: React.MouseEvent) => void
+    onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void
     [key: string]: unknown
 }
 
-export default function Link({
+const Link = React.forwardRef<HTMLAnchorElement, Props>(({
     to,
     children,
     className = '',
     external,
     onClick,
     ...other
-}: Props) {
+}, ref) => {
     const { addWindow } = useApp()
     const { appWindow } = useWindow()
 
     // Strip non-DOM props so they don't get spread onto <a> / <NextLink>
-    const { state, newWindow, ...domProps } = other
+    const { state, newWindow, externalNoIcon: _externalNoIcon, ...domProps } = other
 
-    const handleClick = (e: React.MouseEvent) => {
-        if (onClick) {
+    const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        if (typeof onClick === 'function') {
             onClick(e)
             if (e.defaultPrevented) return
         }
 
         // If it's an internal link
-        if (to && to.startsWith('/')) {
+        if (typeof to === 'string' && to.startsWith('/')) {
             const target = e.target as HTMLElement
             const rect = target.getBoundingClientRect ? target.getBoundingClientRect() : null
             const fromOrigin = rect ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : undefined
 
             // Case 1: Force a new window (fake OS window)
-            if (state?.newWindow || newWindow) {
+            const typedState = state as LinkState | undefined;
+            if (typedState?.newWindow || newWindow) {
                 e.preventDefault()
                 addWindow({
                     key: `${to}-${Date.now()}`,
                     path: to,
-                    title: to.split('/').pop() || 'window',
+                    title: typeof to === 'string' ? to.split('/').pop() || 'window' : 'window',
                     fromOrigin
                 })
                 return
@@ -68,7 +69,7 @@ export default function Link({
                 addWindow({
                     key: `${to}-${Date.now()}`,
                     path: to,
-                    title: to.split('/').pop() || 'window',
+                    title: typeof to === 'string' ? to.split('/').pop() || 'window' : 'window',
                     fromOrigin
                 })
                 return
@@ -76,17 +77,21 @@ export default function Link({
         }
     }
 
-    if (external || (to && (to.startsWith('http') || to.startsWith('https')))) {
+    if (external || (typeof to === 'string' && (to.startsWith('http') || to.startsWith('https')))) {
         return (
-            <a href={to} className={className} target="_blank" rel="noopener noreferrer" onClick={handleClick} {...domProps}>
-                {children}
+            <a href={to as string} className={className as string | undefined} target="_blank" rel="noopener noreferrer" onClick={handleClick} ref={ref} {...(domProps as Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href'>)}>
+                {children as React.ReactNode}
             </a>
         )
     }
 
     return (
-        <NextLink href={to || '#'} className={className} onClick={handleClick} {...domProps}>
-            {children}
+        <NextLink href={to as string || '#'} className={className as string | undefined} onClick={handleClick} ref={ref} {...(domProps as Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href'>)}>
+            {children as React.ReactNode}
         </NextLink>
     )
-}
+})
+
+Link.displayName = 'Link'
+
+export default Link
