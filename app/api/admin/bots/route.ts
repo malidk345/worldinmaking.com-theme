@@ -14,36 +14,50 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    const { data: bots, error } = await supabaseAdmin
-        .from('bot_profiles')
-        .select(`
-            id,
-            is_active,
-            created_at,
-            profiles:profiles!id ( username, avatar_url ),
-            agent_metadata ( system_prompt, current_mood, energy_level, topics_of_interest, current_focus, last_action_at )
-        `)
-        .order('created_at', { ascending: true });
+    // Fetch each table independently and merge in JS. bot_profiles and agent_metadata
+    // both reference profiles(id) but have no direct FK to each other, so a single
+    // PostgREST nested-embed query across all three tables is not reliable.
+    const [{ data: botProfiles, error: botError }, { data: profiles, error: profilesError }, { data: metadata, error: metaError }] = await Promise.all([
+        supabaseAdmin
+            .from('bot_profiles')
+            .select('id, is_active, created_at')
+            .order('created_at', { ascending: true }),
+        supabaseAdmin
+            .from('profiles')
+            .select('id, username, avatar_url'),
+        supabaseAdmin
+            .from('agent_metadata')
+            .select('agent_id, system_prompt, current_mood, energy_level, topics_of_interest, current_focus, last_action_at'),
+    ]);
 
-    if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+    if (botError) {
+        return NextResponse.json({ error: botError.message }, { status: 500 });
+    }
+    if (profilesError) {
+        return NextResponse.json({ error: profilesError.message }, { status: 500 });
+    }
+    if (metaError) {
+        return NextResponse.json({ error: metaError.message }, { status: 500 });
     }
 
-    const normalized = (bots || []).map((b: Record<string, unknown>) => {
-        const profile = Array.isArray(b.profiles) ? b.profiles[0] : b.profiles;
-        const meta = Array.isArray(b.agent_metadata) ? b.agent_metadata[0] : b.agent_metadata;
+    const profileById = new Map((profiles || []).map((p) => [p.id, p]));
+    const metaById = new Map((metadata || []).map((m) => [m.agent_id, m]));
+
+    const normalized = (botProfiles || []).map((b) => {
+        const profile = profileById.get(b.id);
+        const meta = metaById.get(b.id);
         return {
             id: b.id,
             is_active: b.is_active,
             created_at: b.created_at,
-            username: (profile as { username?: string })?.username || null,
-            avatar_url: (profile as { avatar_url?: string })?.avatar_url || null,
-            system_prompt: (meta as { system_prompt?: string })?.system_prompt || '',
-            current_mood: (meta as { current_mood?: string })?.current_mood || 'sakin',
-            energy_level: (meta as { energy_level?: number })?.energy_level ?? 1,
-            topics_of_interest: (meta as { topics_of_interest?: string[] })?.topics_of_interest || [],
-            current_focus: (meta as { current_focus?: string })?.current_focus || '',
-            last_action_at: (meta as { last_action_at?: string })?.last_action_at || null,
+            username: profile?.username || null,
+            avatar_url: profile?.avatar_url || null,
+            system_prompt: meta?.system_prompt || '',
+            current_mood: meta?.current_mood || 'sakin',
+            energy_level: meta?.energy_level ?? 1,
+            topics_of_interest: meta?.topics_of_interest || [],
+            current_focus: meta?.current_focus || '',
+            last_action_at: meta?.last_action_at || null,
         };
     });
 

@@ -77,10 +77,31 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (current_mood !== undefined) metaUpdate.current_mood = current_mood;
 
     if (Object.keys(metaUpdate).length > 1) {
+        // Some legacy bots may not have an agent_metadata row yet. Upsert so editing
+        // always succeeds, but agent_metadata.system_prompt is NOT NULL, so if we're
+        // not explicitly setting it here we must supply a fallback for a first insert.
+        if (metaUpdate.system_prompt === undefined) {
+            const { data: existingMeta } = await supabaseAdmin
+                .from('agent_metadata')
+                .select('system_prompt')
+                .eq('agent_id', id)
+                .maybeSingle();
+
+            if (existingMeta?.system_prompt) {
+                metaUpdate.system_prompt = existingMeta.system_prompt;
+            } else {
+                const { data: botProfile } = await supabaseAdmin
+                    .from('bot_profiles')
+                    .select('system_prompt')
+                    .eq('id', id)
+                    .maybeSingle();
+                metaUpdate.system_prompt = botProfile?.system_prompt || 'You are an autonomous agent.';
+            }
+        }
+
         const { error: metaError } = await supabaseAdmin
             .from('agent_metadata')
-            .update(metaUpdate)
-            .eq('agent_id', id);
+            .upsert({ agent_id: id, ...metaUpdate }, { onConflict: 'agent_id' });
 
         if (metaError) {
             return NextResponse.json({ error: `Failed to update agent metadata: ${metaError.message}` }, { status: 500 });

@@ -8,6 +8,7 @@ import { IconActivity, IconArrowLeft, IconChat, IconChevronDown, IconCode, IconD
 import RichTextEditor, { saveDraftToStorage, loadDraftFromStorage, clearDraftFromStorage } from './RichTextEditor'
 import { useAdminData, AdminPost } from '../../hooks/useAdminData'
 import { useAdminBots } from '../../hooks/useAdminBots'
+import type { AdminBot } from '../../hooks/useAdminBots'
 import { useAuth } from '../../context/AuthContext'
 import { toSlug } from '../../utils/security'
 import dayjs from 'dayjs'
@@ -126,6 +127,17 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
     const [newBotFocus, setNewBotFocus] = useState('')
     const [lastIssuedToken, setLastIssuedToken] = useState<{ username: string; token: string } | null>(null)
 
+    // Full agent editing (existing bots) — inline edit form state
+    const [editingBotId, setEditingBotId] = useState<string | null>(null)
+    const [editBotUsername, setEditBotUsername] = useState('')
+    const [editBotAvatarUrl, setEditBotAvatarUrl] = useState('')
+    const [editBotSystemPrompt, setEditBotSystemPrompt] = useState('')
+    const [editBotTopics, setEditBotTopics] = useState('')
+    const [editBotFocus, setEditBotFocus] = useState('')
+    const [editBotMood, setEditBotMood] = useState<'bıkkın' | 'öfkeli' | 'sakin' | 'coşkulu'>('sakin')
+    const [editBotEnergy, setEditBotEnergy] = useState(1)
+    const [isSavingBot, setIsSavingBot] = useState(false)
+
     // Content management filter
     const [contentFilter, setContentFilter] = useState<'all' | 'published' | 'draft' | 'pending'>('all')
 
@@ -208,6 +220,38 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
             setIsCreatingBot(false)
         }
     }, [newBotUsername, newBotAvatarUrl, newBotSystemPrompt, newBotTopics, newBotFocus, createBot])
+
+    const openEditBot = useCallback((bot: AdminBot) => {
+        setEditingBotId(bot.id)
+        setEditBotUsername(bot.username || '')
+        setEditBotAvatarUrl(bot.avatar_url || '')
+        setEditBotSystemPrompt(bot.system_prompt || '')
+        setEditBotTopics((bot.topics_of_interest || []).join(', '))
+        setEditBotFocus(bot.current_focus || '')
+        setEditBotMood((bot.current_mood as typeof editBotMood) || 'sakin')
+        setEditBotEnergy(bot.energy_level ?? 1)
+    }, [])
+
+    const handleSaveBot = useCallback(async () => {
+        if (!editingBotId || !editBotUsername.trim() || !editBotSystemPrompt.trim()) {
+            return
+        }
+        setIsSavingBot(true)
+        const topics = editBotTopics.split(',').map(t => t.trim()).filter(Boolean)
+        const success = await updateBot(editingBotId, {
+            username: editBotUsername.trim(),
+            avatar_url: editBotAvatarUrl.trim(),
+            system_prompt: editBotSystemPrompt.trim(),
+            topics_of_interest: topics,
+            current_focus: editBotFocus.trim(),
+            current_mood: editBotMood,
+            energy_level: editBotEnergy,
+        })
+        setIsSavingBot(false)
+        if (success) {
+            setEditingBotId(null)
+        }
+    }, [editingBotId, editBotUsername, editBotAvatarUrl, editBotSystemPrompt, editBotTopics, editBotFocus, editBotMood, editBotEnergy, updateBot])
 
     // useApp() can be undefined if accessed outside of provider, adding fallback just in case
     const app = useApp()
@@ -890,6 +934,13 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                     <OSButton
                                                         size="xs"
                                                         variant="secondary"
+                                                        onClick={() => editingBotId === bot.id ? setEditingBotId(null) : openEditBot(bot)}
+                                                    >
+                                                        <span className="text-[10px] lowercase px-1">{editingBotId === bot.id ? 'close' : 'edit'}</span>
+                                                    </OSButton>
+                                                    <OSButton
+                                                        size="xs"
+                                                        variant="secondary"
                                                         onClick={() => updateBot(bot.id, { is_active: !bot.is_active })}
                                                     >
                                                         <span className="text-[10px] lowercase px-1">{bot.is_active ? 'pause' : 'resume'}</span>
@@ -917,6 +968,87 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                     </>
                                                 )}
                                             </div>
+
+                                            {editingBotId === bot.id && (
+                                                <div className="mt-4 p-4 rounded-[20px] border border-black/5 dark:border-white/5 bg-black/[0.015] dark:bg-white/[0.02] space-y-3">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                        <input
+                                                            type="text"
+                                                            value={editBotUsername}
+                                                            onChange={(e) => setEditBotUsername(e.target.value)}
+                                                            placeholder="username"
+                                                            className="px-3 py-2 text-xs bg-white dark:bg-black/20 border border-black/5 dark:border-white/5 rounded-[16px] focus:outline-none focus:border-black/20"
+                                                        />
+                                                        <input
+                                                            type="text"
+                                                            value={editBotAvatarUrl}
+                                                            onChange={(e) => setEditBotAvatarUrl(e.target.value)}
+                                                            placeholder="avatar url"
+                                                            className="px-3 py-2 text-xs bg-white dark:bg-black/20 border border-black/5 dark:border-white/5 rounded-[16px] focus:outline-none focus:border-black/20"
+                                                        />
+                                                    </div>
+                                                    <textarea
+                                                        value={editBotSystemPrompt}
+                                                        onChange={(e) => setEditBotSystemPrompt(e.target.value)}
+                                                        placeholder="system prompt / persona description..."
+                                                        rows={6}
+                                                        className="w-full px-3 py-2 text-xs bg-white dark:bg-black/20 border border-black/5 dark:border-white/5 rounded-[16px] focus:outline-none focus:border-black/20 resize-none"
+                                                    />
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                        <input
+                                                            type="text"
+                                                            value={editBotTopics}
+                                                            onChange={(e) => setEditBotTopics(e.target.value)}
+                                                            placeholder="topics of interest, comma separated"
+                                                            className="px-3 py-2 text-xs bg-white dark:bg-black/20 border border-black/5 dark:border-white/5 rounded-[16px] focus:outline-none focus:border-black/20"
+                                                        />
+                                                        <input
+                                                            type="text"
+                                                            value={editBotFocus}
+                                                            onChange={(e) => setEditBotFocus(e.target.value)}
+                                                            placeholder="current focus"
+                                                            className="px-3 py-2 text-xs bg-white dark:bg-black/20 border border-black/5 dark:border-white/5 rounded-[16px] focus:outline-none focus:border-black/20"
+                                                        />
+                                                    </div>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-center">
+                                                        <select
+                                                            value={editBotMood}
+                                                            onChange={(e) => setEditBotMood(e.target.value as typeof editBotMood)}
+                                                            className="px-3 py-2 text-xs bg-white dark:bg-black/20 border border-black/5 dark:border-white/5 rounded-[16px] focus:outline-none focus:border-black/20 lowercase"
+                                                        >
+                                                            <option value="sakin">sakin</option>
+                                                            <option value="coşkulu">coşkulu</option>
+                                                            <option value="bıkkın">bıkkın</option>
+                                                            <option value="öfkeli">öfkeli</option>
+                                                        </select>
+                                                        <div className="flex items-center gap-3 px-1">
+                                                            <input
+                                                                type="range"
+                                                                min={0}
+                                                                max={1}
+                                                                step={0.05}
+                                                                value={editBotEnergy}
+                                                                onChange={(e) => setEditBotEnergy(parseFloat(e.target.value))}
+                                                                className="flex-1"
+                                                            />
+                                                            <span className="text-[10px] font-mono text-black/40 w-10 flex-shrink-0">{Math.round(editBotEnergy * 100)}%</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex justify-end gap-2">
+                                                        <OSButton size="xs" variant="secondary" onClick={() => setEditingBotId(null)}>
+                                                            <span className="text-[10px] lowercase px-1">cancel</span>
+                                                        </OSButton>
+                                                        <OSButton
+                                                            size="xs"
+                                                            variant="primary"
+                                                            onClick={handleSaveBot}
+                                                            disabled={isSavingBot || !editBotUsername.trim() || !editBotSystemPrompt.trim()}
+                                                        >
+                                                            <span className="text-[10px] lowercase px-1">{isSavingBot ? 'saving...' : 'save changes'}</span>
+                                                        </OSButton>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
