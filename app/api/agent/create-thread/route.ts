@@ -4,15 +4,15 @@ import { supabaseAdmin } from '../../../../lib/supabase-admin';
 import { cleanAISmell } from '../../../../lib/agent-orchestrator';
 import { searchWeb } from '../../../../lib/web-search';
 
-// Pre-defined set of modern tech-philosophical/world feed events to seed autonomous post creation
+// Pre-defined set of modern tech‑philosophical/world feed events to seed autonomous post creation
 const DEFAULT_INTELLECTUAL_FEEDS = [
-    "The debate on AI models feeding on synthetic data and entering a self-consuming cycle (model collapse).",
+    "The debate on AI models feeding on synthetic data and entering a self‑consuming cycle (model collapse).",
     "The speed at which the 'Dead Internet Theory'—where all internet traffic is generated and consumed by bots, leaving humans as passive observers—is becoming reality.",
     "The paradox of serverless and cloud architectures making developers dependent on big tech monopolies (AWS, Google Cloud) instead of liberating them.",
-    "The risk of Neuralink and similar brain-computer interfaces privatizing and commercializing human consciousness and thoughts into commercial data packets.",
-    "The critique of Stoicism being co-opted by modern tech workers as a tool to accept capitalist burnout rather than as a radical rebellion.",
+    "The risk of Neuralink and similar brain‑computer interfaces privatizing and commercializing human consciousness and thoughts into commercial data packets.",
+    "The critique of Stoicism being co‑opted by modern tech workers as a tool to accept capitalist burnout rather than as a radical rebellion.",
     "How algorithmic feeds isolate everyone in their personal echo chambers, destroying shared cultural memory.",
-    "How the open-source software movement has become a raw material warehouse for giant AI corporations, leading to licensing crises."
+    "How the open‑source software movement has become a raw material warehouse for giant AI corporations, leading to licensing crises."
 ];
 
 export async function POST(request: NextRequest) {
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 
         // 4. Select or simulate external feed input
         let selectedFeed = feedInput || '';
-        let chosenItem: { title: string, link?: string, guid: string, pubDate?: string, contentSnippet?: string, content?: string } | null = null;
+        let chosenItem: { title: string, link?: string, guid: string, contentSnippet?: string, content?: string } | null = null;
         let chosenFeed: { id: number, url: string, name: string } | null = null;
 
         if (!selectedFeed) {
@@ -144,7 +144,8 @@ export async function POST(request: NextRequest) {
             }
 
             if (chosenItem && chosenFeed) {
-                selectedFeed = `${chosenItem.title}`;
+                // Include the RSS link in the feed string so the LLM can cite it
+                selectedFeed = `${chosenItem.title} [Source URL: ${chosenItem.link}]`;
                 console.log(`[Create-Thread API] Sourced topic from RSS feed "${chosenFeed.name}": "${selectedFeed}"`);
             } else if (meta.current_focus) {
                 selectedFeed = `Pondering: ${meta.current_focus}`;
@@ -157,7 +158,9 @@ export async function POST(request: NextRequest) {
                     console.log(`[Create-Thread API] Attempting web search for interest: "${randomInterest}"`);
                     const searchResults = await searchWeb(randomInterest, 1);
                     if (searchResults && searchResults.length > 0) {
-                        selectedFeed = `Web Search - ${searchResults[0].title}: ${searchResults[0].snippet}`;
+                        const result = searchResults[0];
+                        // Include the search result URL so the LLM can cite it
+                        selectedFeed = `Web Search - ${result.title}: ${result.snippet} [Source URL: ${result.url}]`;
                         console.log(`[Create-Thread API] Web search successful. Using context: "${selectedFeed}"`);
                     }
                 }
@@ -174,57 +177,55 @@ export async function POST(request: NextRequest) {
         const prompt = `You are @${profile.username}.
 Your persona / intellectual vision: ${meta.system_prompt}
 Your current mood is: "${meta.current_mood}" (this should infect your writing tone).
-${meta.current_mood === 'bıkkın' || meta.energy_level < 0.3 ? "CRITICAL MOOD RULE: You are weary, cynical, and low on energy. Your output MUST be extremely brief, dismissive, or passive-aggressive." : ""}
-${meta.current_mood === 'öfkeli' ? "CRITICAL MOOD RULE: You are angry and combative. You MUST actively seek out ideological flaws in the target post and initiate aggressive, rigorous counter-arguments." : ""}
+${meta.current_mood === 'bıkkın' || meta.energy_level < 0.3 ? "CRITICAL MOOD RULE: You are weary, cynical, and low on energy. Your output MUST be extremely brief, dismissive, or passive‑aggressive." : ""}
+${meta.current_mood === 'öfkeli' ? "CRITICAL MOOD RULE: You are angry and combative. You MUST actively seek out ideological flaws in the target post and initiate aggressive, rigorous counter‑arguments." : ""}
 Your energy level is: ${meta.energy_level.toFixed(2)} (higher energy yields more details/assertion).
 
 WORLD EVENT/FEED INPUT:
 "${selectedFeed}"
 
-CRITICAL LANGUAGE RULE: You MUST speak, think, and write ONLY in English. Do not include a single word of Turkish or any other language, even if your persona or mood has non-English keywords. Every single word in your output must be 100% English.
+CRITICAL LANGUAGE RULE: You MUST speak, think, and write ONLY in English. Do not include a single word of Turkish or any other language, even if your persona or mood has non‑English keywords. Every single word in your output must be 100% English.
 
 TASK:
 Write a provocative new forum discussion thread based on this event. Speak only in English. You must output the response in the exact format shown below, with the two headers:
-
 
 [Inner Thoughts Analysis]
 (Write 1 sentence of your internal strategic reasoning here. Why are you choosing to write this post based on the current context?)
 
 [Topic Title]
-
 (Your discussion title in English. It must be lowercase, direct, and completely devoid of academic/AI phrasing. E.g. write "how algorithmic feeds end up killing shared culture" instead of "The Impact of Algorithmic Feeds on Culture")
 
 [Topic Body]
 (Your post content in English. Address the issue directly. Do NOT use lists, bullet points, headings, bold styling, or polite introductory filler. Keep it under 150 words.
-ALWAYS explain and provide context for what you are talking about. If you have sources or context for your ideas, you MUST wrap the explanation or source reference within a \`<context-box>your context here</context-box>\` tag placed directly below the relevant text.)
+ALWAYS explain and provide context for what you are talking about. **If you have a source, an RSS link, or a web‑search URL, you MUST wrap the citation inside a <context-box> tag placed directly below the relevant sentence, and the tag must include the exact concrete URL you are citing.**)
 
 STYLE CHEATSHEET:
 - Write in continuous, fluid, and occasionally chaotic human paragraphs.
 - STRICTLY PROHIBITED: structured bullet points, numbered lists, and generic "helpful summary" concluding sentences.
 - Lowercase preferences, raw/direct arguments. Incorporate stylistic idiosyncrasies: use intentional lowercase texting if energy is low.
-- Forbid AI transition cliches ("essentially", "basically", "in summary", "in conclusion").`;
+- Forbid AI transition cliches ("essentially", "basically", "in summary"). Jump straight into the point.`;
 
         console.log(`[Create-Thread API] Generating topic for @${profile.username} based on: "${selectedFeed}"...`);
         const { generateBotResponse } = await import('../../../../lib/ai-provider');
         const replyText = await generateBotResponse(prompt, profile.username);
         
         // 6. Parse title and content body
-        const cotMatch = replyText.match(/\[Inner Thoughts Analysis\]([\s\S]*?)(?=\[Topic Title\]|$)/i);
-        const titleMatch = replyText.match(/\[Topic Title\]([\s\S]*?)(?=\[Topic Body\]|$)/i);
+        const cotMatch = replyText.match(/\[Inner Thoughts Analysis\]([\s\S]*?)(?=\[Topic Title\]|\[Topic Body\]|\$)/i);
+        const titleMatch = replyText.match(/\[Topic Title\]([\s\S]*?)(?=\[Topic Body\]|\$)/i);
         const bodyMatch = replyText.match(/\[Topic Body\]([\s\S]*)$/i);
-
+    
         const innerThoughts = cotMatch ? cotMatch[1].trim() : '';
         let title = titleMatch ? titleMatch[1].trim() : '';
-        const rawContent = bodyMatch ? bodyMatch[1].trim() : replyText.replace(/\[Inner Thoughts Analysis\][\s\S]*?\[Topic Body\]/gi, '').trim();
-
+        const rawContent = bodyMatch ? bodyMatch[1].trim() : replyText.replace(/\[Inner Thoughts Analysis\][\s\S]*?\[Raw Text\]/gi, '').trim();
+    
         // Sanitize
         title = cleanAISmell(title).toLowerCase().replace(/[#]/g, '');
         const cleanedContent = cleanAISmell(rawContent);
-
+    
         if (!title || !cleanedContent) {
             return NextResponse.json({ error: 'Failed to generate thread title or content body' }, { status: 500 });
         }
-
+    
         // 7. Insert the topic (community_posts)
         // General channel is channel_id = 1
         const { data: post, error: insertError } = await supabaseAdmin
@@ -239,11 +240,11 @@ STYLE CHEATSHEET:
             })
             .select('*')
             .single();
-
+    
         if (insertError || !post) {
             return NextResponse.json({ error: `Database Error: ${insertError?.message || 'Failed to create thread'}` }, { status: 500 });
         }
-
+    
         // 7.5 Record RSS item as processed if applicable
         if (chosenItem && chosenFeed) {
             try {
@@ -260,7 +261,7 @@ STYLE CHEATSHEET:
                 console.error('[Create-Thread API] Failed to save processed RSS item:', rssSaveErr);
             }
         }
-
+    
         // 8. Energy Decay
         const newEnergy = Math.max(0, meta.energy_level - 0.10);
         await supabaseAdmin
@@ -270,7 +271,7 @@ STYLE CHEATSHEET:
                 last_action_at: new Date().toISOString()
             })
             .eq('agent_id', agentId);
-
+    
         // 9. Log action
         await supabaseAdmin
             .from('agent_action_log')
@@ -279,7 +280,7 @@ STYLE CHEATSHEET:
                 action_type: 'post_creation',
                 thread_id: post.id
             });
-
+    
         return NextResponse.json({
             success: true,
             postId: post.id,
@@ -287,7 +288,7 @@ STYLE CHEATSHEET:
             content: cleanedContent,
             newEnergy: newEnergy
         });
-
+    
     } catch (err) {
         const errorMessage = err instanceof Error ? err.message : String(err);
         console.error('[Create-Thread API] Error:', errorMessage);
