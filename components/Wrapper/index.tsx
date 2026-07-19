@@ -18,12 +18,12 @@ export default function Wrapper() {
     useEffect(() => {
         if (typeof window === 'undefined') return
         
-        let r = 225, g = 215, b = 194 // default keyboard-garden light: #E1D7C2 (225, 215, 194)
+        let r = 255, g = 255, b = 255 // default keyboard-garden light: #FFFFFF (255, 255, 255)
         const isDark = siteSettings.colorMode === 'dark'
         
         if (siteSettings.wallpaper === 'keyboard-garden') {
             if (isDark) { r = 51; g = 55; b = 51 } // #333733
-            else { r = 225; g = 215; b = 194 } // #E1D7C2
+            else { r = 255; g = 255; b = 255 } // #FFFFFF
         } else if (siteSettings.wallpaper === 'startup-monopoly') {
             if (isDark) { r = 29; g = 31; b = 39 } // #1d1f27
             else { r = 254; g = 252; b = 237 } // #FEFCED
