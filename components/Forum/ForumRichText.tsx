@@ -463,7 +463,7 @@ export default function ForumRichText({
                                             ? 'text-primary/20 cursor-not-allowed'
                                             : 'text-primary/70 hover:text-primary hover:bg-black/8 dark:hover:bg-white/8'
                                     }`}
-                                title={button.tooltipContent}
+                                aria-label={button.tooltipContent} title={button.tooltipContent}
                                 disabled={isDisabled}
                                 onClick={(e) => {
                                     e.preventDefault()
