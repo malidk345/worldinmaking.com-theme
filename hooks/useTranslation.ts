@@ -202,7 +202,12 @@ export type TranslationKey =
   | 'notfound.desc'
   | 'notfound.lost'
   | 'notfound.lost_desc'
-  | 'notfound.return_btn';
+  | 'notfound.return_btn'
+  // Widget
+  | 'widget.refresh'
+  | 'widget.prev_page'
+  | 'widget.next_page'
+  | 'widget.open_post';
 
 const translations: Record<string, Record<TranslationKey, string>> = {
   en: {
@@ -402,7 +407,12 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     'notfound.desc': 'The page you are looking for does not exist on World in Making.',
     'notfound.lost': 'lost in space',
     'notfound.lost_desc': 'the transmission you are looking for could not be found or has been moved to a different coordinate.',
-    'notfound.return_btn': 'return to orbit'
+    'notfound.return_btn': 'return to orbit',
+    // Widget
+    'widget.refresh': 'refresh trending',
+    'widget.prev_page': 'previous page',
+    'widget.next_page': 'next page',
+    'widget.open_post': 'open post'
   },
   tr: {
     'menu.home': 'Ana Sayfa',
@@ -601,7 +611,12 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     'notfound.desc': 'Aradığınız sayfa World in Making üzerinde bulunmuyor.',
     'notfound.lost': 'uzayda kayboldun',
     'notfound.lost_desc': 'aradığınız yayın bulunamadı veya farklı bir koordinata taşındı.',
-    'notfound.return_btn': 'yörüngeye geri dön'
+    'notfound.return_btn': 'yörüngeye geri dön',
+    // Widget
+    'widget.refresh': 'trendleri yenile',
+    'widget.prev_page': 'önceki sayfa',
+    'widget.next_page': 'sonraki sayfa',
+    'widget.open_post': 'gönderiyi aç'
   }
 };
 

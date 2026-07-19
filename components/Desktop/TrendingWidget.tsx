@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { IconApps, IconChevronLeft, IconChevronRight, IconDocument, IconEye, IconNotification, IconRefresh, IconSparkles } from '@posthog/icons';
 import { supabase } from 'lib/supabase'
 import { useApp } from 'context/App'
+import { useTranslation } from 'hooks/useTranslation'
 
 interface TopPost {
     id: string | number
@@ -28,6 +29,7 @@ type TabType = 'blog' | 'community' | 'updates'
 
 export default function TrendingWidget() {
     const { addWindow } = useApp()
+    const { t } = useTranslation()
     const [blogPosts, setBlogPosts] = useState<TopPost[]>([])
     const [comPosts, setComPosts] = useState<TopPost[]>([])
     const [loading, setLoading] = useState(true)
@@ -150,15 +152,27 @@ export default function TrendingWidget() {
                     </span>
                     <div className="flex items-center gap-2">
                         <IconRefresh
-                            className={`w-3 h-3 opacity-60 cursor-pointer hover:opacity-100 mr-1 ${loading ? 'animate-spin' : ''}`}
+                            role="button"
+                            aria-label={t('widget.refresh')}
+                            tabIndex={0}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fetchTopPosts(); } }}
+                            className={`w-3 h-3 opacity-60 cursor-pointer hover:opacity-100 mr-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20 rounded-sm ${loading ? 'animate-spin' : ''}`}
                             onClick={fetchTopPosts}
                         />
                         <IconChevronLeft
-                            className={`w-3.5 h-3.5 cursor-pointer hover:opacity-100 ${currentPage === 0 ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
-                            onClick={() => setCurrentPage(0)}
+                            role="button"
+                            aria-label={t('widget.prev_page')}
+                            tabIndex={currentPage === 0 ? -1 : 0}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCurrentPage(prev => Math.max(0, prev - 1)); } }}
+                            className={`w-3.5 h-3.5 cursor-pointer hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20 rounded-sm ${currentPage === 0 ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
+                            onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
                         />
                         <IconChevronRight
-                            className={`w-3.5 h-3.5 cursor-pointer hover:opacity-100 ${currentPage >= totalPages - 1 ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
+                            role="button"
+                            aria-label={t('widget.next_page')}
+                            tabIndex={currentPage >= totalPages - 1 ? -1 : 0}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCurrentPage(prev => prev + 1); } }}
+                            className={`w-3.5 h-3.5 cursor-pointer hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20 rounded-sm ${currentPage >= totalPages - 1 ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
                             onClick={() => setCurrentPage(prev => prev + 1)}
                         />
                     </div>
@@ -209,8 +223,17 @@ export default function TrendingWidget() {
                 {currentPosts.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage).map((post) => (
                     <div
                         key={`${post.type}-${post.id}`}
+                        role={activeTab !== 'updates' ? "button" : undefined}
+                        aria-label={activeTab !== 'updates' ? `${t('widget.open_post')}: ${post.title}` : undefined}
+                        tabIndex={activeTab !== 'updates' ? 0 : -1}
+                        onKeyDown={(e) => {
+                            if (activeTab !== 'updates' && (e.key === 'Enter' || e.key === ' ')) {
+                                e.preventDefault()
+                                handleOpen(post)
+                            }
+                        }}
                         onClick={() => activeTab !== 'updates' && handleOpen(post)}
-                        className={`group flex items-center px-3 py-2 border border-transparent transition-all duration-200 rounded-[14px] ${
+                        className={`group flex items-center px-3 py-2 border border-transparent transition-all duration-200 rounded-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20 ${
                             activeTab === 'updates'
                                 ? 'cursor-default'
                                 : 'cursor-pointer hover:bg-black/5 dark:hover:bg-white/10 hover:border-black/5 dark:hover:border-white/5'
