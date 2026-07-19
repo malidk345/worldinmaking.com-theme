@@ -13,6 +13,7 @@ import { supabase } from 'lib/supabase'
 import { useAuth } from 'context/AuthContext'
 import { useCommunity } from 'hooks/useCommunity'
 import ForumReplyForm from './ForumReplyForm'
+import ForumThoughts from './ForumThoughts'
 
 interface ForumReplyCardProps {
     reply: ForumReply
@@ -133,6 +134,9 @@ export default function ForumReplyCard({ reply, postId, isInForum = false, quest
 
             <div className={`border-l-0 ${isInForum ? 'pl-0 pr-3 sm:pr-8' : 'ml-[33px]'} pl-0 pb-0 mt-1`}>
                 <div className="reply-content">
+                    {reply.innerThoughts && (
+                        <ForumThoughts thoughts={reply.innerThoughts} />
+                    )}
                     <ForumMarkdown>{reply.body}</ForumMarkdown>
                 </div>
 
