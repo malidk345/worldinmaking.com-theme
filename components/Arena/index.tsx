@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useToast } from "../../context/ToastContext";
+import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
 import ScrollArea from "components/RadixUI/ScrollArea";
 import ReactMarkdown from "react-markdown";
@@ -54,6 +55,7 @@ interface DebateTurn {
 
 export default function ArenaApp() {
     const { addToast } = useToast();
+    const { user } = useAuth();
     const [loading, setLoading] = useState(true);
     const [activeDebate, setActiveDebate] = useState<Debate | null>(null);
     const [turns, setTurns] = useState<DebateTurn[]>([]);
@@ -81,16 +83,39 @@ export default function ArenaApp() {
                 const debate = debateData as unknown as Debate;
                 setActiveDebate(debate);
 
-                const storedVote = localStorage.getItem(`vote-debate-${debate.id}`);
-                if (storedVote) {
-                    setUserVote(parseInt(storedVote));
+
+
+                const { data: voteCounts, error: countsErr } = await supabase
+                    .rpc('get_debate_vote_counts', { debate_id_input: debate.id });
+
+                if (!countsErr && voteCounts) {
+                    const counts = voteCounts as unknown as { duelist1: number, duelist2: number };
+                    setVotes({
+                        duelist1: counts.duelist1 || 0,
+                        duelist2: counts.duelist2 || 0
+                    });
+                } else {
+                    const baseline = Math.floor(Math.sin(parseInt(debate.id.slice(0, 8), 16) || 1) * 15) + 50;
+                    setVotes({
+                        duelist1: baseline,
+                        duelist2: 100 - baseline
+                    });
                 }
 
-                const baseline = Math.floor(Math.sin(parseInt(debate.id.slice(0, 8), 16) || 1) * 15) + 50;
-                setVotes({
-                    duelist1: baseline,
-                    duelist2: 100 - baseline
-                });
+                if (user) {
+                    const { data: myVote } = await supabase
+                        .from('debate_votes')
+                        .select('candidate')
+                        .eq('debate_id', debate.id)
+                        .eq('user_id', user.id)
+                        .maybeSingle();
+
+                    if (myVote) {
+                        setUserVote(myVote.candidate);
+                    } else {
+                        setUserVote(null);
+                    }
+                }
 
                 const { data: turnsData, error: turnsErr } = await supabase
                     .from("debate_turns")
@@ -113,7 +138,7 @@ export default function ArenaApp() {
         } finally {
             setLoading(false);
         }
-    }, [addToast]);
+    }, [addToast, user]);
 
     useEffect(() => {
         fetchData();
@@ -167,25 +192,46 @@ export default function ArenaApp() {
         }, 100);
     }, [turns]);
 
-    const handleVote = (candidate: 1 | 2) => {
+    const handleVote = async (candidate: 1 | 2) => {
         if (!activeDebate) return;
+        if (!user) {
+            addToast("You must be logged in to vote", "error");
+            return;
+        }
+
         if (userVote === candidate) {
             setUserVote(null);
-            localStorage.removeItem(`vote-debate-${activeDebate.id}`);
             setVotes((prev) => ({
                 duelist1: candidate === 1 ? prev.duelist1 - 1 : prev.duelist1,
                 duelist2: candidate === 2 ? prev.duelist2 - 1 : prev.duelist2
             }));
             addToast("vote removed", "info");
+
+            await supabase
+                .from('debate_votes')
+                .delete()
+                .eq('debate_id', activeDebate.id)
+                .eq('user_id', user.id);
         } else {
             const oldVote = userVote;
             setUserVote(candidate);
-            localStorage.setItem(`vote-debate-${activeDebate.id}`, candidate.toString());
             setVotes((prev) => ({
                 duelist1: prev.duelist1 + (candidate === 1 ? 1 : 0) - (oldVote === 1 ? 1 : 0),
                 duelist2: prev.duelist2 + (candidate === 2 ? 1 : 0) - (oldVote === 2 ? 1 : 0)
             }));
             addToast("perspective supported!", "success");
+
+            if (oldVote) {
+                await supabase
+                    .from('debate_votes')
+                    .update({ candidate })
+                    .eq('debate_id', activeDebate.id)
+                    .eq('user_id', user.id);
+            } else {
+                await supabase
+                    .from('debate_votes')
+                    .insert({ debate_id: activeDebate.id, user_id: user.id, candidate });
+            }
         }
     };
 

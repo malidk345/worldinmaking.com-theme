@@ -42,3 +42,13 @@ export function stripMarkdown(markdown: string | null | undefined): string {
 
     return text;
 }
+
+/**
+ * Helper function to generate an excerpt from Markdown text
+ */
+export function getExcerpt(markdown: string | null | undefined, length: number = 150): string {
+    if (!markdown) return '';
+    const text = stripMarkdown(markdown);
+    if (text.length <= length) return text;
+    return text.substring(0, length).trim() + '...';
+}
