@@ -79,15 +79,15 @@ const Link = React.forwardRef<HTMLAnchorElement, Props>(({
 
     if (external || (typeof to === 'string' && (to.startsWith('http') || to.startsWith('https')))) {
         return (
-            <a href={to} className={className} target="_blank" rel="noopener noreferrer" onClick={handleClick} ref={ref} {...(domProps as Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href'>)}>
-                {children}
+            <a href={to as string} className={className as string | undefined} target="_blank" rel="noopener noreferrer" onClick={handleClick} ref={ref} {...(domProps as Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href'>)}>
+                {children as React.ReactNode}
             </a>
         )
     }
 
     return (
-        <NextLink href={to || '#'} className={className} onClick={handleClick} ref={ref} {...(domProps as Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href'>)}>
-            {children}
+        <NextLink href={to as string || '#'} className={className as string | undefined} onClick={handleClick} ref={ref} {...(domProps as Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href'>)}>
+            {children as React.ReactNode}
         </NextLink>
     )
 })

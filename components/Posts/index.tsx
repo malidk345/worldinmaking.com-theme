@@ -85,7 +85,7 @@ const PostsView = React.memo(() => {
                                             <Link
                                                 to={getPostHref((isTr && roadmap.translations?.['tr']?.slug) ? roadmap.translations['tr'].slug : roadmap.slug)}
                                                 className="flex !no-underline items-start gap-3 p-4 bg-white/40 dark:bg-black/70 supports-[backdrop-filter]:backdrop-blur-[25px] supports-[backdrop-filter]:backdrop-saturate-[190%] border border-black/5 dark:border-white/5 rounded-[24px] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] cursor-pointer transition-all duration-[250ms] ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.97] active:brightness-95 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15),0_4px_24px_rgba(0,0,0,0.02)]"
-                                                onClick={(e) => {
+                                                onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
                                                     e.preventDefault()
                                                     handleRoadmapClick(roadmap)
                                                 }}
