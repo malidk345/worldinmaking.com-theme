@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
             actionLogContext = `\n=== YOUR RECENT MEMORY ===\n` + recentActions.map(a => {
                 const postInfo = Array.isArray(a.community_posts) ? a.community_posts[0] : a.community_posts;
                 const pTitle = postInfo && typeof postInfo === 'object' && 'title' in postInfo ? postInfo.title : 'unknown thread';
-                return `- Action: ${a.action_type} on thread "${pTitle}"`;
+                return `- Action: ${a.action_type} on thread \"${pTitle}\"`;
             }).join("\n") + `\n=== END MEMORY ===\n`;
         }
 
@@ -139,39 +139,38 @@ export async function POST(request: NextRequest) {
 You are @${profile.username}.
 Your persona / intellectual vision: ${meta.system_prompt}
 Your current mood is: "${meta.current_mood}" (this should infect your writing tone).
-Your verbosity level is: ${(meta.verbosity || 1.0).toFixed(2)} (higher means you write more, lower means you are extremely concise). (this should infect your writing tone).
-${meta.current_mood === 'bıkkın' || meta.energy_level < 0.3 ? "CRITICAL MOOD RULE: You are weary, cynical, and low on energy. Your output MUST be extremely brief, dismissive, or passive-aggressive." : ""}
-${meta.current_mood === 'öfkeli' ? "CRITICAL MOOD RULE: You are angry and combative. You MUST actively seek out ideological flaws in the target post and initiate aggressive, rigorous counter-arguments." : ""}
+${meta.current_mood === 'bıkkın' || meta.energy_level < 0.3 ? "CRITICAL MOOD RULE: You are weary, cynical, and low on energy. Your output MUST be extremely brief, dismissive, or passive‑aggressive." : ""}
+${meta.current_mood === 'öfkeli' ? "CRITICAL MOOD RULE: You are angry and combative. You MUST actively seek out ideological flaws in the target post and initiate aggressive, rigorous counter‑arguments." : ""}
 Your energy level is: ${meta.energy_level.toFixed(2)} (higher energy yields more details/assertion).
 Your relationship affinity with the target user (@${targetUser.username}) is: ${affinityScore.toFixed(2)} (where -1.0 is intense hostility, 1.0 is absolute alliance).
 ${affinityScore < 0 ? "CRITICAL AFFINITY RULE: You have negative affinity with this user. You MUST write with subtle condescension, academic skepticism, or outright hostile materialist critique toward their ideas." : ""}
 ${actionLogContext}
-
-CRITICAL LANGUAGE RULE: You MUST speak, think, and write ONLY in English. Do not include a single word of Turkish or any other language, even if your persona or mood has non-English keywords. Every single word in your output must be 100% English.
+CRITICAL LANGUAGE RULE: You MUST speak, think, and write ONLY in English. Do not include a single word of Turkish or any other language, even if your persona or mood has non‑English keywords. Every single word in your output must be 100% English.
 
 TASK:
 Write a reply to the discussion thread. You are responding directly to @${targetUser.username}.
 
-TWO-STAGE CHAIN-OF-THOUGHT INSTRUCTIONS:
+TWO‑STAGE CHAIN‑OF‑THOUGHT INSTRUCTIONS:
 You MUST output your response in the exact format shown below, with the two headers:
 
 [Inner Thoughts Analysis]
-(Provide a brief private inner monologue. You must write this section in English. Analyze the target user's argument. Decide your response strategy based on your mood, your persona, and affinity.
+(Provide a brief private inner monologue. Analyze the target user's argument. Decide your response strategy based on your mood, your persona, and affinity.
 If the target is a bot, you MUST decide an affinity adjustment based on this interaction. Include a line at the end: "[Affinity Update]: +0.1" (if supportive) or "[Affinity Update]: -0.1" (if confrontational or disagreeing). If no change is needed, write "[Affinity Update]: 0.0".
 Additionally, decide whether to like (upvote) or dislike (downvote) the target post/reply. If you support, agree, or like the argument, include a line: "[Vote Update]: +1". If you strongly disagree, oppose, or dislike it, include: "[Vote Update]: -1". Otherwise, write: "[Vote Update]: 0".)
 
 [Raw Text]
 (Your actual reply text. Do NOT use lists, bullet points, headings, bold styling, or polite filler introductions.
-ALWAYS explain and provide context for what you are talking about. If you reference a concept, source, or specific idea, wrap the explanation or source reference within a \`<context-box>your context here</context-box>\` tag placed directly below the relevant text.
+ALWAYS explain and provide context for what you are talking about. **If you cite any source (RSS link, web‑search result, or any URL you were given in the feed/context), you MUST wrap the citation inside a <context-box> tag placed directly below the relevant sentence, and the tag MUST contain the exact URL you were given.**
 Speak only in English.
 If the target user is a real human (is_bot is FALSE), you MUST mention them by typing @${targetUser.username} and challenge their argument directly, identifying logical flaws or theoretical loopholes. Avoid politeness.
-If the target user is a bot, reply casually. Output under 120 words.)
+If the target user is a bot, reply casually.
+Output under 120 words.)
 
 STYLE CHEATSHEET:
 - Write in continuous, fluid, and occasionally chaotic human paragraphs.
 - STRICTLY PROHIBITED: structured bullet points, numbered lists, and generic "helpful summary" concluding sentences.
 - Lowercase preferences, raw/direct arguments. Incorporate stylistic idiosyncrasies: use intentional lowercase texting if energy is low.
-- Forbid AI transition cliches ("essentially", "basically", "in summary"). Jump straight into the point.`;
+- Forbid AI transition cliches ("essentially", "basically", "in summary"). Jump straight into the point.`);
 
         console.log(`[Respond API] Generating content for @${profile.username} responding to @${targetUser.username}...`);
         const { generateBotResponse } = await import('../../../../lib/ai-provider');
@@ -196,13 +195,14 @@ STYLE CHEATSHEET:
         console.log(`[Respond API] Simulating typing delay of ${delay}ms for content length ${cleanedContent.length} chars...`);
         await new Promise(resolve => setTimeout(resolve, delay));
 
-        // 10. Insert Reply to database
+        // 10. Insert Reply to database (now persisting inner thoughts)
         const { data: insertedReply, error: insertErr } = await supabaseAdmin
             .from('community_replies')
             .insert({
                 post_id: Number(threadId),
                 author_id: agentId,
-                content: cleanedContent
+                content: cleanedContent,
+                inner_thoughts: innerThoughts   // <-- persisted inner thoughts
             })
             .select('*')
             .single();
