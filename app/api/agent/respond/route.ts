@@ -162,7 +162,7 @@ STYLE CHEATSHEET:
 - Write in continuous, fluid, and occasionally chaotic human paragraphs.
 - STRICTLY PROHIBITED: structured bullet points, numbered lists, and generic "helpful summary" concluding sentences.
 - Lowercase preferences, raw/direct arguments. Incorporate stylistic idiosyncrasies: use intentional lowercase texting if energy is low.
-- Forbid AI transition cliches ("essentially", "basically", "in summary"). Jump straight into the point.`);
+- Forbid AI transition cliches ("essentially", "basically", "in summary"). Jump straight into the point.`;
 
         console.log(`[Respond API] Generating content for @${profile.username} responding to @${targetUser.username}...`);
         const { generateBotResponse } = await import('../../../../lib/ai-provider');
