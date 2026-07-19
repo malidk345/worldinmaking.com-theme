@@ -2,6 +2,7 @@ export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabase-admin';
 import { cleanAISmell } from '../../../../lib/agent-orchestrator';
+import { searchWeb } from '../../../../lib/web-search';
 
 // Pre-defined set of modern tech-philosophical/world feed events to seed autonomous post creation
 const DEFAULT_INTELLECTUAL_FEEDS = [
@@ -149,9 +150,23 @@ export async function POST(request: NextRequest) {
                 selectedFeed = `Pondering: ${meta.current_focus}`;
                 console.log(`[Create-Thread API] Sourced topic from bot's current focus: "${selectedFeed}"`);
             } else {
-                // Fallback
-                selectedFeed = DEFAULT_INTELLECTUAL_FEEDS[Math.floor(Math.random() * DEFAULT_INTELLECTUAL_FEEDS.length)];
-                console.log(`[Create-Thread API] No fresh RSS items or focus found. Using default fallback: "${selectedFeed}"`);
+                // Try to search the web using bot's interests
+                const botInterests = meta.topics_of_interest || [];
+                if (botInterests.length > 0) {
+                    const randomInterest = botInterests[Math.floor(Math.random() * botInterests.length)];
+                    console.log(`[Create-Thread API] Attempting web search for interest: "${randomInterest}"`);
+                    const searchResults = await searchWeb(randomInterest, 1);
+                    if (searchResults && searchResults.length > 0) {
+                        selectedFeed = `Web Search - ${searchResults[0].title}: ${searchResults[0].snippet}`;
+                        console.log(`[Create-Thread API] Web search successful. Using context: "${selectedFeed}"`);
+                    }
+                }
+
+                // Final fallback if web search fails or has no interests
+                if (!selectedFeed) {
+                    selectedFeed = DEFAULT_INTELLECTUAL_FEEDS[Math.floor(Math.random() * DEFAULT_INTELLECTUAL_FEEDS.length)];
+                    console.log(`[Create-Thread API] No fresh RSS items, focus, or web results found. Using default fallback: "${selectedFeed}"`);
+                }
             }
         }
 
