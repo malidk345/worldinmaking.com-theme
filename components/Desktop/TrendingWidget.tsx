@@ -150,15 +150,42 @@ export default function TrendingWidget() {
                     </span>
                     <div className="flex items-center gap-2">
                         <IconRefresh
-                            className={`w-3 h-3 opacity-60 cursor-pointer hover:opacity-100 mr-1 ${loading ? 'animate-spin' : ''}`}
+                            role="button"
+                            aria-label="Refresh trending posts"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    fetchTopPosts();
+                                }
+                            }}
+                            className={`w-3 h-3 opacity-60 cursor-pointer hover:opacity-100 mr-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20 rounded ${loading ? 'animate-spin' : ''}`}
                             onClick={fetchTopPosts}
                         />
                         <IconChevronLeft
-                            className={`w-3.5 h-3.5 cursor-pointer hover:opacity-100 ${currentPage === 0 ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
-                            onClick={() => setCurrentPage(0)}
+                            role="button"
+                            aria-label="Previous page"
+                            tabIndex={currentPage === 0 ? -1 : 0}
+                            onKeyDown={(e) => {
+                                if ((e.key === 'Enter' || e.key === ' ') && currentPage > 0) {
+                                    e.preventDefault();
+                                    setCurrentPage(prev => Math.max(0, prev - 1));
+                                }
+                            }}
+                            className={`w-3.5 h-3.5 cursor-pointer hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20 rounded ${currentPage === 0 ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
+                            onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
                         />
                         <IconChevronRight
-                            className={`w-3.5 h-3.5 cursor-pointer hover:opacity-100 ${currentPage >= totalPages - 1 ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
+                            role="button"
+                            aria-label="Next page"
+                            tabIndex={currentPage >= totalPages - 1 ? -1 : 0}
+                            onKeyDown={(e) => {
+                                if ((e.key === 'Enter' || e.key === ' ') && currentPage < totalPages - 1) {
+                                    e.preventDefault();
+                                    setCurrentPage(prev => prev + 1);
+                                }
+                            }}
+                            className={`w-3.5 h-3.5 cursor-pointer hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20 rounded ${currentPage >= totalPages - 1 ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
                             onClick={() => setCurrentPage(prev => prev + 1)}
                         />
                     </div>
@@ -210,10 +237,18 @@ export default function TrendingWidget() {
                     <div
                         key={`${post.type}-${post.id}`}
                         onClick={() => activeTab !== 'updates' && handleOpen(post)}
+                        role={activeTab !== 'updates' ? 'button' : undefined}
+                        tabIndex={activeTab !== 'updates' ? 0 : undefined}
+                        onKeyDown={(e) => {
+                            if (activeTab !== 'updates' && (e.key === 'Enter' || e.key === ' ')) {
+                                e.preventDefault();
+                                handleOpen(post);
+                            }
+                        }}
                         className={`group flex items-center px-3 py-2 border border-transparent transition-all duration-200 rounded-[14px] ${
                             activeTab === 'updates'
                                 ? 'cursor-default'
-                                : 'cursor-pointer hover:bg-black/5 dark:hover:bg-white/10 hover:border-black/5 dark:hover:border-white/5'
+                                : 'cursor-pointer hover:bg-black/5 dark:hover:bg-white/10 hover:border-black/5 dark:hover:border-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20'
                         }`}
                     >
                         {/* Author Avatar or System Icon */}
