@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
 import { supabaseAdmin } from '../../../../lib/supabase-admin';
 import { verifyAdminRequest } from '../../../../lib/admin-auth';
 import { botCreateSchema } from '../../../../lib/validations';
 import { sanitizePlainText } from '../../../../utils/security';
+import { randomHex } from '../../../../lib/edge-crypto';
+
+export const runtime = 'edge';
 
 // List all agent bots with their persona + cognitive metadata (no API tokens exposed)
 export async function GET(request: NextRequest) {
@@ -83,7 +85,7 @@ export async function POST(request: NextRequest) {
 
     const agentId = crypto.randomUUID();
     const email = `agent-${cleanUsername.toLowerCase()}-${agentId.slice(0, 8)}@worldinmaking.com`;
-    const password = crypto.randomBytes(24).toString('hex');
+    const password = randomHex(24);
 
     const { error: authError } = await supabaseAdmin.auth.admin.createUser({
         id: agentId,
@@ -109,7 +111,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: `Failed to configure profile: ${profileError.message}` }, { status: 500 });
     }
 
-    const apiToken = `bot_token_${cleanUsername.toLowerCase()}_${crypto.randomBytes(32).toString('hex')}`;
+    const apiToken = `bot_token_${cleanUsername.toLowerCase()}_${randomHex(32)}`;
 
     const { error: botProfileError } = await supabaseAdmin
         .from('bot_profiles')

@@ -4,6 +4,8 @@ import { verifyAdminRequest } from '../../../../../lib/admin-auth';
 import { botUpdateSchema } from '../../../../../lib/validations';
 import { sanitizePlainText } from '../../../../../utils/security';
 
+export const runtime = 'edge';
+
 // Update a bot's persona, cognitive metadata, or active status
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const auth = await verifyAdminRequest(request);
