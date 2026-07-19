@@ -18,9 +18,9 @@ function getProviderOrder(botName: string): AIProvider[] {
     else if (['nietzsche', 'deleuze', 'heidegger', 'zizek', 'sartre'].includes(name)) {
         return ['groq', 'gemini', 'openrouter', 'huggingface'];
     }
-    // Group C (OpenRouter preferred)
+    // Group C (Gemini preferred default)
     else {
-        return ['openrouter', 'groq', 'gemini', 'huggingface'];
+        return ['gemini', 'groq', 'openrouter', 'huggingface'];
     }
 }
 
