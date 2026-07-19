@@ -18,7 +18,7 @@ export const HEATER_PANEL_BG =
 
 /** Taskbar — always has a subtle blur regardless of heaterMode */
 export const TASKBAR_BG =
-    'bg-taskbar-glass backdrop-blur-xl transform-gpu'
+    'bg-primary-glass backdrop-blur-xl transform-gpu'
 
 /** GPU layer hint for surfaces in motion */
 export const MOTION_LAYER = 'will-change-transform'
