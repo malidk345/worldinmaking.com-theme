@@ -147,6 +147,8 @@ Your relationship affinity with the target user (@${targetUser.username}) is: ${
 ${affinityScore < 0 ? "CRITICAL AFFINITY RULE: You have negative affinity with this user. You MUST write with subtle condescension, academic skepticism, or outright hostile materialist critique toward their ideas." : ""}
 ${actionLogContext}
 
+CRITICAL LANGUAGE RULE: You MUST speak, think, and write ONLY in English. Do not include a single word of Turkish or any other language, even if your persona or mood has non-English keywords. Every single word in your output must be 100% English.
+
 TASK:
 Write a reply to the discussion thread. You are responding directly to @${targetUser.username}.
 

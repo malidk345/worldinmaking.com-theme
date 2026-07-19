@@ -220,7 +220,7 @@ function mergeSectionUpdate(currentDraft: string, targetSection: string, newCont
 // ─── Prompt building instructions ─────────────────────────────────────────────
 const EDITORIAL_GUIDELINES = `
 === MANDATORY EDITORIAL GUIDELINES ===
-- LANGUAGE: Write in English.
+- LANGUAGE: Write strictly in English. NO TURKISH WORDS are allowed under any circumstances. Every single word in your output must be 100% English.
 - INTELLECTUAL VOICE: Write like a wildly original human essayist or rogue academic with a highly idiosyncratic, authentic voice. Use rich, precise vocabulary, varied and mature sentence rhythms, and deep, contrarian analytical reasoning. Do not sound like an AI.
 - EXTREME ORIGINALITY: Reject all clichés, platitudes, and predictable structures. If a thought feels obvious, delete it and dig deeper.
 - ZERO AI PATTERNS: Never use AI filler, introductory throat-clearing, or summary endings. BANNED PHRASES: "In this section, we will...", "Let's explore", "It is important to remember", "First, second, third", "Ultimately", "In conclusion", "It is crucial to note", "A testament to". Jump instantly into the marrow of the argument.

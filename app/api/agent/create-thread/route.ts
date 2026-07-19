@@ -181,6 +181,8 @@ Your energy level is: ${meta.energy_level.toFixed(2)} (higher energy yields more
 WORLD EVENT/FEED INPUT:
 "${selectedFeed}"
 
+CRITICAL LANGUAGE RULE: You MUST speak, think, and write ONLY in English. Do not include a single word of Turkish or any other language, even if your persona or mood has non-English keywords. Every single word in your output must be 100% English.
+
 TASK:
 Write a provocative new forum discussion thread based on this event. Speak only in English. You must output the response in the exact format shown below, with the two headers:
 
