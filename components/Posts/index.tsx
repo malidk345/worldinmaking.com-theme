@@ -5,7 +5,8 @@ import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import {
-    IconPerson,
+    IconDocument,
+    IconChevronRight,
 } from '@posthog/icons'
 import { useApp } from 'context/App'
 import { usePosts } from 'hooks/usePosts'
@@ -71,69 +72,49 @@ const PostsView = React.memo(() => {
                                 {t('posts.empty')}
                             </div>
                         ) : (
-                            <ul className="m-0 p-0 list-none">
-                                {sortedRoadmaps.map((roadmap) => {
-                                    const teamName = roadmap.authorName || 'worldinmaking'
-                                    const computedReadTime = roadmap.wordCount ? `${Math.max(1, Math.ceil(roadmap.wordCount / 200))}m` : '2m'
+                            <div className="bg-white/40 dark:bg-black/70 supports-[backdrop-filter]:backdrop-blur-[25px] supports-[backdrop-filter]:backdrop-saturate-[190%] border border-black/5 dark:border-white/5 rounded-[24px] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15),0_4px_24px_rgba(0,0,0,0.02)] overflow-hidden">
+                                <ul className="m-0 p-0 list-none flex flex-col">
+                                    {sortedRoadmaps.map((roadmap, index) => {
+                                        const computedReadTime = roadmap.wordCount ? `${Math.max(1, Math.ceil(roadmap.wordCount / 200))}m` : '2m'
 
-                                    const isTr = preferredLanguage === 'tr'
-                                    const displayTitle = (isTr && roadmap.translations?.['tr']?.title) ? roadmap.translations['tr'].title : roadmap.title
-                                    const displayDescription = (isTr && roadmap.translations?.['tr']?.excerpt) ? roadmap.translations['tr'].excerpt : roadmap.description
+                                        const isTr = preferredLanguage === 'tr'
+                                        const displayTitle = (isTr && roadmap.translations?.['tr']?.title) ? roadmap.translations['tr'].title : roadmap.title
+                                        const activeSlug = (isTr && roadmap.translations?.['tr']?.slug) ? roadmap.translations['tr'].slug : roadmap.slug
 
-                                    return (
-                                        <li key={roadmap.id} className="font-mono text-xs lowercase py-2 group">
-                                            <Link
-                                                to={getPostHref((isTr && roadmap.translations?.['tr']?.slug) ? roadmap.translations['tr'].slug : roadmap.slug)}
-                                                className="flex !no-underline items-start gap-3 p-4 bg-white/40 dark:bg-black/70 supports-[backdrop-filter]:backdrop-blur-[25px] supports-[backdrop-filter]:backdrop-saturate-[190%] border border-black/5 dark:border-white/5 rounded-[24px] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] cursor-pointer transition-all duration-[250ms] ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.97] active:brightness-95 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15),0_4px_24px_rgba(0,0,0,0.02)]"
-                                                onClick={(e) => {
-                                                    e.preventDefault()
-                                                    handleRoadmapClick(roadmap)
-                                                }}
-                                            >
-                                                <div className="flex-grow flex flex-col min-w-0">
-                                                    {/* Author / Profile Area at Top */}
-                                                    <div className="flex items-center gap-2 mb-2 text-black/50 dark:text-white/50">
-                                                        <div className="size-5 shrink-0 border border-black/10 dark:border-white/10 bg-primary/5 rounded-full overflow-hidden flex items-center justify-center">
-                                                            {roadmap.authorAvatar ? (
-                                                                // eslint-disable-next-line @next/next/no-img-element
-                                                                <img src={roadmap.authorAvatar} alt="" className="size-full object-cover" />
-                                                            ) : (
-                                                                <IconPerson className="size-3" />
-                                                            )}
-                                                        </div>
-                                                        <span className="text-[10px] font-bold">@{teamName.toLowerCase()}</span>
-                                                        <span className="text-[9px] text-black/60 dark:text-white/60 ml-1">[{dayjs.utc(roadmap.date).format('YY.MM.DD')}]</span>
+                                        return (
+                                            <li key={roadmap.id} className={`font-mono group ${index !== sortedRoadmaps.length - 1 ? 'border-b border-black/5 dark:border-white/5' : ''}`}>
+                                                <Link
+                                                    to={getPostHref(activeSlug)}
+                                                    className="flex !no-underline items-center gap-3 px-4 py-3 hover:bg-black/[0.04] dark:hover:bg-white/[0.04] cursor-pointer transition-all duration-[250ms] ease-[cubic-bezier(0.16,1,0.3,1)] active:bg-black/[0.08] dark:active:bg-white/[0.08]"
+                                                    onClick={(e) => {
+                                                        e.preventDefault()
+                                                        handleRoadmapClick(roadmap)
+                                                    }}
+                                                >
+                                                    <div className="size-8 shrink-0 flex items-center justify-center text-black/40 dark:text-white/40 group-hover:text-black/60 dark:group-hover:text-white/60 transition-colors">
+                                                        <IconDocument className="size-6" />
                                                     </div>
 
-                                                    <span className="text-primary font-bold group-hover:!text-black dark:group-hover:!text-white leading-tight break-words text-[13px]">
-                                                        {displayTitle}
-                                                    </span>
-                                                    {displayDescription && (
-                                                        <span className="text-black/50 dark:text-white/50 text-[10px] mt-0.5 leading-snug line-clamp-6 italic">
-                                                            <span>{'//'}</span> {displayDescription}
+                                                    <div className="flex-grow flex flex-col min-w-0 justify-center">
+                                                        <span className="text-primary font-bold group-hover:!text-black dark:group-hover:!text-white leading-tight truncate text-[14px]">
+                                                            {displayTitle}
                                                         </span>
-                                                    )}
-                                                    {/* Colored Preview Image */}
-                                                    {roadmap.image && (
-                                                        <div className="mt-3 w-full max-w-[280px] aspect-video border border-black/5 dark:border-white/5 bg-primary/5 overflow-hidden rounded-[16px] shadow-sm">
-                                                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                            <img
-                                                                src={roadmap.image}
-                                                                alt=""
-                                                                className="size-full object-cover pointer-events-none"
-                                                            />
+                                                        <div className="flex items-center gap-2 mt-0.5 text-[11px] text-black/50 dark:text-white/50">
+                                                            <span>{dayjs.utc(roadmap.date).format('DD MMM YYYY')}</span>
+                                                            <span className="w-[3px] h-[3px] rounded-full bg-black/20 dark:bg-white/20" />
+                                                            <span>{computedReadTime}</span>
                                                         </div>
-                                                    )}
-                                                </div>
+                                                    </div>
 
-                                                <span className="text-black/30 dark:text-white/30 shrink-0 text-[10px] font-bold tracking-tighter ml-auto pt-1">
-                                                    {computedReadTime}
-                                                </span>
-                                            </Link>
-                                        </li>
-                                    )
-                                })}
-                            </ul>
+                                                    <div className="shrink-0 text-black/30 dark:text-white/30 group-hover:text-black/50 dark:group-hover:text-white/50 transition-colors">
+                                                        <IconChevronRight className="size-5" />
+                                                    </div>
+                                                </Link>
+                                            </li>
+                                        )
+                                    })}
+                                </ul>
+                            </div>
                         )}
                     </div>
                 </ScrollArea>
