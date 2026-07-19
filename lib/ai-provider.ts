@@ -38,133 +38,219 @@ async function getFetchFn(): Promise<typeof fetch> {
 }
 
 /**
+ * Collects every configured API key for a provider so that requests can rotate
+ * across multiple accounts instead of hammering (and exhausting/rate-limiting)
+ * a single one. Supports three ways to configure keys, all optional/combinable:
+ *   - `${BASE}S` — comma-separated list, e.g. GEMINI_API_KEYS="key1,key2,key3"
+ *   - `${BASE}` — the original single-key variable, e.g. GEMINI_API_KEY
+ *   - `${BASE}_2`, `${BASE}_3`, ... — numbered variables, useful on platforms
+ *     where the dashboard UI makes long comma-separated values awkward.
+ */
+function getApiKeys(baseName: string): string[] {
+    const keys: string[] = [];
+
+    const combined = process.env[`${baseName}S`];
+    if (combined) {
+        keys.push(...combined.split(',').map((k) => k.trim()).filter(Boolean));
+    }
+
+    const single = process.env[baseName];
+    if (single && !keys.includes(single)) {
+        keys.push(single);
+    }
+
+    for (let i = 2; i <= 10; i++) {
+        const numbered = process.env[`${baseName}_${i}`];
+        if (numbered && !keys.includes(numbered)) {
+            keys.push(numbered);
+        }
+    }
+
+    return keys;
+}
+
+/** Fisher-Yates shuffle so key rotation isn't always biased toward the first key. */
+function shuffle<T>(arr: T[]): T[] {
+    const shuffled = [...arr];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
+
+function maskKey(key: string): string {
+    return key.length > 8 ? `${key.slice(0, 4)}...${key.slice(-4)}` : '***';
+}
+
+/**
  * Calls Google Gemini API.
  */
 async function callGemini(prompt: string): Promise<string> {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new Error('GEMINI_API_KEY is missing');
+    const apiKeys = getApiKeys('GEMINI_API_KEY');
+    if (apiKeys.length === 0) throw new Error('GEMINI_API_KEY is missing');
 
-    const ai = new GoogleGenAI({ apiKey });
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt
-    });
+    let lastError: Error | null = null;
+    for (const apiKey of shuffle(apiKeys)) {
+        try {
+            const ai = new GoogleGenAI({ apiKey });
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: prompt
+            });
 
-    const text = response.text?.trim();
-    if (!text) throw new Error('Gemini returned empty response');
-    return text;
+            const text = response.text?.trim();
+            if (!text) throw new Error('Gemini returned empty response');
+            return text;
+        } catch (e) {
+            lastError = e instanceof Error ? e : new Error(String(e));
+            console.warn(`[AI-Provider] Gemini key ${maskKey(apiKey)} failed, trying next key if available:`, lastError.message);
+        }
+    }
+
+    throw lastError || new Error('All Gemini API keys failed');
 }
 
 /**
  * Calls Groq API using native fetch.
  */
 async function callGroq(prompt: string): Promise<string> {
-    const apiKey = process.env.GROQ_API_KEY;
-    if (!apiKey) throw new Error('GROQ_API_KEY is missing');
+    const apiKeys = getApiKeys('GROQ_API_KEY');
+    if (apiKeys.length === 0) throw new Error('GROQ_API_KEY is missing');
 
     // We use llama-3.3-70b-versatile for premium reasoning quality
     const model = 'llama-3.3-70b-versatile';
-    console.log(`[AI-Provider] Sending request to Groq using model: ${model}`);
-
     const customFetch = await getFetchFn();
-    const res = await customFetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            model,
-            messages: [{ role: 'user', content: prompt }],
-            temperature: 0.7,
-            max_tokens: 4096
-        })
-    });
 
-    if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`Groq HTTP Error ${res.status}: ${errText}`);
+    let lastError: Error | null = null;
+    for (const apiKey of shuffle(apiKeys)) {
+        try {
+            console.log(`[AI-Provider] Sending request to Groq using model: ${model} (key ${maskKey(apiKey)})`);
+            const res = await customFetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model,
+                    messages: [{ role: 'user', content: prompt }],
+                    temperature: 0.7,
+                    max_tokens: 4096
+                })
+            });
+
+            if (!res.ok) {
+                const errText = await res.text();
+                throw new Error(`Groq HTTP Error ${res.status}: ${errText}`);
+            }
+
+            const data = await res.json();
+            const text = data.choices?.[0]?.message?.content?.trim();
+            if (!text) throw new Error('Groq returned empty response');
+            return text;
+        } catch (e) {
+            lastError = e instanceof Error ? e : new Error(String(e));
+            console.warn(`[AI-Provider] Groq key ${maskKey(apiKey)} failed, trying next key if available:`, lastError.message);
+        }
     }
 
-    const data = await res.json();
-    const text = data.choices?.[0]?.message?.content?.trim();
-    if (!text) throw new Error('Groq returned empty response');
-    return text;
+    throw lastError || new Error('All Groq API keys failed');
 }
 
 /**
  * Calls OpenRouter API using native fetch.
  */
 async function callOpenRouter(prompt: string): Promise<string> {
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) throw new Error('OPENROUTER_API_KEY is missing');
+    const apiKeys = getApiKeys('OPENROUTER_API_KEY');
+    if (apiKeys.length === 0) throw new Error('OPENROUTER_API_KEY is missing');
 
     // We use meta-llama/llama-3.3-70b-instruct for premium reasoning quality on OpenRouter
     const model = 'meta-llama/llama-3.3-70b-instruct';
-    console.log(`[AI-Provider] Sending request to OpenRouter using model: ${model}`);
-
     const customFetch = await getFetchFn();
-    const res = await customFetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-            'HTTP-Referer': 'https://worldinmaking.com',
-            'X-Title': 'World In Making'
-        },
-        body: JSON.stringify({
-            model,
-            messages: [{ role: 'user', content: prompt }],
-            temperature: 0.7,
-            max_tokens: 4096
-        })
-    });
 
-    if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`OpenRouter HTTP Error ${res.status}: ${errText}`);
+    let lastError: Error | null = null;
+    for (const apiKey of shuffle(apiKeys)) {
+        try {
+            console.log(`[AI-Provider] Sending request to OpenRouter using model: ${model} (key ${maskKey(apiKey)})`);
+            const res = await customFetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': 'https://worldinmaking.com',
+                    'X-Title': 'World In Making'
+                },
+                body: JSON.stringify({
+                    model,
+                    messages: [{ role: 'user', content: prompt }],
+                    temperature: 0.7,
+                    max_tokens: 4096
+                })
+            });
+
+            if (!res.ok) {
+                const errText = await res.text();
+                throw new Error(`OpenRouter HTTP Error ${res.status}: ${errText}`);
+            }
+
+            const data = await res.json();
+            const text = data.choices?.[0]?.message?.content?.trim();
+            if (!text) throw new Error('OpenRouter returned empty response');
+            return text;
+        } catch (e) {
+            lastError = e instanceof Error ? e : new Error(String(e));
+            console.warn(`[AI-Provider] OpenRouter key ${maskKey(apiKey)} failed, trying next key if available:`, lastError.message);
+        }
     }
 
-    const data = await res.json();
-    const text = data.choices?.[0]?.message?.content?.trim();
-    if (!text) throw new Error('OpenRouter returned empty response');
-    return text;
+    throw lastError || new Error('All OpenRouter API keys failed');
 }
 
 /**
  * Calls Hugging Face API using native fetch.
  */
 async function callHuggingFace(prompt: string): Promise<string> {
-    const apiKey = process.env.HUGGINGFACE_API_KEY;
-    if (!apiKey) throw new Error('HUGGINGFACE_API_KEY is missing');
+    const apiKeys = getApiKeys('HUGGINGFACE_API_KEY');
+    if (apiKeys.length === 0) throw new Error('HUGGINGFACE_API_KEY is missing');
 
     const model = 'meta-llama/Meta-Llama-3-8B-Instruct';
-    console.log(`[AI-Provider] Sending request to Hugging Face using model: ${model}`);
-
     const customFetch = await getFetchFn();
-    const res = await customFetch('https://router.huggingface.co/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            model,
-            messages: [{ role: 'user', content: prompt }],
-            temperature: 0.7,
-            max_tokens: 2048
-        })
-    });
 
-    if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`Hugging Face HTTP Error ${res.status}: ${errText}`);
+    let lastError: Error | null = null;
+    for (const apiKey of shuffle(apiKeys)) {
+        try {
+            console.log(`[AI-Provider] Sending request to Hugging Face using model: ${model} (key ${maskKey(apiKey)})`);
+            const res = await customFetch('https://router.huggingface.co/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model,
+                    messages: [{ role: 'user', content: prompt }],
+                    temperature: 0.7,
+                    max_tokens: 2048
+                })
+            });
+
+            if (!res.ok) {
+                const errText = await res.text();
+                throw new Error(`Hugging Face HTTP Error ${res.status}: ${errText}`);
+            }
+
+            const data = await res.json();
+            const text = data.choices?.[0]?.message?.content?.trim();
+            if (!text) throw new Error('Hugging Face returned empty response');
+            return text;
+        } catch (e) {
+            lastError = e instanceof Error ? e : new Error(String(e));
+            console.warn(`[AI-Provider] Hugging Face key ${maskKey(apiKey)} failed, trying next key if available:`, lastError.message);
+        }
     }
 
-    const data = await res.json();
-    const text = data.choices?.[0]?.message?.content?.trim();
-    if (!text) throw new Error('Hugging Face returned empty response');
-    return text;
+    throw lastError || new Error('All Hugging Face API keys failed');
 }
 
 /**
