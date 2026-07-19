@@ -7,6 +7,7 @@ import OSButton from 'components/OSButton'
 import { IconActivity, IconArrowLeft, IconChat, IconChevronDown, IconCode, IconDownload, IconGear, IconMessage, IconNewspaper, IconPencil, IconPlus, IconSearch, IconTerminal, IconTrash, IconTriangleUp, IconUser } from '@posthog/icons';
 import RichTextEditor, { saveDraftToStorage, loadDraftFromStorage, clearDraftFromStorage } from './RichTextEditor'
 import { useAdminData, AdminPost } from '../../hooks/useAdminData'
+import { useAdminBots } from '../../hooks/useAdminBots'
 import { useAuth } from '../../context/AuthContext'
 import { toSlug } from '../../utils/security'
 import dayjs from 'dayjs'
@@ -23,7 +24,7 @@ import Loading from 'components/Loading'
 import { AppWindow } from '../../context/Window'
 
 const AdminPanel = ({ item }: { item?: AppWindow }) => {
-    const [activeTab, setActiveTab] = useState<'overview' | 'content' | 'comments' | 'writerApplications' | 'users' | 'settings'>('overview')
+    const [activeTab, setActiveTab] = useState<'overview' | 'content' | 'comments' | 'writerApplications' | 'users' | 'bots' | 'settings'>('overview')
     const [isCreating, setIsCreating] = useState(false)
     const [editingPost, setEditingPost] = useState<AdminPost | null>(null)
     const [focusMode, setFocusMode] = useState(false)
@@ -116,6 +117,15 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
         approvePost,
     } = useAdminData()
 
+    const { bots, loading: botsLoading, fetchBots, createBot, updateBot, deactivateBot } = useAdminBots()
+    const [isCreatingBot, setIsCreatingBot] = useState(false)
+    const [newBotUsername, setNewBotUsername] = useState('')
+    const [newBotAvatarUrl, setNewBotAvatarUrl] = useState('')
+    const [newBotSystemPrompt, setNewBotSystemPrompt] = useState('')
+    const [newBotTopics, setNewBotTopics] = useState('')
+    const [newBotFocus, setNewBotFocus] = useState('')
+    const [lastIssuedToken, setLastIssuedToken] = useState<{ username: string; token: string } | null>(null)
+
     // Content management filter
     const [contentFilter, setContentFilter] = useState<'all' | 'published' | 'draft' | 'pending'>('all')
 
@@ -170,6 +180,35 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
         }
     }, [activeTab, fetchCommunityPosts, fetchCommunityReplies])
 
+    useEffect(() => {
+        if (activeTab === 'bots') {
+            fetchBots()
+        }
+    }, [activeTab, fetchBots])
+
+    const handleCreateBot = useCallback(async () => {
+        if (!newBotUsername.trim() || !newBotSystemPrompt.trim()) {
+            return
+        }
+        const topics = newBotTopics.split(',').map(t => t.trim()).filter(Boolean)
+        const result = await createBot({
+            username: newBotUsername.trim(),
+            avatar_url: newBotAvatarUrl.trim() || undefined,
+            system_prompt: newBotSystemPrompt.trim(),
+            topics_of_interest: topics,
+            current_focus: newBotFocus.trim() || undefined,
+        })
+        if (result) {
+            setLastIssuedToken({ username: newBotUsername.trim(), token: result.apiToken })
+            setNewBotUsername('')
+            setNewBotAvatarUrl('')
+            setNewBotSystemPrompt('')
+            setNewBotTopics('')
+            setNewBotFocus('')
+            setIsCreatingBot(false)
+        }
+    }, [newBotUsername, newBotAvatarUrl, newBotSystemPrompt, newBotTopics, newBotFocus, createBot])
+
     // useApp() can be undefined if accessed outside of provider, adding fallback just in case
     const app = useApp()
     const isMobile = app?.isMobile || false
@@ -196,6 +235,7 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
         { id: 'comments', label: 'comments', icon: IconMessage },
         { id: 'writerApplications', label: 'inbox', icon: IconChat },
         { id: 'users', label: 'users', icon: IconUser },
+        { id: 'bots', label: 'agents', icon: IconTerminal },
         { id: 'settings', label: 'settings', icon: IconGear },
     ]
 
@@ -729,6 +769,158 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                     user management matrix coming soon
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                )
+            }
+            case 'bots': {
+                return (
+                    <div className="p-4 md:p-6 h-full flex flex-col text-black min-h-0">
+                        <div className="flex items-center justify-between mb-6 flex-shrink-0">
+                            <div className="flex flex-col">
+                                <h2 className="text-xs font-black uppercase tracking-widest text-black/30">autonomous agents</h2>
+                                <p className="text-[10px] text-black/20 lowercase">manage personas that act, post & vote on their own</p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <span className="text-[10px] font-black text-black/20 uppercase tracking-[0.1em]">{bots.length} total</span>
+                                <OSButton size="xs" variant="primary" onClick={() => setIsCreatingBot(v => !v)}>
+                                    <IconPlus className="size-3" />
+                                    <span className="text-[10px] lowercase px-1">{isCreatingBot ? 'cancel' : 'new agent'}</span>
+                                </OSButton>
+                            </div>
+                        </div>
+
+                        {lastIssuedToken && (
+                            <div className="mb-4 p-4 rounded-[20px] border border-amber-300/50 bg-amber-50 dark:bg-amber-500/10 flex-shrink-0">
+                                <p className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 mb-1">save this api token now — it will not be shown again</p>
+                                <p className="text-xs font-mono break-all text-amber-900 dark:text-amber-200">@{lastIssuedToken.username}: {lastIssuedToken.token}</p>
+                                <button onClick={() => setLastIssuedToken(null)} className="mt-2 text-[10px] underline text-amber-700 dark:text-amber-400 lowercase">dismiss</button>
+                            </div>
+                        )}
+
+                        {isCreatingBot && (
+                            <div className="mb-4 p-5 rounded-[24px] border border-black/5 dark:border-white/5 bg-white dark:bg-[#1C1C1E] shadow-sm flex-shrink-0 space-y-3">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <input
+                                        type="text"
+                                        value={newBotUsername}
+                                        onChange={(e) => setNewBotUsername(e.target.value)}
+                                        placeholder="username (e.g. Camus)"
+                                        className="px-3 py-2 text-xs bg-black/[0.02] border border-black/5 dark:border-white/5 rounded-[16px] focus:outline-none focus:border-black/20"
+                                    />
+                                    <input
+                                        type="text"
+                                        value={newBotAvatarUrl}
+                                        onChange={(e) => setNewBotAvatarUrl(e.target.value)}
+                                        placeholder="avatar url (optional)"
+                                        className="px-3 py-2 text-xs bg-black/[0.02] border border-black/5 dark:border-white/5 rounded-[16px] focus:outline-none focus:border-black/20"
+                                    />
+                                </div>
+                                <textarea
+                                    value={newBotSystemPrompt}
+                                    onChange={(e) => setNewBotSystemPrompt(e.target.value)}
+                                    placeholder="system prompt / persona description..."
+                                    rows={4}
+                                    className="w-full px-3 py-2 text-xs bg-black/[0.02] border border-black/5 dark:border-white/5 rounded-[16px] focus:outline-none focus:border-black/20 resize-none"
+                                />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <input
+                                        type="text"
+                                        value={newBotTopics}
+                                        onChange={(e) => setNewBotTopics(e.target.value)}
+                                        placeholder="topics of interest, comma separated"
+                                        className="px-3 py-2 text-xs bg-black/[0.02] border border-black/5 dark:border-white/5 rounded-[16px] focus:outline-none focus:border-black/20"
+                                    />
+                                    <input
+                                        type="text"
+                                        value={newBotFocus}
+                                        onChange={(e) => setNewBotFocus(e.target.value)}
+                                        placeholder="current focus (optional)"
+                                        className="px-3 py-2 text-xs bg-black/[0.02] border border-black/5 dark:border-white/5 rounded-[16px] focus:outline-none focus:border-black/20"
+                                    />
+                                </div>
+                                <div className="flex justify-end">
+                                    <OSButton size="xs" variant="primary" onClick={handleCreateBot} disabled={!newBotUsername.trim() || !newBotSystemPrompt.trim()}>
+                                        <span className="text-[10px] lowercase px-1">create agent</span>
+                                    </OSButton>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex-grow overflow-auto custom-scrollbar border border-black/5 dark:border-white/5 rounded-[24px] bg-white dark:bg-[#1C1C1E] shadow-sm min-h-0">
+                            {botsLoading && (
+                                <div className="h-48 flex items-center justify-center">
+                                    <Loading label="loading agents" />
+                                </div>
+                            )}
+
+                            {!botsLoading && bots.length === 0 && (
+                                <div className="text-center py-20">
+                                    <IconTerminal className="size-12 text-black/5 mx-auto mb-4" />
+                                    <p className="text-xs font-bold text-black/40 lowercase italic">no agents configured yet</p>
+                                </div>
+                            )}
+
+                            {!botsLoading && bots.length > 0 && (
+                                <div className="divide-y divide-black/5">
+                                    {bots.map(bot => (
+                                        <div key={bot.id} className="p-5 hover:bg-neutral-50 dark:hover:bg-white/[0.02] transition-all">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    {bot.avatar_url ? (
+                                                        // eslint-disable-next-line @next/next/no-img-element
+                                                        <img src={bot.avatar_url} alt={bot.username || 'agent'} className="size-10 rounded-full object-cover border border-black/10 flex-shrink-0" />
+                                                    ) : (
+                                                        <div className="size-10 rounded-full border border-black/10 bg-black/5 flex items-center justify-center flex-shrink-0">
+                                                            <span className="text-xs font-black lowercase">{(bot.username || '?').charAt(0)}</span>
+                                                        </div>
+                                                    )}
+                                                    <div className="min-w-0">
+                                                        <h3 className="text-xs font-black text-black dark:text-white lowercase truncate">@{bot.username}</h3>
+                                                        <p className="text-[10px] text-black/30 lowercase truncate">{bot.current_focus || 'no current focus set'}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2 flex-shrink-0">
+                                                    <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border whitespace-nowrap ${bot.is_active
+                                                        ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                                        : 'bg-neutral-100 border-neutral-200 text-black/40'
+                                                        }`}>
+                                                        {bot.is_active ? 'active' : 'paused'}
+                                                    </span>
+                                                    <OSButton
+                                                        size="xs"
+                                                        variant="secondary"
+                                                        onClick={() => updateBot(bot.id, { is_active: !bot.is_active })}
+                                                    >
+                                                        <span className="text-[10px] lowercase px-1">{bot.is_active ? 'pause' : 'resume'}</span>
+                                                    </OSButton>
+                                                    {bot.is_active && (
+                                                        <OSButton
+                                                            className="hover:!bg-rose-50 hover:!text-rose-600"
+                                                            size="xs"
+                                                            variant="secondary"
+                                                            onClick={() => { if (window.confirm(`deactivate @${bot.username}?`)) deactivateBot(bot.id) }}
+                                                        >
+                                                            <IconTrash className="size-3" />
+                                                        </OSButton>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="mt-3 ml-13 pl-0 flex flex-wrap items-center gap-2 text-[9px] text-black/30 lowercase font-mono">
+                                                <span>mood: {bot.current_mood}</span>
+                                                <span className="opacity-50">·</span>
+                                                <span>energy: {Math.round((bot.energy_level ?? 0) * 100)}%</span>
+                                                {bot.topics_of_interest.length > 0 && (
+                                                    <>
+                                                        <span className="opacity-50">·</span>
+                                                        <span className="truncate">topics: {bot.topics_of_interest.join(', ')}</span>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 )
