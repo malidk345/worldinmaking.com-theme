@@ -214,9 +214,9 @@
 @plugin "@tailwindcss/typography";
 @plugin "@tailwindcss/container-queries";
 
-/* Mobile keyboard: prevent viewport resize / page scroll-up */
 html,
 body {
+  font-family: var(--font-sans);
   overflow: hidden;
   overscroll-behavior: none;
   height: 100%;
@@ -231,6 +231,10 @@ body {
   -ms-text-size-adjust: 100%;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-sans);
 }
 
 /* Custom Scrollbar — PostHog inspired, minimalist and non-intrusive */
