@@ -2,10 +2,10 @@
 @import 'highlight.js/styles/github-dark.min.css';
 
 @theme {
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "RoundHog", "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
   --font-serif: 'Lora', Georgia, "Times New Roman", serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  --font-apple: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-apple: "RoundHog", "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-apple-code: "SF Mono", SFMono-Regular, Consolas, monospace;
 
   --color-background: hsl(var(--background));
@@ -250,6 +250,10 @@ body {
   overflow-x: hidden;
   word-wrap: break-word;
   margin: 0;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
 *,
@@ -326,6 +330,70 @@ mark {
   src: url('https://res.cloudinary.com/dmukukwp6/raw/upload/charter_bold_webfont_479d813f7d.woff') format('woff');
   font-weight: 700;
   font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'RoundHog';
+  src: url('/fonts/RoundHog.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'RoundHog';
+  src: url('/fonts/RoundHog-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'RoundHog';
+  src: url('/fonts/RoundHog-SemiBold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'RoundHog';
+  src: url('/fonts/RoundHog-Bold.woff2') format('woff2');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'RoundHog';
+  src: url('/fonts/RoundHog-Italic.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'RoundHog';
+  src: url('/fonts/RoundHog-Medium-Italic.woff2') format('woff2');
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'RoundHog';
+  src: url('/fonts/RoundHog-SemiBold-Italic.woff2') format('woff2');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'RoundHog';
+  src: url('/fonts/RoundHog-Bold-Italic.woff2') format('woff2');
+  font-weight: 800;
+  font-style: italic;
   font-display: swap;
 }
 
@@ -441,16 +509,16 @@ mark {
 }
 
 @theme {
-  --font-fairytale-title: var(--font-apple);
-  --font-fairytale: var(--font-apple);
-  --font-serif: var(--font-apple);
+  --font-fairytale-title: "Fairytale", var(--font-apple);
+  --font-fairytale: "Fairytale", var(--font-apple);
+  --font-serif: "Charter", "Computer Modern", "Lora", Georgia, serif;
   --font-sans: var(--font-apple);
-  --font-fancy: var(--font-apple);
+  --font-fancy: "Fairytale", var(--font-apple);
   --font-button: var(--font-apple), sans-serif;
   --font-nav: var(--font-apple), sans-serif;
   --font-code: "Source Code Pro", Menlo, Consolas, monaco, monospace;
-  --font-squeak: var(--font-apple);
-  --font-comic: var(--font-apple);
+  --font-squeak: "Squeak", var(--font-apple);
+  --font-comic: "Squeak", var(--font-apple);
   --font-os: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
 
   /* Screens */
