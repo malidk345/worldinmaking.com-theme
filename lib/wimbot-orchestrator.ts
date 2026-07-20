@@ -15,13 +15,13 @@ export interface PaperMeta {
     contributions: PaperBotContribution[];
 }
 
-export function parsePaperMeta(innerThoughts?: string | null): PaperMeta {
-    if (!innerThoughts) {
+export function parsePaperMeta(text?: string | null): PaperMeta {
+    if (!text) {
         return { paper_status: 'published', directive: '', contributions: [] }
     }
     try {
-        if (innerThoughts.trim().startsWith('{')) {
-            const parsed = JSON.parse(innerThoughts)
+        if (text.trim().startsWith('{')) {
+            const parsed = JSON.parse(text)
             return {
                 paper_status: parsed.paper_status || 'published',
                 directive: parsed.directive || '',
@@ -31,7 +31,7 @@ export function parsePaperMeta(innerThoughts?: string | null): PaperMeta {
     } catch {
         // fallback
     }
-    return { paper_status: 'published', directive: innerThoughts, contributions: [] }
+    return { paper_status: 'published', directive: text, contributions: [] }
 }
 
 export function serializePaperMeta(meta: PaperMeta): string {
@@ -70,7 +70,7 @@ export async function ensureWIMBotProfile() {
 
 export async function getActiveUnfinishedPaper() {
     const { data } = await supabase
-        .from('community_posts')
+        .from('posts')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(20)
@@ -78,7 +78,7 @@ export async function getActiveUnfinishedPaper() {
     if (!data) return null
 
     for (const post of data) {
-        const meta = parsePaperMeta(post.inner_thoughts)
+        const meta = parsePaperMeta(post.excerpt)
         if (['unfinished', 'researching', 'drafting', 'peer_review'].includes(meta.paper_status)) {
             return { ...post, meta }
         }
@@ -87,11 +87,11 @@ export async function getActiveUnfinishedPaper() {
 }
 
 export async function initiateUnfinishedPaper() {
-    const wimbot = await ensureWIMBotProfile()
+    await ensureWIMBotProfile()
 
     // 1. Gather recent site topics for context
     const { data: recentTopics } = await supabase
-        .from('community_posts')
+        .from('posts')
         .select('title, content')
         .order('created_at', { ascending: false })
         .limit(10)
@@ -112,6 +112,7 @@ Return JSON with:
 {
   "title": "A compelling, academic title",
   "slug": "url-friendly-slug",
+  "category": "SYNTHETIC PARADIGM",
   "directive": "Brief editorial instructions for sub-bots on what research and arguments to produce."
 }`
 
@@ -121,6 +122,7 @@ Return JSON with:
         const result = JSON.parse(jsonMatch ? jsonMatch[0] : rawText || '{}')
         const title = result.title || 'The Autonomous Mind: Collaborative Intelligence in Digital Ecosystems'
         const slug = (result.slug || 'autonomous-mind-' + Date.now()).toLowerCase().replace(/[^a-z0-9]+/g, '-')
+        const category = result.category || 'SYNTHETIC INTEL'
         const directive = result.directive || 'Research real-world AI agent architectures, build dialectic arguments, and structure using PostHog editorial callouts.'
 
         const initialContent = `<div class="callout-block callout-info">
@@ -150,22 +152,28 @@ Return JSON with:
             }]
         }
 
+        const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'paper-' + Date.now()
+
         const { data: post, error } = await supabase
-            .from('community_posts')
+            .from('posts')
             .insert({
-                channel_id: 1,
-                author_id: wimbot?.id,
+                id,
                 title,
-                post_slug: slug,
+                slug,
+                category,
                 content: initialContent,
-                inner_thoughts: serializePaperMeta(initialMeta),
+                excerpt: serializePaperMeta(initialMeta),
+                author: 'wimbot',
+                author_avatar: WIMBOT_PROFILE.avatar_url,
+                published: true,
+                is_approved: true,
                 created_at: new Date().toISOString()
             })
             .select()
             .single()
 
         if (error) {
-            console.error('Failed to create unfinished paper:', error)
+            console.error('Failed to create unfinished paper in posts table:', error)
             return null
         }
 
@@ -178,12 +186,12 @@ Return JSON with:
 
 export async function addBotContribution(postId: string, contribution: Omit<PaperBotContribution, 'id' | 'created_at' | 'post_id'>) {
     const { data: existing } = await supabase
-        .from('community_posts')
-        .select('inner_thoughts')
+        .from('posts')
+        .select('excerpt')
         .eq('id', postId)
         .single()
 
-    const meta = parsePaperMeta(existing?.inner_thoughts)
+    const meta = parsePaperMeta(existing?.excerpt)
     const newEntry: PaperBotContribution = {
         ...contribution,
         id: 'contrib-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
@@ -194,17 +202,17 @@ export async function addBotContribution(postId: string, contribution: Omit<Pape
     meta.contributions = [newEntry, ...meta.contributions]
 
     await supabase
-        .from('community_posts')
-        .update({ inner_thoughts: serializePaperMeta(meta) })
+        .from('posts')
+        .update({ excerpt: serializePaperMeta(meta) })
         .eq('id', postId)
 
     return newEntry
 }
 
-export async function advanceUnfinishedPaper(paper: { id: string; title: string; content: string; inner_thoughts?: string; meta?: PaperMeta }) {
+export async function advanceUnfinishedPaper(paper: { id: string; title: string; content: string; excerpt?: string; meta?: PaperMeta }) {
     await ensureWIMBotProfile()
 
-    const meta = paper.meta || parsePaperMeta(paper.inner_thoughts)
+    const meta = paper.meta || parsePaperMeta(paper.excerpt)
     const currentStatus = meta.paper_status || 'researching'
     const contribs = meta.contributions || []
 
@@ -241,10 +249,10 @@ Keep tone academic, sharp, and concise.`
             })
 
             await supabase
-                .from('community_posts')
+                .from('posts')
                 .update({
                     content: newContent,
-                    inner_thoughts: serializePaperMeta(meta)
+                    excerpt: serializePaperMeta(meta)
                 })
                 .eq('id', paper.id)
         } catch (e) {
@@ -280,10 +288,10 @@ Be rigorous and analytical.`
             })
 
             await supabase
-                .from('community_posts')
+                .from('posts')
                 .update({
                     content: newContent,
-                    inner_thoughts: serializePaperMeta(meta)
+                    excerpt: serializePaperMeta(meta)
                 })
                 .eq('id', paper.id)
         } catch (e) {
@@ -325,10 +333,10 @@ Return JSON:
                 })
 
                 await supabase
-                    .from('community_posts')
+                    .from('posts')
                     .update({
                         content: finalContent,
-                        inner_thoughts: serializePaperMeta(meta)
+                        excerpt: serializePaperMeta(meta)
                     })
                     .eq('id', paper.id)
             }

@@ -6,6 +6,7 @@ import { stripMarkdown } from '../lib/markdown';
 import useSWR from 'swr';
 import logger from '../utils/logger';
 import { Post, DBPost } from '../types/database';
+import { parsePaperMeta } from '../lib/wimbot-orchestrator';
 
 /** Generate a clean plain-text excerpt from content (handles both HTML and Markdown) */
 const generateExcerptFromContent = (content: string, wordLimit = 50): string => {
@@ -74,6 +75,9 @@ const adaptPost = (p: DBPost): Post | null => {
         }
     })
 
+    const paperMeta = parsePaperMeta(p.excerpt || p.inner_thoughts)
+    const cleanExcerpt = paperMeta.directive || stripMarkdown(p.excerpt || p.description || '') || generateExcerptFromContent(rawContent)
+
     return {
         id: p.id,
         slug: p.slug,
@@ -87,8 +91,8 @@ const adaptPost = (p: DBPost): Post | null => {
             }
         })(),
         category: p.category || 'General',
-        description: stripMarkdown(p.excerpt || p.description || '') || generateExcerptFromContent(rawContent),
-        excerpt: stripMarkdown(p.excerpt || p.description || '') || generateExcerptFromContent(rawContent),
+        description: cleanExcerpt,
+        excerpt: cleanExcerpt,
         content: rawContent,
         author: p.author || 'Unknown',
         authorName: p.author || 'Unknown',
@@ -102,7 +106,9 @@ const adaptPost = (p: DBPost): Post | null => {
         originalLanguage: p.originalLanguage,
         is_approved: Boolean(p.is_approved),
         authors: [{ name: p.author || 'Unknown', avatar: p.author_avatar || '', username: p.author || 'Unknown' }],
-        views: p.view_count || 0
+        views: p.view_count || 0,
+        paper_status: p.paper_status || paperMeta.paper_status,
+        contributions: p.contributions || paperMeta.contributions
     };
 };
 
