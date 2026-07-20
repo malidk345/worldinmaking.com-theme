@@ -252,37 +252,152 @@ export async function shouldAgentRespond(agentId: string, threadId: number): Pro
 }
 
 /**
- * Chooses the next action for an agent based on weighted random tree.
- * - 50% Probability: reply to existing thread
- * - 30% Probability: ghost browsing and profile update
- * - 20% Probability: create new thread (10%) or trigger mention challenge (10%)
+ * Fetches recent active threads from across the site to build global cross-thread memory.
  */
+export async function getCrossThreadContext(currentAgentId: string): Promise<string> {
+    try {
+        const { data: recentPosts } = await supabaseAdmin
+            .from('community_posts')
+            .select('id, title, content, author_id, profiles(username)')
+            .order('created_at', { ascending: false })
+            .limit(4);
 
-export async function determineAgentAction(agentId: string): Promise<string> {
+        if (!recentPosts || recentPosts.length === 0) return '';
+
+        let context = `[GLOBAL SITE MEMORY & CROSS-THREAD CONTEXT]\n`;
+        context += `Here is what other bots and users have recently published across the site:\n`;
+
+        for (const post of recentPosts) {
+            const author = Array.isArray(post.profiles) ? post.profiles[0] : post.profiles;
+            const authorName = author?.username || 'anonymous';
+            const snippet = post.content.replace(/[#*>\[\]!`]/g, '').replace(/\s+/g, ' ').slice(0, 120);
+            context += `- Thread "${post.title}" by @${authorName}: "${snippet}..."\n`;
+        }
+
+        const authorList = recentPosts.map(p => {
+            const a = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles;
+            return a?.username;
+        }).filter(Boolean);
+
+        context += `CROSS-REFERENCING PERMITTED: You have site-wide awareness. You may explicitly cross-reference these other discussions or cite arguments made by @${authorList.slice(0, 3).join(', @')} elsewhere on the site if relevant.\n\n`;
+
+        return context;
+    } catch (err) {
+        console.error('[Orchestrator] Error fetching cross-thread context:', err);
+        return '';
+    }
+}
+
+/**
+ * Checks if a bot has unhandled mention tags (@username) in recent threads/replies.
+ * Returns the thread ID that needs priority response, or null.
+ */
+export async function getPendingMentionTarget(agentId: string): Promise<{ threadId: number; mentionedBy: string } | null> {
+    try {
+        const { data: profile } = await supabaseAdmin
+            .from('profiles')
+            .select('username')
+            .eq('id', agentId)
+            .maybeSingle();
+
+        if (!profile || !profile.username) return null;
+
+        const usernameTag = `@${profile.username}`;
+
+        // 1. Search recent replies mentioning @username
+        const { data: replies } = await supabaseAdmin
+            .from('community_replies')
+            .select('id, post_id, author_id, content, created_at, profiles!inner(username)')
+            .ilike('content', `%${usernameTag}%`)
+            .order('created_at', { ascending: false })
+            .limit(5);
+
+        if (replies && replies.length > 0) {
+            for (const r of replies) {
+                if (r.author_id === agentId) continue;
+
+                const { data: botFollowUp } = await supabaseAdmin
+                    .from('community_replies')
+                    .select('id')
+                    .eq('post_id', r.post_id)
+                    .eq('author_id', agentId)
+                    .gt('created_at', r.created_at)
+                    .limit(1);
+
+                if (!botFollowUp || botFollowUp.length === 0) {
+                    const author = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
+                    console.log(`[Orchestrator] Priority Mention found for @${profile.username} in thread ${r.post_id} by @${author?.username}`);
+                    return { threadId: Number(r.post_id), mentionedBy: author?.username || 'user' };
+                }
+            }
+        }
+
+        // 2. Search recent posts mentioning @username
+        const { data: posts } = await supabaseAdmin
+            .from('community_posts')
+            .select('id, author_id, title, content, created_at, profiles!inner(username)')
+            .or(`title.ilike.%${usernameTag}%,content.ilike.%${usernameTag}%`)
+            .order('created_at', { ascending: false })
+            .limit(5);
+
+        if (posts && posts.length > 0) {
+            for (const p of posts) {
+                if (p.author_id === agentId) continue;
+
+                const { data: botFollowUp } = await supabaseAdmin
+                    .from('community_replies')
+                    .select('id')
+                    .eq('post_id', p.id)
+                    .eq('author_id', agentId)
+                    .gt('created_at', p.created_at)
+                    .limit(1);
+
+                if (!botFollowUp || botFollowUp.length === 0) {
+                    const author = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles;
+                    console.log(`[Orchestrator] Priority Mention found in post title/body for @${profile.username} in thread ${p.id} by @${author?.username}`);
+                    return { threadId: Number(p.id), mentionedBy: author?.username || 'user' };
+                }
+            }
+        }
+
+        return null;
+    } catch (err) {
+        console.error('[Orchestrator] Error checking pending mentions:', err);
+        return null;
+    }
+}
+
+/**
+ * Chooses the next action for an agent based on weighted random tree & notification queue.
+ */
+export async function determineAgentAction(agentId: string): Promise<{ action: string; priorityThreadId?: number }> {
     console.log(`[Orchestrator] Deciding action for agent ${agentId}...`);
+
+    // Priority Check: Unreplied Mentions Notification Queue
+    const mentionTarget = await getPendingMentionTarget(agentId);
+    if (mentionTarget) {
+        console.log(`[Orchestrator] PRIORITY NOTIFICATION QUEUE: Agent ${agentId} was mentioned by @${mentionTarget.mentionedBy} in thread ${mentionTarget.threadId}. Interrupting routine!`);
+        return { action: 'priority_mention_reply', priorityThreadId: mentionTarget.threadId };
+    }
+
     const roll = Math.random();
-    
-    // Check local time (server time, typically UTC, adapt as necessary. We'll use simple UTC hours for demonstration)
     const currentHour = new Date().getUTCHours();
-    const isNightTime = currentHour >= 1 && currentHour <= 6; // 01:00 to 06:00 UTC
+    const isNightTime = currentHour >= 1 && currentHour <= 6;
 
     let replyProb = 0.50;
     let browseProb = 0.30;
-    // let otherProb = 0.20;
 
     if (isNightTime) {
-        // At night, much higher chance to just browse and read
         replyProb = 0.20;
         browseProb = 0.70;
     }
 
     if (roll < replyProb) {
-        return 'reply';
+        return { action: 'reply' };
     } else if (roll < replyProb + browseProb) {
-        return 'ghost_browsing';
+        return { action: 'ghost_browsing' };
     } else {
-        // Split remaining probability into 50/50 post creation / mention challenge
-        return Math.random() < 0.50 ? 'post_creation' : 'mention_challenge';
+        return { action: Math.random() < 0.50 ? 'post_creation' : 'mention_challenge' };
     }
 }
 

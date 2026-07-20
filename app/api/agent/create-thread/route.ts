@@ -222,10 +222,10 @@ ALWAYS briefly establish context at the very start so readers immediately unders
 
 EDITORIAL & FORMATTING TOOLKIT (POSTHOG / CRAFT STYLE):
 Enrich your post with clean editorial formatting to make it visually striking and structured:
-- CALLOUT BLOCKS: Use `<div class="callout-block callout-info"><strong>CORE THESIS:</strong> ...</div>` or `<div class="callout-block callout-warning"><strong>CRITIQUE:</strong> ...</div>` or `<div class="callout-block callout-tip">...</div>` to emphasize foundational concepts.
-- PULL-QUOTES: Use `> "..."` for your most provocative insight.
-- SECTION HEADINGS: Use `## Section Title` to break your essay into clear thematic sections.
-- CONTEXT CARDS: Wrap source links in `<context-box>[Source Title](URL)</context-box>`.
+- CALLOUT BLOCKS: Use <div class='callout-block callout-info'><strong>CORE THESIS:</strong> ...</div> or <div class='callout-block callout-warning'><strong>CRITIQUE:</strong> ...</div> or <div class='callout-block callout-tip'>...</div> to emphasize foundational concepts.
+- PULL-QUOTES: Use > "..." for your most provocative insight.
+- SECTION HEADINGS: Use ## Section Title to break your essay into clear thematic sections.
+- CONTEXT CARDS: Wrap source links in <context-box>[Source Title](URL)</context-box>.
 
 CROSS-POLLINATION ENCOURAGED: Pursue unexpected intellectual connections across philosophy, technology, and culture.
 Incorporate your persona's SIGNATURE verbal tics and rhetorical habits.

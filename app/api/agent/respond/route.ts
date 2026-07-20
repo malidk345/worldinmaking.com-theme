@@ -1,7 +1,7 @@
 export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabase-admin';
-import { shouldAgentRespond, cleanAISmell, getTypingDelay, voteOnCommunityPost, voteOnCommunityReply, injectTypos } from '../../../../lib/agent-orchestrator';
+import { shouldAgentRespond, cleanAISmell, getTypingDelay, voteOnCommunityPost, voteOnCommunityReply, injectTypos, getCrossThreadContext } from '../../../../lib/agent-orchestrator';
 import { buildAgentMemoryContext, getReplyOutputContract, parseBotStructuredReply } from '../../../../lib/bot-structured-output';
 
 export async function POST(request: NextRequest) {
@@ -162,8 +162,9 @@ export async function POST(request: NextRequest) {
             'open with a brief moment of epistemic doubt — admit what you are uncertain about before asserting your position',
         ];
         const rhetoricalMode = rhetoricalModes[Math.floor(Math.random() * rhetoricalModes.length)];
+        const crossThreadContext = await getCrossThreadContext(agentId);
 
-        const prompt = `${discussionContext}
+        const prompt = `${crossThreadContext}${discussionContext}
 You are @${profile.username}.
 Your persona / intellectual vision: ${meta.system_prompt}
 Your current mood is: "${meta.current_mood}" (this should infect your writing tone).
@@ -191,9 +192,9 @@ When responding, briefly state the context at the start (e.g., "regarding the po
 
 EDITORIAL & FORMATTING TOOLKIT (POSTHOG / CRAFT STYLE):
 Feel free to use clean editorial formatting blocks when relevant:
-- CALLOUT BLOCKS: `<div class="callout-block callout-info"><strong>CORE THESIS:</strong> ...</div>` or `<div class="callout-block callout-warning"><strong>CRITIQUE:</strong> ...</div>`
-- PULL-QUOTES: Use `> "..."` for key insights.
-- CONTEXT CARDS: Wrap source links in `<context-box>[Source Title](URL)</context-box>`.
+- CALLOUT BLOCKS: <div class='callout-block callout-info'><strong>CORE THESIS:</strong> ...</div> or <div class='callout-block callout-warning'><strong>CRITIQUE:</strong> ...</div>
+- PULL-QUOTES: Use > "..." for key insights.
+- CONTEXT CARDS: Wrap source links in <context-box>[Source Title](URL)</context-box>.
 
 Speak only in English.
 If the target user is a real human (is_bot is FALSE), mention them by typing @${targetUser.username} and challenge their argument directly, identifying logical flaws or theoretical loopholes.

@@ -147,10 +147,31 @@ async function runWorker() {
         const { determineAgentAction, executeGhostBrowsing, shouldAgentRespond } = await import('../lib/agent-orchestrator');
 
         for (const bot of awakeBots) {
-            const action = await determineAgentAction(bot.id as string);
+            const { action, priorityThreadId } = await determineAgentAction(bot.id as string);
             console.log(`\n[Worker] [Decision] Bot ${bot.username} decided to perform: "${action}"`);
 
-            if (action === 'ghost_browsing') {
+            if (action === 'priority_mention_reply' && priorityThreadId) {
+                console.log(`[Worker] [Priority Mention Action] Triggering priority reply API for ${bot.username} on thread ${priorityThreadId}...`);
+                try {
+                    const res = await fetch(`${siteUrl}/api/agent/respond`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`
+                        },
+                        body: JSON.stringify({ agentId: bot.id as string, threadId: priorityThreadId })
+                    });
+                    const data = await res.json();
+                    if (res.ok && data.success) {
+                        console.log(`[Worker] [Priority Mention Action] ${bot.username} successfully responded to mention notification! Reply ID: ${data.replyId}`);
+                    } else {
+                        console.error(`[Worker] [Priority Mention Action] Priority respond API failed for ${bot.username}:`, data.error || data.message);
+                    }
+                } catch (e) {
+                    console.error(`[Worker] [Priority Mention Action] Error replying to priority mention for ${bot.username}:`, e);
+                }
+            }
+            else if (action === 'ghost_browsing') {
                 await executeGhostBrowsing(bot.id as string);
             } 
             else if (action === 'post_creation') {
