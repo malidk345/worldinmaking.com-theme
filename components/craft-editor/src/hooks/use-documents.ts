@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 
 export interface Folder {
   id: string
@@ -171,13 +171,17 @@ export function useDocuments() {
     localStorage.setItem(SORT_KEY, order)
   }, [])
 
-  const sortedDocuments = [...documents].sort((a, b) => {
-    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1
-    if (sortOrder === 'updated') return b.updatedAt - a.updatedAt
-    if (sortOrder === 'created') return b.createdAt - a.createdAt
-    if (sortOrder === 'name') return a.title.localeCompare(b.title)
-    return 0
-  })
+  // ⚡ Bolt: Memoize the sorted documents array to prevent unnecessary O(N log N) sorts
+  // on every hook render (e.g., when unrelated state like activeDocId changes)
+  const sortedDocuments = useMemo(() => {
+    return [...documents].sort((a, b) => {
+      if (a.pinned !== b.pinned) return a.pinned ? -1 : 1
+      if (sortOrder === 'updated') return b.updatedAt - a.updatedAt
+      if (sortOrder === 'created') return b.createdAt - a.createdAt
+      if (sortOrder === 'name') return a.title.localeCompare(b.title)
+      return 0
+    })
+  }, [documents, sortOrder])
 
   return {
     documents: sortedDocuments,
