@@ -1,6 +1,6 @@
 "use client"
 
-import React from 'react'
+import React, { useMemo } from 'react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { IconMessage } from '@posthog/icons'
@@ -33,16 +33,23 @@ export default function ForumTopicSidebar({
         }
     }
 
-    const getLastActive = (channelId: number) => {
-        const channelPosts = posts.filter((post) => post.channel_id === channelId)
-        if (!channelPosts.length) return null
+    // ⚡ Bolt: Pre-compute last active times to prevent O(M*N) iterations and repeated Date parsing on every render.
+    const lastActiveByChannel = useMemo(() => {
+        const latestPosts: Record<number, { time: number; created_at: string }> = {}
+        for (const post of posts) {
+            if (!post.channel_id) continue
+            const postTime = new Date(post.created_at).getTime()
+            if (!latestPosts[post.channel_id] || postTime > latestPosts[post.channel_id].time) {
+                latestPosts[post.channel_id] = { time: postTime, created_at: post.created_at }
+            }
+        }
 
-        const latest = channelPosts.reduce((acc, current) => {
-            return new Date(current.created_at).getTime() > new Date(acc.created_at).getTime() ? current : acc
-        })
-
-        return dayjs(latest.created_at).fromNow()
-    }
+        const lastActive: Record<number, string> = {}
+        for (const [channelId, data] of Object.entries(latestPosts)) {
+            lastActive[Number(channelId)] = dayjs(data.created_at).fromNow()
+        }
+        return lastActive
+    }, [posts])
 
     return (
         <aside className="w-full sticky top-10">
@@ -70,6 +77,7 @@ export default function ForumTopicSidebar({
 
                     {channels.map((channel) => {
                         const isActive = activeChannelId === channel.id;
+                        const lastActive = lastActiveByChannel[channel.id];
                         return (
                             <div key={channel.id} className="mb-1">
                                 <button
@@ -82,7 +90,7 @@ export default function ForumTopicSidebar({
                                             <span className={`text-xs font-semibold lowercase tracking-tight line-clamp-1 ${isActive ? 'text-primary font-bold' : 'text-primary/80 group-hover:text-primary'}`}>{channel.name}</span>
                                         </div>
                                         <div className="col-span-3 text-right text-[10px] font-normal text-secondary/60">
-                                            {getLastActive(channel.id) || '-'}
+                                            {lastActive || '-'}
                                         </div>
                                     </div>
                                 </button>
