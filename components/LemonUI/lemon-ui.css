@@ -455,6 +455,61 @@
 }
 
 /* ══════════════════════════════════════════════════════════════
+   LemonTabs (PostHog 3000 horizontal tabs)
+══════════════════════════════════════════════════════════════ */
+.LemonTabs {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.LemonTabs__bar {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  border-bottom: 1px solid var(--border-3000, #e2e8f0);
+}
+
+.LemonTabs__tab {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-secondary-3000, rgba(17, 17, 17, 0.6));
+  padding: 0.5rem 0.25rem;
+  border-bottom: 2px solid transparent;
+  transition: all 150ms ease;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-transform: lowercase;
+}
+
+.LemonTabs__tab:hover {
+  color: var(--text-3000, #111);
+}
+
+.LemonTabs__tab.LemonTabs__tab--active {
+  color: var(--primary-3000, #f54e01);
+  border-bottom-color: var(--primary-3000, #f54e01);
+}
+
+.dark .LemonTabs__bar {
+  border-bottom-color: var(--border-3000, #1E2F46);
+}
+
+.dark .LemonTabs__tab {
+  color: var(--color-text-secondary-3000, rgba(255, 255, 255, 0.6));
+}
+
+.dark .LemonTabs__tab:hover {
+  color: var(--text-3000, #fff);
+}
+
+.dark .LemonTabs__tab.LemonTabs__tab--active {
+  color: var(--primary-3000, #f7a503);
+  border-bottom-color: var(--primary-3000, #f7a503);
+}
+
+/* ══════════════════════════════════════════════════════════════
    LemonTag
 ══════════════════════════════════════════════════════════════ */
 .LemonTag {

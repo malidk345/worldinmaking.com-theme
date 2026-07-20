@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useMemo } from 'react'
-import { LemonSegmentedButton } from '@/components/LemonUI'
+import { LemonTabs } from '@/components/LemonUI'
 import ForumQuestionsTable from './ForumQuestionsTable'
 import ForumQuestionForm from './ForumQuestionForm'
 import ForumTopicSidebar from './ForumTopicSidebar'
@@ -82,15 +82,14 @@ export default function ForumPageLayout({
                                 )}
                             </div>
                             <div className="w-auto">
-                                <LemonSegmentedButton
-                                    value={sortBy}
-                                    onChange={(val) => setSortBy(val)}
-                                    options={[
-                                        { value: 'newest', label: 'newest' },
-                                        { value: 'activity', label: 'activity' },
-                                        { value: 'popular', label: 'popular' },
+                                <LemonTabs
+                                    activeKey={sortBy}
+                                    onChange={(key) => setSortBy(key)}
+                                    tabs={[
+                                        { key: 'newest', label: 'newest' },
+                                        { key: 'activity', label: 'activity' },
+                                        { key: 'popular', label: 'popular' },
                                     ]}
-                                    size="xsmall"
                                 />
                             </div>
                         </div>
