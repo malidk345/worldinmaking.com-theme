@@ -32,7 +32,7 @@ import { Document } from '@/hooks/use-documents';
 import { EditorSettings } from '@/hooks/use-editor-settings';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Globe, ImageIcon, Trash2, CheckCircle2 } from 'lucide-react';
+import { Globe, ImageIcon, Trash2, CheckCircle2, RefreshCw, Check, Save } from 'lucide-react';
 
 const lowlight = createLowlight(common);
 
@@ -232,43 +232,44 @@ export function Editor({ document, onChange, sidebarOpen, settings, focusMode, o
         onUpdate={onChange}
       />
 
-      {/* PostHog Notebook Header */}
+      {/* Workspace Top Action Bar (No border-b line, container style controls) */}
       <div className={cn(
-        'flex-none h-12 border-b border-border/30 flex items-center px-4 md:px-6 gap-3 bg-background/80 backdrop-blur-md transition-all duration-300 font-sans',
+        'flex-none h-11 flex items-center px-4 md:px-6 gap-3 bg-transparent transition-all duration-300 font-sans',
         focusMode && 'opacity-0 h-0 border-none overflow-hidden',
         !sidebarOpen && !focusMode ? 'pl-16' : ''
       )}>
-        <div className="flex items-center gap-2 text-xs font-mono">
-          <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-400 font-bold border border-amber-500/30 text-[10px] tracking-wider uppercase">
-            NOTEBOOK
-          </span>
-          <span className="text-muted-foreground/60 hidden sm:inline">Press <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-muted rounded border border-border">/</kbd> for commands</span>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground/50">
+          <span className="hidden sm:inline text-[11px]">Press <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-black/5 dark:bg-white/10 rounded border border-border/30 text-foreground/70">/</kbd> for commands</span>
         </div>
 
         <div className="flex-1" />
 
         <div className="flex items-center gap-2">
-          {/* Saved status badge */}
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground/70 bg-black/5 dark:bg-white/5 px-2.5 py-1 rounded-lg border border-border/40 font-mono text-[11px]">
-            <span className={cn('w-2 h-2 rounded-full transition-colors', isSaved ? 'bg-emerald-500 shadow-sm shadow-emerald-500/50' : 'bg-amber-500 animate-pulse')} />
-            {isSaved ? 'AUTOSAVED' : 'SAVING...'}
+          {/* Container-style Saved status badge with Check icon */}
+          <span className="flex items-center gap-1.5 text-[11px] font-medium text-foreground/70 bg-black/5 dark:bg-white/6 px-2.5 py-1 rounded-lg border border-border/40 font-mono shadow-xs">
+            {isSaved ? (
+              <Check size={12} className="text-emerald-500 shrink-0 stroke-[2.5]" />
+            ) : (
+              <RefreshCw size={12} className="animate-spin text-muted-foreground/60 shrink-0" />
+            )}
+            <span>{isSaved ? 'Saved' : 'Saving...'}</span>
           </span>
 
-          {/* Publish button */}
+          {/* PostHog container-style Publish button */}
           <button
             type="button"
             onClick={() => setShowPublishPanel(v => !v)}
             className={cn(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 shrink-0 font-mono',
+              'flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 shrink-0 font-mono border shadow-xs',
               showPublishPanel
-                ? 'bg-foreground text-background'
+                ? 'bg-foreground text-background border-foreground'
                 : isPublished
-                  ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30'
-                  : 'bg-foreground/8 dark:bg-white/10 text-foreground/70 hover:text-foreground hover:bg-foreground/12 border border-border/30'
+                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 border-emerald-500/30'
+                  : 'bg-black/5 dark:bg-white/6 text-foreground/80 hover:text-foreground hover:bg-black/10 dark:hover:bg-white/10 border-border/40'
             )}
           >
             {isPublished ? <CheckCircle2 size={12} /> : <Globe size={12} />}
-            {isPublished ? 'Published' : 'Publish'}
+            <span>{isPublished ? 'Published' : 'Publish'}</span>
           </button>
         </div>
       </div>

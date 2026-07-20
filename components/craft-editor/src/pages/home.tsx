@@ -159,17 +159,14 @@ export default function Home() {
             )}
           >
             {/* Header — extends into status bar on mobile */}
-            <div className="flex items-center justify-between px-3 border-b border-border/25 shrink-0 sidebar-header">
-              <div className="font-semibold text-sm tracking-tight flex items-center gap-2 text-foreground font-mono">
-                <div className="w-5 h-5 rounded-md bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center justify-center shadow-sm font-bold text-[10px]">
-                  <span>H</span>
+            <div className="flex items-center justify-between px-3 shrink-0 sidebar-header">
+              <div className="font-semibold text-sm tracking-tight flex items-center gap-2 text-foreground">
+                <div className="w-5 h-5 rounded-md bg-foreground text-background flex items-center justify-center shadow-sm font-mono text-[10px] font-bold">
+                  <span>W</span>
                 </div>
-                posthog notebook
+                wim editor
               </div>
               <div className="flex items-center gap-0.5">
-                <Button variant="ghost" size="iconSm" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="rounded-full w-7 h-7 hover:bg-black/5 dark:hover:bg-white/10">
-                  {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
-                </Button>
                 <Button variant="ghost" size="iconSm" onClick={() => setSettingsOpen(v => !v)} className={cn('rounded-full w-7 h-7 hover:bg-black/5 dark:hover:bg-white/10', settingsOpen && 'bg-black/5 dark:bg-white/10')}>
                   <SlidersHorizontal size={14} />
                 </Button>
