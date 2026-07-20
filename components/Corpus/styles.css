@@ -1319,7 +1319,6 @@
     color: color-mix(in hsl, canvasText, canvas 55%);
     text-align: center;
   }
-  }
 
   .corpus-doc-empty {
     display: flex;
