@@ -37,6 +37,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
                 {toasts.map(toast => (
                     <Toast
                         key={toast.id}
+                        type={toast.type}
                         title={toast.title || (toast.type === 'error' ? 'Error' : toast.type === 'success' ? 'Success' : undefined)}
                         description={toast.message}
                         onClose={() => removeToast(toast.id)}
