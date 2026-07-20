@@ -1,4 +1,28 @@
+import fs from 'fs';
+import path from 'path';
 import { GoogleGenAI } from '@google/genai';
+
+function loadEnv() {
+    const envPath = path.resolve(process.cwd(), '.env.local');
+    if (fs.existsSync(envPath)) {
+        const envContent = fs.readFileSync(envPath, 'utf-8');
+        envContent.split('\n').forEach(line => {
+            const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+            if (match) {
+                const key = match[1];
+                let value = match[2] || '';
+                if (value.includes('#') && !value.startsWith('"') && !value.startsWith("'")) {
+                    value = value.split('#')[0].trim();
+                }
+                value = value.trim();
+                if (value.startsWith('"') && value.endsWith('"')) value = value.slice(1, -1);
+                else if (value.startsWith("'") && value.endsWith("'")) value = value.slice(1, -1);
+                if (process.env[key] === undefined) process.env[key] = value;
+            }
+        });
+    }
+}
+loadEnv();
 
 /**
  * Supported providers list in order of fallback.
@@ -95,7 +119,7 @@ async function callGemini(prompt: string): Promise<string> {
         try {
             const ai = new GoogleGenAI({ apiKey });
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
+                model: 'gemini-2.0-flash',
                 contents: prompt
             });
 

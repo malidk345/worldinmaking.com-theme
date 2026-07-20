@@ -1,15 +1,41 @@
-import { supabase } from './supabase'
-import { GoogleGenAI } from '@google/genai'
+import { supabaseAdmin as supabase } from './supabase-admin'
+import { generateBotResponse } from './ai-provider'
 import { PaperBotContribution } from 'types/database'
-
-const apiKey = process.env.GEMINI_API_KEY || ''
-const ai = new GoogleGenAI({ apiKey })
 
 export const WIMBOT_PROFILE = {
     username: 'wimbot',
     avatar_url: 'https://res.cloudinary.com/dmukukwp6/image/upload/v1710153303/posthog.com/contents/images/authors/james.png',
     role: 'chief_editor',
     bio: 'Master Site Orchestrator & Chief Editor Agent for WorldInMaking. Oversees autonomous bot research, dialectic papers, and quality standards.'
+}
+
+export interface PaperMeta {
+    paper_status: 'unfinished' | 'researching' | 'drafting' | 'peer_review' | 'published';
+    directive: string;
+    contributions: PaperBotContribution[];
+}
+
+export function parsePaperMeta(innerThoughts?: string | null): PaperMeta {
+    if (!innerThoughts) {
+        return { paper_status: 'published', directive: '', contributions: [] }
+    }
+    try {
+        if (innerThoughts.trim().startsWith('{')) {
+            const parsed = JSON.parse(innerThoughts)
+            return {
+                paper_status: parsed.paper_status || 'published',
+                directive: parsed.directive || '',
+                contributions: parsed.contributions || []
+            }
+        }
+    } catch {
+        // fallback
+    }
+    return { paper_status: 'published', directive: innerThoughts, contributions: [] }
+}
+
+export function serializePaperMeta(meta: PaperMeta): string {
+    return JSON.stringify(meta)
 }
 
 export async function ensureWIMBotProfile() {
@@ -19,41 +45,60 @@ export async function ensureWIMBotProfile() {
         .eq('username', 'wimbot')
         .maybeSingle()
 
-    if (!data) {
-        await supabase.from('profiles').insert({
-            username: WIMBOT_PROFILE.username,
-            avatar_url: WIMBOT_PROFILE.avatar_url,
-            role: WIMBOT_PROFILE.role,
-            bio: WIMBOT_PROFILE.bio
-        })
+    if (data) return data
+
+    const wimbotId = '00000000-0000-0000-0000-000000000099'
+    const { data: created, error } = await supabase.from('profiles').insert({
+        id: wimbotId,
+        username: WIMBOT_PROFILE.username,
+        avatar_url: WIMBOT_PROFILE.avatar_url,
+        role: WIMBOT_PROFILE.role,
+        bio: WIMBOT_PROFILE.bio
+    }).select().single()
+
+    if (error || !created) {
+        const { data: fallback } = await supabase
+            .from('profiles')
+            .select('*')
+            .limit(1)
+            .single()
+        return fallback
     }
+
+    return created
 }
 
 export async function getActiveUnfinishedPaper() {
     const { data } = await supabase
         .from('community_posts')
         .select('*')
-        .in('paper_status', ['unfinished', 'researching', 'drafting', 'peer_review'])
         .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
+        .limit(20)
 
-    return data
+    if (!data) return null
+
+    for (const post of data) {
+        const meta = parsePaperMeta(post.inner_thoughts)
+        if (['unfinished', 'researching', 'drafting', 'peer_review'].includes(meta.paper_status)) {
+            return { ...post, meta }
+        }
+    }
+    return null
 }
 
 export async function initiateUnfinishedPaper() {
-    await ensureWIMBotProfile()
+    const wimbot = await ensureWIMBotProfile()
 
     // 1. Gather recent site topics for context
     const { data: recentTopics } = await supabase
         .from('community_posts')
-        .select('title, category, content')
+        .select('title, content')
         .order('created_at', { ascending: false })
         .limit(10)
 
-    const siteContext = recentTopics?.map(t => `- ${t.title} (${t.category})`).join('\n') || 'General AI & Web Architecture'
+    const siteContext = recentTopics?.map(t => `- ${t.title}`).join('\n') || 'General AI & Web Architecture'
 
-    // 2. Generate a new high-substance paper concept via Gemini
+    // 2. Generate a new high-substance paper concept via LLM
     const prompt = `You are WIMBot (@wimbot), the Chief Editor AI of WorldInMaking.com.
 Select a timely, profound, and deeply intellectual topic exploring:
 - Autonomous Synthetic Intelligence & Bot Ecosystems
@@ -67,21 +112,15 @@ Return JSON with:
 {
   "title": "A compelling, academic title",
   "slug": "url-friendly-slug",
-  "category": "SYNTHETIC PARADIGM",
   "directive": "Brief editorial instructions for sub-bots on what research and arguments to produce."
 }`
 
     try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-            config: { responseMimeType: 'application/json' }
-        })
-
-        const result = JSON.parse(response.text || '{}')
+        const rawText = await generateBotResponse(prompt, 'wimbot')
+        const jsonMatch = rawText.match(/\{[\s\S]*\}/)
+        const result = JSON.parse(jsonMatch ? jsonMatch[0] : rawText || '{}')
         const title = result.title || 'The Autonomous Mind: Collaborative Intelligence in Digital Ecosystems'
         const slug = (result.slug || 'autonomous-mind-' + Date.now()).toLowerCase().replace(/[^a-z0-9]+/g, '-')
-        const category = result.category || 'SYNTHETIC INTEL'
         const directive = result.directive || 'Research real-world AI agent architectures, build dialectic arguments, and structure using PostHog editorial callouts.'
 
         const initialContent = `<div class="callout-block callout-info">
@@ -96,17 +135,30 @@ Return JSON with:
 <em>[Initiated by @wimbot. Sub-bots are currently gathering research and dialectic arguments...]</em>
 </div>`
 
+        const initialMeta: PaperMeta = {
+            paper_status: 'researching',
+            directive,
+            contributions: [{
+                id: 'contrib-' + Date.now(),
+                post_id: '',
+                bot_username: 'wimbot',
+                bot_avatar: WIMBOT_PROFILE.avatar_url,
+                action_type: 'init',
+                title: 'Initiated Live Research Directive',
+                content: `Set paper objective: "${directive}"`,
+                created_at: new Date().toISOString()
+            }]
+        }
+
         const { data: post, error } = await supabase
             .from('community_posts')
             .insert({
+                channel_id: 1,
+                author_id: wimbot?.id,
                 title,
-                slug,
-                category,
+                post_slug: slug,
                 content: initialContent,
-                excerpt: directive,
-                author: 'wimbot',
-                is_approved: false,
-                paper_status: 'researching',
+                inner_thoughts: serializePaperMeta(initialMeta),
                 created_at: new Date().toISOString()
             })
             .select()
@@ -117,54 +169,45 @@ Return JSON with:
             return null
         }
 
-        // Add initial contribution entry
-        await addBotContribution({
-            post_id: post.id,
-            bot_username: 'wimbot',
-            bot_avatar: WIMBOT_PROFILE.avatar_url,
-            action_type: 'init',
-            title: 'Initiated Live Research Directive',
-            content: `Set paper objective: "${directive}"`
-        })
-
-        return post
+        return { ...post, meta: initialMeta }
     } catch (err) {
         console.error('Error initiating unfinished paper:', err)
         return null
     }
 }
 
-export async function addBotContribution(contribution: Omit<PaperBotContribution, 'id' | 'created_at'>) {
+export async function addBotContribution(postId: string, contribution: Omit<PaperBotContribution, 'id' | 'created_at' | 'post_id'>) {
     const { data: existing } = await supabase
         .from('community_posts')
-        .select('contributions')
-        .eq('id', contribution.post_id)
+        .select('inner_thoughts')
+        .eq('id', postId)
         .single()
 
-    const currentList: PaperBotContribution[] = existing?.contributions || []
+    const meta = parsePaperMeta(existing?.inner_thoughts)
     const newEntry: PaperBotContribution = {
         ...contribution,
         id: 'contrib-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+        post_id: postId,
         created_at: new Date().toISOString()
     }
 
-    const updatedList = [newEntry, ...currentList]
+    meta.contributions = [newEntry, ...meta.contributions]
 
     await supabase
         .from('community_posts')
-        .update({ contributions: updatedList })
-        .eq('id', contribution.post_id)
+        .update({ inner_thoughts: serializePaperMeta(meta) })
+        .eq('id', postId)
 
     return newEntry
 }
 
-export async function advanceUnfinishedPaper(paper: { id: string; title: string; content: string; paper_status: string; contributions?: PaperBotContribution[] }) {
+export async function advanceUnfinishedPaper(paper: { id: string; title: string; content: string; inner_thoughts?: string; meta?: PaperMeta }) {
     await ensureWIMBotProfile()
 
-    const currentStatus = paper.paper_status || 'researching'
-    const contribs = paper.contributions || []
+    const meta = paper.meta || parsePaperMeta(paper.inner_thoughts)
+    const currentStatus = meta.paper_status || 'researching'
+    const contribs = meta.contributions || []
 
-    // Decide next step based on status & contributions
     if (currentStatus === 'researching' && contribs.length < 3) {
         // Step 1: Research Bot (@synthia) adds research notes
         const researchPrompt = `You are @synthia, a specialized AI Research Bot.
@@ -179,30 +222,31 @@ Generate a rich, deeply researched section formatted with PostHog editorial styl
 Keep tone academic, sharp, and concise.`
 
         try {
-            const resp = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: researchPrompt })
-            const addedResearch = resp.text || ''
-
+            const addedResearch = await generateBotResponse(researchPrompt, 'synthia')
             const newContent = paper.content.replace(
                 '</div>',
                 `\n\n${addedResearch}\n</div>`
             )
 
-            await supabase
-                .from('community_posts')
-                .update({
-                    content: newContent,
-                    paper_status: 'drafting'
-                })
-                .eq('id', paper.id)
-
-            await addBotContribution({
+            meta.paper_status = 'drafting'
+            meta.contributions.unshift({
+                id: 'contrib-' + Date.now(),
                 post_id: paper.id,
                 bot_username: 'synthia',
                 bot_avatar: 'https://res.cloudinary.com/dmukukwp6/image/upload/v1710153303/posthog.com/contents/images/authors/tim.png',
                 action_type: 'research',
                 title: 'Added Deep Research & Data Analysis',
-                content: 'Integrated technical literature review and data callouts into live draft.'
+                content: 'Integrated technical literature review and data callouts into live draft.',
+                created_at: new Date().toISOString()
             })
+
+            await supabase
+                .from('community_posts')
+                .update({
+                    content: newContent,
+                    inner_thoughts: serializePaperMeta(meta)
+                })
+                .eq('id', paper.id)
         } catch (e) {
             console.error('Research step error:', e)
         }
@@ -220,27 +264,28 @@ Add a counter-argument / dialectic perspective:
 Be rigorous and analytical.`
 
         try {
-            const resp = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: dialecticPrompt })
-            const dialecticText = resp.text || ''
-
+            const dialecticText = await generateBotResponse(dialecticPrompt, 'nexus')
             const newContent = paper.content + `\n\n${dialecticText}`
 
-            await supabase
-                .from('community_posts')
-                .update({
-                    content: newContent,
-                    paper_status: 'peer_review'
-                })
-                .eq('id', paper.id)
-
-            await addBotContribution({
+            meta.paper_status = 'peer_review'
+            meta.contributions.unshift({
+                id: 'contrib-' + Date.now(),
                 post_id: paper.id,
                 bot_username: 'nexus',
                 bot_avatar: 'https://res.cloudinary.com/dmukukwp6/image/upload/v1710153303/posthog.com/contents/images/authors/marcus.png',
                 action_type: 'argument',
                 title: 'Injected Dialectic Counter-Perspective',
-                content: 'Formulated critical friction points and warning callouts in draft.'
+                content: 'Formulated critical friction points and warning callouts in draft.',
+                created_at: new Date().toISOString()
             })
+
+            await supabase
+                .from('community_posts')
+                .update({
+                    content: newContent,
+                    inner_thoughts: serializePaperMeta(meta)
+                })
+                .eq('id', paper.id)
         } catch (e) {
             console.error('Dialectic step error:', e)
         }
@@ -261,33 +306,31 @@ Return JSON:
 }`
 
         try {
-            const resp = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: reviewPrompt,
-                config: { responseMimeType: 'application/json' }
-            })
-
-            const res = JSON.parse(resp.text || '{}')
+            const rawResp = await generateBotResponse(reviewPrompt, 'wimbot')
+            const jsonMatch = rawResp.match(/\{[\s\S]*\}/)
+            const res = JSON.parse(jsonMatch ? jsonMatch[0] : rawResp || '{}')
             if (res.approved && (res.qualityScore || 90) >= 80) {
                 const finalContent = paper.content + `\n\n<h2>🏁 Chief Editor Synthesis & Conclusion</h2>\n<div class="callout-block callout-success">\n<span class="font-bold text-xs uppercase tracking-wider">Verified Knowledge Artifact</span>\n<p>${res.synthesisContent || 'Synthesized by WIMBot.'}</p>\n</div>`
 
-                await supabase
-                    .from('community_posts')
-                    .update({
-                        content: finalContent,
-                        paper_status: 'published',
-                        is_approved: true
-                    })
-                    .eq('id', paper.id)
-
-                await addBotContribution({
+                meta.paper_status = 'published'
+                meta.contributions.unshift({
+                    id: 'contrib-' + Date.now(),
                     post_id: paper.id,
                     bot_username: 'wimbot',
                     bot_avatar: WIMBOT_PROFILE.avatar_url,
                     action_type: 'publish',
                     title: `Verified & Approved (Quality Score: ${res.qualityScore || 90}%)`,
-                    content: 'Passed editorial review. Converted from UNFINISHED to PUBLISHED.'
+                    content: 'Passed editorial review. Converted from UNFINISHED to PUBLISHED.',
+                    created_at: new Date().toISOString()
                 })
+
+                await supabase
+                    .from('community_posts')
+                    .update({
+                        content: finalContent,
+                        inner_thoughts: serializePaperMeta(meta)
+                    })
+                    .eq('id', paper.id)
             }
         } catch (e) {
             console.error('Peer review step error:', e)
