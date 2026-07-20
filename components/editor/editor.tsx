@@ -232,30 +232,45 @@ export function Editor({ document, onChange, sidebarOpen, settings, focusMode, o
         onUpdate={onChange}
       />
 
-      {/* Header */}
+      {/* PostHog Notebook Header */}
       <div className={cn(
-        'flex-none h-12 border-b border-border/20 flex items-center px-5 gap-3 bg-background/50 backdrop-blur-sm transition-all duration-300',
+        'flex-none h-12 border-b border-border/30 flex items-center px-4 md:px-6 gap-3 bg-background/80 backdrop-blur-md transition-all duration-300 font-sans',
         focusMode && 'opacity-0 h-0 border-none overflow-hidden',
         !sidebarOpen && !focusMode ? 'pl-16' : ''
       )}>
+        <div className="flex items-center gap-2 text-xs font-mono">
+          <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-400 font-bold border border-amber-500/30 text-[10px] tracking-wider uppercase">
+            NOTEBOOK
+          </span>
+          <span className="text-muted-foreground/60 hidden sm:inline">Press <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-muted rounded border border-border">/</kbd> for commands</span>
+        </div>
+
         <div className="flex-1" />
 
-        {/* Publish button */}
-        <button
-          type="button"
-          onClick={() => setShowPublishPanel(v => !v)}
-          className={cn(
-            'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 shrink-0',
-            showPublishPanel
-              ? 'bg-foreground text-background'
-              : isPublished
-                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/25'
-                : 'bg-foreground/8 dark:bg-white/10 text-foreground/70 hover:text-foreground hover:bg-foreground/12'
-          )}
-        >
-          {isPublished ? <CheckCircle2 size={12} /> : <Globe size={12} />}
-          {isPublished ? 'Published' : 'Publish'}
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Saved status badge */}
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground/70 bg-black/5 dark:bg-white/5 px-2.5 py-1 rounded-lg border border-border/40 font-mono text-[11px]">
+            <span className={cn('w-2 h-2 rounded-full transition-colors', isSaved ? 'bg-emerald-500 shadow-sm shadow-emerald-500/50' : 'bg-amber-500 animate-pulse')} />
+            {isSaved ? 'AUTOSAVED' : 'SAVING...'}
+          </span>
+
+          {/* Publish button */}
+          <button
+            type="button"
+            onClick={() => setShowPublishPanel(v => !v)}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 shrink-0 font-mono',
+              showPublishPanel
+                ? 'bg-foreground text-background'
+                : isPublished
+                  ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30'
+                  : 'bg-foreground/8 dark:bg-white/10 text-foreground/70 hover:text-foreground hover:bg-foreground/12 border border-border/30'
+            )}
+          >
+            {isPublished ? <CheckCircle2 size={12} /> : <Globe size={12} />}
+            {isPublished ? 'Published' : 'Publish'}
+          </button>
+        </div>
       </div>
 
       {/* Canvas */}
