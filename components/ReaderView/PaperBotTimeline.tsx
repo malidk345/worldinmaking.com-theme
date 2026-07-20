@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { PaperBotContribution } from 'types/database'
-import { IconSparkles, IconCheckCircle, IconChevronDown, IconChevronUp, IconActivity } from '@posthog/icons'
+import { IconSparkles, IconCheckCircle, IconChevronDown, IconActivity } from '@posthog/icons'
 
 dayjs.extend(relativeTime)
 
@@ -82,7 +82,7 @@ export default function PaperBotTimeline({ contributions = [], paperStatus = 'pu
                         className="p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-muted transition-colors cursor-pointer"
                         title={isExpanded ? 'Collapse Stream' : 'Expand Stream'}
                     >
-                        {isExpanded ? <IconChevronUp className="size-4" /> : <IconChevronDown className="size-4" />}
+                        <IconChevronDown className={`size-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
                     </button>
                 </div>
             </div>
