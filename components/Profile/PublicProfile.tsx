@@ -10,6 +10,7 @@ import OSButton from 'components/OSButton'
 import Loading from 'components/Loading'
 import Tooltip from 'components/RadixUI/Tooltip'
 import { useTranslation } from 'hooks/useTranslation'
+import dayjs from 'dayjs'
 import { IconBook, IconBookmark, IconChevronLeft, IconChevronRight, IconDocument, IconExternal, IconPlus, IconRefresh, IconShare, IconSidebarClose, IconSidebarOpen, IconSparkles, IconStack, IconTrash, IconUser } from '@posthog/icons';
 
 import '../Corpus/styles.css'
@@ -782,14 +783,29 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                     </div>
                                                 )}
                                                 <div className="corpus-doc-media">
-                                                    <div className="corpus-doc-preview-text">{node.preview}</div>
+                                                    <div className="corpus-doc-preview-paper">
+                                                        <div className="flex flex-col gap-1 overflow-hidden">
+                                                            <div className="font-bold text-[8px] uppercase tracking-wider opacity-40 border-b border-current/10 pb-1 mb-1 truncate">
+                                                                NODE
+                                                            </div>
+                                                            <div className="font-semibold text-[8.5px] leading-tight line-clamp-3">
+                                                                {node.title}
+                                                            </div>
+                                                            <div className="font-mono text-[7px] opacity-60 leading-relaxed line-clamp-6 mt-1">
+                                                                {node.preview}
+                                                            </div>
+                                                        </div>
+                                                        <div className="pt-1 border-t border-current/10 flex items-center justify-between text-[7px] font-mono opacity-40">
+                                                            <span>{node.updated}</span>
+                                                            <span>DOC</span>
+                                                        </div>
+                                                    </div>
                                                     <div className="corpus-doc-media-fade" />
                                                     <div className="corpus-doc-badge"><IconBook className="size-3" /><span>{node.status === 'draft' ? t('profile.draft') : t('profile.pub')}</span></div>
                                                 </div>
                                                 <div className="corpus-doc-info">
-                                                    <div><IconDocument className="size-3.5" /><span>{node.updated}</span></div>
                                                     <h3>{node.title}</h3>
-                                                    <p>{isOwner ? `${t('profile.click_to_edit')} • ${node.status === 'draft' ? t('profile.draft') : t('profile.pub')}` : t('profile.published_node')}</p>
+                                                    <div className="corpus-doc-date">{node.updated}</div>
                                                 </div>
                                             </article>
                                         ))}
@@ -841,14 +857,33 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                 )}
                                                 <div className="corpus-doc-media">
                                                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                    {post.image_url ? <img src={post.image_url} alt={post.title} className="size-full object-cover" /> : <div className="corpus-doc-preview-text">{post.excerpt || t('profile.read_more')}</div>}
+                                                    {post.image_url ? (
+                                                        <img src={post.image_url} alt={post.title} className="size-full object-cover" />
+                                                    ) : (
+                                                        <div className="corpus-doc-preview-paper">
+                                                            <div className="flex flex-col gap-1 overflow-hidden">
+                                                                <div className="font-bold text-[8px] uppercase tracking-wider opacity-40 border-b border-current/10 pb-1 mb-1 truncate">
+                                                                    {post.category || 'DOCUMENT'}
+                                                                </div>
+                                                                <div className="font-semibold text-[8.5px] leading-tight line-clamp-3">
+                                                                    {post.title}
+                                                                </div>
+                                                                <div className="font-mono text-[7px] opacity-60 leading-relaxed line-clamp-6 mt-1">
+                                                                    {post.excerpt || (post.content ? post.content.replace(/<[^>]*>/g, '') : t('profile.read_more'))}
+                                                                </div>
+                                                            </div>
+                                                            <div className="pt-1 border-t border-current/10 flex items-center justify-between text-[7px] font-mono opacity-40">
+                                                                <span>{post.created_at ? dayjs(post.created_at).format('DD/MM/YYYY') : ''}</span>
+                                                                <span>DOC</span>
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                     <div className="corpus-doc-media-fade" />
                                                     <div className="corpus-doc-badge"><IconSparkles className="size-3" /><span>{post.published ? (post.is_approved ? t('profile.post') : t('profile.pending')) : t('profile.draft')}</span></div>
                                                 </div>
                                                 <div className="corpus-doc-info">
-                                                    <div><IconBook className="size-3.5" /><span>{relativeTime(post.created_at)}</span></div>
                                                     <h3>{post.title}</h3>
-                                                    <p>{isOwner ? t('profile.click_to_edit') : t('profile.open_post')}</p>
+                                                    <div className="corpus-doc-date">{post.created_at ? dayjs(post.created_at).format('DD/MM/YYYY, HH:mm') : ''}</div>
                                                 </div>
                                             </article>
                                         ))}
@@ -875,14 +910,26 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                 onClick={() => openPost({ id: savedPost.post_slug, title: savedPost.post_title || savedPost.post_slug, slug: savedPost.post_slug, created_at: savedPost.saved_at, published: true, is_approved: true })}
                                             >
                                                 <div className="corpus-doc-media">
-                                                    <div className="corpus-doc-preview-text">{savedPost.post_title || savedPost.post_slug}</div>
+                                                    <div className="corpus-doc-preview-paper">
+                                                        <div className="flex flex-col gap-1 overflow-hidden">
+                                                            <div className="font-bold text-[8px] uppercase tracking-wider opacity-40 border-b border-current/10 pb-1 mb-1 truncate">
+                                                                SAVED DOC
+                                                            </div>
+                                                            <div className="font-semibold text-[8.5px] leading-tight line-clamp-3">
+                                                                {savedPost.post_title || savedPost.post_slug}
+                                                            </div>
+                                                        </div>
+                                                        <div className="pt-1 border-t border-current/10 flex items-center justify-between text-[7px] font-mono opacity-40">
+                                                            <span>{savedPost.saved_at ? dayjs(savedPost.saved_at).format('DD/MM/YYYY') : ''}</span>
+                                                            <span>SAVED</span>
+                                                        </div>
+                                                    </div>
                                                     <div className="corpus-doc-media-fade" />
                                                     <div className="corpus-doc-badge"><IconBookmark className="size-3" /><span>{t('profile.saved_badge')}</span></div>
                                                 </div>
                                                 <div className="corpus-doc-info">
-                                                    <div><IconBook className="size-3.5" /><span>{relativeTime(savedPost.saved_at)}</span></div>
                                                     <h3>{savedPost.post_title || savedPost.post_slug}</h3>
-                                                    <p>{t('profile.open_saved')}</p>
+                                                    <div className="corpus-doc-date">{savedPost.saved_at ? dayjs(savedPost.saved_at).format('DD/MM/YYYY, HH:mm') : ''}</div>
                                                 </div>
                                             </article>
                                         ))}
