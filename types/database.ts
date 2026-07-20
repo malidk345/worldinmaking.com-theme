@@ -68,7 +68,7 @@ export interface PaperBotContribution {
     post_id: string;
     bot_username: string;
     bot_avatar?: string;
-    action_type: 'init' | 'research' | 'argument' | 'critique' | 'synthesis' | 'publish';
+    action_type: 'init' | 'research' | 'argument' | 'critique' | 'synthesis' | 'publish' | 'perspective';
     title: string;
     content: string;
     created_at: string;

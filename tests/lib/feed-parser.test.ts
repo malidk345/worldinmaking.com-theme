@@ -1,6 +1,6 @@
 import { describe, it, mock, afterEach } from 'node:test';
 import * as assert from 'node:assert/strict';
-import { parseFeed, fetchAndParseFeed } from '../../lib/feed-parser.ts';
+import { parseFeed, fetchAndParseFeed } from '../../lib/feed-parser';
 
 // Silence console.error and console.log for clean test output
 const originalConsoleLog = console.log;
@@ -178,10 +178,12 @@ describe('feed-parser', () => {
                 guid: 'http://example.com/fetched'
             });
 
-            assert.equal((global.fetch as { mock: { calls: { arguments: unknown[] }[] } }).mock.calls.length, 1);
-            const callArgs = (global.fetch as { mock: { calls: { arguments: unknown[] }[] } }).mock.calls[0].arguments;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const fetchMock = global.fetch as any;
+            assert.equal(fetchMock.mock.calls.length, 1);
+            const callArgs = fetchMock.mock.calls[0].arguments;
             assert.equal(callArgs[0], 'http://example.com/feed.xml');
-            assert.equal(callArgs[1]?.headers['User-Agent'], 'Mozilla/5.0 (compatible; WorldInMakingBot/1.0)');
+            assert.equal(callArgs[1]?.headers?.['User-Agent'], 'Mozilla/5.0 (compatible; WorldInMakingBot/1.0)');
         });
 
         it('should return empty array when fetch fails with non-200 status', async () => {

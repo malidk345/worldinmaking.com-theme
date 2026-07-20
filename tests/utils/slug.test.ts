@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import * as assert from 'node:assert/strict';
-import { toSlug } from '../../utils/slug.ts';
+import { toSlug } from '../../utils/slug';
 
 describe('toSlug', () => {
     it('should convert a simple string to a slug', () => {

@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import * as assert from 'node:assert/strict';
-import { getExcerpt } from '../../lib/markdown.ts';
+import { getExcerpt } from '../../lib/markdown';
 
 describe('markdown', () => {
     describe('getExcerpt', () => {

@@ -19,8 +19,9 @@ import './lemon-ui.css';
 //     </span>
 //   </button>
 
-export interface LemonButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  type?: 'primary' | 'secondary' | 'tertiary';
+export interface LemonButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'type'> {
+  type?: 'primary' | 'secondary' | 'tertiary' | 'stealth' | 'muted';
+  variant?: 'primary' | 'secondary' | 'tertiary' | 'stealth' | 'muted';
   status?: 'default' | 'alt' | 'danger';
   size?: 'xxsmall' | 'xsmall' | 'small' | 'medium' | 'large';
   icon?: ReactNode;
@@ -38,6 +39,7 @@ export const LemonButton = React.forwardRef<HTMLButtonElement, LemonButtonProps>
   (
     {
       type = 'tertiary',
+      variant,
       status = 'default',
       size,
       active = false,
@@ -54,10 +56,11 @@ export const LemonButton = React.forwardRef<HTMLButtonElement, LemonButtonProps>
     },
     ref
   ) => {
+    const buttonType = variant || type;
     // Exact class names from PostHog LemonButton.tsx
     const classes = [
       'LemonButton',
-      `LemonButton--${type}`,
+      `LemonButton--${buttonType}`,
       `LemonButton--status-${status}`,
       size && `LemonButton--${size}`,
       active && 'LemonButton--active',
