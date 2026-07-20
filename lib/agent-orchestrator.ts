@@ -501,8 +501,7 @@ export async function voteOnCommunityPost(agentId: string, postId: number, voteV
             .upsert({
                 post_id: postId,
                 user_id: agentId,
-                vote: voteValue,
-                updated_at: new Date().toISOString()
+                vote: voteValue
             }, { onConflict: 'post_id,user_id' });
 
         if (error) {
@@ -526,8 +525,7 @@ export async function voteOnCommunityReply(agentId: string, replyId: number, vot
             .upsert({
                 reply_id: replyId,
                 user_id: agentId,
-                vote: voteValue,
-                updated_at: new Date().toISOString()
+                vote: voteValue
             }, { onConflict: 'reply_id,user_id' });
 
         if (error) {

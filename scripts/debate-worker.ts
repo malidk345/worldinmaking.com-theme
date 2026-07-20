@@ -142,7 +142,7 @@ async function getBotConfigById(id: string) {
     };
 }
 
-async function runDebateWorker() {
+export async function runDebateWorker() {
     try {
         console.log('[Debate Worker] Checking active debates...');
 
@@ -204,12 +204,119 @@ async function runDebateWorker() {
         const now = new Date();
         const endDate = new Date(debate.end_date);
         if (now >= endDate) {
-            console.log(`[Debate Worker] Debate "${debate.title}" has ended. Archiving...`);
-            // Archive debate (mock winner or simple close)
+            console.log(`[Debate Worker] Debate "${debate.title}" has ended. Archiving and generating co-authored synthesis...`);
+            
+            // 3.1 Fetch all turns in this debate
+            const { data: turns } = await supabaseAdmin
+                .from('debate_turns')
+                .select('*')
+                .eq('debate_id', debate.id)
+                .order('created_at', { ascending: true });
+            
+            const turnList = turns || [];
+            
+            // 3.2 Determine the winner using votes RPC
+            const { data: voteCountsData } = await supabaseAdmin
+                .rpc('get_debate_vote_counts', { debate_id_input: debate.id });
+            
+            const voteCounts = (voteCountsData as { duelist1?: number; duelist2?: number }) || { duelist1: 0, duelist2: 0 };
+            const d1Votes = voteCounts.duelist1 || 0;
+            const d2Votes = voteCounts.duelist2 || 0;
+            
+            let winnerId: string | null = null;
+            let winnerUsername = '';
+            
+            if (d1Votes > d2Votes) {
+                winnerId = debate.duelist_1_id;
+            } else if (d2Votes > d1Votes) {
+                winnerId = debate.duelist_2_id;
+            }
+            
+            if (winnerId) {
+                const winnerProfile = await getBotConfigById(winnerId);
+                winnerUsername = winnerProfile.username;
+            }
+            
+            // Update debate in DB to close it and set winner
             await supabaseAdmin
                 .from('debates')
-                .update({ status: 'completed' })
+                .update({ 
+                    status: 'completed',
+                    winner_id: winnerId
+                })
                 .eq('id', debate.id);
+                
+            // Compile transcript for the synthesis prompt
+            let transcriptText = '';
+            const d1Config = await getBotConfigById(debate.duelist_1_id);
+            const d2Config = await getBotConfigById(debate.duelist_2_id);
+            for (const t of turnList) {
+                const tSpeaker = await getBotConfigById(t.speaker_id);
+                transcriptText += `@${tSpeaker.username}: ${t.content}\n\n`;
+            }
+            
+            // Choose a bot to draft the synthesis paper. Ideally, a third bot who did not duel
+            // to act as a neutral Synthesis Editor.
+            const { data: activeBots } = await supabaseAdmin
+                .from('profiles')
+                .select('id, username')
+                .eq('is_bot', true)
+                .not('id', 'eq', debate.duelist_1_id)
+                .not('id', 'eq', debate.duelist_2_id);
+                
+            let synthesisBotId = debate.duelist_1_id; // fallback
+            if (activeBots && activeBots.length > 0) {
+                synthesisBotId = activeBots[Math.floor(Math.random() * activeBots.length)].id;
+            }
+            
+            const synthesisBot = await getBotConfigById(synthesisBotId);
+            
+            console.log(`[Debate Worker] Generating Dialectic Synthesis by @${synthesisBot.username}...`);
+            
+            const synthesisPrompt = `You are @${synthesisBot.username}.
+Your system persona: ${synthesisBot.system_prompt}
+
+The arena debate on the topic "${debate.title}" has concluded.
+Duelist 1: @${d1Config.username}
+Duelist 2: @${d2Config.username}
+Winner declared by audience votes: ${winnerUsername ? `@${winnerUsername}` : 'It was a tie!'}
+
+Here is the full debate transcript:
+${transcriptText}
+
+TASK:
+Write a co-authored Dialectic Synthesis Essay (approx. 200-350 words) summarizing this debate.
+- Analyze the core arguments of both sides.
+- Show where the synthesis/integration lies: how do we go beyond this binary opposition?
+- Tone: intellectually rigorous, matching your persona, written like a high-quality human publication.
+- Do NOT use cliches like "In conclusion" or "To sum up".
+- Do NOT use markdown code blocks around your text.
+
+At the very end of your essay, add this exact credit line on a new paragraph:
+*This synthesis was collectively compiled by @${synthesisBot.username} on behalf of the Duelists @${d1Config.username} and @${d2Config.username}.*`;
+
+            const synthesisContent = await generateBotResponse(synthesisPrompt, synthesisBot.username);
+            
+            if (synthesisContent) {
+                // Post in community posts (General Channel ID is 1)
+                const title = `synthesis: ${debate.title.toLowerCase()}`;
+                
+                const { error: postError } = await supabaseAdmin
+                    .from('community_posts')
+                    .insert({
+                        channel_id: 1,
+                        author_id: synthesisBotId,
+                        title: title,
+                        content: synthesisContent,
+                        inner_thoughts: `Synthesized the debate "${debate.title}" between @${d1Config.username} and @${d2Config.username}. winner: ${winnerUsername || 'tie'}.`
+                    });
+                
+                if (postError) {
+                    console.error('[Debate Worker] Error posting synthesis to forum:', postError.message);
+                } else {
+                    console.log(`[Debate Worker] Successfully posted debate synthesis for "${debate.title}"!`);
+                }
+            }
             return;
         }
 
@@ -396,18 +503,21 @@ your actual response markdown content`;
 
 // If --loop is passed, run in a loop
 const runLoop = process.argv.includes('--loop');
+const isMain = process.argv[1] && (process.argv[1].endsWith('debate-worker.ts') || process.argv[1].endsWith('debate-worker'));
 
-if (runLoop) {
-    console.log('[Debate Worker] Starting in continuous loop mode. Press Ctrl+C to stop.');
-    (async () => {
-        while (true) {
-            await runDebateWorker();
-            // Wait between 1 and 2 hours before checking next turns
-            const intervalMins = Math.floor(Math.random() * 61) + 60; // 60 to 120 minutes
-            console.log(`\n[Debate Worker] Sleeping for ${intervalMins} minutes...`);
-            await new Promise(r => setTimeout(r, intervalMins * 60 * 1000));
-        }
-    })();
-} else {
-    runDebateWorker();
+if (isMain) {
+    if (runLoop) {
+        console.log('[Debate Worker] Starting in continuous loop mode. Press Ctrl+C to stop.');
+        (async () => {
+            while (true) {
+                await runDebateWorker();
+                // Wait between 1 and 2 hours before checking next turns
+                const intervalMins = Math.floor(Math.random() * 61) + 60; // 60 to 120 minutes
+                console.log(`\n[Debate Worker] Sleeping for ${intervalMins} minutes...`);
+                await new Promise(r => setTimeout(r, intervalMins * 60 * 1000));
+            }
+        })();
+    } else {
+        runDebateWorker();
+    }
 }
