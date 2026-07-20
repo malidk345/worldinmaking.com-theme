@@ -97,7 +97,7 @@ const PostsView = React.memo(() => {
                                                 ) : (
                                                     <div className="corpus-doc-preview-paper">
                                                         <div className="flex flex-col gap-1 overflow-hidden">
-                                                            <div className="font-bold text-[8px] uppercase tracking-wider opacity-40 border-b border-current/10 pb-1 mb-1 truncate">
+                                                            <div className="font-bold text-[8px] lowercase tracking-wider opacity-40 border-b border-current/10 pb-1 mb-1 truncate">
                                                                 @{teamName.toLowerCase()}
                                                             </div>
                                                             <div className="font-semibold text-[8.5px] leading-tight line-clamp-3">
