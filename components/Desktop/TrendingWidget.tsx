@@ -149,18 +149,38 @@ export default function TrendingWidget() {
                         {(currentPage * itemsPerPage) + 1}-{Math.min((currentPage + 1) * itemsPerPage, currentPosts.length)} of {currentPosts.length}
                     </span>
                     <div className="flex items-center gap-2">
-                        <IconRefresh
-                            className={`w-3 h-3 opacity-60 cursor-pointer hover:opacity-100 mr-1 ${loading ? 'animate-spin' : ''}`}
+                        <button
+                            type="button"
+                            aria-label="Refresh trending"
+                            className={`p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20 mr-1`}
                             onClick={fetchTopPosts}
-                        />
-                        <IconChevronLeft
-                            className={`w-3.5 h-3.5 cursor-pointer hover:opacity-100 ${currentPage === 0 ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
+                        >
+                            <IconRefresh
+                                className={`w-3 h-3 opacity-60 ${loading ? 'animate-spin' : ''}`}
+                            />
+                        </button>
+                        <button
+                            type="button"
+                            aria-label="Previous page"
+                            className={`p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20 ${currentPage === 0 ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
                             onClick={() => setCurrentPage(0)}
-                        />
-                        <IconChevronRight
-                            className={`w-3.5 h-3.5 cursor-pointer hover:opacity-100 ${currentPage >= totalPages - 1 ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
+                            disabled={currentPage === 0}
+                        >
+                            <IconChevronLeft
+                                className="w-3.5 h-3.5 cursor-pointer hover:opacity-100"
+                            />
+                        </button>
+                        <button
+                            type="button"
+                            aria-label="Next page"
+                            className={`p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20 ${currentPage >= totalPages - 1 ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
                             onClick={() => setCurrentPage(prev => prev + 1)}
-                        />
+                            disabled={currentPage >= totalPages - 1}
+                        >
+                            <IconChevronRight
+                                className="w-3.5 h-3.5 cursor-pointer hover:opacity-100"
+                            />
+                        </button>
                     </div>
                 </div>
             </div>
