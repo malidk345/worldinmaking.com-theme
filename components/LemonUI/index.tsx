@@ -323,43 +323,101 @@ export function LemonWidget({ title, actions, children, className = '' }: LemonW
 }
 
 // ── 11. LemonInput ─────────────────────────────────────────────────────────
-export interface LemonInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+export interface LemonInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size' | 'prefix' | 'suffix'> {
   icon?: ReactNode;
+  prefix?: ReactNode;
+  suffix?: ReactNode;
+  status?: 'default' | 'danger';
+  size?: 'xsmall' | 'small' | 'medium' | 'large';
+  fullWidth?: boolean;
+  allowClear?: boolean;
+  onClear?: () => void;
 }
 
 export const LemonInput = React.forwardRef<HTMLInputElement, LemonInputProps>(
-  ({ icon, className = '', ...props }, ref) => {
+  (
+    {
+      icon,
+      prefix,
+      suffix,
+      status = 'default',
+      size = 'medium',
+      fullWidth = true,
+      allowClear,
+      onClear,
+      className = '',
+      value,
+      type = 'text',
+      ...props
+    },
+    ref
+  ) => {
+    const effectivePrefix = prefix || icon;
+    const classes = [
+      'LemonInput',
+      'input-like',
+      status !== 'default' && `LemonInput--status-${status}`,
+      type && `LemonInput--type-${type}`,
+      size && `LemonInput--${size}`,
+      fullWidth && 'LemonInput--full-width',
+      value && 'LemonInput--has-content',
+      className,
+    ]
+      .filter(Boolean)
+      .join(' ');
+
     return (
-      <div className="LemonInput__wrapper">
-        {icon && (
-          <span
-            className="absolute left-2.5 pointer-events-none shrink-0"
-            style={{ color: 'var(--muted-3000)' }}
-          >
-            {icon}
-          </span>
-        )}
+      <span className={classes}>
+        {effectivePrefix && <span className="LemonInput__prefix shrink-0 mr-1.5 opacity-60">{effectivePrefix}</span>}
         <input
           ref={ref}
-          className={`LemonInput__input ${icon ? 'pl-8' : ''} ${className}`}
+          type={type}
+          value={value}
+          className="LemonInput__input"
           {...props}
         />
-      </div>
+        {allowClear && value && (
+          <button
+            type="button"
+            className="LemonInput__clear cursor-pointer opacity-60 hover:opacity-100 px-1"
+            onClick={onClear}
+          >
+            ×
+          </button>
+        )}
+        {suffix && <span className="LemonInput__suffix shrink-0 ml-1.5 opacity-60">{suffix}</span>}
+      </span>
     );
   }
 );
 LemonInput.displayName = 'LemonInput';
 
 // ── 12. LemonTextArea ──────────────────────────────────────────────────────
-export const LemonTextArea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>(
-  ({ className = '', ...props }, ref) => {
+export interface LemonTextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  status?: 'default' | 'danger';
+}
+
+export const LemonTextArea = React.forwardRef<HTMLTextAreaElement, LemonTextAreaProps>(
+  ({ status = 'default', className = '', ...props }, ref) => {
+    const classes = [
+      'LemonInput',
+      'LemonTextArea',
+      'input-like',
+      status !== 'default' && `LemonInput--status-${status}`,
+      className,
+    ]
+      .filter(Boolean)
+      .join(' ');
+
     return (
-      <textarea
-        ref={ref}
-        className={`LemonInput__input ${className}`}
-        style={{ resize: 'vertical', minHeight: '5rem' }}
-        {...props}
-      />
+      <span className={classes}>
+        <textarea
+          ref={ref}
+          className="LemonInput__input"
+          style={{ resize: 'vertical', minHeight: '5rem' }}
+          {...props}
+        />
+      </span>
     );
   }
 );

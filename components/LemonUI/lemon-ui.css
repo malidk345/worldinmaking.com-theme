@@ -505,44 +505,96 @@
 }
 
 /* ══════════════════════════════════════════════════════════════
-   LemonInput
+   LemonInput (verbatim from posthog/frontend/src/lib/lemon-ui/LemonInput/LemonInput.scss)
 ══════════════════════════════════════════════════════════════ */
-.LemonInput__wrapper {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  width: 100%;
-}
+.LemonInput {
+  --lemon-input-height: calc(2.125rem + 3px);
 
-.LemonInput__input {
-  width: 100%;
-  padding: 0.375rem 0.625rem;
+  display: flex;
+  gap: 0.375rem;
+  align-items: center;
+  justify-content: flex-start;
+  height: var(--lemon-input-height);
+  min-height: var(--lemon-input-height);
+  padding: 0.25rem 0.625rem;
   font-size: 0.875rem;
-  font-weight: 400;
-  line-height: 1.5rem;
+  line-height: 1.25rem;
   color: var(--text-3000, #111);
+  text-align: left;
+  cursor: text;
   background-color: var(--color-bg-surface-primary, #fff);
   border: 1px solid var(--border-3000, #dadbd2);
   border-radius: var(--lemon-radius, 4px);
   outline: none;
   transition: border-color 200ms ease, box-shadow 200ms ease;
-  appearance: none;
+  width: 100%;
 }
 
-.LemonInput__input:focus {
+.LemonInput[aria-disabled='true'] {
+  cursor: not-allowed;
+  opacity: var(--opacity-disabled, 0.45);
+}
+
+.LemonInput:focus-within,
+.LemonInput.LemonInput--focused {
   border-color: var(--primary-3000, #f54e01);
-  box-shadow: 0 0 0 2px rgba(245, 78, 1, 0.15);
+  box-shadow: 0 0 0 2px var(--primary-highlight, rgba(245, 78, 1, 0.15));
 }
 
-.dark .LemonInput__input {
+.LemonInput.LemonInput--status-danger {
+  border-color: var(--danger-3000-button-border, #ef4444) !important;
+}
+
+.LemonInput .LemonInput__input {
+  flex: 1;
+  align-self: stretch;
+  width: 100%;
+  padding: 0;
+  cursor: inherit;
+  background: none;
+  border: none;
+  outline: none;
+  color: inherit;
+  font-size: inherit;
+  font-family: inherit;
+}
+
+.LemonInput.LemonInput--small {
+  --lemon-input-height: 2rem;
+  padding: 0.125rem 0.375rem;
+  font-size: 0.8125rem;
+}
+
+.LemonInput.LemonInput--large {
+  --lemon-input-height: 2.75rem;
+  font-size: 1rem;
+}
+
+.LemonInput.LemonInput--full-width {
+  width: 100%;
+  max-width: 100%;
+}
+
+.LemonTextArea {
+  height: auto;
+  min-height: 5rem;
+  padding: 0.5rem 0.625rem;
+}
+
+.LemonTextArea .LemonInput__input {
+  resize: vertical;
+}
+
+.dark .LemonInput {
   color: var(--text-3000, #fff);
-  background-color: var(--color-bg-surface-primary, #1d1f27);
-  border-color: var(--border-3000, #35373e);
+  background-color: var(--color-bg-surface-primary, #0F233D);
+  border-color: var(--border-3000, #1E2F46);
 }
 
-.dark .LemonInput__input:focus {
+.dark .LemonInput:focus-within,
+.dark .LemonInput.LemonInput--focused {
   border-color: var(--primary-3000, #f7a503);
-  box-shadow: 0 0 0 2px rgba(247, 165, 3, 0.15);
+  box-shadow: 0 0 0 2px var(--primary-highlight, rgba(247, 165, 3, 0.15));
 }
 
 /* ══════════════════════════════════════════════════════════════
