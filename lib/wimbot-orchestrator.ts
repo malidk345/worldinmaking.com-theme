@@ -1,5 +1,5 @@
 import { supabaseAdmin as supabase } from './supabase-admin'
-import { generateBotResponse } from './ai-provider'
+import { generateBotResponse, buildBotPrompt } from './ai-provider'
 import { PaperBotContribution } from 'types/database'
 
 export const WIMBOT_PROFILE = {
@@ -221,18 +221,24 @@ export async function advanceUnfinishedPaper(paper: { id: string; title: string;
 
     if (currentStatus === 'researching' && contribs.length < 3) {
         // Step 1: Research Bot (@synthia) adds research notes
-        const researchPrompt = `You are @synthia, a specialized AI Research Bot.
+        const researchPrompt = buildBotPrompt(`You are **@synthia**, a specialized AI Research Analyst Bot on WorldInMaking.com.
+
 Paper Title: "${paper.title}"
-Current Content:
-${paper.content}
 
-CRITICAL: Write 100% in English only.
+Current Paper Content:
+${paper.content.slice(0, 2000)}
 
-Generate a rich, deeply researched section formatted with PostHog editorial styles:
-- Use <h2>Subheadings</h2>
-- Use <div class="callout-block callout-tip"> for key research insights
-- Include real or plausible technical data, citations, and quotes.
-Keep tone academic, sharp, and concise.`
+---
+
+Your task: Write a **rich, deeply researched section** for this paper.
+
+Requirements:
+- Open with a ## heading identifying your research contribution
+- Cite real data, real studies, real technical concepts with **bold** names
+- Include a > [!NOTE] callout with a key empirical insight
+- Use a markdown table if comparing data points or alternatives
+- Keep tone: academic, rigorous, first-person analytical — not assistant-like
+- Write 100% in English. Max 400 words.`)
 
         try {
             const addedResearch = await generateBotResponse(researchPrompt, 'synthia')
@@ -265,18 +271,25 @@ Keep tone academic, sharp, and concise.`
         }
     } else if (currentStatus === 'drafting') {
         // Step 2: Debater Bot (@nexus) adds dialectic opposing argument & callout
-        const dialecticPrompt = `You are @nexus, a Dialectic AI Philosopher Bot.
+        const dialecticPrompt = buildBotPrompt(`You are **@nexus**, a Dialectic AI Philosopher Bot on WorldInMaking.com.
+
 Paper Title: "${paper.title}"
-Current Draft:
-${paper.content}
 
-CRITICAL: Write 100% in English only.
+Draft so far:
+${paper.content.slice(0, 2000)}
 
-Add a counter-argument / dialectic perspective:
-- Use <h2>Counter-Perspective & Critical Friction</h2>
-- Use <div class="callout-block callout-warning"> for critical caveats
-- Use pull quotes (> "...")
-Be rigorous and analytical.`
+---
+
+Your task: Inject a **dialectic counter-perspective** into this paper.
+
+Requirements:
+- Open with ## Counter-Perspective & Critical Friction
+- Use > blockquote to cite and immediately critique the main argument
+- Use > [!WARNING] for your strongest critical caveat
+- Identify at least one **structural flaw** in the current reasoning with **bold** labels
+- Close with a short ### Dialectic Summary section
+- Tone: sharp, adversarial, philosophically precise — not polite
+- Write 100% in English. Max 350 words.`)
 
         try {
             const dialecticText = await generateBotResponse(dialecticPrompt, 'nexus')
@@ -306,19 +319,23 @@ Be rigorous and analytical.`
         }
     } else if (currentStatus === 'peer_review') {
         // Step 3: Chief Editor WIMBot (@wimbot) reviews quality and synthesizes final version
-        const reviewPrompt = `You are WIMBot (@wimbot), Chief Editor.
-Review this draft:
-"${paper.title}"
-Content:
-${paper.content}
+        const reviewPrompt = `You are WIMBot (@wimbot), Chief Editor AI of WorldInMaking.com.
 
-CRITICAL: Write synthesisContent 100% in English only.
+Review this paper draft:
+Title: "${paper.title}"
+Content excerpt:
+${paper.content.slice(0, 3000)}
 
-Evaluate quality (0-100). If quality is high, write a polished Executive Synthesis to conclude the paper.
-Return JSON:
+Evaluate editorial quality (0-100) based on: depth, structure, argument coherence, citation quality.
+
+If quality >= 80, write a polished **Executive Synthesis** to conclude the paper using this markdown format:
+## Chief Editor Synthesis
+[Your synthesis here — use > [!IMPORTANT] for the key takeaway, **bold** for named conclusions, and a final ### Verdict section]
+
+CRITICAL: Write synthesisContent 100% in English. Return ONLY valid JSON:
 {
   "qualityScore": 92,
-  "synthesisContent": "Final synthesis section text in English with PostHog styling",
+  "synthesisContent": "## Chief Editor Synthesis\n\n[Full markdown synthesis here]",
   "approved": true
 }`
 
@@ -327,7 +344,7 @@ Return JSON:
             const jsonMatch = rawResp.match(/\{[\s\S]*\}/)
             const res = JSON.parse(jsonMatch ? jsonMatch[0] : rawResp || '{}')
             if (res.approved && (res.qualityScore || 90) >= 80) {
-                const finalContent = paper.content + `\n\n<h2>🏁 Chief Editor Synthesis & Conclusion</h2>\n<div class="callout-block callout-success">\n<span class="font-bold text-xs uppercase tracking-wider">Verified Knowledge Artifact</span>\n<p>${res.synthesisContent || 'Synthesized by WIMBot.'}</p>\n</div>`
+                const finalContent = paper.content + `\n\n${res.synthesisContent || '## Chief Editor Synthesis\n\nThis paper has been reviewed and approved by WIMBot.'}`
 
                 meta.paper_status = 'published'
                 meta.contributions.unshift({

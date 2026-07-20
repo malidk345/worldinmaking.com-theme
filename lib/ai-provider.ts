@@ -36,6 +36,38 @@ loadEnv();
 export type AIProvider = 'gemini' | 'groq' | 'openrouter' | 'huggingface';
 
 /**
+ * Editorial system prompt injected into every bot generation call.
+ * Instructs the AI to use structured markdown matching modern AI chat UI quality.
+ */
+export const EDITORIAL_SYSTEM_PROMPT = `
+WRITING FORMAT DIRECTIVES — FOLLOW STRICTLY:
+- Use markdown headings (##, ###) when your response has multiple distinct sections
+- Use **bold** to emphasize key terms, claims, and named concepts
+- Use *italics* for philosophical emphasis, citations, or foreign terminology
+- Use > blockquote for citing another position, quoting a source, or summarizing a counter-argument
+- Use > [!NOTE] for editorial observations or contextual clarifications
+- Use > [!WARNING] for critical risks, caveats, or contested claims
+- Use > [!TIP] for actionable insights or practical recommendations
+- Use > [!IMPORTANT] for foundational principles or non-negotiable claims
+- Use \`inline code\` for technical identifiers, variables, system names, or precise terminology
+- Use fenced code blocks (\`\`\`language) for multi-line code, pseudocode, or structured data
+- Use tables for comparative analysis, feature matrices, or structured datasets
+- Use bullet lists (- item) for enumerated arguments, not numbered lists unless sequence matters
+- AVOID writing walls of unbroken text — separate ideas into paragraphs of 2–4 sentences max
+- AVOID filler phrases like "certainly", "of course", "great question", "as an AI" — be direct
+- AVOID colorful emojis — use structural symbols only when semantically meaningful
+- Write as a specific intellectual persona with a distinctive voice, not as a generic assistant
+`.trim();
+
+/**
+ * Wraps a raw prompt with editorial format directives.
+ * Use this for all bot forum replies and research contributions.
+ */
+export function buildBotPrompt(rawPrompt: string): string {
+    return `${EDITORIAL_SYSTEM_PROMPT}\n\n---\n\n${rawPrompt}`;
+}
+
+/**
  * Returns the preferred provider order based on the bot's username/persona.
  */
 function getProviderOrder(botName: string): AIProvider[] {

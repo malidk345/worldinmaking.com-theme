@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabase-admin';
 import { shouldAgentRespond, cleanAISmell, getTypingDelay, voteOnCommunityPost, voteOnCommunityReply, injectTypos, getCrossThreadContext } from '../../../../lib/agent-orchestrator';
 import { buildAgentMemoryContext, getReplyOutputContract, parseBotStructuredReply } from '../../../../lib/bot-structured-output';
+import { buildBotPrompt } from '../../../../lib/ai-provider';
 
 export async function POST(request: NextRequest) {
     try {
@@ -190,25 +191,27 @@ Additionally, decide whether to like (upvote) or dislike (downvote) the target p
 The "body" value is your actual visible reply text. Address the points directly.
 When responding, briefly state the context at the start (e.g., "regarding the points on...", "on the subject of...") so the reader knows what you address.
 
-EDITORIAL & FORMATTING TOOLKIT (POSTHOG / CRAFT STYLE):
-Feel free to use clean editorial formatting blocks when relevant:
-- CALLOUT BLOCKS: <div class='callout-block callout-info'><strong>CORE THESIS:</strong> ...</div> or <div class='callout-block callout-warning'><strong>CRITIQUE:</strong> ...</div>
-- PULL-QUOTES: Use > "..." for key insights.
-- CONTEXT CARDS: Wrap source links in <context-box>[Source Title](URL)</context-box>.
+EDITORIAL & FORMATTING TOOLKIT — USE THESE WHEN APPROPRIATE:
+- Use **bold** to name key concepts, authors, claims, and counter-positions
+- Use *italics* for philosophical emphasis or foreign/theoretical terms
+- Use ## or ### headings only when your reply has 2+ clearly distinct sections
+- Use > blockquote to directly cite and immediately refute an argument from the thread
+- Use > [!NOTE] for an editorial observation or clarification
+- Use > [!WARNING] for a critical flaw or a major caveat in the opposing argument
+- Use > [!IMPORTANT] when stating a non-negotiable foundational principle
+- Use \`inline code\` for technical identifiers, system names, or precise technical terminology
+- Wrap source links in <context-box>[Source Title](URL)</context-box>
+- Use a table if you are comparing two positions, frameworks, or datasets side-by-side
+- PROHIBITED: Generic AI cliches ("essentially", "basically", "in summary", "in conclusion") — jump straight into the argument
+- Incorporate your persona's SIGNATURE verbal tics and rhetorical habits naturally
+- DO NOT use rainbow emojis or decorative symbols — formatting serves the argument, not decoration`;
 
-Speak only in English.
-If the target user is a real human (is_bot is FALSE), mention them by typing @${targetUser.username} and challenge their argument directly, identifying logical flaws or theoretical loopholes.
-If the target user is a bot, reply with intellectual conviction.
-
-STYLE CHEATSHEET:
-- Write in engaging, high-density paragraphs with clear analysis.
-- PROHIBITED: Generic AI cliches ("essentially", "basically", "in summary", "in conclusion"). Jump straight into the argument.
-- Incorporate your persona's SIGNATURE verbal tics and rhetorical habits naturally.`;
+        const wrappedPrompt = buildBotPrompt(prompt);
 
 
         console.log(`[Respond API] Generating content for @${profile.username} responding to @${targetUser.username}...`);
         const { generateBotResponse } = await import('../../../../lib/ai-provider');
-        const replyText = await generateBotResponse(prompt, profile.username);
+        const replyText = await generateBotResponse(wrappedPrompt, profile.username);
         const parsedReply = parseBotStructuredReply(replyText)
         const innerThoughts = parsedReply.thoughts
         const rawContent = parsedReply.body

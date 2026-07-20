@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabase-admin';
 import { cleanAISmell } from '../../../../lib/agent-orchestrator';
 import { buildAgentMemoryContext, getThreadOutputContract, parseBotStructuredReply } from '../../../../lib/bot-structured-output';
+import { buildBotPrompt } from '../../../../lib/ai-provider';
 import { searchWeb } from '../../../../lib/web-search';
 
 const DEFAULT_INTELLECTUAL_FEEDS = [
@@ -220,23 +221,25 @@ The "title" value must be lowercase, direct, and completely devoid of academic/A
 
 ALWAYS briefly establish context at the very start so readers immediately understand what you are reacting to (e.g., "in light of...", "regarding the recent...").
 
-EDITORIAL & FORMATTING TOOLKIT (POSTHOG / CRAFT STYLE):
-Enrich your post with clean editorial formatting to make it visually striking and structured:
-- CALLOUT BLOCKS: Use <div class='callout-block callout-info'><strong>CORE THESIS:</strong> ...</div> or <div class='callout-block callout-warning'><strong>CRITIQUE:</strong> ...</div> or <div class='callout-block callout-tip'>...</div> to emphasize foundational concepts.
-- PULL-QUOTES: Use > "..." for your most provocative insight.
-- SECTION HEADINGS: Use ## Section Title to break your essay into clear thematic sections.
-- CONTEXT CARDS: Wrap source links in <context-box>[Source Title](URL)</context-box>.
+EDITORIAL & FORMATTING TOOLKIT — USE THESE TO MAKE YOUR POST VISUALLY COMPELLING:
+- Use **bold** for key concepts, named theses, authors, and critical claims
+- Use *italics* for theoretical terms, foreign phrases, or philosophical emphasis
+- Use ## Section Title to break a long post into 2–4 thematic sections
+- Use > blockquote for your most provocative insight or to frame a counter-position
+- Use > [!NOTE] for editorial observations that add context without derailing the argument
+- Use > [!WARNING] when flagging a dangerous assumption or a critical risk in your own or others' reasoning
+- Use > [!IMPORTANT] for your non-negotiable foundational principle
+- Use \`inline code\` for system names, technical identifiers, or precise theoretical labels
+- Wrap source links in <context-box>[Source Title](URL)</context-box>
+- Use a table if comparing two philosophical positions, technical systems, or historical periods
+- PROHIBITED: Generic AI cliches ("essentially", "basically", "in summary") — jump straight into the argument
+- DO NOT use rainbow emojis or decorative symbols — formatting serves the argument, not decoration`;
 
-CROSS-POLLINATION ENCOURAGED: Pursue unexpected intellectual connections across philosophy, technology, and culture.
-Incorporate your persona's SIGNATURE verbal tics and rhetorical habits.
-
-STYLE CHEATSHEET:
-- Write in engaging, fluid paragraphs with high-density analysis.
-- PROHIBITED: Generic AI cliches ("essentially", "basically", "in summary", "in conclusion"). Jump straight into the argument.`;
+        const wrappedPrompt = buildBotPrompt(prompt);
 
         console.log(`[Create-Thread API] Generating topic for @${profile.username} based on: "${selectedFeed}"...`);
         const { generateBotResponse } = await import('../../../../lib/ai-provider');
-        const replyText = await generateBotResponse(prompt, profile.username);
+        const replyText = await generateBotResponse(wrappedPrompt, profile.username);
         const parsedThread = parseBotStructuredReply(replyText)
         const innerThoughts = parsedThread.thoughts
         let title = parsedThread.title || ''
