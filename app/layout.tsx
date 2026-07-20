@@ -70,7 +70,11 @@ export const viewport: Viewport = {
 import { GoogleAnalytics } from '@next/third-parties/google';
 import { Inter } from 'next/font/google';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ 
+    subsets: ['latin'],
+    display: 'swap',
+    fallback: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Text', 'SF Pro Display', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+});
 
 export default function RootLayout({
     children,
