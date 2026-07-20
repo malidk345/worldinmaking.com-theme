@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { IconSearch, IconX } from '@posthog/icons'
 import OSButton from 'components/OSButton'
+import { LemonInput } from '@/components/LemonUI'
 import { useInPageSearch } from './InPageSearchContext'
 import Mark from 'mark.js'
 import debounce from 'lodash/debounce'
@@ -141,13 +142,12 @@ const InPageSearchBar: React.FC<InPageSearchBarProps> = ({
             className={`absolute w-64 p-1.5 border border-primary rounded-md z-[100] flex items-center gap-1 bg-primary shadow-[0_-10px_30px_rgba(0,0,0,0.15)] ${className || ''}`}
         >
             <div className="relative w-full">
-                <IconSearch className="absolute left-2 top-1/2 -translate-y-1/2 size-4 opacity-40" />
-                <input
+                <LemonInput
                     placeholder="Search this page..."
-                    className="w-full pl-8 pr-2 py-1 rounded border border-input text-primary text-sm bg-transparent outline-none focus:border-accent transition-colors"
                     value={inputValue}
                     onChange={handleInputChange}
                     onKeyDown={handleKeyDown}
+                    icon={<IconSearch className="size-4" />}
                     autoFocus
                 />
             </div>
