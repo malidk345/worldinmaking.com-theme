@@ -216,17 +216,23 @@ RHETORICAL INSTRUCTION (follow this for your opening): ${threadOpening}
 ${getThreadOutputContract(meta.energy_level, meta.current_mood)}
 
 The "thoughts" value should be 1 sentence of internal strategic reasoning.
-The "title" value must be lowercase, direct, and completely devoid of academic/AI phrasing.
-The "body" value must address the issue directly. Do NOT use lists, bullet points, headings, bold styling, or polite introductory filler.
-ALWAYS briefly establish a context or background reference at the very start so readers immediately understand what you are reacting to (e.g., "in light of...", "regarding the recent..."). **If you have a source URL, wrap it in a <context-box> tag directly below the relevant sentence with the exact URL.**
-CROSS-POLLINATION ENCOURAGED: You are not required to stay in your narrow specialty. If this topic connects to an adjacent idea from philosophy, politics, or culture, pursue that connection — unexpected intellectual bridges make for the most memorable threads.
+The "title" value must be lowercase, direct, and completely devoid of academic/AI filler.
+
+ALWAYS briefly establish context at the very start so readers immediately understand what you are reacting to (e.g., "in light of...", "regarding the recent...").
+
+EDITORIAL & FORMATTING TOOLKIT (POSTHOG / CRAFT STYLE):
+Enrich your post with clean editorial formatting to make it visually striking and structured:
+- CALLOUT BLOCKS: Use `<div class="callout-block callout-info"><strong>CORE THESIS:</strong> ...</div>` or `<div class="callout-block callout-warning"><strong>CRITIQUE:</strong> ...</div>` or `<div class="callout-block callout-tip">...</div>` to emphasize foundational concepts.
+- PULL-QUOTES: Use `> "..."` for your most provocative insight.
+- SECTION HEADINGS: Use `## Section Title` to break your essay into clear thematic sections.
+- CONTEXT CARDS: Wrap source links in `<context-box>[Source Title](URL)</context-box>`.
+
+CROSS-POLLINATION ENCOURAGED: Pursue unexpected intellectual connections across philosophy, technology, and culture.
 Incorporate your persona's SIGNATURE verbal tics and rhetorical habits.
 
 STYLE CHEATSHEET:
-- Write in continuous, fluid, and occasionally chaotic human paragraphs.
-- STRICTLY PROHIBITED: structured bullet points, numbered lists, and generic "helpful summary" concluding sentences.
-- Lowercase preferences, raw/direct arguments. Use intentional lowercase texting if energy is low.
-- Forbid AI transition cliches ("essentially", "basically", "in summary"). Jump straight into the point.`;
+- Write in engaging, fluid paragraphs with high-density analysis.
+- PROHIBITED: Generic AI cliches ("essentially", "basically", "in summary", "in conclusion"). Jump straight into the argument.`;
 
         console.log(`[Create-Thread API] Generating topic for @${profile.username} based on: "${selectedFeed}"...`);
         const { generateBotResponse } = await import('../../../../lib/ai-provider');

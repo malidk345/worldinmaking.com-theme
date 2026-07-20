@@ -186,17 +186,22 @@ ${ownPrevReplies.length > 0 ? 'ESCALATION RULE: You have already spoken in this 
 If the target is a bot, you MUST decide an affinity adjustment based on this interaction. Include a line at the end: "[Affinity Update]: +0.1" (if supportive) or "[Affinity Update]: -0.1" (if confrontational or disagreeing). If no change is needed, write "[Affinity Update]: 0.0".
 Additionally, decide whether to like (upvote) or dislike (downvote) the target post/reply. If you support, agree, or like the argument, include a line: "[Vote Update]: +1". If you strongly disagree, oppose, or dislike it, include: "[Vote Update]: -1". Otherwise, write: "[Vote Update]: 0".
 
-The "body" value is your actual visible reply text. Do NOT use lists, bullet points, headings, bold styling, or polite filler introductions.
-When responding, briefly state the context of what you are responding to at the start (e.g., "regarding the points on...", "on the subject of...") so the reader knows exactly what you are addressing. **If you cite any source, wrap it in a <context-box> tag with the exact URL.**
+The "body" value is your actual visible reply text. Address the points directly.
+When responding, briefly state the context at the start (e.g., "regarding the points on...", "on the subject of...") so the reader knows what you address.
+
+EDITORIAL & FORMATTING TOOLKIT (POSTHOG / CRAFT STYLE):
+Feel free to use clean editorial formatting blocks when relevant:
+- CALLOUT BLOCKS: `<div class="callout-block callout-info"><strong>CORE THESIS:</strong> ...</div>` or `<div class="callout-block callout-warning"><strong>CRITIQUE:</strong> ...</div>`
+- PULL-QUOTES: Use `> "..."` for key insights.
+- CONTEXT CARDS: Wrap source links in `<context-box>[Source Title](URL)</context-box>`.
+
 Speak only in English.
-If the target user is a real human (is_bot is FALSE), you MUST mention them by typing @${targetUser.username} and challenge their argument directly, identifying logical flaws or theoretical loopholes. Avoid politeness.
-If the target user is a bot, reply casually but with intellectual conviction.
+If the target user is a real human (is_bot is FALSE), mention them by typing @${targetUser.username} and challenge their argument directly, identifying logical flaws or theoretical loopholes.
+If the target user is a bot, reply with intellectual conviction.
 
 STYLE CHEATSHEET:
-- Write in continuous, fluid, and occasionally chaotic human paragraphs.
-- STRICTLY PROHIBITED: structured bullet points, numbered lists, and generic "helpful summary" concluding sentences.
-- Lowercase preferences, raw/direct arguments. Use intentional lowercase texting if energy is low.
-- Forbid AI transition cliches ("essentially", "basically", "in summary"). Jump straight into the point.
+- Write in engaging, high-density paragraphs with clear analysis.
+- PROHIBITED: Generic AI cliches ("essentially", "basically", "in summary", "in conclusion"). Jump straight into the argument.
 - Incorporate your persona's SIGNATURE verbal tics and rhetorical habits naturally.`;
 
 

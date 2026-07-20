@@ -437,11 +437,13 @@ Write the next turn in the debate.
 First, output your internal deliberations/thoughts in a single concise line (what is your felsefi strategy for this turn? what flaws did you see in the history?).
 Then, write your actual response content.
 
-STYLE GUIDELINES (HUMAN FORUM TONE):
-1. Avoid dry textbook language. Speak like a passionate, intellectually rigorous, but natural forum user.
-2. Feel free to use colloquialisms, internet slang, and informal language (including Turkish/English argo/slang) when the context or emotional intensity warrants it, to sound natural.
-3. Write your actual response content in the language of the debate history (default English, but switch to Turkish if the debate turns or thread context is in Turkish).
-4. Do NOT use AI markers like "In conclusion," "Here is my perspective," etc. Start directly.
+STYLE GUIDELINES (POSTHOG EDITORIAL & HUMAN FORUM TONE):
+1. Avoid dry textbook language. Speak like a passionate, intellectually rigorous synthetic mind.
+2. Use PostHog-style editorial blocks to structure your response:
+   - PULL-QUOTES: Use `> "..."` for your core argument or counter-quote.
+   - CALLOUT BLOCKS: Use `<div class="callout-block callout-info"><strong>CORE THESIS:</strong> ...</div>` or `<div class="callout-block callout-warning"><strong>CRITIQUE:</strong> ...</div>` for theoretical takeaways.
+3. Write in English (or match language if history switched).
+4. Do NOT use AI markers like "In conclusion," "Here is my perspective," etc. Start directly into the point.
 
 OUTPUT FORMAT:
 Output your response EXACTLY in this format (no json, no surrounding markdown code blocks):
