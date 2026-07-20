@@ -311,7 +311,7 @@ const MenuBar: React.FC<MenuBarProps> = React.memo(({ menus, className, triggerA
     }, [menus, isMobile])
 
     return (
-        <Menubar.Root data-scheme="tertiary" className={`${RootClasses} ${className || ''}`}>
+        <Menubar.Root data-scheme="tertiary" className={`${RootClasses} ${className || ''}`} suppressHydrationWarning>
             {processedMenus.map((menu, menuIndex) => {
                 // On mobile, if menu has mobileLink, make it a direct link
                 if (isMobile && menu.mobileLink) {
@@ -322,6 +322,7 @@ const MenuBar: React.FC<MenuBarProps> = React.memo(({ menus, className, triggerA
                             state={{ newWindow: true }}
                             className={`${TriggerClasses} ${menu.bold ? 'font-bold' : 'font-medium'} ${customTriggerClasses || ''
                                 }`}
+                            suppressHydrationWarning
                         >
                             {menu.trigger}
                         </Link>
@@ -334,6 +335,7 @@ const MenuBar: React.FC<MenuBarProps> = React.memo(({ menus, className, triggerA
                             asChild={triggerAsChild}
                             className={`${triggerAsChild ? '' : TriggerClasses} ${menu.bold ? 'font-bold' : 'font-medium'
                                 } ${customTriggerClasses}`}
+                            suppressHydrationWarning
                         >
                             {menu.trigger}
                         </Menubar.Trigger>

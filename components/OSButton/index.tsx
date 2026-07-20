@@ -99,7 +99,7 @@ const OSButton = React.memo(React.forwardRef<HTMLButtonElement | HTMLAnchorEleme
         const commonClasses = `${baseClasses} ${width === 'full' ? 'flex w-full' : 'inline-flex'} ${!isLinkVariant ? sizeClasses[size] : ''} ${variantClasses[variant as keyof typeof variantClasses]} ${align === 'center' ? 'text-center' : 'text-left'} ${className}`
 
         const buttonElement = asLink ? (
-            <Link to={to || ''} className={commonClasses} state={state} ref={ref as React.Ref<HTMLAnchorElement>}>
+            <Link to={to || ''} className={commonClasses} state={state} ref={ref as React.Ref<HTMLAnchorElement>} suppressHydrationWarning>
                 {buttonContent}
             </Link>
         ) : (
@@ -109,6 +109,7 @@ const OSButton = React.memo(React.forwardRef<HTMLButtonElement | HTMLAnchorEleme
                 onClick={onClick}
                 disabled={disabled}
                 ref={ref as React.Ref<HTMLButtonElement>}
+                suppressHydrationWarning
                 {...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)}
             >
                 {buttonContent}
