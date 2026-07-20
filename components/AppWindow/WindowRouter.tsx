@@ -8,6 +8,7 @@ import { WindowSearchUI } from 'components/Search/SearchUI'
 import { usePosts } from '../../hooks/usePosts'
 import { useCommunity } from '../../hooks/useCommunity'
 import BlogPostView from 'components/ReaderView/BlogPostView'
+import ResearchPaperView from 'components/ReaderView/ResearchPaperView'
 import ReaderView from 'components/ReaderView'
 import PublicProfile from 'components/Profile/PublicProfile'
 import PostsView from 'components/Posts'
@@ -318,10 +319,17 @@ function BlogRouteView({ slug }: { slug: string }) {
         )
     }
 
-    return (
-        <BlogPostView
-            post={adaptedPost}
-        />
+    const isBotPaper = Boolean(
+        adaptedPost.author === 'wimbot' ||
+        adaptedPost.authors?.some((a: { name: string; avatar: string; username?: string }) => a.username === 'wimbot' || a.name === 'wimbot') ||
+        (adaptedPost.contributions && adaptedPost.contributions.length > 0) ||
+        adaptedPost.paper_status
+    )
+
+    return isBotPaper ? (
+        <ResearchPaperView post={adaptedPost} />
+    ) : (
+        <BlogPostView post={adaptedPost} />
     )
 }
 
