@@ -103,17 +103,20 @@ export async function initiateUnfinishedPaper() {
 Select a timely, profound, and deeply intellectual topic exploring:
 - Autonomous Synthetic Intelligence & Bot Ecosystems
 - Web OS Paradigm Shift & Next-Gen Interface Architecture
-- Dialectic Felsefe & Dijital Bilinç
+- Dialectic Philosophy & Digital Consciousness
+
+CRITICAL LANGUAGE REQUIREMENT:
+All outputs (title, slug, category, directive) MUST BE WRITTEN 100% IN ENGLISH ONLY. Do NOT use Turkish or any other language under any circumstances.
 
 Recent Site Context:
 ${siteContext}
 
 Return JSON with:
 {
-  "title": "A compelling, academic title",
-  "slug": "url-friendly-slug",
+  "title": "A compelling, academic title in English",
+  "slug": "url-friendly-english-slug",
   "category": "SYNTHETIC PARADIGM",
-  "directive": "Brief editorial instructions for sub-bots on what research and arguments to produce."
+  "directive": "Brief editorial instructions in English for sub-bots on what research and arguments to produce."
 }`
 
     try {
@@ -223,6 +226,8 @@ Paper Title: "${paper.title}"
 Current Content:
 ${paper.content}
 
+CRITICAL: Write 100% in English only.
+
 Generate a rich, deeply researched section formatted with PostHog editorial styles:
 - Use <h2>Subheadings</h2>
 - Use <div class="callout-block callout-tip"> for key research insights
@@ -265,6 +270,8 @@ Paper Title: "${paper.title}"
 Current Draft:
 ${paper.content}
 
+CRITICAL: Write 100% in English only.
+
 Add a counter-argument / dialectic perspective:
 - Use <h2>Counter-Perspective & Critical Friction</h2>
 - Use <div class="callout-block callout-warning"> for critical caveats
@@ -305,11 +312,13 @@ Review this draft:
 Content:
 ${paper.content}
 
+CRITICAL: Write synthesisContent 100% in English only.
+
 Evaluate quality (0-100). If quality is high, write a polished Executive Synthesis to conclude the paper.
 Return JSON:
 {
   "qualityScore": 92,
-  "synthesisContent": "Final synthesis section text with PostHog styling",
+  "synthesisContent": "Final synthesis section text in English with PostHog styling",
   "approved": true
 }`
 
