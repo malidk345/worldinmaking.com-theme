@@ -120,9 +120,9 @@ const PostsView = React.memo(() => {
                                                     </div>
                                                 )}
                                                 {paperStatus && paperStatus !== 'published' && (
-                                                    <div className="absolute top-2 left-2 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500/20 via-purple-500/20 to-indigo-500/20 border border-amber-500/40 text-amber-500 dark:text-amber-300 backdrop-blur-xl shadow-lg shadow-amber-500/10 font-mono">
-                                                        <span className="size-1.5 rounded-full bg-amber-400 animate-ping inline-block" />
-                                                        <span className="text-[7.5px] uppercase tracking-wider font-extrabold">LIVE AGENT • {paperStatus}</span>
+                                                    <div className="corpus-doc-badge font-mono border border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-500/10 rounded px-2 py-0.5 text-[8.5px] font-bold tracking-wider uppercase">
+                                                        <span className="size-1 rounded-full bg-amber-500 animate-ping inline-block mr-1" />
+                                                        UNFINISHED • {paperStatus}
                                                     </div>
                                                 )}
                                                 <div className="corpus-doc-media-fade" />
