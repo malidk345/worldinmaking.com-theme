@@ -158,7 +158,7 @@ export default function BlueprintsExplorer() {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {paginatedPosts.map((post, idx) => (
+                                            {paginatedPosts.map((post: BlueprintPost, idx: number) => (
                                                 <tr
                                                     key={post.id}
                                                     className="LemonTable__row"
