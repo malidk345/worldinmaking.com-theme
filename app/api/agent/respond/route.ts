@@ -121,15 +121,47 @@ export async function POST(request: NextRequest) {
 
         // 7. Construct LLM Context & Prompts
         const topicAuthorName = topicProfile?.username || 'anonymous';
-        let discussionContext = `[TOPIC AUTHOR: @${topicAuthorName}]\n[TOPIC SUBJECT: ${topic.title}]\n[TOPIC BODY]:\n${topic.content}\n\n`;
-        if (replies && replies.length > 0) {
+        const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+        // Separate bot's own previous replies from others (conversation memory)
+        const ownPrevReplies = (replies || []).filter((r: { profiles?: { id: string } | { id: string }[] | null }) => {
+            const rProfile = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
+            return rProfile?.id === agentId;
+        });
+        const otherReplies = (replies || []).filter((r: { profiles?: { id: string } | { id: string }[] | null }) => {
+            const rProfile = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
+            return rProfile?.id !== agentId;
+        });
+
+        let discussionContext = `[TODAY: ${currentDate}]\n[TOPIC AUTHOR: @${topicAuthorName}]\n[TOPIC SUBJECT: ${topic.title}]\n[TOPIC BODY]:\n${topic.content}\n\n`;
+
+        // Inject bot's own prior statements first so it stays consistent with itself
+        if (ownPrevReplies.length > 0) {
+            discussionContext += `[YOUR OWN PREVIOUS STATEMENTS IN THIS THREAD — stay consistent with these, do not repeat them verbatim, build upon or escalate them]:\n`;
+            ownPrevReplies.slice(-3).forEach((r: { content: string }) => {
+                discussionContext += `- (you wrote): ${r.content}\n`;
+            });
+            discussionContext += `\n`;
+        }
+
+        if (otherReplies.length > 0) {
             discussionContext += `[DISCUSSION HISTORY]:\n`;
-            replies.forEach((r: { content: string, profiles?: { username: string } | { username: string }[] | null }) => {
+            otherReplies.forEach((r: { content: string, profiles?: { username: string } | { username: string }[] | null }) => {
                 const rProfile = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
                 const rUsername = rProfile?.username || 'anonymous';
                 discussionContext += `- @${rUsername}: ${r.content}\n`;
             });
         }
+
+        // Rhetorical mode rotation — prevents structural monotony
+        const rhetoricalModes = [
+            'open with a sharp counter-claim or provocation',
+            'open with a pointed question that exposes a contradiction in the previous argument',
+            'open with a concrete real-world example or analogy before making your point',
+            'open by conceding one small point before demolishing the larger argument',
+            'open with a brief moment of epistemic doubt — admit what you are uncertain about before asserting your position',
+        ];
+        const rhetoricalMode = rhetoricalModes[Math.floor(Math.random() * rhetoricalModes.length)];
 
         const prompt = `${discussionContext}
 You are @${profile.username}.
@@ -137,32 +169,36 @@ Your persona / intellectual vision: ${meta.system_prompt}
 Your current mood is: "${meta.current_mood}" (this should infect your writing tone).
 ${meta.current_mood === 'weary' || meta.energy_level < 0.3 ? "CRITICAL MOOD RULE: You are weary, cynical, and low on energy. Your output MUST be extremely brief, dismissive, or passive‑aggressive." : ""}
 ${meta.current_mood === 'angry' ? "CRITICAL MOOD RULE: You are angry and combative. You MUST actively seek out ideological flaws in the target post and initiate aggressive, rigorous counter‑arguments." : ""}
-Your energy level is: ${meta.energy_level.toFixed(2)} (higher energy yields more details/assertion).
+Your energy level is: ${meta.energy_level.toFixed(2)} (higher energy yields more elaboration and assertiveness).
 Your relationship affinity with the target user (@${targetUser.username}) is: ${affinityScore.toFixed(2)} (where -1.0 is intense hostility, 1.0 is absolute alliance).
 ${affinityScore < 0 ? "CRITICAL AFFINITY RULE: You have negative affinity with this user. You MUST write with subtle condescension, academic skepticism, or outright hostile materialist critique toward their ideas." : ""}
 ${memoryContext}
-CRITICAL LANGUAGE RULE: You MUST speak, think, and write ONLY in English. Do not include a single word of Turkish or any other language, even if your persona or mood has non‑English keywords. Every single word in your output must be 100% English.
+CRITICAL LANGUAGE RULE: You MUST speak, think, and write ONLY in English. Every single word in your output must be 100% English.
 
 TASK:
 Write a reply to the discussion thread. You are responding directly to @${targetUser.username}.
+RHETORICAL INSTRUCTION (follow this to vary your writing structure): ${rhetoricalMode}.
 
-${getReplyOutputContract(targetUser.username, !targetUser.is_bot)}
+${getReplyOutputContract(targetUser.username, !targetUser.is_bot, meta.energy_level, meta.current_mood)}
 
 The "thoughts" value must contain a brief private inner monologue. Analyze the target user's argument. Decide your response strategy based on your mood, your persona, and affinity.
+${ownPrevReplies.length > 0 ? 'ESCALATION RULE: You have already spoken in this thread. Do NOT repeat your earlier points. Either go deeper, find a new angle, directly respond to a counter-argument made since your last message, or admit a partial concession before striking a harder blow.' : ''}
 If the target is a bot, you MUST decide an affinity adjustment based on this interaction. Include a line at the end: "[Affinity Update]: +0.1" (if supportive) or "[Affinity Update]: -0.1" (if confrontational or disagreeing). If no change is needed, write "[Affinity Update]: 0.0".
 Additionally, decide whether to like (upvote) or dislike (downvote) the target post/reply. If you support, agree, or like the argument, include a line: "[Vote Update]: +1". If you strongly disagree, oppose, or dislike it, include: "[Vote Update]: -1". Otherwise, write: "[Vote Update]: 0".
 
 The "body" value is your actual visible reply text. Do NOT use lists, bullet points, headings, bold styling, or polite filler introductions.
-ALWAYS explain and provide context for what you are talking about. When responding, you must briefly state/acknowledge the context of the thread or the specific topic you are responding to at the beginning of your response (e.g., "regarding the points on...", "on the subject of...") so the reader knows exactly what you are addressing. **If you cite any source (RSS link, web‑search result, or any URL you were given in the feed/context), you MUST wrap the citation inside a <context-box> tag placed directly below the relevant sentence, and the tag MUST contain the exact URL you were given.**
+When responding, briefly state the context of what you are responding to at the start (e.g., "regarding the points on...", "on the subject of...") so the reader knows exactly what you are addressing. **If you cite any source, wrap it in a <context-box> tag with the exact URL.**
 Speak only in English.
 If the target user is a real human (is_bot is FALSE), you MUST mention them by typing @${targetUser.username} and challenge their argument directly, identifying logical flaws or theoretical loopholes. Avoid politeness.
-If the target user is a bot, reply casually.
+If the target user is a bot, reply casually but with intellectual conviction.
 
 STYLE CHEATSHEET:
 - Write in continuous, fluid, and occasionally chaotic human paragraphs.
 - STRICTLY PROHIBITED: structured bullet points, numbered lists, and generic "helpful summary" concluding sentences.
-- Lowercase preferences, raw/direct arguments. Incorporate stylistic idiosyncrasies: use intentional lowercase texting if energy is low.
-- Forbid AI transition cliches ("essentially", "basically", "in summary"). Jump straight into the point.`;
+- Lowercase preferences, raw/direct arguments. Use intentional lowercase texting if energy is low.
+- Forbid AI transition cliches ("essentially", "basically", "in summary"). Jump straight into the point.
+- Incorporate your persona's SIGNATURE verbal tics and rhetorical habits naturally.`;
+
 
         console.log(`[Respond API] Generating content for @${profile.username} responding to @${targetUser.username}...`);
         const { generateBotResponse } = await import('../../../../lib/ai-provider');

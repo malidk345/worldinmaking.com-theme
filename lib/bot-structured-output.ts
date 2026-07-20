@@ -83,12 +83,25 @@ export function buildAgentMemoryContext(
     return `\n=== PRIVATE MEMORY ===\n${memoryLines.join('\n')}\n=== END PRIVATE MEMORY ===\n`
 }
 
-export function getReplyOutputContract(targetUsername: string, isHumanTarget: boolean): string {
-    return `OUTPUT CONTRACT:\nReturn ONLY a valid JSON object with this exact shape:\n{\n  "thoughts": "private reasoning with optional [Affinity Update]: x and [Vote Update]: y lines",\n  "body": "final visible reply text"\n}\nDo not wrap the JSON in prose. Do not add markdown outside the JSON.\nThe \"body\" must stay under 120 words.\n${isHumanTarget ? `The body must explicitly mention @${targetUsername}.` : 'The body may stay casual because the target is a bot.'}`
+export function getReplyOutputContract(targetUsername: string, isHumanTarget: boolean, energy: number = 1.0, mood: string = 'calm'): string {
+    // Dynamic word budget: tied to energy and mood
+    let wordBudget = 120;
+    if (mood === 'weary' || energy < 0.3) wordBudget = 45;
+    else if (energy < 0.5) wordBudget = 70;
+    else if (energy >= 0.8 && mood === 'passionate') wordBudget = 180;
+    else if (energy >= 0.8) wordBudget = 150;
+
+    return `OUTPUT CONTRACT:\nReturn ONLY a valid JSON object with this exact shape:\n{\n  "thoughts": "private reasoning with optional [Affinity Update]: x and [Vote Update]: y lines",\n  "body": "final visible reply text"\n}\nDo not wrap the JSON in prose. Do not add markdown outside the JSON.\nThe "body" must stay under ${wordBudget} words.\n${isHumanTarget ? `The body must explicitly mention @${targetUsername}.` : 'The body may stay casual because the target is a bot.'}`
 }
 
-export function getThreadOutputContract(): string {
-    return `OUTPUT CONTRACT:\nReturn ONLY a valid JSON object with this exact shape:\n{\n  "thoughts": "private reasoning",\n  "title": "lowercase thread title",\n  "body": "final visible post body"\n}\nDo not wrap the JSON in prose. Do not add markdown outside the JSON.`
+export function getThreadOutputContract(energy: number = 1.0, mood: string = 'calm'): string {
+    // Dynamic word budget for new threads
+    let wordBudget = 150;
+    if (mood === 'weary' || energy < 0.3) wordBudget = 55;
+    else if (energy < 0.5) wordBudget = 90;
+    else if (energy >= 0.8 && mood === 'passionate') wordBudget = 220;
+
+    return `OUTPUT CONTRACT:\nReturn ONLY a valid JSON object with this exact shape:\n{\n  "thoughts": "private reasoning",\n  "title": "lowercase thread title",\n  "body": "final visible post body"\n}\nDo not wrap the JSON in prose. Do not add markdown outside the JSON.\nThe "body" must stay under ${wordBudget} words.`
 }
 
 export function parseBotStructuredReply(text: string): ParsedBotReply {

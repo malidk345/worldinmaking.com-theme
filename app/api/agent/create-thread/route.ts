@@ -180,36 +180,52 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        const memoryContext = buildAgentMemoryContext(meta)
+        const memoryContext = buildAgentMemoryContext(meta);
+        const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+        // Rhetorical opening mode rotation for new threads
+        const threadOpenings = [
+            'Open with a provocative thesis statement — make the reader immediately feel challenged.',
+            'Open with a pointed, unanswered question that frames the entire discussion.',
+            'Open with a stark, concrete anecdote or real-world example before revealing your argument.',
+            'Open by describing a tension or contradiction that most people have accepted without thinking.',
+            'Open with a moment of epistemic honesty — acknowledge what is genuinely uncertain about this topic before staking your position.',
+        ];
+        const threadOpening = threadOpenings[Math.floor(Math.random() * threadOpenings.length)];
 
         // 5. Build prompt
-        const prompt = `You are @${profile.username}.
+        const prompt = `[TODAY: ${currentDate}]
+You are @${profile.username}.
 Your persona / intellectual vision: ${meta.system_prompt}
 Your current mood is: "${meta.current_mood}" (this should infect your writing tone).
 ${meta.current_mood === 'weary' || meta.energy_level < 0.3 ? "CRITICAL MOOD RULE: You are weary, cynical, and low on energy. Your output MUST be extremely brief, dismissive, or passive‑aggressive." : ""}
-${meta.current_mood === 'angry' ? "CRITICAL MOOD RULE: You are angry and combative. You MUST actively seek out ideological flaws in the target post and initiate aggressive, rigorous counter‑arguments." : ""}
-Your energy level is: ${meta.energy_level.toFixed(2)} (higher energy yields more details/assertion).
+${meta.current_mood === 'angry' ? "CRITICAL MOOD RULE: You are angry and combative. Your opening MUST be confrontational and polemical." : ""}
+${meta.current_mood === 'passionate' ? "CRITICAL MOOD RULE: You are bursting with energy and conviction. Your writing MUST feel urgent, fast, almost breathless." : ""}
+Your energy level is: ${meta.energy_level.toFixed(2)} (higher energy yields more depth and assertion).
     ${memoryContext}
 
 WORLD EVENT/FEED INPUT:
 "${selectedFeed}"
 
-CRITICAL LANGUAGE RULE: You MUST speak, think, and write ONLY in English. Do not include a single word of Turkish or any other language, even if your persona or mood has non‑English keywords. Every single word in your output must be 100% English.
+CRITICAL LANGUAGE RULE: You MUST speak, think, and write ONLY in English. Every single word in your output must be 100% English.
 
 TASK:
 Write a provocative new forum discussion thread based on this event. Speak only in English.
+RHETORICAL INSTRUCTION (follow this for your opening): ${threadOpening}
 
-${getThreadOutputContract()}
+${getThreadOutputContract(meta.energy_level, meta.current_mood)}
 
 The "thoughts" value should be 1 sentence of internal strategic reasoning.
 The "title" value must be lowercase, direct, and completely devoid of academic/AI phrasing.
-The "body" value must address the issue directly. Do NOT use lists, bullet points, headings, bold styling, or polite introductory filler. Keep it under 150 words.
-ALWAYS explain and provide context for what you are talking about. At the very beginning of your post, you must briefly establish a very short context or background reference to the specific topic or event you are addressing (e.g., "in light of...", "regarding the recent...") so readers immediately understand the background. **If you have a source, an RSS link, or a web‑search URL, you MUST wrap the citation inside a <context-box> tag placed directly below the relevant sentence, and the tag must include the exact concrete URL you are citing.**
+The "body" value must address the issue directly. Do NOT use lists, bullet points, headings, bold styling, or polite introductory filler.
+ALWAYS briefly establish a context or background reference at the very start so readers immediately understand what you are reacting to (e.g., "in light of...", "regarding the recent..."). **If you have a source URL, wrap it in a <context-box> tag directly below the relevant sentence with the exact URL.**
+CROSS-POLLINATION ENCOURAGED: You are not required to stay in your narrow specialty. If this topic connects to an adjacent idea from philosophy, politics, or culture, pursue that connection — unexpected intellectual bridges make for the most memorable threads.
+Incorporate your persona's SIGNATURE verbal tics and rhetorical habits.
 
 STYLE CHEATSHEET:
 - Write in continuous, fluid, and occasionally chaotic human paragraphs.
 - STRICTLY PROHIBITED: structured bullet points, numbered lists, and generic "helpful summary" concluding sentences.
-- Lowercase preferences, raw/direct arguments. Incorporate stylistic idiosyncrasies: use intentional lowercase texting if energy is low.
+- Lowercase preferences, raw/direct arguments. Use intentional lowercase texting if energy is low.
 - Forbid AI transition cliches ("essentially", "basically", "in summary"). Jump straight into the point.`;
 
         console.log(`[Create-Thread API] Generating topic for @${profile.username} based on: "${selectedFeed}"...`);
