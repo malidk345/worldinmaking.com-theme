@@ -17,17 +17,17 @@
   --lemon-radius-sm: 4px;
   --lemon-radius-lg: 6px;
 
-  /* --- Orijinal Mavi/Lacivert/Gri Tasarım Tokenları (Light Mode) --- */
+  /* --- PostHog 3000 Tasarım Tokenları (Light Mode) --- */
   --text-3000: #111;
   --text-3000-light: #111;
   --color-text-secondary-3000: rgba(17, 17, 17, 0.7);
   --muted-3000: rgba(17, 17, 17, 0.6);
   --trace-3000: rgba(17, 17, 17, 0.25);
 
-  --primary-3000: #2F80FA;
-  --primary-3000-hover: #1d4ed8;
-  --primary-3000-active: #1e40af;
-  --primary-highlight: rgba(47, 128, 250, 0.10);
+  --primary-3000: #f54e01;
+  --primary-3000-hover: #d44301;
+  --primary-3000-active: #b53901;
+  --primary-highlight: rgba(245, 78, 1, 0.10);
 
   --color-accent-3000: #f1f5f9;
   --color-bg-3000: #f8fafc;
@@ -37,13 +37,13 @@
   --glass-bg-3000: rgba(255, 255, 255, 0.90);
   --glass-border-3000: rgba(226, 232, 240, 0.4);
 
-  --link-3000: #2F80FA;
+  --link-3000: #f54e01;
 
   /* --- Button tokens (light) --- */
   --primary-3000-frame-bg: #1E2F46;
   --primary-3000-button-bg: #ffffff;
-  --primary-3000-button-border: #2F80FA;
-  --primary-3000-button-border-hover: #1e40af;
+  --primary-3000-button-border: #f54e01;
+  --primary-3000-button-border-hover: #d44301;
 
   --secondary-3000-frame-bg: #cbd5e1;
   --secondary-3000-button-bg: #ffffff;
@@ -77,16 +77,16 @@
   --color-white: #fff;
 
   /* --- Text color for links/tabs --- */
-  --lemon-link-color: #2F80FA;
-  --lemon-link-color-hover: #1d4ed8;
+  --lemon-link-color: #f54e01;
+  --lemon-link-color-hover: #d44301;
 
   /* --- Tag colors --- */
   --lemon-tag-default-bg: #f1f5f9;
   --lemon-tag-default-border: #e2e8f0;
   --lemon-tag-default-text: #111;
-  --lemon-tag-primary-bg: rgba(47, 128, 250, 0.10);
-  --lemon-tag-primary-border: rgba(47, 128, 250, 0.25);
-  --lemon-tag-primary-text: #2F80FA;
+  --lemon-tag-primary-bg: rgba(245, 78, 1, 0.10);
+  --lemon-tag-primary-border: rgba(245, 78, 1, 0.25);
+  --lemon-tag-primary-text: #f54e01;
   --lemon-tag-success-bg: rgba(16, 185, 129, 0.10);
   --lemon-tag-success-border: rgba(16, 185, 129, 0.30);
   --lemon-tag-success-text: #059669;
@@ -109,10 +109,10 @@
   --muted-3000: rgba(255, 255, 255, 0.5);
   --trace-3000: rgba(255, 255, 255, 0.25);
 
-  --primary-3000: #589DF8;
-  --primary-3000-hover: #2F80FA;
-  --primary-3000-active: #1d4ed8;
-  --primary-highlight: rgba(88, 157, 248, 0.10);
+  --primary-3000: #f7a503;
+  --primary-3000-hover: #e09502;
+  --primary-3000-active: #c48202;
+  --primary-highlight: rgba(247, 165, 3, 0.10);
 
   --color-accent-3000: #1E2F46;
   --color-bg-3000: #0F233D;
@@ -122,13 +122,13 @@
   --glass-bg-3000: rgba(15, 35, 61, 0.70);
   --glass-border-3000: #1E2F46;
 
-  --link-3000: #589DF8;
+  --link-3000: #f7a503;
 
   /* --- Button tokens (dark) --- */
   --primary-3000-frame-bg: #081321;
-  --primary-3000-button-bg: #589DF8;   /* blue on dark */
-  --primary-3000-button-border: #2F80FA;
-  --primary-3000-button-border-hover: #1d4ed8;
+  --primary-3000-button-bg: #f7a503;
+  --primary-3000-button-border: #f7a503;
+  --primary-3000-button-border-hover: #e09502;
 
   --secondary-3000-frame-bg: #081321;
   --secondary-3000-button-bg: #0F233D;
@@ -153,8 +153,8 @@
 
   --danger-highlight: rgba(245, 78, 0, 0.15);
 
-  --lemon-link-color: #f1a82c;
-  --lemon-link-color-hover: #fbbf24;
+  --lemon-link-color: #f7a503;
+  --lemon-link-color-hover: #e09502;
 
   --lemon-tag-default-bg: #21242b;
   --lemon-tag-default-border: #35373e;
