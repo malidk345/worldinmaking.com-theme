@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import OSButton from 'components/OSButton'
+import { LemonInput, LemonTextArea } from '@/components/LemonUI'
 import { supabase } from 'lib/supabase'
 import { useToast } from 'context/ToastContext'
 import { IconChat, IconMessage, IconPerson, IconSend } from '@posthog/icons';
@@ -89,49 +90,40 @@ export default function ContactContent() {
 
             <form onSubmit={handleSubmit} className="flex-1 p-6 space-y-6 overflow-y-auto custom-scrollbar">
                 <div className="space-y-4 pt-2">
+
                     <div className="space-y-1.5">
                         <label className="text-[13px] font-bold text-primary tracking-wide">{t('contact.name_label')}</label>
-                        <div className="relative group">
-                            <IconPerson className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted group-focus-within:text-primary transition-colors" />
-                            <input
-                                type="text"
-                                required
-                                value={formData.name}
-                                onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                placeholder={t('contact.name_placeholder')}
-                                className="w-full bg-gray-50 dark:bg-gray-900 border border-black/10 dark:border-white/10 rounded-[20px] px-10 py-2.5 text-[15px] shadow-none outline-none focus:border-black/20 dark:focus:border-white/20 focus:bg-white dark:focus:bg-black transition-all duration-200 text-primary placeholder:text-muted"
-                            />
-                        </div>
+                        <LemonInput
+                            type="text"
+                            required
+                            value={formData.name}
+                            onChange={e => setFormData({ ...formData, name: e.target.value })}
+                            placeholder={t('contact.name_placeholder')}
+                            icon={<IconPerson className="size-4" />}
+                        />
                     </div>
 
                     <div className="space-y-1.5">
                         <label className="text-[13px] font-bold text-primary tracking-wide">{t('contact.email_label')}</label>
-                        <div className="relative group">
-                            <IconMessage className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted group-focus-within:text-primary transition-colors" />
-                            <input
-                                type="email"
-                                required
-                                value={formData.email}
-                                onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                placeholder={t('contact.email_placeholder')}
-                                className="w-full bg-gray-50 dark:bg-gray-900 border border-black/10 dark:border-white/10 rounded-[20px] px-10 py-2.5 text-[15px] shadow-none outline-none focus:border-black/20 dark:focus:border-white/20 focus:bg-white dark:focus:bg-black transition-all duration-200 text-primary placeholder:text-muted"
-                            />
-                        </div>
+                        <LemonInput
+                            type="email"
+                            required
+                            value={formData.email}
+                            onChange={e => setFormData({ ...formData, email: e.target.value })}
+                            placeholder={t('contact.email_placeholder')}
+                            icon={<IconMessage className="size-4" />}
+                        />
                     </div>
 
                     <div className="space-y-1.5">
                         <label className="text-[13px] font-bold text-primary tracking-wide">{t('contact.msg_label')}</label>
-                        <div className="relative group">
-                            <IconChat className="absolute left-3 top-3.5 size-4 text-muted group-focus-within:text-primary transition-colors" />
-                            <textarea
-                                required
-                                rows={5}
-                                value={formData.message}
-                                onChange={e => setFormData({ ...formData, message: e.target.value })}
-                                placeholder={t('contact.msg_placeholder')}
-                                className="w-full bg-gray-50 dark:bg-gray-900 border border-black/10 dark:border-white/10 rounded-[24px] px-10 py-4 text-[15px] shadow-none focus:border-black/20 dark:focus:border-white/20 focus:bg-white dark:focus:bg-black transition-all duration-200 resize-none text-primary placeholder:text-primary/40 outline-none"
-                            />
-                        </div>
+                        <LemonTextArea
+                            required
+                            rows={5}
+                            value={formData.message}
+                            onChange={e => setFormData({ ...formData, message: e.target.value })}
+                            placeholder={t('contact.msg_placeholder')}
+                        />
                     </div>
                 </div>
 

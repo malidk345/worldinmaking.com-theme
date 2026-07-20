@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from 'react'
-import { LemonButton } from '@/components/LemonUI'
+import { LemonButton, LemonInput } from '@/components/LemonUI'
 import { useAuth } from 'context/AuthContext'
 import ForumAvatar from '../Forum/ForumAvatar'
 import ForumRichText from '../Forum/ForumRichText'
@@ -74,12 +74,11 @@ export default function CommentForm({ onSubmit, className = '', placeholder }: C
                             />
                         </div>
                         <div className="flex-1 min-w-0 w-full max-w-full">
-                            <input
+                            <LemonInput
                                 type="text"
                                 value={subject}
                                 onChange={(e) => setSubject(e.target.value)}
                                 placeholder={t('comments.subject_placeholder')}
-                                className="w-full bg-white/60 dark:bg-black/60 border border-black/5 dark:border-white/5 rounded-full px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm text-primary font-bold outline-none placeholder:text-primary/40 focus:bg-white focus:border-black/10 dark:focus:bg-black/80 dark:focus:border-white/10 shadow-inner transition-all duration-300 lowercase"
                                 id="comment-subject"
                                 name="subject"
                                 maxLength={140}

@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from 'react'
-import { LemonButton } from '@/components/LemonUI'
+import { LemonButton, LemonInput } from '@/components/LemonUI'
 import { useAuth } from 'context/AuthContext'
 import ForumAvatar from './ForumAvatar'
 import ForumRichText from './ForumRichText'
@@ -73,12 +73,11 @@ export default function ForumQuestionForm({ isInForum = false, archived = false,
 
                         <div className="flex-1 min-w-0 w-full max-w-full">
                             {isInForum && (
-                                <input
+                                <LemonInput
                                     type="text"
                                     value={subject}
                                     onChange={(e) => setSubject(e.target.value)}
                                     placeholder="subject (optional)"
-                                    className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-full px-3 py-1.5 text-xs md:text-sm text-primary font-bold outline-none placeholder:text-primary/40 focus:bg-white dark:focus:bg-black focus:border-gray-300 dark:focus:border-gray-700 transition-all duration-200 lowercase"
                                     id="subject"
                                     name="subject"
                                     maxLength={140}
