@@ -231,7 +231,7 @@ export async function advanceUnfinishedPaper(paper: { id: string; title: string;
         system_prompt: b.system_prompt,
         username: Array.isArray(b.profiles) ? b.profiles[0]?.username : b.profiles?.username,
         avatar_url: Array.isArray(b.profiles) ? b.profiles[0]?.avatar_url : b.profiles?.avatar_url
-    })).filter((b: any) => b.username && b.username !== 'wimbot');
+    })).filter((b: { id: string; system_prompt: string; username?: string; avatar_url?: string }) => b.username && b.username !== 'wimbot');
 
     if (bots.length === 0) {
         console.log('No active philosopher bots available for paper factory.');

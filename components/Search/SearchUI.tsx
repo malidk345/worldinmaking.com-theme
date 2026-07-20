@@ -117,6 +117,7 @@ export const WindowSearchUI = ({ initialFilter }: { initialFilter?: string }) =>
                         </div>
                         {results.map((post) => (
                              <button
+                                key={post.id}
                                 onClick={() => handleResultClick(post)}
                                 className="w-full text-left p-3 hover:bg-[var(--color-bg-fill-button-tertiary-hover)] rounded-[var(--radius)] transition-colors block cursor-pointer group"
                             >

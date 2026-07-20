@@ -1,7 +1,6 @@
 "use client"
 
 import React, { useState } from 'react'
-import OSButton from 'components/OSButton'
 import ForumRichText from './ForumRichText'
 import ForumAvatar from './ForumAvatar'
 import { useAuth } from 'context/AuthContext'
