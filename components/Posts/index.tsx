@@ -17,6 +17,7 @@ import BlogPostView from 'components/ReaderView/BlogPostView'
 import Link from 'components/Link'
 import SEO from 'components/SEO'
 import Loading from 'components/Loading'
+import 'components/Corpus/styles.css'
 
 dayjs.extend(utc)
 dayjs.extend(relativeTime)
@@ -76,69 +77,56 @@ const PostsView = React.memo(() => {
                                 {t('posts.empty')}
                             </div>
                         ) : (
-                            <ul className="m-0 p-0 list-none">
+                            <div className="corpus-doc-grid animate-fadeIn">
                                 {sortedRoadmaps.map((roadmap) => {
                                     const teamName = roadmap.authorName || 'worldinmaking'
-                                    const computedReadTime = roadmap.wordCount ? `${Math.max(1, Math.ceil(roadmap.wordCount / 200))}m` : '2m'
-
                                     const isTr = preferredLanguage === 'tr'
                                     const displayTitle = (isTr && roadmap.translations?.['tr']?.title) ? roadmap.translations['tr'].title : roadmap.title
                                     const displayDescription = (isTr && roadmap.translations?.['tr']?.excerpt) ? roadmap.translations['tr'].excerpt : roadmap.description
 
                                     return (
-                                        <li key={roadmap.id} className="font-mono text-xs lowercase py-2 group">
-                                            <Link
-                                                to={getPostHref((isTr && roadmap.translations?.['tr']?.slug) ? roadmap.translations['tr'].slug : roadmap.slug)}
-                                                className="flex !no-underline items-start gap-3 p-4 bg-white/40 dark:bg-black/70 supports-[backdrop-filter]:backdrop-blur-[25px] supports-[backdrop-filter]:backdrop-saturate-[190%] border border-black/5 dark:border-white/5 rounded-[24px] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] cursor-pointer transition-all duration-[250ms] ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.97] active:brightness-95 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15),0_4px_24px_rgba(0,0,0,0.02)]"
-                                                onClick={(e) => {
-                                                    e.preventDefault()
-                                                    handleRoadmapClick(roadmap)
-                                                }}
-                                            >
-                                                <div className="flex-grow flex flex-col min-w-0">
-                                                    {/* Author / Profile Area at Top */}
-                                                    <div className="flex items-center gap-2 mb-2 text-black/50 dark:text-white/50">
-                                                        <div className="size-5 shrink-0 border border-black/10 dark:border-white/10 bg-primary/5 rounded-full overflow-hidden flex items-center justify-center">
-                                                            {roadmap.authorAvatar ? (
-                                                                // eslint-disable-next-line @next/next/no-img-element
-                                                                <img src={roadmap.authorAvatar} alt="" className="size-full object-cover" />
-                                                            ) : (
-                                                                <IconPerson className="size-3" />
+                                        <article
+                                            key={roadmap.id}
+                                            className="corpus-doc-card cursor-pointer group"
+                                            onClick={() => handleRoadmapClick(roadmap)}
+                                        >
+                                            <div className="corpus-doc-media">
+                                                {roadmap.image ? (
+                                                    // eslint-disable-next-line @next/next/no-img-element
+                                                    <img src={roadmap.image} alt={displayTitle} className="size-full object-cover" />
+                                                ) : (
+                                                    <div className="corpus-doc-preview-paper">
+                                                        <div className="flex flex-col gap-1 overflow-hidden">
+                                                            <div className="font-bold text-[8px] uppercase tracking-wider opacity-40 border-b border-current/10 pb-1 mb-1 truncate">
+                                                                @{teamName.toLowerCase()}
+                                                            </div>
+                                                            <div className="font-semibold text-[8.5px] leading-tight line-clamp-3">
+                                                                {displayTitle}
+                                                            </div>
+                                                            {displayDescription && (
+                                                                <div className="font-mono text-[7px] opacity-60 leading-relaxed line-clamp-6 mt-1">
+                                                                    {displayDescription}
+                                                                </div>
                                                             )}
                                                         </div>
-                                                        <span className="text-[10px] font-bold">@{teamName.toLowerCase()}</span>
-                                                        <span className="text-[9px] text-black/60 dark:text-white/60 ml-1">[{dayjs.utc(roadmap.date).format('YY.MM.DD')}]</span>
-                                                    </div>
-
-                                                    <span className="text-primary font-bold group-hover:!text-black dark:group-hover:!text-white leading-tight break-words text-[13px]">
-                                                        {displayTitle}
-                                                    </span>
-                                                    {displayDescription && (
-                                                        <span className="text-black/50 dark:text-white/50 text-[10px] mt-0.5 leading-snug line-clamp-6 italic">
-                                                            <span>{'//'}</span> {displayDescription}
-                                                        </span>
-                                                    )}
-                                                    {/* Colored Preview Image */}
-                                                    {roadmap.image && (
-                                                        <div className="mt-3 w-full max-w-[280px] aspect-video border border-black/5 dark:border-white/5 bg-primary/5 overflow-hidden rounded-[16px] shadow-sm">
-                                                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                            <img
-                                                                src={roadmap.image}
-                                                                alt=""
-                                                                className="size-full object-cover pointer-events-none"
-                                                            />
+                                                        <div className="pt-1 border-t border-current/10 flex items-center justify-between text-[7px] font-mono opacity-40">
+                                                            <span>{roadmap.date ? dayjs.utc(roadmap.date).format('DD/MM/YYYY') : ''}</span>
+                                                            <span>DOC</span>
                                                         </div>
-                                                    )}
+                                                    </div>
+                                                )}
+                                                <div className="corpus-doc-media-fade" />
+                                            </div>
+                                            <div className="corpus-doc-info">
+                                                <h3>{displayTitle}</h3>
+                                                <div className="corpus-doc-date">
+                                                    {roadmap.date ? dayjs.utc(roadmap.date).format('DD/MM/YYYY, HH:mm') : ''}
                                                 </div>
-
-                                                <span className="text-black/30 dark:text-white/30 shrink-0 text-[10px] font-bold tracking-tighter ml-auto pt-1">
-                                                    {computedReadTime}
-                                                </span>
-                                            </Link>
-                                        </li>
+                                            </div>
+                                        </article>
                                     )
                                 })}
-                            </ul>
+                            </div>
                         )}
                     </div>
                 </ScrollArea>
