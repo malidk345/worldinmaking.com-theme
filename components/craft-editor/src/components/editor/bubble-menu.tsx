@@ -51,6 +51,7 @@ function Btn({ onClick, isActive, title, children, className }: { onClick: () =>
       type="button"
       onMouseDown={e => { e.preventDefault(); onClick() }}
       title={title}
+      aria-label={title}
       className={cn('flex items-center justify-center h-6 w-6 rounded-md text-sm transition-all duration-100 shrink-0', isActive ? 'bg-foreground text-background' : 'text-foreground/60 hover:text-foreground hover:bg-black/8 dark:hover:bg-white/12', className)}
     >{children}</button>
   )
@@ -62,6 +63,7 @@ function ColorSwatch({ color, isSelected, onClick, label }: { color: string | nu
       type="button"
       onMouseDown={e => { e.preventDefault(); onClick() }}
       title={label}
+      aria-label={label}
       className={cn('relative w-5 h-5 rounded-md transition-all duration-100', isSelected ? 'ring-2 ring-foreground/50 ring-offset-1 scale-110' : 'hover:scale-110')}
       style={{ backgroundColor: color ?? 'transparent' }}
     >
@@ -119,7 +121,7 @@ export function EditorBubbleMenu({ editor, onInsertImage }: EditorBubbleMenuProp
       >
         {/* Block type */}
         <div className="relative" ref={blockRef}>
-          <button type="button" onMouseDown={e => { e.preventDefault(); closeAll(); setBlockOpen(v => !v) }} className="flex items-center gap-1 h-6 px-1.5 rounded-md text-foreground/70 hover:text-foreground hover:bg-black/8 dark:hover:bg-white/12 transition-all whitespace-nowrap">
+          <button type="button" onMouseDown={e => { e.preventDefault(); closeAll(); setBlockOpen(v => !v) }} aria-label="Toggle block type" className="flex items-center gap-1 h-6 px-1.5 rounded-md text-foreground/70 hover:text-foreground hover:bg-black/8 dark:hover:bg-white/12 transition-all whitespace-nowrap">
             <ActiveIcon size={13} /><span className="text-[11px] font-medium hidden sm:block">{activeBlock.label}</span>
             <ChevronDown size={10} className={cn('transition-transform duration-150', blockOpen && 'rotate-180')} />
           </button>
@@ -156,7 +158,7 @@ export function EditorBubbleMenu({ editor, onInsertImage }: EditorBubbleMenuProp
 
         {/* Color */}
         <div className="relative" ref={colorRef}>
-          <button type="button" onMouseDown={e => { e.preventDefault(); closeAll(); setColorOpen(v => !v) }} title="Text color" className={cn('flex flex-col items-center justify-center h-6 w-6 rounded-md gap-[2px] transition-all', colorOpen ? 'bg-black/8 dark:bg-white/12' : 'text-foreground/60 hover:text-foreground hover:bg-black/8 dark:hover:bg-white/12')}>
+          <button type="button" onMouseDown={e => { e.preventDefault(); closeAll(); setColorOpen(v => !v) }} title="Text color" aria-label="Text color" className={cn('flex flex-col items-center justify-center h-6 w-6 rounded-md gap-[2px] transition-all', colorOpen ? 'bg-black/8 dark:bg-white/12' : 'text-foreground/60 hover:text-foreground hover:bg-black/8 dark:hover:bg-white/12')}>
             <Baseline size={11} /><div className="h-[3px] w-3.5 rounded-full" style={{ backgroundColor: currentColor ?? 'currentColor' }} />
           </button>
           <AnimatePresence>
@@ -174,7 +176,7 @@ export function EditorBubbleMenu({ editor, onInsertImage }: EditorBubbleMenuProp
 
         {/* Highlight */}
         <div className="relative" ref={hlRef}>
-          <button type="button" onMouseDown={e => { e.preventDefault(); closeAll(); setHlOpen(v => !v) }} title="Highlight" className={cn('flex items-center justify-center h-6 w-6 rounded-md transition-all', (hlOpen || editor.isActive('highlight')) ? 'bg-black/8 dark:bg-white/12' : 'text-foreground/60 hover:text-foreground hover:bg-black/8 dark:hover:bg-white/12')} style={currentHl ? { color: currentHl } : undefined}>
+          <button type="button" onMouseDown={e => { e.preventDefault(); closeAll(); setHlOpen(v => !v) }} title="Highlight" aria-label="Highlight" className={cn('flex items-center justify-center h-6 w-6 rounded-md transition-all', (hlOpen || editor.isActive('highlight')) ? 'bg-black/8 dark:bg-white/12' : 'text-foreground/60 hover:text-foreground hover:bg-black/8 dark:hover:bg-white/12')} style={currentHl ? { color: currentHl } : undefined}>
             <Highlighter size={13} />
           </button>
           <AnimatePresence>

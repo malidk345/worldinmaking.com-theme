@@ -1,3 +1,3 @@
-## 2024-07-18 - [Add focus visible styles to OSButton]
-**Learning:** `OSButton` component lacks clear visual focus states, reducing keyboard accessibility. This app requires `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20` for standard focus rings.
-**Action:** Always ensure custom button components have proper focus rings explicitly set since default browser rings can be subtle or overridden.
+## 2024-07-21 - [Icon-Only Button Accessibility in Rich Text Editors]
+**Learning:** Relying solely on the `title` attribute for tooltips in icon-only buttons (like those found in text editor toolbars and bubble menus) is insufficient for screen reader accessibility. Screen readers may ignore `title` depending on user settings or the specific element context.
+**Action:** When dynamically generating or rendering icon-only buttons, always ensure an explicit `aria-label` attribute is provided (e.g., using `aria-label={button.tooltipContent}` or `aria-label={title}`) to guarantee the button's purpose is communicated effectively to assistive technologies.
