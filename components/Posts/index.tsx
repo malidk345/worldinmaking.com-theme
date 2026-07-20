@@ -97,7 +97,7 @@ const PostsView = React.memo(() => {
                                             <div className="corpus-doc-media">
                                                 {roadmap.image ? (
                                                     // eslint-disable-next-line @next/next/no-img-element
-                                                    <img src={roadmap.image} alt={displayTitle} className="size-full object-cover" />
+                                                    <img src={roadmap.image} alt={displayTitle} className="size-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none' }} />
                                                 ) : (
                                                     <div className="corpus-doc-preview-paper">
                                                         <div className="flex flex-col gap-1 overflow-hidden">

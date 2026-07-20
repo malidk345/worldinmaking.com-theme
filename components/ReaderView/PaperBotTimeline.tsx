@@ -47,6 +47,7 @@ export default function PaperBotTimeline({ contributions = [], paperStatus = 'pu
                                 src={bot.avatar}
                                 alt={bot.name}
                                 className="inline-block size-6 rounded-full ring-2 ring-white dark:ring-neutral-900 object-cover"
+                                onError={(e) => { e.currentTarget.style.display = 'none' }}
                             />
                         ))}
                     </div>
@@ -126,6 +127,7 @@ export default function PaperBotTimeline({ contributions = [], paperStatus = 'pu
                                                             src={item.bot_avatar}
                                                             alt={item.bot_username}
                                                             className="size-5 rounded-full object-cover ring-1 ring-black/10 dark:ring-white/20"
+                                                            onError={(e) => { e.currentTarget.style.display = 'none' }}
                                                         />
                                                     )}
                                                     <span className="font-bold font-mono text-xs text-primary lowercase">
