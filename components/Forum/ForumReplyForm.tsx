@@ -7,6 +7,7 @@ import ForumAvatar from './ForumAvatar'
 import { useAuth } from 'context/AuthContext'
 import { stripHtmlTags } from 'utils/security'
 import { AnimatePresence, motion } from 'framer-motion'
+import { LemonButton } from '@/components/LemonUI'
 
 interface ForumReplyFormProps {
     isInForum?: boolean
@@ -85,22 +86,21 @@ export default function ForumReplyForm({ archived = false, isInForum = false, in
                                 placeholder="type your reply..."
                                 cta={
                                     <div className="flex gap-2">
-                                        <OSButton
-                                            size="sm"
+                                        <LemonButton
                                             variant="primary"
+                                            size="small"
                                             disabled={!stripHtmlTags(body)}
                                             onClick={handleSubmit}
                                         >
-                                            <span className="lowercase font-bold">post</span>
-                                        </OSButton>
-                                        <OSButton
-                                            size="sm"
-                                            variant="default"
+                                            Post
+                                        </LemonButton>
+                                        <LemonButton
+                                            variant="stealth"
+                                            size="small"
                                             onClick={() => setIsOpen(false)}
-                                            className="border-none opacity-60 hover:opacity-100"
                                         >
-                                            <span className="lowercase font-bold">cancel</span>
-                                        </OSButton>
+                                            Cancel
+                                        </LemonButton>
                                     </div>
                                 }
                             />

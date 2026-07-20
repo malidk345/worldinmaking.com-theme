@@ -174,7 +174,6 @@ function ActivitySubsteps({ substeps, status }: { substeps: string[]; status: Ac
 
 /* ── Activity (birebir ActivityPrimitives.tsx Activity) ── */
 function Activity({
-    id,
     title,
     status,
     icon,

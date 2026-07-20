@@ -53,11 +53,11 @@
 }
 
 .post-editor-root {
-  background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 100%), hsl(var(--background)) !important;
+  background: #f4f4f5 !important;
 }
 
 .dark .post-editor-root {
-  background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%), hsl(var(--background)) !important;
+  background: #121214 !important;
 }
 
 .post-editor-root .glass-panel {

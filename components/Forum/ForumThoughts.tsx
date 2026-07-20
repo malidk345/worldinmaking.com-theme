@@ -1,48 +1,30 @@
-import React, { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import React from 'react'
 import { IconBrain } from '@posthog/icons'
+import { LemonCollapse, LemonTag } from '@/components/LemonUI'
 
 interface ForumThoughtsProps {
     thoughts: string
 }
 
 export default function ForumThoughts({ thoughts }: ForumThoughtsProps) {
-    const [isOpen, setIsOpen] = useState(false)
-
     if (!thoughts) return null
 
     return (
         <div className="mb-2 w-full">
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="group inline-flex items-center gap-1.5 rounded-full border border-black/5 bg-white/45 px-2.5 py-1 text-[11px] font-mono lowercase tracking-wide text-primary/50 backdrop-blur-[20px] transition-colors duration-200 hover:text-primary/80 dark:border-white/10 dark:bg-[#121214]/45"
-                aria-expanded={isOpen}
+            <LemonCollapse
+                defaultOpen={false}
+                title={
+                    <div className="flex items-center gap-2">
+                        <IconBrain className="h-3.5 w-3.5 text-blue-500" />
+                        <span className="font-semibold text-xs lowercase">thoughts</span>
+                        <LemonTag type="primary">INTEL</LemonTag>
+                    </div>
+                }
             >
-                <IconBrain className="h-3.5 w-3.5" />
-                <span>thoughts</span>
-                <span className="text-primary/35 transition-transform duration-200 group-hover:text-primary/60" aria-hidden="true">
-                    {isOpen ? 'v' : '>'}
-                </span>
-            </button>
-
-            <AnimatePresence>
-                {isOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, height: 0, y: -5 }}
-                        animate={{ opacity: 1, height: 'auto', y: 0 }}
-                        exit={{ opacity: 0, height: 0, y: -5 }}
-                        transition={{
-                            duration: 0.25,
-                            ease: [0.16, 1, 0.3, 1] // Micro-Kinetic Spring
-                        }}
-                        className="overflow-hidden"
-                    >
-                        <div className="mt-1.5 p-3 rounded-[18px] bg-white/40 dark:bg-[#121214]/40 backdrop-blur-[20px] saturate-[180%] border border-black/5 dark:border-white/5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)] text-[11px] leading-relaxed italic text-primary/70 mb-2">
-                            {thoughts}
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                <div className="text-xs leading-relaxed italic text-slate-700 dark:text-slate-200">
+                    {thoughts}
+                </div>
+            </LemonCollapse>
         </div>
     )
 }

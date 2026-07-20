@@ -12,6 +12,7 @@ import Tooltip from 'components/RadixUI/Tooltip'
 import { useTranslation } from 'hooks/useTranslation'
 import dayjs from 'dayjs'
 import { IconBook, IconBookmark, IconChevronLeft, IconChevronRight, IconDocument, IconExternal, IconPlus, IconRefresh, IconShare, IconSidebarClose, IconSidebarOpen, IconSparkles, IconStack, IconTrash, IconUser } from '@posthog/icons';
+import { LemonTag } from '@/components/LemonUI'
 
 import '../Corpus/styles.css'
 
@@ -555,7 +556,9 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                 </div>
                             )}
                             <h1 className="text-[13px] font-bold tracking-tight text-primary leading-none m-0 whitespace-nowrap">{displayName}&apos;s profile</h1>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-primary/30 border border-primary/15 px-1.5 py-0.5 rounded hidden sm:inline">public</span>
+                            <div className="hidden sm:inline">
+                                <LemonTag type="primary">PUBLIC</LemonTag>
+                            </div>
                         </div>
                     )}
                 </div>

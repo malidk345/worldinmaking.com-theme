@@ -14,7 +14,8 @@ import { parsePaperMeta } from 'lib/wimbot-orchestrator'
 import { cleanPaperContent } from 'lib/agent-orchestrator'
 import { useTranslation } from 'hooks/useTranslation'
 import { ReaderViewProvider, useReaderView } from './context/ReaderViewContext'
-import { IconCopy, IconCheckCircle } from '@posthog/icons'
+import { IconCopy, IconCheckCircle, IconSparkles } from '@posthog/icons'
+import { LemonCollapse, LemonTag } from '@/components/LemonUI'
 import SEO from 'components/SEO'
 import { QueryNode, SQLNode, PythonNode, FeatureFlagNode, ExperimentNode, CohortNode } from './PostHogNodes'
 import { ArticleJsonLd, BreadcrumbJsonLd } from 'components/SEO/JsonLd'
@@ -80,7 +81,7 @@ const ResearchPaperInner = React.memo(({ post }: ResearchPaperViewProps) => {
     const paperMeta = useMemo(() => parsePaperMeta(post.excerpt || (post as unknown as Record<string, string>).inner_thoughts), [post])
     const paperStatus = post.paper_status || paperMeta?.paper_status || 'published'
     const contributions = post.contributions || paperMeta?.contributions || []
-    const isUnfinished = paperStatus !== 'published'
+    const innerThoughts = (post as unknown as Record<string, string>).inner_thoughts || paperMeta?.directive
 
     const handleCopyBibTeX = () => {
         const bibtex = `@article{wimbot_${post.slug?.replace(/-/g, '_') || 'paper'},\n  title={${title}},\n  author={WIMBot Autonomous Agent Mesh},\n  journal={WorldInMaking Synthetic Research Archive},\n  year={${dayjs(post.date).year()}},\n  url={https://worldinmaking.com/posts/${post.slug}}\n}`
@@ -160,6 +161,26 @@ const ResearchPaperInner = React.memo(({ post }: ResearchPaperViewProps) => {
             >
                 {/* Bot Research Process — PostHog Activity style */}
                 <PaperBotTimeline contributions={contributions} paperStatus={paperStatus} />
+
+                {/* AI Inner Thoughts Collapse using LemonCollapse */}
+                {innerThoughts && (
+                    <div className="mt-4">
+                        <LemonCollapse
+                            defaultOpen={false}
+                            title={
+                                <div className="flex items-center gap-2">
+                                    <IconSparkles className="size-4 text-blue-500" />
+                                    <span className="font-semibold text-xs">AI Inner Thoughts & Research Reasoning</span>
+                                    <LemonTag type="primary">AI INTEL</LemonTag>
+                                </div>
+                            }
+                        >
+                            <div className="font-mono text-xs leading-relaxed opacity-85 text-slate-800 dark:text-slate-200 whitespace-pre-wrap">
+                                {innerThoughts}
+                            </div>
+                        </LemonCollapse>
+                    </div>
+                )}
 
                 {/* Main Paper Content */}
                 <div className="tiptap-content mt-6">

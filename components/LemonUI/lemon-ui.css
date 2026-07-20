@@ -1,0 +1,277 @@
+/* Lemon UI Design System — Original PostHog 3000 Native Palette */
+
+:root {
+  /* PostHog 3000 Light Mode Tokens */
+  --lemon-bg-page: #f4f4f5;
+  --lemon-surface: #ffffff;
+  --lemon-surface-popover: #ffffff;
+  --lemon-border: #e4e4e7;
+  --lemon-border-hover: #d4d4d8;
+  --lemon-text-primary: #18181b;
+  --lemon-text-secondary: #71717a;
+  
+  --lemon-accent: #1d4ed8;
+  --lemon-accent-hover: #1e40af;
+  
+  --lemon-success: #10b981;
+  --lemon-warning: #f59e0b;
+  --lemon-danger: #ef4444;
+
+  --lemon-radius-xs: 4px;
+  --lemon-radius-sm: 6px;
+  --lemon-radius-md: 6px;
+  --lemon-radius-lg: 10px;
+}
+
+.dark {
+  /* PostHog 3000 Dark Mode Tokens */
+  --lemon-bg-page: #121214;
+  --lemon-surface: #1c1c1e;
+  --lemon-surface-popover: #242427;
+  --lemon-border: #27272a;
+  --lemon-border-hover: #3f3f46;
+  --lemon-text-primary: #f4f4f5;
+  --lemon-text-secondary: #a1a1aa;
+  
+  --lemon-accent: #3b82f6;
+  --lemon-accent-hover: #60a5fa;
+}
+
+/* 1. LemonButton (PostHog 3000 3D Frame Button) */
+.LemonButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--lemon-radius-md);
+  border: 1px solid var(--lemon-border);
+  background-color: var(--lemon-surface);
+  color: var(--lemon-text-primary);
+  cursor: pointer;
+  transition: all 120ms ease;
+  white-space: nowrap;
+  user-select: none;
+  text-decoration: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.LemonButton--size-xsmall {
+  padding: 0.15rem 0.375rem;
+  font-size: 0.7rem;
+  border-radius: var(--lemon-radius-xs);
+}
+
+.LemonButton--size-small {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+.LemonButton--size-medium {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.LemonButton--size-large {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+/* Primary Variant — PostHog Accent */
+.LemonButton--primary {
+  background-color: var(--lemon-accent);
+  color: #ffffff;
+  border-color: var(--lemon-accent);
+  box-shadow: 0 2px 0 0 rgba(0, 0, 0, 0.2);
+}
+
+.LemonButton--primary:hover {
+  background-color: var(--lemon-accent-hover);
+  border-color: var(--lemon-accent-hover);
+}
+
+/* Secondary Variant */
+.LemonButton--secondary {
+  background-color: var(--lemon-surface);
+  color: var(--lemon-text-primary);
+  border-color: var(--lemon-border);
+}
+
+.LemonButton--secondary:hover {
+  background-color: var(--lemon-bg-page);
+  border-color: var(--lemon-border-hover);
+}
+
+/* Active Variant */
+.LemonButton--active {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: var(--lemon-accent);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+/* Stealth Variant */
+.LemonButton--stealth {
+  background-color: transparent;
+  color: var(--lemon-text-primary);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.LemonButton--stealth:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.dark .LemonButton--stealth:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* 2. LemonTag (PostHog 3000 Native Tag) */
+.LemonTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1rem;
+  border-radius: var(--lemon-radius-xs);
+  border: 1px solid var(--lemon-border);
+  background-color: var(--lemon-bg-page);
+  color: var(--lemon-text-primary);
+  white-space: nowrap;
+}
+
+.LemonTag--primary {
+  background-color: rgba(29, 78, 216, 0.1);
+  border-color: rgba(29, 78, 216, 0.3);
+  color: #1d4ed8;
+}
+
+.dark .LemonTag--primary {
+  background-color: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.4);
+  color: #60a5fa;
+}
+
+.LemonTag--success {
+  background-color: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #10b981;
+}
+
+.LemonTag--warning {
+  background-color: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #f59e0b;
+}
+
+.LemonTag--danger {
+  background-color: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+/* 3. LemonBadge */
+.LemonBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.375rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  background-color: var(--lemon-accent);
+  color: #ffffff;
+  line-height: 1;
+}
+
+/* 4. LemonCard (PostHog 3000 Surface) */
+.LemonCard {
+  background-color: var(--lemon-surface);
+  border: 1px solid var(--lemon-border);
+  border-radius: var(--lemon-radius-lg);
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* 5. LemonBanner */
+.LemonBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--lemon-radius-md);
+  border: 1px solid var(--lemon-border);
+  background-color: var(--lemon-bg-page);
+  color: var(--lemon-text-primary);
+  font-size: 0.8125rem;
+}
+
+/* 6. LemonSegmentedButton */
+.LemonSegmentedButton {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1875rem;
+  border-radius: var(--lemon-radius-md);
+  background-color: var(--lemon-bg-page);
+  border: 1px solid var(--lemon-border);
+  gap: 0.125rem;
+}
+
+.LemonSegmentedButton__option {
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: var(--lemon-radius-sm);
+  color: var(--lemon-text-secondary);
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.LemonSegmentedButton__option--active {
+  background-color: var(--lemon-surface);
+  color: var(--lemon-text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* 7. LemonSwitch */
+.LemonSwitch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 2.25rem;
+  height: 1.25rem;
+  border-radius: 9999px;
+  background-color: var(--lemon-border);
+  border: 1px solid var(--lemon-border-hover);
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.LemonSwitch--checked {
+  background-color: var(--lemon-accent) !important;
+  border-color: var(--lemon-accent) !important;
+}
+
+.LemonSwitch__handle {
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 9999px;
+  background-color: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: transform 150ms ease;
+  transform: translateX(0.125rem);
+}
+
+.LemonSwitch--checked .LemonSwitch__handle {
+  transform: translateX(1.125rem);
+}

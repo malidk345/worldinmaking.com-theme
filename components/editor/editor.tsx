@@ -33,6 +33,7 @@ import { EditorSettings } from '@/hooks/use-editor-settings';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Globe, ImageIcon, Trash2, CheckCircle2, RefreshCw, Check, Save } from 'lucide-react';
+import { LemonButton, LemonTag } from '@/components/LemonUI';
 
 const lowlight = createLowlight(common);
 
@@ -245,32 +246,22 @@ export function Editor({ document, onChange, sidebarOpen, settings, focusMode, o
         <div className="flex-1" />
 
         <div className="flex items-center gap-2">
-          {/* Container-style Saved status badge with Check icon */}
-          <span className="flex items-center gap-1.5 text-[11px] font-medium text-foreground/70 bg-black/5 dark:bg-white/6 px-2.5 py-1 rounded-lg border border-border/40 font-mono shadow-xs">
-            {isSaved ? (
-              <Check size={12} className="text-emerald-500 shrink-0 stroke-[2.5]" />
-            ) : (
-              <RefreshCw size={12} className="animate-spin text-muted-foreground/60 shrink-0" />
-            )}
-            <span>{isSaved ? 'Saved' : 'Saving...'}</span>
-          </span>
-
-          {/* PostHog container-style Publish button */}
-          <button
-            type="button"
-            onClick={() => setShowPublishPanel(v => !v)}
-            className={cn(
-              'flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 shrink-0 font-mono border shadow-xs',
-              showPublishPanel
-                ? 'bg-foreground text-background border-foreground'
-                : isPublished
-                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 border-emerald-500/30'
-                  : 'bg-black/5 dark:bg-white/6 text-foreground/80 hover:text-foreground hover:bg-black/10 dark:hover:bg-white/10 border-border/40'
-            )}
+          {/* LemonTag for Saved status */}
+          <LemonTag
+            type="default"
+            icon={isSaved ? <Save size={13} className="shrink-0 opacity-80" /> : <RefreshCw size={13} className="animate-spin shrink-0 opacity-60" />}
           >
-            {isPublished ? <CheckCircle2 size={12} /> : <Globe size={12} />}
-            <span>{isPublished ? 'Published' : 'Publish'}</span>
-          </button>
+            {isSaved ? 'Saved' : 'Saving...'}
+          </LemonTag>
+
+          {/* LemonButton for Publish */}
+          <LemonButton
+            variant={showPublishPanel ? 'primary' : isPublished ? 'secondary' : 'secondary'}
+            icon={isPublished ? <Check size={13} /> : <Globe size={13} />}
+            onClick={() => setShowPublishPanel(v => !v)}
+          >
+            {isPublished ? 'Published' : 'Publish'}
+          </LemonButton>
         </div>
       </div>
 

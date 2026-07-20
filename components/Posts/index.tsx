@@ -17,6 +17,7 @@ import 'components/Corpus/styles.css'
 import { parsePaperMeta } from 'lib/wimbot-orchestrator'
 
 import { IconSparkles } from '@posthog/icons'
+import { LemonTag } from '@/components/LemonUI'
 
 dayjs.extend(utc)
 dayjs.extend(relativeTime)
@@ -80,11 +81,6 @@ const PostsView = React.memo(() => {
                             </div>
                         ) : (
                             <div className="corpus-doc-grid-wrapper animate-fadeIn">
-                                <div className="corpus-doc-tabs mb-4">
-                                    <button className="corpus-doc-tab corpus-doc-tab--active">
-                                        {t('menu.newspaper')} <span>{sortedRoadmaps.length}</span>
-                                    </button>
-                                </div>
                                 <div className="corpus-doc-grid">
                                     {sortedRoadmaps.map((roadmap) => {
                                         const isTr = preferredLanguage === 'tr'
@@ -129,14 +125,16 @@ const PostsView = React.memo(() => {
                                                         </div>
                                                     )}
                                                     {paperStatus && paperStatus !== 'published' ? (
-                                                        <div className="corpus-doc-badge font-mono border border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-500/10 rounded px-2 py-0.5 text-[8.5px] font-bold tracking-wider uppercase">
-                                                            <span className="size-1 rounded-full bg-amber-500 animate-ping inline-block mr-1" />
-                                                            UNFINISHED • {paperStatus}
+                                                        <div className="corpus-doc-badge">
+                                                            <LemonTag type="warning">
+                                                                UNFINISHED • {paperStatus}
+                                                            </LemonTag>
                                                         </div>
                                                     ) : (
                                                         <div className="corpus-doc-badge">
-                                                            <IconSparkles className="size-3" />
-                                                            <span>{t('profile.post')}</span>
+                                                            <LemonTag type="primary" icon={<IconSparkles className="size-3" />}>
+                                                                {t('profile.post')}
+                                                            </LemonTag>
                                                         </div>
                                                     )}
                                                     <div className="corpus-doc-media-fade" />

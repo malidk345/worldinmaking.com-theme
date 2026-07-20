@@ -17,6 +17,7 @@ import { CommandPalette } from '@/components/editor/command-palette';
 import { FolderDialog } from '@/components/editor/folder-dialog';
 import { Button } from '@/components/ui/button';
 import { NoiseOverlay } from '@/components/noise-overlay';
+import { LemonButton, Lettermark, LemonInput } from '@/components/LemonUI';
 import { cn } from '@/lib/utils';
 
 import { DOC_ICONS, RenderIcon } from '@/components/editor/icons';
@@ -161,9 +162,7 @@ export default function Home() {
             {/* Header — extends into status bar on mobile */}
             <div className="flex items-center justify-between px-3 shrink-0 sidebar-header">
               <div className="font-semibold text-sm tracking-tight flex items-center gap-2 text-foreground">
-                <div className="w-5 h-5 rounded-md bg-foreground text-background flex items-center justify-center shadow-sm font-mono text-[10px] font-bold">
-                  <span>W</span>
-                </div>
+                <Lettermark name="WIM" />
                 wim editor
               </div>
               <div className="flex items-center gap-0.5">
