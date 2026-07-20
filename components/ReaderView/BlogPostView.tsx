@@ -14,6 +14,7 @@ import CloudinaryImage from 'components/CloudinaryImage'
 import { ArticleJsonLd, BreadcrumbJsonLd } from 'components/SEO/JsonLd'
 import { sanitizeHtml } from 'utils/security'
 import { useTranslation } from 'hooks/useTranslation'
+import { QueryNode, SQLNode, PythonNode, FeatureFlagNode, ExperimentNode, CohortNode } from './PostHogNodes'
 
 interface BlogPostViewProps {
     post: {
@@ -34,6 +35,24 @@ interface BlogPostViewProps {
         views?: number
     }
 }
+
+
+const customSanitizeSchema = {
+    ...defaultSchema,
+    tagNames: [
+        ...(defaultSchema.tagNames || []),
+        'query', 'sqlv2', 'pythonv2', 'featureflag', 'experiment', 'cohort'
+    ],
+    attributes: {
+        ...defaultSchema.attributes,
+        query: ['type', 'title', 'query'],
+        sqlv2: ['code', 'nodeid'],
+        pythonv2: ['code', 'nodeid'],
+        featureflag: ['name', 'status'],
+        experiment: ['name', 'status'],
+        cohort: ['name', 'count']
+    }
+};
 
 const BlogPostView = React.memo(({ post }: BlogPostViewProps) => {
     const { lang } = useTranslation()
@@ -222,7 +241,7 @@ const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
                     ) : (
                         <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
-                            rehypePlugins={[rehypeRaw, rehypeSlug, [rehypeSanitize, { ...defaultSchema, clobberPrefix: '' }]]}
+                            rehypePlugins={[rehypeRaw, rehypeSlug, [rehypeSanitize, customSanitizeSchema]]}
                             components={{
                                 img: ({ src, alt, title }: { src?: string; alt?: string; title?: string }) => {
                                     let finalSrc = src || '';
@@ -272,7 +291,15 @@ const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
                                             priority={false}
                                         />
                                     );
-                                }
+                                },
+                                ...({
+                                    query: ({ type, title }: { type?: string; title?: string }) => <QueryNode type={type} title={title} />,
+                                    sqlv2: ({ code, nodeid }: { code?: string; nodeid?: string }) => <SQLNode code={code} nodeId={nodeid} />,
+                                    pythonv2: ({ code, nodeid }: { code?: string; nodeid?: string }) => <PythonNode code={code} nodeId={nodeid} />,
+                                    featureflag: ({ name, status }: { name?: string; status?: string }) => <FeatureFlagNode name={name} status={status} />,
+                                    experiment: ({ name, status }: { name?: string; status?: string }) => <ExperimentNode name={name} status={status} />,
+                                    cohort: ({ name, count }: { name?: string; count?: string }) => <CohortNode name={name} count={count} />,
+                                } as unknown as Record<string, React.ElementType>)
                             }}
                         >
                             {processedContent}

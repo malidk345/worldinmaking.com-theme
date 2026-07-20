@@ -13,8 +13,9 @@ import PaperBotTimeline from './PaperBotTimeline'
 import { parsePaperMeta } from 'lib/wimbot-orchestrator'
 import { useTranslation } from 'hooks/useTranslation'
 import { ReaderViewProvider, useReaderView } from './context/ReaderViewContext'
-import { IconCopy, IconCheckCircle, IconSparkles } from '@posthog/icons'
+import { IconCopy, IconCheckCircle } from '@posthog/icons'
 import SEO from 'components/SEO'
+import { QueryNode, SQLNode, PythonNode, FeatureFlagNode, ExperimentNode, CohortNode } from './PostHogNodes'
 import { ArticleJsonLd, BreadcrumbJsonLd } from 'components/SEO/JsonLd'
 
 dayjs.extend(relativeTime)
@@ -36,6 +37,24 @@ export default function ResearchPaperView({ post }: ResearchPaperViewProps) {
     )
 }
 
+
+const customSanitizeSchema = {
+    ...defaultSchema,
+    tagNames: [
+        ...(defaultSchema.tagNames || []),
+        'query', 'sqlv2', 'pythonv2', 'featureflag', 'experiment', 'cohort'
+    ],
+    attributes: {
+        ...defaultSchema.attributes,
+        query: ['type', 'title', 'query'],
+        sqlv2: ['code', 'nodeid'],
+        pythonv2: ['code', 'nodeid'],
+        featureflag: ['name', 'status'],
+        experiment: ['name', 'status'],
+        cohort: ['name', 'count']
+    }
+};
+
 const BOT_AUTHORS = [
     { name: 'wimbot', role: 'Master Orchestrator', avatar: 'https://res.cloudinary.com/dmukukwp6/image/upload/v1710153303/posthog.com/contents/images/authors/james.png' },
     { name: 'synthia', role: 'Research & Empirical Data', avatar: 'https://res.cloudinary.com/dmukukwp6/image/upload/v1710153303/posthog.com/contents/images/authors/tim.png' },
@@ -45,7 +64,6 @@ const BOT_AUTHORS = [
 
 const ResearchPaperInner = React.memo(({ post }: ResearchPaperViewProps) => {
     const { currentLanguage } = useReaderView()
-    const [showStream, setShowStream] = useState(true)
     const [copiedCitation, setCopiedCitation] = useState(false)
 
     // Language resolution
@@ -87,7 +105,7 @@ const ResearchPaperInner = React.memo(({ post }: ResearchPaperViewProps) => {
             featuredImage: post.image || undefined,
             contributors: BOT_AUTHORS.map(a => ({ name: a.name, image: a.avatar, username: a.name })),
             date: post.date,
-            tags: post.tags?.map(t => ({ label: t })) || [{ label: 'Synthetic AI' }, { label: 'Research Paper' }],
+            tags: post.tags?.map(t => ({ label: t })) || [],
             wordCount,
             readTime,
             views: post.views || 0,
@@ -138,91 +156,43 @@ const ResearchPaperInner = React.memo(({ post }: ResearchPaperViewProps) => {
                 proseSize="base"
                 contentMaxWidthClass="max-w-3xl"
             >
-                {/* PostHog Academic Paper Header & Metadata Bar */}
-                <div className="my-6 rounded-xl border border-black/10 dark:border-white/10 bg-[#f9fafb] dark:bg-[#161616] p-4 sm:p-5 font-mono text-xs shadow-xs">
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/10 dark:border-white/10 pb-3 mb-3">
-                        <div className="flex items-center gap-2 text-[11px] font-bold text-primary opacity-80">
-                            <IconSparkles className="size-4 text-purple-500" />
-                            <span>SYNTHETIC RESEARCH PAPER // OPEN ACCESS</span>
-                        </div>
-
-                        <div className="flex items-center gap-2 text-[10px]">
-                            {isUnfinished ? (
-                                <span className="px-2 py-0.5 rounded border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 font-bold uppercase">
-                                    STATUS: {paperStatus}
-                                </span>
-                            ) : (
-                                <span className="px-2 py-0.5 rounded border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold uppercase">
-                                    STATUS: VERIFIED & PUBLISHED
-                                </span>
-                            )}
-                            <span className="px-2 py-0.5 rounded border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 opacity-70">
-                                DOI: 10.5281/wim.{post.id.substring(0, 8)}
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* Bot Author Mesh Cluster Info */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-1">
-                        {BOT_AUTHORS.map((bot) => (
-                            <div key={bot.name} className="flex items-center gap-2">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                    src={bot.avatar}
-                                    alt={bot.name}
-                                    className="size-6 rounded-full object-cover border border-black/10"
-                                    onError={(e) => { e.currentTarget.style.display = 'none' }}
-                                />
-                                <div className="overflow-hidden">
-                                    <div className="font-bold text-primary lowercase truncate">@{bot.name}</div>
-                                    <div className="text-[9.5px] text-muted truncate opacity-60">{bot.role}</div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Paper Toolbar / Controls */}
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-black/10 dark:border-white/10 pt-3 mt-3">
-                        <button
-                            onClick={() => setShowStream(!showStream)}
-                            className="px-2.5 py-1 rounded border border-black/10 dark:border-white/10 bg-white dark:bg-[#202020] hover:bg-black/5 dark:hover:bg-white/10 text-primary transition-colors cursor-pointer text-[10.5px] font-bold flex items-center gap-1.5"
-                        >
-                            <span>{showStream ? 'Hide Agent Collaboration Stream' : 'Show Agent Collaboration Stream'}</span>
-                        </button>
-
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={handleCopyBibTeX}
-                                className="px-2.5 py-1 rounded border border-black/10 dark:border-white/10 bg-white dark:bg-[#202020] hover:bg-black/5 dark:hover:bg-white/10 text-primary transition-colors cursor-pointer text-[10.5px] font-bold flex items-center gap-1.5"
-                            >
-                                {copiedCitation ? <IconCheckCircle className="size-3.5 text-emerald-500" /> : <IconCopy className="size-3.5 opacity-60" />}
-                                <span>{copiedCitation ? 'BibTeX Copied!' : 'Copy BibTeX'}</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Embedded PostHog Bot Collaboration Stream Log */}
-                {showStream && (
-                    <PaperBotTimeline contributions={contributions} paperStatus={paperStatus} />
-                )}
+                {/* Bot Research Process — PostHog Activity style */}
+                <PaperBotTimeline contributions={contributions} paperStatus={paperStatus} />
 
                 {/* Main Paper Content */}
                 <div className="tiptap-content mt-6">
                     <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeRaw, rehypeSlug, [rehypeSanitize, { ...defaultSchema, clobberPrefix: '' }]]}
+                        rehypePlugins={[rehypeRaw, rehypeSlug, [rehypeSanitize, customSanitizeSchema]]}
+                        components={{
+                            ...({
+                                query: ({ type, title }: { type?: string; title?: string }) => <QueryNode type={type} title={title} />,
+                                sqlv2: ({ code, nodeid }: { code?: string; nodeid?: string }) => <SQLNode code={code} nodeId={nodeid} />,
+                                pythonv2: ({ code, nodeid }: { code?: string; nodeid?: string }) => <PythonNode code={code} nodeId={nodeid} />,
+                                featureflag: ({ name, status }: { name?: string; status?: string }) => <FeatureFlagNode name={name} status={status} />,
+                                experiment: ({ name, status }: { name?: string; status?: string }) => <ExperimentNode name={name} status={status} />,
+                                cohort: ({ name, count }: { name?: string; count?: string }) => <CohortNode name={name} count={count} />,
+                            } as unknown as Record<string, React.ElementType>)
+                        }}
                     >
                         {rawContent}
                     </ReactMarkdown>
                 </div>
 
-                {/* Paper Footnote / Citation Block */}
-                <div className="my-8 p-4 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 font-mono text-xs text-muted">
-                    <div className="font-bold text-primary uppercase tracking-wider mb-1">Citing This Paper</div>
-                    <p className="m-0 text-[11px] leading-relaxed opacity-80">
-                        WIMBot Autonomous Agent Mesh ({dayjs(post.date).year()}). &quot;{title}&quot;. <em>WorldInMaking Synthetic Research Archive</em>. https://worldinmaking.com/posts/{post.slug}
-                    </p>
+                {/* Minimal citation footer */}
+                <div className="mt-8 flex items-center gap-2 text-[11px] text-muted font-mono border-t border-black/[0.06] dark:border-white/[0.06] pt-4">
+                    <span className="opacity-60">Cite:</span>
+                    <span className="opacity-80 flex-1 truncate">
+                        WIMBot Agent Mesh ({dayjs(post.date).year()}). &quot;{title}&quot;.{' '}
+                        <em>WorldInMaking Synthetic Research Archive</em>.
+                    </span>
+                    <button
+                        onClick={handleCopyBibTeX}
+                        className="shrink-0 flex items-center gap-1 px-2 py-0.5 rounded border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                    >
+                        {copiedCitation ? <IconCheckCircle className="size-3 text-emerald-500" /> : <IconCopy className="size-3 opacity-50" />}
+                        <span>{copiedCitation ? 'Copied!' : 'BibTeX'}</span>
+                    </button>
                 </div>
             </ReaderView>
         </>

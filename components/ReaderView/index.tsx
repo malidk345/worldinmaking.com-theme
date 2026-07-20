@@ -7,7 +7,6 @@ import ScrollArea from 'components/RadixUI/ScrollArea'
 import FooterBar from '../OSChrome/FooterBar'
 import { TreeMenu } from '../TreeMenu'
 import { ReaderViewProvider, useReaderView } from './context/ReaderViewContext'
-import { ContributorsSmall } from './ContributorsSmall'
 import { TableOfContents, type TableOfContentsItem } from './TableOfContents'
 import CommentSection from '../Community/CommentSection'
 import { getProseClasses } from '../../constants/index'
@@ -412,54 +411,112 @@ const ReaderViewContent = React.memo(({
                                 </h1>
                             )}
 
-                            {(body.date || body.contributors || body.tags) && (
-                                <div className="mt-6 mx-auto max-w-2xl w-full border border-black/10 dark:border-white/10 rounded-[20px] md:rounded-[24px] bg-white/80 dark:bg-[#1C1C1E]/80 supports-[backdrop-filter]:backdrop-blur-[20px] overflow-hidden shadow-[0_4px_16px_rgba(0,0,0,0.02)]">
-                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 sm:px-5 py-3 font-mono text-xs lowercase">
-                                        {body.contributors && (
-                                            <div className="flex items-center shrink-0">
-                                                <ContributorsSmall contributors={body.contributors} />
+                            {(body.date || body.contributors || (body.tags && body.tags.length > 0)) && (
+                                <div className="LemonTable my-4" data-attr="notebooks-table">
+                                    <div role="presentation" className="ScrollableShadows" style={{ position: 'relative' }}>
+                                        <div
+                                            role="presentation"
+                                            className="ScrollableShadows__inner"
+                                            style={{ overflowX: 'auto', overflowY: 'hidden' }}
+                                        >
+                                            <div role="presentation" className="min-w-0" style={{ minWidth: 'fit-content' }}>
+                                                <div className="LemonTable__content">
+                                                    <table>
+                                                        <colgroup>
+                                                            <col style={{ width: '40%' }} />
+                                                            <col style={{ width: '30%' }} />
+                                                            <col style={{ width: '30%' }} />
+                                                        </colgroup>
+                                                        <thead>
+                                                            <tr>
+                                                                <th className="LemonTable__header">
+                                                                    <div className="LemonTable__header-content"><div>Created by</div></div>
+                                                                </th>
+                                                                <th className="LemonTable__header">
+                                                                    <div className="LemonTable__header-content"><div>Created</div></div>
+                                                                </th>
+                                                                <th className="LemonTable__header">
+                                                                    <div className="LemonTable__header-content"><div>Read time</div></div>
+                                                                </th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <tr>
+                                                                {/* Created by — sleek AI agent badges */}
+                                                                <td>
+                                                                    {body.contributors && body.contributors.length > 0 ? (
+                                                                        <div className="flex items-center gap-1.5 py-0.5" title={body.contributors.map(c => `@${c.name}`).join(', ')}>
+                                                                            <div className="flex -space-x-1 items-center">
+                                                                                {body.contributors.slice(0, 4).map((c, idx) => {
+                                                                                    const colors = [
+                                                                                        'bg-purple-500/20 text-purple-600 dark:text-purple-300 border-purple-500/30',
+                                                                                        'bg-blue-500/20 text-blue-600 dark:text-blue-300 border-blue-500/30',
+                                                                                        'bg-amber-500/20 text-amber-600 dark:text-amber-300 border-amber-500/30',
+                                                                                        'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 border-emerald-500/30',
+                                                                                    ]
+                                                                                    const colorStyle = colors[idx % colors.length]
+                                                                                    return (
+                                                                                        <span
+                                                                                            key={c.name}
+                                                                                            className={`size-5 rounded-full flex items-center justify-center text-[9px] font-bold font-mono border ${colorStyle} shrink-0`}
+                                                                                            title={`@${c.name}`}
+                                                                                        >
+                                                                                            {c.name.charAt(0).toUpperCase()}
+                                                                                        </span>
+                                                                                    )
+                                                                                })}
+                                                                            </div>
+                                                                            <span className="profile-name text-xs font-mono">
+                                                                                @{body.contributors[0].username || body.contributors[0].name}
+                                                                                {body.contributors.length > 1 && (
+                                                                                    <span className="opacity-50"> +{body.contributors.length - 1}</span>
+                                                                                )}
+                                                                            </span>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <span className="opacity-40">—</span>
+                                                                    )}
+                                                                </td>
+                                                                {/* Created date */}
+                                                                <td>
+                                                                    <span className="whitespace-nowrap text-xs">
+                                                                        {body.date ? dayjs.utc(body.date).format('MMM D, YYYY') : '—'}
+                                                                    </span>
+                                                                </td>
+                                                                {/* Read time */}
+                                                                <td>
+                                                                    {body.readTime !== undefined ? (
+                                                                        <span className="LemonTag">{body.readTime} min read</span>
+                                                                    ) : (
+                                                                        <span className="opacity-40">—</span>
+                                                                    )}
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
                                             </div>
-                                        )}
-
-                                        {body.date && (
-                                            <div className="flex items-center shrink-0 opacity-60">
-                                                <span className="text-[10px] whitespace-nowrap">
-                                                    [{dayjs.utc(body.date).format('YY.MM.DD')}]
-                                                </span>
-                                            </div>
-                                        )}
-
-                                        {body.readTime !== undefined && (
-                                            <div className="flex items-center gap-1.5 opacity-40 shrink-0 ml-auto">
-                                                <span className="text-[10px] font-bold tracking-tighter">{body.readTime}m</span>
-                                            </div>
-                                        )}
-
-                                        {body.tags && body.tags.length > 0 && (
-                                            <div className="flex items-center flex-wrap gap-2 w-full mt-3 pt-3 border-t border-black/5 dark:border-white/5">
-                                                {body.tags?.map((tag) => (
-                                                    tag.url && tag.url !== '#' ? (
-                                                        <a
-                                                            key={`${tag.label}-${tag.url}`}
-                                                            href={tag.url}
-                                                            className="text-[10px] opacity-70 hover:opacity-100 transition-opacity bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 px-2.5 py-1 rounded-full"
-                                                        >
-                                                            #{tag.label.toLowerCase()}
-                                                        </a>
-                                                    ) : (
-                                                        <span
-                                                            key={tag.label}
-                                                            className="text-[10px] opacity-70 bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 px-2.5 py-1 rounded-full"
-                                                        >
-                                                            #{tag.label.toLowerCase()}
-                                                        </span>
-                                                    )
-                                                ))}
-                                            </div>
-                                        )}
+                                        </div>
                                     </div>
+                                    {/* Tags footer row — only if tags exist */}
+                                    {body.tags && body.tags.length > 0 && (
+                                        <div className="LemonTable__footer px-3 py-1.5 flex flex-wrap gap-1.5">
+                                            {body.tags.map((tag) => (
+                                                tag.url && tag.url !== '#' ? (
+                                                    <a key={`${tag.label}-${tag.url}`} href={tag.url} className="LemonTag hover:opacity-75 transition-opacity">
+                                                        {tag.label.toLowerCase()}
+                                                    </a>
+                                                ) : (
+                                                    <span key={tag.label} className="LemonTag">
+                                                        {tag.label.toLowerCase()}
+                                                    </span>
+                                                )
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             )}
+
 
                             <div className="reader-content-container overflow-x-hidden" onClick={handleContentClick}>
                                 <div

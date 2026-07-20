@@ -1,160 +1,323 @@
 "use client"
-import React, { useState } from 'react'
+import React, { useLayoutEffect, useState, useEffect } from 'react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { PaperBotContribution } from 'types/database'
-import { IconSparkles, IconCheckCircle, IconChevronDown, IconActivity } from '@posthog/icons'
+import {
+    IconBrain,
+    IconChevronDown,
+    IconCheckCircle,
+    IconSparkles,
+    IconSearch,
+    IconBolt,
+    IconMessage,
+} from '@posthog/icons'
 
 dayjs.extend(relativeTime)
 
+/* ── PostHog THINKING_MESSAGES (birebir thinkingMessages.ts) ── */
+const THINKING_MESSAGES = [
+    'Booping', 'Crunching', 'Digging', 'Fetching', 'Inferring', 'Indexing',
+    'Juggling', 'Noodling', 'Peeking', 'Percolating', 'Poking', 'Pondering',
+    'Scanning', 'Scrambling', 'Sifting', 'Sniffing', 'Spelunking', 'Tinkering',
+    'Unraveling', 'Decoding', 'Trekking', 'Sorting', 'Trimming', 'Mulling',
+    'Surfacing', 'Rummaging', 'Scouting', 'Scouring', 'Threading', 'Hunting',
+    'Swizzling', 'Grokking', 'Hedging', 'Scheming', 'Unfurling', 'Puzzling',
+    'Dissecting', 'Stacking', 'Hashing', 'Clustering', 'Merging', 'Snooping',
+    'Rewiring', 'Linking', 'Mapping', 'Tracing', 'Framing', 'Sharpening', 'Thinking',
+]
+
+function getRandomThinkingMessage(): string {
+    return THINKING_MESSAGES[Math.floor(Math.random() * THINKING_MESSAGES.length)] + '...'
+}
+
+/* ── ShimmeringContent (birebir ActivityPrimitives.tsx) ── */
+function ShimmeringContent({ children }: { children: React.ReactNode }) {
+    const isText = typeof children === 'string'
+    if (isText) {
+        return (
+            <span
+                className="bg-clip-text text-transparent select-none"
+                style={{
+                    backgroundImage: 'linear-gradient(90deg,currentColor 0%,rgba(0,0,0,0.25) 35%,currentColor 65%,rgba(0,0,0,0.25) 90%,currentColor 100%)',
+                    backgroundSize: '200% 100%',
+                    animation: 'ph-shimmer 3s linear infinite',
+                }}
+            >
+                {children}
+            </span>
+        )
+    }
+    return (
+        <span className="inline-flex min-w-0 max-w-full" style={{ animation: 'ph-shimmer-opacity 3s linear infinite' }}>
+            {children}
+        </span>
+    )
+}
+
+type ActivityStatus = 'pending' | 'in_progress' | 'completed' | 'failed'
+
+/* ── ActivityHeader (birebir ActivityPrimitives.tsx) ── */
+function ActivityHeader({
+    title,
+    status,
+    icon,
+    animate = true,
+    hasDetails,
+    isDetailsExpanded,
+    onToggleDetails,
+}: {
+    title: React.ReactNode
+    status: ActivityStatus
+    icon?: React.ReactNode
+    animate?: boolean
+    hasDetails: boolean
+    isDetailsExpanded: boolean
+    onToggleDetails: () => void
+}) {
+    const isInProgress = status === 'in_progress'
+    const isPending = status === 'pending'
+    const isFailed = status === 'failed'
+
+    const titleNode = (
+        <div className="min-w-0 min-h-5 flex items-center">
+            {isInProgress && animate
+                ? <ShimmeringContent>{title as string}</ShimmeringContent>
+                : <span className={`inline-flex ${isInProgress ? 'text-muted' : ''}`}>{title}</span>
+            }
+        </div>
+    )
+
+    return (
+        <div
+            className={[
+                'group/activity-header transition-colors duration-500 flex select-none min-w-0',
+                isPending ? 'text-muted' : '',
+                isFailed ? 'text-danger' : '',
+                !isInProgress && !isPending && !isFailed ? '' : '',
+                hasDetails ? 'cursor-pointer rounded px-1 -mx-1 hover:bg-black/[0.04] dark:hover:bg-white/[0.06]' : 'cursor-default',
+                hasDetails && isDetailsExpanded ? 'bg-black/[0.04] dark:bg-white/[0.06]' : '',
+            ].filter(Boolean).join(' ')}
+            onClick={hasDetails ? onToggleDetails : undefined}
+            role={hasDetails ? 'button' : undefined}
+            tabIndex={hasDetails ? 0 : undefined}
+            aria-expanded={hasDetails ? isDetailsExpanded : undefined}
+            onKeyDown={hasDetails ? (e) => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleDetails() }
+            } : undefined}
+        >
+            {/* Icon slot with chevron swap on hover — birebir PostHog */}
+            {icon && (
+                <div className="relative flex items-center justify-center size-5 shrink-0 overflow-hidden mr-1.5">
+                    <span className={[
+                        'inline-flex transition-[color,transform,opacity] duration-200 ease-out',
+                        isInProgress ? 'text-muted' : 'text-muted',
+                        hasDetails
+                            ? 'group-hover/activity-header:-translate-x-1 group-hover/activity-header:scale-90 group-hover/activity-header:opacity-0 group-focus-within/activity-header:-translate-x-1 group-focus-within/activity-header:scale-90 group-focus-within/activity-header:opacity-0'
+                            : '',
+                    ].filter(Boolean).join(' ')}>
+                        {isInProgress && animate ? <ShimmeringContent>{icon}</ShimmeringContent> : icon}
+                    </span>
+                    {hasDetails && (
+                        <span className="absolute inline-flex translate-x-1 scale-90 text-tertiary opacity-0 transition-[color,transform,opacity] duration-200 ease-out group-hover/activity-header:translate-x-0 group-hover/activity-header:scale-100 group-hover/activity-header:text-primary group-hover/activity-header:opacity-100 group-focus-within/activity-header:translate-x-0 group-focus-within/activity-header:scale-100 group-focus-within/activity-header:text-primary group-focus-within/activity-header:opacity-100">
+                            <IconChevronDown className="size-5" />
+                        </span>
+                    )}
+                </div>
+            )}
+            <div className="flex items-center gap-1 flex-1 min-w-0">
+                {titleNode}
+            </div>
+        </div>
+    )
+}
+
+/* ── ActivityDetails + ActivitySubsteps (birebir ActivityPrimitives.tsx) ── */
+function ActivityDetails({ children, hasIcon }: { children: React.ReactNode; hasIcon: boolean }) {
+    return (
+        <div className={`space-y-1 border-l-2 border-black/10 dark:border-white/10 ${hasIcon ? 'pl-3.5 ml-[calc(0.775rem)]' : ''}`}>
+            {children}
+        </div>
+    )
+}
+
+function activitySubstepText(content: string, isInProgress: boolean): string {
+    if (content.startsWith('[') && content.endsWith(')')) return content
+    if (!content.endsWith('...') && !content.endsWith('…') && !content.endsWith('.') && isInProgress) return content + '...'
+    if ((content.endsWith('...') || content.endsWith('…')) && !isInProgress) return content.replace(/…/g, '').replace(/\./g, '')
+    return content
+}
+
+function ActivitySubsteps({ substeps, status }: { substeps: string[]; status: ActivityStatus }) {
+    const isCompleted = status === 'completed'
+    const isFailed = status === 'failed'
+    return (
+        <>
+            {substeps.map((substep, i) => {
+                const isCurrentSubstep = i === substeps.length - 1
+                const isCompletedSubstep = i < substeps.length - 1 || isCompleted
+                return (
+                    <div key={i} className="leading-relaxed text-xs">
+                        <span className={[
+                            isFailed ? 'text-danger' : '',
+                            !isFailed && isCompletedSubstep ? 'text-muted' : '',
+                            !isFailed && isCurrentSubstep && !isCompleted ? 'text-secondary' : '',
+                        ].filter(Boolean).join(' ')}>
+                            {activitySubstepText(substep ?? '', status === 'in_progress')}
+                        </span>
+                    </div>
+                )
+            })}
+        </>
+    )
+}
+
+/* ── Activity (birebir ActivityPrimitives.tsx Activity) ── */
+function Activity({
+    id,
+    title,
+    status,
+    icon,
+    animate = true,
+    substeps = [],
+}: {
+    id: string
+    title: React.ReactNode
+    status: ActivityStatus
+    icon?: React.ReactNode
+    animate?: boolean
+    substeps?: string[]
+}) {
+    const hasDetails = substeps.length > 0
+    const shouldExpandDetails = hasDetails && status !== 'completed' && status !== 'failed'
+    const [isDetailsExpanded, setIsDetailsExpanded] = useState(shouldExpandDetails)
+
+    useLayoutEffect(() => {
+        setIsDetailsExpanded(shouldExpandDetails)
+    }, [shouldExpandDetails])
+
+    return (
+        <div className="flex flex-col rounded w-full min-w-0 gap-1 text-xs">
+            <ActivityHeader
+                title={title}
+                status={status}
+                icon={icon}
+                animate={animate}
+                hasDetails={hasDetails}
+                isDetailsExpanded={isDetailsExpanded}
+                onToggleDetails={() => setIsDetailsExpanded(v => !v)}
+            />
+            {isDetailsExpanded && hasDetails && (
+                <ActivityDetails hasIcon={!!icon}>
+                    <ActivitySubsteps substeps={substeps} status={status} />
+                </ActivityDetails>
+            )}
+        </div>
+    )
+}
+
+/* ── ThinkingIndicator (birebir ThreadView.tsx ThinkingIndicator) ── */
+function ThinkingIndicator() {
+    const [message, setMessage] = useState(() => getRandomThinkingMessage())
+
+    useEffect(() => {
+        const interval = setInterval(() => setMessage(getRandomThinkingMessage()), 5000)
+        return () => clearInterval(interval)
+    }, [])
+
+    return (
+        <Activity
+            id="thinking"
+            icon={<IconBrain className="size-4" />}
+            title={message}
+            status="in_progress"
+            animate={true}
+        />
+    )
+}
+
+/* ── Icon map ── */
+const ACTION_ICONS: Record<string, React.ReactNode> = {
+    init:     <IconSparkles className="size-4" />,
+    research: <IconSearch className="size-4" />,
+    argument: <IconMessage className="size-4" />,
+    publish:  <IconCheckCircle className="size-4" />,
+    thinking: <IconBrain className="size-4" />,
+}
+function getIcon(type?: string): React.ReactNode {
+    return ACTION_ICONS[type ?? ''] ?? <IconBolt className="size-4" />
+}
+
+/* ── Props ── */
 interface PaperBotTimelineProps {
     contributions?: PaperBotContribution[]
     paperStatus?: string
 }
 
+/* ── Main component ── */
 export default function PaperBotTimeline({ contributions = [], paperStatus = 'published' }: PaperBotTimelineProps) {
-    const [isExpanded, setIsExpanded] = useState(true)
+    const [open, setOpen] = useState(false)
     const isUnfinished = paperStatus !== 'published'
 
-    const botAvatars = [
-        { name: 'wimbot', avatar: 'https://res.cloudinary.com/dmukukwp6/image/upload/v1710153303/posthog.com/contents/images/authors/james.png' },
-        { name: 'synthia', avatar: 'https://res.cloudinary.com/dmukukwp6/image/upload/v1710153303/posthog.com/contents/images/authors/tim.png' },
-        { name: 'nexus', avatar: 'https://res.cloudinary.com/dmukukwp6/image/upload/v1710153303/posthog.com/contents/images/authors/marcus.png' },
-        { name: 'logix', avatar: 'https://res.cloudinary.com/dmukukwp6/image/upload/v1710153303/posthog.com/contents/images/authors/charles.png' }
-    ]
-
-    const getActionTagStyle = (type?: string) => {
-        switch (type) {
-            case 'init': return 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20'
-            case 'research': return 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20'
-            case 'argument': return 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20'
-            case 'publish': return 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20'
-            default: return 'bg-neutral-500/10 text-neutral-700 dark:text-neutral-300 border-neutral-500/20'
-        }
-    }
-
     return (
-        <div className="my-6 rounded-xl border border-black/10 dark:border-white/10 bg-[#f9fafb] dark:bg-[#161616] p-4 sm:p-5 shadow-xs font-sans">
-            {/* PostHog Editorial Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-black/10 dark:border-white/10 pb-3 mb-4">
-                <div className="flex items-center gap-3">
-                    {/* Bot Avatars Stack */}
-                    <div className="flex -space-x-1.5 overflow-hidden items-center p-0.5">
-                        {botAvatars.map((bot) => (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                                key={bot.name}
-                                src={bot.avatar}
-                                alt={bot.name}
-                                className="inline-block size-5 rounded-full ring-2 ring-[#f9fafb] dark:ring-[#161616] object-cover"
-                                onError={(e) => { e.currentTarget.style.display = 'none' }}
-                            />
-                        ))}
-                    </div>
+        <>
+            {/* ── shimmer keyframes injected once ── */}
+            <style>{`
+                @keyframes ph-shimmer {
+                    0%   { background-position: 200% 0 }
+                    100% { background-position: -200% 0 }
+                }
+                @keyframes ph-shimmer-opacity {
+                    0%,100% { opacity: 1 }
+                    50%     { opacity: 0.4 }
+                }
+            `}</style>
 
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <span className="font-mono text-[10px] uppercase tracking-wider font-bold text-primary opacity-60">
-                                PostHog Agent Engine
-                            </span>
-                            <span className="size-1.5 rounded-full bg-emerald-500" />
-                        </div>
-                        <h4 className="font-bold text-xs sm:text-sm text-primary tracking-tight m-0">
-                            Synthetic Bot Collaboration Log
-                        </h4>
-                    </div>
-                </div>
+            {/*
+              ── Outer accordion header — not a PostHog element, just a minimal
+                 expand/collapse for the whole section. Styled as a plain muted line.
+            */}
+            <button
+                onClick={() => setOpen(v => !v)}
+                className="flex items-center gap-1.5 text-muted hover:text-primary transition-colors text-xs mb-1.5 cursor-pointer select-none"
+            >
+                <IconBrain className="size-3.5" />
+                <span className="font-medium">Bot research process</span>
+                <span className="opacity-40">·</span>
+                <span className="opacity-50 font-mono">{contributions.length} steps</span>
+                <IconChevronDown className={`size-3.5 ml-0.5 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+            </button>
 
-                <div className="flex items-center gap-2 self-start sm:self-auto font-mono text-[10px]">
-                    {isUnfinished ? (
-                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400 font-semibold">
-                            <span className="size-1.5 rounded-full bg-amber-500 animate-ping inline-block" />
-                            <span>UNFINISHED • {paperStatus?.toUpperCase()}</span>
-                        </div>
-                    ) : (
-                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-semibold">
-                            <IconCheckCircle className="size-3.5" />
-                            <span>VERIFIED & PUBLISHED BY WIMBOT</span>
-                        </div>
-                    )}
-
-                    <button
-                        onClick={() => setIsExpanded(!isExpanded)}
-                        className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 text-muted transition-colors cursor-pointer"
-                        title={isExpanded ? 'Collapse Log' : 'Expand Log'}
-                    >
-                        <IconChevronDown className={`size-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
-                    </button>
-                </div>
-            </div>
-
-            {/* PostHog Clean Audit / Thought Stream Log */}
-            {isExpanded && (
-                <div className="mt-3 space-y-3">
-                    {isUnfinished && (
-                        <div className="flex items-center gap-2 p-2.5 rounded-md bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 font-mono text-[11px] text-muted">
-                            <IconActivity className="size-3.5 text-primary opacity-60 animate-spin" />
-                            <span>Autonomous bot pipeline actively compiling research & peer review entries...</span>
-                        </div>
-                    )}
-
+            {/* ── Thread-style activity list — no border, no background, just gap-1.5 flex col ── */}
+            {open && (
+                <div className="flex flex-col gap-1.5 mb-4">
                     {contributions.length === 0 ? (
-                        <div className="py-6 text-center text-xs text-muted font-mono flex items-center justify-center gap-2">
-                            <IconSparkles className="size-4 opacity-50 animate-spin" />
-                            <span>Initializing bot agent collaboration entries...</span>
-                        </div>
+                        <ThinkingIndicator />
                     ) : (
-                        <div className="relative pl-3.5 border-l border-black/10 dark:border-white/10 space-y-3 my-1">
-                            {contributions.map((item, index) => {
-                                const tagStyle = getActionTagStyle(item.action_type)
-
-                                return (
-                                    <div key={item.id || index} className="relative group">
-                                        {/* PostHog Square Bullet Node */}
-                                        <div className="absolute -left-[18.5px] top-2.5 size-2 rounded-xs bg-primary/40 group-hover:bg-primary transition-colors" />
-
-                                        <div className="rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-[#1a1a1a] p-3 shadow-2xs">
-                                            {/* Top Line: Bot Handle & Action Tag */}
-                                            <div className="flex items-center justify-between gap-2 mb-1">
-                                                <div className="flex items-center gap-2">
-                                                    {item.bot_avatar && (
-                                                        // eslint-disable-next-line @next/next/no-img-element
-                                                        <img
-                                                            src={item.bot_avatar}
-                                                            alt={item.bot_username}
-                                                            className="size-4 rounded-full object-cover"
-                                                            onError={(e) => { e.currentTarget.style.display = 'none' }}
-                                                        />
-                                                    )}
-                                                    <span className="font-bold font-mono text-xs text-primary lowercase">
-                                                        @{item.bot_username}
-                                                    </span>
-                                                    <span className={`px-1.5 py-0.5 rounded font-mono text-[9px] font-semibold border uppercase tracking-wider ${tagStyle}`}>
-                                                        {item.action_type || 'STEP'}
-                                                    </span>
-                                                </div>
-                                                <span className="font-mono text-[10px] text-muted opacity-60">
-                                                    {dayjs(item.created_at).fromNow()}
-                                                </span>
-                                            </div>
-
-                                            {/* Step Title */}
-                                            <h5 className="font-bold text-xs text-primary mb-1">
-                                                {item.title}
-                                            </h5>
-
-                                            {/* Step Content */}
-                                            <p className="font-mono text-[11px] text-muted leading-relaxed m-0 opacity-85">
-                                                {item.content}
-                                            </p>
-                                        </div>
-                                    </div>
-                                )
-                            })}
-                        </div>
+                        <>
+                            {contributions.map((item, index) => (
+                                <Activity
+                                    key={item.id || index}
+                                    id={String(item.id || index)}
+                                    icon={getIcon(item.action_type)}
+                                    title={
+                                        <span className="text-muted">
+                                            {item.title || item.action_type || 'Step'}
+                                            <span className="font-mono opacity-50 ml-2">
+                                                @{item.bot_username} · {dayjs(item.created_at).fromNow()}
+                                            </span>
+                                        </span>
+                                    }
+                                    status="completed"
+                                    animate={false}
+                                    substeps={item.content ? [item.content] : []}
+                                />
+                            ))}
+                            {isUnfinished && <ThinkingIndicator />}
+                        </>
                     )}
                 </div>
             )}
-        </div>
+        </>
     )
 }

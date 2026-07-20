@@ -68,6 +68,9 @@ importers:
       '@popperjs/core':
         specifier: ^2.11.8
         version: 2.11.8
+      '@posthog/brand':
+        specifier: ^0.8.0
+        version: 0.8.0(react@19.0.0)
       '@posthog/icons':
         specifier: ^0.37.4
         version: 0.37.4(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -1467,6 +1470,15 @@ packages:
 
   '@poppinss/exception@1.2.3':
     resolution: {integrity: sha512-dCED+QRChTVatE9ibtoaxc+WkdzOSjYTKi/+uacHWIsfodVfpsueo3+DKpgU5Px8qXjgmXkSvhXvSCz3fnP9lw==}
+
+  '@posthog/brand@0.8.0':
+    resolution: {integrity: sha512-SjsjLdX6JHl/CGczENP2/75nUBEz9IshC9gbNKxcleoOnb8FUxISyggqjDWj4DxJx1oHmkqCbONdbv82VLhFFw==}
+    engines: {node: '>=22.18'}
+    peerDependencies:
+      react: '>=18'
+    peerDependenciesMeta:
+      react:
+        optional: true
 
   '@posthog/icons@0.37.4':
     resolution: {integrity: sha512-Xl3jtjTG4dacTgKqLmKbryzjQw6JBLoFKozNusHfNKNMjFdZl1yUBXr/uO057dJgWvdPugAdnHwPJDdBgHToGw==}
@@ -6424,6 +6436,10 @@ snapshots:
       supports-color: 10.2.2
 
   '@poppinss/exception@1.2.3': {}
+
+  '@posthog/brand@0.8.0(react@19.0.0)':
+    optionalDependencies:
+      react: 19.0.0
 
   '@posthog/icons@0.37.4(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
     dependencies:

@@ -2,11 +2,12 @@
 @import 'highlight.js/styles/github-dark.min.css';
 
 @theme {
-  --font-sans: "RoundHog", "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
   --font-serif: 'Lora', Georgia, "Times New Roman", serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  --font-apple: "RoundHog", "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-apple: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-apple-code: "SF Mono", SFMono-Regular, Consolas, monospace;
+  --font-title: "RoundHog", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
 
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -48,6 +49,14 @@
 
   --color-glass: var(--glass);
   --color-glass-border: var(--glass-border);
+  --color-ai: var(--color-ai);
+  --animate-hue-rotate: hue-rotate 5s linear infinite;
+
+  @keyframes hue-rotate {
+    to {
+      filter: hue-rotate(360deg);
+    }
+  }
 }
 
 .post-editor-root {
@@ -94,6 +103,7 @@
   --glass-border: rgba(255, 255, 255, 0.4);
 
   --radius: 1rem;
+  --color-ai: oklch(0.59 0.27 303.09deg);
 }
 
 .dark .post-editor-root {
@@ -138,6 +148,7 @@
 
   --glass: rgba(15, 20, 30, 0.6);
   --glass-border: rgba(255, 255, 255, 0.08);
+  --color-ai: oklch(0.69 0.29 341.57deg);
 }
 
 .glass-panel {
@@ -155,6 +166,10 @@
 @utility antialiased {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+@utility animate-hue-rotate {
+  animation: var(--animate-hue-rotate);
 }
 
 @utility apple-h1 {
@@ -210,6 +225,12 @@ body {
   font-variant-ligatures: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Custom Scrollbar — PostHog inspired, minimalist and non-intrusive */
@@ -254,6 +275,9 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  font-size: 14px;
+  line-height: 1.5715;
+  color: var(--text-3000, #000000);
 }
 
 *,
@@ -513,9 +537,10 @@ mark {
   --font-fairytale: "Fairytale", var(--font-apple);
   --font-serif: "Charter", "Computer Modern", "Lora", Georgia, serif;
   --font-sans: var(--font-apple);
+  --font-title: "RoundHog", var(--font-apple);
   --font-fancy: "Fairytale", var(--font-apple);
-  --font-button: var(--font-apple), sans-serif;
-  --font-nav: var(--font-apple), sans-serif;
+  --font-button: "RoundHog", var(--font-apple), sans-serif;
+  --font-nav: "RoundHog", var(--font-apple), sans-serif;
   --font-code: "Source Code Pro", Menlo, Consolas, monaco, monospace;
   --font-squeak: "Squeak", var(--font-apple);
   --font-comic: "Squeak", var(--font-apple);
@@ -1108,10 +1133,11 @@ mark {
   h4,
   h5,
   h6 {
-    @apply font-bold;
-    letter-spacing: -0.025em;
-    font-variation-settings: 'wght' 700;
-    font-family: var(--font-apple);
+    font-family: var(--font-title) !important;
+    font-weight: 500;
+    margin-top: 0;
+    margin-bottom: 0.5em;
+    color: var(--text-3000, #000000);
   }
 
   a:hover,
@@ -1124,18 +1150,20 @@ mark {
   }
 
   h1 {
-    @apply text-[1.75rem] leading-tight;
+    font-size: 1.75rem;
+    line-height: 1.2;
 
     code {
-      @apply !text-[1.75rem];
+      font-size: 1.75rem !important;
     }
   }
 
   h2 {
-    @apply text-[1.75rem] leading-tight;
+    font-size: 1.3125rem;
+    line-height: 1.3;
 
     code {
-      @apply !text-[1.75rem];
+      font-size: 1.3125rem !important;
     }
   }
 
@@ -1144,15 +1172,17 @@ mark {
   }
 
   h3 {
-    @apply text-xl;
+    font-size: 1rem;
+    line-height: 1.4;
 
     code {
-      @apply !text-xl;
+      font-size: 1rem !important;
     }
   }
 
 
 
+  .prose,
   .prose p,
   .prose li,
   .prose blockquote,
@@ -1166,7 +1196,7 @@ mark {
   .reader-view-content-container h5,
   .reader-view-content-container h6,
   .reader-view-content-container blockquote {
-    font-family: var(--font-apple);
+    font-family: var(--font-apple) !important;
   }
 
   mark {
@@ -1307,9 +1337,32 @@ mark {
   }
 
   .prose-sm {
-    font-size: 15px !important;
-    line-height: 1.6 !important;
-    /* Reverted to match 'aa' 15px */
+    font-size: 14px !important;
+    line-height: 1.5715 !important;
+
+    p,
+    li,
+    blockquote,
+    ol,
+    ul {
+      font-size: 14px !important;
+      line-height: 1.5715 !important;
+    }
+
+    h1 {
+      font-size: 1.75rem !important;
+      line-height: 1.2 !important;
+    }
+
+    h2 {
+      font-size: 1.3125rem !important;
+      line-height: 1.3 !important;
+    }
+
+    h3 {
+      font-size: 1rem !important;
+      line-height: 1.4 !important;
+    }
 
     li p {
       @apply mt-2;
@@ -1523,25 +1576,118 @@ details[data-type="references"] .references-body li {
   margin-bottom: 8px !important;
 }
 
-/* ── Callout Block ────────────────────────────────────────────── */
-[data-type="callout"] {
-  padding: 1.75rem 2.25rem;
-  margin: 2.5rem 0;
-  background: rgba(0, 0, 0, 0.02);
-  border-left: 5px solid rgba(0, 0, 0, 0.5);
-  border-radius: 0 0.85rem 0.85rem 0;
-  font-weight: 400;
-  /* Normal weight */
-  color: #000000;
-  /* Pure Black */
-  line-height: 1.75;
-  font-size: 15px;
+/* ── Callout Block (LemonBanner Style) ────────────────────────── */
+[data-type="callout"],
+.callout-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem !important;
+  margin: 1.5rem 0 !important;
+  border: solid 1px rgba(0, 0, 0, 0.08) !important;
+  border-radius: 0.5rem !important;
+  font-weight: 500;
+  line-height: 1.5715;
+  font-size: 14px !important;
   transition: all 0.2s ease;
+  background-color: rgba(0, 0, 0, 0.015);
 }
 
-[data-type="callout"]:hover {
-  background: rgba(0, 0, 0, 0.03);
-  border-left-color: #000000;
+.dark [data-type="callout"],
+.dark .callout-block {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  background-color: rgba(255, 255, 255, 0.015);
+}
+
+/* Specific sub-types matching LemonBanner */
+.callout-info {
+  background-color: rgb(239 246 255 / 0.3) !important;
+  border-color: rgb(191 219 254 / 0.5) !important;
+  color: rgb(30 58 138) !important;
+}
+.dark .callout-info {
+  background-color: rgb(30 58 138 / 0.1) !important;
+  border-color: rgb(29 78 216 / 0.3) !important;
+  color: rgb(219 234 254) !important;
+}
+
+.callout-warning {
+  background-color: rgb(254 243 199 / 0.3) !important;
+  border-color: rgb(253 230 138 / 0.5) !important;
+  color: rgb(120 53 4) !important;
+}
+.dark .callout-warning {
+  background-color: rgb(120 53 4 / 0.1) !important;
+  border-color: rgb(180 83 9 / 0.3) !important;
+  color: rgb(254 243 199) !important;
+}
+
+.callout-success {
+  background-color: rgb(240 253 244 / 0.3) !important;
+  border-color: rgb(187 247 208 / 0.5) !important;
+  color: rgb(20 83 45) !important;
+}
+.dark .callout-success {
+  background-color: rgb(20 83 45 / 0.1) !important;
+  border-color: rgb(21 128 61 / 0.3) !important;
+  color: rgb(220 252 231) !important;
+}
+
+.callout-error {
+  background-color: rgb(254 242 242 / 0.3) !important;
+  border-color: rgb(254 226 226 / 0.5) !important;
+  color: rgb(127 29 29) !important;
+}
+.dark .callout-error {
+  background-color: rgb(127 29 29 / 0.1) !important;
+  border-color: rgb(185 28 28 / 0.3) !important;
+  color: rgb(254 226 226) !important;
+}
+
+.callout-tip {
+  background-color: rgb(250 245 255 / 0.3) !important;
+  border-color: rgb(233 213 255 / 0.5) !important;
+  color: rgb(88 28 135) !important;
+}
+.dark .callout-tip {
+  background-color: rgb(88 28 135 / 0.1) !important;
+  border-color: rgb(109 40 217 / 0.3) !important;
+  color: rgb(243 232 255) !important;
+}
+
+/* PostHog Premium Gradient-Bordered AI Block */
+.callout-ai {
+  position: relative !important;
+  background: linear-gradient(135deg, rgb(167 139 250 / 6%) 0%, rgb(129 140 248 / 6%) 100%) !important;
+  border: none !important;
+  color: rgb(139 92 246) !important;
+  overflow: hidden;
+}
+.dark .callout-ai {
+  background: linear-gradient(135deg, rgb(167 139 250 / 12%) 0%, rgb(129 140 248 / 12%) 100%) !important;
+  color: rgb(196 181 253) !important;
+}
+.callout-ai::before {
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  pointer-events: none;
+  content: '';
+  background: linear-gradient(135deg, rgb(167 139 250) 0%, rgb(129 140 248) 50%, rgb(167 139 250) 100%);
+  border-radius: 0.5rem;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  -webkit-mask-composite: destination-out;
+}
+
+.callout-block p {
+  margin-bottom: 0 !important;
+}
+.callout-block p + p {
+  margin-top: 0.5rem !important;
 }
 
 /* ── Mobile Friendly Editor Toolbar ──────────────────────────── */
@@ -1830,8 +1976,8 @@ button::-moz-focus-inner,
 
 .tiptap-content {
   /* Base text */
-  font-size: 16.5px;
-  line-height: 1.78;
+  font-size: 14px;
+  line-height: 1.5715;
   color: rgb(var(--text-primary, 30 30 30));
   font-family: var(--font-apple);
   -webkit-font-smoothing: antialiased;
@@ -1847,8 +1993,8 @@ button::-moz-focus-inner,
 /* Paragraphs */
 .tiptap-content p {
   margin-top: 0;
-  margin-bottom: 1.4rem;
-  line-height: 1.78;
+  margin-bottom: 1rem;
+  line-height: 1.5715;
   font-size: inherit;
 }
 
@@ -1860,37 +2006,28 @@ button::-moz-focus-inner,
   margin-top: 0.25rem;
 }
 
-/* Drop-cap for first paragraph of the article */
-.tiptap-content > div > p:first-of-type::first-letter,
-.tiptap-content > p:first-of-type::first-letter {
-  float: left;
-  font-size: 3.5em;
-  line-height: 0.82;
-  margin-right: 0.1em;
-  margin-top: 0.05em;
-  font-weight: 700;
-  font-family: var(--font-serif, Georgia, serif);
-  color: rgb(var(--text-primary));
-}
+
 
 /* Headings — strong typographic hierarchy */
 .tiptap-content h1 {
-  font-size: 1.875rem;
-  font-weight: 800;
+  font-family: var(--font-title) !important;
+  font-size: 1.75rem;
+  font-weight: 500;
   line-height: 1.2;
-  letter-spacing: -0.03em;
-  margin-top: 2.5rem;
-  margin-bottom: 0.75rem;
+  letter-spacing: -0.02em;
+  margin-top: 2rem;
+  margin-bottom: 0.5em;
   color: rgb(var(--text-primary));
 }
 
 .tiptap-content h2 {
-  font-size: 1.45rem;
-  font-weight: 700;
+  font-family: var(--font-title) !important;
+  font-size: 1.3125rem;
+  font-weight: 500;
   line-height: 1.3;
-  letter-spacing: -0.02em;
-  margin-top: 2.75rem;
-  margin-bottom: 0.6rem;
+  letter-spacing: -0.015em;
+  margin-top: 2rem;
+  margin-bottom: 0.5em;
   color: rgb(var(--text-primary));
   padding-bottom: 0.4rem;
   border-bottom: 1px solid rgba(0, 0, 0, 0.07);
@@ -1901,32 +2038,37 @@ button::-moz-focus-inner,
 }
 
 .tiptap-content h3 {
-  font-size: 1.15rem;
-  font-weight: 700;
+  font-family: var(--font-title) !important;
+  font-size: 1rem;
+  font-weight: 500;
   line-height: 1.4;
   letter-spacing: -0.01em;
-  margin-top: 2rem;
-  margin-bottom: 0.45rem;
+  margin-top: 1.75rem;
+  margin-bottom: 0.5em;
   color: rgb(var(--text-primary));
 }
 
 .tiptap-content h4 {
-  font-size: 0.975rem;
-  font-weight: 700;
+  font-family: var(--font-title) !important;
+  font-size: 0.875rem;
+  font-weight: 500;
   line-height: 1.5;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   margin-top: 1.5rem;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.5em;
   color: rgb(var(--text-secondary, 100 100 100));
 }
 
 .tiptap-content h5,
 .tiptap-content h6 {
-  font-size: 0.9rem;
+  font-family: var(--font-title) !important;
+  font-size: 0.6875rem;
   font-weight: 600;
+  line-height: 1.5;
+  text-transform: uppercase;
+  letter-spacing: 0.075em;
   margin-top: 1.25rem;
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.25rem;
   color: rgb(var(--text-secondary, 100 100 100));
 }
 
@@ -1960,7 +2102,7 @@ button::-moz-focus-inner,
 
 .tiptap-content em {
   font-style: italic;
-  font-family: var(--font-serif, Georgia, serif);
+  font-family: var(--font-apple) !important;
 }
 
 /* Blockquote — editorial pull-quote style */
@@ -1971,7 +2113,7 @@ button::-moz-focus-inner,
   background: rgba(0, 0, 0, 0.025);
   border-radius: 0 8px 8px 0;
   font-style: italic;
-  font-family: var(--font-serif, Georgia, serif);
+  font-family: var(--font-apple) !important;
   font-size: 1.05em;
   line-height: 1.65;
   color: rgb(var(--text-secondary, 60 60 60));
@@ -2199,4 +2341,221 @@ button::-moz-focus-inner,
   .tiptap-content h3 { font-size: 1.05rem; }
 }
 
-
+
+/* ── LemonTable — Exact port from PostHog LemonTable.scss ──────────── */
+/* Variables matching PostHog base.scss:
+   --color-border-primary (light): hsl(78deg 13% 85%)  ≈ #dce0d3
+   --color-border-primary (dark):  hsl(78deg 13% 20%)  ≈ #30342b
+   --radius: 0.375rem
+   --row-horizontal-padding: 0.5rem
+   font-size thead: 0.75rem (12px)
+   letter-spacing thead: 0.03125rem
+*/
+
+.LemonTable {
+  --row-horizontal-padding: 0.5rem;
+  --row-base-height: auto;
+  --lemon-table-border: hsl(78deg 13% 85%);
+  position: relative;
+  flex: 1;
+  width: 100%;
+  overflow: hidden;
+  font-size: 13px;
+  background: #ffffff;
+  border: 1px solid hsl(78deg 13% 85%);
+  border-radius: 0.375rem;
+  margin: 1.25rem 0;
+}
+.dark .LemonTable {
+  background: #1c1c1c;
+  border-color: hsl(78deg 13% 20%);
+}
+
+.LemonTable__content {
+  width: 100%;
+  overflow-x: auto;
+}
+
+/* ── Table base ── */
+.LemonTable__content > table {
+  width: 100%;
+  border-spacing: 0;
+  border-collapse: collapse;
+}
+
+/* ── thead ── */
+.LemonTable__content > table > thead {
+  position: relative;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03125rem;
+  background: #ffffff;
+}
+.dark .LemonTable__content > table > thead {
+  background: #1c1c1c;
+}
+
+.LemonTable__content > table > thead > tr > th {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  padding-left: var(--row-horizontal-padding);
+  padding-right: var(--row-horizontal-padding);
+  font-weight: 700;
+  text-align: left;
+  /* box-shadow replaces border-bottom for sticky header support */
+  box-shadow: inset 0 -1px hsl(78deg 13% 85%);
+}
+.dark .LemonTable__content > table > thead > tr > th {
+  box-shadow: inset 0 -1px hsl(78deg 13% 20%);
+}
+
+/* first-child & last-child get double horizontal padding */
+.LemonTable__content > table > thead > tr > th:first-child,
+.LemonTable__content > table > tbody > tr > td:first-child {
+  padding-left: calc(var(--row-horizontal-padding) * 2);
+}
+.LemonTable__content > table > thead > tr > th:last-child,
+.LemonTable__content > table > tbody > tr > td:last-child {
+  padding-right: calc(var(--row-horizontal-padding) * 2);
+}
+
+/* ── tbody ── */
+.LemonTable__content > table > tbody > tr:not(:first-child) {
+  border-top: 1px solid hsl(78deg 13% 85%);
+}
+.dark .LemonTable__content > table > tbody > tr:not(:first-child) {
+  border-top-color: hsl(78deg 13% 20%);
+}
+
+.LemonTable__content > table > tbody > tr > td {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  padding-left: var(--row-horizontal-padding);
+  padding-right: var(--row-horizontal-padding);
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── LemonTable__header-content ── */
+.LemonTable__header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  line-height: 1.5;
+  color: #888;
+}
+.dark .LemonTable__header-content {
+  color: #777;
+}
+
+/* ── ProfilePicture (from PostHog ProfilePicture component) ── */
+.profile-package {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+.ProfilePicture {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  overflow: hidden;
+  background-color: #e5e5e5;
+}
+.dark .ProfilePicture {
+  background-color: #3a3a3a;
+}
+.profile-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: inherit;
+  white-space: nowrap;
+}
+
+/* ── LemonTag (from PostHog LemonTag component) ── */
+.LemonTag {
+  display: inline-flex;
+  align-items: center;
+  height: 1.25rem;
+  padding: 0 0.375rem;
+  font-size: 0.6875rem;   /* 11px */
+  font-weight: 600;
+  line-height: 1;
+  border-radius: 0.25rem;
+  white-space: nowrap;
+  border: 1px solid hsl(78deg 13% 85%);
+  background-color: transparent;
+  color: #555;
+}
+.dark .LemonTag {
+  border-color: hsl(78deg 13% 20%);
+  color: #aaa;
+}
+/* highlight type — amber/yellow PostHog template badge */
+.LemonTag--highlight {
+  background-color: #fef3c7;
+  border-color: #fcd34d;
+  color: #b45309;
+}
+.dark .LemonTag--highlight {
+  background-color: rgba(120, 53, 4, 0.2);
+  border-color: rgba(251, 191, 36, 0.3);
+  color: #fde68a;
+}
+
+/* ── Row hover (PostHog uses color-mix, we approximate) ── */
+.LemonTable__content > table > tbody > tr:hover > td {
+  background-color: hsl(78deg 13% 97%);
+}
+.dark .LemonTable__content > table > tbody > tr:hover > td {
+  background-color: hsl(78deg 5% 14%);
+}
+
+/* ── LemonButton--tertiary action button ── */
+.LemonButton--tertiary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  color: #888;
+  transition: background 150ms ease, color 150ms ease;
+}
+.LemonButton--tertiary:hover {
+  background-color: hsl(78deg 13% 92%);
+  color: #222;
+}
+.dark .LemonButton--tertiary {
+  color: #777;
+}
+.dark .LemonButton--tertiary:hover {
+  background-color: hsl(78deg 5% 18%);
+  color: #eee;
+}
+
+/* ── ScrollableShadows — birebir PostHog (base-ui-disable-scrollbar) ── */
+.ScrollableShadows {
+  position: relative;
+}
+.ScrollableShadows__inner {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+.ScrollableShadows__inner::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── LemonTable__footer — border-top matching PostHog ── */
+.LemonTable__footer {
+  border-top: 1px solid hsl(78deg 13% 85%);
+}
+.dark .LemonTable__footer {
+  border-top: 1px solid hsl(78deg 13% 20%);
+}

@@ -144,7 +144,7 @@ export default function ForumQuestionCard({
                     />
                 </div>
 
-                <div className="opacity-50">
+                <div className="w-full">
                     <div className="pb-2 pl-[30px]">
                         {question.subject && (
                             <h3 className="font-semibold !m-0 pb-1 leading-5 text-sm">
