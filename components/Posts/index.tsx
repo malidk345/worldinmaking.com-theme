@@ -4,9 +4,6 @@ import React, { useMemo } from 'react'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import relativeTime from 'dayjs/plugin/relativeTime'
-import {
-    IconPerson,
-} from '@posthog/icons'
 import { useApp } from 'context/App'
 import { usePosts } from 'hooks/usePosts'
 
@@ -14,7 +11,6 @@ import type { Post } from 'types/database'
 import ScrollArea from 'components/RadixUI/ScrollArea'
 import { useTranslation } from 'hooks/useTranslation'
 import BlogPostView from 'components/ReaderView/BlogPostView'
-import Link from 'components/Link'
 import SEO from 'components/SEO'
 import Loading from 'components/Loading'
 import 'components/Corpus/styles.css'
@@ -85,8 +81,9 @@ const PostsView = React.memo(() => {
                                     const displayTitle = (isTr && roadmap.translations?.['tr']?.title) ? roadmap.translations['tr'].title : roadmap.title
                                     const displayDescription = (isTr && roadmap.translations?.['tr']?.excerpt) ? roadmap.translations['tr'].excerpt : roadmap.description
                                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                    const paperMeta = parsePaperMeta((roadmap as any).inner_thoughts || (roadmap as any).excerpt || (roadmap as any).paper_status)
-                                    const paperStatus = (roadmap as any).paper_status || paperMeta?.paper_status
+                                    const roadmapRecord = roadmap as any
+                                    const paperMeta = parsePaperMeta((roadmapRecord.inner_thoughts as string) || (roadmapRecord.excerpt as string) || (roadmapRecord.paper_status as string))
+                                    const paperStatus = (roadmapRecord.paper_status as string) || paperMeta?.paper_status
 
                                     return (
                                         <article

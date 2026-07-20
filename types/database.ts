@@ -36,6 +36,8 @@ export interface Post {
     authors?: { name: string, avatar: string, username?: string }[];
     tags?: string[];
     views?: number;
+    paper_status?: string;
+    contributions?: PaperBotContribution[];
 }
 
 export interface DBPost {

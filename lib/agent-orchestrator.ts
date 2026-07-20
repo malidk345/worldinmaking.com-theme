@@ -254,7 +254,8 @@ export async function shouldAgentRespond(agentId: string, threadId: number): Pro
 /**
  * Fetches recent active threads from across the site to build global cross-thread memory.
  */
-export async function getCrossThreadContext(currentAgentId: string): Promise<string> {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function getCrossThreadContext(_currentAgentId: string): Promise<string> {
     try {
         const { data: recentPosts } = await supabaseAdmin
             .from('community_posts')

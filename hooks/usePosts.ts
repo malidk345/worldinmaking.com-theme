@@ -75,7 +75,7 @@ const adaptPost = (p: DBPost): Post | null => {
         }
     })
 
-    const paperMeta = parsePaperMeta(p.excerpt || p.inner_thoughts)
+    const paperMeta = parsePaperMeta(p.excerpt || (p as unknown as Record<string, string>).inner_thoughts)
     const cleanExcerpt = paperMeta?.directive || stripMarkdown(p.excerpt || p.description || '') || generateExcerptFromContent(rawContent)
 
     return {

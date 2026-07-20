@@ -856,27 +856,28 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                     </div>
                                                 )}
                                                 <div className="corpus-doc-media">
-                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
                                                     {post.image_url ? (
+                                                        // eslint-disable-next-line @next/next/no-img-element
                                                         <img src={post.image_url} alt={post.title} className="size-full object-cover" />
                                                     ) : (
-                                                        <div className="corpus-doc-preview-paper">
-                                                            <div className="flex flex-col gap-1 overflow-hidden">
-                                                                <div className="font-bold text-[8px] lowercase tracking-wider opacity-40 border-b border-current/10 pb-1 mb-1 truncate">
-                                                                    {(post.category || 'document').toLowerCase()}
+                                                        (() => {
+                                                            const postRec = post as unknown as Record<string, string>
+                                                            return (
+                                                                <div className="corpus-doc-preview-paper">
+                                                                    <div className="flex flex-col gap-1 overflow-hidden">
+                                                                        <div className="font-bold text-[8px] lowercase tracking-wider opacity-40 border-b border-current/10 pb-1 mb-1 truncate">
+                                                                            {(postRec.category || 'document').toLowerCase()}
+                                                                        </div>
+                                                                        <div className="font-semibold text-[8.5px] leading-tight line-clamp-3">
+                                                                            {post.title}
+                                                                        </div>
+                                                                        <div className="font-mono text-[7px] opacity-60 leading-relaxed line-clamp-6 mt-1">
+                                                                            {post.excerpt || (postRec.content ? postRec.content.replace(/<[^>]*>/g, '') : t('profile.read_more'))}
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
-                                                                <div className="font-semibold text-[8.5px] leading-tight line-clamp-3">
-                                                                    {post.title}
-                                                                </div>
-                                                                <div className="font-mono text-[7px] opacity-60 leading-relaxed line-clamp-6 mt-1">
-                                                                    {post.excerpt || (post.content ? post.content.replace(/<[^>]*>/g, '') : t('profile.read_more'))}
-                                                                </div>
-                                                            </div>
-                                                            <div className="pt-1 border-t border-current/10 flex items-center justify-between text-[7px] font-mono opacity-40">
-                                                                <span>{post.created_at ? dayjs(post.created_at).format('DD/MM/YYYY') : ''}</span>
-                                                                <span>DOC</span>
-                                                            </div>
-                                                        </div>
+                                                            )
+                                                        })()
                                                     )}
                                                     <div className="corpus-doc-media-fade" />
                                                     <div className="corpus-doc-badge"><IconSparkles className="size-3" /><span>{post.published ? (post.is_approved ? t('profile.post') : t('profile.pending')) : t('profile.draft')}</span></div>
