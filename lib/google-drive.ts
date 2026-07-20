@@ -51,13 +51,20 @@ export async function fetchDriveDocuments(): Promise<DriveDocument[]> {
         for (const file of files.slice(0, 5)) {
             let textContent = file.description || '';
 
-            // If it's a plain text or markdown file and API key is present, attempt export
-            if (apiKey && (file.mimeType.includes('text') || file.mimeType.includes('markdown') || file.mimeType.includes('json'))) {
+            if (apiKey) {
                 try {
-                    const contentRes = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media&key=${apiKey}`);
-                    if (contentRes.ok) {
+                    let contentRes;
+                    if (file.mimeType === 'application/vnd.google-apps.document') {
+                        // Export Google Docs to plain text
+                        contentRes = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}/export?mimeType=text/plain&key=${apiKey}`);
+                    } else if (file.mimeType.includes('text') || file.mimeType.includes('markdown') || file.mimeType.includes('json')) {
+                        // Download plain text files
+                        contentRes = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media&key=${apiKey}`);
+                    }
+
+                    if (contentRes && contentRes.ok) {
                         const fetchedText = await contentRes.text();
-                        if (fetchedText) textContent = fetchedText.slice(0, 2000);
+                        if (fetchedText) textContent = fetchedText.slice(0, 3000); // 3000 chars for richer context
                     }
                 } catch {
                     // Ignore individual file fetch error

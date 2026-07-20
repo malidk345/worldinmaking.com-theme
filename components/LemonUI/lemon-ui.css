@@ -1,277 +1,1059 @@
-/* Lemon UI Design System — Original PostHog 3000 Native Palette */
+/*
+ * Lemon UI — PostHog 3000 Design System
+ * CSS tokens and component styles extracted directly from:
+ *   posthog/frontend/src/styles/base.scss
+ *   posthog/frontend/src/lib/lemon-ui/LemonButton/LemonButton.scss
+ *
+ * Light mode: orange accent (#f54e01)
+ * Dark mode:  amber accent (#f7a503)
+ */
+
+/* ══════════════════════════════════════════════════════════════
+   DESIGN TOKENS  — from posthog/frontend/src/styles/base.scss
+══════════════════════════════════════════════════════════════ */
 
 :root {
-  /* PostHog 3000 Light Mode Tokens */
-  --lemon-bg-page: #f4f4f5;
-  --lemon-surface: #ffffff;
-  --lemon-surface-popover: #ffffff;
-  --lemon-border: #e4e4e7;
-  --lemon-border-hover: #d4d4d8;
-  --lemon-text-primary: #18181b;
-  --lemon-text-secondary: #71717a;
-  
-  --lemon-accent: #1d4ed8;
-  --lemon-accent-hover: #1e40af;
-  
-  --lemon-success: #10b981;
-  --lemon-warning: #f59e0b;
-  --lemon-danger: #ef4444;
+  --lemon-radius: 4px;
+  --lemon-radius-sm: 4px;
+  --lemon-radius-lg: 6px;
 
-  --lemon-radius-xs: 4px;
-  --lemon-radius-sm: 6px;
-  --lemon-radius-md: 6px;
-  --lemon-radius-lg: 10px;
+  /* --- Orijinal Mavi/Lacivert/Gri Tasarım Tokenları (Light Mode) --- */
+  --text-3000: #111;
+  --text-3000-light: #111;
+  --color-text-secondary-3000: rgba(17, 17, 17, 0.7);
+  --muted-3000: rgba(17, 17, 17, 0.6);
+  --trace-3000: rgba(17, 17, 17, 0.25);
+
+  --primary-3000: #2F80FA;
+  --primary-3000-hover: #1d4ed8;
+  --primary-3000-active: #1e40af;
+  --primary-highlight: rgba(47, 128, 250, 0.10);
+
+  --color-accent-3000: #f1f5f9;
+  --color-bg-3000: #f8fafc;
+
+  --border-3000: #e2e8f0;
+  --border-bold-3000: #cbd5e1;
+  --glass-bg-3000: rgba(255, 255, 255, 0.90);
+  --glass-border-3000: rgba(226, 232, 240, 0.4);
+
+  --link-3000: #2F80FA;
+
+  /* --- Button tokens (light) --- */
+  --primary-3000-frame-bg: #1E2F46;
+  --primary-3000-button-bg: #ffffff;
+  --primary-3000-button-border: #2F80FA;
+  --primary-3000-button-border-hover: #1e40af;
+
+  --secondary-3000-frame-bg: #cbd5e1;
+  --secondary-3000-button-bg: #ffffff;
+  --secondary-3000-button-border: #e2e8f0;
+  --secondary-3000-button-border-hover: #94a3b8;
+
+  --danger-3000-frame-bg: rgba(239, 68, 68, 0.5);
+  --danger-3000-button-border: #ef4444;
+  --danger-3000-button-border-hover: #dc2626;
+
+  /* --- Shadow --- */
+  --shadow-elevation-3000: 0 3px 0 #e2e8f0;
+
+  /* --- Semantic background --- */
+  --color-bg-surface-primary: #ffffff;
+  --color-bg-surface-popover: #ffffff;
+  --color-bg-fill-button-tertiary-hover: rgba(0, 0, 0, 0.06);
+  --color-bg-fill-button-tertiary-active: rgba(0, 0, 0, 0.10);
+
+  /* --- Border --- */
+  --color-border-primary: #e2e8f0;
+  --color-border-secondary: #cbd5e1;
+
+  /* --- Danger highlight --- */
+  --danger-highlight: rgba(239, 68, 68, 0.10);
+
+  /* --- Opacity --- */
+  --opacity-disabled: 0.45;
+
+  /* --- Color white --- */
+  --color-white: #fff;
+
+  /* --- Text color for links/tabs --- */
+  --lemon-link-color: #2F80FA;
+  --lemon-link-color-hover: #1d4ed8;
+
+  /* --- Tag colors --- */
+  --lemon-tag-default-bg: #f1f5f9;
+  --lemon-tag-default-border: #e2e8f0;
+  --lemon-tag-default-text: #111;
+  --lemon-tag-primary-bg: rgba(47, 128, 250, 0.10);
+  --lemon-tag-primary-border: rgba(47, 128, 250, 0.25);
+  --lemon-tag-primary-text: #2F80FA;
+  --lemon-tag-success-bg: rgba(16, 185, 129, 0.10);
+  --lemon-tag-success-border: rgba(16, 185, 129, 0.30);
+  --lemon-tag-success-text: #059669;
+  --lemon-tag-warning-bg: rgba(245, 158, 11, 0.12);
+  --lemon-tag-warning-border: rgba(245, 158, 11, 0.30);
+  --lemon-tag-warning-text: #d97706;
+  --lemon-tag-danger-bg: rgba(239, 68, 68, 0.10);
+  --lemon-tag-danger-border: rgba(239, 68, 68, 0.25);
+  --lemon-tag-danger-text: #dc2626;
+  --lemon-tag-muted-bg: rgba(17, 17, 17, 0.05);
+  --lemon-tag-muted-border: rgba(17, 17, 17, 0.12);
+  --lemon-tag-muted-text: rgba(17, 17, 17, 0.6);
 }
 
+/* ══ DARK MODE ══════════════════════════════════════════════════════════════ */
 .dark {
-  /* PostHog 3000 Dark Mode Tokens */
-  --lemon-bg-page: #121214;
-  --lemon-surface: #1c1c1e;
-  --lemon-surface-popover: #242427;
-  --lemon-border: #27272a;
-  --lemon-border-hover: #3f3f46;
-  --lemon-text-primary: #f4f4f5;
-  --lemon-text-secondary: #a1a1aa;
-  
-  --lemon-accent: #3b82f6;
-  --lemon-accent-hover: #60a5fa;
+  --text-3000: #fff;
+  --text-3000-light: #111;          /* buttons use dark-on-light bg */
+  --color-text-secondary-3000: rgba(255, 255, 255, 0.7);
+  --muted-3000: rgba(255, 255, 255, 0.5);
+  --trace-3000: rgba(255, 255, 255, 0.25);
+
+  --primary-3000: #589DF8;
+  --primary-3000-hover: #2F80FA;
+  --primary-3000-active: #1d4ed8;
+  --primary-highlight: rgba(88, 157, 248, 0.10);
+
+  --color-accent-3000: #1E2F46;
+  --color-bg-3000: #0F233D;
+
+  --border-3000: #1E2F46;
+  --border-bold-3000: #2E3F56;
+  --glass-bg-3000: rgba(15, 35, 61, 0.70);
+  --glass-border-3000: #1E2F46;
+
+  --link-3000: #589DF8;
+
+  /* --- Button tokens (dark) --- */
+  --primary-3000-frame-bg: #081321;
+  --primary-3000-button-bg: #589DF8;   /* blue on dark */
+  --primary-3000-button-border: #2F80FA;
+  --primary-3000-button-border-hover: #1d4ed8;
+
+  --secondary-3000-frame-bg: #081321;
+  --secondary-3000-button-bg: #0F233D;
+  --secondary-3000-button-border: #1E2F46;
+  --secondary-3000-button-border-hover: #2E3F56;
+
+  --danger-3000-frame-bg: rgba(239, 68, 68, 0.5);
+  --danger-3000-button-border: #ef4444;
+  --danger-3000-button-border-hover: #dc2626;
+
+  /* --- Shadow --- */
+  --shadow-elevation-3000: 0 3px 0 #1E2F46;
+
+  /* --- Semantic background --- */
+  --color-bg-surface-primary: #0F233D;
+  --color-bg-surface-popover: #1E2F46;
+  --color-bg-fill-button-tertiary-hover: rgba(255, 255, 255, 0.08);
+  --color-bg-fill-button-tertiary-active: rgba(255, 255, 255, 0.14);
+
+  --color-border-primary: #35373e;
+  --color-border-secondary: #3f4046;
+
+  --danger-highlight: rgba(245, 78, 0, 0.15);
+
+  --lemon-link-color: #f1a82c;
+  --lemon-link-color-hover: #fbbf24;
+
+  --lemon-tag-default-bg: #21242b;
+  --lemon-tag-default-border: #35373e;
+  --lemon-tag-default-text: rgba(255,255,255,0.85);
+  --lemon-tag-primary-bg: rgba(247, 165, 3, 0.12);
+  --lemon-tag-primary-border: rgba(247, 165, 3, 0.28);
+  --lemon-tag-primary-text: #f7a503;
+  --lemon-tag-success-bg: rgba(16, 185, 129, 0.10);
+  --lemon-tag-success-border: rgba(16, 185, 129, 0.28);
+  --lemon-tag-success-text: #34d399;
+  --lemon-tag-warning-bg: rgba(245, 158, 11, 0.12);
+  --lemon-tag-warning-border: rgba(245, 158, 11, 0.28);
+  --lemon-tag-warning-text: #fbbf24;
+  --lemon-tag-danger-bg: rgba(239, 68, 68, 0.12);
+  --lemon-tag-danger-border: rgba(239, 68, 68, 0.28);
+  --lemon-tag-danger-text: #f87171;
+  --lemon-tag-muted-bg: rgba(255, 255, 255, 0.05);
+  --lemon-tag-muted-border: rgba(255, 255, 255, 0.12);
+  --lemon-tag-muted-text: rgba(255, 255, 255, 0.5);
 }
 
-/* 1. LemonButton (PostHog 3000 3D Frame Button) */
+/* ══════════════════════════════════════════════════════════════
+   LemonButton — PostHog 1-to-1 from LemonButton.scss
+   Class naming convention: .LemonButton--{type} .LemonButton--status-{status}
+   Size: .LemonButton--{size}   (xxsmall | xsmall | small | large)
+══════════════════════════════════════════════════════════════ */
+
+/* --- Base --- */
 .LemonButton {
-  display: inline-flex;
+  --lemon-button-hover-depth: -0.03125rem;
+  --lemon-button-press-depth: 0.03125rem;
+  --lemon-button-chrome-depth: 0.1875rem;
+  --lemon-button-padding-vertical: 0.25rem;
+  --lemon-button-padding-horizontal: 0.75rem;
+  --lemon-button-padding-adjacent-icon: 0.375rem;
+  --lemon-button-transition: opacity 200ms ease, transform 200ms ease;
+  --lemon-button-border-width: 0;
+  --lemon-button-bg-color: transparent;
+  --button-border-color: none;
+  --lemon-button-border-color-hover: none;
+  --lemon-button-frame-bg-color: none;
+  --lemon-button-font-size: 0.875rem;
+  --lemon-button-icon-size: 1.5rem;
+  --lemon-button-height: 2.3125rem;
+  --lemon-button-gap: 0.5rem;
+  --lemon-button-icon-opacity: 0.8;
+  --lemon-button-color: var(--text-3000);
+  --lemon-button-radius: var(--lemon-radius, 4px);
+  --lemon-button-side-action-width: 2rem;
+
+  display: flex;
+  flex-shrink: 0;
   align-items: center;
-  justify-content: center;
-  gap: 0.375rem;
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  line-height: 1.25rem;
-  padding: 0.375rem 0.75rem;
-  border-radius: var(--lemon-radius-md);
-  border: 1px solid var(--lemon-border);
-  background-color: var(--lemon-surface);
-  color: var(--lemon-text-primary);
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+  appearance: none;
   cursor: pointer;
-  transition: all 120ms ease;
-  white-space: nowrap;
   user-select: none;
+  background: none;
+  border: none;
+  border-radius: var(--lemon-button-radius);
+  transition: var(--lemon-button-transition);
   text-decoration: none;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-.LemonButton--size-xsmall {
-  padding: 0.15rem 0.375rem;
-  font-size: 0.7rem;
-  border-radius: var(--lemon-radius-xs);
-}
-
-.LemonButton--size-small {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-}
-
-.LemonButton--size-medium {
-  padding: 0.375rem 0.75rem;
-  font-size: 0.8125rem;
-}
-
-.LemonButton--size-large {
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-}
-
-/* Primary Variant — PostHog Accent */
-.LemonButton--primary {
-  background-color: var(--lemon-accent);
-  color: #ffffff;
-  border-color: var(--lemon-accent);
-  box-shadow: 0 2px 0 0 rgba(0, 0, 0, 0.2);
-}
-
-.LemonButton--primary:hover {
-  background-color: var(--lemon-accent-hover);
-  border-color: var(--lemon-accent-hover);
-}
-
-/* Secondary Variant */
-.LemonButton--secondary {
-  background-color: var(--lemon-surface);
-  color: var(--lemon-text-primary);
-  border-color: var(--lemon-border);
-}
-
-.LemonButton--secondary:hover {
-  background-color: var(--lemon-bg-page);
-  border-color: var(--lemon-border-hover);
-}
-
-/* Active Variant */
-.LemonButton--active {
-  background-color: rgba(59, 130, 246, 0.1);
-  color: var(--lemon-accent);
-  border-color: rgba(59, 130, 246, 0.3);
-}
-
-/* Stealth Variant */
-.LemonButton--stealth {
-  background-color: transparent;
-  color: var(--lemon-text-primary);
+/* --- Chrome span (the visible surface) --- */
+.LemonButton .LemonButton__chrome {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: row;
+  flex-shrink: 0;
+  gap: var(--lemon-button-gap);
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: var(--lemon-button-height);
+  padding: var(--lemon-button-padding-vertical) var(--lemon-button-padding-horizontal);
+  font-size: var(--lemon-button-font-size);
+  font-weight: 500;
+  line-height: 1.5rem;
+  color: var(--lemon-button-color);
+  text-align: left;
+  background: none;
   border-color: transparent;
-  box-shadow: none;
+  border-style: solid;
+  border-width: var(--lemon-button-border-width);
 }
 
-.LemonButton--stealth:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+.LemonButton .LemonButton__content {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  min-width: 0;
+  line-height: initial;
 }
 
-.dark .LemonButton--stealth:hover {
-  background-color: rgba(255, 255, 255, 0.08);
+.LemonButton .LemonButton__icon {
+  display: flex;
+  flex-shrink: 0;
+  place-items: center center;
+  font-size: var(--lemon-button-icon-size);
+  transition: color 200ms ease;
+  opacity: var(--lemon-button-icon-opacity);
 }
 
-/* 2. LemonTag (PostHog 3000 Native Tag) */
+/* --- Disabled --- */
+.LemonButton[aria-disabled='true']:not(.LemonButton--loading) {
+  cursor: not-allowed;
+  opacity: var(--opacity-disabled, 0.45);
+}
+
+/* --- Active / hover opacity --- */
+.LemonButton.LemonButton--active .LemonButton__icon,
+.LemonButton:hover:not([aria-disabled='true']) .LemonButton__icon,
+.LemonButton:not([aria-disabled='true']):active .LemonButton__icon {
+  --lemon-button-icon-opacity: 0.75;
+}
+
+/* --- Full width --- */
+.LemonButton.LemonButton--full-width {
+  --lemon-button-padding-horizontal: 0.5rem;
+  width: 100%;
+}
+
+/* --- No padding --- */
+.LemonButton.LemonButton--no-padding,
+.LemonButton.LemonButton--no-padding .LemonButton__chrome {
+  min-height: 0;
+  padding: 0;
+  width: auto;
+  height: auto;
+}
+
+/* --- Centered --- */
+.LemonButton.LemonButton--centered .LemonButton__chrome {
+  justify-content: center !important;
+}
+.LemonButton.LemonButton--centered .LemonButton__content {
+  flex: initial !important;
+  text-align: center !important;
+}
+
+/* ══ SIZE MODIFIERS ══ */
+.LemonButton.LemonButton--xxsmall {
+  --lemon-button-padding-horizontal: 0.25rem;
+  --lemon-button-padding-vertical: 0.125rem;
+  --lemon-button-padding-adjacent-icon: 0.1875rem;
+  --lemon-button-font-size: 0.6875rem;
+  --lemon-button-icon-size: 0.8125rem;
+  --lemon-button-height: 1.25rem;
+  --lemon-button-gap: 0.1875rem;
+}
+
+.LemonButton.LemonButton--xsmall {
+  --lemon-button-padding-horizontal: 0.375rem;
+  --lemon-button-padding-adjacent-icon: 0.25rem;
+  --lemon-button-font-size: 0.75rem;
+  --lemon-button-icon-size: 0.875rem;
+  --lemon-button-height: 1.625rem;
+  --lemon-button-gap: 0.25rem;
+}
+
+.LemonButton.LemonButton--small {
+  --lemon-button-padding-horizontal: 0.5rem;
+  --lemon-button-height: 2.0625rem;
+  --lemon-button-gap: 0.5rem;
+  --lemon-button-icon-size: 1.25rem;
+}
+
+.LemonButton.LemonButton--large {
+  --lemon-button-font-size: 1rem;
+  --lemon-button-icon-size: 1.75rem;
+  --lemon-button-padding-adjacent-icon: 0.75rem;
+  --lemon-button-height: 3.0625rem;
+  --lemon-button-gap: 0.75rem;
+}
+
+/* ══ TYPE: primary ══ */
+.LemonButton.LemonButton--primary {
+  --lemon-button-bg-color: var(--primary-3000-button-bg);
+  --lemon-button-bg-color-active: var(--primary-3000-button-bg);
+  --button-border-color: var(--primary-3000-button-border);
+  --lemon-button-border-color-hover: var(--primary-3000-button-border-hover);
+  --lemon-button-frame-bg-color: var(--primary-3000-frame-bg);
+  --lemon-button-color: var(--text-3000-light);
+  --lemon-button-border-width: 1px;
+}
+
+/* primary chrome: 3D frame via ::before and ::after */
+.LemonButton.LemonButton--primary .LemonButton__chrome,
+.LemonButton.LemonButton--secondary .LemonButton__chrome {
+  background: transparent;
+  padding-top: calc(var(--lemon-button-padding-vertical) - var(--lemon-button-chrome-depth) * 0.5);
+  padding-bottom: calc(var(--lemon-button-padding-vertical) + var(--lemon-button-chrome-depth) * 0.5);
+}
+
+.LemonButton.LemonButton--primary .LemonButton__chrome > *,
+.LemonButton.LemonButton--secondary .LemonButton__chrome > * {
+  z-index: 1;
+}
+
+.LemonButton.LemonButton--primary .LemonButton__chrome::before,
+.LemonButton.LemonButton--secondary .LemonButton__chrome::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  z-index: 0;
+  border: 1px solid var(--button-border-color);
+  border-radius: var(--lemon-button-radius);
+}
+
+.LemonButton.LemonButton--primary .LemonButton__chrome::after,
+.LemonButton.LemonButton--secondary .LemonButton__chrome::after {
+  content: '';
+  position: absolute;
+  inset: -1px -1px calc(var(--lemon-button-chrome-depth) - 1px);
+  z-index: 0;
+  background: var(--lemon-button-bg-color);
+  border: 1px solid var(--button-border-color);
+  border-radius: var(--lemon-button-radius);
+  box-shadow: 0 var(--lemon-button-chrome-depth) 0 -1px var(--lemon-button-frame-bg-color);
+  transition: opacity 200ms ease;
+}
+
+/* hover */
+.LemonButton.LemonButton--primary:not([aria-disabled='true']):hover .LemonButton__chrome,
+.LemonButton.LemonButton--secondary:not([aria-disabled='true']):hover .LemonButton__chrome {
+  transform: translateY(var(--lemon-button-hover-depth));
+}
+.LemonButton.LemonButton--primary:not([aria-disabled='true']):hover .LemonButton__chrome::after,
+.LemonButton.LemonButton--secondary:not([aria-disabled='true']):hover .LemonButton__chrome::after {
+  border-color: var(--lemon-button-border-color-hover);
+  box-shadow: 0 calc(var(--lemon-button-chrome-depth) - var(--lemon-button-hover-depth)) 0 -1px var(--lemon-button-frame-bg-color);
+}
+
+/* active/press */
+.LemonButton.LemonButton--primary:not([aria-disabled='true']):active .LemonButton__chrome,
+.LemonButton.LemonButton--secondary:not([aria-disabled='true']):active .LemonButton__chrome {
+  transform: translateY(var(--lemon-button-press-depth));
+}
+.LemonButton.LemonButton--primary:not([aria-disabled='true']):active .LemonButton__chrome::after,
+.LemonButton.LemonButton--secondary:not([aria-disabled='true']):active .LemonButton__chrome::after {
+  border-color: var(--lemon-button-border-color-hover);
+  box-shadow: 0 calc(var(--lemon-button-chrome-depth) - var(--lemon-button-press-depth)) 0 -1px var(--lemon-button-frame-bg-color);
+}
+
+/* ══ TYPE: secondary ══ */
+.LemonButton.LemonButton--secondary {
+  --button-border-color: var(--secondary-3000-button-border);
+  --lemon-button-bg-color: var(--color-bg-surface-primary);
+  --lemon-button-bg-color-active: var(--color-bg-surface-primary);
+  --lemon-button-border-color-hover: var(--secondary-3000-button-border-hover);
+  --lemon-button-frame-bg-color: var(--secondary-3000-frame-bg);
+  --lemon-button-border-width: 1px;
+}
+
+/* ══ TYPE: tertiary (flat) ══ */
+.LemonButton.LemonButton--tertiary:not([aria-disabled='true']):hover {
+  background-color: var(--color-bg-fill-button-tertiary-hover);
+}
+.LemonButton.LemonButton--tertiary.LemonButton--active,
+.LemonButton.LemonButton--tertiary[aria-expanded='true'] {
+  background-color: var(--color-bg-fill-button-tertiary-active);
+}
+
+/* ══ STATUS: danger ══ */
+.LemonButton.LemonButton--status-danger {
+  --lemon-button-color: var(--danger-3000-button-border-hover) !important;
+  --button-border-color: var(--danger-3000-button-border);
+  --lemon-button-border-color-hover: var(--danger-3000-button-border-hover);
+  --lemon-button-frame-bg-color: var(--danger-3000-frame-bg);
+  --lemon-button-icon-opacity: 1;
+}
+
+.LemonButton.LemonButton--tertiary.LemonButton--status-danger:not([aria-disabled='true']):hover,
+.LemonButton.LemonButton--tertiary.LemonButton--status-danger.LemonButton--active {
+  background-color: var(--danger-highlight);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   LemonCard
+══════════════════════════════════════════════════════════════ */
+.LemonCard {
+  padding: 1rem;
+  background-color: var(--color-bg-surface-primary, #fff);
+  border: 1px solid var(--border-3000, #dadbd2);
+  border-radius: var(--lemon-radius-lg, 6px);
+  box-shadow: var(--shadow-elevation-3000, 0 3px 0 #dadbd2);
+}
+
+.dark .LemonCard {
+  background-color: var(--color-bg-surface-primary, #1d1f27);
+  border-color: var(--border-3000, #35373e);
+  box-shadow: var(--shadow-elevation-3000, 0 3px 0 #35373e);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   LemonTag
+══════════════════════════════════════════════════════════════ */
 .LemonTag {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.15rem 0.5rem;
+  padding: 0.0625rem 0.375rem;
   font-size: 0.6875rem;
   font-weight: 600;
-  line-height: 1rem;
-  border-radius: var(--lemon-radius-xs);
-  border: 1px solid var(--lemon-border);
-  background-color: var(--lemon-bg-page);
-  color: var(--lemon-text-primary);
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  border: 1px solid var(--lemon-tag-default-border);
+  border-radius: var(--lemon-radius-sm, 4px);
+  background-color: var(--lemon-tag-default-bg);
+  color: var(--lemon-tag-default-text);
   white-space: nowrap;
 }
 
-.LemonTag--primary {
-  background-color: rgba(29, 78, 216, 0.1);
-  border-color: rgba(29, 78, 216, 0.3);
-  color: #1d4ed8;
+.LemonTag.LemonTag--primary {
+  background-color: var(--lemon-tag-primary-bg);
+  border-color: var(--lemon-tag-primary-border);
+  color: var(--lemon-tag-primary-text);
 }
 
-.dark .LemonTag--primary {
-  background-color: rgba(59, 130, 246, 0.15);
-  border-color: rgba(59, 130, 246, 0.4);
-  color: #60a5fa;
+.LemonTag.LemonTag--success {
+  background-color: var(--lemon-tag-success-bg);
+  border-color: var(--lemon-tag-success-border);
+  color: var(--lemon-tag-success-text);
 }
 
-.LemonTag--success {
-  background-color: rgba(16, 185, 129, 0.1);
-  border-color: rgba(16, 185, 129, 0.3);
-  color: #10b981;
+.LemonTag.LemonTag--warning {
+  background-color: var(--lemon-tag-warning-bg);
+  border-color: var(--lemon-tag-warning-border);
+  color: var(--lemon-tag-warning-text);
 }
 
-.LemonTag--warning {
-  background-color: rgba(245, 158, 11, 0.1);
-  border-color: rgba(245, 158, 11, 0.3);
-  color: #f59e0b;
+.LemonTag.LemonTag--danger {
+  background-color: var(--lemon-tag-danger-bg);
+  border-color: var(--lemon-tag-danger-border);
+  color: var(--lemon-tag-danger-text);
 }
 
-.LemonTag--danger {
-  background-color: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.3);
-  color: #ef4444;
+.LemonTag.LemonTag--muted {
+  background-color: var(--lemon-tag-muted-bg);
+  border-color: var(--lemon-tag-muted-border);
+  color: var(--lemon-tag-muted-text);
 }
 
-/* 3. LemonBadge */
-.LemonBadge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.25rem;
-  height: 1.25rem;
-  padding: 0 0.375rem;
-  font-size: 0.65rem;
-  font-weight: 700;
-  border-radius: 9999px;
-  background-color: var(--lemon-accent);
-  color: #ffffff;
-  line-height: 1;
-}
-
-/* 4. LemonCard (PostHog 3000 Surface) */
-.LemonCard {
-  background-color: var(--lemon-surface);
-  border: 1px solid var(--lemon-border);
-  border-radius: var(--lemon-radius-lg);
-  padding: 1.25rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-/* 5. LemonBanner */
-.LemonBanner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  border-radius: var(--lemon-radius-md);
-  border: 1px solid var(--lemon-border);
-  background-color: var(--lemon-bg-page);
-  color: var(--lemon-text-primary);
-  font-size: 0.8125rem;
-}
-
-/* 6. LemonSegmentedButton */
-.LemonSegmentedButton {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.1875rem;
-  border-radius: var(--lemon-radius-md);
-  background-color: var(--lemon-bg-page);
-  border: 1px solid var(--lemon-border);
-  gap: 0.125rem;
-}
-
-.LemonSegmentedButton__option {
-  padding: 0.25rem 0.625rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  border-radius: var(--lemon-radius-sm);
-  color: var(--lemon-text-secondary);
-  background-color: transparent;
-  border: none;
-  cursor: pointer;
-  transition: all 120ms ease;
-}
-
-.LemonSegmentedButton__option--active {
-  background-color: var(--lemon-surface);
-  color: var(--lemon-text-primary);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-/* 7. LemonSwitch */
-.LemonSwitch {
+/* ══════════════════════════════════════════════════════════════
+   LemonInput
+══════════════════════════════════════════════════════════════ */
+.LemonInput__wrapper {
   position: relative;
   display: inline-flex;
   align-items: center;
+  width: 100%;
+}
+
+.LemonInput__input {
+  width: 100%;
+  padding: 0.375rem 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.5rem;
+  color: var(--text-3000, #111);
+  background-color: var(--color-bg-surface-primary, #fff);
+  border: 1px solid var(--border-3000, #dadbd2);
+  border-radius: var(--lemon-radius, 4px);
+  outline: none;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+  appearance: none;
+}
+
+.LemonInput__input:focus {
+  border-color: var(--primary-3000, #f54e01);
+  box-shadow: 0 0 0 2px rgba(245, 78, 1, 0.15);
+}
+
+.dark .LemonInput__input {
+  color: var(--text-3000, #fff);
+  background-color: var(--color-bg-surface-primary, #1d1f27);
+  border-color: var(--border-3000, #35373e);
+}
+
+.dark .LemonInput__input:focus {
+  border-color: var(--primary-3000, #f7a503);
+  box-shadow: 0 0 0 2px rgba(247, 165, 3, 0.15);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   LemonBanner
+══════════════════════════════════════════════════════════════ */
+.LemonBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: var(--lemon-radius, 4px);
+  border: 1px solid;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.LemonBanner--info {
+  background-color: rgba(245, 78, 1, 0.06);
+  border-color: rgba(245, 78, 1, 0.25);
+  color: var(--text-3000, #111);
+}
+
+.LemonBanner--warning {
+  background-color: rgba(245, 158, 11, 0.10);
+  border-color: rgba(245, 158, 11, 0.30);
+  color: var(--text-3000, #111);
+}
+
+.LemonBanner--success {
+  background-color: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.28);
+  color: var(--text-3000, #111);
+}
+
+.LemonBanner--error {
+  background-color: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.28);
+  color: var(--text-3000, #111);
+}
+
+.dark .LemonBanner--info {
+  background-color: rgba(247, 165, 3, 0.08);
+  border-color: rgba(247, 165, 3, 0.25);
+  color: var(--text-3000, #fff);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   LemonField (label + input wrapper)
+══════════════════════════════════════════════════════════════ */
+.LemonField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 100%;
+}
+
+.LemonField__label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-3000, #111);
+  line-height: 1.4;
+}
+
+.LemonField__error {
+  font-size: 0.75rem;
+  color: #dc2626;
+}
+
+.LemonField__help {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary-3000, rgba(17,17,17,0.6));
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Lettermark (PostHog brand avatar)
+══════════════════════════════════════════════════════════════ */
+.Lettermark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--lemon-radius, 4px);
+  background-color: var(--primary-3000, #f54e01);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.875rem;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", Roboto, sans-serif;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Spinner
+══════════════════════════════════════════════════════════════ */
+.LemonSpinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: lemon-spin 0.6s linear infinite;
+  opacity: 0.75;
+}
+
+@keyframes lemon-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Segmented button / Tabs (PostHog orange accent)
+══════════════════════════════════════════════════════════════ */
+.LemonTabs {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--border-3000, #dadbd2);
+}
+
+.LemonTabs__tab {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
+  color: var(--color-text-secondary-3000, rgba(17,17,17,0.6));
+  cursor: pointer;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  transition: color 150ms ease, border-color 150ms ease;
+  white-space: nowrap;
+}
+
+.LemonTabs__tab:hover {
+  color: var(--text-3000, #111);
+}
+
+.LemonTabs__tab--active {
+  color: var(--primary-3000, #f54e01) !important;
+  border-bottom-color: var(--primary-3000, #f54e01) !important;
+}
+
+.dark .LemonTabs__tab {
+  color: var(--color-text-secondary-3000, rgba(255,255,255,0.6));
+}
+.dark .LemonTabs__tab:hover {
+  color: var(--text-3000, #fff);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Switch / Checkbox
+══════════════════════════════════════════════════════════════ */
+.LemonSwitch {
+  position: relative;
   width: 2.25rem;
   height: 1.25rem;
-  border-radius: 9999px;
-  background-color: var(--lemon-border);
-  border: 1px solid var(--lemon-border-hover);
+  border-radius: 999px;
+  background-color: var(--border-3000, #dadbd2);
   cursor: pointer;
-  transition: background-color 150ms ease;
+  transition: background-color 200ms ease;
+  flex-shrink: 0;
 }
 
 .LemonSwitch--checked {
-  background-color: var(--lemon-accent) !important;
-  border-color: var(--lemon-accent) !important;
+  background-color: var(--primary-3000, #f54e01);
 }
 
 .LemonSwitch__handle {
-  width: 0.95rem;
-  height: 0.95rem;
-  border-radius: 9999px;
-  background-color: #ffffff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-  transition: transform 150ms ease;
-  transform: translateX(0.125rem);
+  position: absolute;
+  top: 0.125rem;
+  left: 0.125rem;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background-color: #fff;
+  transition: transform 200ms ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
 .LemonSwitch--checked .LemonSwitch__handle {
-  transform: translateX(1.125rem);
+  transform: translateX(1rem);
 }
+
+/* ── 9. LemonTable ────────────────────────────────────────────────────────── */
+.LemonTable {
+  --row-base-height: auto;
+  --row-horizontal-padding: 0.75rem;
+  --lemon-table-background-color: var(--color-bg-surface-primary);
+
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background: var(--lemon-table-background-color);
+  border: 1px solid var(--border-3000);
+  border-radius: var(--lemon-radius-lg, 6px);
+}
+
+.LemonTable__content > table {
+  width: 100%;
+  min-width: 480px; /* Forces scrollability on mobile screens */
+  border-spacing: 0;
+  border-collapse: collapse;
+}
+
+.LemonTable__content > table > thead {
+  background: var(--lemon-table-background-color);
+}
+
+.LemonTable__content > table > thead > tr > th {
+  padding: 0.5rem var(--row-horizontal-padding);
+  font-size: 0.6875rem; /* 11px */
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  text-align: left;
+  color: var(--muted-3000);
+  box-shadow: inset 0 -1px var(--border-3000);
+}
+
+.LemonTable__content > table > tbody > tr {
+  transition: background-color 150ms ease;
+}
+
+.LemonTable__content > table > tbody > tr:hover {
+  background-color: var(--color-bg-fill-button-tertiary-hover);
+}
+
+.LemonTable__content > table > tbody > tr:not(:first-child) {
+  border-top: 1px solid var(--border-3000);
+}
+
+.LemonTable__content > table > tbody > tr > td {
+  padding: 0.5rem var(--row-horizontal-padding);
+  font-size: 0.75rem; /* 12px */
+  color: var(--text-3000);
+  vertical-align: middle;
+}
+
+.LemonTable__footer {
+  border-top: 1px solid var(--border-3000);
+  background-color: var(--color-bg-3000);
+}
+
+/* ── 10. LemonDrawer (Sidebar / Drawer) ───────────────────────────────────── */
+.LemonDrawer {
+  position: fixed;
+  top: calc(44px + 0.5rem);
+  right: 0.5rem;
+  bottom: 0.5rem;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-bg-surface-primary);
+  border: 1px solid var(--border-3000);
+  border-radius: var(--lemon-radius-lg, 6px);
+  box-shadow: var(--shadow-elevation-3000);
+  overflow: hidden;
+  transition: transform 300ms cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.LemonDrawer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-3000);
+  background-color: var(--color-bg-3000);
+}
+
+.LemonDrawer__title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-3000);
+}
+
+.LemonDrawer__content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+/* ── 11. ScrollableShadows ────────────────────────────────────────────────── */
+.ScrollableShadows {
+  --scrollable-shadows-offset-top: 0px;
+  --shadow-x-start: 0 0 0 0 transparent;
+  --shadow-x-end: 0 0 0 0 transparent;
+  --shadow-y-start: 0 0 0 0 transparent;
+  --shadow-y-end: 0 0 0 0 transparent;
+
+  position: relative;
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: hidden;
+}
+
+.ScrollableShadows::before,
+.ScrollableShadows::after {
+  position: absolute;
+  top: var(--scrollable-shadows-offset-top);
+  left: 0;
+  z-index: 8;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  content: '';
+  transition: box-shadow 200ms ease;
+}
+
+.ScrollableShadows::before {
+  box-shadow:
+    var(--shadow-x-start, 0 0 0 0 transparent) inset,
+    var(--shadow-y-start, 0 0 0 0 transparent) inset;
+}
+
+.ScrollableShadows::after {
+  box-shadow:
+    var(--shadow-x-end, 0 0 0 0 transparent) inset,
+    var(--shadow-y-end, 0 0 0 0 transparent) inset;
+}
+
+.ScrollableShadows[data-overflow-x-start] {
+  --shadow-x-start: 16px 0 16px -16px rgba(0, 0, 0, 0.25);
+}
+
+.ScrollableShadows[data-overflow-x-end] {
+  --shadow-x-end: -16px 0 16px -16px rgba(0, 0, 0, 0.25);
+}
+
+.ScrollableShadows[data-overflow-y-start] {
+  --shadow-y-start: 0 16px 16px -16px rgba(0, 0, 0, 0.25);
+}
+
+.ScrollableShadows[data-overflow-y-end] {
+  --shadow-y-end: 0 -16px 16px -16px rgba(0, 0, 0, 0.25);
+}
+
+.dark .ScrollableShadows[data-overflow-x-start] {
+  --shadow-x-start: 16px 0 16px -16px rgba(0, 0, 0, 0.8);
+}
+
+.dark .ScrollableShadows[data-overflow-x-end] {
+  --shadow-x-end: -16px 0 16px -16px rgba(0, 0, 0, 0.8);
+}
+
+/* The actual scroll viewport — matches Base UI ScrollArea.Viewport behavior */
+.ScrollableShadows__inner {
+  display: block;
+  width: 100%;
+  /* Horizontal scroll by default; components override as needed */
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ScrollableShadows__inner--vertical {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.ScrollableShadows__inner--both {
+  overflow-x: auto;
+  overflow-y: auto;
+}
+
+/* ── 12. LemonTable — birebir PostHog LemonTable.scss ────────────────────── */
+.LemonTable {
+  --row-base-height: auto;
+  --row-horizontal-padding: 0.5rem;
+  --lemon-table-background-color: var(--color-bg-surface-primary, #fff);
+
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  font-size: 13px;
+  background: var(--lemon-table-background-color) !important;
+  border: 1px solid var(--color-border-primary, var(--border-3000, #e2e8f0));
+  border-radius: var(--lemon-radius, 4px);
+}
+
+.LemonTable__content > table {
+  width: 100%;
+  border-spacing: 0;
+  border-collapse: collapse;
+}
+
+.LemonTable__content > table > thead {
+  position: relative;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03125rem;
+  background: var(--lemon-table-background-color, #fff);
+}
+
+.LemonTable__content > table > thead > tr > th {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  padding-left: var(--row-horizontal-padding);
+  padding-right: var(--row-horizontal-padding);
+  font-weight: 700;
+  text-align: left;
+  white-space: nowrap;
+  background: var(--lemon-table-background-color, #fff);
+  /* box-shadow as border supports sticky headers — exact PostHog technique */
+  box-shadow: inset 0 -1px var(--color-border-primary, var(--border-3000, #e2e8f0));
+}
+
+.LemonTable__content > table > thead > tr > th:first-child {
+  padding-left: calc(var(--row-horizontal-padding) * 2);
+}
+
+.LemonTable__content > table > thead > tr > th:last-child {
+  padding-right: calc(var(--row-horizontal-padding) * 2);
+}
+
+.LemonTable__content > table > tbody > tr:not(:first-child) {
+  border-top: 1px solid var(--color-border-primary, var(--border-3000, #e2e8f0));
+}
+
+.LemonTable__content > table > tbody > tr > td {
+  padding-top: 0.3125rem;
+  padding-bottom: 0.3125rem;
+  padding-left: var(--row-horizontal-padding);
+  padding-right: var(--row-horizontal-padding);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-text-secondary, var(--text-3000, #111));
+}
+
+.LemonTable__content > table > tbody > tr > td:first-child {
+  padding-left: calc(var(--row-horizontal-padding) * 2);
+}
+
+.LemonTable__content > table > tbody > tr > td:last-child {
+  padding-right: calc(var(--row-horizontal-padding) * 2);
+}
+
+.LemonTable__header {
+  cursor: default;
+}
+
+.LemonTable__header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  line-height: 1.5;
+  color: var(--color-text-tertiary, var(--muted-3000, rgba(17,17,17,0.6)));
+}
+
+.LemonTable__header-content > div {
+  white-space: nowrap;
+}
+
+.LemonTable__footer {
+  cursor: default;
+  border-top: 1px solid var(--color-border-primary, var(--border-3000, #e2e8f0));
+}
+
+/* ── 13. LemonCollapse ────────────────────────────────────────────────────── */
+.LemonCollapse {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  overflow: hidden;
+  border: 1px solid var(--color-border-primary, var(--border-3000, #e2e8f0));
+  border-radius: var(--lemon-radius, 4px);
+}
+
+.LemonCollapse--embedded {
+  border: none;
+  border-radius: 0;
+}
+
+.LemonCollapsePanel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.LemonCollapsePanel:not(:last-child) {
+  border-bottom: 1px solid var(--color-border-primary, var(--border-3000, #e2e8f0));
+}
+
+.LemonCollapsePanel__header {
+  background: var(--color-bg-surface-primary, #fff);
+  border-radius: 0 !important;
+}
+
+.LemonCollapsePanel__header.LemonButton:active {
+  transform: inherit;
+}
+
+.LemonCollapsePanel__header--disabled:hover {
+  cursor: default;
+  background-color: var(--color-bg-surface-primary, #fff) !important;
+}
+
+.LemonCollapsePanel__body {
+  box-sizing: content-box;
+  overflow: hidden;
+  border-top: 1px solid var(--color-border-primary, var(--border-3000, #e2e8f0));
+  transition: max-height 200ms ease;
+}
+
+.LemonCollapsePanel__content {
+  padding: 1rem;
+}
+

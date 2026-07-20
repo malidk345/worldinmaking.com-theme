@@ -76,12 +76,12 @@ const OSButton = React.memo(React.forwardRef<HTMLButtonElement | HTMLAnchorEleme
         }
 
         const variantClasses = {
-            default: `bg-transparent text-[#1d1d1f] dark:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] hover:scale-[1.04] ${active ? 'bg-black/[0.04] dark:bg-white/[0.06]' : ''}`,
-            primary: 'bg-[#1d1d1f] text-[#ffffff] dark:bg-[#ffffff] dark:text-[#1d1d1f] shadow-[0_4px_14px_rgba(0,0,0,0.15)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.2)] hover:scale-[1.04] hover:-translate-y-0.5',
-            secondary: `bg-white dark:bg-[#1C1C1E] text-[#1d1d1f] dark:text-white border border-black/5 dark:border-white/5 shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)] hover:scale-[1.04] hover:-translate-y-0.5 ${active ? 'bg-gray-50 dark:bg-[#2C2C2E]' : ''}`,
-            underline: 'underline border-transparent hover:no-underline !p-0 !bg-transparent text-[#1d1d1f] dark:text-white hover:scale-100 active:scale-100 active:translate-y-0',
-            underlineOnHover: 'hover:underline border-transparent !p-0 !bg-transparent text-[#1d1d1f] dark:text-white hover:scale-100 active:scale-100 active:translate-y-0',
-            ghost: `bg-transparent text-[#1d1d1f] dark:text-white hover:bg-black/[0.05] dark:hover:bg-white/[0.08] ${active ? 'bg-black/[0.05] dark:bg-white/[0.08]' : ''}`,
+            default: `bg-transparent text-[var(--text-3000)] hover:bg-[var(--color-bg-fill-button-tertiary-hover)] hover:scale-[1.04] ${active ? 'bg-[var(--color-bg-fill-button-tertiary-active)]' : ''}`,
+            primary: 'bg-[var(--primary-3000)] text-white dark:text-black shadow-[0_4px_14px_rgba(0,0,0,0.15)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.2)] hover:scale-[1.04] hover:-translate-y-0.5',
+            secondary: `bg-[var(--color-bg-surface-primary)] text-[var(--text-3000)] border border-[var(--border-3000)] shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)] hover:scale-[1.04] hover:-translate-y-0.5 ${active ? 'bg-[var(--color-bg-fill-button-tertiary-active)]' : ''}`,
+            underline: 'underline border-transparent hover:no-underline !p-0 !bg-transparent text-[var(--text-3000)] hover:scale-100 active:scale-100 active:translate-y-0',
+            underlineOnHover: 'hover:underline border-transparent !p-0 !bg-transparent text-[var(--text-3000)] hover:scale-100 active:scale-100 active:translate-y-0',
+            ghost: `bg-transparent text-[var(--text-3000)] hover:bg-[var(--color-bg-fill-button-tertiary-hover)] ${active ? 'bg-[var(--color-bg-fill-button-tertiary-active)]' : ''}`,
         }
 
         const buttonContent = (

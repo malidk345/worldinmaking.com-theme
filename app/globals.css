@@ -942,6 +942,69 @@ mark {
     --radius: 1rem;
     --glass: rgba(255, 255, 255, 0.6);
     --glass-border: rgba(255, 255, 255, 0.4);
+
+    /* ─────────────────────────────────────────────────────────────
+       PostHog 3000 Design Tokens — Light Mode
+       Source: posthog/frontend/src/styles/base.scss
+       These are the OFFICIAL PostHog color tokens used in Lemon UI.
+       All Lemon UI components and any component using PostHog design
+       language should reference these variables, never hardcoded colors.
+    ──────────────────────────────────────────────────────────────── */
+
+    /* Text */
+    --text-3000: #111;
+    --text-3000-light: #111;
+    --color-text-secondary-3000: rgba(17, 17, 17, 0.7);
+    --muted-3000: rgba(17, 17, 17, 0.6);
+    --trace-3000: rgba(17, 17, 17, 0.25);
+
+    /* Brand accent — PostHog orange (light mode) */
+    --primary-3000: #f54e01;
+    --primary-3000-hover: #f54e01;
+    --primary-3000-active: #f54e01;
+    --primary-highlight: rgba(245, 78, 1, 0.10);
+
+    /* Backgrounds */
+    --color-accent-3000: #f5f5f2;
+    --color-bg-3000: #fafaf7;
+    --color-bg-surface-primary: #ffffff;
+    --color-bg-surface-popover: #ffffff;
+    --color-bg-fill-button-tertiary-hover: rgba(0, 0, 0, 0.06);
+    --color-bg-fill-button-tertiary-active: rgba(0, 0, 0, 0.10);
+
+    /* Borders */
+    --border-3000: #e2e8f0;
+    --border-bold-3000: #cbd5e1;
+
+    /* Links */
+    --link-3000: #f54e00;
+
+    /* Glass */
+    --glass-bg-3000: rgba(255, 255, 255, 0.90);
+    --glass-border-3000: rgba(228, 229, 222, 0.4);
+
+    /* Shadows */
+    --shadow-elevation-3000: 0 3px 0 #e4e5db;
+
+    /* Button tokens */
+    --primary-3000-frame-bg: #eb9d2a;
+    --primary-3000-button-bg: #fff;
+    --primary-3000-button-border: #b17816;
+    --primary-3000-button-border-hover: #8e5b03;
+    --secondary-3000-frame-bg: #e5e5e0;
+    --secondary-3000-button-bg: #ffffff;
+    --secondary-3000-button-border: #ccc;
+    --secondary-3000-button-border-hover: #aaa;
+    --danger-3000-frame-bg: rgba(245, 78, 0, 0.5);
+    --danger-3000-button-border: #e96b30;
+    --danger-3000-button-border-hover: #f54e00;
+    --danger-highlight: rgba(245, 78, 0, 0.10);
+
+    /* Opacity */
+    --opacity-disabled: 0.45;
+
+    /* White */
+    --color-white: #fff;
   }
 
   [data-scheme='secondary'] {
@@ -965,6 +1028,7 @@ mark {
     --text-secondary: 50 50 50;
     --text-muted: 130 130 130;
   }
+
 
   .dark,
   .dark [data-scheme='primary'] {
@@ -991,6 +1055,60 @@ mark {
     --glass: rgba(15, 20, 30, 0.6);
     --glass-border: rgba(255, 255, 255, 0.08);
 
+    /* ─────────────────────────────────────────────────────────────
+       PostHog 3000 Design Tokens — Dark Mode
+       Source: posthog/frontend/src/styles/base.scss
+    ──────────────────────────────────────────────────────────────── */
+
+    /* Text */
+    --text-3000: #fff;
+    --text-3000-light: #111;
+    --color-text-secondary-3000: rgba(255, 255, 255, 0.7);
+    --muted-3000: rgba(255, 255, 255, 0.5);
+    --trace-3000: rgba(255, 255, 255, 0.25);
+
+    /* Brand accent — PostHog amber (dark mode) -> converted to Light Blue */
+    --primary-3000: #589DF8;
+    --primary-3000-hover: #2F80FA;
+    --primary-3000-active: #1d4ed8;
+    --primary-highlight: rgba(88, 157, 248, 0.10);
+
+    /* Backgrounds */
+    --color-accent-3000: #1E2F46;
+    --color-bg-3000: #0F233D;
+    --color-bg-surface-primary: #0F233D;
+    --color-bg-surface-popover: #1E2F46;
+    --color-bg-fill-button-tertiary-hover: rgba(255, 255, 255, 0.08);
+    --color-bg-fill-button-tertiary-active: rgba(255, 255, 255, 0.14);
+
+    /* Borders */
+    --border-3000: #1E2F46;
+    --border-bold-3000: #2E3F56;
+
+    /* Links */
+    --link-3000: #589DF8;
+
+    /* Glass */
+    --glass-bg-3000: rgba(15, 35, 61, 0.70);
+    --glass-border-3000: #1E2F46;
+
+    /* Shadows */
+    --shadow-elevation-3000: 0 3px 0 #1E2F46;
+
+    /* Button tokens */
+    --primary-3000-frame-bg: #081321;
+    --primary-3000-button-bg: #589DF8;
+    --primary-3000-button-border: #2F80FA;
+    --primary-3000-button-border-hover: #1d4ed8;
+    --secondary-3000-frame-bg: #081321;
+    --secondary-3000-button-bg: #0F233D;
+    --secondary-3000-button-border: #1E2F46;
+    --secondary-3000-button-border-hover: #2E3F56;
+    --danger-3000-frame-bg: rgba(239, 68, 68, 0.5);
+    --danger-3000-button-border: #ef4444;
+    --danger-3000-button-border-hover: #dc2626;
+    --danger-highlight: rgba(239, 68, 68, 0.15);
+
     .hover-invert:hover,
     .hover-invert[data-state='open'] {
       --bg: var(--text-primary);
@@ -998,6 +1116,7 @@ mark {
       --accent: var(--text-muted);
     }
   }
+
 
   .dark [data-scheme='secondary'] {
     --bg: 20 20 25;
@@ -2342,113 +2461,6 @@ button::-moz-focus-inner,
 }
 
 
-/* ── LemonTable — Exact port from PostHog LemonTable.scss ──────────── */
-/* Variables matching PostHog base.scss:
-   --color-border-primary (light): hsl(78deg 13% 85%)  ≈ #dce0d3
-   --color-border-primary (dark):  hsl(78deg 13% 20%)  ≈ #30342b
-   --radius: 0.375rem
-   --row-horizontal-padding: 0.5rem
-   font-size thead: 0.75rem (12px)
-   letter-spacing thead: 0.03125rem
-*/
-
-.LemonTable {
-  --row-horizontal-padding: 0.5rem;
-  --row-base-height: auto;
-  --lemon-table-border: hsl(78deg 13% 85%);
-  position: relative;
-  flex: 1;
-  width: 100%;
-  overflow: hidden;
-  font-size: 13px;
-  background: #ffffff;
-  border: 1px solid hsl(78deg 13% 85%);
-  border-radius: 0.375rem;
-  margin: 1.25rem 0;
-}
-.dark .LemonTable {
-  background: #1c1c1c;
-  border-color: hsl(78deg 13% 20%);
-}
-
-.LemonTable__content {
-  width: 100%;
-  overflow-x: auto;
-}
-
-/* ── Table base ── */
-.LemonTable__content > table {
-  width: 100%;
-  border-spacing: 0;
-  border-collapse: collapse;
-}
-
-/* ── thead ── */
-.LemonTable__content > table > thead {
-  position: relative;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03125rem;
-  background: #ffffff;
-}
-.dark .LemonTable__content > table > thead {
-  background: #1c1c1c;
-}
-
-.LemonTable__content > table > thead > tr > th {
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-  padding-left: var(--row-horizontal-padding);
-  padding-right: var(--row-horizontal-padding);
-  font-weight: 700;
-  text-align: left;
-  /* box-shadow replaces border-bottom for sticky header support */
-  box-shadow: inset 0 -1px hsl(78deg 13% 85%);
-}
-.dark .LemonTable__content > table > thead > tr > th {
-  box-shadow: inset 0 -1px hsl(78deg 13% 20%);
-}
-
-/* first-child & last-child get double horizontal padding */
-.LemonTable__content > table > thead > tr > th:first-child,
-.LemonTable__content > table > tbody > tr > td:first-child {
-  padding-left: calc(var(--row-horizontal-padding) * 2);
-}
-.LemonTable__content > table > thead > tr > th:last-child,
-.LemonTable__content > table > tbody > tr > td:last-child {
-  padding-right: calc(var(--row-horizontal-padding) * 2);
-}
-
-/* ── tbody ── */
-.LemonTable__content > table > tbody > tr:not(:first-child) {
-  border-top: 1px solid hsl(78deg 13% 85%);
-}
-.dark .LemonTable__content > table > tbody > tr:not(:first-child) {
-  border-top-color: hsl(78deg 13% 20%);
-}
-
-.LemonTable__content > table > tbody > tr > td {
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-  padding-left: var(--row-horizontal-padding);
-  padding-right: var(--row-horizontal-padding);
-  vertical-align: middle;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* ── LemonTable__header-content ── */
-.LemonTable__header-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  line-height: 1.5;
-  color: #888;
-}
-.dark .LemonTable__header-content {
-  color: #777;
-}
-
 /* ── ProfilePicture (from PostHog ProfilePicture component) ── */
 .profile-package {
   display: inline-flex;
@@ -2473,89 +2485,4 @@ button::-moz-focus-inner,
   font-weight: 500;
   color: inherit;
   white-space: nowrap;
-}
-
-/* ── LemonTag (from PostHog LemonTag component) ── */
-.LemonTag {
-  display: inline-flex;
-  align-items: center;
-  height: 1.25rem;
-  padding: 0 0.375rem;
-  font-size: 0.6875rem;   /* 11px */
-  font-weight: 600;
-  line-height: 1;
-  border-radius: 0.25rem;
-  white-space: nowrap;
-  border: 1px solid hsl(78deg 13% 85%);
-  background-color: transparent;
-  color: #555;
-}
-.dark .LemonTag {
-  border-color: hsl(78deg 13% 20%);
-  color: #aaa;
-}
-/* highlight type — amber/yellow PostHog template badge */
-.LemonTag--highlight {
-  background-color: #fef3c7;
-  border-color: #fcd34d;
-  color: #b45309;
-}
-.dark .LemonTag--highlight {
-  background-color: rgba(120, 53, 4, 0.2);
-  border-color: rgba(251, 191, 36, 0.3);
-  color: #fde68a;
-}
-
-/* ── Row hover (PostHog uses color-mix, we approximate) ── */
-.LemonTable__content > table > tbody > tr:hover > td {
-  background-color: hsl(78deg 13% 97%);
-}
-.dark .LemonTable__content > table > tbody > tr:hover > td {
-  background-color: hsl(78deg 5% 14%);
-}
-
-/* ── LemonButton--tertiary action button ── */
-.LemonButton--tertiary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  padding: 0.25rem;
-  border-radius: 0.25rem;
-  cursor: pointer;
-  color: #888;
-  transition: background 150ms ease, color 150ms ease;
-}
-.LemonButton--tertiary:hover {
-  background-color: hsl(78deg 13% 92%);
-  color: #222;
-}
-.dark .LemonButton--tertiary {
-  color: #777;
-}
-.dark .LemonButton--tertiary:hover {
-  background-color: hsl(78deg 5% 18%);
-  color: #eee;
-}
-
-/* ── ScrollableShadows — birebir PostHog (base-ui-disable-scrollbar) ── */
-.ScrollableShadows {
-  position: relative;
-}
-.ScrollableShadows__inner {
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
-}
-.ScrollableShadows__inner::-webkit-scrollbar {
-  display: none;
-}
-
-/* ── LemonTable__footer — border-top matching PostHog ── */
-.LemonTable__footer {
-  border-top: 1px solid hsl(78deg 13% 85%);
-}
-.dark .LemonTable__footer {
-  border-top: 1px solid hsl(78deg 13% 20%);
 }

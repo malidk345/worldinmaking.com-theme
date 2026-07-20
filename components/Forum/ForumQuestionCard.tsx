@@ -10,7 +10,7 @@ import ForumReplyForm from './ForumReplyForm'
 import { extractForumMeta } from './extractForumMeta'
 import { ForumQuestion, ForumReply } from './types'
 import Link from 'components/Link'
-import OSButton from 'components/OSButton'
+import { LemonButton } from '@/components/LemonUI'
 import { IconPencil, IconArchive, IconUndo, IconTrash } from '@posthog/icons'
 import ViewCounter from 'components/ViewCounter'
 import VotePicker from 'components/VotePicker'
@@ -257,18 +257,20 @@ export default function ForumQuestionCard({
                         />
                         
                         <div className="!ml-auto flex items-center space-x-px">
-                            <OSButton
+                            <LemonButton
                                 onClick={() => setIsEditing(!isEditing)}
-                                icon={<IconPencil />}
-                                size="md"
-                                tooltip="edit post"
+                                icon={<IconPencil className="size-3.5" />}
+                                type="tertiary"
+                                size="small"
+                                title="edit post"
                                 className="!p-1.5 opacity-60 hover:opacity-100 hidden sm:flex"
                             />
-                            <OSButton
+                            <LemonButton
                                 onClick={() => { }} 
-                                icon={question.archived ? <IconUndo /> : <IconArchive />}
-                                size="md"
-                                tooltip={question.archived ? 'restore thread' : 'archive thread'}
+                                icon={question.archived ? <IconUndo className="size-3.5" /> : <IconArchive className="size-3.5" />}
+                                type="tertiary"
+                                size="small"
+                                title={question.archived ? 'restore thread' : 'archive thread'}
                                 className="!p-1.5 opacity-60 hover:opacity-100 hidden sm:flex"
                             />
                         </div>
@@ -314,16 +316,18 @@ export default function ForumQuestionCard({
                                 views={question.views || 0} 
                             />
                             {isAdmin && (
-                                <OSButton
-                                    size="sm"
+                                <LemonButton
+                                    size="small"
+                                    type="tertiary"
+                                    status="danger"
                                     onClick={() => {
                                         if (confirm('are you sure you want to delete this?')) {
                                             deletePost(question.id)
                                         }
                                     }}
-                                    icon={<IconTrash />}
-                                    tooltip="delete"
-                                    className="!p-1 opacity-40 hover:opacity-100 hover:text-red-500"
+                                    icon={<IconTrash className="size-3.5" />}
+                                    title="delete"
+                                    className="!p-1 opacity-60 hover:opacity-100"
                                 />
                             )}
                         </div>

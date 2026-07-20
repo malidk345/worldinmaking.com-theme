@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from 'react'
-import OSButton from 'components/OSButton'
+import { LemonButton } from '@/components/LemonUI'
 import { useAuth } from 'context/AuthContext'
 import ForumAvatar from './ForumAvatar'
 import ForumRichText from './ForumRichText'
@@ -100,26 +100,25 @@ export default function ForumQuestionForm({ isInForum = false, archived = false,
                             placeholder={isInForum ? "type more details..." : "add a comment..."}
                             cta={
                                 <div className="flex gap-2">
-                                    <OSButton
-                                        size="sm"
+                                    <LemonButton
+                                        size="small"
                                         variant="primary"
                                         disabled={!stripHtmlTags(body) || (isInForum && !subject.trim())}
                                         onClick={handleSubmit}
                                     >
                                         <span className="lowercase font-bold">post</span>
-                                    </OSButton>
-                                    <OSButton
-                                        size="sm"
-                                        variant="default"
+                                    </LemonButton>
+                                    <LemonButton
+                                        size="small"
+                                        variant="stealth"
                                         onClick={() => {
                                             setBody('')
                                             setSubject('')
                                             setIsOpen(false)
                                         }}
-                                        className="border-none opacity-60 hover:opacity-100"
                                     >
                                         <span className="lowercase font-bold">cancel</span>
-                                    </OSButton>
+                                    </LemonButton>
                                 </div>
                             }
                         />

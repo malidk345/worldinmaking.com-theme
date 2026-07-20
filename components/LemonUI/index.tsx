@@ -1,44 +1,100 @@
+/**
+ * Lemon UI — PostHog 3000 component primitives
+ * All styling uses CSS custom properties defined in lemon-ui.css,
+ * which are extracted verbatim from posthog/frontend/src/styles/base.scss
+ * and posthog/frontend/src/lib/lemon-ui/LemonButton/LemonButton.scss.
+ *
+ * NO hardcoded blue colors anywhere. Accent = PostHog orange/amber.
+ */
+
 import React, { ReactNode, useState } from 'react';
 import './lemon-ui.css';
 
-// ── 1. LemonButton ─────────────────────────────────────────────────────────
+// ── 1. LemonButton (PostHog 1-to-1) ─────────────────────────────────────────
+// DOM structure mirrors posthog LemonButton.tsx exactly:
+//   <button className="LemonButton LemonButton--{type} LemonButton--status-{status} ...">
+//     <span className="LemonButton__chrome">
+//       <span className="LemonButton__icon">{icon}</span>
+//       <span className="LemonButton__content">{children}</span>
+//     </span>
+//   </button>
+
 export interface LemonButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  type?: 'button' | 'submit' | 'reset';
-  variant?: 'primary' | 'secondary' | 'stealth' | 'active';
-  size?: 'xsmall' | 'small' | 'medium' | 'large';
+  type?: 'primary' | 'secondary' | 'tertiary';
+  status?: 'default' | 'alt' | 'danger';
+  size?: 'xxsmall' | 'xsmall' | 'small' | 'medium' | 'large';
   icon?: ReactNode;
   sideIcon?: ReactNode;
   children?: ReactNode;
   className?: string;
-  hotkey?: string;
+  active?: boolean;
+  fullWidth?: boolean;
+  noPadding?: boolean;
+  center?: boolean;
+  loading?: boolean;
 }
 
 export const LemonButton = React.forwardRef<HTMLButtonElement, LemonButtonProps>(
-  ({ variant = 'secondary', size = 'medium', icon, sideIcon, children, className = '', hotkey, ...props }, ref) => {
-    const variantClass = `LemonButton--${variant}`;
-    const sizeClass = `LemonButton--size-${size}`;
+  (
+    {
+      type = 'tertiary',
+      status = 'default',
+      size,
+      active = false,
+      fullWidth = false,
+      noPadding = false,
+      center = false,
+      loading = false,
+      icon,
+      sideIcon,
+      children,
+      className = '',
+      disabled,
+      ...props
+    },
+    ref
+  ) => {
+    // Exact class names from PostHog LemonButton.tsx
+    const classes = [
+      'LemonButton',
+      `LemonButton--${type}`,
+      `LemonButton--status-${status}`,
+      size && `LemonButton--${size}`,
+      active && 'LemonButton--active',
+      loading && 'LemonButton--loading',
+      fullWidth && 'LemonButton--full-width',
+      noPadding && 'LemonButton--no-padding',
+      center && 'LemonButton--centered',
+      !children && 'LemonButton--no-content',
+      icon && 'LemonButton--has-icon',
+      sideIcon && 'LemonButton--has-side-icon',
+      className,
+    ]
+      .filter(Boolean)
+      .join(' ');
+
+    const effectiveIcon = loading ? <Spinner /> : icon;
 
     return (
       <button
         ref={ref}
-        className={`LemonButton ${variantClass} ${sizeClass} ${className}`}
+        className={classes}
+        aria-disabled={!!disabled || loading}
+        disabled={disabled || loading}
         {...props}
       >
-        {icon && <span className="inline-flex shrink-0">{icon}</span>}
-        {children && <span>{children}</span>}
-        {sideIcon && <span className="inline-flex shrink-0 ml-auto">{sideIcon}</span>}
-        {hotkey && (
-          <kbd className="ml-1.5 px-1 py-0.2 text-[9px] font-mono bg-black/10 dark:bg-white/10 rounded border border-black/10 dark:border-white/10 opacity-70">
-            {hotkey}
-          </kbd>
-        )}
+        <span className="LemonButton__chrome">
+          {effectiveIcon && <span className="LemonButton__icon">{effectiveIcon}</span>}
+          {children && <span className="LemonButton__content">{children}</span>}
+          {sideIcon && <span className="LemonButton__icon">{sideIcon}</span>}
+        </span>
       </button>
     );
   }
 );
 LemonButton.displayName = 'LemonButton';
 
-// ── 2. LemonSegmentedButton ────────────────────────────────────────────────
+// ── 2. LemonSegmentedButton ─────────────────────────────────────────────────
 export interface LemonSegmentedOption<T extends string> {
   value: T;
   label: ReactNode;
@@ -50,6 +106,7 @@ export interface LemonSegmentedButtonProps<T extends string> {
   onChange: (value: T) => void;
   options: LemonSegmentedOption<T>[];
   className?: string;
+  size?: 'xxsmall' | 'xsmall' | 'small' | 'medium' | 'large';
 }
 
 export function LemonSegmentedButton<T extends string>({
@@ -57,23 +114,30 @@ export function LemonSegmentedButton<T extends string>({
   onChange,
   options,
   className = '',
+  size = 'xsmall',
 }: LemonSegmentedButtonProps<T>) {
   return (
-    <div className={`LemonSegmentedButton ${className}`}>
-      {options.map((opt) => {
+    <div className={`flex items-center w-full ${className}`}>
+      {options.map((opt, idx) => {
         const isActive = opt.value === value;
         return (
-          <button
+          <LemonButton
             key={opt.value}
-            type="button"
+            type={isActive ? 'primary' : 'secondary'}
             onClick={() => onChange(opt.value)}
-            className={`LemonSegmentedButton__option ${
-              isActive ? 'LemonSegmentedButton__option--active' : ''
+            icon={opt.icon}
+            size={size}
+            className={`flex-1 !rounded-none text-[11px] font-semibold ${
+              idx === 0 
+                ? '!rounded-l-[var(--radius)]' 
+                : idx === options.length - 1 
+                  ? '!rounded-r-[var(--radius)] -ml-px' 
+                  : '-ml-px'
             }`}
+            center
           >
-            {opt.icon && <span className="inline-block mr-1">{opt.icon}</span>}
             {opt.label}
-          </button>
+          </LemonButton>
         );
       })}
     </div>
@@ -97,7 +161,7 @@ export interface LemonTabsProps<T extends string> {
 
 export function LemonTabs<T extends string>({ activeKey, onChange, tabs, className = '' }: LemonTabsProps<T>) {
   return (
-    <div className={`flex items-center gap-1 border-b border-slate-200 dark:border-blue-500/20 ${className}`}>
+    <div className={`LemonTabs ${className}`}>
       {tabs.map((tab) => {
         const isActive = tab.key === activeKey;
         return (
@@ -105,15 +169,11 @@ export function LemonTabs<T extends string>({ activeKey, onChange, tabs, classNa
             key={tab.key}
             type="button"
             onClick={() => onChange(tab.key)}
-            className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
-              isActive
-                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-            }`}
+            className={`LemonTabs__tab${isActive ? ' LemonTabs__tab--active' : ''}`}
           >
             {tab.icon && <span>{tab.icon}</span>}
             <span>{tab.label}</span>
-            {tab.badge && <span className="ml-1">{tab.badge}</span>}
+            {tab.badge && <span>{tab.badge}</span>}
           </button>
         );
       })}
@@ -148,7 +208,13 @@ export interface LemonBadgeProps {
 
 export function LemonBadge({ content, active = true, className = '' }: LemonBadgeProps) {
   if (!active) return null;
-  return <span className={`LemonBadge ${className}`}>{content}</span>;
+  return (
+    <span
+      className={`inline-flex items-center justify-center min-w-[1.125rem] h-[1.125rem] px-1 text-[0.625rem] font-bold rounded-full bg-[var(--primary-3000)] text-white ${className}`}
+    >
+      {content}
+    </span>
+  );
 }
 
 // ── 6. LemonSnack ──────────────────────────────────────────────────────────
@@ -160,7 +226,9 @@ export interface LemonSnackProps {
 
 export function LemonSnack({ children, onClose, className = '' }: LemonSnackProps) {
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-slate-200 dark:bg-blue-950 text-slate-800 dark:text-slate-200 rounded-full border border-slate-300 dark:border-blue-500/30 ${className}`}>
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full border border-[var(--border-3000)] bg-[var(--color-accent-3000)] text-[var(--text-3000)] ${className}`}
+    >
       <span>{children}</span>
       {onClose && (
         <button onClick={onClose} className="hover:opacity-75 cursor-pointer text-xs font-bold leading-none">
@@ -172,10 +240,12 @@ export function LemonSnack({ children, onClose, className = '' }: LemonSnackProp
 }
 
 // ── 7. Lettermark ──────────────────────────────────────────────────────────
-export function Lettermark({ name }: { name: string }) {
+// PostHog brand: orange lettermark, not blue
+export function Lettermark({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' | 'lg' }) {
   const char = (name || 'W').charAt(0).toUpperCase();
+  const sizeClass = size === 'sm' ? 'w-5 h-5 text-[9px]' : size === 'lg' ? 'w-9 h-9 text-base' : 'w-7 h-7 text-xs';
   return (
-    <div className="w-5 h-5 rounded-md bg-blue-600 dark:bg-blue-500 text-white flex items-center justify-center font-bold text-[10px] font-mono shadow-xs shrink-0 select-none">
+    <div className={`Lettermark ${sizeClass} rounded font-bold flex items-center justify-center shrink-0 select-none`}>
       {char}
     </div>
   );
@@ -192,7 +262,7 @@ export function LemonCard({ children, className = '', onClick }: LemonCardProps)
   return (
     <div
       onClick={onClick}
-      className={`LemonCard ${onClick ? 'cursor-pointer hover:border-blue-500/40 transition-colors' : ''} ${className}`}
+      className={`LemonCard ${onClick ? 'cursor-pointer' : ''} ${className}`}
     >
       {children}
     </div>
@@ -211,12 +281,12 @@ export interface LemonBannerProps {
 export function LemonBanner({ type = 'info', icon, action, children, className = '' }: LemonBannerProps) {
   return (
     <div className={`LemonBanner LemonBanner--${type} ${className}`}>
-      <div className="flex items-center gap-2">
-        {icon && <span className="shrink-0">{icon}</span>}
+      <div className="flex items-start gap-2 flex-1">
+        {icon && <span className="shrink-0 mt-0.5">{icon}</span>}
         <div>{children}</div>
       </div>
       {action && (
-        <LemonButton variant="secondary" size="small" onClick={action.onClick}>
+        <LemonButton type="secondary" size="xsmall" onClick={action.onClick}>
           {action.children}
         </LemonButton>
       )}
@@ -235,8 +305,13 @@ export interface LemonWidgetProps {
 export function LemonWidget({ title, actions, children, className = '' }: LemonWidgetProps) {
   return (
     <div className={`LemonCard p-0 overflow-hidden ${className}`}>
-      <div className="flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-[#141E38] border-b border-slate-200 dark:border-blue-500/20">
-        <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100">{title}</h4>
+      <div
+        className="flex items-center justify-between px-4 py-3 border-b"
+        style={{ borderColor: 'var(--border-3000)', background: 'var(--color-accent-3000)' }}
+      >
+        <h4 className="text-xs font-bold" style={{ color: 'var(--text-3000)' }}>
+          {title}
+        </h4>
         {actions && <div className="flex items-center gap-1.5">{actions}</div>}
       </div>
       <div className="p-4 text-xs">{children}</div>
@@ -252,17 +327,18 @@ export interface LemonInputProps extends React.InputHTMLAttributes<HTMLInputElem
 export const LemonInput = React.forwardRef<HTMLInputElement, LemonInputProps>(
   ({ icon, className = '', ...props }, ref) => {
     return (
-      <div className="relative inline-flex items-center w-full">
+      <div className="LemonInput__wrapper">
         {icon && (
-          <span className="absolute left-2.5 text-slate-400 pointer-events-none shrink-0">
+          <span
+            className="absolute left-2.5 pointer-events-none shrink-0"
+            style={{ color: 'var(--muted-3000)' }}
+          >
             {icon}
           </span>
         )}
         <input
           ref={ref}
-          className={`w-full text-xs bg-slate-100 dark:bg-[#1C2541] text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-blue-500/20 rounded-md py-1.5 ${
-            icon ? 'pl-8' : 'pl-3'
-          } pr-3 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-all ${className}`}
+          className={`LemonInput__input ${icon ? 'pl-8' : ''} ${className}`}
           {...props}
         />
       </div>
@@ -277,7 +353,8 @@ export const LemonTextArea = React.forwardRef<HTMLTextAreaElement, React.Textare
     return (
       <textarea
         ref={ref}
-        className={`w-full text-xs bg-slate-100 dark:bg-[#1C2541] text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-blue-500/20 rounded-md p-3 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-all ${className}`}
+        className={`LemonInput__input ${className}`}
+        style={{ resize: 'vertical', minHeight: '5rem' }}
         {...props}
       />
     );
@@ -302,7 +379,11 @@ export function LemonSwitch({ checked, onChange, label, className = '' }: LemonS
       >
         <div className="LemonSwitch__handle" />
       </div>
-      {label && <span className="text-xs text-slate-700 dark:text-slate-200 font-medium">{label}</span>}
+      {label && (
+        <span className="text-xs font-medium" style={{ color: 'var(--text-3000)' }}>
+          {label}
+        </span>
+      )}
     </label>
   );
 }
@@ -322,9 +403,14 @@ export function LemonCheckbox({ checked, onChange, label, className = '' }: Lemo
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="w-4 h-4 rounded border-slate-300 dark:border-blue-500/30 text-blue-600 focus:ring-blue-500/30 accent-blue-600 cursor-pointer"
+        style={{ accentColor: 'var(--primary-3000)' }}
+        className="w-4 h-4 rounded cursor-pointer"
       />
-      {label && <span className="text-xs text-slate-700 dark:text-slate-200">{label}</span>}
+      {label && (
+        <span className="text-xs" style={{ color: 'var(--text-3000)' }}>
+          {label}
+        </span>
+      )}
     </label>
   );
 }
@@ -352,9 +438,10 @@ export function LemonRadio<T extends string>({ value, onChange, options, classNa
             name="lemon-radio"
             checked={opt.value === value}
             onChange={() => onChange(opt.value)}
-            className="w-3.5 h-3.5 text-blue-600 accent-blue-600"
+            style={{ accentColor: 'var(--primary-3000)' }}
+            className="w-3.5 h-3.5"
           />
-          <span className="text-slate-700 dark:text-slate-200">{opt.label}</span>
+          <span style={{ color: 'var(--text-3000)' }}>{opt.label}</span>
         </label>
       ))}
     </div>
@@ -372,18 +459,23 @@ export interface LemonFieldProps {
 
 export function LemonField({ label, error, help, children, className = '' }: LemonFieldProps) {
   return (
-    <div className={`flex flex-col gap-1 w-full ${className}`}>
-      {label && <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">{label}</label>}
+    <div className={`LemonField ${className}`}>
+      {label && <label className="LemonField__label">{label}</label>}
       {children}
-      {error && <span className="text-[11px] text-red-500 font-medium">{error}</span>}
-      {help && <span className="text-[11px] text-slate-400">{help}</span>}
+      {error && <span className="LemonField__error">{error}</span>}
+      {help && <span className="LemonField__help">{help}</span>}
     </div>
   );
 }
 
 // ── 17. LemonDivider ───────────────────────────────────────────────────────
 export function LemonDivider({ className = '' }: { className?: string }) {
-  return <div className={`w-full h-px bg-slate-200 dark:bg-blue-500/20 my-3 ${className}`} />;
+  return (
+    <div
+      className={`w-full h-px my-3 ${className}`}
+      style={{ background: 'var(--border-3000)' }}
+    />
+  );
 }
 
 // ── 18. LemonTable ─────────────────────────────────────────────────────────
@@ -407,10 +499,20 @@ export function LemonTable<T extends Record<string, unknown>>({
   className = '',
 }: LemonTableProps<T>) {
   return (
-    <div className={`w-full overflow-x-auto border border-slate-200 dark:border-blue-500/20 rounded-md ${className}`}>
+    <div
+      className={`w-full overflow-x-auto rounded border ${className}`}
+      style={{ borderColor: 'var(--border-3000)' }}
+    >
       <table className="w-full text-left text-xs border-collapse">
         <thead>
-          <tr className="bg-slate-100 dark:bg-[#1C2541] border-b border-slate-200 dark:border-blue-500/20 text-slate-600 dark:text-slate-300 font-semibold">
+          <tr
+            className="text-xs font-semibold border-b"
+            style={{
+              background: 'var(--color-accent-3000)',
+              color: 'var(--color-text-secondary-3000)',
+              borderColor: 'var(--border-3000)',
+            }}
+          >
             {columns.map((col) => (
               <th key={col.key} className="px-3 py-2">
                 {col.title}
@@ -418,11 +520,15 @@ export function LemonTable<T extends Record<string, unknown>>({
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-200 dark:divide-blue-500/10 bg-white dark:bg-[#0B132B]">
+        <tbody>
           {dataSource.map((record) => (
-            <tr key={rowKey(record)} className="hover:bg-slate-50 dark:hover:bg-[#1C2541]/50 transition-colors">
+            <tr
+              key={rowKey(record)}
+              className="border-b transition-colors hover:opacity-90"
+              style={{ borderColor: 'var(--border-3000)', background: 'var(--color-bg-surface-primary)' }}
+            >
               {columns.map((col) => (
-                <td key={col.key} className="px-3 py-2 text-slate-700 dark:text-slate-200">
+                <td key={col.key} className="px-3 py-2" style={{ color: 'var(--text-3000)' }}>
                   {col.render ? col.render(record) : String(record[col.key] ?? '')}
                 </td>
               ))}
@@ -446,20 +552,37 @@ export interface LemonModalProps {
 export function LemonModal({ isOpen, onClose, title, children, footer }: LemonModalProps) {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-      <div className="w-full max-w-lg bg-white dark:bg-[#1C2541] border border-slate-200 dark:border-blue-500/30 rounded-xl shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 dark:border-blue-500/20">
-          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">{title}</h3>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
+      <div
+        className="w-full max-w-lg rounded-lg shadow-xl overflow-hidden border"
+        style={{
+          background: 'var(--color-bg-surface-primary)',
+          borderColor: 'var(--border-3000)',
+        }}
+      >
+        <div
+          className="flex items-center justify-between px-5 py-3.5 border-b"
+          style={{ borderColor: 'var(--border-3000)' }}
+        >
+          <h3 className="text-sm font-bold" style={{ color: 'var(--text-3000)' }}>
+            {title}
+          </h3>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg leading-none cursor-pointer"
+            className="text-lg leading-none cursor-pointer hover:opacity-70"
+            style={{ color: 'var(--muted-3000)' }}
           >
             ×
           </button>
         </div>
-        <div className="p-5 text-xs text-slate-700 dark:text-slate-200">{children}</div>
+        <div className="p-5 text-xs" style={{ color: 'var(--text-3000)' }}>
+          {children}
+        </div>
         {footer && (
-          <div className="flex items-center justify-end gap-2 px-5 py-3 bg-slate-50 dark:bg-[#0B132B] border-t border-slate-200 dark:border-blue-500/20">
+          <div
+            className="flex items-center justify-end gap-2 px-5 py-3 border-t"
+            style={{ background: 'var(--color-accent-3000)', borderColor: 'var(--border-3000)' }}
+          >
             {footer}
           </div>
         )}
@@ -473,32 +596,63 @@ export interface LemonCollapseProps {
   title: ReactNode;
   children: ReactNode;
   defaultOpen?: boolean;
+  embedded?: boolean;
 }
 
-export function LemonCollapse({ title, children, defaultOpen = false }: LemonCollapseProps) {
+export function LemonCollapse({ title, children, defaultOpen = false, embedded = false }: LemonCollapseProps) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="border border-slate-200 dark:border-blue-500/20 rounded-md overflow-hidden">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="flex items-center justify-between w-full px-4 py-2.5 text-xs font-semibold bg-slate-50 dark:bg-[#141E38] text-slate-800 dark:text-slate-100 cursor-pointer"
-      >
-        <span>{title}</span>
-        <span className="text-slate-400">{open ? '▲' : '▼'}</span>
-      </button>
-      {open && <div className="p-4 text-xs border-t border-slate-200 dark:border-blue-500/20">{children}</div>}
+    <div className={`LemonCollapse ${embedded ? 'LemonCollapse--embedded' : ''}`}>
+      <div className="LemonCollapsePanel" aria-expanded={open}>
+        <LemonButton
+          fullWidth
+          className="LemonCollapsePanel__header"
+          onClick={() => setOpen(!open)}
+          icon={open ? (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+          ) : (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          )}
+          style={{ display: 'flex', width: '100%' }}
+        >
+          <span className="font-semibold text-xs lowercase">{title}</span>
+        </LemonButton>
+        <div
+          className="LemonCollapsePanel__body"
+          style={{ maxHeight: open ? '1000px' : '0px', transition: 'max-height 200ms ease-in-out' }}
+        >
+          <div className="LemonCollapsePanel__content" style={{ padding: 0 }}>
+            {children}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
-// ── 21. LemonSkeleton & Spinner ────────────────────────────────────────────
+// ── 21. LemonSkeleton & Spinner ─────────────────────────────────────────────
 export function LemonSkeleton({ className = '' }: { className?: string }) {
-  return <div className={`animate-pulse bg-slate-200 dark:bg-blue-500/15 rounded-md ${className}`} />;
+  return (
+    <div
+      className={`animate-pulse rounded ${className}`}
+      style={{ background: 'var(--border-3000)' }}
+    />
+  );
 }
 
-export function Spinner({ className = '' }: { className?: string }) {
+// Spinner — PostHog uses orange/amber, not blue
+export interface SpinnerProps {
+  className?: string;
+  size?: 'small' | 'medium' | 'large';
+  textColored?: boolean;
+}
+
+export function Spinner({ className = '', size = 'small', textColored = false }: SpinnerProps) {
+  const sizeMap = { small: 'w-4 h-4', medium: 'w-5 h-5', large: 'w-6 h-6' };
   return (
-    <div className={`w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin ${className}`} />
+    <span
+      className={`LemonSpinner ${sizeMap[size]} ${className}`}
+      style={textColored ? { color: 'currentColor' } : { borderColor: 'var(--primary-3000)', borderTopColor: 'transparent' }}
+    />
   );
 }

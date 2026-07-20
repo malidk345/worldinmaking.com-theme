@@ -3,7 +3,7 @@
 import React, { useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { IconChevronRight } from '@posthog/icons';
-import OSButton from 'components/OSButton'
+import { LemonButton } from 'components/LemonUI'
 import Tooltip from 'components/RadixUI/Tooltip'
 
 interface SidePanelProps {
@@ -53,19 +53,24 @@ export default function SidePanel({
                     animate={{ x: 0 }}
                     exit={{ x: '110%' }}
                     transition={{ type: 'spring', stiffness: 400, damping: 35, mass: 1 }}
-                    className={`fixed top-[calc(44px+0.5rem)] sm:top-[calc(44px+1rem)] right-2 sm:right-4 h-auto max-h-[90dvh] sm:h-[calc(100dvh-2rem-44px)] ${width} bg-white/60 dark:bg-black/60 border border-white/20 dark:border-white/10 rounded-[32px] shadow-[0_8px_32px_rgba(0,0,0,0.12),0_1px_4px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.4)] supports-[backdrop-filter]:backdrop-blur-[80px] z-[10000] flex flex-col text-primary overflow-hidden ${panelClassName}`}
+                    className={`fixed top-[calc(44px+0.5rem)] sm:top-[calc(44px+1rem)] right-2 sm:right-4 h-auto max-h-[90dvh] sm:h-[calc(100dvh-2rem-44px)] ${width} LemonDrawer rounded-[var(--radius-lg)] shadow-[var(--shadow-elevation-3000)] backdrop-blur-md z-[10000] flex flex-col text-[var(--text-3000)] overflow-hidden ${panelClassName}`}
                 >
                     <div className="h-full flex flex-col">
                         {(title || showCloseButton) && (
-                            <div className="flex items-center justify-between px-5 py-4 border-b border-black/5 dark:border-white/10 bg-transparent">
-                                <h2 className="text-[15px] font-semibold tracking-tight m-0 capitalize">{title}</h2>
+                            <div className="LemonDrawer__header bg-transparent">
+                                <h2 className="LemonDrawer__title m-0 capitalize">{title}</h2>
                                 <div className="flex items-center gap-2">
                                     {headerAside && <div>{headerAside}</div>}
                                     {showCloseButton && (
                                         <Tooltip trigger={
-                                            <OSButton onClick={onClose} size="sm" variant="ghost" className="px-1 shadow-none border-none hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors">
-                                                <IconChevronRight className="size-5" />
-                                            </OSButton>
+                                            <LemonButton
+                                                onClick={onClose}
+                                                size="small"
+                                                type="secondary"
+                                                className="!px-1 !min-h-0"
+                                            >
+                                                <IconChevronRight className="size-4" />
+                                            </LemonButton>
                                         }>
                                             Hide sidebar
                                         </Tooltip>
@@ -74,7 +79,7 @@ export default function SidePanel({
                             </div>
                         )}
 
-                        <div className="flex-1 overflow-hidden">
+                        <div className="LemonDrawer__content flex-1">
                             {children}
                         </div>
                     </div>

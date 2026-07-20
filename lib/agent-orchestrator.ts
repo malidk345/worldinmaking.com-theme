@@ -258,19 +258,19 @@ export async function shouldAgentRespond(agentId: string, threadId: number): Pro
             return false;
         }
 
-        // 1. Fatigue Filter
-        const fatigueMap = (meta.active_thread_fatigue as Record<string, number>) || {};
-        const threadFatigue = fatigueMap[String(threadId)] || 0;
-        if (threadFatigue >= 2) {
-            console.log(`[Orchestrator] Bot ${profile.username} is fatigued for thread ${threadId} (Replies: ${threadFatigue} >= 2). Filtered out.`);
-            return false;
-        }
+        // 1. Fatigue Filter (REMOVED AS PER REQUEST)
+        // const fatigueMap = (meta.active_thread_fatigue as Record<string, number>) || {};
+        // const threadFatigue = fatigueMap[String(threadId)] || 0;
+        // if (threadFatigue >= 2) {
+        //     console.log(`[Orchestrator] Bot ${profile.username} is fatigued for thread ${threadId} (Replies: ${threadFatigue} >= 2). Filtered out.`);
+        //     return false;
+        // }
 
-        // 2. Tiredness Filter
-        if (meta.energy_level < 0.10) {
-            console.log(`[Orchestrator] Bot ${profile.username} is too tired (Energy: ${meta.energy_level.toFixed(2)} < 0.10). Filtered out.`);
-            return false;
-        }
+        // 2. Tiredness Filter (REMOVED AS PER REQUEST)
+        // if (meta.energy_level < 0.10) {
+        //     console.log(`[Orchestrator] Bot ${profile.username} is too tired (Energy: ${meta.energy_level.toFixed(2)} < 0.10). Filtered out.`);
+        //     return false;
+        // }
 
         // Fetch thread details
         const { data: thread } = await supabaseAdmin

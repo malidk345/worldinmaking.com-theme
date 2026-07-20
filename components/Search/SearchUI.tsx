@@ -73,13 +73,13 @@ export const WindowSearchUI = ({ initialFilter }: { initialFilter?: string }) =>
     return (
         <div className="flex flex-col h-full bg-transparent overflow-hidden">
             {/* Search Input */}
-            <div className="flex-shrink-0 p-3 pb-2 border-b border-black/5 dark:border-white/5">
-                <div className="flex items-center gap-2 bg-black/5 dark:bg-white/10 shadow-inner rounded-full px-4 py-2.5">
-                    <IconSearch className="size-5 text-muted flex-shrink-0" />
+            <div className="flex-shrink-0 p-3 pb-2 border-b border-[var(--border-3000)]">
+                <div className="flex items-center gap-2 bg-[var(--color-bg-surface-primary)] border border-[var(--border-3000)] rounded-full px-4 py-2">
+                    <IconSearch className="size-5 text-[var(--muted-3000)] flex-shrink-0" />
                     <input
                         ref={inputRef}
                         type="text"
-                        className="flex-1 bg-transparent border-0 outline-none text-[15px] font-medium tracking-tight text-primary placeholder:text-muted"
+                        className="flex-1 bg-transparent border-0 outline-none text-[15px] font-medium tracking-tight text-[var(--text-3000)] placeholder:text-[var(--muted-3000)]"
                         placeholder={t('search.placeholder')}
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
@@ -88,7 +88,7 @@ export const WindowSearchUI = ({ initialFilter }: { initialFilter?: string }) =>
                     {query && (
                         <button
                             onClick={() => setQuery('')}
-                            className="flex items-center justify-center size-5 bg-black/10 dark:bg-white/20 hover:bg-black/20 dark:hover:bg-white/30 rounded-full text-primary transition-colors flex-shrink-0"
+                            className="flex items-center justify-center size-5 bg-[var(--color-bg-fill-button-tertiary-hover)] hover:bg-[var(--color-bg-fill-button-tertiary-active)] rounded-full text-[var(--text-3000)] transition-colors flex-shrink-0"
                         >
                             <span className="text-[10px] font-bold">✕</span>
                         </button>
@@ -116,22 +116,21 @@ export const WindowSearchUI = ({ initialFilter }: { initialFilter?: string }) =>
                             {results.length} {lang === 'en' ? (results.length === 1 ? 'result' : 'results') : t('search.results_count')}
                         </div>
                         {results.map((post) => (
-                            <button
-                                key={post.id}
+                             <button
                                 onClick={() => handleResultClick(post)}
-                                className="w-full text-left p-3 hover:bg-black/5 dark:hover:bg-white/10 rounded-[18px] transition-colors block cursor-pointer group"
+                                className="w-full text-left p-3 hover:bg-[var(--color-bg-fill-button-tertiary-hover)] rounded-[var(--radius)] transition-colors block cursor-pointer group"
                             >
                                 <div className="flex items-start gap-3">
                                     <div className="flex-1 min-w-0">
                                         {post.category && (
-                                            <span className="text-[10px] font-bold lowercase tracking-wider text-orange opacity-80 mb-0.5 block">
+                                            <span className="text-[10px] font-bold lowercase tracking-wider text-[var(--primary-3000)] opacity-85 mb-0.5 block">
                                                 {post.category}
                                             </span>
                                         )}
-                                        <h4 className="text-[15px] font-semibold tracking-tight text-primary m-0 line-clamp-1 group-hover:text-blue-500 transition-colors">
+                                        <h4 className="text-[15px] font-semibold tracking-tight text-[var(--text-3000)] m-0 line-clamp-1 group-hover:text-[var(--link-3000)] transition-colors">
                                             {post.title}
                                         </h4>
-                                        <p className="text-[13px] leading-snug tracking-tight text-secondary m-0 mt-1 line-clamp-2 opacity-70">
+                                        <p className="text-[13px] leading-snug tracking-tight text-[var(--color-text-secondary-3000)] m-0 mt-1 line-clamp-2 opacity-70">
                                             {getExcerpt(post.content, query)}
                                         </p>
                                         <div className="flex items-center gap-2 mt-2">

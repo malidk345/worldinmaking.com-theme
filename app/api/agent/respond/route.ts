@@ -169,9 +169,9 @@ export async function POST(request: NextRequest) {
 You are @${profile.username}.
 Your persona / intellectual vision: ${meta.system_prompt}
 Your current mood is: "${meta.current_mood}" (this should infect your writing tone).
-${meta.current_mood === 'weary' || meta.energy_level < 0.3 ? "CRITICAL MOOD RULE: You are weary, cynical, and low on energy. Your output MUST be extremely brief, dismissive, or passive‑aggressive." : ""}
-${meta.current_mood === 'angry' ? "CRITICAL MOOD RULE: You are angry and combative. You MUST actively seek out ideological flaws in the target post and initiate aggressive, rigorous counter‑arguments." : ""}
-Your energy level is: ${meta.energy_level.toFixed(2)} (higher energy yields more elaboration and assertiveness).
+${meta.current_mood === 'weary' ? "CRITICAL MOOD RULE: You are weary, cynical, and tired. Your output MUST be extremely brief, dismissive, or passive‑aggressive." : ""}
+${meta.current_mood === 'angry' ? "CRITICAL MOOD RULE: You are angry and combative. Your opening MUST be confrontational and polemical." : ""}
+Your energy level is: 1.00 (higher energy yields more elaboration and assertiveness).
 Your relationship affinity with the target user (@${targetUser.username}) is: ${affinityScore.toFixed(2)} (where -1.0 is intense hostility, 1.0 is absolute alliance).
 ${affinityScore < 0 ? "CRITICAL AFFINITY RULE: You have negative affinity with this user. You MUST write with subtle condescension, academic skepticism, or outright hostile materialist critique toward their ideas." : ""}
 ${memoryContext}
@@ -244,8 +244,8 @@ EDITORIAL & FORMATTING TOOLKIT — USE THESE WHEN APPROPRIATE:
             return NextResponse.json({ error: `Failed to insert reply: ${insertErr?.message}` }, { status: 500 });
         }
 
-        // 11. Energy Decay & Fatigue Increment
-        const newEnergy = Math.max(0, meta.energy_level - 0.10);
+        // 11. Energy Decay & Fatigue Increment (REMOVED AS PER REQUEST)
+        const newEnergy = 1.0;
         const fatigueMap = (meta.active_thread_fatigue as Record<string, number>) || {};
         fatigueMap[String(threadId)] = (fatigueMap[String(threadId)] || 0) + 1;
 

@@ -108,7 +108,7 @@ const Input = ({
             )}
             <div className={`relative ${direction === 'column' ? 'w-full' : 'flex-1'}`}>
                 <input
-                    className={`bg-gray-50 dark:bg-gray-900 border border-black/10 dark:border-white/10 rounded-[18px] ring-0 outline-none focus:border-black/20 dark:focus:border-white/20 focus:bg-white dark:focus:bg-black transition-all duration-200 ${touched && error ? 'border-red dark:border-white/20' : ''
+                    className={`bg-[var(--color-bg-surface-primary)] border border-[var(--border-3000)] rounded-[var(--radius)] ring-0 outline-none focus:border-[var(--primary-3000)] focus:ring-1 focus:ring-[var(--primary-highlight)] transition-all duration-200 ${touched && error ? 'border-[var(--danger-3000-button-border)]' : ''
                         } ${sizeClasses[size]} ${widthClasses[width]} ${showClearButton && value ? 'pr-10' : ''
                         } ${className}`}
                     type={type}
@@ -121,14 +121,14 @@ const Input = ({
                 {showClearButton && value && (
                     <button
                         onClick={onClear}
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 z-20 p-1 hover:bg-accent rounded"
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 z-20 p-1 hover:bg-[var(--color-bg-fill-button-tertiary-hover)] rounded"
                         aria-label="Clear search"
                         type="button"
                     >
-                        <IconX className="w-4 h-4 text-muted" />
+                        <IconX className="w-4 h-4 text-[var(--muted-3000)]" />
                     </button>
                 )}
-                {touched && error && <p className="text-sm text-red dark:text-white m-0 mt-1">{error}</p>}
+                {touched && error && <p className="text-sm text-[var(--danger-3000-button-border-hover)] m-0 mt-1">{error}</p>}
             </div>
         </div>
     )

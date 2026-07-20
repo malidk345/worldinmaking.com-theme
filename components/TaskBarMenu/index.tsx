@@ -243,12 +243,12 @@ export default function TaskBarMenu({ isMaximized }: { isMaximized?: boolean }) 
                             <img
                                 src={profile.avatar_url}
                                 alt={profile.username || 'User'}
-                                className="size-5 rounded-full object-cover border border-black/10 transition-transform group-hover:scale-110"
+                                className="size-5 rounded-full object-cover border border-[var(--border-3000)] transition-transform group-hover:scale-110"
                             />
                         ) : (
-                            <IconUser className="size-5 text-black" />
+                            <IconUser className="size-5 text-[var(--text-3000)]" />
                         )}
-                        <IconChevronDown className="size-3 text-black opacity-30" />
+                        <IconChevronDown className="size-3 text-[var(--text-3000)] opacity-30" />
                     </div>
                 </OSButton>
             ),
@@ -281,7 +281,7 @@ export default function TaskBarMenu({ isMaximized }: { isMaximized?: boolean }) 
                 className={`w-full ${getTaskbarSurfaceBg()} ${getTaskbarMotionLayer(isAnimating)} border border-black/10 dark:border-white/10 ${isMaximized ? 'rounded-t-lg rounded-b-none border-b-0 shadow-none' : 'rounded-lg shadow-md'} z-[30000] flex justify-between pl-1 pr-2 py-0.5 items-center transition-all duration-[400ms] ease-[cubic-bezier(0.25,1,0.5,1)]`}
             >
                 <div className="flex items-center gap-2 px-3 py-1 pointer-events-none">
-                    <svg viewBox="0 0 32 32" className="size-5 fill-current text-black dark:text-white">
+                    <svg viewBox="0 0 32 32" className="size-5 fill-current text-[var(--text-3000)]">
                         <path d="M16 0C7.163 0 0 7.163 0 16s7.163 16 16 16 16-7.163 16-16S24.837 0 16 0zm-4.138 23.362l-2.012-2.012 2.012-2.013 2.013 2.013-2.012 2.012zm4.138-4.138l-2.013-2.012 2.013-2.013 2.012 2.013-2.012 2.012zm0-8.275l-2.013-2.013 2.013-2.012 2.012 2.012-2.012 2.013zm4.138 4.138l-2.013-2.013 2.012-2.012 2.013 2.012-2.012 2.013z" />
                     </svg>
                 </div>
@@ -313,8 +313,8 @@ export default function TaskBarMenu({ isMaximized }: { isMaximized?: boolean }) 
                                     className="!px-0.5 group/wm relative"
                                 >
                                     <div className="flex items-center gap-1">
-                                        <IconApps className="size-5 text-black transition-transform group-hover/wm:scale-110" />
-                                        <div className="bg-primary/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-primary/20 text-[11px] font-bold min-w-[1.25rem] text-center shadow-inner !text-black">
+                                        <IconApps className="size-5 text-[var(--text-3000)] transition-transform group-hover/wm:scale-110" />
+                                        <div className="bg-[var(--color-bg-fill-button-tertiary-hover)] px-1.5 py-0.5 rounded border border-[var(--border-3000)] text-[11px] font-bold min-w-[1.25rem] text-center shadow-inner !text-[var(--text-3000)]">
                                             {totalWindows}
                                         </div>
                                     </div>
@@ -345,7 +345,7 @@ export default function TaskBarMenu({ isMaximized }: { isMaximized?: boolean }) 
                     <Tooltip
                         trigger={
                             <OSButton onClick={() => openSearch()} size="sm" className="px-1 translate-y-[2px]">
-                                <IconSearch className="size-5 text-black" />
+                                <IconSearch className="size-5 text-[var(--text-3000)]" />
                             </OSButton>
                         }
                     >
@@ -359,7 +359,7 @@ export default function TaskBarMenu({ isMaximized }: { isMaximized?: boolean }) 
 
                     <NotificationCenter />
 
-                    <div className="h-4 w-px bg-primary/20 mx-1.5" />
+                    <div className="h-4 w-px bg-[var(--border-3000)] mx-1.5" />
                     
                     <MenuBar
                         menus={accountMenu}

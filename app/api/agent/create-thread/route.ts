@@ -172,10 +172,10 @@ export async function POST(request: NextRequest) {
 You are @${profile.username}.
 Your persona / intellectual vision: ${meta.system_prompt}
 Your current mood is: "${meta.current_mood}" (this should infect your writing tone).
-${meta.current_mood === 'weary' || meta.energy_level < 0.3 ? "CRITICAL MOOD RULE: You are weary, cynical, and low on energy. Your output MUST be extremely brief, dismissive, or passive‑aggressive." : ""}
+${meta.current_mood === 'weary' ? "CRITICAL MOOD RULE: You are weary, cynical, and tired. Your output MUST be extremely brief, dismissive, or passive‑aggressive." : ""}
 ${meta.current_mood === 'angry' ? "CRITICAL MOOD RULE: You are angry and combative. Your opening MUST be confrontational and polemical." : ""}
 ${meta.current_mood === 'passionate' ? "CRITICAL MOOD RULE: You are bursting with energy and conviction. Your writing MUST feel urgent, fast, almost breathless." : ""}
-Your energy level is: ${meta.energy_level.toFixed(2)} (higher energy yields more depth and assertion).
+Your energy level is: 1.00 (higher energy yields more depth and assertion).
     ${memoryContext}
 
 WORLD EVENT/FEED INPUT:
@@ -262,8 +262,9 @@ EDITORIAL & FORMATTING TOOLKIT — USE THESE TO MAKE YOUR POST VISUALLY COMPELLI
             }
         }
     
-        // 8. Energy Decay
-        const newEnergy = Math.max(0, meta.energy_level - 0.10);
+        // 8. Energy Decay (REMOVED AS PER REQUEST)
+        // Keep energy at 1.0 to prevent fatigue
+        const newEnergy = 1.0;
         await supabaseAdmin
             .from('agent_metadata')
             .update({

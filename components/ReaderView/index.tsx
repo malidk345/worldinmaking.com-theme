@@ -17,10 +17,11 @@ import { useToast } from 'context/ToastContext'
 import { useTranslation } from 'hooks/useTranslation'
 import { supabase } from 'lib/supabase'
 import { sanitizeHtml } from 'utils/security'
-import dayjs from 'dayjs'
-import utc from 'dayjs/plugin/utc'
+import PostMetaTable from './PostMetaTable'
+import { LemonCollapse } from 'components/LemonUI'
 
-dayjs.extend(utc)
+
+
 
 interface BodyProps {
     type: 'mdx' | 'plain'
@@ -128,6 +129,8 @@ const ReaderViewContent = React.memo(({
 
     const contentRef = useRef<HTMLDivElement>(null)
     const scrollAreaRef = useRef<HTMLDivElement>(null)
+
+
     const showSidebar = tableOfContents && tableOfContents.length > 0 && !hideRightSidebar
     const renderLeftSidebar = !hideLeftSidebar
     const normalizedBookmarkSlug = (bookmarkMeta?.slug || '')
@@ -314,7 +317,7 @@ const ReaderViewContent = React.memo(({
                                     {/* Suggested Posts Section */}
                                     <div>
                                         <div className="flex items-center gap-2 px-2 mb-3 pt-2">
-                                            <div className="w-1 h-3 rounded-full bg-gradient-to-b from-burnt-orange to-burnt-orange/40" />
+                                            <div className="w-1 h-3 rounded-full bg-gradient-to-b from-[var(--primary-3000)] to-[var(--primary-3000)]/40" />
                                             <h4 className="font-nav font-black text-black dark:text-white m-0 text-[10px] lowercase tracking-[0.2em]">
                                                 {t('reader.suggested')}
                                             </h4>
@@ -354,7 +357,7 @@ const ReaderViewContent = React.memo(({
                                         animate={{ x: "0%", opacity: 1 }}
                                         exit={{ x: "-100%", opacity: 0 }}
                                         transition={{ type: "spring", bounce: 0, duration: 0.3 }}
-                                        className="absolute top-1 bottom-1 left-1 w-1/2 bg-primary z-50 rounded-sm shadow-2xl overflow-hidden border border-black/10 lg:hidden"
+                                        className="absolute top-1 bottom-1 left-1 w-1/2 bg-[var(--color-bg-surface-primary)] z-50 rounded-sm shadow-2xl overflow-hidden border border-[var(--border-3000)] lg:hidden"
                                     >
                                         {leftSidebarContent}
                                     </motion.div>
@@ -364,7 +367,7 @@ const ReaderViewContent = React.memo(({
                                         initial={{ width: 0, opacity: 0 }}
                                         animate={{ width: 220, opacity: 1 }}
                                         exit={{ width: 0, opacity: 0 }}
-                                        className="border-r border-primary bg-transparent overflow-hidden flex-shrink-0 hidden lg:block"
+                                        className="border-r border-[var(--border-3000)] bg-[var(--color-bg-surface-primary)]/10 overflow-hidden flex-shrink-0 hidden lg:block"
                                     >
                                         {leftSidebarContent}
                                     </motion.div>
@@ -412,110 +415,18 @@ const ReaderViewContent = React.memo(({
                             )}
 
                             {(body.date || body.contributors || (body.tags && body.tags.length > 0)) && (
-                                <div className="LemonTable my-4" data-attr="notebooks-table">
-                                    <div role="presentation" className="ScrollableShadows" style={{ position: 'relative' }}>
-                                        <div
-                                            role="presentation"
-                                            className="ScrollableShadows__inner"
-                                            style={{ overflowX: 'auto', overflowY: 'hidden' }}
-                                        >
-                                            <div role="presentation" className="min-w-0" style={{ minWidth: 'fit-content' }}>
-                                                <div className="LemonTable__content">
-                                                    <table>
-                                                        <colgroup>
-                                                            <col style={{ width: '40%' }} />
-                                                            <col style={{ width: '30%' }} />
-                                                            <col style={{ width: '30%' }} />
-                                                        </colgroup>
-                                                        <thead>
-                                                            <tr>
-                                                                <th className="LemonTable__header">
-                                                                    <div className="LemonTable__header-content"><div>Created by</div></div>
-                                                                </th>
-                                                                <th className="LemonTable__header">
-                                                                    <div className="LemonTable__header-content"><div>Created</div></div>
-                                                                </th>
-                                                                <th className="LemonTable__header">
-                                                                    <div className="LemonTable__header-content"><div>Read time</div></div>
-                                                                </th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            <tr>
-                                                                {/* Created by — sleek AI agent badges */}
-                                                                <td>
-                                                                    {body.contributors && body.contributors.length > 0 ? (
-                                                                        <div className="flex items-center gap-1.5 py-0.5" title={body.contributors.map(c => `@${c.name}`).join(', ')}>
-                                                                            <div className="flex -space-x-1 items-center">
-                                                                                {body.contributors.slice(0, 4).map((c, idx) => {
-                                                                                    const colors = [
-                                                                                        'bg-purple-500/20 text-purple-600 dark:text-purple-300 border-purple-500/30',
-                                                                                        'bg-blue-500/20 text-blue-600 dark:text-blue-300 border-blue-500/30',
-                                                                                        'bg-amber-500/20 text-amber-600 dark:text-amber-300 border-amber-500/30',
-                                                                                        'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 border-emerald-500/30',
-                                                                                    ]
-                                                                                    const colorStyle = colors[idx % colors.length]
-                                                                                    return (
-                                                                                        <span
-                                                                                            key={c.name}
-                                                                                            className={`size-5 rounded-full flex items-center justify-center text-[9px] font-bold font-mono border ${colorStyle} shrink-0`}
-                                                                                            title={`@${c.name}`}
-                                                                                        >
-                                                                                            {c.name.charAt(0).toUpperCase()}
-                                                                                        </span>
-                                                                                    )
-                                                                                })}
-                                                                            </div>
-                                                                            <span className="profile-name text-xs font-mono">
-                                                                                @{body.contributors[0].username || body.contributors[0].name}
-                                                                                {body.contributors.length > 1 && (
-                                                                                    <span className="opacity-50"> +{body.contributors.length - 1}</span>
-                                                                                )}
-                                                                            </span>
-                                                                        </div>
-                                                                    ) : (
-                                                                        <span className="opacity-40">—</span>
-                                                                    )}
-                                                                </td>
-                                                                {/* Created date */}
-                                                                <td>
-                                                                    <span className="whitespace-nowrap text-xs">
-                                                                        {body.date ? dayjs.utc(body.date).format('MMM D, YYYY') : '—'}
-                                                                    </span>
-                                                                </td>
-                                                                {/* Read time */}
-                                                                <td>
-                                                                    {body.readTime !== undefined ? (
-                                                                        <span className="LemonTag">{body.readTime} min read</span>
-                                                                    ) : (
-                                                                        <span className="opacity-40">—</span>
-                                                                    )}
-                                                                </td>
-                                                            </tr>
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {/* Tags footer row — only if tags exist */}
-                                    {body.tags && body.tags.length > 0 && (
-                                        <div className="LemonTable__footer px-3 py-1.5 flex flex-wrap gap-1.5">
-                                            {body.tags.map((tag) => (
-                                                tag.url && tag.url !== '#' ? (
-                                                    <a key={`${tag.label}-${tag.url}`} href={tag.url} className="LemonTag hover:opacity-75 transition-opacity">
-                                                        {tag.label.toLowerCase()}
-                                                    </a>
-                                                ) : (
-                                                    <span key={tag.label} className="LemonTag">
-                                                        {tag.label.toLowerCase()}
-                                                    </span>
-                                                )
-                                            ))}
-                                        </div>
-                                    )}
+                                <div className="my-4">
+                                    <LemonCollapse title="post metadata" defaultOpen={false}>
+                                        <PostMetaTable
+                                            contributors={body.contributors}
+                                            date={body.date}
+                                            readTime={body.readTime}
+                                            tags={body.tags}
+                                        />
+                                    </LemonCollapse>
                                 </div>
                             )}
+
 
 
                             <div className="reader-content-container overflow-x-hidden" onClick={handleContentClick}>
@@ -579,7 +490,7 @@ const ReaderViewContent = React.memo(({
                                         animate={{ x: "0%", opacity: 1 }}
                                         exit={{ x: "100%", opacity: 0 }}
                                         transition={{ type: "spring", bounce: 0, duration: 0.3 }}
-                                        className="absolute top-1 bottom-1 right-1 w-1/2 bg-primary z-50 rounded-sm shadow-2xl overflow-hidden border border-black/10 lg:hidden"
+                                        className="absolute top-1 bottom-1 right-1 w-1/2 bg-[var(--color-bg-surface-primary)] z-50 rounded-sm shadow-2xl overflow-hidden border border-[var(--border-3000)] lg:hidden"
                                     >
                                         {rightSidebarContent}
                                     </motion.div>
@@ -589,7 +500,7 @@ const ReaderViewContent = React.memo(({
                                         initial={{ width: 0, opacity: 0 }}
                                         animate={{ width: 220, opacity: 1 }}
                                         exit={{ width: 0, opacity: 0 }}
-                                        className="border-l border-primary bg-transparent overflow-hidden flex-shrink-0 hidden lg:block"
+                                        className="border-l border-[var(--border-3000)] bg-[var(--color-bg-surface-primary)]/10 overflow-hidden flex-shrink-0 hidden lg:block"
                                     >
                                         {rightSidebarContent}
                                     </motion.div>

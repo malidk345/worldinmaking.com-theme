@@ -14,8 +14,8 @@ import { parsePaperMeta } from 'lib/wimbot-orchestrator'
 import { cleanPaperContent } from 'lib/agent-orchestrator'
 import { useTranslation } from 'hooks/useTranslation'
 import { ReaderViewProvider, useReaderView } from './context/ReaderViewContext'
-import { IconCopy, IconCheckCircle, IconSparkles } from '@posthog/icons'
-import { LemonCollapse, LemonTag } from '@/components/LemonUI'
+import { IconCopy, IconCheckCircle, IconSparkles, IconChevronDown, IconChevronRight } from '@posthog/icons'
+import { LemonCard, LemonTag } from '@/components/LemonUI'
 import SEO from 'components/SEO'
 import { QueryNode, SQLNode, PythonNode, FeatureFlagNode, ExperimentNode, CohortNode } from './PostHogNodes'
 import { ArticleJsonLd, BreadcrumbJsonLd } from 'components/SEO/JsonLd'
@@ -82,6 +82,7 @@ const ResearchPaperInner = React.memo(({ post }: ResearchPaperViewProps) => {
     const paperStatus = post.paper_status || paperMeta?.paper_status || 'published'
     const contributions = post.contributions || paperMeta?.contributions || []
     const innerThoughts = (post as unknown as Record<string, string>).inner_thoughts || paperMeta?.directive
+    const [isThoughtsOpen, setIsThoughtsOpen] = useState(false)
 
     const handleCopyBibTeX = () => {
         const bibtex = `@article{wimbot_${post.slug?.replace(/-/g, '_') || 'paper'},\n  title={${title}},\n  author={WIMBot Autonomous Agent Mesh},\n  journal={WorldInMaking Synthetic Research Archive},\n  year={${dayjs(post.date).year()}},\n  url={https://worldinmaking.com/posts/${post.slug}}\n}`
@@ -162,23 +163,27 @@ const ResearchPaperInner = React.memo(({ post }: ResearchPaperViewProps) => {
                 {/* Bot Research Process — PostHog Activity style */}
                 <PaperBotTimeline contributions={contributions} paperStatus={paperStatus} />
 
-                {/* AI Inner Thoughts Collapse using LemonCollapse */}
+                {/* AI Inner Thoughts — Compact LemonCard Container */}
                 {innerThoughts && (
                     <div className="mt-4">
-                        <LemonCollapse
-                            defaultOpen={false}
-                            title={
-                                <div className="flex items-center gap-2">
-                                    <IconSparkles className="size-4 text-blue-500" />
-                                    <span className="font-semibold text-xs">AI Inner Thoughts & Research Reasoning</span>
-                                    <LemonTag type="primary">AI INTEL</LemonTag>
-                                </div>
-                            }
+                        <LemonCard
+                            onClick={() => setIsThoughtsOpen(!isThoughtsOpen)}
+                            className="!p-2.5 border border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 transition-colors cursor-pointer select-none"
                         >
-                            <div className="font-mono text-xs leading-relaxed opacity-85 text-slate-800 dark:text-slate-200 whitespace-pre-wrap">
-                                {innerThoughts}
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-1.5 text-[11px] font-mono font-medium">
+                                    <IconSparkles className="size-3.5 opacity-70" />
+                                    <span>AI Inner Thoughts & Research Reasoning</span>
+                                    <LemonTag type="default">AI INTEL</LemonTag>
+                                </div>
+                                {isThoughtsOpen ? <IconChevronDown className="size-3.5 opacity-50" /> : <IconChevronRight className="size-3.5 opacity-50" />}
                             </div>
-                        </LemonCollapse>
+                            {isThoughtsOpen && (
+                                <div className="mt-2 pt-2 border-t border-slate-200 dark:border-zinc-800 text-[11px] font-mono leading-relaxed opacity-85 whitespace-pre-wrap">
+                                    {innerThoughts}
+                                </div>
+                            )}
+                        </LemonCard>
                     </div>
                 )}
 

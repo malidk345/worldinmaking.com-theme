@@ -256,7 +256,8 @@ export function Editor({ document, onChange, sidebarOpen, settings, focusMode, o
 
           {/* LemonButton for Publish */}
           <LemonButton
-            variant={showPublishPanel ? 'primary' : isPublished ? 'secondary' : 'secondary'}
+            type={isPublished ? 'secondary' : 'primary'}
+            size="small"
             icon={isPublished ? <Check size={13} /> : <Globe size={13} />}
             onClick={() => setShowPublishPanel(v => !v)}
           >

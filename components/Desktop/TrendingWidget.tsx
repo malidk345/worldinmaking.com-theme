@@ -2,9 +2,11 @@
 
 import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { IconApps, IconChevronLeft, IconChevronRight, IconDocument, IconEye, IconNotification, IconRefresh, IconSparkles } from '@posthog/icons';
+import { IconApps, IconChevronLeft, IconChevronRight, IconDocument, IconRefresh, IconSparkles } from '@posthog/icons';
 import { supabase } from 'lib/supabase'
 import { useApp } from 'context/App'
+import { LemonButton, Spinner } from '@/components/LemonUI'
+import { ScrollableShadows } from '@/components/LemonUI/ScrollableShadows'
 
 interface TopPost {
     id: string | number
@@ -17,14 +19,7 @@ interface TopPost {
     time?: string
 }
 
-const manualUpdates: TopPost[] = [
-    { id: 1, title: 'new view count feature added to all posts', view_count: 0, type: 'blog', author: 'system', time: 'today' },
-    { id: 2, title: 'improved mobile responsiveness for trending widget', view_count: 0, type: 'blog', author: 'system', time: 'yesterday' },
-    { id: 3, title: 'supabase infrastructure hardened for production', view_count: 0, type: 'blog', author: 'system', time: '25 mar' },
-    { id: 4, title: 'new forum discussion categories are now live', view_count: 0, type: 'community', author: 'system', time: '24 mar' }
-]
-
-type TabType = 'blog' | 'community' | 'updates'
+type TabType = 'blog' | 'community'
 
 export default function TrendingWidget() {
     const { addWindow } = useApp()
@@ -40,7 +35,7 @@ export default function TrendingWidget() {
     const fetchTopPosts = async () => {
         setLoading(true)
         try {
-            // 10 Posts (Joined with profiles for real avatar)
+            // 10 Posts
             const { data: bData, error: bError } = await supabase
                 .from('posts')
                 .select('id, title, slug, view_count, author, author_id, created_at, profiles(username, avatar_url)')
@@ -106,7 +101,6 @@ export default function TrendingWidget() {
     }, [])
 
     const handleOpen = (post: TopPost) => {
-        if (activeTab === 'updates') return // News items don't open posts
         const title = post.title.toLowerCase()
         if (post.type === 'blog') {
             addWindow({ key: `post-${post.slug}`, path: `/posts/${post.slug}`, title })
@@ -115,7 +109,7 @@ export default function TrendingWidget() {
         }
     }
 
-    const currentPosts = activeTab === 'blog' ? blogPosts : (activeTab === 'community' ? comPosts : manualUpdates)
+    const currentPosts = activeTab === 'blog' ? blogPosts : comPosts
     const totalPages = Math.ceil(currentPosts.length / itemsPerPage)
 
     if (!loading && blogPosts.length === 0 && comPosts.length === 0) return null
@@ -125,149 +119,152 @@ export default function TrendingWidget() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className="fixed bottom-20 md:bottom-24 left-4 right-4 md:left-auto md:right-10 w-auto md:w-[380px] lg:w-[400px] bg-white/70 dark:bg-black/70 supports-[backdrop-filter]:backdrop-blur-[20px] shadow-[0_16px_48px_-16px_rgba(0,0,0,0.2)] dark:shadow-[0_16px_48px_-16px_rgba(0,0,0,0.5)] z-50 font-sans border border-black/10 dark:border-white/10 rounded-[28px]"
+            className="fixed bottom-20 md:bottom-24 left-4 right-4 md:left-auto md:right-10 w-auto md:w-[380px] lg:w-[400px] bg-[var(--glass-bg-3000)] border border-[var(--border-3000)] rounded-[var(--radius-lg)] shadow-[var(--shadow-elevation-3000)] backdrop-blur-md z-50 font-sans flex flex-col overflow-hidden text-[var(--text-3000)]"
         >
-            {/* 1. Toolbar */}
-            <div className="flex items-center justify-between px-4 py-2.5 border-b border-black/5 dark:border-white/5">
-                <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1.5">
-                        {activeTab === 'blog' ? (
-                            <IconDocument className="w-3.5 h-3.5 text-primary" />
-                        ) : activeTab === 'community' ? (
-                            <IconSparkles className="w-3.5 h-3.5 text-primary" />
-                        ) : (
-                            <IconNotification className="w-3.5 h-3.5 text-primary" />
-                        )}
-                        <span className="text-[12px] font-bold text-primary lowercase tracking-tight">
-                            {activeTab === 'blog' ? 'trending posts' : activeTab === 'community' ? 'trending entries' : 'updates'}
-                        </span>
-                    </div>
+            {/* 1. Header Toolbar */}
+            <div className="flex items-center justify-between px-4 py-2 border-b border-[var(--border-3000)]">
+                <div className="flex items-center gap-1.5">
+                    {activeTab === 'blog' ? (
+                        <IconDocument className="w-3.5 h-3.5" />
+                    ) : (
+                        <IconSparkles className="w-3.5 h-3.5" />
+                    )}
+                    <span className="text-[12px] font-bold lowercase tracking-tight">
+                        {activeTab === 'blog' ? 'trending posts' : 'trending entries'}
+                    </span>
                 </div>
 
-                <div className="flex items-center gap-3 text-[11px] opacity-60">
+                <div className="flex items-center gap-3 text-[11px] opacity-65">
                     <span className="lowercase text-[10px] font-bold font-mono">
                         {(currentPage * itemsPerPage) + 1}-{Math.min((currentPage + 1) * itemsPerPage, currentPosts.length)} of {currentPosts.length}
                     </span>
-                    <div className="flex items-center gap-2">
-                        <IconRefresh
-                            className={`w-3 h-3 opacity-60 cursor-pointer hover:opacity-100 mr-1 ${loading ? 'animate-spin' : ''}`}
+                    <div className="flex items-center gap-1">
+                        <LemonButton
+                            size="xxsmall"
+                            type="tertiary"
                             onClick={fetchTopPosts}
+                            icon={loading ? <Spinner /> : <IconRefresh className="w-3 h-3" />}
                         />
-                        <IconChevronLeft
-                            className={`w-3.5 h-3.5 cursor-pointer hover:opacity-100 ${currentPage === 0 ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
+                        <LemonButton
+                            size="xxsmall"
+                            type="tertiary"
+                            disabled={currentPage === 0}
                             onClick={() => setCurrentPage(0)}
+                            icon={<IconChevronLeft className="w-3.5 h-3.5" />}
                         />
-                        <IconChevronRight
-                            className={`w-3.5 h-3.5 cursor-pointer hover:opacity-100 ${currentPage >= totalPages - 1 ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
+                        <LemonButton
+                            size="xxsmall"
+                            type="tertiary"
+                            disabled={currentPage >= totalPages - 1}
                             onClick={() => setCurrentPage(prev => prev + 1)}
+                            icon={<IconChevronRight className="w-3.5 h-3.5" />}
                         />
                     </div>
                 </div>
             </div>
 
-            {/* 2. Categorized Tabs (Segmented Control style) */}
-            <div className="bg-black/5 dark:bg-white/5 rounded-[18px] p-0.5 mx-4 my-2 flex gap-0.5 border border-black/5 dark:border-white/5">
-                <button
-                    onClick={() => { setActiveTab('blog'); setCurrentPage(0); }}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 text-[11.5px] font-semibold transition-all duration-300 lowercase rounded-[15px] cursor-pointer ${
-                        activeTab === 'blog'
-                            ? 'bg-white/95 dark:bg-white/10 text-black dark:text-white shadow-[0_2px_8px_rgba(0,0,0,0.05)] border border-black/5 dark:border-white/10'
-                            : 'text-primary/70 hover:bg-black/5 dark:hover:bg-white/5 border border-transparent'
-                    }`}
-                >
-                    <IconDocument className="w-3.5 h-3.5" />
-                    <span>posts</span>
-                </button>
-
-                <button
-                    onClick={() => { setActiveTab('community'); setCurrentPage(0); }}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 text-[11.5px] font-semibold transition-all duration-300 lowercase rounded-[15px] cursor-pointer ${
-                        activeTab === 'community'
-                            ? 'bg-white/95 dark:bg-white/10 text-black dark:text-white shadow-[0_2px_8px_rgba(0,0,0,0.05)] border border-black/5 dark:border-white/10'
-                            : 'text-primary/70 hover:bg-black/5 dark:hover:bg-white/5 border border-transparent'
-                    }`}
-                >
-                    <IconSparkles className="w-3.5 h-3.5" />
-                    <span>entries</span>
-                </button>
-
-                <button
-                    onClick={() => { setActiveTab('updates'); setCurrentPage(0); }}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 text-[11.5px] font-semibold transition-all duration-300 lowercase rounded-[15px] cursor-pointer ${
-                        activeTab === 'updates'
-                            ? 'bg-white/95 dark:bg-white/10 text-black dark:text-white shadow-[0_2px_8px_rgba(0,0,0,0.05)] border border-black/5 dark:border-white/10'
-                            : 'text-primary/70 hover:bg-black/5 dark:hover:bg-white/5 border border-transparent'
-                    }`}
-                >
-                    <IconNotification className="w-3.5 h-3.5" />
-                    <span>updates</span>
-                </button>
+            {/* 2. Categorized Tabs (Single Horizontal Button) */}
+            <div className="px-4 py-2 flex justify-center border-b border-[var(--border-3000)]">
+                <div className="flex items-center w-full rounded-[var(--radius)] border border-[var(--border-3000)] overflow-hidden bg-[var(--color-bg-surface-primary)] shadow-sm">
+                    <button
+                        onClick={() => { setActiveTab('blog'); setCurrentPage(0); }}
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-semibold transition-colors cursor-pointer ${activeTab === 'blog' ? 'bg-[var(--color-fill-3000)] text-[var(--text-3000)]' : 'bg-transparent text-[var(--muted-3000)] hover:bg-black/5 dark:hover:bg-white/5'}`}
+                    >
+                        <IconDocument className="w-3.5 h-3.5" />
+                        posts
+                    </button>
+                    <div className="w-px h-5 bg-[var(--border-3000)]"></div>
+                    <button
+                        onClick={() => { setActiveTab('community'); setCurrentPage(0); }}
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-semibold transition-colors cursor-pointer ${activeTab === 'community' ? 'bg-[var(--color-fill-3000)] text-[var(--text-3000)]' : 'bg-transparent text-[var(--muted-3000)] hover:bg-black/5 dark:hover:bg-white/5'}`}
+                    >
+                        <IconSparkles className="w-3.5 h-3.5" />
+                        entries
+                    </button>
+                </div>
             </div>
 
-            {/* 3. List Area */}
-            <div className="max-h-[220px] overflow-y-auto custom-scrollbar bg-transparent px-3 pb-3 flex flex-col gap-1">
-                {currentPosts.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage).map((post) => (
-                    <div
-                        key={`${post.type}-${post.id}`}
-                        onClick={() => activeTab !== 'updates' && handleOpen(post)}
-                        className={`group flex items-center px-3 py-2 border border-transparent transition-all duration-200 rounded-[14px] ${
-                            activeTab === 'updates'
-                                ? 'cursor-default'
-                                : 'cursor-pointer hover:bg-black/5 dark:hover:bg-white/10 hover:border-black/5 dark:hover:border-white/5'
-                        }`}
-                    >
-                        {/* Author Avatar or System Icon */}
-                        <div className="mr-2.5 flex-shrink-0">
-                            {activeTab === 'updates' ? (
-                                <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center border border-primary/5">
-                                    <IconNotification className="w-3 h-3 text-primary" />
-                                </div>
-                            ) : post.avatar_url ? (
-                                /* eslint-disable-next-line @next/next/no-img-element */
-                                <img
-                                    src={post.avatar_url}
-                                    alt={post.author}
-                                    className="w-5 h-5 rounded-full object-cover border border-black/10 dark:border-white/10 shadow-sm"
-                                />
-                            ) : (
-                                <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-bold text-primary lowercase border border-black/10 dark:border-white/10">
-                                    {(post.author || 'a').charAt(0)}
-                                </div>
-                            )}
+            {/* 3. LemonTable */}
+            <div className="LemonTable" style={{ border: 'none', borderRadius: 0 }}>
+                <ScrollableShadows direction="both" innerStyle={{ maxHeight: '220px' }}>
+                    {loading ? (
+                        <div style={{ padding: '48px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '11px', color: 'var(--muted-3000)' }}>
+                            <Spinner size="small" />
+                            <span>loading trends...</span>
                         </div>
-
-                        {/* Title */}
-                        <div className="flex-1 min-w-0 pr-3">
-                            <span className={`text-[12px] font-semibold text-primary lowercase block truncate`}>
-                                {post.title}
-                            </span>
+                    ) : currentPosts.length === 0 ? (
+                        <div style={{ padding: '48px 0', textAlign: 'center', fontSize: '11px', color: 'var(--muted-3000)' }}>
+                            no items found
                         </div>
-
-                        {/* Right side - Views & Time */}
-                        <div className="flex items-center gap-3 flex-shrink-0">
-                            {activeTab !== 'updates' && (
-                                <div className="flex items-center gap-1 text-[10px] font-bold text-primary opacity-30 lowercase">
-                                    <IconEye className="w-3 h-3" />
-                                    <span>{post.view_count || 0}</span>
-                                </div>
-                            )}
-                            <span className="text-[10px] font-bold text-primary opacity-50 whitespace-nowrap lowercase font-mono">
-                                {post.time}
-                            </span>
+                    ) : (
+                        <div className="LemonTable__content">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th className="LemonTable__header" style={{ width: '32px' }}>
+                                            <div className="LemonTable__header-content"><div>#</div></div>
+                                        </th>
+                                        <th className="LemonTable__header">
+                                            <div className="LemonTable__header-content"><div>Title</div></div>
+                                        </th>
+                                        <th className="LemonTable__header" style={{ width: '56px', textAlign: 'right' }}>
+                                            <div className="LemonTable__header-content" style={{ justifyContent: 'flex-end' }}><div>Views</div></div>
+                                        </th>
+                                        <th className="LemonTable__header" style={{ width: '56px', textAlign: 'right' }}>
+                                            <div className="LemonTable__header-content" style={{ justifyContent: 'flex-end' }}><div>Date</div></div>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {currentPosts.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage).map((post, idx) => (
+                                        <tr
+                                            key={`${post.type}-${post.id}`}
+                                            className="LemonTable__row"
+                                            onClick={() => handleOpen(post)}
+                                            style={{ cursor: 'pointer' }}
+                                            onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = 'var(--color-bg-fill-button-tertiary-hover, rgba(0,0,0,0.04))' }}
+                                            onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = '' }}
+                                        >
+                                            <td style={{ fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, color: 'var(--muted-3000)', width: '32px' }}>
+                                                {currentPage * itemsPerPage + idx + 1}
+                                            </td>
+                                            <td style={{ maxWidth: 0 }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                                                    {post.avatar_url ? (
+                                                        // eslint-disable-next-line @next/next/no-img-element
+                                                        <img src={post.avatar_url} alt={post.author} style={{ width: '18px', height: '18px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '1px solid var(--border-3000)' }} />
+                                                    ) : (
+                                                        <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'var(--color-bg-fill-button-tertiary-hover)', border: '1px solid var(--border-3000)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: 700 }}>
+                                                            {(post.author || 'a').charAt(0).toUpperCase()}
+                                                        </div>
+                                                    )}
+                                                    <span style={{ fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                        {post.title}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td style={{ textAlign: 'right', fontSize: '11px', fontFamily: 'monospace', fontWeight: 700, opacity: 0.6, whiteSpace: 'nowrap', width: '56px' }}>
+                                                {post.view_count || 0}
+                                            </td>
+                                            <td style={{ textAlign: 'right', fontSize: '11px', fontFamily: 'monospace', opacity: 0.6, whiteSpace: 'nowrap', width: '56px' }}>
+                                                {post.time}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
-                    </div>
-                ))}
+                    )}
+                </ScrollableShadows>
             </div>
 
             {/* Footer */}
-            <div className="px-4 py-2.5 bg-black/5 dark:bg-white/5 border-t border-black/5 dark:border-white/5 flex justify-between items-center text-[9px] opacity-40 lowercase font-bold rounded-b-[28px] font-mono">
+            <div className="px-4 py-2 border-t border-[var(--border-3000)] flex justify-between items-center text-[9px] opacity-50 lowercase font-bold font-mono">
                 <div className="flex gap-3">
                     {activeTab === 'blog' ? (
-                        <span>1-{blogPosts.length} of {totalPosts} posts</span>
-                    ) : activeTab === 'community' ? (
-                        <span>1-{comPosts.length} of {totalEntries} entries</span>
+                        <span>1-{Math.min((currentPage + 1) * itemsPerPage, blogPosts.length)} of {totalPosts} posts</span>
                     ) : (
-                        <span>{manualUpdates.length} updates</span>
+                        <span>1-{Math.min((currentPage + 1) * itemsPerPage, comPosts.length)} of {totalEntries} entries</span>
                     )}
                 </div>
                 <div className="flex items-center">

@@ -24,6 +24,7 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   async headers() {
+    if (isDevelopment) return [];
     return [
       {
         source: '/(.*)',
