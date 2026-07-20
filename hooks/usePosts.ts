@@ -76,7 +76,7 @@ const adaptPost = (p: DBPost): Post | null => {
     })
 
     const paperMeta = parsePaperMeta(p.excerpt || p.inner_thoughts)
-    const cleanExcerpt = paperMeta.directive || stripMarkdown(p.excerpt || p.description || '') || generateExcerptFromContent(rawContent)
+    const cleanExcerpt = paperMeta?.directive || stripMarkdown(p.excerpt || p.description || '') || generateExcerptFromContent(rawContent)
 
     return {
         id: p.id,
@@ -107,8 +107,8 @@ const adaptPost = (p: DBPost): Post | null => {
         is_approved: Boolean(p.is_approved),
         authors: [{ name: p.author || 'Unknown', avatar: p.author_avatar || '', username: p.author || 'Unknown' }],
         views: p.view_count || 0,
-        paper_status: p.paper_status || paperMeta.paper_status,
-        contributions: p.contributions || paperMeta.contributions
+        paper_status: p.paper_status || paperMeta?.paper_status,
+        contributions: p.contributions || paperMeta?.contributions
     };
 };
 
