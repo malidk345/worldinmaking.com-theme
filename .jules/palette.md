@@ -1,3 +1,7 @@
-## 2024-07-18 - [Add focus visible styles to OSButton]
-**Learning:** `OSButton` component lacks clear visual focus states, reducing keyboard accessibility. This app requires `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20` for standard focus rings.
-**Action:** Always ensure custom button components have proper focus rings explicitly set since default browser rings can be subtle or overridden.
+## 2024-05-18 - Adding accessibility to Tiptap Rich Text Editor buttons
+**Learning:** Found that custom editor toolbars built with `div` or generic `button` tags often lack screen-reader accessible labels (ARIA) and keyboard focus indicators, making them difficult to use for visually impaired users. Additionally, custom popup menus (like Mentions autocompletes) need proper `role="listbox"`, `role="option"`, and `aria-selected` attributes to correctly announce their interactive state to screen readers.
+**Action:** When creating custom toolbars or dropdown components, ensure that icon-only buttons include `aria-label` or `title` alongside `focus-visible` styling to support keyboard navigation. Convert autocomplete lists into accessible listboxes.
+
+## 2024-05-18 - Added focus-visible and aria-labels to buttons in ForumRichText
+**Learning:** Icon-only buttons without `aria-label` are inaccessible to screen readers, and missing `focus-visible` styles make keyboard navigation difficult. Furthermore, custom dropdowns/lists need `role="listbox"` and `role="option"` with `aria-selected` for screen readers to properly announce the selection state.
+**Action:** Always add `aria-label` to icon-only buttons. Ensure all interactive elements have visible focus indicators (`focus-visible`). When building custom select/autocomplete components, use proper ARIA roles (`listbox`, `option`) and states (`aria-selected`).

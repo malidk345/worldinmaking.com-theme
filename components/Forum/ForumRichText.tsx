@@ -237,7 +237,9 @@ const MentionProfile = ({ profile, onSelect, index, focused }: { profile: Profil
             <button
                 onClick={() => onSelect?.(profile)}
                 type="button"
-                className={`w-full text-left px-3 py-2 rounded-[14px] transition-colors flex items-center gap-3 ${focused === index ? 'bg-black/10 dark:bg-white/10' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
+                role="option"
+                aria-selected={focused === index}
+                className={`w-full text-left px-3 py-2 rounded-[14px] transition-colors flex items-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20 ${focused === index ? 'bg-black/10 dark:bg-white/10' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
             >
                 <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-black/10 dark:border-white/10">
                     <ForumAvatar className="w-full h-full" image={profile.avatar_url} />
@@ -287,11 +289,11 @@ const MentionProfiles = ({ onSelect, onClose, search = '' }: { onSelect?: (profi
         >
             <div className="flex justify-between items-center px-3 py-2 border-b border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5">
                 <span className="text-[10px] font-bold lowercase opacity-50 tracking-wider">mentions</span>
-                <button onClick={onClose} className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors">
+                <button onClick={onClose} aria-label="Close mentions" className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20">
                     <IconX className="w-3 h-3 text-primary" />
                 </button>
             </div>
-            <ul className="m-0 p-0 list-none overflow-y-auto flex-1 p-1 space-y-0.5">
+            <ul role="listbox" className="m-0 p-0 list-none overflow-y-auto flex-1 p-1 space-y-0.5">
                 {filteredProfiles.map((profile, index) => (
                     <MentionProfile
                         focused={focused}
@@ -456,7 +458,9 @@ export default function ForumRichText({
                             <button
                                 key={button.name}
                                 type="button"
-                                className={`p-1.5 md:p-2 rounded-[16px] flex items-center justify-center transition-all duration-200 shrink-0
+                                aria-label={button.tooltipContent}
+                                aria-pressed={isActive}
+                                className={`p-1.5 md:p-2 rounded-[16px] flex items-center justify-center transition-all duration-200 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20
                                     ${isActive
                                         ? 'bg-black text-white dark:bg-white dark:text-black shadow-sm'
                                         : isDisabled
