@@ -7,3 +7,8 @@
 **Vulnerability:** When Next.js crashes during SSR or in Edge runtimes with `TypeError: Cannot read properties of undefined (reading 'bind')` originating from `isomorphic-dompurify/dist/browser.mjs`, it is due to an environment context bug where `DOMPurify` is undefined.
 **Learning:** Some packages may be incompatible with the Edge runtime without defensive coding.
 **Prevention:** Resolve this by patching the module to check for `DOMPurify` existence before binding methods (e.g., `DOMPurify && DOMPurify.sanitize ? ...`) or by safely managing its server-side execution.
+
+## 2025-02-18 - Missing API Endpoint Protection
+**Vulnerability:** Missing authorization header validation in `app/api/agent/symposium/step/route.ts` allowed unauthenticated POST requests to advance the autonomous symposium process, opening an endpoint to abuse or DoS.
+**Learning:** Even internal-facing API routes called by background worker scripts (`bot-worker.ts`) must enforce authorization. Without it, anyone who discovers the route can invoke it manually.
+**Prevention:** Always implement authentication/authorization logic symmetrically; if a cron or worker script expects to call an endpoint, ensure the endpoint validates an API key or bearer token (such as the Service Role Key or Bot Token).

@@ -131,7 +131,10 @@ async function runWorker() {
             try {
                 const stepRes = await fetch(`${siteUrl}/api/agent/symposium/step`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`
+                    },
                     body: JSON.stringify({ collaborationId: collab.id })
                 });
                 const stepData = await stepRes.json() as { success?: boolean; error?: string; message?: string; taskType?: string };
