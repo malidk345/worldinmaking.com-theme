@@ -25,7 +25,9 @@ export type TranslationKey =
   | 'wm.open_window'
   | 'wm.open_windows'
   | 'search.tooltip'
+  | 'search.clear'
   | 'search.type_to_search'
+  | 'notif.close'
   | 'menu.signed_in_as'
   | 'menu.about_title'
   | 'menu.about_h1'
@@ -227,7 +229,9 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     'wm.open_window': 'open window.',
     'wm.open_windows': 'open windows.',
     'search.tooltip': 'search',
+    'search.clear': 'clear search',
     'search.type_to_search': 'type at least 2 characters to search...',
+    'notif.close': 'close notifications',
     'menu.signed_in_as': 'signed in as',
     'menu.about_title': 'About WorldInMaking',
     'menu.about_h1': 'i am mustafa ali.',
@@ -426,7 +430,9 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     'wm.open_window': 'açık pencere.',
     'wm.open_windows': 'açık pencere.',
     'search.tooltip': 'ara',
+    'search.clear': 'aramayı temizle',
     'search.type_to_search': 'aramak için en az 2 karakter yazın...',
+    'notif.close': 'bildirimleri kapat',
     'menu.signed_in_as': 'oturum açıldı:',
     'menu.about_title': 'WorldInMaking Hakkında',
     'menu.about_h1': 'ben mustafa ali.',
