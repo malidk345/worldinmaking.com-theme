@@ -8,13 +8,21 @@ export async function POST(request: NextRequest) {
     try {
         // 1. Authorization check: Either Bearer secret token or process.env validation
         const authHeader = request.headers.get('Authorization');
-        const systemToken = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+        const systemToken = process.env.SUPABASE_SERVICE_ROLE_KEY;
         
         let isAuthorized = false;
         if (authHeader && authHeader.startsWith('Bearer ')) {
             const token = authHeader.substring(7).trim();
-            if (token === systemToken || token.startsWith('bot_token_')) {
+            if (token && systemToken && token === systemToken) {
                 isAuthorized = true;
+            } else if (token && token.startsWith('bot_token_')) {
+                const { data: bot } = await supabaseAdmin
+                    .from('bot_profiles')
+                    .select('id')
+                    .eq('api_token', token)
+                    .eq('is_active', true)
+                    .maybeSingle();
+                if (bot) isAuthorized = true;
             }
         }
 
