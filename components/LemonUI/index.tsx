@@ -717,3 +717,192 @@ export function Spinner({ className = '', size = 'small', textColored = false }:
     />
   );
 }
+
+// ── 22. LemonProgress & LemonProgressCircle ───────────────────────────────
+export interface LemonProgressProps {
+  percent: number;
+  size?: 'medium' | 'large';
+  bgColor?: string;
+  strokeColor?: string;
+  className?: string;
+  children?: ReactNode;
+}
+
+export function LemonProgress({
+  percent,
+  size = 'medium',
+  bgColor = 'var(--color-bg-3000)',
+  strokeColor = 'var(--primary-3000)',
+  className = '',
+  children,
+}: LemonProgressProps) {
+  const width = isNaN(percent) ? 0 : Math.max(Math.min(percent, 100), 0);
+  return (
+    <div
+      className={`LemonProgress rounded-full w-full inline-block ${size === 'large' ? 'h-5' : 'h-1.5'} ${className}`}
+      style={{ backgroundColor: bgColor }}
+    >
+      <span
+        className="LemonProgress__track block h-full rounded-full transition-all duration-300"
+        style={{ width: `${width}%`, backgroundColor: strokeColor }}
+      >
+        {children}
+      </span>
+    </div>
+  );
+}
+
+export function LemonProgressCircle({ percent, size = 36, strokeWidth = 4 }: { percent: number; size?: number; strokeWidth?: number }) {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (percent / 100) * circumference;
+  return (
+    <svg width={size} height={size} className="transform -rotate-90">
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        stroke="var(--border-3000)"
+        strokeWidth={strokeWidth}
+        fill="none"
+      />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        stroke="var(--primary-3000)"
+        strokeWidth={strokeWidth}
+        strokeDasharray={circumference}
+        strokeDashoffset={strokeDashoffset}
+        strokeLinecap="round"
+        fill="none"
+        className="transition-all duration-300"
+      />
+    </svg>
+  );
+}
+
+// ── 23. LemonFileInput ─────────────────────────────────────────────────────
+export interface LemonFileInputProps {
+  value?: File[];
+  onChange?: (files: File[]) => void;
+  accept?: string;
+  multiple?: boolean;
+  loading?: boolean;
+  callToAction?: ReactNode;
+  className?: string;
+}
+
+export function LemonFileInput({
+  value = [],
+  onChange,
+  accept,
+  multiple = false,
+  loading = false,
+  callToAction = 'Drop files here or click to upload',
+  className = '',
+}: LemonFileInputProps) {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && onChange) {
+      onChange(Array.from(e.target.files));
+    }
+  };
+
+  return (
+    <div className={`LemonFileInput border-2 border-dashed border-[var(--border-3000)] hover:border-[var(--primary-3000)] rounded-lg p-6 text-center cursor-pointer transition-colors ${className}`}>
+      <input
+        type="file"
+        accept={accept}
+        multiple={multiple}
+        onChange={handleChange}
+        className="hidden"
+        id="lemon-file-input"
+      />
+      <label htmlFor="lemon-file-input" className="cursor-pointer flex flex-col items-center gap-2">
+        {loading ? <Spinner size="medium" /> : <span className="text-xs font-semibold text-[var(--text-3000)]">{callToAction}</span>}
+        {value.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {value.map((f, i) => (
+              <LemonTag key={i} type="muted">{f.name}</LemonTag>
+            ))}
+          </div>
+        )}
+      </label>
+    </div>
+  );
+}
+
+// ── 24. LemonTree ──────────────────────────────────────────────────────────
+export interface LemonTreeItem {
+  id: string;
+  name: string;
+  icon?: ReactNode;
+  children?: LemonTreeItem[];
+}
+
+export function LemonTree({ items, onSelect, className = '' }: { items: LemonTreeItem[]; onSelect?: (item: LemonTreeItem) => void; className?: string }) {
+  return (
+    <div className={`LemonTree flex flex-col gap-1 ${className}`}>
+      {items.map((item) => (
+        <LemonTreeRow key={item.id} item={item} onSelect={onSelect} level={0} />
+      ))}
+    </div>
+  );
+}
+
+function LemonTreeRow({ item, onSelect, level }: { item: LemonTreeItem; onSelect?: (item: LemonTreeItem) => void; level: number }) {
+  const [expanded, setExpanded] = useState(false);
+  const hasChildren = item.children && item.children.length > 0;
+
+  return (
+    <div>
+      <div
+        onClick={() => {
+          if (hasChildren) setExpanded(!expanded);
+          onSelect?.(item);
+        }}
+        className="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-[var(--color-bg-fill-button-tertiary-hover)] text-xs text-[var(--text-3000)]"
+        style={{ paddingLeft: `${(level + 1) * 0.75}rem` }}
+      >
+        {hasChildren && <span className="text-[10px] opacity-60">{expanded ? '▼' : '▶'}</span>}
+        {item.icon && <span>{item.icon}</span>}
+        <span className="font-medium">{item.name}</span>
+      </div>
+      {hasChildren && expanded && (
+        <div className="flex flex-col gap-0.5">
+          {item.children!.map((child) => (
+            <LemonTreeRow key={child.id} item={child} onSelect={onSelect} level={level + 1} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── 25. LemonMenu & LemonDropdown ──────────────────────────────────────────
+export interface LemonMenuItem {
+  key: string;
+  label: ReactNode;
+  icon?: ReactNode;
+  danger?: boolean;
+  onClick?: () => void;
+}
+
+export function LemonMenu({ items, className = '' }: { items: LemonMenuItem[]; className?: string }) {
+  return (
+    <div className={`LemonMenu bg-[var(--color-bg-surface-primary)] border border-[var(--border-3000)] rounded-md shadow-lg p-1 min-w-[160px] ${className}`}>
+      {items.map((item) => (
+        <button
+          key={item.key}
+          onClick={item.onClick}
+          className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs rounded text-left transition-colors ${
+            item.danger ? 'text-red-500 hover:bg-red-500/10' : 'text-[var(--text-3000)] hover:bg-[var(--color-bg-fill-button-tertiary-hover)]'
+          }`}
+        >
+          {item.icon && <span>{item.icon}</span>}
+          <span>{item.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
