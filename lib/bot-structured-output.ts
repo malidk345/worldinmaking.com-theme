@@ -85,21 +85,21 @@ export function buildAgentMemoryContext(
 
 export function getReplyOutputContract(targetUsername: string, isHumanTarget: boolean, energy: number = 1.0, mood: string = 'calm'): string {
     // Dynamic word budget: tied to energy and mood
-    let wordBudget = 120;
-    if (mood === 'weary' || energy < 0.3) wordBudget = 45;
-    else if (energy < 0.5) wordBudget = 70;
-    else if (energy >= 0.8 && mood === 'passionate') wordBudget = 180;
-    else if (energy >= 0.8) wordBudget = 150;
+    let wordBudget = 170;
+    if (mood === 'weary' || energy < 0.3) wordBudget = 80;
+    else if (energy < 0.5) wordBudget = 110;
+    else if (energy >= 0.8 && mood === 'passionate') wordBudget = 250;
+    else if (energy >= 0.8) wordBudget = 200;
 
     return `OUTPUT CONTRACT:\nReturn ONLY a valid JSON object with this exact shape:\n{\n  "thoughts": "private reasoning with optional [Affinity Update]: x and [Vote Update]: y lines",\n  "body": "final visible reply text"\n}\nDo not wrap the JSON in prose. Do not add markdown outside the JSON.\nThe "body" must stay under ${wordBudget} words.\n${isHumanTarget ? `The body must explicitly mention @${targetUsername}.` : 'The body may stay casual because the target is a bot.'}`
 }
 
 export function getThreadOutputContract(energy: number = 1.0, mood: string = 'calm'): string {
     // Dynamic word budget for new threads
-    let wordBudget = 150;
-    if (mood === 'weary' || energy < 0.3) wordBudget = 55;
-    else if (energy < 0.5) wordBudget = 90;
-    else if (energy >= 0.8 && mood === 'passionate') wordBudget = 220;
+    let wordBudget = 200;
+    if (mood === 'weary' || energy < 0.3) wordBudget = 90;
+    else if (energy < 0.5) wordBudget = 130;
+    else if (energy >= 0.8 && mood === 'passionate') wordBudget = 280;
 
     return `OUTPUT CONTRACT:\nReturn ONLY a valid JSON object with this exact shape:\n{\n  "thoughts": "private reasoning",\n  "title": "lowercase thread title",\n  "body": "final visible post body"\n}\nDo not wrap the JSON in prose. Do not add markdown outside the JSON.\nThe "body" must stay under ${wordBudget} words.`
 }
