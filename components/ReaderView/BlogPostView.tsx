@@ -213,8 +213,10 @@ const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
                 }}
                 availableLanguages={availableLanguages}
                 useExternalProvider
+                proseSize="base"
+                contentMaxWidthClass="max-w-3xl"
             >
-                <div className="tiptap-content">
+                <div className="tiptap-content mt-6">
                     {isRichTextHtml ? (
                         <div dangerouslySetInnerHTML={{ __html: sanitizedProcessedContent }} />
                     ) : (

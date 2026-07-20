@@ -1753,4 +1753,382 @@ button::-moz-focus-inner,
   backdrop-filter: blur(24px) !important;
   -webkit-backdrop-filter: blur(24px) !important;
 }
+
+/* ==========================================================
+   TIPTAP-CONTENT — Editorial Reader Typography System
+   Used by BlogPostView and ResearchPaperView for rendered
+   HTML/Markdown content in the reader window.
+   ========================================================== */
+
+.tiptap-content {
+  /* Base text */
+  font-size: 16.5px;
+  line-height: 1.78;
+  color: rgb(var(--text-primary, 30 30 30));
+  font-family: var(--font-apple);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "kern" 1, "liga" 1;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.dark .tiptap-content {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+/* Paragraphs */
+.tiptap-content p {
+  margin-top: 0;
+  margin-bottom: 1.4rem;
+  line-height: 1.78;
+  font-size: inherit;
+}
+
+/* First paragraph after headings — no extra top margin */
+.tiptap-content h1 + p,
+.tiptap-content h2 + p,
+.tiptap-content h3 + p,
+.tiptap-content h4 + p {
+  margin-top: 0.25rem;
+}
+
+/* Drop-cap for first paragraph of the article */
+.tiptap-content > div > p:first-of-type::first-letter,
+.tiptap-content > p:first-of-type::first-letter {
+  float: left;
+  font-size: 3.5em;
+  line-height: 0.82;
+  margin-right: 0.1em;
+  margin-top: 0.05em;
+  font-weight: 700;
+  font-family: var(--font-serif, Georgia, serif);
+  color: rgb(var(--text-primary));
+}
+
+/* Headings — strong typographic hierarchy */
+.tiptap-content h1 {
+  font-size: 1.875rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  margin-top: 2.5rem;
+  margin-bottom: 0.75rem;
+  color: rgb(var(--text-primary));
+}
+
+.tiptap-content h2 {
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  margin-top: 2.75rem;
+  margin-bottom: 0.6rem;
+  color: rgb(var(--text-primary));
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+}
+
+.dark .tiptap-content h2 {
+  border-bottom-color: rgba(255, 255, 255, 0.07);
+}
+
+.tiptap-content h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  margin-top: 2rem;
+  margin-bottom: 0.45rem;
+  color: rgb(var(--text-primary));
+}
+
+.tiptap-content h4 {
+  font-size: 0.975rem;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  margin-top: 1.5rem;
+  margin-bottom: 0.35rem;
+  color: rgb(var(--text-secondary, 100 100 100));
+}
+
+.tiptap-content h5,
+.tiptap-content h6 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-top: 1.25rem;
+  margin-bottom: 0.3rem;
+  color: rgb(var(--text-secondary, 100 100 100));
+}
+
+/* First heading has no top margin */
+.tiptap-content h1:first-child,
+.tiptap-content h2:first-child,
+.tiptap-content h3:first-child {
+  margin-top: 0;
+}
+
+/* Links */
+.tiptap-content a {
+  color: rgb(var(--text-primary));
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(var(--text-primary), 0.35);
+  transition: text-decoration-color 0.15s ease;
+  font-weight: 500;
+}
+
+.tiptap-content a:hover {
+  text-decoration-color: rgb(var(--text-primary));
+}
+
+/* Strong / Em */
+.tiptap-content strong {
+  font-weight: 700;
+  color: rgb(var(--text-primary));
+}
+
+.tiptap-content em {
+  font-style: italic;
+  font-family: var(--font-serif, Georgia, serif);
+}
+
+/* Blockquote — editorial pull-quote style */
+.tiptap-content blockquote {
+  margin: 2rem 0;
+  padding: 1rem 1.25rem 1rem 1.5rem;
+  border-left: 3px solid rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.025);
+  border-radius: 0 8px 8px 0;
+  font-style: italic;
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: 1.05em;
+  line-height: 1.65;
+  color: rgb(var(--text-secondary, 60 60 60));
+}
+
+.dark .tiptap-content blockquote {
+  border-left-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.tiptap-content blockquote p {
+  margin-bottom: 0;
+}
+
+/* Inline code */
+.tiptap-content code:not(pre code) {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 5px;
+  padding: 0.1em 0.4em;
+  color: rgb(var(--text-primary));
+  font-weight: 500;
+}
+
+.dark .tiptap-content code:not(pre code) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Code block */
+.tiptap-content pre {
+  margin: 1.75rem 0;
+  background: #0d0d0d;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow-x: auto;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+}
+
+.tiptap-content pre code {
+  display: block;
+  padding: 1.125rem 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.7;
+  color: #e5e7eb;
+  background: transparent;
+  border: none;
+}
+
+/* Horizontal rule */
+.tiptap-content hr {
+  margin: 2.5rem auto;
+  border: none;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.1);
+  max-width: 40%;
+}
+
+.dark .tiptap-content hr {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Lists */
+.tiptap-content ul,
+.tiptap-content ol {
+  margin-top: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding-left: 1.5rem;
+}
+
+.tiptap-content ul {
+  list-style-type: disc;
+}
+
+.tiptap-content ol {
+  list-style-type: decimal;
+}
+
+.tiptap-content li {
+  margin-bottom: 0.4rem;
+  line-height: 1.7;
+  padding-left: 0.25rem;
+}
+
+.tiptap-content li::marker {
+  color: rgba(var(--text-primary), 0.4);
+}
+
+.tiptap-content li > p {
+  margin-bottom: 0.3rem;
+}
+
+.tiptap-content ul ul,
+.tiptap-content ol ol,
+.tiptap-content ul ol,
+.tiptap-content ol ul {
+  margin-top: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+/* Images */
+.tiptap-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  margin: 2rem auto;
+  display: block;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.dark .tiptap-content img {
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Figure & figcaption */
+.tiptap-content figure {
+  margin: 2rem 0;
+}
+
+.tiptap-content figcaption {
+  text-align: center;
+  font-size: 0.8rem;
+  color: rgb(var(--text-muted, 130 130 130));
+  margin-top: 0.5rem;
+  font-style: italic;
+}
+
+/* Tables */
+.tiptap-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.75rem 0;
+  font-size: 0.9em;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.dark .tiptap-content table {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.tiptap-content th {
+  background: rgba(0, 0, 0, 0.04);
+  font-weight: 700;
+  text-align: left;
+  padding: 0.65rem 1rem;
+  border-bottom: 1.5px solid rgba(0, 0, 0, 0.08);
+  font-size: 0.8em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgb(var(--text-secondary));
+}
+
+.dark .tiptap-content th {
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.tiptap-content td {
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  vertical-align: top;
+  line-height: 1.5;
+}
+
+.dark .tiptap-content td {
+  border-bottom-color: rgba(255, 255, 255, 0.04);
+}
+
+.tiptap-content tr:last-child td {
+  border-bottom: none;
+}
+
+.tiptap-content tr:nth-child(even) {
+  background: rgba(0, 0, 0, 0.015);
+}
+
+.dark .tiptap-content tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+/* Mark / Highlight */
+.tiptap-content mark {
+  background: rgba(255, 213, 0, 0.3);
+  border-radius: 3px;
+  padding: 0 0.2em;
+}
+
+.dark .tiptap-content mark {
+  background: rgba(255, 213, 0, 0.18);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Details / summary */
+.tiptap-content details {
+  margin: 1.5rem 0;
+  border-radius: 8px;
+}
+
+.tiptap-content details summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95em;
+  list-style: none;
+  padding: 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Responsive: slightly smaller on small screens */
+@media (max-width: 640px) {
+  .tiptap-content {
+    font-size: 15.5px;
+  }
+  .tiptap-content h1 { font-size: 1.6rem; }
+  .tiptap-content h2 { font-size: 1.25rem; }
+  .tiptap-content h3 { font-size: 1.05rem; }
+}
+
 

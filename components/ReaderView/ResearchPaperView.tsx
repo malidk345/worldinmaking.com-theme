@@ -135,6 +135,8 @@ const ResearchPaperInner = React.memo(({ post }: ResearchPaperViewProps) => {
                 }}
                 availableLanguages={availableLanguages}
                 useExternalProvider
+                proseSize="base"
+                contentMaxWidthClass="max-w-3xl"
             >
                 {/* PostHog Academic Paper Header & Metadata Bar */}
                 <div className="my-6 rounded-xl border border-black/10 dark:border-white/10 bg-[#f9fafb] dark:bg-[#161616] p-4 sm:p-5 font-mono text-xs shadow-xs">

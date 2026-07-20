@@ -405,8 +405,8 @@ const ReaderViewContent = React.memo(({
 
                             {title && !hideTitle && (
                                 <h1
-                                    className={`mx-auto transition-all lowercase tracking-tight ${proseSize === 'lg' ? 'max-w-full' : 'max-w-2xl'
-                                        }`}
+                                    className={`mx-auto transition-all tracking-tight font-black ${proseSize === 'lg' ? 'max-w-full text-4xl' : 'max-w-3xl text-3xl md:text-4xl'
+                                        } leading-tight mb-2 mt-4`}
                                 >
                                     {title}
                                 </h1>
@@ -473,7 +473,6 @@ const ReaderViewContent = React.memo(({
                                         className={`reader-view-content-container @container/reader-content-container ${getProseClasses(
                                             proseSize
                                         )} max-w-none relative`}
-                                        style={{ fontSize: '15px' }}
                                     >
                                         {body.type === 'mdx' ? (
                                             <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(body.content) }} />
