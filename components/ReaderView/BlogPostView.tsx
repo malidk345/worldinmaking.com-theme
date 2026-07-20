@@ -14,6 +14,7 @@ import CloudinaryImage from 'components/CloudinaryImage'
 import { ArticleJsonLd, BreadcrumbJsonLd } from 'components/SEO/JsonLd'
 import { sanitizeHtml } from 'utils/security'
 import { useTranslation } from 'hooks/useTranslation'
+import PaperBotTimeline from './PaperBotTimeline'
 
 interface BlogPostViewProps {
     post: {
@@ -214,6 +215,11 @@ const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
                 availableLanguages={availableLanguages}
                 useExternalProvider
             >
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {((post as any).contributions?.length > 0 || (post as any).paper_status) && (
+                    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+                    <PaperBotTimeline contributions={(post as any).contributions} paperStatus={(post as any).paper_status} />
+                )}
                 <div className="tiptap-content">
                     {isRichTextHtml ? (
                         <div dangerouslySetInnerHTML={{ __html: sanitizedProcessedContent }} />

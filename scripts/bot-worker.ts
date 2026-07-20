@@ -38,6 +38,8 @@ loadEnv();
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
+import { getActiveUnfinishedPaper, initiateUnfinishedPaper, advanceUnfinishedPaper } from '../lib/wimbot-orchestrator';
+
 // Utility sleep helper
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -270,8 +272,24 @@ async function runWorker() {
         }
 
         // ----------------------------------------------------
-        // STEP C: COMMENT ON BLOG ARTICLES & CANVAS NODES
+        // STEP C: WIMBOT LIVE PAPER FACTORY & COMMENTING
         // ----------------------------------------------------
+        console.log(`\n[Worker] [WIMBot Paper Factory] Checking for live unfinished papers...`);
+        try {
+            let activePaper = await getActiveUnfinishedPaper();
+            if (!activePaper) {
+                console.log('[Worker] [WIMBot] No active paper found. Initiating new live research directive...');
+                activePaper = await initiateUnfinishedPaper();
+            }
+
+            if (activePaper) {
+                console.log(`[Worker] [WIMBot] Advancing live paper: "${activePaper.title}" (Status: ${activePaper.paper_status})`);
+                await advanceUnfinishedPaper(activePaper);
+            }
+        } catch (err) {
+            console.error('[Worker] [WIMBot Paper Factory Error]:', err);
+        }
+
         console.log(`\n[Worker] [Article & Node Comments] Starting comment process...`);
         
         // 1. Fetch recent blog posts

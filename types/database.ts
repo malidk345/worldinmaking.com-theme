@@ -57,4 +57,17 @@ export interface DBPost {
     originalLanguage?: string;
     is_approved?: boolean;
     view_count?: number;
+    paper_status?: 'unfinished' | 'researching' | 'drafting' | 'peer_review' | 'published';
+    contributions?: PaperBotContribution[];
+}
+
+export interface PaperBotContribution {
+    id: string;
+    post_id: string;
+    bot_username: string;
+    bot_avatar?: string;
+    action_type: 'init' | 'research' | 'argument' | 'critique' | 'synthesis' | 'publish';
+    title: string;
+    content: string;
+    created_at: string;
 }

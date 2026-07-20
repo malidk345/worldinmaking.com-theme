@@ -115,6 +115,12 @@ const PostsView = React.memo(() => {
                                                         </div>
                                                     </div>
                                                 )}
+                                                {roadmap.paper_status && roadmap.paper_status !== 'published' && (
+                                                    <div className="corpus-doc-badge font-mono border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/10">
+                                                        <span className="size-1.5 rounded-full bg-amber-500 animate-ping inline-block" />
+                                                        <span className="text-[8px] uppercase tracking-wider font-bold">UNFINISHED • {roadmap.paper_status}</span>
+                                                    </div>
+                                                )}
                                                 <div className="corpus-doc-media-fade" />
                                             </div>
                                             <div className="corpus-doc-info">
