@@ -90,7 +90,7 @@ export async function fetchDriveDocuments(): Promise<DriveDocument[]> {
  * Combines Google Drive Knowledge Base with Live Web Search
  * to produce a rich, grounded hybrid research context for AI bots.
  */
-export async function getHybridResearchContext(query: string = 'autonomous AI systems and web architecture'): Promise<{
+export async function getHybridResearchContext(query: string = 'contemporary philosophy ethics digital society culture'): Promise<{
     driveNotes: string;
     webResults: string;
     combinedContext: string;

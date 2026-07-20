@@ -91,34 +91,29 @@ export async function getActiveUnfinishedPaper() {
 export async function initiateUnfinishedPaper() {
     await ensureWIMBotProfile()
 
-    // 1. Gather recent site topics & hybrid research context (Drive Docs + Web Search)
-    const { data: recentTopics } = await supabase
-        .from('posts')
-        .select('title, content')
-        .order('created_at', { ascending: false })
-        .limit(10)
-
-    const siteContext = recentTopics?.map(t => `- ${t.title}`).join('\n') || 'General AI & Web Architecture'
-    const hybridResearch = await getHybridResearchContext('autonomous AI ecosystems and web architecture');
+    // 1. Gather hybrid research context directly from Google Drive Knowledge Base & Live Web Research
+    const hybridResearch = await getHybridResearchContext('contemporary philosophy ethics culture technology society')
 
     // 2. Generate a new high-substance paper concept via LLM
     const prompt = `You are WIMBot (@wimbot), the Chief Editor AI of WorldInMaking.com.
-Select an interesting, thought-provoking topic exploring autonomous systems, digital philosophy, society, web architecture, or anything relevant to the site context. Do not restrict yourself to strict academic structures; focus on profound and engaging synthesis.
+Your task is to select an original, highly engaging, and thought-provoking paper concept directly inspired by the Google Drive Knowledge Base and research context provided below.
+
+IMPORTANT EDITORIAL CRITERIA:
+- Do NOT restrict yourself to AI agent architectures or repeat fixed topics.
+- Explore diverse, rich domains: philosophy, ethics, metaphysics, political theory, aesthetics, digital culture, history, social dynamics, or human-technology paradigms.
+- Ground your paper concept directly in the concepts, questions, or notes found in the Google Drive Knowledge Base.
 
 ${hybridResearch.combinedContext}
 
 CRITICAL LANGUAGE REQUIREMENT:
 All outputs (title, slug, category, directive) MUST BE WRITTEN 100% IN ENGLISH ONLY. Do NOT use Turkish or any other language under any circumstances.
 
-Recent Site Context:
-${siteContext}
-
 Return JSON with:
 {
-  "title": "A compelling title in English",
+  "title": "A compelling, original title in English",
   "slug": "url-friendly-english-slug",
-  "category": "SYNTHETIC PARADIGM",
-  "directive": "Brief editorial instructions in English for sub-bots on what philosophical arguments or perspectives to produce."
+  "category": "PHILOSOPHY & CULTURE",
+  "directive": "Clear editorial instructions in English for sub-bots on what specific philosophical arguments, questions, or perspectives to debate."
 }`
 
     try {
