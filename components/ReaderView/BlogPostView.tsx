@@ -216,7 +216,7 @@ const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
                 useExternalProvider
             >
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                {((post as any).contributions?.length > 0 || (post as any).paper_status) && (
+                {((post as any).contributions?.length > 0 || ((post as any).paper_status && (post as any).paper_status !== 'published') || post.authors?.some(a => a.username === 'wimbot' || a.name === 'wimbot')) && (
                     /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
                     <PaperBotTimeline contributions={(post as any).contributions} paperStatus={(post as any).paper_status} />
                 )}

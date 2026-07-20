@@ -15,23 +15,23 @@ export interface PaperMeta {
     contributions: PaperBotContribution[];
 }
 
-export function parsePaperMeta(text?: string | null): PaperMeta {
-    if (!text) {
-        return { paper_status: 'published', directive: '', contributions: [] }
-    }
+export function parsePaperMeta(text?: string | null): PaperMeta | null {
+    if (!text) return null
     try {
         if (text.trim().startsWith('{')) {
             const parsed = JSON.parse(text)
-            return {
-                paper_status: parsed.paper_status || 'published',
-                directive: parsed.directive || '',
-                contributions: parsed.contributions || []
+            if (parsed.paper_status || parsed.contributions || parsed.directive) {
+                return {
+                    paper_status: parsed.paper_status || 'published',
+                    directive: parsed.directive || '',
+                    contributions: parsed.contributions || []
+                }
             }
         }
     } catch {
         // fallback
     }
-    return { paper_status: 'published', directive: text, contributions: [] }
+    return null
 }
 
 export function serializePaperMeta(meta: PaperMeta): string {
@@ -79,7 +79,7 @@ export async function getActiveUnfinishedPaper() {
 
     for (const post of data) {
         const meta = parsePaperMeta(post.excerpt)
-        if (['unfinished', 'researching', 'drafting', 'peer_review'].includes(meta.paper_status)) {
+        if (meta && ['unfinished', 'researching', 'drafting', 'peer_review'].includes(meta.paper_status)) {
             return { ...post, meta }
         }
     }
@@ -194,7 +194,7 @@ export async function addBotContribution(postId: string, contribution: Omit<Pape
         .eq('id', postId)
         .single()
 
-    const meta = parsePaperMeta(existing?.excerpt)
+    const meta = parsePaperMeta(existing?.excerpt) || { paper_status: 'researching', directive: '', contributions: [] }
     const newEntry: PaperBotContribution = {
         ...contribution,
         id: 'contrib-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
@@ -215,7 +215,7 @@ export async function addBotContribution(postId: string, contribution: Omit<Pape
 export async function advanceUnfinishedPaper(paper: { id: string; title: string; content: string; excerpt?: string; meta?: PaperMeta }) {
     await ensureWIMBotProfile()
 
-    const meta = paper.meta || parsePaperMeta(paper.excerpt)
+    const meta = paper.meta || parsePaperMeta(paper.excerpt) || { paper_status: 'researching', directive: '', contributions: [] }
     const currentStatus = meta.paper_status || 'researching'
     const contribs = meta.contributions || []
 
