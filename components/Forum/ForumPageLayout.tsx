@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useMemo } from 'react'
+import { LemonSegmentedButton } from '@/components/LemonUI'
 import ForumQuestionsTable from './ForumQuestionsTable'
 import ForumQuestionForm from './ForumQuestionForm'
 import ForumTopicSidebar from './ForumTopicSidebar'
@@ -80,19 +81,17 @@ export default function ForumPageLayout({
                                     </span>
                                 )}
                             </div>
-                            <div className="flex items-center bg-accent p-1 rounded-[12px] border border-primary/70">
-                                {(['newest', 'activity', 'popular'] as const).map((sort) => (
-                                    <button
-                                        key={sort}
-                                        onClick={() => setSortBy(sort)}
-                                        className={`px-3 py-1 text-[10px] font-black tracking-tight transition-all rounded-[12px] lowercase ${sortBy === sort
-                                            ? 'bg-primary text-primary border border-primary'
-                                            : 'text-secondary hover:text-primary'
-                                            }`}
-                                    >
-                                        {sort}
-                                    </button>
-                                ))}
+                            <div className="w-auto">
+                                <LemonSegmentedButton
+                                    value={sortBy}
+                                    onChange={(val) => setSortBy(val)}
+                                    options={[
+                                        { value: 'newest', label: 'newest' },
+                                        { value: 'activity', label: 'activity' },
+                                        { value: 'popular', label: 'popular' },
+                                    ]}
+                                    size="xsmall"
+                                />
                             </div>
                         </div>
 
