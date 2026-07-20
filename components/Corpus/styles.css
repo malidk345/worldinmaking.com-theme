@@ -1192,8 +1192,8 @@
     width: 100%;
     display: flex;
     flex-direction: column;
-    padding: 0.375rem;
-    border-radius: 24px;
+    padding: 0.25rem;
+    border-radius: 12px;
     cursor: pointer;
     background: transparent;
     transition: transform 0.2s ease, background 0.2s ease;
@@ -1208,11 +1208,11 @@
     position: relative;
     width: 100%;
     aspect-ratio: 3 / 4;
-    border-radius: 20px;
+    border-radius: 10px;
     overflow: hidden;
     background: color-mix(in hsl, canvas, canvasText 5%);
     border: 1px solid color-mix(in hsl, canvas, canvasText 10%);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   }
 
   .corpus-doc-preview-paper {
@@ -1229,6 +1229,7 @@
     border: 1px solid rgba(0,0,0,0.06);
     overflow: hidden;
     user-select: none;
+    border-radius: 10px;
   }
 
   .dark .corpus-doc-preview-paper {
@@ -1251,10 +1252,7 @@
   }
 
   .corpus-doc-media-fade {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to bottom, transparent 40%, color-mix(in hsl, canvas, canvasText 8%) 100%);
-    pointer-events: none;
+    display: none !important;
   }
 
   .corpus-doc-badge {
