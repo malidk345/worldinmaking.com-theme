@@ -85,8 +85,8 @@ const PostsView = React.memo(() => {
                                     const displayTitle = (isTr && roadmap.translations?.['tr']?.title) ? roadmap.translations['tr'].title : roadmap.title
                                     const displayDescription = (isTr && roadmap.translations?.['tr']?.excerpt) ? roadmap.translations['tr'].excerpt : roadmap.description
                                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                    const paperMeta = parsePaperMeta((roadmap as any).inner_thoughts || (roadmap as any).paper_status)
-                                    const paperStatus = (roadmap as any).paper_status || paperMeta.paper_status
+                                    const paperMeta = parsePaperMeta((roadmap as any).inner_thoughts || (roadmap as any).excerpt || (roadmap as any).paper_status)
+                                    const paperStatus = (roadmap as any).paper_status || paperMeta?.paper_status
 
                                     return (
                                         <article
