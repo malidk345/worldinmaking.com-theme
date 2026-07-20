@@ -18,6 +18,7 @@ import Link from 'components/Link'
 import SEO from 'components/SEO'
 import Loading from 'components/Loading'
 import 'components/Corpus/styles.css'
+import { parsePaperMeta } from 'lib/wimbot-orchestrator'
 
 dayjs.extend(utc)
 dayjs.extend(relativeTime)
@@ -83,6 +84,9 @@ const PostsView = React.memo(() => {
                                     const isTr = preferredLanguage === 'tr'
                                     const displayTitle = (isTr && roadmap.translations?.['tr']?.title) ? roadmap.translations['tr'].title : roadmap.title
                                     const displayDescription = (isTr && roadmap.translations?.['tr']?.excerpt) ? roadmap.translations['tr'].excerpt : roadmap.description
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                    const paperMeta = parsePaperMeta((roadmap as any).inner_thoughts || (roadmap as any).paper_status)
+                                    const paperStatus = (roadmap as any).paper_status || paperMeta.paper_status
 
                                     return (
                                         <article
@@ -115,10 +119,10 @@ const PostsView = React.memo(() => {
                                                         </div>
                                                     </div>
                                                 )}
-                                                {roadmap.paper_status && roadmap.paper_status !== 'published' && (
-                                                    <div className="corpus-doc-badge font-mono border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/10">
-                                                        <span className="size-1.5 rounded-full bg-amber-500 animate-ping inline-block" />
-                                                        <span className="text-[8px] uppercase tracking-wider font-bold">UNFINISHED • {roadmap.paper_status}</span>
+                                                {paperStatus && paperStatus !== 'published' && (
+                                                    <div className="absolute top-2 left-2 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500/20 via-purple-500/20 to-indigo-500/20 border border-amber-500/40 text-amber-500 dark:text-amber-300 backdrop-blur-xl shadow-lg shadow-amber-500/10 font-mono">
+                                                        <span className="size-1.5 rounded-full bg-amber-400 animate-ping inline-block" />
+                                                        <span className="text-[7.5px] uppercase tracking-wider font-extrabold">LIVE AGENT • {paperStatus}</span>
                                                     </div>
                                                 )}
                                                 <div className="corpus-doc-media-fade" />
