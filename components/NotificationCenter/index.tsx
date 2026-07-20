@@ -8,6 +8,7 @@ import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import OSButton from 'components/OSButton'
 import ScrollArea from 'components/RadixUI/ScrollArea'
+import { useTranslation } from 'hooks/useTranslation'
 
 dayjs.extend(relativeTime)
 
@@ -63,6 +64,7 @@ export default function NotificationCenter() {
     const [isOpen, setIsOpen] = useState(false)
     const [notifications, setNotifications] = useState<Notification[]>([])
     const [hasUnread, setHasUnread] = useState(false)
+    const { t } = useTranslation()
 
     useEffect(() => {
         fetchNotifications()
@@ -155,8 +157,10 @@ export default function NotificationCenter() {
                                     <h3 className="font-bold text-[10px] tracking-widest opacity-50 uppercase">activity</h3>
                                 </div>
                                 <button 
+                                    type="button"
                                     onClick={() => setIsOpen(false)}
                                     className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded transition-colors text-primary"
+                                    aria-label={t('notif.close')}
                                 >
                                     <IconX className="size-3 opacity-40" />
                                 </button>

@@ -87,6 +87,8 @@ export const WindowSearchUI = ({ initialFilter }: { initialFilter?: string }) =>
                     />
                     {query && (
                         <button
+                            type="button"
+                            aria-label={t('search.clear')}
                             onClick={() => setQuery('')}
                             className="flex items-center justify-center size-5 bg-black/10 dark:bg-white/20 hover:bg-black/20 dark:hover:bg-white/30 rounded-full text-primary transition-colors flex-shrink-0"
                         >
