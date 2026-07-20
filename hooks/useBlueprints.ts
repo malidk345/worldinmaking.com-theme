@@ -27,6 +27,7 @@ export interface BlueprintPost {
     custom_css?: string;
     is_published: boolean;
     order_index: number;
+    lectureName?: string;
 }
 
 export const useBlueprints = () => {
