@@ -2,6 +2,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCallback, useEffect, useState } from 'react';
 
 export type TranslationKey =
+  | 'common.close'
   | 'menu.create_post'
   // TaskBarMenu
   | 'menu.home'
@@ -206,6 +207,7 @@ export type TranslationKey =
 
 const translations: Record<string, Record<TranslationKey, string>> = {
   en: {
+    'common.close': 'close',
     'menu.home': 'Home',
     'menu.profile': 'Profile',
     'menu.community': 'Community',
@@ -405,6 +407,7 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     'notfound.return_btn': 'return to orbit'
   },
   tr: {
+    'common.close': 'kapat',
     'menu.home': 'Ana Sayfa',
     'menu.profile': 'Profil',
     'menu.community': 'Topluluk',

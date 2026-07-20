@@ -8,6 +8,7 @@ import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import OSButton from 'components/OSButton'
 import ScrollArea from 'components/RadixUI/ScrollArea'
+import { useTranslation } from 'hooks/useTranslation'
 
 dayjs.extend(relativeTime)
 
@@ -60,6 +61,7 @@ const IconNotificationWithBadge = ({
 }
 
 export default function NotificationCenter() {
+    const { t } = useTranslation()
     const [isOpen, setIsOpen] = useState(false)
     const [notifications, setNotifications] = useState<Notification[]>([])
     const [hasUnread, setHasUnread] = useState(false)
@@ -157,6 +159,7 @@ export default function NotificationCenter() {
                                 <button 
                                     onClick={() => setIsOpen(false)}
                                     className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded transition-colors text-primary"
+                                    aria-label={t('common.close')}
                                 >
                                     <IconX className="size-3 opacity-40" />
                                 </button>
