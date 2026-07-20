@@ -33,15 +33,23 @@ export default function ForumTopicSidebar({
         }
     }
 
+    // ⚡ Bolt: Pre-calculate the latest active time per channel to prevent O(N * C) date instantiations on every render
+    const channelLatestMap = React.useMemo(() => {
+        const map = new Map<number, number>()
+        for (const post of posts) {
+            if (post.channel_id == null) continue
+            const time = new Date(post.created_at).getTime()
+            const currentMax = map.get(post.channel_id)
+            if (currentMax === undefined || time > currentMax) {
+                map.set(post.channel_id, time)
+            }
+        }
+        return map
+    }, [posts])
+
     const getLastActive = (channelId: number) => {
-        const channelPosts = posts.filter((post) => post.channel_id === channelId)
-        if (!channelPosts.length) return null
-
-        const latest = channelPosts.reduce((acc, current) => {
-            return new Date(current.created_at).getTime() > new Date(acc.created_at).getTime() ? current : acc
-        })
-
-        return dayjs(latest.created_at).fromNow()
+        const maxTime = channelLatestMap.get(channelId)
+        return maxTime ? dayjs(maxTime).fromNow() : null
     }
 
     return (
