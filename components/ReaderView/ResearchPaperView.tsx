@@ -11,6 +11,7 @@ import { Post } from 'types/database'
 import ReaderView from './index'
 import PaperBotTimeline from './PaperBotTimeline'
 import { parsePaperMeta } from 'lib/wimbot-orchestrator'
+import { cleanPaperContent } from 'lib/agent-orchestrator'
 import { useTranslation } from 'hooks/useTranslation'
 import { ReaderViewProvider, useReaderView } from './context/ReaderViewContext'
 import { IconCopy, IconCheckCircle } from '@posthog/icons'
@@ -72,6 +73,7 @@ const ResearchPaperInner = React.memo(({ post }: ResearchPaperViewProps) => {
 
     const title = (!isOriginal && translation?.title) ? translation.title : post.title
     const rawContent = (!isOriginal && translation?.content) ? translation.content : (post.content || '')
+    const cleanedContent = useMemo(() => cleanPaperContent(rawContent), [rawContent])
     const description = (!isOriginal && translation?.excerpt) ? translation.excerpt : (post.description || post.content?.slice(0, 160) || '')
 
     // Parse paper metadata & bot contributions
@@ -96,12 +98,12 @@ const ResearchPaperInner = React.memo(({ post }: ResearchPaperViewProps) => {
     }, [post])
 
     const body = useMemo(() => {
-        const wordCount = rawContent ? rawContent.split(/\s+/).filter(Boolean).length : 0
+        const wordCount = cleanedContent ? cleanedContent.split(/\s+/).filter(Boolean).length : 0
         const readTime = Math.max(1, Math.ceil(wordCount / 200))
 
         return {
             type: 'plain' as const,
-            content: rawContent,
+            content: cleanedContent,
             featuredImage: post.image || undefined,
             contributors: BOT_AUTHORS.map(a => ({ name: a.name, image: a.avatar, username: a.name })),
             date: post.date,
@@ -110,7 +112,7 @@ const ResearchPaperInner = React.memo(({ post }: ResearchPaperViewProps) => {
             readTime,
             views: post.views || 0,
         }
-    }, [rawContent, post.image, post.date, post.tags, post.views])
+    }, [cleanedContent, post.image, post.date, post.tags, post.views])
 
     const tableOfContents = useMemo(() => post.headings?.map(h => ({
         url: `#${h.id}`,
@@ -175,7 +177,7 @@ const ResearchPaperInner = React.memo(({ post }: ResearchPaperViewProps) => {
                             } as unknown as Record<string, React.ElementType>)
                         }}
                     >
-                        {rawContent}
+                        {cleanedContent}
                     </ReactMarkdown>
                 </div>
 

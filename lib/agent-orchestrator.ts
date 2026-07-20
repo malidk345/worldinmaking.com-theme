@@ -17,6 +17,167 @@ export function cleanAISmell(text: string): string {
 }
 
 /**
+ * Sanitizes research paper content: removes emojis, flattens micro-headings, and cleans layout bloat.
+ */
+export function cleanPaperContent(text: string): string {
+    if (!text) return '';
+    return text
+        // 1. Strip emojis and decorative symbols (using UTF-16 surrogate pairs & symbol ranges)
+        .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]|[\u2600-\u27BF]|[\u2300-\u23FF]|[\u2B50-\u2B55]/g, '')
+        // 2. Clean emojis/symbols immediately following markdown headers (e.g. "## 📌 Title" -> "## Title")
+        .replace(/^(#{1,6})\s*[\s\S]*?\s*([A-Za-z0-9])/gm, (match, hashes, firstChar) => `${hashes} ${firstChar}`)
+        // 3. Convert micro-subheadings (###, ####, #####, ######) to bold paragraph lead-ins to avoid header fragmentation
+        .replace(/^#{3,6}\s+(.+)$/gm, '**$1**')
+        // 4. Clean up spaces on header lines
+        .replace(/^(#{1,2})\s+/gm, '$1 ')
+        // 5. Clean up multiple horizontal rules or excessive spacing
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+}
+
+// ─── Wikimedia Commons Image Search Helpers ────────────────────────────────────
+const WIKIMEDIA_STOP_WORDS = new Set([
+    'a', 'an', 'the', 'of', 'in', 'on', 'at', 'with', 'by', 'for', 'about', 'against',
+    'between', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'to',
+    'from', 'up', 'down', 'in', 'out', 'off', 'over', 'under', 'again', 'further', 'then',
+    'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each',
+    'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own',
+    'same', 'so', 'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'should', 'now',
+    'hyper-realistic', 'realistic', 'hyperrealistic', 'photography', 'photo', 'illustration',
+    'drawing', 'painting', 'concept', 'art', 'detailed', 'high-resolution', '8k', '4k',
+    'rendering', 'render', 'macro', 'micro', 'scenic', 'dramatic', 'atmospheric', 'moody'
+]);
+
+function simplifyWikimediaQuery(prompt: string): string {
+    const clean = prompt.toLowerCase()
+        .replace(/[^\w\s\-]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    const words = clean.split(' ');
+    const keywords = words.filter(word => !WIKIMEDIA_STOP_WORDS.has(word));
+
+    if (keywords.length > 0) {
+        return keywords.slice(0, 3).join(' ');
+    }
+    return prompt.slice(0, 30);
+}
+
+async function searchWikimediaImage(query: string): Promise<string | null> {
+    try {
+        const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srnamespace=6&srsearch=${encodeURIComponent(query)}&format=json&origin=*`;
+        const searchRes = await fetch(searchUrl, {
+            headers: { 'User-Agent': 'WorldInMakingBot/1.0 (contact@worldinmaking.com)' }
+        });
+        if (!searchRes.ok) return null;
+
+        const searchData = (await searchRes.json()) as {
+            query?: {
+                search?: Array<{
+                    title: string;
+                }>;
+            };
+        };
+        const results = searchData?.query?.search || [];
+        if (results.length === 0) return null;
+
+        const imageResult = results.find((r: { title: string }) =>
+            /\.(jpg|jpeg|png|gif|svg)$/i.test(r.title)
+        );
+
+        if (!imageResult) return null;
+        const fileName = imageResult.title;
+
+        const infoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(fileName)}&prop=imageinfo&iiprop=url&format=json&origin=*`;
+        const infoRes = await fetch(infoUrl, {
+            headers: { 'User-Agent': 'WorldInMakingBot/1.0 (contact@worldinmaking.com)' }
+        });
+        if (!infoRes.ok) return null;
+
+        const infoData = (await infoRes.json()) as {
+            query?: {
+                pages?: Record<string, {
+                    imageinfo?: Array<{
+                        url?: string;
+                    }>;
+                }>;
+            };
+        };
+        const pages = infoData?.query?.pages || {};
+        const pageId = Object.keys(pages)[0];
+        const imageUrl = pages[pageId]?.imageinfo?.[0]?.url;
+
+        return imageUrl || null;
+    } catch (err) {
+        console.error('Error fetching from Wikimedia:', err);
+        return null;
+    }
+}
+
+async function getRealImageLink(description: string): Promise<string> {
+    let url = await searchWikimediaImage(description);
+    if (url) return url;
+
+    const simple = simplifyWikimediaQuery(description);
+    url = await searchWikimediaImage(simple);
+    if (url) return url;
+
+    const validParts = simple.split(' ').filter(p => p.length > 2);
+    if (validParts.length > 0) {
+        try {
+            url = await Promise.any(
+                validParts.map(part => searchWikimediaImage(part).then(res => {
+                    if (res) return res;
+                    throw new Error("not found");
+                }))
+            );
+            if (url) return url;
+        } catch {
+            // all failed
+        }
+    }
+
+    // Fallback: search Wikimedia Commons for generic concept terms
+    const fallbacks = ['abstract concept', 'philosophy', 'metaphor', 'allegory', 'ideas'];
+    try {
+        url = await Promise.any(
+            fallbacks.map(term => searchWikimediaImage(term).then(res => {
+                if (res) return res;
+                throw new Error("not found");
+            }))
+        );
+        if (url) return url;
+    } catch {
+        // all failed
+    }
+
+    return 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800';
+}
+
+/**
+ * Resolves Markdown illustration placeholders `![illustration: description]()` into real image URLs.
+ */
+export async function resolveIllustrationPlaceholders(content: string): Promise<string> {
+    if (!content) return '';
+    const regex = /!\[illustration:\s*([^\]]+)\]\(\)/gi;
+    const matches = Array.from(content.matchAll(regex));
+    let updatedContent = content;
+
+    for (const match of matches) {
+        const fullPlaceholder = match[0];
+        const description = match[1].trim();
+        try {
+            const realUrl = await getRealImageLink(description);
+            updatedContent = updatedContent.replace(fullPlaceholder, `![illustration: ${description}](${realUrl})`);
+        } catch (e) {
+            console.error('[Illustration Resolution Error]', e);
+        }
+    }
+
+    return updatedContent;
+}
+
+/**
  * Calculates a typing delay (in ms) simulating human writing speed.
  * Capped at 4000ms to prevent serverless function timeout.
  */

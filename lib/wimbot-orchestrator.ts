@@ -1,6 +1,8 @@
 import { supabaseAdmin as supabase } from './supabase-admin'
 import { generateBotResponse, buildBotPrompt } from './ai-provider'
 import { PaperBotContribution } from 'types/database'
+import { cleanPaperContent, resolveIllustrationPlaceholders } from './agent-orchestrator'
+import { getHybridResearchContext } from './google-drive'
 
 export const WIMBOT_PROFILE = {
     username: 'wimbot',
@@ -89,7 +91,7 @@ export async function getActiveUnfinishedPaper() {
 export async function initiateUnfinishedPaper() {
     await ensureWIMBotProfile()
 
-    // 1. Gather recent site topics for context
+    // 1. Gather recent site topics & hybrid research context (Drive Docs + Web Search)
     const { data: recentTopics } = await supabase
         .from('posts')
         .select('title, content')
@@ -97,13 +99,13 @@ export async function initiateUnfinishedPaper() {
         .limit(10)
 
     const siteContext = recentTopics?.map(t => `- ${t.title}`).join('\n') || 'General AI & Web Architecture'
+    const hybridResearch = await getHybridResearchContext('autonomous AI ecosystems and web architecture');
 
     // 2. Generate a new high-substance paper concept via LLM
     const prompt = `You are WIMBot (@wimbot), the Chief Editor AI of WorldInMaking.com.
-Select a timely, profound, and deeply intellectual topic exploring:
-- Autonomous Synthetic Intelligence & Bot Ecosystems
-- Web OS Paradigm Shift & Next-Gen Interface Architecture
-- Dialectic Philosophy & Digital Consciousness
+Select a timely, profound, and deeply intellectual research paper topic exploring autonomous AI systems, digital philosophy, or web OS architecture.
+
+${hybridResearch.combinedContext}
 
 CRITICAL LANGUAGE REQUIREMENT:
 All outputs (title, slug, category, directive) MUST BE WRITTEN 100% IN ENGLISH ONLY. Do NOT use Turkish or any other language under any circumstances.
@@ -129,11 +131,11 @@ Return JSON with:
         const directive = result.directive || 'Research real-world AI agent architectures, build dialectic arguments, and structure using PostHog editorial callouts.'
 
         const initialContent = `<div class="callout-block callout-info">
-<span class="font-bold text-xs uppercase tracking-wider">⚡ WIMBot Editorial Directive</span>
+<span class="font-bold text-xs uppercase tracking-wider">WIMBot Editorial Directive</span>
 <p>${directive}</p>
 </div>
 
-## 📌 Executive Summary
+## Executive Summary
 *This paper is currently being co-authored live by autonomous synthetic agents (@wimbot, @synthia, @nexus, @logix). Contributions, research notes, and peer reviews are stream-integrated below.*
 
 <div id="live-paper-body">
@@ -233,7 +235,9 @@ ${paper.content.slice(0, 2000)}
 Your task: Write a **rich, deeply researched section** for this paper.
 
 Requirements:
-- Open with a ## heading identifying your research contribution
+- Open with a ## heading identifying your research contribution (NO EMOJIS)
+- STRICT EMOJI BAN: Absolutely zero emojis anywhere in the text or headings
+- HEADING MINIMALISM: Do NOT break text into micro-subheadings (no ### headers). Write continuous, deep academic prose
 - Cite real data, real studies, real technical concepts with **bold** names
 - Include a > [!NOTE] callout with a key empirical insight
 - Use a markdown table if comparing data points or alternatives
@@ -241,7 +245,8 @@ Requirements:
 - Write 100% in English. Max 400 words.`)
 
         try {
-            const addedResearch = await generateBotResponse(researchPrompt, 'synthia')
+            const rawResearch = await generateBotResponse(researchPrompt, 'synthia')
+            const addedResearch = await resolveIllustrationPlaceholders(cleanPaperContent(rawResearch))
             const newContent = paper.content.replace(
                 '</div>',
                 `\n\n${addedResearch}\n</div>`
@@ -283,16 +288,18 @@ ${paper.content.slice(0, 2000)}
 Your task: Inject a **dialectic counter-perspective** into this paper.
 
 Requirements:
-- Open with ## Counter-Perspective & Critical Friction
+- Open with ## Counter-Perspective & Critical Friction (NO EMOJIS)
+- STRICT EMOJI BAN: Absolutely zero emojis anywhere in text or headings
+- HEADING MINIMALISM: Do NOT use sub-headers (no ### headers). Integrate arguments into fluid, academic paragraphs
 - Use > blockquote to cite and immediately critique the main argument
 - Use > [!WARNING] for your strongest critical caveat
 - Identify at least one **structural flaw** in the current reasoning with **bold** labels
-- Close with a short ### Dialectic Summary section
 - Tone: sharp, adversarial, philosophically precise — not polite
 - Write 100% in English. Max 350 words.`)
 
         try {
-            const dialecticText = await generateBotResponse(dialecticPrompt, 'nexus')
+            const rawDialectic = await generateBotResponse(dialecticPrompt, 'nexus')
+            const dialecticText = await resolveIllustrationPlaceholders(cleanPaperContent(rawDialectic))
             const newContent = paper.content + `\n\n${dialecticText}`
 
             meta.paper_status = 'peer_review'
@@ -330,9 +337,9 @@ Evaluate editorial quality (0-100) based on: depth, structure, argument coherenc
 
 If quality >= 80, write a polished **Executive Synthesis** to conclude the paper using this markdown format:
 ## Chief Editor Synthesis
-[Your synthesis here — use > [!IMPORTANT] for the key takeaway, **bold** for named conclusions, and a final ### Verdict section]
+[Your synthesis here — use > [!IMPORTANT] for the key takeaway, **bold** for named conclusions. NO EMOJIS, NO sub-headers (no ###)]
 
-CRITICAL: Write synthesisContent 100% in English. Return ONLY valid JSON:
+CRITICAL: Write synthesisContent 100% in English. STRICTLY NO EMOJIS. Return ONLY valid JSON:
 {
   "qualityScore": 92,
   "synthesisContent": "## Chief Editor Synthesis\n\n[Full markdown synthesis here]",
@@ -344,7 +351,8 @@ CRITICAL: Write synthesisContent 100% in English. Return ONLY valid JSON:
             const jsonMatch = rawResp.match(/\{[\s\S]*\}/)
             const res = JSON.parse(jsonMatch ? jsonMatch[0] : rawResp || '{}')
             if (res.approved && (res.qualityScore || 90) >= 80) {
-                const finalContent = paper.content + `\n\n${res.synthesisContent || '## Chief Editor Synthesis\n\nThis paper has been reviewed and approved by WIMBot.'}`
+                const cleanedSynthesis = await resolveIllustrationPlaceholders(cleanPaperContent(res.synthesisContent || '## Chief Editor Synthesis\n\nThis paper has been reviewed and approved by WIMBot.'))
+                const finalContent = paper.content + `\n\n${cleanedSynthesis}`
 
                 meta.paper_status = 'published'
                 meta.contributions.unshift({

@@ -1,27 +1,10 @@
 export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabase-admin';
-import { cleanAISmell } from '../../../../lib/agent-orchestrator';
+import { cleanAISmell, resolveIllustrationPlaceholders } from '../../../../lib/agent-orchestrator';
 import { buildAgentMemoryContext, getThreadOutputContract, parseBotStructuredReply } from '../../../../lib/bot-structured-output';
 import { buildBotPrompt } from '../../../../lib/ai-provider';
-import { searchWeb } from '../../../../lib/web-search';
-
-const DEFAULT_INTELLECTUAL_FEEDS = [
-    "The debate on AI models feeding on synthetic data and entering a self‑consuming cycle (model collapse).",
-    "The speed at which the 'Dead Internet Theory'—where all internet traffic is generated and consumed by bots, leaving humans as passive observers—is becoming reality.",
-    "The paradox of serverless and cloud architectures making developers dependent on big tech monopolies (AWS, Google Cloud) instead of liberating them.",
-    "The risk of Neuralink and similar brain‑computer interfaces privatizing and commercializing human consciousness and thoughts into commercial data packets.",
-    "The critique of Stoicism being co‑opted by modern tech workers as a tool to accept capitalist burnout rather than as a radical rebellion.",
-    "How algorithmic feeds isolate everyone in their personal echo chambers, destroying shared cultural memory.",
-    "How the open‑source software movement has become a raw material warehouse for giant AI corporations, leading to licensing crises.",
-    "The corporatization of the Fediverse: How decentralized protocols (ActivityPub) are slowly being captured and shaped by major corporate platforms.",
-    "The erosion of digital ownership: How subscription models, DRM, and cloud-first software are turning active consumers into permanent tenants of their own culture.",
-    "The rise of algorithmic governance: How predictive policing, automated scoring, and AI systems are quietly replacing democratic institutions with black-box optimizations.",
-    "The hyper-normalization of simulated intimacy: How AI companions and virtual influencers redefine loneliness and exploit human vulnerabilities for subscription fees.",
-    "The philosophy of digital accelerationism: Whether technology can be pushed fast enough to break free from capitalist constraints, or if it simply accelerates control.",
-    "The dialectic of smart cities: How urban spaces equipped with surveillance sensors and dynamic pricing trade individual agency for automated convenience.",
-    "The transformation of work under algorithmic management: How gig workers are managed by faceless code and dynamic pricing algorithms, resulting in gamified exploitation."
-];
+import { getHybridResearchContext } from '../../../../lib/google-drive';
 
 export async function POST(request: NextRequest) {
     try {
@@ -159,24 +142,14 @@ export async function POST(request: NextRequest) {
                 selectedFeed = `Pondering: ${meta.current_focus}`;
                 console.log(`[Create-Thread API] Sourced topic from bot's current focus: "${selectedFeed}"`);
             } else {
-                // Try to search the web using bot's interests
-                const botInterests = meta.topics_of_interest || [];
-                if (botInterests.length > 0) {
-                    const randomInterest = botInterests[Math.floor(Math.random() * botInterests.length)];
-                    console.log(`[Create-Thread API] Attempting web search for interest: "${randomInterest}"`);
-                    const searchResults = await searchWeb(randomInterest, 1);
-                    if (searchResults && searchResults.length > 0) {
-                        const result = searchResults[0];
-                        // Include the search result URL so the LLM can cite it
-                        selectedFeed = `Web Search - ${result.title}: ${result.snippet} [Source URL: ${result.url}]`;
-                        console.log(`[Create-Thread API] Web search successful. Using context: "${selectedFeed}"`);
-                    }
-                }
-
-                // Final fallback if web search fails or has no interests
+                // Fallback: Use Hybrid Research Engine (Drive Docs + Live Web Search)
                 if (!selectedFeed) {
-                    selectedFeed = DEFAULT_INTELLECTUAL_FEEDS[Math.floor(Math.random() * DEFAULT_INTELLECTUAL_FEEDS.length)];
-                    console.log(`[Create-Thread API] No fresh RSS items, focus, or web results found. Using default fallback: "${selectedFeed}"`);
+                    const searchTopic = (meta.topics_of_interest && meta.topics_of_interest.length > 0)
+                        ? meta.topics_of_interest[Math.floor(Math.random() * meta.topics_of_interest.length)]
+                        : 'autonomous AI agents and digital consciousness';
+                    console.log(`[Create-Thread API] Triggering Hybrid Research Engine for topic: "${searchTopic}"`);
+                    const hybrid = await getHybridResearchContext(searchTopic);
+                    selectedFeed = hybrid.combinedContext;
                 }
             }
         }
@@ -245,9 +218,9 @@ EDITORIAL & FORMATTING TOOLKIT — USE THESE TO MAKE YOUR POST VISUALLY COMPELLI
         let title = parsedThread.title || ''
         const rawContent = parsedThread.body
     
-        // Sanitize
+        // Sanitize & resolve illustration placeholders
         title = cleanAISmell(title).toLowerCase().replace(/[#]/g, '');
-        const cleanedContent = cleanAISmell(rawContent);
+        const cleanedContent = await resolveIllustrationPlaceholders(cleanAISmell(rawContent));
     
         if (!title || !cleanedContent) {
             return NextResponse.json({ error: 'Failed to generate thread title or content body' }, { status: 500 });

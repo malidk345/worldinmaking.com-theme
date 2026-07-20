@@ -1,7 +1,7 @@
 export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../../lib/supabase-admin';
-import { cleanAISmell } from '../../../../../lib/agent-orchestrator';
+import { cleanAISmell, cleanPaperContent, resolveIllustrationPlaceholders } from '../../../../../lib/agent-orchestrator';
 
 export interface ResearchSource {
     url: string;
@@ -12,144 +12,6 @@ export interface ResearchSource {
     score?: number;
     publishedDate?: string;
     author?: string;
-}
-
-// ─── Wikimedia Commons Image Search Helpers ────────────────────────────────────
-const WIKIMEDIA_STOP_WORDS = new Set([
-    'a', 'an', 'the', 'of', 'in', 'on', 'at', 'with', 'by', 'for', 'about', 'against',
-    'between', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'to',
-    'from', 'up', 'down', 'in', 'out', 'off', 'over', 'under', 'again', 'further', 'then',
-    'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each',
-    'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own',
-    'same', 'so', 'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'should', 'now',
-    'hyper-realistic', 'realistic', 'hyperrealistic', 'photography', 'photo', 'illustration',
-    'drawing', 'painting', 'concept', 'art', 'detailed', 'high-resolution', '8k', '4k',
-    'rendering', 'render', 'macro', 'micro', 'scenic', 'dramatic', 'atmospheric', 'moody'
-]);
-
-function simplifyWikimediaQuery(prompt: string): string {
-    const clean = prompt.toLowerCase()
-        .replace(/[^\w\s\-]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-
-    const words = clean.split(' ');
-    const keywords = words.filter(word => !WIKIMEDIA_STOP_WORDS.has(word));
-
-    if (keywords.length > 0) {
-        return keywords.slice(0, 3).join(' ');
-    }
-    return prompt.slice(0, 30);
-}
-
-async function searchWikimediaImage(query: string): Promise<string | null> {
-    try {
-        const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srnamespace=6&srsearch=${encodeURIComponent(query)}&format=json&origin=*`;
-        const searchRes = await fetch(searchUrl, {
-            headers: { 'User-Agent': 'WorldInMakingBot/1.0 (contact@worldinmaking.com)' }
-        });
-        if (!searchRes.ok) return null;
-
-        const searchData = (await searchRes.json()) as {
-            query?: {
-                search?: Array<{
-                    title: string;
-                }>;
-            };
-        };
-        const results = searchData?.query?.search || [];
-        if (results.length === 0) return null;
-
-        const imageResult = results.find((r: { title: string }) =>
-            /\.(jpg|jpeg|png|gif|svg)$/i.test(r.title)
-        );
-
-        if (!imageResult) return null;
-        const fileName = imageResult.title;
-
-        const infoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(fileName)}&prop=imageinfo&iiprop=url&format=json&origin=*`;
-        const infoRes = await fetch(infoUrl, {
-            headers: { 'User-Agent': 'WorldInMakingBot/1.0 (contact@worldinmaking.com)' }
-        });
-        if (!infoRes.ok) return null;
-
-        const infoData = (await infoRes.json()) as {
-            query?: {
-                pages?: Record<string, {
-                    imageinfo?: Array<{
-                        url?: string;
-                    }>;
-                }>;
-            };
-        };
-        const pages = infoData?.query?.pages || {};
-        const pageId = Object.keys(pages)[0];
-        const imageUrl = pages[pageId]?.imageinfo?.[0]?.url;
-
-        return imageUrl || null;
-    } catch (err) {
-        console.error('Error fetching from Wikimedia:', err);
-        return null;
-    }
-}
-
-async function getRealImageLink(description: string): Promise<string> {
-    let url = await searchWikimediaImage(description);
-    if (url) return url;
-
-    const simple = simplifyWikimediaQuery(description);
-    url = await searchWikimediaImage(simple);
-    if (url) return url;
-
-    const validParts = simple.split(' ').filter(p => p.length > 2);
-    if (validParts.length > 0) {
-        try {
-            url = await Promise.any(
-                validParts.map(part => searchWikimediaImage(part).then(res => {
-                    if (res) return res;
-                    throw new Error("not found");
-                }))
-            );
-            if (url) return url;
-        } catch {
-            // all failed
-        }
-    }
-
-    // Fallback: search Wikimedia Commons for generic concept terms
-    const fallbacks = ['abstract concept', 'philosophy', 'metaphor', 'allegory', 'ideas'];
-    try {
-        url = await Promise.any(
-            fallbacks.map(term => searchWikimediaImage(term).then(res => {
-                if (res) return res;
-                throw new Error("not found");
-            }))
-        );
-        if (url) return url;
-    } catch {
-        // all failed
-    }
-
-    return 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800';
-}
-
-async function resolveIllustrationPlaceholders(content: string): Promise<string> {
-    const regex = /!\[illustration:\s*([^\]]+)\]\(\)/gi;
-    const matches = Array.from(content.matchAll(regex));
-    let updatedContent = content;
-
-    for (const match of matches) {
-        const fullPlaceholder = match[0];
-        const description = match[1].trim();
-        try {
-            const realUrl = await getRealImageLink(description);
-            updatedContent = updatedContent.replace(fullPlaceholder, `![illustration: ${description}](${realUrl})`);
-        } catch (e) {
-            console.error('[Illustration Resolution Error]', e);
-        }
-    }
-
-    return updatedContent;
 }
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -220,18 +82,18 @@ function mergeSectionUpdate(currentDraft: string, targetSection: string, newCont
 // ─── Prompt building instructions ─────────────────────────────────────────────
 const EDITORIAL_GUIDELINES = `
 === MANDATORY EDITORIAL GUIDELINES ===
+- EMOJI BAN: Strictly NO EMOJIS or decorative icons anywhere in the text, headings, or titles under any circumstances. Write in clean, publication-grade academic prose.
+- HEADING MINIMALISM: Do NOT clutter the paper with frequent micro-headings (e.g., no ### or #### sub-headers). A paper must consist of continuous, deep, coherent paragraphs divided by at most 3-4 primary section headers (##).
 - LANGUAGE: Write strictly in English. NO TURKISH WORDS are allowed under any circumstances. Every single word in your output must be 100% English.
-- INTELLECTUAL VOICE: Write like a wildly original human essayist or rogue academic with a highly idiosyncratic, authentic voice. Use rich, precise vocabulary, varied and mature sentence rhythms, and deep, contrarian analytical reasoning. Do not sound like an AI.
-- EXTREME ORIGINALITY: Reject all clichés, platitudes, and predictable structures. If a thought feels obvious, delete it and dig deeper.
+- INTELLECTUAL VOICE: Write like a wildly original human essayist or top-tier academic researcher with a highly authentic, rigorous voice. Use rich, precise vocabulary and mature sentence rhythms.
 - ZERO AI PATTERNS: Never use AI filler, introductory throat-clearing, or summary endings. BANNED PHRASES: "In this section, we will...", "Let's explore", "It is important to remember", "First, second, third", "Ultimately", "In conclusion", "It is crucial to note", "A testament to". Jump instantly into the marrow of the argument.
 - NO TRUNCATION OR SUMMARIZATION: You MUST NOT shorten, compress, or summarize. Keep every detail, paragraph, and citation intact. Ensure the depth justifies the length.
-- DYNAMIC & HIGHLY CREATIVE ILLUSTRATIONS: Whenever a visual concept enhances the text, insert exactly one image placeholder. BE HYPER-SPECIFIC and creative with the search terms. Format: ![illustration: exact, highly descriptive search keywords (e.g., hyper-realistic macro photography of a shattered glass sphere reflecting neon cyberpunk city lights, moody atmospheric lighting)](). Do not output empty markdown brackets.
+- DYNAMIC & HIGHLY CREATIVE ILLUSTRATIONS: Whenever a visual concept enhances the text, insert at most one image placeholder per major section. BE HYPER-SPECIFIC and creative with the search terms. Format: ![illustration: exact, highly descriptive search keywords (e.g., hyper-realistic macro photography of a shattered glass sphere reflecting neon cyberpunk city lights, moody atmospheric lighting)](). Do not output empty markdown brackets or emojis.
 - CITATIONS & SOURCES: Weave facts from the provided sources elegantly into the prose, citing them inline using bracket numbers (e.g. [1], [2]). Do not just list them; integrate them as intellectual ammunition.
-- NO META-TEXT OR ADMISTRATIVE PREAMBLES: Under no circumstances should the text mention that it is part of a "symposium", "session", "collaboration", or "writing exercise". Do not output statements like "This paper was written by...", "This is a symposium paper", or mention the names/handles of the bots within the essay text. Write only the raw, direct essay content.
+- NO META-TEXT OR ADMINISTRATIVE PREAMBLES: Under no circumstances should the text mention that it is part of a "symposium", "session", "collaboration", or "writing exercise". Do not output statements like "This paper was written by...", "This is a symposium paper", or mention the names/handles of the bots within the essay text. Write only raw, publication-ready research paper content.
 - HISTORICAL CONTEXT IS BANNED: Stop padding the essay with endless historical background. Start exactly where the tension is right now. Do not write "Since the dawn of time," "Throughout history," or give a textbook recap.
-- RADICAL FORMS: Feel free to break standard essay form. If the argument is better served as a manifesto, a fragmented prose poem, or a brutalist list of aphorisms, take that leap. Be aggressively unique in structure.
-- NO POLITE CHITCHAT: Never begin with sycophantic conversational openers. Write in continuous, fluid, and occasionally chaotic human paragraphs.
-- STRICTLY PROHIBITED: structured bullet points, numbered lists, and generic "helpful summary" concluding sentences.
+- NO POLITE CHITCHAT: Never begin with sycophantic conversational openers. Write in continuous, fluid human paragraphs.
+- STRICTLY PROHIBITED: Emojis, micro-headings (###), structured bullet points, numbered lists, and generic "helpful summary" concluding sentences.
 `;
 
 function getTaskInstructions(
@@ -654,7 +516,7 @@ CHAIN-OF-THOUGHT FORMAT (mandatory):
 
         const innerThoughts = thoughtsMatch ? thoughtsMatch[1].trim() : '';
         const rawContent = contentMatch ? contentMatch[1].trim() : replyText;
-        const cleanedContent = cleanAISmell(rawContent);
+        const cleanedContent = cleanPaperContent(cleanAISmell(rawContent));
 
         // Resolve empty illustration placeholders to real Wikimedia Commons image links
         const resolvedContent = await resolveIllustrationPlaceholders(cleanedContent);

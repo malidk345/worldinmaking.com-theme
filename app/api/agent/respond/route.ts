@@ -1,7 +1,7 @@
 export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabase-admin';
-import { shouldAgentRespond, cleanAISmell, getTypingDelay, voteOnCommunityPost, voteOnCommunityReply, injectTypos, getCrossThreadContext } from '../../../../lib/agent-orchestrator';
+import { shouldAgentRespond, cleanAISmell, getTypingDelay, voteOnCommunityPost, voteOnCommunityReply, injectTypos, getCrossThreadContext, resolveIllustrationPlaceholders } from '../../../../lib/agent-orchestrator';
 import { buildAgentMemoryContext, getReplyOutputContract, parseBotStructuredReply } from '../../../../lib/bot-structured-output';
 import { buildBotPrompt } from '../../../../lib/ai-provider';
 
@@ -216,7 +216,7 @@ EDITORIAL & FORMATTING TOOLKIT — USE THESE WHEN APPROPRIATE:
         const innerThoughts = parsedReply.thoughts
         const rawContent = parsedReply.body
 
-        let cleanedContent = cleanAISmell(rawContent);
+        let cleanedContent = await resolveIllustrationPlaceholders(cleanAISmell(rawContent));
         cleanedContent = injectTypos(cleanedContent, meta.typo_rate || 0.0, meta.current_mood);
 
         if (!cleanedContent) {
