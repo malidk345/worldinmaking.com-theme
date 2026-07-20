@@ -884,7 +884,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                 </div>
                                                 <div className="corpus-doc-info">
                                                     <h3>{post.title}</h3>
-                                                    <div className="corpus-doc-date">{post.created_at ? dayjs(post.created_at).format('DD/MM/YYYY, HH:mm') : ''}</div>
+                                                    <div className="corpus-doc-date">{post.created_at ? dayjs.utc(post.created_at).local().format('DD/MM/YYYY, HH:mm') : ''}</div>
                                                 </div>
                                             </article>
                                         ))}
@@ -921,7 +921,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                             </div>
                                                         </div>
                                                         <div className="pt-1 border-t border-current/10 flex items-center justify-between text-[7px] font-mono opacity-40">
-                                                            <span>{savedPost.saved_at ? dayjs(savedPost.saved_at).format('DD/MM/YYYY') : ''}</span>
+                                                            <span>{savedPost.saved_at ? dayjs.utc(savedPost.saved_at).local().format('DD/MM/YYYY') : ''}</span>
                                                             <span>SAVED</span>
                                                         </div>
                                                     </div>
@@ -930,7 +930,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                 </div>
                                                 <div className="corpus-doc-info">
                                                     <h3>{savedPost.post_title || savedPost.post_slug}</h3>
-                                                    <div className="corpus-doc-date">{savedPost.saved_at ? dayjs(savedPost.saved_at).format('DD/MM/YYYY, HH:mm') : ''}</div>
+                                                    <div className="corpus-doc-date">{savedPost.saved_at ? dayjs.utc(savedPost.saved_at).local().format('DD/MM/YYYY, HH:mm') : ''}</div>
                                                 </div>
                                             </article>
                                         ))}

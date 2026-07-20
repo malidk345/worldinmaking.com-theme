@@ -123,7 +123,7 @@ const PostsView = React.memo(() => {
                                                                 )}
                                                             </div>
                                                             <div className="pt-1 border-t border-current/10 flex items-center justify-between text-[7px] font-mono opacity-40">
-                                                                <span>{roadmap.date ? dayjs.utc(roadmap.date).format('DD/MM/YYYY') : (roadmapRecord.created_at ? dayjs.utc(roadmapRecord.created_at).format('DD/MM/YYYY') : '')}</span>
+                                                                <span>{roadmap.date ? dayjs.utc(roadmap.date).local().format('DD/MM/YYYY') : (roadmapRecord.created_at ? dayjs.utc(roadmapRecord.created_at).local().format('DD/MM/YYYY') : '')}</span>
                                                                 <span>DOC</span>
                                                             </div>
                                                         </div>
@@ -144,7 +144,7 @@ const PostsView = React.memo(() => {
                                                 <div className="corpus-doc-info">
                                                     <h3>{displayTitle}</h3>
                                                     <div className="corpus-doc-date">
-                                                        {roadmap.date ? dayjs.utc(roadmap.date).format('DD/MM/YYYY, HH:mm') : (roadmapRecord.created_at ? dayjs.utc(roadmapRecord.created_at).format('DD/MM/YYYY, HH:mm') : '')}
+                                                        {roadmap.date ? dayjs.utc(roadmap.date).local().format('DD/MM/YYYY, HH:mm') : (roadmapRecord.created_at ? dayjs.utc(roadmapRecord.created_at).local().format('DD/MM/YYYY, HH:mm') : '')}
                                                     </div>
                                                 </div>
                                             </article>
