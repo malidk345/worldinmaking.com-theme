@@ -101,7 +101,7 @@ export default function ForumQuestionForm({ isInForum = false, archived = false,
                                 <div className="flex gap-2">
                                     <LemonButton
                                         size="small"
-                                        variant="primary"
+                                        type="primary"
                                         disabled={!stripHtmlTags(body) || (isInForum && !subject.trim())}
                                         onClick={handleSubmit}
                                     >
