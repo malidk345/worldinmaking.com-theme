@@ -1,308 +1,365 @@
-"use client"
+"use client";
 
-import React from 'react'
-import { createPortal } from 'react-dom'
-import OSButton from 'components/OSButton'
+import React from "react";
+import { createPortal } from "react-dom";
+import OSButton from "components/OSButton";
 import {
-    IconSidebarOpen,
-    IconSidebarClose,
-    IconChevronLeft,
-    IconChevronRight,
-    IconSearch,
-    IconTableOfContents,
-    IconBookmark,
-    IconBookmarkSolid,
-    IconGlobe,
-    IconMessage,
-} from '@posthog/icons'
-import Tooltip from 'components/RadixUI/Tooltip'
-import { useApp } from 'context/App'
-import { useWindow } from 'context/Window'
-import InPageSearchBar from 'components/Search/InPageSearchBar'
-import { LanguageSelector } from './LanguageSelector'
-import KeyboardShortcut from 'components/KeyboardShortcut'
+  IconSidebarOpen,
+  IconSidebarClose,
+  IconChevronLeft,
+  IconChevronRight,
+  IconSearch,
+  IconTableOfContents,
+  IconBookmark,
+  IconBookmarkSolid,
+  IconGlobe,
+  IconMessage,
+} from "@posthog/icons";
+import Tooltip from "components/RadixUI/Tooltip";
+import { useApp } from "context/App";
+import { useWindow } from "context/Window";
+import InPageSearchBar from "components/Search/InPageSearchBar";
+import { LanguageSelector } from "./LanguageSelector";
+import KeyboardShortcut from "components/KeyboardShortcut";
 
 interface FooterBarProps {
-    isNavVisible?: boolean
-    isTocVisible?: boolean
-    onToggleNav?: () => void
-    onToggleToc?: () => void
-    showBack?: boolean
-    showForward?: boolean
-    showSearch?: boolean
-    showToc?: boolean
-    hasLeftSidebar?: boolean
-    rightActionButtons?: React.ReactNode
-    title?: string
-    navIconClassName?: string
-    searchContentRef?: React.RefObject<HTMLElement | null>
-    onBookmark?: () => void
-    isBookmarked?: boolean
-    bookmarkLoading?: boolean
-    onComment?: () => void
-    onSearch?: (query: string) => void
-    currentLanguage?: string
-    availableLanguages?: string[]
-    onLanguageChange?: (code: string) => void
+  isNavVisible?: boolean;
+  isTocVisible?: boolean;
+  onToggleNav?: () => void;
+  onToggleToc?: () => void;
+  showBack?: boolean;
+  showForward?: boolean;
+  showSearch?: boolean;
+  showToc?: boolean;
+  hasLeftSidebar?: boolean;
+  rightActionButtons?: React.ReactNode;
+  title?: string;
+  navIconClassName?: string;
+  searchContentRef?: React.RefObject<HTMLElement | null>;
+  onBookmark?: () => void;
+  isBookmarked?: boolean;
+  bookmarkLoading?: boolean;
+  onComment?: () => void;
+  onSearch?: (query: string) => void;
+  currentLanguage?: string;
+  availableLanguages?: string[];
+  onLanguageChange?: (code: string) => void;
 }
 
 export default function FooterBar({
-    isNavVisible,
-    isTocVisible,
-    onToggleNav,
-    onToggleToc,
-    showBack = false,
-    showForward = false,
-    showSearch = false,
-    showToc = false,
-    hasLeftSidebar = false,
-    rightActionButtons,
-    title,
-    navIconClassName = '',
-    searchContentRef,
-    onBookmark,
-    isBookmarked = false,
-    bookmarkLoading = false,
-    onComment,
-    onSearch,
-    currentLanguage = 'en',
-    availableLanguages,
-    onLanguageChange,
+  isNavVisible,
+  isTocVisible,
+  onToggleNav,
+  onToggleToc,
+  showBack = false,
+  showForward = false,
+  showSearch = false,
+  showToc = false,
+  hasLeftSidebar = false,
+  rightActionButtons,
+  title,
+  navIconClassName = "",
+  searchContentRef,
+  onBookmark,
+  isBookmarked = false,
+  bookmarkLoading = false,
+  onComment,
+  onSearch,
+  currentLanguage = "en",
+  availableLanguages,
+  onLanguageChange,
 }: FooterBarProps) {
-    const appContext = useApp()
-    const compact = appContext?.compact
-    const focusedWindow = appContext?.focusedWindow
+  const appContext = useApp();
+  const compact = appContext?.compact;
+  const focusedWindow = appContext?.focusedWindow;
 
-    const windowContext = useWindow()
-    const goBack = windowContext?.goBack
-    const goForward = windowContext?.goForward
-    const canGoBack = windowContext?.canGoBack
-    const canGoForward = windowContext?.canGoForward
-    const appWindow = windowContext?.appWindow
+  const windowContext = useWindow();
+  const goBack = windowContext?.goBack;
+  const goForward = windowContext?.goForward;
+  const canGoBack = windowContext?.canGoBack;
+  const canGoForward = windowContext?.canGoForward;
+  const appWindow = windowContext?.appWindow;
 
-    const [searchOpen, setSearchOpen] = React.useState(false)
-    const [languageOpen, setLanguageOpen] = React.useState(false)
+  const [searchOpen, setSearchOpen] = React.useState(false);
+  const [languageOpen, setLanguageOpen] = React.useState(false);
 
-    const toggleSearch = () => setSearchOpen(!searchOpen)
-    const toggleLanguage = () => setLanguageOpen(!languageOpen)
+  const toggleSearch = () => setSearchOpen(!searchOpen);
+  const toggleLanguage = () => setLanguageOpen(!languageOpen);
 
-    React.useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            const target = e.target as HTMLElement
-            if (
-                target.tagName === 'INPUT' ||
-                target.tagName === 'TEXTAREA' ||
-                target.shadowRoot
-            ) {
-                return
-            }
-            // Only handle Shift+F if this window is the focused/active window
-            if (e.key === 'F' && e.shiftKey && focusedWindow?.key === appWindow?.key) {
-                e.preventDefault()
-                setSearchOpen(true)
-            }
-        }
-        window.addEventListener('keydown', handleKeyDown)
-        return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [focusedWindow, appWindow])
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.shadowRoot
+      ) {
+        return;
+      }
+      // Only handle Shift+F if this window is the focused/active window
+      if (
+        e.key === "F" &&
+        e.shiftKey &&
+        focusedWindow?.key === appWindow?.key
+      ) {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [focusedWindow, appWindow]);
 
-    // Consistent button styling for ALL icons
-    // Slightly increased from h-7 w-7 to h-8 w-8
-    // p-2 and p-1.5 adjusted to center the size-[18px] icons
-    const mainIconBtnClass = "p-2 h-8 w-8 !rounded-md"
-    const interactionBtnClass = "p-1.5 h-8 w-8 !rounded"
+  // Consistent button styling for ALL icons
+  // Slightly increased from h-7 w-7 to h-8 w-8
+  // p-2 and p-1.5 adjusted to center the size-[18px] icons
+  const mainIconBtnClass = "p-2 h-8 w-8 !rounded-md";
+  const interactionBtnClass = "p-1.5 h-8 w-8 !rounded";
 
-    const [footerTarget, setFooterTarget] = React.useState<HTMLElement | null>(null)
+  const [footerTarget, setFooterTarget] = React.useState<HTMLElement | null>(
+    null,
+  );
 
-    React.useEffect(() => {
-        if (appWindow?.key) {
-            const el = document.getElementById(`window-footer-${appWindow.key}`)
-            if (el) {
-                setFooterTarget(el)
-            }
-        }
-    }, [appWindow?.key])
-
-    const content = (
-        <div data-scheme="tertiary" className={`flex w-full items-center px-1.5 py-0.5 select-none gap-2 justify-between ${footerTarget ? 'bg-transparent' : 'bg-primary border-t border-primary'}`}>
-
-            {/* LEFT SECTION: Sidebar, Nav, Separator, Bookmark, Comment */}
-            <div className="flex items-center gap-1 flex-shrink-0">
-                <div className="flex items-center">
-                    {hasLeftSidebar && (
-                        <Tooltip
-                            trigger={
-                                <OSButton
-                                    size="sm"
-                                    onClick={(e) => {
-                                        e.preventDefault()
-                                        onToggleNav?.()
-                                    }}
-                                    active={isNavVisible}
-                                    className={mainIconBtnClass}
-                                >
-                                    {isNavVisible ? (
-                                        <IconSidebarOpen className={`${navIconClassName} size-[18px]`} />
-                                    ) : (
-                                        <IconSidebarClose className={`${navIconClassName} size-[18px]`} />
-                                    )}
-                                </OSButton>
-                            }
-                        >
-                            {isNavVisible ? 'hide' : 'show'} sidebar
-                        </Tooltip>
-                    )}
-                </div>
-
-                {/* Back/Forward buttons */}
-                {(showBack || showForward) && (
-                    <div className="hidden sm:flex items-center gap-0.5 ml-1 pl-1 border-l border-black/10 dark:border-white/10 h-5">
-                        {showBack && (
-                            <OSButton
-                                size="sm"
-                                onClick={goBack}
-                                disabled={!canGoBack}
-                                className="p-1 h-8 w-8 !rounded-md"
-                            >
-                                <IconChevronLeft className={`size-[18px] ${canGoBack ? 'opacity-100' : 'opacity-30'}`} />
-                            </OSButton>
-                        )}
-                        {showForward && (
-                            <OSButton
-                                size="sm"
-                                onClick={goForward}
-                                disabled={!canGoForward}
-                                className="p-1 h-8 w-8 !rounded-md"
-                            >
-                                <IconChevronRight className={`size-[18px] ${canGoForward ? 'opacity-100' : 'opacity-30'}`} />
-                            </OSButton>
-                        )}
-                    </div>
-                )}
-
-                {/* Separator */}
-                <div className="w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
-
-                {/* Bookmark & Comment */}
-                <div className="flex items-center gap-0.5">
-                    <Tooltip trigger={
-                        <OSButton
-                            size="sm"
-                            className={interactionBtnClass}
-                            onClick={onBookmark}
-                            disabled={!onBookmark || bookmarkLoading}
-                            active={isBookmarked}
-                        >
-                            {isBookmarked ? (
-                                <IconBookmarkSolid className="size-[18px] text-primary" />
-                            ) : (
-                                <IconBookmark className={`size-[18px] ${onBookmark ? 'text-primary' : 'text-primary/30'}`} />
-                            )}
-                        </OSButton>
-                    } side="bottom">bookmark</Tooltip>
-
-                    <Tooltip trigger={
-                        <OSButton size="sm" className={interactionBtnClass} onClick={onComment} disabled={!onComment}>
-                            <IconMessage className={`size-[18px] ${onComment ? 'text-primary' : 'text-primary/30'}`} />
-                        </OSButton>
-                    } side="bottom">comment</Tooltip>
-                </div>
-            </div>
-
-            {/* RIGHT SECTION: Alignments, Separator, Search, TOC */}
-            <div className="flex items-center gap-1 justify-end flex-shrink-0">
-                {rightActionButtons}
-                <div className="relative">
-                    <Tooltip trigger={
-                        <OSButton
-                            size="sm"
-                            className={interactionBtnClass}
-                            onClick={toggleLanguage}
-                            active={languageOpen}
-                        >
-                            <IconGlobe className="size-[18px] text-primary" />
-                        </OSButton>
-                    } side="bottom">language</Tooltip>
-
-                    <LanguageSelector
-                        visible={languageOpen}
-                        onClose={() => setLanguageOpen(false)}
-                        currentLanguage={currentLanguage}
-                        availableLanguages={availableLanguages}
-                        onLanguageChange={onLanguageChange || (() => { })}
-                    />
-                </div>
-
-                {/* Separator */}
-                <div className="w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
-
-                {/* Search & TOC */}
-                <div className="flex items-center gap-1 relative">
-                    {showSearch && (
-                        <Tooltip
-                            trigger={
-                                <OSButton size="sm" className={mainIconBtnClass} onClick={toggleSearch} active={searchOpen}>
-                                    <IconSearch className="size-[18px]" />
-                                </OSButton>
-                            }
-                            side="bottom"
-                        >
-                            <div className="flex flex-col items-center gap-1">
-                                <span>search this page</span>
-                                <div className="flex gap-1 items-center opacity-70">
-                                    <KeyboardShortcut text="Shift" size="xs" />
-                                    <KeyboardShortcut text="F" size="xs" />
-                                </div>
-                            </div>
-                        </Tooltip>
-                    )}
-
-                    {showSearch && (
-                        <InPageSearchBar
-                            visible={searchOpen}
-                            onClose={() => setSearchOpen(false)}
-                            contentRef={searchContentRef}
-                            onSearch={onSearch}
-                            className="-top-2 right-0 -translate-y-full"
-                        />
-                    )}
-
-                    {showToc && (
-                        <Tooltip
-                            trigger={
-                                <OSButton
-                                    size="sm"
-                                    onClick={(e) => {
-                                        e.preventDefault()
-                                        onToggleToc?.()
-                                    }}
-                                    active={isTocVisible}
-                                    className={`${mainIconBtnClass} ${!compact ? '!w-auto !px-2' : ''}`}
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <IconTableOfContents className="size-[18px]" />
-                                        {!compact && (
-                                            <div className="hidden lg:flex flex-col items-start leading-none text-left min-w-[60px]">
-                                                <span className="text-[9px] font-bold opacity-60">contents</span>
-                                                <span className="text-[11px] font-bold truncate max-w-[80px]">{title}</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                </OSButton>
-                            }
-                        >
-                            {isTocVisible ? 'hide' : 'show'} table of contents
-                        </Tooltip>
-                    )}
-                </div>
-            </div>
-        </div >
-    )
-
-    if (footerTarget) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return createPortal(content, footerTarget) as any
+  React.useEffect(() => {
+    if (appWindow?.key) {
+      const el = document.getElementById(`window-footer-${appWindow.key}`);
+      if (el) {
+        setFooterTarget(el);
+      }
     }
+  }, [appWindow?.key]);
 
-    return content
+  const content = (
+    <div
+      data-scheme="tertiary"
+      className={`flex w-full items-center px-1.5 py-0.5 select-none gap-2 justify-between ${footerTarget ? "bg-transparent" : "bg-primary border-t border-primary"}`}
+    >
+      {/* LEFT SECTION: Sidebar, Nav, Separator, Bookmark, Comment */}
+      <div className="flex items-center gap-1 flex-shrink-0">
+        <div className="flex items-center">
+          {hasLeftSidebar && (
+            <Tooltip
+              trigger={
+                <OSButton
+                  aria-label="toggle sidebar"
+                  size="sm"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onToggleNav?.();
+                  }}
+                  active={isNavVisible}
+                  className={mainIconBtnClass}
+                >
+                  {isNavVisible ? (
+                    <IconSidebarOpen
+                      className={`${navIconClassName} size-[18px]`}
+                    />
+                  ) : (
+                    <IconSidebarClose
+                      className={`${navIconClassName} size-[18px]`}
+                    />
+                  )}
+                </OSButton>
+              }
+            >
+              {isNavVisible ? "hide" : "show"} sidebar
+            </Tooltip>
+          )}
+        </div>
+
+        {/* Back/Forward buttons */}
+        {(showBack || showForward) && (
+          <div className="hidden sm:flex items-center gap-0.5 ml-1 pl-1 border-l border-black/10 dark:border-white/10 h-5">
+            {showBack && (
+              <OSButton
+                aria-label="go back"
+                size="sm"
+                onClick={goBack}
+                disabled={!canGoBack}
+                className="p-1 h-8 w-8 !rounded-md"
+              >
+                <IconChevronLeft
+                  className={`size-[18px] ${canGoBack ? "opacity-100" : "opacity-30"}`}
+                />
+              </OSButton>
+            )}
+            {showForward && (
+              <OSButton
+                aria-label="go forward"
+                size="sm"
+                onClick={goForward}
+                disabled={!canGoForward}
+                className="p-1 h-8 w-8 !rounded-md"
+              >
+                <IconChevronRight
+                  className={`size-[18px] ${canGoForward ? "opacity-100" : "opacity-30"}`}
+                />
+              </OSButton>
+            )}
+          </div>
+        )}
+
+        {/* Separator */}
+        <div className="w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
+
+        {/* Bookmark & Comment */}
+        <div className="flex items-center gap-0.5">
+          <Tooltip
+            trigger={
+              <OSButton
+                aria-label="bookmark"
+                size="sm"
+                className={interactionBtnClass}
+                onClick={onBookmark}
+                disabled={!onBookmark || bookmarkLoading}
+                active={isBookmarked}
+              >
+                {isBookmarked ? (
+                  <IconBookmarkSolid className="size-[18px] text-primary" />
+                ) : (
+                  <IconBookmark
+                    className={`size-[18px] ${onBookmark ? "text-primary" : "text-primary/30"}`}
+                  />
+                )}
+              </OSButton>
+            }
+            side="bottom"
+          >
+            bookmark
+          </Tooltip>
+
+          <Tooltip
+            trigger={
+              <OSButton
+                aria-label="comment"
+                size="sm"
+                className={interactionBtnClass}
+                onClick={onComment}
+                disabled={!onComment}
+              >
+                <IconMessage
+                  className={`size-[18px] ${onComment ? "text-primary" : "text-primary/30"}`}
+                />
+              </OSButton>
+            }
+            side="bottom"
+          >
+            comment
+          </Tooltip>
+        </div>
+      </div>
+
+      {/* RIGHT SECTION: Alignments, Separator, Search, TOC */}
+      <div className="flex items-center gap-1 justify-end flex-shrink-0">
+        {rightActionButtons}
+        <div className="relative">
+          <Tooltip
+            trigger={
+              <OSButton
+                aria-label="change language"
+                size="sm"
+                className={interactionBtnClass}
+                onClick={toggleLanguage}
+                active={languageOpen}
+              >
+                <IconGlobe className="size-[18px] text-primary" />
+              </OSButton>
+            }
+            side="bottom"
+          >
+            language
+          </Tooltip>
+
+          <LanguageSelector
+            visible={languageOpen}
+            onClose={() => setLanguageOpen(false)}
+            currentLanguage={currentLanguage}
+            availableLanguages={availableLanguages}
+            onLanguageChange={onLanguageChange || (() => {})}
+          />
+        </div>
+
+        {/* Separator */}
+        <div className="w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
+
+        {/* Search & TOC */}
+        <div className="flex items-center gap-1 relative">
+          {showSearch && (
+            <Tooltip
+              trigger={
+                <OSButton
+                  aria-label="search"
+                  size="sm"
+                  className={mainIconBtnClass}
+                  onClick={toggleSearch}
+                  active={searchOpen}
+                >
+                  <IconSearch className="size-[18px]" />
+                </OSButton>
+              }
+              side="bottom"
+            >
+              <div className="flex flex-col items-center gap-1">
+                <span>search this page</span>
+                <div className="flex gap-1 items-center opacity-70">
+                  <KeyboardShortcut text="Shift" size="xs" />
+                  <KeyboardShortcut text="F" size="xs" />
+                </div>
+              </div>
+            </Tooltip>
+          )}
+
+          {showSearch && (
+            <InPageSearchBar
+              visible={searchOpen}
+              onClose={() => setSearchOpen(false)}
+              contentRef={searchContentRef}
+              onSearch={onSearch}
+              className="-top-2 right-0 -translate-y-full"
+            />
+          )}
+
+          {showToc && (
+            <Tooltip
+              trigger={
+                <OSButton
+                  aria-label="toggle table of contents"
+                  size="sm"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onToggleToc?.();
+                  }}
+                  active={isTocVisible}
+                  className={`${mainIconBtnClass} ${!compact ? "!w-auto !px-2" : ""}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <IconTableOfContents className="size-[18px]" />
+                    {!compact && (
+                      <div className="hidden lg:flex flex-col items-start leading-none text-left min-w-[60px]">
+                        <span className="text-[9px] font-bold opacity-60">
+                          contents
+                        </span>
+                        <span className="text-[11px] font-bold truncate max-w-[80px]">
+                          {title}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </OSButton>
+              }
+            >
+              {isTocVisible ? "hide" : "show"} table of contents
+            </Tooltip>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (footerTarget) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return createPortal(content, footerTarget) as any;
+  }
+
+  return content;
 }
