@@ -140,19 +140,22 @@ export default function TrendingWidget() {
                     </span>
                     <div className="flex items-center gap-1">
                         <LemonButton
+                            aria-label="Refresh"
                             size="xxsmall"
                             type="tertiary"
                             onClick={fetchTopPosts}
                             icon={loading ? <Spinner /> : <IconRefresh className="w-3 h-3" />}
                         />
                         <LemonButton
+                            aria-label="Previous page"
                             size="xxsmall"
                             type="tertiary"
                             disabled={currentPage === 0}
-                            onClick={() => setCurrentPage(0)}
+                            onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
                             icon={<IconChevronLeft className="w-3.5 h-3.5" />}
                         />
                         <LemonButton
+                            aria-label="Next page"
                             size="xxsmall"
                             type="tertiary"
                             disabled={currentPage >= totalPages - 1}
