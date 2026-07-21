@@ -92,16 +92,22 @@ export async function GET(request: NextRequest) {
             const author = Array.isArray(topic.profiles) ? topic.profiles[0] : topic.profiles;
             const repliesArray = topic.replies || [];
             
-            const sortedReplies = repliesArray.map((reply) => {
+            // ⚡ Bolt: Use Schwartzian transform to prevent O(N log N) Date parsing during sort.
+            const mappedReplies = repliesArray.map((reply) => {
                 const replyAuthor = Array.isArray(reply.profiles) ? reply.profiles[0] : reply.profiles;
-                return {
+                const formatted = {
                     id: reply.id,
                     content: reply.content,
                     authorId: reply.author_id,
                     authorName: replyAuthor?.username || 'anonymous',
                     createdAt: reply.created_at
                 };
-            }).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+                return {
+                    formatted,
+                    time: new Date(reply.created_at).getTime()
+                };
+            });
+            const sortedReplies = mappedReplies.sort((a, b) => a.time - b.time).map(m => m.formatted);
 
             return {
                 id: topic.id,
