@@ -729,8 +729,8 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                         style={{ margin: 0, lineHeight: 1.6 }}
                                                     />
                                                     <div className="flex items-center justify-end gap-2 px-3 py-3 border-t border-primary/10">
-                                                        <LemonButton htmlType="button" type="tertiary" size="small" onClick={() => setIsEditingProfile(false)}>{t('profile.cancel')}</LemonButton>
-                                                        <LemonButton htmlType="button" type="primary" size="small" onClick={handleSaveProfile} disabled={updatingProfile || !hasProfileChanges}>
+                                                        <LemonButton type="tertiary" size="small" onClick={() => setIsEditingProfile(false)}>{t('profile.cancel')}</LemonButton>
+                                                        <LemonButton type="primary" size="small" onClick={handleSaveProfile} disabled={updatingProfile || !hasProfileChanges}>
                                                             {updatingProfile ? 'saving...' : t('profile.save')}
                                                         </LemonButton>
                                                     </div>

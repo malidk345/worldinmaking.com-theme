@@ -657,7 +657,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                                             }
                                                         }}
                                                         className="group"
-                                                        tooltip="right click for more options"
+                                                        title="right click for more options"
                                                     >
                                                         <span>
                                                             <IconSquare className="size-5 group-hover:hidden" />
@@ -683,10 +683,10 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                                         >
                                                             left half
                                                             <div className="ml-auto pl-5 text-secondary group-data-[disabled]:text-muted group-data-[highlighted]:text-primary">
-                                                                <KeyboardShortcut text="Shift" size="xsmall" />
+                                                                <KeyboardShortcut text="Shift" size="xs" />
                                                                 <KeyboardShortcut
                                                                     text={<IconArrowLeft className="size-3 inline-block" />}
-                                                                    size="xsmall"
+                                                                    size="xs"
                                                                 />
                                                             </div>
                                                         </ContextMenu.Item>
@@ -696,10 +696,10 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                                         >
                                                             right half
                                                             <div className="ml-auto pl-5 text-secondary group-data-[disabled]:text-muted group-data-[highlighted]:text-primary">
-                                                                <KeyboardShortcut text="Shift" size="xsmall" />
+                                                                <KeyboardShortcut text="Shift" size="xs" />
                                                                 <KeyboardShortcut
                                                                     text={<IconArrowRight className="size-3 inline-block" />}
-                                                                    size="xsmall"
+                                                                    size="xs"
                                                                 />
                                                             </div>
                                                         </ContextMenu.Item>
@@ -714,10 +714,10 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                                         >
                                                             maximize
                                                             <div className="ml-auto pl-5 text-secondary group-data-[disabled]:text-muted group-data-[highlighted]:text-primary">
-                                                                <KeyboardShortcut text="Shift" size="xsmall" />
+                                                                <KeyboardShortcut text="Shift" size="xs" />
                                                                 <KeyboardShortcut
                                                                     text={<IconArrowRight className="size-3 inline-block -rotate-90" />}
-                                                                    size="xsmall"
+                                                                    size="xs"
                                                                 />
                                                             </div>
                                                         </ContextMenu.Item>
@@ -738,8 +738,8 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                             <div className="flex flex-col items-center gap-2">
                                                 <span>close window</span>
                                                 <div className="flex items-center gap-1">
-                                                    <KeyboardShortcut text="Shift" size="xsmall" />
-                                                    <KeyboardShortcut text="W" size="xsmall" />
+                                                    <KeyboardShortcut text="Shift" size="xs" />
+                                                    <KeyboardShortcut text="W" size="xs" />
                                                 </div>
                                             </div>
                                         </Tooltip>

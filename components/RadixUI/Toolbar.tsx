@@ -51,8 +51,8 @@ const Toolbar = ({ elements, className, 'aria-label': ariaLabel }: ToolbarProps)
                         <LemonButton
                             key={index}
                             onClick={() => !element.disabled && element.onClick?.()}
-                            variant={element.variant || 'default'}
-                            size={element.size || 'md'}
+                            type={(element.variant === "primary" ? "primary" : element.variant === "secondary" ? "secondary" : element.variant === "ghost" ? "stealth" : "tertiary")}
+                            size={(element.size === "xs" || element.size === "sm" ? "small" : element.size === "lg" || element.size === "xl" ? "large" : "medium")}
                             icon={element.icon}
                             active={element.active}
                             className={`${element.className || ''} !px-[5px] ${element.active ? '!bg-accent-2 hover:!bg-accent-2 text-primary' : ''}`}

@@ -173,7 +173,7 @@ export default function ForumQuestionCard({
                                 active={userVote !== 0}
                                 onDecrement={() => handleVoteChange('down')}
                                 onIncrement={() => handleVoteChange('up')}
-                                size="small"
+                                size="sm"
                             />
                         </div>
                     </div>
