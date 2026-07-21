@@ -11,6 +11,8 @@ import Loading from "components/Loading";
 import ForumAvatar from "components/Forum/ForumAvatar";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import { IconCopy, IconThumbsUp, IconThumbsDown, IconRefresh, IconEye } from "@posthog/icons";
+
 
 dayjs.extend(relativeTime);
 
@@ -404,108 +406,84 @@ export default function ArenaApp() {
             </div>
 
             {/* Debate Timeline */}
-            <div className="flex-grow min-h-0 bg-white dark:bg-[#121214] relative">
+            <div className="flex-grow min-h-0 bg-[#f4f5f5] dark:bg-[#121214] relative">
                 <ScrollArea className="h-full select-text">
-                    <div className="px-5 py-5">
+                    <div className="px-4 py-6">
                         {turns.length === 0 ? (
                             <div className="flex flex-col items-center justify-center min-h-[200px] text-center py-16">
                                 <span className="text-xl animate-pulse text-primary/20">✦</span>
-                                <span className="text-[9px] font-medium lowercase tracking-wide mt-3 text-primary/30">
+                                <span className="text-[13px] font-medium lowercase tracking-wide mt-3 text-primary/40">
                                     arena initialized. awaiting opening remarks...
                                 </span>
                             </div>
                         ) : (
-                            <div className="max-w-2xl mx-auto space-y-6 pb-8">
+                            <div className="max-w-3xl mx-auto space-y-6 pb-8">
                                 {turns.map((turn) => {
-                                    const isD1 = turn.speaker_id === activeDebate.duelist_1_id;
+
                                     const isD2 = turn.speaker_id === activeDebate.duelist_2_id;
                                     const isInter = turn.is_interjection;
 
                                     return (
                                         <div
                                             key={turn.id}
-                                            className={`flex flex-col ${
+                                            className={`flex w-full ${
                                                 isInter
-                                                    ? "items-center"
-                                                    : isD1
-                                                        ? "items-start"
-                                                        : "items-end"
+                                                    ? "justify-center"
+                                                    : isD2
+                                                        ? "justify-end"
+                                                        : "justify-start"
                                             }`}
                                         >
-                                            {/* Interjection */}
                                             {isInter ? (
-                                                <div className="w-full max-w-lg rounded-[18px] border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 p-4 relative">
-                                                    <div className="absolute top-2.5 right-3">
-                                                        <span className="text-[7px] font-semibold uppercase tracking-[0.15em] text-primary border border-black/10 dark:border-white/10 bg-transparent px-1.5 py-0.5 rounded-full">
-                                                            interjection
-                                                        </span>
+                                                <div className="w-full max-w-2xl bg-white dark:bg-[#121214] border border-black/10 dark:border-white/10 rounded-lg p-4 relative mb-4">
+                                                    <div className="flex items-center gap-1.5 mb-2.5 text-primary/60 border border-black/10 dark:border-white/10 rounded-[6px] px-2 py-1 w-fit">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-70"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                                        <span className="text-[12px] italic text-primary/70">With 1 event</span>
                                                     </div>
-                                                    <div className="flex gap-3 items-start">
-                                                        <ForumAvatar
-                                                            image={turn.speaker?.avatar_url}
-                                                            className="size-7 rounded-[8px] shrink-0"
-                                                        />
-                                                        <div className="flex-grow min-w-0 pr-16">
-                                                            <span className="text-[10px] font-semibold text-primary lowercase block mb-1">
-                                                                @{turn.speaker?.username}
-                                                            </span>
-
-                                                            {turn.inner_thoughts && (
-                                                                <details className="mb-1.5 outline-none">
-                                                                    <summary className="text-[9px] font-medium text-primary/30 hover:text-primary/50 cursor-pointer select-none lowercase outline-none">
-                                                                        internal deliberations
-                                                                    </summary>
-                                                                    <p className="text-[9px] leading-relaxed text-secondary/60 bg-accent/60 p-2.5 rounded-[10px] mt-1 border border-black/5 dark:border-white/5 select-text italic">
-                                                                        {turn.inner_thoughts}
-                                                                    </p>
-                                                                </details>
-                                                            )}
-
-                                                            <div className="text-xs leading-relaxed text-primary select-text prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
-                                                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                                                    {turn.content}
-                                                                </ReactMarkdown>
-                                                            </div>
-                                                        </div>
+                                                    <div className="text-[15px] font-medium text-primary mb-3">
+                                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                            {turn.content}
+                                                        </ReactMarkdown>
+                                                    </div>
+                                                    <div className="text-[15px] leading-relaxed text-primary/80 select-text prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                                                       {turn.inner_thoughts && (
+                                                           <p>{turn.inner_thoughts}</p>
+                                                       )}
+                                                    </div>
+                                                    <div className="flex items-center gap-4 mt-4 text-primary/40">
+                                                        <button className="hover:text-primary transition-colors" aria-label="Copy"><IconCopy className="size-3.5" /></button>
+                                                        <button className="hover:text-primary transition-colors" aria-label="Thumbs up"><IconThumbsUp className="size-3.5" /></button>
+                                                        <button className="hover:text-primary transition-colors" aria-label="Thumbs down"><IconThumbsDown className="size-3.5" /></button>
+                                                        <button className="hover:text-primary transition-colors" aria-label="Refresh"><IconRefresh className="size-3.5" /></button>
+                                                        <button className="hover:text-primary transition-colors" aria-label="View"><IconEye className="size-3.5" /></button>
                                                     </div>
                                                 </div>
                                             ) : (
-                                                /* Duelist Post */
-                                                <div className={`w-full max-w-[95%] sm:max-w-[88%] flex gap-3 items-start ${isD2 ? "flex-row-reverse" : ""}`}>
-                                                    <ForumAvatar
-                                                        image={turn.speaker?.avatar_url}
-                                                        className="size-8 rounded-[10px] shrink-0 mt-0.5"
-                                                    />
-                                                    <div className="flex-grow min-w-0">
-                                                        <div className={`flex items-baseline gap-2 mb-1.5 ${isD2 ? "justify-end" : ""}`}>
-                                                            <span className={`text-[10px] font-bold lowercase ${isD1 ? "text-primary" : "text-primary"}`}>
-                                                                @{turn.speaker?.username}
-                                                            </span>
-                                                            <span className="text-[8px] font-medium text-primary/30 tabular-nums">
-                                                                {dayjs(turn.created_at).fromNow()}
-                                                            </span>
-                                                        </div>
+                                                <div className={`flex flex-col gap-1.5 w-full max-w-[85%] sm:max-w-[75%]`}>
+                                                    <div className={`flex items-center gap-2 ${isD2 ? "flex-row-reverse" : "flex-row"}`}>
+                                                        <span className="text-[13px] font-semibold text-primary/60">
+                                                            {turn.speaker?.username}
+                                                        </span>
+                                                        <span className="text-[11px] text-primary/40 tabular-nums mt-0.5">
+                                                            {dayjs(turn.created_at).format("HH:mm")}
+                                                        </span>
+                                                    </div>
 
-                                                        {turn.inner_thoughts && (
-                                                            <details className={`mb-1.5 outline-none ${isD2 ? "text-right" : ""}`}>
-                                                                <summary className="text-[8px] font-medium text-primary/30 hover:text-primary/50 cursor-pointer select-none lowercase outline-none">
-                                                                    deliberations
-                                                                </summary>
-                                                                <p className="text-[9px] leading-relaxed text-secondary/60 bg-accent/60 p-2.5 rounded-[10px] mt-1 border border-black/5 dark:border-white/5 select-text italic text-left">
-                                                                    {turn.inner_thoughts}
-                                                                </p>
-                                                            </details>
-                                                        )}
+                                                    {turn.inner_thoughts && (
+                                                        <details className={`mb-1 outline-none ${isD2 ? "text-right" : "text-left"}`}>
+                                                            <summary className="text-[12px] font-medium text-primary/40 hover:text-primary/60 cursor-pointer select-none outline-none">
+                                                                deliberations
+                                                            </summary>
+                                                            <div className="text-[13px] leading-relaxed text-secondary/70 bg-black/5 dark:bg-white/5 p-3 rounded-md mt-1 border border-black/5 dark:border-white/5 select-text italic text-left">
+                                                                {turn.inner_thoughts}
+                                                            </div>
+                                                        </details>
+                                                    )}
 
-                                                        <div className={`p-3.5 rounded-[18px] border text-xs leading-relaxed select-text prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 ${
-                                                            isD1
-                                                                ? "bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 rounded-tl-[4px]"
-                                                                : "bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 rounded-tr-[4px]"
-                                                        }`}>
-                                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                                                {turn.content}
-                                                            </ReactMarkdown>
-                                                        </div>
+                                                    <div className={`bg-white dark:bg-[#1d1d1f] border border-black/10 dark:border-white/10 rounded-[10px] p-4 shadow-sm text-[15px] leading-relaxed select-text prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0`}>
+                                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                            {turn.content}
+                                                        </ReactMarkdown>
                                                     </div>
                                                 </div>
                                             )}
@@ -515,8 +493,40 @@ export default function ArenaApp() {
                                 <div ref={timelineEndRef} />
                             </div>
                         )}
+
                     </div>
                 </ScrollArea>
+
+                {/* Fixed Input Box */}
+                <div className="absolute bottom-4 left-0 right-0 px-4">
+                    <div className="max-w-3xl mx-auto">
+                        <div className="w-full rounded-[10px] border-2 border-[#b07be6] bg-white p-3 shadow-sm">
+                            <textarea
+                               className="w-full bg-transparent outline-none resize-none text-[15px] placeholder:text-primary/40 text-primary min-h-[44px]"
+                               placeholder="Ask follow-up or / for commands"
+                               rows={1}
+                            />
+                            <div className="flex items-center justify-between mt-2">
+                                <div className="flex items-center gap-2">
+                                    <button className="flex items-center gap-1.5 px-2 py-1 border border-black/10 rounded-[6px] text-[12px] text-primary/70 hover:bg-black/5 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
+                                        Auto
+                                    </button>
+                                    <button className="flex items-center justify-center px-2 py-1 border border-black/10 rounded-[6px] text-[12px] text-primary/70 hover:bg-black/5 transition-colors">
+                                        @
+                                    </button>
+                                    <button className="flex items-center gap-1.5 px-2 py-1 border border-black/10 rounded-[6px] text-[12px] text-primary/70 hover:bg-black/5 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                                        $pageview
+                                    </button>
+                                </div>
+                                <button className="flex items-center justify-center size-7 bg-transparent border border-black/10 rounded-[6px] text-primary/50 hover:bg-black/5 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );
