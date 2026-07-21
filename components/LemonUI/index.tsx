@@ -8,7 +8,30 @@
  */
 
 import React, { ReactNode, useState } from 'react';
+import { IconX } from '@posthog/icons';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import './lemon-ui.css';
+
+export * from './LemonButton/LemonButton';
+export * from './LemonInput/LemonInput';
+export * from './LemonCard/LemonCard';
+export * from './LemonMarkdown/LemonMarkdown';
+export * from './LemonBadge/LemonBadge';
+export * from './LemonBanner/LemonBanner';
+export * from './LemonTag/LemonTag';
+export * from './LemonTabs/LemonTabs';
+export * from './Lettermark/Lettermark';
+export * from './Spinner/Spinner';
+export * from './LemonCollapse/LemonCollapse';
+export * from './LemonDivider/LemonDivider';
+export * from './LemonField/LemonField';
+export * from './LemonSwitch/LemonSwitch';
+export * from './LemonCheckbox/LemonCheckbox';
+export * from './LemonSkeleton/LemonSkeleton';
+export * from './LemonSnack/LemonSnack';
+export * from './LemonDrawer/LemonDrawer';
+export * from './LemonTable/LemonTable';
 
 // ── 1. LemonButton (PostHog 1-to-1) ─────────────────────────────────────────
 // DOM structure mirrors posthog LemonButton.tsx exactly:
@@ -256,32 +279,74 @@ export function Lettermark({ name, size = 'md' }: { name: string; size?: 'sm' | 
 
 // ── 8. LemonCard ───────────────────────────────────────────────────────────
 export interface LemonCardProps {
-  children: ReactNode;
+  hoverEffect?: boolean;
   className?: string;
-  onClick?: () => void;
+  children?: ReactNode;
+  onClick?: (e?: React.MouseEvent) => void;
+  focused?: boolean;
+  closeable?: boolean;
+  onClose?: () => void;
 }
 
-export function LemonCard({ children, className = '', onClick }: LemonCardProps) {
-  return (
-    <div
-      onClick={onClick}
-      className={`LemonCard ${onClick ? 'cursor-pointer' : ''} ${className}`}
-    >
-      {children}
-    </div>
-  );
-}
+export const LemonCard = React.forwardRef<HTMLDivElement, LemonCardProps>(
+  (
+    {
+      hoverEffect = true,
+      className = '',
+      children,
+      onClick,
+      focused,
+      closeable = false,
+      onClose,
+      ...props
+    },
+    ref
+  ) => {
+    const isCloseable = closeable || !!onClose;
+    const classes = [
+      'LemonCard',
+      'border rounded p-6 bg-[var(--color-bg-surface-primary)] relative',
+      hoverEffect && 'LemonCard--hoverEffect',
+      focused ? 'border-2 border-[var(--primary-3000)]' : 'border-[var(--border-3000)]',
+      onClick && !focused && 'cursor-pointer',
+      className,
+    ]
+      .filter(Boolean)
+      .join(' ');
+
+    return (
+      <div ref={ref} className={classes} onClick={onClick} {...props}>
+        {isCloseable && (
+          <div className="absolute top-2 right-2 z-10">
+            <LemonButton
+              icon={<IconX className="size-4" />}
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose?.();
+              }}
+              type="tertiary"
+              size="xsmall"
+            />
+          </div>
+        )}
+        {children}
+      </div>
+    );
+  }
+);
+LemonCard.displayName = 'LemonCard';
 
 // ── 9. LemonBanner ─────────────────────────────────────────────────────────
 export interface LemonBannerProps {
   type?: 'info' | 'warning' | 'success' | 'error';
   icon?: ReactNode;
   action?: { children: ReactNode; onClick: () => void };
+  onClose?: () => void;
   children: ReactNode;
   className?: string;
 }
 
-export function LemonBanner({ type = 'info', icon, action, children, className = '' }: LemonBannerProps) {
+export function LemonBanner({ type = 'info', icon, action, onClose, children, className = '' }: LemonBannerProps) {
   return (
     <div className={`LemonBanner LemonBanner--${type} ${className}`}>
       <div className="flex items-start gap-2 flex-1">
@@ -292,6 +357,16 @@ export function LemonBanner({ type = 'info', icon, action, children, className =
         <LemonButton type="secondary" size="xsmall" onClick={action.onClick}>
           {action.children}
         </LemonButton>
+      )}
+      {onClose && (
+        <button
+          type="button"
+          onClick={onClose}
+          className="hover:opacity-75 cursor-pointer text-xs font-bold leading-none shrink-0 border-none bg-transparent"
+          aria-label="Close banner"
+        >
+          ×
+        </button>
       )}
     </div>
   );
@@ -423,6 +498,45 @@ export const LemonTextArea = React.forwardRef<HTMLTextAreaElement, LemonTextArea
 );
 LemonTextArea.displayName = 'LemonTextArea';
 
+// ── 12b. LemonSelect ───────────────────────────────────────────────────────
+export interface LemonSelectOption<T extends string> {
+  value: T;
+  label: ReactNode;
+  icon?: ReactNode;
+}
+
+export interface LemonSelectProps<T extends string> {
+  value: T;
+  onChange: (value: T) => void;
+  options: LemonSelectOption<T>[];
+  className?: string;
+  size?: 'small' | 'medium' | 'large';
+  disabled?: boolean;
+}
+
+export function LemonSelect<T extends string>({
+  value,
+  onChange,
+  options,
+  className = '',
+  disabled = false,
+}: LemonSelectProps<T>) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value as T)}
+      disabled={disabled}
+      className={`LemonSelect bg-[var(--color-bg-surface-primary)] border border-[var(--border-3000)] rounded px-2.5 py-1 text-xs font-semibold text-[var(--text-3000)] outline-none focus:border-[var(--primary-3000)] cursor-pointer ${className}`}
+    >
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {typeof opt.label === 'string' ? opt.label : opt.value}
+        </option>
+      ))}
+    </select>
+  );
+}
+
 // ── 13. LemonSwitch ────────────────────────────────────────────────────────
 export interface LemonSwitchProps {
   checked: boolean;
@@ -539,67 +653,7 @@ export function LemonDivider({ className = '' }: { className?: string }) {
   );
 }
 
-// ── 18. LemonTable ─────────────────────────────────────────────────────────
-export interface LemonTableColumn<T> {
-  title: string;
-  key: string;
-  render?: (record: T) => ReactNode;
-}
-
-export interface LemonTableProps<T> {
-  columns: LemonTableColumn<T>[];
-  dataSource: T[];
-  rowKey: (record: T) => string;
-  className?: string;
-}
-
-export function LemonTable<T extends Record<string, unknown>>({
-  columns,
-  dataSource,
-  rowKey,
-  className = '',
-}: LemonTableProps<T>) {
-  return (
-    <div
-      className={`w-full overflow-x-auto rounded border ${className}`}
-      style={{ borderColor: 'var(--border-3000)' }}
-    >
-      <table className="w-full text-left text-xs border-collapse">
-        <thead>
-          <tr
-            className="text-xs font-semibold border-b"
-            style={{
-              background: 'var(--color-accent-3000)',
-              color: 'var(--color-text-secondary-3000)',
-              borderColor: 'var(--border-3000)',
-            }}
-          >
-            {columns.map((col) => (
-              <th key={col.key} className="px-3 py-2">
-                {col.title}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {dataSource.map((record) => (
-            <tr
-              key={rowKey(record)}
-              className="border-b transition-colors hover:opacity-90"
-              style={{ borderColor: 'var(--border-3000)', background: 'var(--color-bg-surface-primary)' }}
-            >
-              {columns.map((col) => (
-                <td key={col.key} className="px-3 py-2" style={{ color: 'var(--text-3000)' }}>
-                  {col.render ? col.render(record) : String(record[col.key] ?? '')}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
+// ── 18. LemonTable re-exported from ./LemonTable/LemonTable ──────────────
 
 // ── 19. LemonModal ─────────────────────────────────────────────────────────
 export interface LemonModalProps {
@@ -903,6 +957,89 @@ export function LemonMenu({ items, className = '' }: { items: LemonMenuItem[]; c
           <span>{item.label}</span>
         </button>
       ))}
+    </div>
+  );
+}
+
+// ── 26. LemonMarkdown ──────────────────────────────────────────────────────
+export interface LemonMarkdownProps {
+  children?: ReactNode;
+  markdown?: string;
+  className?: string;
+}
+
+export function LemonMarkdown({ children, markdown, className = '' }: LemonMarkdownProps) {
+  const content = markdown || (typeof children === 'string' ? children : null);
+
+  return (
+    <div className={`LemonMarkdown ${className}`}>
+      {content ? (
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          {content}
+        </ReactMarkdown>
+      ) : (
+        children
+      )}
+    </div>
+  );
+}
+
+// ── 27. LemonTextAreaMarkdown ─────────────────────────────────────────────
+export interface LemonTextAreaMarkdownProps {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  minRows?: number;
+  className?: string;
+  onPressCmdEnter?: (val: string) => void;
+}
+
+export function LemonTextAreaMarkdown({
+  value,
+  onChange,
+  placeholder = 'Write markdown content here...',
+  minRows = 4,
+  className = '',
+  onPressCmdEnter,
+}: LemonTextAreaMarkdownProps) {
+  const [mode, setMode] = useState<'write' | 'preview'>('write');
+
+  return (
+    <div className={`LemonTextAreaMarkdown flex flex-col gap-2 ${className}`}>
+      <div className="flex items-center justify-between border-b border-[var(--border-3000)] pb-1">
+        <LemonTabs
+          activeKey={mode}
+          onChange={(key) => setMode(key)}
+          tabs={[
+            { key: 'write', label: 'Write' },
+            { key: 'preview', label: 'Preview' },
+          ]}
+        />
+        <span className="text-[10px] opacity-40 font-mono">Markdown supported</span>
+      </div>
+
+      {mode === 'write' ? (
+        <LemonTextArea
+          value={value}
+          onChange={(e) => onChange(typeof e === 'string' ? e : e.target.value)}
+          placeholder={placeholder}
+          rows={minRows}
+          onKeyDown={(e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && onPressCmdEnter) {
+              e.preventDefault();
+              onPressCmdEnter(value);
+            }
+          }}
+        />
+      ) : (
+        <div className="p-3 min-h-[6rem] border border-[var(--border-3000)] rounded bg-[var(--color-bg-surface-primary)]">
+          {value ? (
+            <LemonMarkdown>{value}</LemonMarkdown>
+          ) : (
+            <span className="text-xs opacity-40 italic">Nothing to preview</span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

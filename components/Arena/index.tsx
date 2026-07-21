@@ -11,6 +11,7 @@ import Loading from "components/Loading";
 import ForumAvatar from "components/Forum/ForumAvatar";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import { SidePanelDiscussion } from "components/PostHogComponents/SidePanels/SidePanelDiscussion";
 
 dayjs.extend(relativeTime);
 
@@ -62,6 +63,7 @@ export default function ArenaApp() {
     const [userVote, setUserVote] = useState<number | null>(null);
     const [votes, setVotes] = useState({ duelist1: 50, duelist2: 50 });
     const timelineEndRef = useRef<HTMLDivElement>(null);
+    const [comments, setComments] = useState<{ id: string; created_by: { first_name: string }; content: string; created_at: string }[]>([]);
 
     const fetchData = useCallback(async () => {
         try {
@@ -403,8 +405,11 @@ export default function ArenaApp() {
                 </div>
             </div>
 
-            {/* Debate Timeline */}
-            <div className="flex-grow min-h-0 bg-white dark:bg-[#121214] relative">
+            {/* Body: Timeline + Discussion side by side */}
+            <div className="flex flex-1 min-h-0 overflow-hidden">
+
+                {/* Debate Timeline */}
+                <div className="flex-1 min-w-0 bg-white dark:bg-[#121214] relative">
                 <ScrollArea className="h-full select-text">
                     <div className="px-5 py-5">
                         {turns.length === 0 ? (
@@ -512,11 +517,32 @@ export default function ArenaApp() {
                                         </div>
                                     );
                                 })}
-                                <div ref={timelineEndRef} />
-                            </div>
-                        )}
-                    </div>
-                </ScrollArea>
+                                </div>
+                            )}\r
+                        </div>
+                    </ScrollArea>
+                </div>
+
+                {/* Discussion — inline right column (PostHog SidePanelDiscussion markup, no drawer) */}
+                <div className="w-72 shrink-0 border-l border-black/5 dark:border-white/5 flex flex-col overflow-hidden bg-white dark:bg-[#121214]">
+                    <SidePanelDiscussion
+                        isOpen={true}
+                        onClose={() => {}}
+                        scope="Arena debate"
+                        itemId={activeDebate.id}
+                        comments={comments}
+                        onAddComment={async (text) => {
+                            const newComment = {
+                                id: String(Date.now()),
+                                created_by: { first_name: user?.user_metadata?.username ?? user?.email ?? 'You' },
+                                content: text,
+                                created_at: 'just now',
+                            };
+                            setComments((prev) => [...prev, newComment]);
+                        }}
+                    />
+                </div>
+
             </div>
         </div>
     );

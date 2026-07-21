@@ -510,6 +510,148 @@
 }
 
 /* ══════════════════════════════════════════════════════════════
+   LemonMarkdown (PostHog 3000 verbatim markdown renderer)
+══════════════════════════════════════════════════════════════ */
+.LemonMarkdown {
+  overflow-wrap: anywhere;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--text-3000, #111);
+}
+
+.LemonMarkdown > * {
+  margin: 0 0 0.75em;
+}
+
+.LemonMarkdown > *:last-child {
+  margin-bottom: 0;
+}
+
+.LemonMarkdown ol,
+.LemonMarkdown ul {
+  padding-left: 1.5em;
+}
+
+.LemonMarkdown ol {
+  list-style-type: decimal;
+}
+
+.LemonMarkdown ul {
+  list-style-type: disc;
+}
+
+.LemonMarkdown p {
+  margin-bottom: 0.75em;
+}
+
+.LemonMarkdown hr {
+  margin: 1.5em 0;
+  border: none;
+  border-top: 1px solid var(--border-3000, #e2e8f0);
+}
+
+.LemonMarkdown h1,
+.LemonMarkdown h2,
+.LemonMarkdown h3,
+.LemonMarkdown h4 {
+  margin-bottom: 0.5em;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text-3000, #111);
+}
+
+.LemonMarkdown h1,
+.LemonMarkdown h2 {
+  padding-bottom: 0.375em;
+  border-bottom: 1px solid var(--border-3000, #e2e8f0);
+}
+
+.LemonMarkdown h1:not(:first-child),
+.LemonMarkdown h2:not(:first-child) {
+  margin-top: 1.25em;
+}
+
+.LemonMarkdown h1 {
+  font-size: 1.5rem;
+}
+
+.LemonMarkdown h2 {
+  font-size: 1.25rem;
+}
+
+.LemonMarkdown h3 {
+  font-size: 1.125rem;
+}
+
+.LemonMarkdown h4 {
+  font-size: 1rem;
+}
+
+.LemonMarkdown blockquote {
+  padding: 0.5em 1em;
+  margin: 1em 0;
+  color: var(--color-text-secondary-3000, rgba(17, 17, 17, 0.7));
+  background-color: var(--color-accent-3000, #f1f5f9);
+  border-left: 3px solid var(--primary-3000, #f54e01);
+  border-radius: 0 var(--lemon-radius, 4px) var(--lemon-radius, 4px) 0;
+}
+
+.LemonMarkdown pre {
+  margin: 1em 0;
+  padding: 1em;
+  background-color: var(--color-accent-3000, #f1f5f9);
+  border: 1px solid var(--border-3000, #e2e8f0);
+  border-radius: var(--lemon-radius, 4px);
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8125rem;
+}
+
+.LemonMarkdown code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.85em;
+  padding: 0.15em 0.35em;
+  background-color: var(--color-accent-3000, #f1f5f9);
+  border: 1px solid var(--border-3000, #e2e8f0);
+  border-radius: 3px;
+}
+
+.LemonMarkdown pre code {
+  padding: 0;
+  background-color: transparent;
+  border: none;
+}
+
+.dark .LemonMarkdown {
+  color: var(--text-3000, #fff);
+}
+
+.dark .LemonMarkdown h1,
+.dark .LemonMarkdown h2,
+.dark .LemonMarkdown h3,
+.dark .LemonMarkdown h4 {
+  color: var(--text-3000, #fff);
+}
+
+.dark .LemonMarkdown h1,
+.dark .LemonMarkdown h2,
+.dark .LemonMarkdown hr {
+  border-bottom-color: var(--border-3000, #1E2F46);
+}
+
+.dark .LemonMarkdown blockquote {
+  color: var(--color-text-secondary-3000, rgba(255, 255, 255, 0.7));
+  background-color: var(--color-accent-3000, #1E2F46);
+  border-left-color: var(--primary-3000, #f7a503);
+}
+
+.dark .LemonMarkdown pre,
+.dark .LemonMarkdown code {
+  background-color: var(--color-accent-3000, #1E2F46);
+  border-color: var(--border-3000, #1E2F46);
+}
+
+/* ══════════════════════════════════════════════════════════════
    LemonTag
 ══════════════════════════════════════════════════════════════ */
 .LemonTag {

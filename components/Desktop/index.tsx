@@ -125,6 +125,18 @@ export default function Desktop() {
                     path: '/arena',
                     title: 'philosophical arena'
                 })
+            },
+            {
+                label: 'notebooks',
+                displayLabel: 'notebooks',
+                Icon: <AppIcon name="notebook" />,
+                url: '/notebooks',
+                onClick: () => addWindow({
+                    key: 'notebooks',
+                    path: '/notebooks',
+                    title: 'notebooks explorer',
+                    size: { width: 1000, height: 650 }
+                })
             }
         ]
 

@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from 'react'
-import { LemonButton, LemonInput } from '@/components/LemonUI'
+import { LemonButton, LemonInput, LemonTextAreaMarkdown } from '@/components/LemonUI'
 import { useAuth } from 'context/AuthContext'
 import ForumAvatar from '../Forum/ForumAvatar'
 import ForumRichText from '../Forum/ForumRichText'
@@ -88,39 +88,34 @@ export default function CommentForm({ onSubmit, className = '', placeholder }: C
                     </div>
 
                     <div data-scheme="primary" className="space-y-2 md:space-y-3">
-                        <ForumRichText
-                            initialValue={body}
-                            setFieldValue={(field: string, value: string) => setBody(value)}
-                            onSubmit={handleSubmit}
-                            mentions={true}
-                            boxed={true}
-                            borderClass="border-black/10 dark:border-white/10"
-                            className="bg-transparent lowercase px-1 md:px-2"
+                        <LemonTextAreaMarkdown
+                            value={body}
+                            onChange={(val) => setBody(val)}
                             placeholder={activePlaceholder}
-                            cta={
-                                 <div className="flex gap-2">
-                                     <LemonButton
-                                         size="small"
-                                         type="primary"
-                                         disabled={!stripHtmlTags(body)}
-                                         onClick={handleSubmit}
-                                     >
-                                         <span className="lowercase font-bold">{t('comments.post_btn')}</span>
-                                     </LemonButton>
-                                     <LemonButton
-                                         size="small"
-                                         type="tertiary"
-                                         onClick={() => {
-                                             setBody('')
-                                             setSubject('')
-                                             setIsActive(false)
-                                         }}
-                                     >
-                                         <span className="lowercase font-bold">{t('comments.cancel_btn')}</span>
-                                     </LemonButton>
-                                 </div>
-                            }
+                            onPressCmdEnter={handleSubmit}
+                            minRows={4}
                         />
+                        <div className="flex justify-end gap-2 mt-2">
+                            <LemonButton
+                                size="small"
+                                type="tertiary"
+                                onClick={() => {
+                                    setBody('')
+                                    setSubject('')
+                                    setIsActive(false)
+                                }}
+                            >
+                                <span className="lowercase font-bold">{t('comments.cancel_btn')}</span>
+                            </LemonButton>
+                            <LemonButton
+                                size="small"
+                                type="primary"
+                                disabled={!stripHtmlTags(body)}
+                                onClick={handleSubmit}
+                            >
+                                <span className="lowercase font-bold">{t('comments.post_btn')}</span>
+                            </LemonButton>
+                        </div>
                         <p className="text-[10px] opacity-40 mt-2 px-2 [text-wrap:balance] text-primary lowercase font-medium tracking-wide">
                             {t('comments.guidelines')}
                         </p>

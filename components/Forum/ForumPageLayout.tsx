@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useMemo } from 'react'
-import { LemonTabs } from '@/components/LemonUI'
+import { LemonSelect } from '@/components/LemonUI'
 import ForumQuestionsTable from './ForumQuestionsTable'
 import ForumQuestionForm from './ForumQuestionForm'
 import ForumTopicSidebar from './ForumTopicSidebar'
@@ -82,14 +82,15 @@ export default function ForumPageLayout({
                                 )}
                             </div>
                             <div className="w-auto">
-                                <LemonTabs
-                                    activeKey={sortBy}
-                                    onChange={(key) => setSortBy(key)}
-                                    tabs={[
-                                        { key: 'newest', label: 'newest' },
-                                        { key: 'activity', label: 'activity' },
-                                        { key: 'popular', label: 'popular' },
+                                <LemonSelect<'newest' | 'activity' | 'popular'>
+                                    value={sortBy}
+                                    onChange={(val) => setSortBy(val)}
+                                    options={[
+                                        { value: 'newest', label: 'newest' },
+                                        { value: 'activity', label: 'activity' },
+                                        { value: 'popular', label: 'popular' },
                                     ]}
+                                    size="small"
                                 />
                             </div>
                         </div>

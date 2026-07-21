@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from 'react'
-import { LemonButton, LemonInput } from '@/components/LemonUI'
+import { LemonButton, LemonInput, LemonTextAreaMarkdown } from '@/components/LemonUI'
 import { useAuth } from 'context/AuthContext'
 import ForumAvatar from './ForumAvatar'
 import ForumRichText from './ForumRichText'
@@ -88,39 +88,34 @@ export default function ForumQuestionForm({ isInForum = false, archived = false,
                     </div>
 
                     <div data-scheme="primary" className="space-y-2 md:space-y-3">
-                        <ForumRichText
-                            initialValue={body}
-                            setFieldValue={(field: string, value: string) => setBody(value)}
-                            onSubmit={handleSubmit}
-                            mentions={true}
-                            boxed={true}
-                            borderClass="border-black/10 dark:border-white/10"
-                            className="bg-transparent lowercase px-1 md:px-2"
+                        <LemonTextAreaMarkdown
+                            value={body}
+                            onChange={(val) => setBody(val)}
                             placeholder={isInForum ? "type more details..." : "add a comment..."}
-                            cta={
-                                <div className="flex gap-2">
-                                    <LemonButton
-                                        size="small"
-                                        variant="primary"
-                                        disabled={!stripHtmlTags(body) || (isInForum && !subject.trim())}
-                                        onClick={handleSubmit}
-                                    >
-                                        <span className="lowercase font-bold">post</span>
-                                    </LemonButton>
-                                    <LemonButton
-                                        size="small"
-                                        variant="stealth"
-                                        onClick={() => {
-                                            setBody('')
-                                            setSubject('')
-                                            setIsOpen(false)
-                                        }}
-                                    >
-                                        <span className="lowercase font-bold">cancel</span>
-                                    </LemonButton>
-                                </div>
-                            }
+                            onPressCmdEnter={handleSubmit}
+                            minRows={4}
                         />
+                        <div className="flex justify-end gap-2 mt-2">
+                            <LemonButton
+                                size="small"
+                                type="tertiary"
+                                onClick={() => {
+                                    setBody('')
+                                    setSubject('')
+                                    setIsOpen(false)
+                                }}
+                            >
+                                <span className="lowercase font-bold">cancel</span>
+                            </LemonButton>
+                            <LemonButton
+                                size="small"
+                                type="primary"
+                                disabled={!stripHtmlTags(body) || (isInForum && !subject.trim())}
+                                onClick={handleSubmit}
+                            >
+                                <span className="lowercase font-bold">post</span>
+                            </LemonButton>
+                        </div>
 
                         <p className="text-[10px] opacity-40 mt-2 px-2 [text-wrap:balance] text-primary lowercase font-medium tracking-wide">
                             if you need to share personal info relating to a bug or issue with your account, we suggest filing a support ticket in the app.

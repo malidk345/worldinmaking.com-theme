@@ -120,20 +120,13 @@ const PostsView = React.memo(() => {
                                                             </div>
                                                             <div className="pt-1 border-t border-current/10 flex items-center justify-between text-[7px] font-mono opacity-40">
                                                                 <span>{roadmap.date ? dayjs.utc(roadmap.date).local().format('DD/MM/YYYY') : (roadmapRecord.created_at ? dayjs.utc(roadmapRecord.created_at).local().format('DD/MM/YYYY') : '')}</span>
-                                                                <span>DOC</span>
                                                             </div>
                                                         </div>
                                                     )}
-                                                    {paperStatus && paperStatus !== 'published' ? (
+                                                    {paperStatus && paperStatus !== 'published' && (
                                                         <div className="corpus-doc-badge">
                                                             <LemonTag type="warning">
                                                                 UNFINISHED • {paperStatus}
-                                                            </LemonTag>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="corpus-doc-badge">
-                                                            <LemonTag type="primary" icon={<IconSparkles className="size-3" />}>
-                                                                {t('profile.post')}
                                                             </LemonTag>
                                                         </div>
                                                     )}

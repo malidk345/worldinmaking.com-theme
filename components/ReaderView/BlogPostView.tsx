@@ -235,7 +235,7 @@ const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
                 proseSize="base"
                 contentMaxWidthClass="max-w-3xl"
             >
-                <div className="tiptap-content mt-6">
+                <div className="LemonMarkdown tiptap-content mt-6">
                     {isRichTextHtml ? (
                         <div dangerouslySetInnerHTML={{ __html: sanitizedProcessedContent }} />
                     ) : (

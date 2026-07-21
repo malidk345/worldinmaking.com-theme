@@ -30,6 +30,7 @@ import ArchiveExplorer from 'components/ArchiveExplorer'
 import ForumAvatar from 'components/Forum/ForumAvatar'
 import ForumRichText from 'components/Forum/ForumRichText'
 import ArenaApp from 'components/Arena'
+import { NotebooksListSkeleton } from 'components/Notebooks/NotebooksList'
 
 interface AdaptablePost {
     id: number | string
@@ -171,6 +172,11 @@ function WindowRouterInner({ item }: { item: AppWindow }) {
     }
 
 
+
+    // /notebooks (Notebooks Explorer)
+    if (path === '/notebooks') {
+        return <NotebooksListSkeleton />
+    }
 
     // /arena (Weekly Philosophical Arena)
     if (path === '/arena') {
