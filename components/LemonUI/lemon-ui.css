@@ -18,21 +18,21 @@
   --lemon-radius-lg: 6px;
 
   /* --- PostHog 3000 Tasarım Tokenları (Light Mode) --- */
-  --text-3000: #111;
-  --text-3000-light: #111;
-  --color-text-secondary-3000: rgba(17, 17, 17, 0.7);
-  --muted-3000: rgba(17, 17, 17, 0.6);
+  --text-3000: hsl(var(--foreground));
+  --text-3000-light: hsl(var(--foreground));
+  --color-text-secondary-3000: hsl(var(--foreground) / 0.7);
+  --muted-3000: hsl(var(--muted-foreground));
   --trace-3000: rgba(17, 17, 17, 0.25);
 
-  --primary-3000: #f54e01;
-  --primary-3000-hover: #d44301;
-  --primary-3000-active: #b53901;
-  --primary-highlight: rgba(245, 78, 1, 0.10);
+  --primary-3000: hsl(var(--primary));
+  --primary-3000-hover: hsl(var(--primary) / 0.9);
+  --primary-3000-active: hsl(var(--primary) / 0.8);
+  --primary-highlight: hsl(var(--primary) / 0.1);
 
   --color-accent-3000: #f1f5f9;
-  --color-bg-3000: #f8fafc;
+  --color-bg-3000: hsl(var(--background));
 
-  --border-3000: #e2e8f0;
+  --border-3000: hsl(var(--border));
   --border-bold-3000: #cbd5e1;
   --glass-bg-3000: rgba(255, 255, 255, 0.90);
   --glass-border-3000: rgba(226, 232, 240, 0.4);
@@ -41,13 +41,13 @@
 
   /* --- Button tokens (light) --- */
   --primary-3000-frame-bg: #1E2F46;
-  --primary-3000-button-bg: #ffffff;
-  --primary-3000-button-border: #f54e01;
-  --primary-3000-button-border-hover: #d44301;
+  --primary-3000-button-bg: hsl(var(--primary));
+  --primary-3000-button-border: transparent;
+  --primary-3000-button-border-hover: transparent;
 
   --secondary-3000-frame-bg: #cbd5e1;
-  --secondary-3000-button-bg: #ffffff;
-  --secondary-3000-button-border: #e2e8f0;
+  --secondary-3000-button-bg: hsl(var(--background));
+  --secondary-3000-button-border: hsl(var(--border));
   --secondary-3000-button-border-hover: #94a3b8;
 
   --danger-3000-frame-bg: rgba(239, 68, 68, 0.5);
@@ -104,12 +104,12 @@
 /* ══ DARK MODE ══════════════════════════════════════════════════════════════ */
 .dark {
   --text-3000: #fff;
-  --text-3000-light: #111;          /* buttons use dark-on-light bg */
+  --text-3000-light: hsl(var(--foreground));          /* buttons use dark-on-light bg */
   --color-text-secondary-3000: rgba(255, 255, 255, 0.7);
   --muted-3000: rgba(255, 255, 255, 0.5);
   --trace-3000: rgba(255, 255, 255, 0.25);
 
-  --primary-3000: #f7a503;
+  --primary-3000: hsl(var(--primary));
   --primary-3000-hover: #e09502;
   --primary-3000-active: #c48202;
   --primary-highlight: rgba(247, 165, 3, 0.10);

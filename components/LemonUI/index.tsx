@@ -8,6 +8,7 @@
  */
 
 import React, { ReactNode, useState } from 'react';
+import Tooltip from 'components/RadixUI/Tooltip';
 import './lemon-ui.css';
 
 // ── 1. LemonButton (PostHog 1-to-1) ─────────────────────────────────────────
@@ -20,6 +21,7 @@ import './lemon-ui.css';
 //   </button>
 
 export interface LemonButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'type'> {
+  htmlType?: 'button' | 'submit' | 'reset';
   type?: 'primary' | 'secondary' | 'tertiary' | 'stealth' | 'muted';
   variant?: 'primary' | 'secondary' | 'tertiary' | 'stealth' | 'muted';
   status?: 'default' | 'alt' | 'danger';
@@ -33,6 +35,7 @@ export interface LemonButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLBu
   noPadding?: boolean;
   center?: boolean;
   loading?: boolean;
+  tooltip?: string | ReactNode;
 }
 
 export const LemonButton = React.forwardRef<HTMLButtonElement, LemonButtonProps>(
@@ -52,6 +55,8 @@ export const LemonButton = React.forwardRef<HTMLButtonElement, LemonButtonProps>
       children,
       className = '',
       disabled,
+      htmlType = 'button',
+      tooltip,
       ...props
     },
     ref
@@ -78,9 +83,10 @@ export const LemonButton = React.forwardRef<HTMLButtonElement, LemonButtonProps>
 
     const effectiveIcon = loading ? <Spinner /> : icon;
 
-    return (
+    const buttonElement = (
       <button
         ref={ref}
+        type={htmlType}
         className={classes}
         aria-disabled={!!disabled || loading}
         disabled={disabled || loading}
@@ -93,6 +99,12 @@ export const LemonButton = React.forwardRef<HTMLButtonElement, LemonButtonProps>
         </span>
       </button>
     );
+
+    if (tooltip) {
+      return <Tooltip trigger={buttonElement} side="bottom">{tooltip}</Tooltip>;
+    }
+
+    return buttonElement;
   }
 );
 LemonButton.displayName = 'LemonButton';
@@ -789,6 +801,7 @@ export interface LemonFileInputProps {
   accept?: string;
   multiple?: boolean;
   loading?: boolean;
+  tooltip?: string | ReactNode;
   callToAction?: ReactNode;
   className?: string;
 }
