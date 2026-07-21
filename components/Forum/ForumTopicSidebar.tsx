@@ -37,8 +37,9 @@ export default function ForumTopicSidebar({
         const channelPosts = posts.filter((post) => post.channel_id === channelId)
         if (!channelPosts.length) return null
 
+        // ⚡ Bolt: Prevent repeated Date parsing inside reduce by comparing strings directly
         const latest = channelPosts.reduce((acc, current) => {
-            return new Date(current.created_at).getTime() > new Date(acc.created_at).getTime() ? current : acc
+            return current.created_at > acc.created_at ? current : acc
         })
 
         return dayjs(latest.created_at).fromNow()
