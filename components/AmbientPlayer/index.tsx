@@ -106,6 +106,7 @@ export default function AmbientPlayer() {
                         onClick={togglePlay}
                         size="sm"
                         className={`!px-1 group/music relative translate-y-[2px] transition-all ${isPlaying ? 'bg-primary/5 dark:bg-white/10' : ''}`}
+                        aria-label={isPlaying ? "Pause Ambient Player" : "Play Ambient Player"}
                     >
                         <div className="flex items-center justify-center gap-1.5 min-w-[32px] px-1 h-5">
                             {isLoading ? (

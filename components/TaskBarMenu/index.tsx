@@ -236,7 +236,7 @@ export default function TaskBarMenu({ isMaximized }: { isMaximized?: boolean }) 
     const accountMenu = React.useMemo(() => [
         {
             trigger: (
-                <OSButton size="sm" className="px-1 overflow-hidden">
+                <OSButton size="sm" className="px-1 overflow-hidden" aria-label="Account Menu">
                     <div className="flex items-center gap-1.5">
                         {profile?.avatar_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
@@ -311,6 +311,7 @@ export default function TaskBarMenu({ isMaximized }: { isMaximized?: boolean }) 
                                     data-active-windows
                                     size="sm"
                                     className="!px-0.5 group/wm relative"
+                                    aria-label="Active Windows"
                                 >
                                     <div className="flex items-center gap-1">
                                         <IconApps className="size-5 text-[var(--text-3000)] transition-transform group-hover/wm:scale-110" />
@@ -344,7 +345,7 @@ export default function TaskBarMenu({ isMaximized }: { isMaximized?: boolean }) 
 
                     <Tooltip
                         trigger={
-                            <OSButton onClick={() => openSearch()} size="sm" className="px-1 translate-y-[2px]">
+                            <OSButton onClick={() => openSearch()} size="sm" className="px-1 translate-y-[2px]" aria-label="Search">
                                 <IconSearch className="size-5 text-[var(--text-3000)]" />
                             </OSButton>
                         }
