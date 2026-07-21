@@ -19,7 +19,7 @@ import type { AppWindow as AppWindowType } from '../../context/Window'
 import { WindowProvider } from '../../context/Window'
 import { IMenu } from 'components/PostLayout/types'
 import Tooltip from 'components/RadixUI/Tooltip'
-import OSButton from 'components/OSButton'
+import { LemonButton } from '@/components/LemonUI'
 import MenuBar from 'components/RadixUI/MenuBar'
 import { Popover } from '../RadixUI/Popover'
 import FileMenu from '../RadixUI/FileMenu'
@@ -640,15 +640,15 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                     </div>
 
                                     <div className="flex justify-end">
-                                        <OSButton size="xs" onClick={handleMinimize}>
+                                        <LemonButton size="xsmall" onClick={handleMinimize}>
                                             <IconMinus className="size-4 relative top-1" />
-                                        </OSButton>
+                                        </LemonButton>
 
                                         {!item.fixedSize && (
                                             <ContextMenu.Root>
                                                 <ContextMenu.Trigger asChild>
-                                                    <OSButton
-                                                        size="xs"
+                                                    <LemonButton
+                                                        size="xsmall"
                                                         onClick={() => {
                                                             if (isMaximized) {
                                                                 collapseWindow()
@@ -667,7 +667,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                                                 <IconExpand45Chevrons className="size-6 -m-0.5 hidden group-hover:block" />
                                                             )}
                                                         </span>
-                                                    </OSButton>
+                                                    </LemonButton>
                                                 </ContextMenu.Trigger>
                                                 <ContextMenu.Portal>
                                                     <ContextMenu.Content
@@ -683,10 +683,10 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                                         >
                                                             left half
                                                             <div className="ml-auto pl-5 text-secondary group-data-[disabled]:text-muted group-data-[highlighted]:text-primary">
-                                                                <KeyboardShortcut text="Shift" size="xs" />
+                                                                <KeyboardShortcut text="Shift" size="xsmall" />
                                                                 <KeyboardShortcut
                                                                     text={<IconArrowLeft className="size-3 inline-block" />}
-                                                                    size="xs"
+                                                                    size="xsmall"
                                                                 />
                                                             </div>
                                                         </ContextMenu.Item>
@@ -696,10 +696,10 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                                         >
                                                             right half
                                                             <div className="ml-auto pl-5 text-secondary group-data-[disabled]:text-muted group-data-[highlighted]:text-primary">
-                                                                <KeyboardShortcut text="Shift" size="xs" />
+                                                                <KeyboardShortcut text="Shift" size="xsmall" />
                                                                 <KeyboardShortcut
                                                                     text={<IconArrowRight className="size-3 inline-block" />}
-                                                                    size="xs"
+                                                                    size="xsmall"
                                                                 />
                                                             </div>
                                                         </ContextMenu.Item>
@@ -714,10 +714,10 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                                         >
                                                             maximize
                                                             <div className="ml-auto pl-5 text-secondary group-data-[disabled]:text-muted group-data-[highlighted]:text-primary">
-                                                                <KeyboardShortcut text="Shift" size="xs" />
+                                                                <KeyboardShortcut text="Shift" size="xsmall" />
                                                                 <KeyboardShortcut
                                                                     text={<IconArrowRight className="size-3 inline-block -rotate-90" />}
-                                                                    size="xs"
+                                                                    size="xsmall"
                                                                 />
                                                             </div>
                                                         </ContextMenu.Item>
@@ -728,8 +728,8 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
 
                                         <Tooltip
                                             trigger={
-                                                <OSButton
-                                                    size="md"
+                                                <LemonButton
+                                                    size="medium"
                                                     onClick={handleClose}
                                                     icon={<IconX />}
                                                 />
@@ -738,8 +738,8 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                             <div className="flex flex-col items-center gap-2">
                                                 <span>close window</span>
                                                 <div className="flex items-center gap-1">
-                                                    <KeyboardShortcut text="Shift" size="xs" />
-                                                    <KeyboardShortcut text="W" size="xs" />
+                                                    <KeyboardShortcut text="Shift" size="xsmall" />
+                                                    <KeyboardShortcut text="W" size="xsmall" />
                                                 </div>
                                             </div>
                                         </Tooltip>

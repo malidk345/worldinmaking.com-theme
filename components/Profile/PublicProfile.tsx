@@ -6,7 +6,7 @@ import { useAuth } from 'context/AuthContext'
 import { useApp } from 'context/App'
 import { useWindow } from 'context/Window'
 import { useToast } from 'context/ToastContext'
-import OSButton from 'components/OSButton'
+import { LemonButton } from '@/components/LemonUI'
 import Loading from 'components/Loading'
 import Tooltip from 'components/RadixUI/Tooltip'
 import { useTranslation } from 'hooks/useTranslation'
@@ -524,9 +524,9 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                     {isOwner && (
                         <Tooltip
                             trigger={
-                                <OSButton size="sm" onClick={() => setSidebarOpen((prev) => !prev)} active={sidebarOpen} className="p-1 h-8 w-8 !rounded-full">
+                                <LemonButton size="small" onClick={() => setSidebarOpen((prev) => !prev)} active={sidebarOpen} className="p-1 h-8 w-8 !rounded-full">
                                     {sidebarOpen ? <IconSidebarOpen className="size-[18px]" /> : <IconSidebarClose className="size-[18px]" />}
-                                </OSButton>
+                                </LemonButton>
                             }
                             side="bottom"
                         >
@@ -535,12 +535,12 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                     )}
 
                     <div className="hidden sm:flex items-center gap-0.5">
-                        <OSButton size="sm" onClick={goBack} disabled={!canGoBack} className="p-1 h-8 w-8 !rounded-full">
+                        <LemonButton size="small" onClick={goBack} disabled={!canGoBack} className="p-1 h-8 w-8 !rounded-full">
                             <IconChevronLeft className={`size-[18px] ${canGoBack ? 'opacity-100' : 'opacity-30'}`} />
-                        </OSButton>
-                        <OSButton size="sm" onClick={goForward} disabled={!canGoForward} className="p-1 h-8 w-8 !rounded-full">
+                        </LemonButton>
+                        <LemonButton size="small" onClick={goForward} disabled={!canGoForward} className="p-1 h-8 w-8 !rounded-full">
                             <IconChevronRight className={`size-[18px] ${canGoForward ? 'opacity-100' : 'opacity-30'}`} />
-                        </OSButton>
+                        </LemonButton>
                     </div>
 
                     <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
@@ -567,16 +567,16 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                     {isOwner && !isEditingProfile && (
                         <>
                             <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
-                            <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-full flex items-center gap-1.5" onClick={handleAddNode}><IconPlus className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">new node</span></OSButton>} side="bottom">new node</Tooltip>
-                            <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-full flex items-center gap-1.5" onClick={handleAddPost}><IconBook className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">new post</span></OSButton>} side="bottom">new post</Tooltip>
-                            <Tooltip trigger={<OSButton size="sm" className="px-2.5 h-8 !rounded-full flex items-center gap-1.5" onClick={openProfileEditor}><IconSparkles className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">{t('profile.edit')}</span></OSButton>} side="bottom">{t('profile.edit')}</Tooltip>
+                            <Tooltip trigger={<LemonButton size="small" className="px-2.5 h-8 !rounded-full flex items-center gap-1.5" onClick={handleAddNode}><IconPlus className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">new node</span></LemonButton>} side="bottom">new node</Tooltip>
+                            <Tooltip trigger={<LemonButton size="small" className="px-2.5 h-8 !rounded-full flex items-center gap-1.5" onClick={handleAddPost}><IconBook className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">new post</span></LemonButton>} side="bottom">new post</Tooltip>
+                            <Tooltip trigger={<LemonButton size="small" className="px-2.5 h-8 !rounded-full flex items-center gap-1.5" onClick={openProfileEditor}><IconSparkles className="size-[14px] opacity-70" /><span className="hidden md:inline text-[12px] font-semibold">{t('profile.edit')}</span></LemonButton>} side="bottom">{t('profile.edit')}</Tooltip>
                         </>
                     )}
                     <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
-                    <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded-full" onClick={refreshAll}><IconRefresh className={`size-[16px] opacity-70 ${refreshing ? 'animate-spin' : ''}`} /></OSButton>} side="bottom">refresh profile</Tooltip>
-                    <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded-full" onClick={() => copyLink(publicProfilePath, 'profile')}><IconShare className="size-[16px] opacity-70" /></OSButton>} side="bottom">share profile</Tooltip>
+                    <Tooltip trigger={<LemonButton size="small" className="p-1.5 h-8 w-8 !rounded-full" onClick={refreshAll}><IconRefresh className={`size-[16px] opacity-70 ${refreshing ? 'animate-spin' : ''}`} /></LemonButton>} side="bottom">refresh profile</Tooltip>
+                    <Tooltip trigger={<LemonButton size="small" className="p-1.5 h-8 w-8 !rounded-full" onClick={() => copyLink(publicProfilePath, 'profile')}><IconShare className="size-[16px] opacity-70" /></LemonButton>} side="bottom">share profile</Tooltip>
                     {profile.website && (
-                        <Tooltip trigger={<a href={profile.website} target="_blank" rel="noopener noreferrer"><OSButton size="sm" className="p-1.5 h-8 w-8 !rounded-full"><IconExternal className="size-[16px] opacity-70" /></OSButton></a>} side="bottom">website</Tooltip>
+                        <Tooltip trigger={<a href={profile.website} target="_blank" rel="noopener noreferrer"><LemonButton size="small" className="p-1.5 h-8 w-8 !rounded-full"><IconExternal className="size-[16px] opacity-70" /></LemonButton></a>} side="bottom">website</Tooltip>
                     )}
                 </div>
             </div>
@@ -597,18 +597,18 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                             <div className="space-y-1">
                                 {!isEditingProfile ? (
                                     <>
-                                        <OSButton size="sm" className="w-full !h-9 !rounded-full !px-2.5 flex items-center justify-start gap-2" onClick={handleAddNode}>
+                                        <LemonButton size="small" className="w-full !h-9 !rounded-full !px-2.5 flex items-center justify-start gap-2" onClick={handleAddNode}>
                                             <IconPlus className="size-[14px] opacity-70" />
                                             <span className="text-[12px] font-semibold">new node</span>
-                                        </OSButton>
-                                        <OSButton size="sm" className="w-full !h-9 !rounded-full !px-2.5 flex items-center justify-start gap-2" onClick={handleAddPost}>
+                                        </LemonButton>
+                                        <LemonButton size="small" className="w-full !h-9 !rounded-full !px-2.5 flex items-center justify-start gap-2" onClick={handleAddPost}>
                                             <IconBook className="size-[14px] opacity-70" />
                                             <span className="text-[12px] font-semibold">new post</span>
-                                        </OSButton>
-                                        <OSButton size="sm" className="w-full !h-9 !rounded-full !px-2.5 flex items-center justify-start gap-2" onClick={openProfileEditor}>
+                                        </LemonButton>
+                                        <LemonButton size="small" className="w-full !h-9 !rounded-full !px-2.5 flex items-center justify-start gap-2" onClick={openProfileEditor}>
                                             <IconSparkles className="size-[14px] opacity-70" />
                                             <span className="text-[12px] font-semibold">{t('profile.edit')}</span>
-                                        </OSButton>
+                                        </LemonButton>
                                     </>
                                 ) : (
                                     <div className="rounded-[24px] border border-primary/10 bg-black/5 dark:bg-white/5 px-2.5 py-2 text-[11px] font-bold lowercase text-primary/60">
@@ -729,10 +729,10 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                                                         style={{ margin: 0, lineHeight: 1.6 }}
                                                     />
                                                     <div className="flex items-center justify-end gap-2 px-3 py-3 border-t border-primary/10">
-                                                        <OSButton type="button" variant="underlineOnHover" size="sm" onClick={() => setIsEditingProfile(false)}>{t('profile.cancel')}</OSButton>
-                                                        <OSButton type="button" variant="primary" size="sm" onClick={handleSaveProfile} disabled={updatingProfile || !hasProfileChanges}>
+                                                        <LemonButton htmlType="button" type="tertiary" size="small" onClick={() => setIsEditingProfile(false)}>{t('profile.cancel')}</LemonButton>
+                                                        <LemonButton htmlType="button" type="primary" size="small" onClick={handleSaveProfile} disabled={updatingProfile || !hasProfileChanges}>
                                                             {updatingProfile ? 'saving...' : t('profile.save')}
-                                                        </OSButton>
+                                                        </LemonButton>
                                                     </div>
                                                 </div>
                                             ) : (

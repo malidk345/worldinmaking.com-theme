@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from 'react'
-import OSButton from 'components/OSButton'
+import { LemonButton } from '@/components/LemonUI'
 
 export type ToolbarElement =
     | { type: 'separator'; className?: string }
@@ -48,7 +48,7 @@ const Toolbar = ({ elements, className, 'aria-label': ariaLabel }: ToolbarProps)
 
                 if (element.type === 'button') {
                     return (
-                        <OSButton
+                        <LemonButton
                             key={index}
                             onClick={() => !element.disabled && element.onClick?.()}
                             variant={element.variant || 'default'}
@@ -59,7 +59,7 @@ const Toolbar = ({ elements, className, 'aria-label': ariaLabel }: ToolbarProps)
                             disabled={element.disabled}
                         >
                             {!element.hideLabel && element.label}
-                        </OSButton>
+                        </LemonButton>
                     )
                 }
 
