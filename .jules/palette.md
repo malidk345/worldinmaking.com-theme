@@ -1,3 +1,6 @@
 ## 2024-07-18 - [Add focus visible styles to OSButton]
 **Learning:** `OSButton` component lacks clear visual focus states, reducing keyboard accessibility. This app requires `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20` for standard focus rings.
 **Action:** Always ensure custom button components have proper focus rings explicitly set since default browser rings can be subtle or overridden.
+## $(date +%Y-%m-%d) - Adding ARIA Labels to Rich Text Editor Toolbar Buttons
+**Learning:** React component abstractions mapping over arrays of objects to render icon-only buttons (like `ForumRichText.tsx`) frequently forget to pass explicit ARIA properties. Specifically, relying on native `title` properties in dynamically generated mapping (like `title={button.tooltipContent}`) does not automatically make the icon button readable for screen readers if `aria-label` is not also explicitly passed.
+**Action:** When creating configuration-driven toolbars, always enforce the inclusion and explicit rendering of `aria-label` attributes. Next time, always verify if custom `<button>` mapping loops are destructuring and forwarding accessibility props correctly.
