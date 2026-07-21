@@ -20,6 +20,7 @@ import './lemon-ui.css';
 //   </button>
 
 export interface LemonButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'type'> {
+  htmlType?: 'button' | 'submit' | 'reset';
   type?: 'primary' | 'secondary' | 'tertiary' | 'stealth' | 'muted';
   variant?: 'primary' | 'secondary' | 'tertiary' | 'stealth' | 'muted';
   status?: 'default' | 'alt' | 'danger';
@@ -52,6 +53,7 @@ export const LemonButton = React.forwardRef<HTMLButtonElement, LemonButtonProps>
       children,
       className = '',
       disabled,
+      htmlType = 'button',
       ...props
     },
     ref
@@ -84,6 +86,7 @@ export const LemonButton = React.forwardRef<HTMLButtonElement, LemonButtonProps>
         className={classes}
         aria-disabled={!!disabled || loading}
         disabled={disabled || loading}
+        type={htmlType}
         {...props}
       >
         <span className="LemonButton__chrome">

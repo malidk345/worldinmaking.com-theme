@@ -3,7 +3,7 @@
 import React, { useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { IconChevronRight } from '@posthog/icons';
-import { LemonButton } from 'components/LemonUI'
+import { LemonButton } from '@/components/LemonUI'
 import Tooltip from 'components/RadixUI/Tooltip'
 
 interface SidePanelProps {

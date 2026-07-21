@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { createPortal } from 'react-dom'
-import OSButton from 'components/OSButton'
+import { LemonButton } from '@/components/LemonUI'
 import {
     IconSidebarOpen,
     IconSidebarClose,
@@ -132,8 +132,8 @@ export default function FooterBar({
                     {hasLeftSidebar && (
                         <Tooltip
                             trigger={
-                                <OSButton
-                                    size="sm"
+                                <LemonButton
+                                    size="small"
                                     onClick={(e) => {
                                         e.preventDefault()
                                         onToggleNav?.()
@@ -146,7 +146,7 @@ export default function FooterBar({
                                     ) : (
                                         <IconSidebarClose className={`${navIconClassName} size-[18px]`} />
                                     )}
-                                </OSButton>
+                                </LemonButton>
                             }
                         >
                             {isNavVisible ? 'hide' : 'show'} sidebar
@@ -158,24 +158,24 @@ export default function FooterBar({
                 {(showBack || showForward) && (
                     <div className="hidden sm:flex items-center gap-0.5 ml-1 pl-1 border-l border-black/10 dark:border-white/10 h-5">
                         {showBack && (
-                            <OSButton
-                                size="sm"
+                            <LemonButton
+                                size="small"
                                 onClick={goBack}
                                 disabled={!canGoBack}
                                 className="p-1 h-8 w-8 !rounded-md"
                             >
                                 <IconChevronLeft className={`size-[18px] ${canGoBack ? 'opacity-100' : 'opacity-30'}`} />
-                            </OSButton>
+                            </LemonButton>
                         )}
                         {showForward && (
-                            <OSButton
-                                size="sm"
+                            <LemonButton
+                                size="small"
                                 onClick={goForward}
                                 disabled={!canGoForward}
                                 className="p-1 h-8 w-8 !rounded-md"
                             >
                                 <IconChevronRight className={`size-[18px] ${canGoForward ? 'opacity-100' : 'opacity-30'}`} />
-                            </OSButton>
+                            </LemonButton>
                         )}
                     </div>
                 )}
@@ -186,8 +186,8 @@ export default function FooterBar({
                 {/* Bookmark & Comment */}
                 <div className="flex items-center gap-0.5">
                     <Tooltip trigger={
-                        <OSButton
-                            size="sm"
+                        <LemonButton
+                            size="small"
                             className={interactionBtnClass}
                             onClick={onBookmark}
                             disabled={!onBookmark || bookmarkLoading}
@@ -198,13 +198,13 @@ export default function FooterBar({
                             ) : (
                                 <IconBookmark className={`size-[18px] ${onBookmark ? 'text-primary' : 'text-primary/30'}`} />
                             )}
-                        </OSButton>
+                        </LemonButton>
                     } side="bottom">bookmark</Tooltip>
 
                     <Tooltip trigger={
-                        <OSButton size="sm" className={interactionBtnClass} onClick={onComment} disabled={!onComment}>
+                        <LemonButton size="small" className={interactionBtnClass} onClick={onComment} disabled={!onComment}>
                             <IconMessage className={`size-[18px] ${onComment ? 'text-primary' : 'text-primary/30'}`} />
-                        </OSButton>
+                        </LemonButton>
                     } side="bottom">comment</Tooltip>
                 </div>
             </div>
@@ -214,14 +214,14 @@ export default function FooterBar({
                 {rightActionButtons}
                 <div className="relative">
                     <Tooltip trigger={
-                        <OSButton
-                            size="sm"
+                        <LemonButton
+                            size="small"
                             className={interactionBtnClass}
                             onClick={toggleLanguage}
                             active={languageOpen}
                         >
                             <IconGlobe className="size-[18px] text-primary" />
-                        </OSButton>
+                        </LemonButton>
                     } side="bottom">language</Tooltip>
 
                     <LanguageSelector
@@ -241,9 +241,9 @@ export default function FooterBar({
                     {showSearch && (
                         <Tooltip
                             trigger={
-                                <OSButton size="sm" className={mainIconBtnClass} onClick={toggleSearch} active={searchOpen}>
+                                <LemonButton size="small" className={mainIconBtnClass} onClick={toggleSearch} active={searchOpen}>
                                     <IconSearch className="size-[18px]" />
-                                </OSButton>
+                                </LemonButton>
                             }
                             side="bottom"
                         >
@@ -270,8 +270,8 @@ export default function FooterBar({
                     {showToc && (
                         <Tooltip
                             trigger={
-                                <OSButton
-                                    size="sm"
+                                <LemonButton
+                                    size="small"
                                     onClick={(e) => {
                                         e.preventDefault()
                                         onToggleToc?.()
@@ -288,7 +288,7 @@ export default function FooterBar({
                                             </div>
                                         )}
                                     </div>
-                                </OSButton>
+                                </LemonButton>
                             }
                         >
                             {isTocVisible ? 'hide' : 'show'} table of contents

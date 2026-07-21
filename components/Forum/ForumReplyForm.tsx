@@ -86,7 +86,7 @@ export default function ForumReplyForm({ archived = false, isInForum = false, in
                                 cta={
                                     <div className="flex gap-2">
                                         <LemonButton
-                                            variant="primary"
+                                            type="primary"
                                             size="small"
                                             disabled={!stripHtmlTags(body)}
                                             onClick={handleSubmit}
