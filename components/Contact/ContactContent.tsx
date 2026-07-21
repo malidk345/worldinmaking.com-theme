@@ -5,7 +5,7 @@ import OSButton from 'components/OSButton'
 import { LemonInput, LemonTextArea } from '@/components/LemonUI'
 import { supabase } from 'lib/supabase'
 import { useToast } from 'context/ToastContext'
-import { IconChat, IconMessage, IconPerson, IconSend } from '@posthog/icons';
+import { IconMessage, IconPerson, IconSend } from '@posthog/icons';
 import { useTranslation } from 'hooks/useTranslation'
 
 export default function ContactContent() {
