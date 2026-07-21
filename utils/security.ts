@@ -1,3 +1,5 @@
+import DOMPurify from 'isomorphic-dompurify';
+
 /**
  * Input Sanitization and Validation Utilities
  * Provides security-focused helper functions for user input.
@@ -10,6 +12,10 @@
  */
 export function sanitizeString(input: string | null | undefined): string {
     if (typeof input !== 'string') return ''
+
+    if (DOMPurify && DOMPurify.sanitize) {
+        return DOMPurify.sanitize(input);
+    }
 
     return input
         .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
@@ -27,7 +33,10 @@ export function sanitizeString(input: string | null | undefined): string {
 export function sanitizeHtml(html: string | null | undefined, options = {}): string {
     if (typeof html !== 'string') return ''
 
-    void options
+    if (DOMPurify && DOMPurify.sanitize) {
+        return DOMPurify.sanitize(html, options);
+    }
+
     return sanitizeString(html)
 }
 
