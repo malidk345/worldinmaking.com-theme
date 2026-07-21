@@ -729,7 +729,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                         <Tooltip
                                             trigger={
                                                 <LemonButton
-                                                    size="medium"
+                                                    size="xsmall"
                                                     onClick={handleClose}
                                                     icon={<IconX />}
                                                 />
