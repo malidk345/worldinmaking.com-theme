@@ -19,7 +19,7 @@ import type { AppWindow as AppWindowType } from '../../context/Window'
 import { WindowProvider } from '../../context/Window'
 import { IMenu } from 'components/PostLayout/types'
 import Tooltip from 'components/RadixUI/Tooltip'
-import OSButton from 'components/OSButton'
+import { LemonButton } from '@/components/LemonUI'
 import MenuBar from 'components/RadixUI/MenuBar'
 import { Popover } from '../RadixUI/Popover'
 import FileMenu from '../RadixUI/FileMenu'
@@ -640,15 +640,15 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                     </div>
 
                                     <div className="flex justify-end">
-                                        <OSButton size="xs" onClick={handleMinimize}>
+                                        <LemonButton size="xsmall" onClick={handleMinimize}>
                                             <IconMinus className="size-4 relative top-1" />
-                                        </OSButton>
+                                        </LemonButton>
 
                                         {!item.fixedSize && (
                                             <ContextMenu.Root>
                                                 <ContextMenu.Trigger asChild>
-                                                    <OSButton
-                                                        size="xs"
+                                                    <LemonButton
+                                                        size="xsmall"
                                                         onClick={() => {
                                                             if (isMaximized) {
                                                                 collapseWindow()
@@ -657,7 +657,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                                             }
                                                         }}
                                                         className="group"
-                                                        tooltip="right click for more options"
+                                                        title="right click for more options"
                                                     >
                                                         <span>
                                                             <IconSquare className="size-5 group-hover:hidden" />
@@ -667,7 +667,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                                                 <IconExpand45Chevrons className="size-6 -m-0.5 hidden group-hover:block" />
                                                             )}
                                                         </span>
-                                                    </OSButton>
+                                                    </LemonButton>
                                                 </ContextMenu.Trigger>
                                                 <ContextMenu.Portal>
                                                     <ContextMenu.Content
@@ -728,8 +728,8 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
 
                                         <Tooltip
                                             trigger={
-                                                <OSButton
-                                                    size="md"
+                                                <LemonButton
+                                                    size="xsmall"
                                                     onClick={handleClose}
                                                     icon={<IconX />}
                                                 />
