@@ -1,12 +1,12 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
+import { LemonButton } from 'components/LemonUI'
 import { motion, AnimatePresence } from 'framer-motion'
 import { IconChat, IconNewspaper, IconX } from '@posthog/icons';
 import { supabase } from 'lib/supabase'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
-import OSButton from 'components/OSButton'
 import ScrollArea from 'components/RadixUI/ScrollArea'
 
 dayjs.extend(relativeTime)
@@ -123,15 +123,15 @@ export default function NotificationCenter() {
 
     return (
         <div className="relative">
-            <OSButton
+            <LemonButton
                 onClick={toggleOpen}
-                size="sm"
+                size="small"
                 className={`!px-1 group/notif relative translate-y-[2px] transition-all ${isOpen ? 'bg-primary/5 dark:bg-white/10' : ''}`}
             >
                 <div className="relative px-1 h-5 flex items-center justify-center">
                     <IconNotificationWithBadge hasUnread={hasUnread} className={`size-[18px] text-black transition-transform group-hover/notif:scale-110 ${hasUnread ? 'animate-wiggle' : ''}`} />
                 </div>
-            </OSButton>
+            </LemonButton>
 
             <AnimatePresence>
                 {isOpen && (

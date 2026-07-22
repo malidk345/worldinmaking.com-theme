@@ -40,10 +40,16 @@ export function LemonTable<T>({
     if (typeof rowKey === 'function') {
       return rowKey(record);
     }
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (rowKey && (record as any)[rowKey] !== undefined) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
       return String((record as any)[rowKey]);
     }
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((record as any).id) return String((record as any).id);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((record as any).key) return String((record as any).key);
     return idx;
   };
@@ -101,6 +107,7 @@ export function LemonTable<T>({
               dataSource.map((record, rIdx) => (
                 <tr key={String(getRowKey(record, rIdx))}>
                   {columns.map((col, cIdx) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const val = col.dataIndex ? (record as any)[col.dataIndex] : undefined;
                     return (
                       <td

@@ -1,3 +1,4 @@
+import { LemonInput, LemonTextArea } from 'components/LemonUI'
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -130,7 +131,7 @@ function InputGroupInput({
   ...props
 }: React.ComponentProps<'input'>) {
   return (
-    <Input
+    <LemonInput
       data-slot="input-group-control"
       className={cn(
         'flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent',
@@ -146,7 +147,7 @@ function InputGroupTextarea({
   ...props
 }: React.ComponentProps<'textarea'>) {
   return (
-    <Textarea
+    <LemonTextArea
       data-slot="input-group-control"
       className={cn(
         'flex-1 resize-none rounded-none border-0 bg-transparent py-3 shadow-none focus-visible:ring-0 dark:bg-transparent',
