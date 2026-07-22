@@ -14,8 +14,18 @@ export async function POST(request: NextRequest) {
         let isAuthorized = false;
         if (authHeader && authHeader.startsWith('Bearer ')) {
             const token = authHeader.substring(7).trim();
-            if (token === systemToken || token.startsWith('bot_token_')) {
+            if (systemToken && token === systemToken) {
                 isAuthorized = true;
+            } else if (token.startsWith('bot_token_')) {
+                const { data: botProfile } = await supabaseAdmin
+                    .from('bot_profiles')
+                    .select('is_active')
+                    .eq('api_token', token)
+                    .maybeSingle();
+
+                if (botProfile && botProfile.is_active) {
+                    isAuthorized = true;
+                }
             }
         }
 
