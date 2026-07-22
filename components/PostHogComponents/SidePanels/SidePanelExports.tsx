@@ -75,6 +75,8 @@ export function SidePanelExports({
             size="small"
             type="tertiary"
             onClick={onRefresh}
+            aria-label="Refresh exports"
+            title="Refresh exports"
           />
         </div>
 
@@ -109,15 +111,17 @@ export function SidePanelExports({
               </div>
               <div className="shrink-0">
                 {asset.status === 'pending' ? (
-                  <LemonButton size="small" type="secondary" disabled icon={<IconRefresh className="size-3.5 animate-spin" />} />
+                  <LemonButton size="small" type="secondary" disabled icon={<IconRefresh className="size-3.5 animate-spin" />} aria-label="Export pending" title="Export pending" />
                 ) : asset.status === 'error' ? (
-                  <LemonButton size="small" type="secondary" disabled icon={<IconWarning className="size-3.5 text-[var(--danger-3000)]" />} />
+                  <LemonButton size="small" type="secondary" disabled icon={<IconWarning className="size-3.5 text-[var(--danger-3000)]" />} aria-label="Export failed" title="Export failed" />
                 ) : (
                   <LemonButton
                     size="small"
                     type={!asset.downloaded ? 'primary' : 'secondary'}
                     icon={<IconDownload className="size-3.5" />}
                     onClick={() => onDownload?.(asset)}
+                    aria-label="Download export"
+                    title="Download export"
                   />
                 )}
               </div>
