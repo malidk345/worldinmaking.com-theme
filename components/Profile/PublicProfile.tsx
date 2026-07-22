@@ -524,7 +524,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                     {isOwner && (
                         <Tooltip
                             trigger={
-                                <OSButton size="sm" onClick={() => setSidebarOpen((prev) => !prev)} active={sidebarOpen} className="p-1 h-8 w-8 !rounded-full">
+                                <OSButton size="sm" onClick={() => setSidebarOpen((prev) => !prev)} active={sidebarOpen} className="p-1 h-8 w-8 !rounded-full" aria-label={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}>
                                     {sidebarOpen ? <IconSidebarOpen className="size-[18px]" /> : <IconSidebarClose className="size-[18px]" />}
                                 </OSButton>
                             }
@@ -535,10 +535,10 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                     )}
 
                     <div className="hidden sm:flex items-center gap-0.5">
-                        <OSButton size="sm" onClick={goBack} disabled={!canGoBack} className="p-1 h-8 w-8 !rounded-full">
+                        <OSButton size="sm" onClick={goBack} disabled={!canGoBack} className="p-1 h-8 w-8 !rounded-full" aria-label="Go back">
                             <IconChevronLeft className={`size-[18px] ${canGoBack ? 'opacity-100' : 'opacity-30'}`} />
                         </OSButton>
-                        <OSButton size="sm" onClick={goForward} disabled={!canGoForward} className="p-1 h-8 w-8 !rounded-full">
+                        <OSButton size="sm" onClick={goForward} disabled={!canGoForward} className="p-1 h-8 w-8 !rounded-full" aria-label="Go forward">
                             <IconChevronRight className={`size-[18px] ${canGoForward ? 'opacity-100' : 'opacity-30'}`} />
                         </OSButton>
                     </div>
@@ -573,10 +573,10 @@ export default function PublicProfile({ username }: PublicProfileProps) {
                         </>
                     )}
                     <div className="hidden sm:block w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
-                    <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded-full" onClick={refreshAll}><IconRefresh className={`size-[16px] opacity-70 ${refreshing ? 'animate-spin' : ''}`} /></OSButton>} side="bottom">refresh profile</Tooltip>
-                    <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded-full" onClick={() => copyLink(publicProfilePath, 'profile')}><IconShare className="size-[16px] opacity-70" /></OSButton>} side="bottom">share profile</Tooltip>
+                    <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded-full" onClick={refreshAll} aria-label="Refresh profile"><IconRefresh className={`size-[16px] opacity-70 ${refreshing ? 'animate-spin' : ''}`} /></OSButton>} side="bottom">refresh profile</Tooltip>
+                    <Tooltip trigger={<OSButton size="sm" className="p-1.5 h-8 w-8 !rounded-full" onClick={() => copyLink(publicProfilePath, 'profile')} aria-label="Share profile"><IconShare className="size-[16px] opacity-70" /></OSButton>} side="bottom">share profile</Tooltip>
                     {profile.website && (
-                        <Tooltip trigger={<a href={profile.website} target="_blank" rel="noopener noreferrer"><OSButton size="sm" className="p-1.5 h-8 w-8 !rounded-full"><IconExternal className="size-[16px] opacity-70" /></OSButton></a>} side="bottom">website</Tooltip>
+                        <Tooltip trigger={<a href={profile.website} target="_blank" rel="noopener noreferrer" aria-label="Visit website"><OSButton size="sm" className="p-1.5 h-8 w-8 !rounded-full" aria-label="Visit website"><IconExternal className="size-[16px] opacity-70" /></OSButton></a>} side="bottom">website</Tooltip>
                     )}
                 </div>
             </div>

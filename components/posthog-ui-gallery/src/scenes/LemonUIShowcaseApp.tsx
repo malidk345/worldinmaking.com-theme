@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react'
 import {
   LemonButton,
@@ -399,9 +400,9 @@ export function LemonUIShowcaseApp({ onBack }: { onBack?: () => void } = {}): JS
             <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '1rem' }}>LemonTable Component</h3>
             <LemonTable
               columns={[
-                { title: 'User / Distinct ID', dataIndex: 'user', render: (val) => <ProfilePicture name={val} showName /> },
-                { title: 'Role', dataIndex: 'role', render: (val) => <LemonTag type="highlight">{val}</LemonTag> },
-                { title: 'Status', dataIndex: 'status', render: (val) => <LemonBadge content={val} status="success" /> },
+                { title: 'User / Distinct ID', dataIndex: 'user', render: (val: any) => <ProfilePicture name={val} showName /> },
+                { title: 'Role', dataIndex: 'role', render: (val: any) => <LemonTag type="highlight">{val}</LemonTag> },
+                { title: 'Status', dataIndex: 'status', render: (val: any) => <LemonBadge content={val} status="success" /> },
                 { title: 'Actions', key: 'actions', render: () => <More overlay={<LemonButton fullWidth>View Profile</LemonButton>} /> },
               ]}
               dataSource={[

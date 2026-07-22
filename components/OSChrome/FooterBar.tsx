@@ -139,6 +139,7 @@ export default function FooterBar({
                                         onToggleNav?.()
                                     }}
                                     active={isNavVisible}
+                                    aria-label={isNavVisible ? 'Hide sidebar' : 'Show sidebar'}
                                     className={mainIconBtnClass}
                                 >
                                     {isNavVisible ? (
@@ -163,6 +164,7 @@ export default function FooterBar({
                                 onClick={goBack}
                                 disabled={!canGoBack}
                                 className="p-1 h-8 w-8 !rounded-md"
+                                aria-label="Go back"
                             >
                                 <IconChevronLeft className={`size-[18px] ${canGoBack ? 'opacity-100' : 'opacity-30'}`} />
                             </OSButton>
@@ -173,6 +175,7 @@ export default function FooterBar({
                                 onClick={goForward}
                                 disabled={!canGoForward}
                                 className="p-1 h-8 w-8 !rounded-md"
+                                aria-label="Go forward"
                             >
                                 <IconChevronRight className={`size-[18px] ${canGoForward ? 'opacity-100' : 'opacity-30'}`} />
                             </OSButton>
@@ -192,6 +195,7 @@ export default function FooterBar({
                             onClick={onBookmark}
                             disabled={!onBookmark || bookmarkLoading}
                             active={isBookmarked}
+                            aria-label="Bookmark"
                         >
                             {isBookmarked ? (
                                 <IconBookmarkSolid className="size-[18px] text-primary" />
@@ -202,7 +206,7 @@ export default function FooterBar({
                     } side="bottom">bookmark</Tooltip>
 
                     <Tooltip trigger={
-                        <OSButton size="sm" className={interactionBtnClass} onClick={onComment} disabled={!onComment}>
+                        <OSButton size="sm" className={interactionBtnClass} onClick={onComment} disabled={!onComment} aria-label="Comment">
                             <IconMessage className={`size-[18px] ${onComment ? 'text-primary' : 'text-primary/30'}`} />
                         </OSButton>
                     } side="bottom">comment</Tooltip>
@@ -219,6 +223,7 @@ export default function FooterBar({
                             className={interactionBtnClass}
                             onClick={toggleLanguage}
                             active={languageOpen}
+                            aria-label="Change language"
                         >
                             <IconGlobe className="size-[18px] text-primary" />
                         </OSButton>
@@ -241,7 +246,7 @@ export default function FooterBar({
                     {showSearch && (
                         <Tooltip
                             trigger={
-                                <OSButton size="sm" className={mainIconBtnClass} onClick={toggleSearch} active={searchOpen}>
+                                <OSButton size="sm" className={mainIconBtnClass} onClick={toggleSearch} active={searchOpen} aria-label="Search page">
                                     <IconSearch className="size-[18px]" />
                                 </OSButton>
                             }
@@ -278,6 +283,7 @@ export default function FooterBar({
                                     }}
                                     active={isTocVisible}
                                     className={`${mainIconBtnClass} ${!compact ? '!w-auto !px-2' : ''}`}
+                                    aria-label={isTocVisible ? 'Hide table of contents' : 'Show table of contents'}
                                 >
                                     <div className="flex items-center gap-2">
                                         <IconTableOfContents className="size-[18px]" />
