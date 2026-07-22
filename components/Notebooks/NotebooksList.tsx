@@ -96,24 +96,24 @@ export function NotebooksListSkeleton() {
           href={`#notebook-${short_id}`}
           className="font-semibold flex items-center gap-2 text-[var(--text-3000,#111827)] hover:text-[var(--primary-3000-hover,#1d4ed8)] hover:underline"
         >
-          {title || 'Untitled'}
+          {(title as React.ReactNode) || 'Untitled'}
           {is_template && <LemonTag type="highlight">TEMPLATE</LemonTag>}
         </a>
       ),
     },
     {
       title: 'Created by',
-      render: (_, notebook) => notebook.created_by?.first_name || '—',
+      render: (_, notebook) => (notebook.created_by?.first_name as React.ReactNode) || '—',
     },
     {
       title: 'Created',
       dataIndex: 'created_at',
-      render: (created_at) => <span className="font-mono text-xs opacity-75">{created_at}</span>,
+      render: (created_at) => <span className="font-mono text-xs opacity-75">{created_at as React.ReactNode}</span>,
     },
     {
       title: 'Last modified',
       dataIndex: 'last_modified_at',
-      render: (last_modified_at) => <span className="font-mono text-xs opacity-75">{last_modified_at}</span>,
+      render: (last_modified_at) => <span className="font-mono text-xs opacity-75">{last_modified_at as React.ReactNode}</span>,
     },
     {
       title: '',
@@ -213,9 +213,9 @@ export function NotebooksListSkeleton() {
         {/* Official LemonTable Implementation */}
         <LemonTable
           data-attr="notebooks-table"
-          dataSource={filteredNotebooks}
+          dataSource={filteredNotebooks as unknown as Record<string, unknown>[]}
           rowKey="short_id"
-          columns={columns}
+          columns={columns as unknown as Column<Record<string, unknown>>[]}
         />
       </div>
     </div>
