@@ -12,7 +12,7 @@ const compat = new FlatCompat({
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
-    ignores: [".next/**", ".next-dev/**", ".vercel/**", "out/**", "build/**", "next-env.d.ts", "eslint_report*.txt", "components/craft-editor/**", "components/editor/**"],
+    ignores: [".next/**", ".next-dev/**", ".vercel/**", "out/**", "build/**", "next-env.d.ts", "eslint_report*.txt", "components/craft-editor/**", "components/editor/**", "components/posthog-ui-gallery/**"],
   },
 ];
 
