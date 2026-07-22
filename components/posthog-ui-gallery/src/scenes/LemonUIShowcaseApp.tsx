@@ -60,7 +60,7 @@ import {
   IconChevronRight,
 } from '../components/lemon-ui'
 
-export function LemonUIShowcaseApp(): JSX.Element {
+export function LemonUIShowcaseApp({ onBack }: { onBack?: () => void } = {}): JSX.Element {
   const [activeTab, setActiveTab] = useState<'buttons' | 'inputs' | 'pickers' | 'overlays' | 'cards' | 'feedback' | 'tokens'>('buttons')
 
   // State bindings for interactive components

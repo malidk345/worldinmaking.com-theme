@@ -121,7 +121,7 @@ export function SidePanelNotebooksApp({ onBack }: SidePanelNotebooksAppProps): J
             padding: '0 0.5rem 0 0.75rem',
             display: 'flex',
             alignItems: 'center',
-            justify: 'space-between',
+            justifyContent: 'space-between',
             gap: '0.5rem',
             flexShrink: 0,
           }}

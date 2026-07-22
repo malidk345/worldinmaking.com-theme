@@ -52,7 +52,7 @@ export function GalleryLandingApp({ onSelectScene }: GalleryLandingAppProps): JS
                 transition: 'all 150ms ease',
                 display: 'flex',
                 alignItems: 'center',
-                justify: 'space-between',
+                justifyContent: 'space-between',
                 gap: '1rem',
               }}
               onMouseEnter={(e) => {
@@ -93,7 +93,7 @@ export function GalleryLandingApp({ onSelectScene }: GalleryLandingAppProps): JS
                 transition: 'all 150ms ease',
                 display: 'flex',
                 alignItems: 'center',
-                justify: 'space-between',
+                justifyContent: 'space-between',
                 gap: '1rem',
               }}
               onMouseEnter={(e) => {
@@ -134,7 +134,7 @@ export function GalleryLandingApp({ onSelectScene }: GalleryLandingAppProps): JS
                 transition: 'all 150ms ease',
                 display: 'flex',
                 alignItems: 'center',
-                justify: 'space-between',
+                justifyContent: 'space-between',
                 gap: '1rem',
               }}
               onMouseEnter={(e) => {
@@ -175,7 +175,7 @@ export function GalleryLandingApp({ onSelectScene }: GalleryLandingAppProps): JS
                 transition: 'all 150ms ease',
                 display: 'flex',
                 alignItems: 'center',
-                justify: 'space-between',
+                justifyContent: 'space-between',
                 gap: '1rem',
               }}
               onMouseEnter={(e) => {

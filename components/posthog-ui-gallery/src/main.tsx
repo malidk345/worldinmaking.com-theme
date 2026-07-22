@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import App from './App.tsx'
+import App from './App'
 
 // Lemon UI component SCSS (pure CSS rules, no JS imports)
 import '../../src/lib/lemon-ui/LemonButton/LemonButton.scss'
