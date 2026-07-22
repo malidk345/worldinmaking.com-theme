@@ -1,6 +1,6 @@
 "use client"
 
-import React from 'react'
+import React, { useMemo } from 'react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { IconMessage } from '@posthog/icons'
@@ -33,15 +33,26 @@ export default function ForumTopicSidebar({
         }
     }
 
+    // ⚡ Bolt: Pre-calculate the latest post per channel to avoid O(N * M) filtering
+    // on every render, and use lexicographical string comparison for ISO 8601 dates
+    // instead of repeatedly parsing with new Date().getTime().
+    const latestActiveByChannel = useMemo(() => {
+        const result: Record<number, string> = {}
+        for (const post of posts) {
+            if (post.channel_id != null) {
+                const existing = result[post.channel_id]
+                if (!existing || post.created_at > existing) {
+                    result[post.channel_id] = post.created_at
+                }
+            }
+        }
+        return result
+    }, [posts])
+
     const getLastActive = (channelId: number) => {
-        const channelPosts = posts.filter((post) => post.channel_id === channelId)
-        if (!channelPosts.length) return null
-
-        const latest = channelPosts.reduce((acc, current) => {
-            return new Date(current.created_at).getTime() > new Date(acc.created_at).getTime() ? current : acc
-        })
-
-        return dayjs(latest.created_at).fromNow()
+        const latestDate = latestActiveByChannel[channelId]
+        if (!latestDate) return null
+        return dayjs(latestDate).fromNow()
     }
 
     return (
