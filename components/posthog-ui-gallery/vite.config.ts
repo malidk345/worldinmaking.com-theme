@@ -1,9 +1,6 @@
 import path from 'path'
-// @ts-expect-error Vite isn't in nextjs build deps
 import tailwindcss from '@tailwindcss/vite'
-// @ts-expect-error Vite isn't in nextjs build deps
 import { defineConfig } from 'vite'
-// @ts-expect-error Vite isn't in nextjs build deps
 import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/

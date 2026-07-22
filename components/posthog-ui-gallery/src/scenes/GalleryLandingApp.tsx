@@ -163,7 +163,89 @@ export function GalleryLandingApp({ onSelectScene }: GalleryLandingAppProps): JS
               </LemonButton>
             </div>
 
-            {/* Item 4: Lemon UI Component Showcase */}
+            {/* Item 4: Discussions & Threads */}
+            <div
+              onClick={() => onSelectScene('discussions')}
+              style={{
+                backgroundColor: 'var(--color-bg-surface-primary)',
+                border: '1px solid var(--border-3000)',
+                borderRadius: 'var(--radius)',
+                padding: '1.25rem 1.5rem',
+                cursor: 'pointer',
+                transition: 'all 150ms ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '1rem',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-bold-3000)'
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.06)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-3000)'
+                e.currentTarget.style.boxShadow = 'none'
+              }}
+            >
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                  <span style={{ fontWeight: 700, fontSize: '1.0625rem', color: 'var(--text-3000)' }}>
+                    4. Discussions &amp; Threads
+                  </span>
+                  <LemonTag type="highlight">Storybook Scene</LemonTag>
+                </div>
+                <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+                  Storybook: <code>Scenes-App/Discussions → Threads</code> (Interactive team comments, reactions, status badges &amp; rich composer)
+                </div>
+              </div>
+
+              <LemonButton size="small" type="primary">
+                Open Scene →
+              </LemonButton>
+            </div>
+
+            {/* Item 5: PostHog AI Thread */}
+            <div
+              onClick={() => onSelectScene('posthog_ai' as any)}
+              style={{
+                backgroundColor: 'var(--color-bg-surface-primary)',
+                border: '1px solid var(--border-3000)',
+                borderRadius: 'var(--radius)',
+                padding: '1.25rem 1.5rem',
+                cursor: 'pointer',
+                transition: 'all 150ms ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '1rem',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-bold-3000)'
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.06)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-3000)'
+                e.currentTarget.style.boxShadow = 'none'
+              }}
+            >
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                  <span style={{ fontWeight: 700, fontSize: '1.0625rem', color: 'var(--text-3000)' }}>
+                    🦔 5. PostHog AI Thread
+                  </span>
+                  <LemonTag type="highlight">Storybook Scene</LemonTag>
+                </div>
+                <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+                  Storybook: <code>Scenes-App/PostHog AI → Thread</code> (Max AI assistant chat, HogQL query executions, chart visualizer &amp; prompts)
+                </div>
+              </div>
+
+              <LemonButton size="small" type="primary">
+                Open Scene →
+              </LemonButton>
+            </div>
+
+            {/* Item 6: Lemon UI Component Showcase */}
             <div
               onClick={() => onSelectScene('lemonui')}
               style={{

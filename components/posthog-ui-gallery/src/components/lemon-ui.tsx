@@ -99,6 +99,8 @@ export interface LemonButtonProps {
   buttonWrapper?: (button: React.ReactElement) => React.ReactElement
   to?: string
   targetBlank?: boolean
+  style?: React.CSSProperties
+  tooltip?: React.ReactNode
 }
 
 export const LemonButton = forwardRef<HTMLButtonElement, LemonButtonProps>(
@@ -651,6 +653,8 @@ export interface LemonInputProps {
   size?: 'small' | 'medium' | 'large'
   className?: string
   autoFocus?: boolean
+  onPressEnter?: () => void
+  readOnly?: boolean
 }
 
 export const LemonInput = forwardRef<HTMLInputElement, LemonInputProps>(function LemonInput(
@@ -668,6 +672,8 @@ export const LemonInput = forwardRef<HTMLInputElement, LemonInputProps>(function
     size = 'medium',
     className,
     autoFocus,
+    onPressEnter,
+    readOnly,
   },
   ref
 ) {
@@ -716,7 +722,13 @@ export const LemonInput = forwardRef<HTMLInputElement, LemonInputProps>(function
         onChange={handleChange}
         placeholder={placeholder}
         disabled={disabled}
+        readOnly={readOnly}
         autoFocus={autoFocus}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            onPressEnter?.()
+          }
+        }}
         className="LemonInput__input"
         style={{
           border: 'none',
@@ -1166,9 +1178,11 @@ export interface LemonTextAreaProps {
   rows?: number
   disabled?: boolean
   maxLength?: number
+  autoFocus?: boolean
+  style?: React.CSSProperties
 }
 
-export function LemonTextArea({ value, onChange, placeholder, rows = 3, disabled, maxLength }: LemonTextAreaProps): JSX.Element {
+export function LemonTextArea({ value, onChange, placeholder, rows = 3, disabled, maxLength, autoFocus, style }: LemonTextAreaProps): JSX.Element {
   return (
     <textarea
       value={value}
@@ -1177,6 +1191,7 @@ export function LemonTextArea({ value, onChange, placeholder, rows = 3, disabled
       rows={rows}
       disabled={disabled}
       maxLength={maxLength}
+      autoFocus={autoFocus}
       style={{
         width: '100%',
         padding: '0.5rem 0.75rem',
@@ -1488,8 +1503,8 @@ export function LemonTabs<T extends string = string>({ activeKey, onChange, tabs
 
 // ─── LemonDivider ───────────────────────────────────────────────────────────
 
-export function LemonDivider({ vertical = false, className }: { vertical?: boolean; className?: string }): JSX.Element {
-  return <div className={clsx('LemonDivider', vertical && 'LemonDivider--vertical', className)} style={{ height: vertical ? '100%' : '1px', width: vertical ? '1px' : '100%', backgroundColor: 'var(--border-3000)', margin: '0.5rem 0' }} />
+export function LemonDivider({ vertical = false, className, style }: { vertical?: boolean; className?: string; style?: React.CSSProperties }): JSX.Element {
+  return <div className={clsx('LemonDivider', vertical && 'LemonDivider--vertical', className)} style={{ height: vertical ? '100%' : '1px', width: vertical ? '1px' : '100%', backgroundColor: 'var(--border-3000)', margin: '0.5rem 0', ...style }} />
 }
 
 // ─── LemonTable ─────────────────────────────────────────────────────────────
@@ -1498,7 +1513,6 @@ export interface LemonTableColumn<T> {
   title: React.ReactNode
   dataIndex?: keyof T
   key?: string
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   render?: (value: any, record: T, index: number) => React.ReactNode
 }
 
@@ -1509,7 +1523,6 @@ export interface LemonTableProps<T> {
   className?: string
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function LemonTable<T extends Record<string, any>>({ columns, dataSource, loading, className }: LemonTableProps<T>): JSX.Element {
   return (
     <div style={{ position: 'relative', overflowX: 'auto' }}>

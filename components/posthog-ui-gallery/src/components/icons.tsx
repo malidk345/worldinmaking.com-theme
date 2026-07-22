@@ -58,6 +58,14 @@ export function IconGear(props: LemonIconProps): JSX.Element {
   )
 }
 
+export function IconCopy(props: LemonIconProps): JSX.Element {
+  return (
+    <LemonIconBase {...props}>
+      <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" fill="currentColor" />
+    </LemonIconBase>
+  )
+}
+
 export function IconSearch(props: LemonIconProps): JSX.Element {
   return (
     <LemonIconBase {...props}>
@@ -134,6 +142,14 @@ export function IconExternal(props: LemonIconProps): JSX.Element {
   return (
     <LemonIconBase {...props}>
       <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" fill="currentColor" />
+    </LemonIconBase>
+  )
+}
+
+export function IconChat(props: LemonIconProps): JSX.Element {
+  return (
+    <LemonIconBase {...props}>
+      <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z" fill="currentColor" />
     </LemonIconBase>
   )
 }

@@ -1,8 +1,8 @@
 "use client"
 
 import React, { useEffect } from 'react'
-import Home from 'components/craft-editor/src/pages/home'
-import { ThemeProvider } from 'components/craft-editor/src/components/theme-provider'
+import Home from '../../components/craft-editor/src/pages/home'
+import { ThemeProvider } from '../../components/craft-editor/src/components/theme-provider'
 import '../../components/editor/editor.css'
 
 export default function WritePostPage() {

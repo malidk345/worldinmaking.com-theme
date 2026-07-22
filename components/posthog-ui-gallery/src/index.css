@@ -81,18 +81,19 @@
   --color-posthog-brand-yellow-saturation: 93%;
   --color-posthog-brand-yellow-lightness: 49%;
 
-  --color-posthog-3000-25: #fafafa;
-  --color-posthog-3000-50: #f3f4f6;
-  --color-posthog-3000-100: #e5e7eb;
-  --color-posthog-3000-150: #d1d5db;
-  --color-posthog-3000-200: #e2e8f0;
-  --color-posthog-3000-300: #cbd5e1;
-  --color-posthog-3000-400: #94a3b8;
-  --color-posthog-3000-500: #64748b;
-  --color-posthog-3000-600: #475569;
-  --color-posthog-3000-700: #334155;
-  --color-posthog-3000-800: #1e293b;
-  --color-posthog-3000-900: #0f172a;
+  /* Balanced Warm Graphite Gray Scale (Warm Stone Neutral - Zero Cream, Zero Blue-Cold) */
+  --color-posthog-3000-25: #fafaf9;
+  --color-posthog-3000-50: #f5f5f4;
+  --color-posthog-3000-100: #e7e7e4;
+  --color-posthog-3000-150: #d6d3d1;
+  --color-posthog-3000-200: #e7e7e4;
+  --color-posthog-3000-300: #d6d3d1;
+  --color-posthog-3000-400: #a8a29e;
+  --color-posthog-3000-500: #78716c;
+  --color-posthog-3000-600: #57534e;
+  --color-posthog-3000-700: #44403c;
+  --color-posthog-3000-800: #292524;
+  --color-posthog-3000-900: #1c1917;
 
   --color-white: #fff;
   --color-black: #000;
@@ -166,36 +167,36 @@
   --radius-lg: 0.625rem;
   --opacity-disabled: 0.65;
 
-  /* Legacy / Deprecated Color Mappings (Navy Blue Theme + rgba(0,0,0,0.1) Borders) */
-  --text-3000-light: #111;
-  --color-text-secondary-3000-light: rgba(17, 17, 17, 0.7);
-  --muted-3000-light: rgba(17, 17, 17, 0.6);
-  --trace-3000-light: rgba(17, 17, 17, 0.25);
+  /* Balanced Warm Graphite Dual-Layer Theme */
+  --text-3000-light: #1c1917;
+  --color-text-secondary-3000-light: #57534e;
+  --muted-3000-light: #78716c;
+  --trace-3000-light: rgba(28, 25, 23, 0.25);
   --primary-3000-light: #1e3a8a;
   --primary-highlight-light: rgba(30, 58, 138, 0.1);
   --primary-3000-hover-light: #1d4ed8;
   --primary-3000-active-light: #1e40af;
-  --secondary-3000-light: rgba(0, 0, 0, 0.04);
-  --secondary-3000-hover-light: rgba(0, 0, 0, 0.07);
-  --color-accent-3000-light: rgba(0, 0, 0, 0.03);
-  --color-bg-3000-light: #f9fafb;
-  --border-3000-light: rgba(0, 0, 0, 0.1);
-  --border-bold-3000-light: rgba(0, 0, 0, 0.18);
-  --glass-bg-3000-light: rgba(255, 255, 255, 0.85);
-  --glass-border-3000-light: rgba(0, 0, 0, 0.1);
+  --secondary-3000-light: rgba(28, 25, 23, 0.04);
+  --secondary-3000-hover-light: rgba(28, 25, 23, 0.08);
+  --color-accent-3000-light: rgba(28, 25, 23, 0.03);
+  --color-bg-3000-light: #f5f5f4; /* Warm Stone 50 balanced undertone */
+  --border-3000-light: #e7e7e4;
+  --border-bold-3000-light: #d6d3d1;
+  --glass-bg-3000-light: rgba(255, 255, 255, 0.9);
+  --glass-border-3000-light: #e7e7e4;
   --link-3000-light: #1d4ed8;
   --primary-3000-frame-bg-light: #1e3a8a;
   --primary-3000-button-bg-light: #fff;
   --primary-3000-button-border-light: #1e40af;
   --primary-3000-button-border-hover-light: #1e3a8a;
-  --secondary-3000-frame-bg-light: rgba(0, 0, 0, 0.04);
-  --secondary-3000-button-bg-light: #fff;
-  --secondary-3000-button-border-light: rgba(0, 0, 0, 0.1);
-  --secondary-3000-button-border-hover-light: rgba(0, 0, 0, 0.18);
+  --secondary-3000-frame-bg-light: #e7e7e4;
+  --secondary-3000-button-bg-light: #ffffff; /* Elevated clean white buttons on top */
+  --secondary-3000-button-border-light: #e7e7e4;
+  --secondary-3000-button-border-hover-light: #d6d3d1;
   --danger-3000-frame-bg-light: rgba(245, 78, 0, 0.5);
   --danger-3000-button-border-light: #e96b30;
   --danger-3000-button-border-hover-light: #f54e00;
-  --shadow-elevation-3000-light: 0 3px 0 rgba(0, 0, 0, 0.1);
+  --shadow-elevation-3000-light: 0 3px 0 #e7e7e4;
 
   --text-3000: var(--text-3000-light);
   --color-text-secondary-3000: var(--color-text-secondary-3000-light);
@@ -212,7 +213,7 @@
   --glass-bg-3000: var(--glass-bg-3000-light);
   --glass-border-3000: var(--glass-border-3000-light);
   --color-bg-light: #fff;
-  --color-bg-table: #f9faf7;
+  --color-bg-table: #ffffff;
   --link: var(--link-3000-light);
   --muted: #5f5f5f;
   --danger: #db3707;
@@ -560,3 +561,107 @@ button svg {
   flex-shrink: 0;
   color: var(--muted, #5f5f5f);
 }
+
+/* ── PostHog 1:1 Discussion & Thread SCSS Rules (1:1 from MarkdownNotebook.scss) ── */
+.MarkdownNotebook__discussion-comment {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.8125rem;
+    background: var(--color-bg-surface-primary);
+    border: 1px solid var(--color-border-primary);
+    border-radius: 0.375rem;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 5%);
+}
+
+.MarkdownNotebook__discussion-comment-replies {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 16rem;
+    overflow-y: auto;
+}
+
+.MarkdownNotebook__discussion-comment-reply {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+}
+
+.MarkdownNotebook__discussion-comment-reply-body {
+    min-width: 0;
+    flex: 1;
+}
+
+.MarkdownNotebook__discussion-comment-reply-meta {
+    display: flex;
+    gap: 0.375rem;
+    align-items: baseline;
+}
+
+.MarkdownNotebook__discussion-comment-reply-author {
+    font-weight: 600;
+}
+
+.MarkdownNotebook__discussion-comment-reply-time {
+    font-size: 0.6875rem;
+    color: var(--color-text-secondary);
+}
+
+.MarkdownNotebook__discussion-comment-reply-text {
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    color: var(--text-3000);
+}
+
+.MarkdownNotebook__discussion-comment-empty {
+    color: var(--color-text-secondary);
+}
+
+.MarkdownNotebook__discussion-comment-composer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.MarkdownNotebook__discussion-comment-input {
+    max-height: calc(1.4em * 6 + 1rem);
+    overflow-y: auto;
+    resize: none;
+    field-sizing: content;
+}
+
+.MarkdownNotebook__discussion-comment-actions {
+    display: flex;
+    gap: 0.375rem;
+    justify-content: flex-end;
+}
+
+/* ── PostHog.com Official Glassmorphism Window CSS Definitions ── */
+.posthog-glass {
+  background: rgba(255, 255, 255, 0.78) !important;
+  backdrop-filter: blur(12px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.06), 0 1px 2px 0 rgba(0, 0, 0, 0.04) !important;
+}
+
+.posthog-glass-panel {
+  background: rgba(245, 245, 244, 0.85) !important;
+  backdrop-filter: blur(16px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(150%) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.posthog-glass-dark {
+  background: rgba(27, 27, 29, 0.78) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.37) !important;
+}
+

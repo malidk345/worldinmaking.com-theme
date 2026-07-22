@@ -4,9 +4,12 @@ import { NotebooksListApp } from './scenes/NotebooksListApp'
 import { TextOnlyNotebookApp } from './scenes/TextOnlyNotebookApp'
 import { SidePanelNotebooksApp } from './scenes/SidePanelNotebooksApp'
 import { LemonUIShowcaseApp } from './scenes/LemonUIShowcaseApp'
+import { DiscussionsApp } from './scenes/DiscussionsApp'
+import { PostHogAIApp } from './scenes/PostHogAIApp'
+import { FullNotebookApp } from './scenes/FullNotebookApp'
 import { LemonButton } from './components/lemon-ui'
 
-export type SceneType = 'landing' | 'list' | 'detail' | 'sidepanel' | 'lemonui'
+export type SceneType = 'landing' | 'list' | 'detail' | 'sidepanel' | 'lemonui' | 'discussions' | 'posthog_ai' | 'full_notebook'
 
 export default function App() {
   const [currentScene, setCurrentScene] = useState<SceneType>('landing')
@@ -14,7 +17,7 @@ export default function App() {
 
   const handleSelectNotebook = (_id: string, title: string) => {
     setActiveTitle(title)
-    setCurrentScene('detail')
+    setCurrentScene('full_notebook')
   }
 
   return (
@@ -45,24 +48,24 @@ export default function App() {
         </LemonButton>
         <LemonButton
           size="small"
-          type={currentScene === 'list' ? 'primary' : 'tertiary'}
-          onClick={() => setCurrentScene('list')}
+          type={currentScene === 'full_notebook' ? 'primary' : 'tertiary'}
+          onClick={() => setCurrentScene('full_notebook')}
         >
-          1. List
+          📓 Notebook
         </LemonButton>
         <LemonButton
           size="small"
-          type={currentScene === 'detail' ? 'primary' : 'tertiary'}
-          onClick={() => setCurrentScene('detail')}
+          type={currentScene === 'posthog_ai' ? 'primary' : 'tertiary'}
+          onClick={() => setCurrentScene('posthog_ai')}
         >
-          2. Detail
+          🦔 PostHog AI
         </LemonButton>
         <LemonButton
           size="small"
-          type={currentScene === 'sidepanel' ? 'primary' : 'tertiary'}
-          onClick={() => setCurrentScene('sidepanel')}
+          type={currentScene === 'discussions' ? 'primary' : 'tertiary'}
+          onClick={() => setCurrentScene('discussions')}
         >
-          3. Drawer
+          💬 Discussions
         </LemonButton>
         <LemonButton
           size="small"
@@ -89,8 +92,23 @@ export default function App() {
         />
       )}
 
+      {currentScene === 'full_notebook' && (
+        <TextOnlyNotebookApp
+          initialTitle={activeTitle}
+          onBack={() => setCurrentScene('landing')}
+        />
+      )}
+
       {currentScene === 'sidepanel' && (
         <SidePanelNotebooksApp onBack={() => setCurrentScene('list')} />
+      )}
+
+      {currentScene === 'discussions' && (
+        <DiscussionsApp onBack={() => setCurrentScene('landing')} />
+      )}
+
+      {currentScene === 'posthog_ai' && (
+        <PostHogAIApp onBack={() => setCurrentScene('landing')} />
       )}
 
       {currentScene === 'lemonui' && (
