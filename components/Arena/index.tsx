@@ -119,7 +119,28 @@ export default function ArenaApp() {
                     }
                 }
 
-                const { data: turnsData, error: turnsErr } = await supabase
+
+                const { data: commentsData, error: commentsErr } = await supabase
+                    .from("debate_comments")
+                    .select(`
+                        id,
+                        content,
+                        created_at,
+                        created_by:profiles!debate_comments_user_id_fkey(first_name, username)
+                    `)
+                    .eq("debate_id", debate.id)
+                    .order("created_at", { ascending: true });
+
+                if (!commentsErr && commentsData) {
+                    setComments(commentsData.map(c => ({
+                        id: c.id,
+                        created_by: { first_name: (c.created_by as unknown as {first_name?: string, username?: string})?.first_name || (c.created_by as unknown as {first_name?: string, username?: string})?.username || 'Unknown' },
+                        content: c.content,
+                        created_at: dayjs(c.created_at).fromNow()
+                    })));
+                }
+
+const { data: turnsData, error: turnsErr } = await supabase
                     .from("debate_turns")
                     .select(`
                         *,
@@ -149,7 +170,37 @@ export default function ArenaApp() {
     useEffect(() => {
         if (!activeDebate) return;
 
-        const turnsChannel = supabase
+
+        const commentsChannel = supabase
+            .channel(`debate-comments-${activeDebate.id}`)
+            .on(
+                "postgres_changes",
+                {
+                    event: "INSERT",
+                    schema: "public",
+                    table: "debate_comments",
+                    filter: `debate_id=eq.${activeDebate.id}`
+                },
+                async (payload) => {
+                    const { data: profile } = await supabase
+                        .from("profiles")
+                        .select("first_name, username")
+                        .eq("id", payload.new.user_id)
+                        .single();
+
+                    const newComment = {
+                        id: payload.new.id,
+                        created_by: { first_name: profile?.first_name || profile?.username || 'Unknown' },
+                        content: payload.new.content,
+                        created_at: dayjs(payload.new.created_at).fromNow()
+                    };
+
+                    setComments((prev) => [...prev, newComment]);
+                }
+            )
+            .subscribe();
+
+const turnsChannel = supabase
             .channel(`debate-turns-${activeDebate.id}`)
             .on(
                 "postgres_changes",
@@ -185,6 +236,7 @@ export default function ArenaApp() {
 
         return () => {
             supabase.removeChannel(turnsChannel);
+            supabase.removeChannel(commentsChannel);
         };
     }, [activeDebate, addToast]);
 
@@ -532,13 +584,32 @@ export default function ArenaApp() {
                         itemId={activeDebate.id}
                         comments={comments}
                         onAddComment={async (text) => {
-                            const newComment = {
-                                id: String(Date.now()),
+                            if (!user) {
+                                addToast("You must be logged in to comment", "error");
+                                return;
+                            }
+
+                            // Optimistic update
+                            const optimisticComment = {
+                                id: 'temp-' + Date.now(),
                                 created_by: { first_name: user?.user_metadata?.username ?? user?.email ?? 'You' },
                                 content: text,
                                 created_at: 'just now',
                             };
-                            setComments((prev) => [...prev, newComment]);
+                            setComments((prev) => [...prev, optimisticComment]);
+
+                            const { error } = await supabase
+                                .from('debate_comments')
+                                .insert({
+                                    debate_id: activeDebate.id,
+                                    user_id: user.id,
+                                    content: text
+                                });
+                            if (error) {
+                                addToast("Failed to post comment", "error");
+                                // Rollback optimistic update
+                                setComments((prev) => prev.filter(c => c.id !== optimisticComment.id));
+                            }
                         }}
                     />
                 </div>
