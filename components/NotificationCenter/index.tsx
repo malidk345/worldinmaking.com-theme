@@ -157,6 +157,7 @@ export default function NotificationCenter() {
                                 <button 
                                     onClick={() => setIsOpen(false)}
                                     className="p-1 hover:bg-[var(--color-bg-fill-button-tertiary-hover)] rounded transition-colors text-primary"
+                                    aria-label="Close notifications"
                                 >
                                     <IconX className="size-3 opacity-40" />
                                 </button>

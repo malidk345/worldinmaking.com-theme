@@ -199,6 +199,7 @@ function CustomToolbar() {
                 onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "bold")}
                 className={buttonClass(isBold)}
                 title="bold"
+                aria-label="bold"
             >
                 <IconTextWidthFixed className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
             </button>
@@ -207,6 +208,7 @@ function CustomToolbar() {
                 onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "italic")}
                 className={buttonClass(isItalic)}
                 title="italic"
+                aria-label="italic"
             >
                 <IconMinusSmall className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
             </button>
@@ -215,6 +217,7 @@ function CustomToolbar() {
                 onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "underline")}
                 className={buttonClass(isUnderline)}
                 title="underline"
+                aria-label="underline"
             >
                 <IconMinus className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
             </button>
@@ -223,6 +226,7 @@ function CustomToolbar() {
                 onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "strikethrough")}
                 className={buttonClass(isStrikethrough)}
                 title="strikethrough"
+                aria-label="strikethrough"
             >
                 <IconMinusSquare className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
             </button>
@@ -235,6 +239,7 @@ function CustomToolbar() {
                 onClick={() => formatHeading("h1")}
                 className={buttonClass(activeBlock === "h1")}
                 title="heading 1"
+                aria-label="heading 1"
             >
                 <IconTextWidth className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
             </button>
@@ -243,6 +248,7 @@ function CustomToolbar() {
                 onClick={() => formatHeading("h2")}
                 className={buttonClass(activeBlock === "h2")}
                 title="heading 2"
+                aria-label="heading 2"
             >
                 <IconTextWidth className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
             </button>
@@ -251,6 +257,7 @@ function CustomToolbar() {
                 onClick={() => formatList("bullet")}
                 className={buttonClass(activeBlock === "bullet" || activeBlock === "unordered-list")}
                 title="bullet list"
+                aria-label="bullet list"
             >
                 <IconList className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
             </button>
@@ -259,6 +266,7 @@ function CustomToolbar() {
                 onClick={() => formatList("number")}
                 className={buttonClass(activeBlock === "number" || activeBlock === "ordered-list")}
                 title="numbered list"
+                aria-label="numbered list"
             >
                 <IconList className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
             </button>
@@ -267,6 +275,7 @@ function CustomToolbar() {
                 onClick={formatQuote}
                 className={buttonClass(activeBlock === "quote")}
                 title="quote"
+                aria-label="quote"
             >
                 <IconQuote className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
             </button>
@@ -275,6 +284,7 @@ function CustomToolbar() {
                 onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "code")}
                 className={buttonClass(activeBlock === "code")}
                 title="code block"
+                aria-label="code block"
             >
                 <IconCode className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
             </button>
@@ -287,6 +297,7 @@ function CustomToolbar() {
                 onClick={insertLink}
                 className={buttonClass(false)}
                 title="link"
+                aria-label="link"
             >
                 <IconExternal className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
             </button>
@@ -295,6 +306,7 @@ function CustomToolbar() {
                 onClick={() => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, "left")}
                 className={buttonClass(false)}
                 title="align left"
+                aria-label="align left"
             >
                 <IconDocument className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
             </button>
@@ -303,6 +315,7 @@ function CustomToolbar() {
                 onClick={() => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, "center")}
                 className={buttonClass(false)}
                 title="align center"
+                aria-label="align center"
             >
                 <IconDocument className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
             </button>
@@ -311,6 +324,7 @@ function CustomToolbar() {
                 onClick={() => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, "right")}
                 className={buttonClass(false)}
                 title="align right"
+                aria-label="align right"
             >
                 <IconDocument className="w-3.5 h-3.5 md:w-4 md:h-4 stroke-[2.5]" />
             </button>
