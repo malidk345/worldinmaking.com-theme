@@ -1,6 +1,9 @@
 import path from 'path'
+// @ts-expect-error missing deps in host workspace
 import tailwindcss from '@tailwindcss/vite'
+// @ts-expect-error missing deps in host workspace
 import { defineConfig } from 'vite'
+// @ts-expect-error missing deps in host workspace
 import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
