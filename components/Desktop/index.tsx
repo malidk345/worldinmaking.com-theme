@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext'
 import { AppIcon } from 'components/OSIcons/AppIcon'
 import ArchiveExplorer from 'components/ArchiveExplorer'
 import DraggableDesktopIcon from './DraggableDesktopIcon'
+import { getWallpaperClasses } from '../../hooks/useTheme'
 import { motion } from 'framer-motion'
 import PostsView from 'components/Posts'
 import TrendingWidget from './TrendingWidget'
@@ -166,7 +167,7 @@ export default function Desktop() {
 
     const isTechnical = siteSettings.wallpaper === 'technical'
 
-    const wallpaperClasses = 'bg-accent'
+    const wallpaperClasses = getWallpaperClasses()
 
     return (
         <div
