@@ -24,7 +24,8 @@ export interface LemonTableProps<T> {
   'data-attr'?: string;
 }
 
-export function LemonTable<T extends Record<string, unknown>>({
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function LemonTable<T extends Record<string, any>>({
   columns,
   dataSource,
   rowKey,
@@ -107,7 +108,7 @@ export function LemonTable<T extends Record<string, unknown>>({
                         key={cIdx}
                         className={col.align ? `text-${col.align}` : undefined}
                       >
-                        {col.render ? col.render(val, record, rIdx) : (val ?? '')}
+                        {col.render ? col.render(val, record, rIdx) : ((val as React.ReactNode) ?? '')}
                       </td>
                     );
                   })}
