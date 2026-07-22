@@ -99,6 +99,7 @@ export function LemonUIShowcaseApp({ onBack }: { onBack?: () => void } = {}): JS
         <div style={{ marginTop: '1.5rem' }}>
           <LemonTabs
             activeKey={activeTab}
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onChange={(key) => setActiveTab(key as any)}
             tabs={[
               { key: 'buttons', label: '1. Buttons & Triggers', badge: <LemonBadge content="21" status="primary" /> },
