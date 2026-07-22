@@ -43,6 +43,7 @@ export * from './LemonTable/LemonTable';
 //   </button>
 
 export interface LemonButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'type'> {
+  htmlType?: 'button' | 'submit' | 'reset';
   type?: 'primary' | 'secondary' | 'tertiary' | 'stealth' | 'muted';
   variant?: 'primary' | 'secondary' | 'tertiary' | 'stealth' | 'muted';
   status?: 'default' | 'alt' | 'danger';
@@ -61,6 +62,7 @@ export interface LemonButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLBu
 export const LemonButton = React.forwardRef<HTMLButtonElement, LemonButtonProps>(
   (
     {
+      htmlType = 'button',
       type = 'tertiary',
       variant,
       status = 'default',

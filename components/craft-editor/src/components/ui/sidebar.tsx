@@ -1,3 +1,4 @@
+import { LemonInput } from 'components/LemonUI'
 'use client';
 
 import * as React from 'react';
@@ -323,7 +324,7 @@ function SidebarInput({
   ...props
 }: React.ComponentProps<typeof Input>) {
   return (
-    <Input
+    <LemonInput
       data-slot="sidebar-input"
       data-sidebar="input"
       className={cn('bg-background h-8 w-full shadow-none', className)}

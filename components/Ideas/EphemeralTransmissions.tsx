@@ -1,9 +1,9 @@
 "use client"
 
 import React, { useState, useEffect, useRef } from 'react'
+import { LemonButton } from 'components/LemonUI'
 import { IconClock, IconSend, IconTerminal } from '@posthog/icons';
 import ScrollArea from 'components/RadixUI/ScrollArea'
-import OSButton from 'components/OSButton'
 
 interface Transmission {
     id: string
@@ -123,13 +123,13 @@ export default function EphemeralTransmissions() {
                         className="flex-1 bg-transparent border-none outline-none resize-none text-[#00ff00] placeholder:text-[#00ff00]/30 min-h-[44px] py-2"
                         rows={1}
                     />
-                    <OSButton
-                        variant="primary"
+                    <LemonButton
+                        type="primary"
                         onClick={handleSend}
                         className="bg-[#00ff00]/10 text-[#00ff00] border-[#00ff00]/30 hover:bg-[#00ff00]/20 h-fit self-end"
                     >
                         <IconSend className="size-4" />
-                    </OSButton>
+                    </LemonButton>
                 </div>
             </div>
         </div>

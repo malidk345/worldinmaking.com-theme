@@ -1,8 +1,8 @@
 "use client"
 
 import React, { useEffect } from 'react'
+import { LemonButton } from 'components/LemonUI'
 import { useApp } from '../../context/App'
-import OSButton from 'components/OSButton'
 import { IconScreen, IconTrash } from '@posthog/icons';
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -109,9 +109,9 @@ export default function ActiveWindowsPanel() {
 
                             {totalWindows > 0 && (
                                 <motion.div variants={itemVariants} className="fixed bottom-24 z-[20000]">
-                                    <OSButton
-                                        variant="secondary"
-                                        size="md"
+                                    <LemonButton
+                                        type="secondary"
+                                        size="medium"
                                         className="!rounded-full px-6 py-3 font-bold tracking-widest uppercase text-xs gap-3 bg-white/20 dark:bg-black/40 hover:!bg-red-500 hover:!text-white hover:border-red-600 border-white/20 dark:border-white/10 text-black/80 dark:text-white shadow-[0_8px_32px_rgba(0,0,0,0.12),inset_0_1px_0_0_rgba(255,255,255,0.15)] transition-all duration-[400ms] ease-[cubic-bezier(0.25,1,0.5,1)] group"
                                         onClick={() => {
                                             closeAllWindows()
@@ -120,7 +120,7 @@ export default function ActiveWindowsPanel() {
                                     >
                                         <IconTrash className="size-4 opacity-60 group-hover:opacity-100" />
                                         <span>kill all processes</span>
-                                    </OSButton>
+                                    </LemonButton>
                                 </motion.div>
                             )}
                         </motion.div>
