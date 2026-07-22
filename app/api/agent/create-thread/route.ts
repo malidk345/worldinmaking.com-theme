@@ -10,12 +10,32 @@ export async function POST(request: NextRequest) {
     try {
         // 1. Authorization check
         const authHeader = request.headers.get('Authorization');
-        const systemToken = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
         
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return NextResponse.json({ error: 'Unauthorized: Missing or invalid authorization header format' }, { status: 401 });
+        }
+
+        const token = authHeader.substring(7).trim();
+        if (!token) {
+            return NextResponse.json({ error: 'Unauthorized: Token is empty' }, { status: 401 });
+        }
+
         let isAuthorized = false;
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-            const token = authHeader.substring(7).trim();
-            if (token === systemToken || token.startsWith('bot_token_')) {
+
+        // Check if it's the valid system token
+        const systemToken = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        if (systemToken && token === systemToken) {
+            isAuthorized = true;
+        } else {
+            // Check if it's a valid active bot token
+            const { data: bot } = await supabaseAdmin
+                .from('bot_profiles')
+                .select('id')
+                .eq('api_token', token)
+                .eq('is_active', true)
+                .maybeSingle();
+
+            if (bot) {
                 isAuthorized = true;
             }
         }
