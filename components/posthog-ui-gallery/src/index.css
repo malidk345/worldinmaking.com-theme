@@ -1,0 +1,562 @@
+@import "tailwindcss";
+
+/* ── PostHog CSS design tokens (extracted 100% 1:1 from base.scss) ────────── */
+:root {
+  /* Fonts */
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-sans:
+    'Emoji Flags Polyfill', 'RoundHog', -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', 'Roboto',
+    'Helvetica Neue', helvetica, arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+  --font-title:
+    'Emoji Flags Polyfill', 'RoundHog', -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', 'Roboto',
+    'Helvetica Neue', helvetica, arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+  --font-button:
+    'Emoji Flags Polyfill', 'RoundHog', -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', 'Roboto',
+    'Helvetica Neue', helvetica, arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+  --font-mono:
+    'Emoji Flags Polyfill', ui-monospace, 'SFMono-Regular', 'SF Mono', 'Menlo', 'Consolas', 'Liberation Mono',
+    monospace;
+
+  /* Primitive OKLCH Color Tokens */
+  --color-red-50: oklch(0.971 0.013 17.38deg);
+  --color-red-100: oklch(0.936 0.032 17.717deg);
+  --color-red-200: oklch(0.885 0.062 18.334deg);
+  --color-red-300: oklch(0.808 0.114 19.571deg);
+  --color-red-400: oklch(0.704 0.191 22.216deg);
+  --color-red-500: oklch(0.637 0.237 25.331deg);
+  --color-red-600: oklch(0.577 0.245 27.325deg);
+  --color-red-700: oklch(0.505 0.213 27.518deg);
+  --color-red-800: oklch(0.444 0.177 26.899deg);
+  --color-red-900: oklch(0.396 0.141 25.723deg);
+  --color-red-950: oklch(0.258 0.092 26.042deg);
+
+  --color-yellow-50: oklch(0.987 0.026 102.212deg);
+  --color-yellow-100: oklch(0.973 0.071 103.193deg);
+  --color-yellow-400: oklch(0.852 0.199 91.936deg);
+  --color-yellow-700: oklch(0.554 0.135 66.442deg);
+  --color-yellow-900: oklch(0.421 0.095 57.708deg);
+  --color-yellow-950: oklch(0.286 0.066 53.813deg);
+
+  --color-green-50: oklch(0.982 0.018 155.826deg);
+  --color-green-100: oklch(0.962 0.044 156.743deg);
+  --color-green-400: oklch(0.792 0.209 151.711deg);
+  --color-green-600: oklch(0.627 0.194 149.214deg);
+  --color-green-900: oklch(0.393 0.095 152.535deg);
+  --color-green-950: oklch(0.266 0.065 152.934deg);
+
+  --color-blue-50: oklch(0.97 0.014 254.604deg);
+  --color-blue-100: oklch(0.932 0.032 255.585deg);
+  --color-blue-400: oklch(0.707 0.165 254.624deg);
+  --color-blue-500: oklch(0.623 0.214 259.815deg);
+  --color-blue-900: oklch(0.379 0.146 265.522deg);
+  --color-blue-950: oklch(0.282 0.091 267.935deg);
+
+  --color-neutral-50: oklch(0.985 0.002 247.858deg);
+  --color-neutral-100: oklch(0.967 0.003 264.542deg);
+  --color-neutral-250: oklch(0.90 0.008 260deg);
+  --color-neutral-350: oklch(0.82 0.015 255deg);
+  --color-neutral-400: oklch(0.707 0.022 261.325deg);
+  --color-neutral-600: oklch(0.446 0.013 264.695deg);
+  --color-neutral-750: oklch(0.34 0.012 260deg);
+  --color-neutral-850: oklch(0.24 0.012 265deg);
+  --color-neutral-900: oklch(0.21 0.006 285.885deg);
+  --color-neutral-950: oklch(0.13 0.004 285.885deg);
+
+  --color-neutral-cool-100: oklch(0.96 0.005 265deg);
+  --color-neutral-cool-250: oklch(0.88 0.01 265deg);
+  --color-neutral-cool-450: oklch(0.68 0.02 265deg);
+  --color-neutral-cool-600: oklch(0.43 0.02 265deg);
+  --color-neutral-cool-750: oklch(0.33 0.015 265deg);
+  --color-neutral-cool-800: oklch(0.28 0.013 265deg);
+  --color-neutral-cool-850: oklch(0.24 0.012 265deg);
+  --color-neutral-cool-900: oklch(0.20 0.010 265deg);
+  --color-neutral-cool-950: oklch(0.16 0.008 265deg);
+
+  /* PostHog 3000 Brand Colors (Orange replaced with Navy Blue) */
+  --color-posthog-brand-orange-hue: 220deg;
+  --color-posthog-brand-orange-saturation: 85%;
+  --color-posthog-brand-orange-lightness: 40%;
+  --color-posthog-brand-yellow-hue: 40deg;
+  --color-posthog-brand-yellow-saturation: 93%;
+  --color-posthog-brand-yellow-lightness: 49%;
+
+  --color-posthog-3000-25: #fafafa;
+  --color-posthog-3000-50: #f3f4f6;
+  --color-posthog-3000-100: #e5e7eb;
+  --color-posthog-3000-150: #d1d5db;
+  --color-posthog-3000-200: #e2e8f0;
+  --color-posthog-3000-300: #cbd5e1;
+  --color-posthog-3000-400: #94a3b8;
+  --color-posthog-3000-500: #64748b;
+  --color-posthog-3000-600: #475569;
+  --color-posthog-3000-700: #334155;
+  --color-posthog-3000-800: #1e293b;
+  --color-posthog-3000-900: #0f172a;
+
+  --color-white: #fff;
+  --color-black: #000;
+
+  /* Brand accent — light mode (Navy Blue) */
+  --color-brand-primary-hue: var(--color-posthog-brand-orange-hue);
+  --color-brand-primary-saturation: var(--color-posthog-brand-orange-saturation);
+  --color-brand-primary-lightness: var(--color-posthog-brand-orange-lightness);
+  --color-accent: hsl(
+    var(--color-brand-primary-hue),
+    var(--color-brand-primary-saturation),
+    var(--color-brand-primary-lightness)
+  );
+
+  /* Highlights */
+  --color-accent-highlight-primary: hsla(var(--color-brand-primary-hue), var(--color-brand-primary-saturation), var(--color-brand-primary-lightness), 20%);
+  --color-accent-highlight-secondary: hsla(var(--color-brand-primary-hue), var(--color-brand-primary-saturation), var(--color-brand-primary-lightness), 10%);
+  --color-accent-highlight-secondary-border: hsla(var(--color-brand-primary-hue), var(--color-brand-primary-saturation), var(--color-brand-primary-lightness), 14%);
+  --color-accent-highlight-secondary-hover-border: hsla(var(--color-brand-primary-hue), var(--color-brand-primary-saturation), var(--color-brand-primary-lightness), 35%);
+
+  /* Background semantic tokens */
+  --color-bg-primary: var(--color-posthog-3000-50);
+  --color-bg-surface-primary: var(--color-white);
+  --color-bg-surface-secondary: var(--color-posthog-3000-100);
+  --color-bg-surface-tertiary: var(--color-posthog-3000-150);
+  --color-bg-surface-tooltip: var(--color-neutral-cool-850);
+  --color-bg-surface-tooltip-inverse: var(--color-neutral-cool-250);
+  --color-bg-surface-popover: var(--color-white);
+  --color-bg-surface-popover-inverse: var(--color-neutral-cool-950);
+
+  /* Fills */
+  --color-bg-fill-primary: var(--color-white);
+  --color-bg-fill-secondary: var(--color-posthog-3000-25);
+  --color-bg-fill-tertiary: var(--color-posthog-3000-50);
+  --color-bg-fill-highlight-25: rgba(0, 0, 0, 0.025);
+  --color-bg-fill-highlight-50: rgba(0, 0, 0, 0.05);
+  --color-bg-fill-highlight-75: rgba(0, 0, 0, 0.075);
+  --color-bg-fill-highlight-100: rgba(0, 0, 0, 0.1);
+  --color-bg-fill-button-tertiary-hover: var(--color-bg-fill-highlight-75);
+  --color-bg-fill-button-tertiary-active: var(--color-bg-fill-highlight-50);
+  --color-bg-fill-info-secondary: var(--color-blue-100);
+  --color-bg-fill-info-tertiary: var(--color-blue-50);
+  --color-bg-fill-warning-secondary: var(--color-yellow-100);
+  --color-bg-fill-warning-tertiary: var(--color-yellow-50);
+  --color-bg-fill-error-secondary: var(--color-red-100);
+  --color-bg-fill-error-tertiary: var(--color-red-50);
+  --color-bg-fill-success-secondary: var(--color-green-100);
+  --color-bg-fill-success-tertiary: var(--color-green-50);
+  --color-bg-fill-input: var(--color-white);
+
+  /* Text tokens */
+  --color-text-primary: var(--color-neutral-900);
+  --color-text-primary-inverse: var(--color-neutral-100);
+  --color-text-secondary: var(--color-neutral-600);
+  --color-text-secondary-inverse: var(--color-neutral-400);
+  --color-text-tertiary: var(--color-neutral-600);
+  --color-text-success: var(--color-green-600);
+  --color-text-warning: var(--color-yellow-700);
+  --color-text-error: var(--color-red-600);
+
+  /* Border tokens */
+  --color-border-primary: rgba(0, 0, 0, 0.1);
+  --color-border-secondary: rgba(0, 0, 0, 0.15);
+  --color-border-info: var(--color-blue-400);
+  --color-border-warning: var(--color-yellow-400);
+  --color-border-error: var(--color-red-400);
+  --color-border-success: var(--color-green-400);
+
+  /* Radius & Spacing */
+  --radius: 0.375rem;
+  --radius-lg: 0.625rem;
+  --opacity-disabled: 0.65;
+
+  /* Legacy / Deprecated Color Mappings (Navy Blue Theme + rgba(0,0,0,0.1) Borders) */
+  --text-3000-light: #111;
+  --color-text-secondary-3000-light: rgba(17, 17, 17, 0.7);
+  --muted-3000-light: rgba(17, 17, 17, 0.6);
+  --trace-3000-light: rgba(17, 17, 17, 0.25);
+  --primary-3000-light: #1e3a8a;
+  --primary-highlight-light: rgba(30, 58, 138, 0.1);
+  --primary-3000-hover-light: #1d4ed8;
+  --primary-3000-active-light: #1e40af;
+  --secondary-3000-light: rgba(0, 0, 0, 0.04);
+  --secondary-3000-hover-light: rgba(0, 0, 0, 0.07);
+  --color-accent-3000-light: rgba(0, 0, 0, 0.03);
+  --color-bg-3000-light: #f9fafb;
+  --border-3000-light: rgba(0, 0, 0, 0.1);
+  --border-bold-3000-light: rgba(0, 0, 0, 0.18);
+  --glass-bg-3000-light: rgba(255, 255, 255, 0.85);
+  --glass-border-3000-light: rgba(0, 0, 0, 0.1);
+  --link-3000-light: #1d4ed8;
+  --primary-3000-frame-bg-light: #1e3a8a;
+  --primary-3000-button-bg-light: #fff;
+  --primary-3000-button-border-light: #1e40af;
+  --primary-3000-button-border-hover-light: #1e3a8a;
+  --secondary-3000-frame-bg-light: rgba(0, 0, 0, 0.04);
+  --secondary-3000-button-bg-light: #fff;
+  --secondary-3000-button-border-light: rgba(0, 0, 0, 0.1);
+  --secondary-3000-button-border-hover-light: rgba(0, 0, 0, 0.18);
+  --danger-3000-frame-bg-light: rgba(245, 78, 0, 0.5);
+  --danger-3000-button-border-light: #e96b30;
+  --danger-3000-button-border-hover-light: #f54e00;
+  --shadow-elevation-3000-light: 0 3px 0 rgba(0, 0, 0, 0.1);
+
+  --text-3000: var(--text-3000-light);
+  --color-text-secondary-3000: var(--color-text-secondary-3000-light);
+  --muted-3000: var(--muted-3000-light);
+  --trace-3000: var(--trace-3000-light);
+  --primary-3000: var(--primary-3000-light);
+  --primary-highlight: var(--primary-highlight-light);
+  --secondary-3000: var(--secondary-3000-light);
+  --secondary-3000-hover: var(--secondary-3000-hover-light);
+  --color-accent-3000: var(--color-accent-3000-light);
+  --color-bg-3000: var(--color-bg-3000-light);
+  --border-3000: var(--border-3000-light);
+  --border-bold-3000: var(--border-bold-3000-light);
+  --glass-bg-3000: var(--glass-bg-3000-light);
+  --glass-border-3000: var(--glass-border-3000-light);
+  --color-bg-light: #fff;
+  --color-bg-table: #f9faf7;
+  --link: var(--link-3000-light);
+  --muted: #5f5f5f;
+  --danger: #db3707;
+  --warning: #f7a501;
+  --success: #388600;
+  --danger-highlight: rgba(219, 55, 7, 0.1);
+  --warning-highlight: rgba(247, 165, 1, 0.1);
+  --success-highlight: rgba(56, 134, 0, 0.1);
+  --bg-3000: var(--color-bg-3000-light);
+  --bg-light: #fff;
+  --shadow-elevation-3000: var(--shadow-elevation-3000-light);
+
+  --primary-3000-frame-bg: var(--primary-3000-frame-bg-light);
+  --primary-3000-button-bg: var(--color-white);
+  --primary-3000-button-border: var(--primary-3000-button-border-light);
+  --primary-3000-button-border-hover: var(--primary-3000-button-border-hover-light);
+  --secondary-3000-frame-bg: var(--secondary-3000-frame-bg-light);
+  --secondary-3000-button-bg: var(--secondary-3000-button-bg-light);
+  --secondary-3000-button-border: var(--secondary-3000-button-border-light);
+  --secondary-3000-button-border-hover: var(--secondary-3000-button-border-hover-light);
+  --danger-3000-frame-bg: var(--danger-3000-frame-bg-light);
+  --danger-3000-button-border: var(--danger-3000-button-border-light);
+  --danger-3000-button-border-hover: var(--danger-3000-button-border-hover-light);
+
+  /* Lettermark Colors */
+  --lettermark-1-bg: #dcb1e3; --lettermark-1-text: #572e5e;
+  --lettermark-2-bg: #ffc4b2; --lettermark-2-text: #3e5891;
+  --lettermark-3-bg: #b1985d; --lettermark-3-text: #3e5891;
+  --lettermark-4-bg: #3e5891; --lettermark-4-text: #ffc4b2;
+  --lettermark-5-bg: #8da9e7; --lettermark-5-text: #572e5e;
+}
+
+[theme='dark'] {
+  --color-brand-primary-hue: var(--color-posthog-brand-yellow-hue);
+  --color-brand-primary-saturation: var(--color-posthog-brand-yellow-saturation);
+  --color-brand-primary-lightness: var(--color-posthog-brand-yellow-lightness);
+  --color-accent: hsl(var(--color-posthog-brand-yellow-hue), var(--color-posthog-brand-yellow-saturation), var(--color-posthog-brand-yellow-lightness));
+
+  --color-bg-primary: var(--color-neutral-cool-950);
+  --color-bg-surface-primary: var(--color-neutral-cool-850);
+  --color-bg-surface-secondary: var(--color-neutral-cool-900);
+  --color-bg-surface-tertiary: var(--color-neutral-cool-950);
+
+  --color-bg-fill-primary: var(--color-neutral-cool-900);
+  --color-bg-fill-secondary: var(--color-neutral-cool-850);
+  --color-bg-fill-tertiary: var(--color-neutral-cool-800);
+  --color-bg-fill-button-tertiary-hover: rgba(255, 255, 255, 0.075);
+  --color-bg-fill-button-tertiary-active: rgba(255, 255, 255, 0.05);
+
+  --color-text-primary: var(--color-neutral-100);
+  --color-text-secondary: var(--color-neutral-350);
+  --color-text-tertiary: var(--color-neutral-400);
+
+  --color-border-primary: var(--color-neutral-cool-800);
+  --color-border-secondary: var(--color-neutral-cool-600);
+
+  --text-3000-dark: #fff;
+  --color-bg-3000-dark: #1d1f27;
+  --border-3000-dark: #35373e;
+  --border-bold-3000-dark: #3f4046;
+  --glass-bg-3000-dark: rgba(36, 38, 42, 0.6);
+  --glass-border-3000-dark: var(--border-3000-dark);
+  --link-3000-dark: #f1a82c;
+
+  --text-3000: var(--text-3000-dark);
+  --color-text-secondary-3000: rgba(255, 255, 255, 0.7);
+  --muted-3000: rgba(255, 255, 255, 0.5);
+  --muted: rgba(255, 255, 255, 0.5);
+  --color-bg-3000: var(--color-bg-3000-dark);
+  --border-3000: var(--border-3000-dark);
+  --border-bold-3000: var(--border-bold-3000-dark);
+  --bg-3000: var(--color-bg-3000-dark);
+  --bg-light: var(--color-neutral-cool-900);
+  --color-bg-light: var(--color-neutral-cool-900);
+  --color-bg-table: #232429;
+  --link: var(--link-3000-dark);
+
+  --primary-3000-button-bg: var(--color-accent);
+  --primary-3000-button-border: #b17816;
+  --primary-3000-button-border-hover: #8e5b03;
+  --secondary-3000-button-border: #4a4c52;
+  --secondary-3000-button-border-hover: #5e6064;
+  --danger-3000-button-border: #c44003;
+  --danger-3000-button-border-hover: #f54e00;
+  --danger-3000-frame-bg: rgba(245, 78, 0, 0.5);
+}
+
+/* ─── LemonTable Styles ───────────────────────────────────────────────────── */
+.LemonTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+  background-color: var(--color-bg-surface-primary);
+  border: 1px solid var(--border-3000);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.LemonTable th {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--border-3000);
+  background-color: var(--color-bg-surface-secondary);
+  text-transform: uppercase;
+  font-size: 0.6875rem;
+  letter-spacing: 0.03em;
+}
+
+.LemonTable td {
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid var(--border-3000);
+  color: var(--text-3000);
+}
+
+.LemonTable tr:last-child td {
+  border-bottom: none;
+}
+
+.LemonTable tr:hover td {
+  background-color: var(--color-bg-surface-secondary);
+}
+
+/* ── Global Body Reset & Typography ───────────────────────────────── */
+*, ::after, ::before {
+  border-color: var(--color-border-primary, currentColor);
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  background-color: var(--bg-3000, #f3f4f6);
+  color: var(--text-3000, #111);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+button, input, select, textarea {
+  font-family: var(--font-sans);
+  font-size: inherit;
+  color: inherit;
+}
+
+button {
+  font-family: var(--font-button);
+}
+
+
+/* ─── Keyframe Animations (Spinner & Skeleton) ────────────────────────────── */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.Spinner {
+  display: inline-block;
+  vertical-align: -0.15em;
+  animation: spin 0.9s linear infinite !important;
+  transform-origin: center;
+  flex-shrink: 0;
+}
+.Popover {
+  z-index: 9999;
+  position: absolute;
+  isolation: isolate;
+}
+
+.Popover__box {
+  position: relative;
+  background: var(--color-bg-surface-primary, #ffffff);
+  border: 1px solid var(--border-3000, #e2e8f0);
+  border-radius: var(--radius-lg, 0.5rem);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+  overflow: hidden;
+}
+
+.Popover__content {
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 0.25rem 0;
+}
+
+.Popover--padded .Popover__content {
+  padding: 0.75rem 1rem;
+}
+
+.LemonButtonWithSideAction {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius);
+}
+
+.LemonButtonWithSideAction--full-width {
+  display: flex;
+  width: 100%;
+}
+
+.LemonButtonWithSideAction__side-button {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  margin-left: -1px;
+}
+.LemonBanner {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.LemonBanner__content {
+  flex: 1;
+  line-height: 1.5;
+}
+
+.LemonBanner__buttons {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.375rem;
+  align-items: center;
+}
+
+.LemonSelect {
+  display: inline-flex;
+  align-items: center;
+  height: 2.3125rem;
+  padding: 0.25rem 1.75rem 0.25rem 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-3000, #111);
+  cursor: pointer;
+  background-color: var(--color-bg-surface-primary, #fff);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666660' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.375rem center;
+  background-size: 1rem;
+  border: 1px solid var(--color-border-primary, #e2e8f0);
+  border-radius: var(--radius, 0.375rem);
+  outline: none;
+  appearance: none;
+  transition: border-color 150ms ease;
+}
+
+.LemonSelect:hover {
+  border-color: var(--color-border-secondary, #cbd5e1);
+}
+
+.LemonInput {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.LemonInput__input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  font-size: 0.875rem;
+  font-family: var(--font-sans);
+  color: var(--text-3000, #111);
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+.LemonInput__input::placeholder {
+  color: var(--color-text-secondary, rgba(17,17,17,0.5));
+}
+
+.ScrollableShadows__shadow--top {
+  top: 0;
+  height: 16px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.06), rgba(0,0,0,0));
+}
+
+.ScrollableShadows__shadow--bottom {
+  bottom: 0;
+  height: 16px;
+  background: linear-gradient(to top, rgba(0,0,0,0.06), rgba(0,0,0,0));
+}
+
+/* ── PostHog & Lucide Icon System Resets & Utilities ────────────────────── */
+
+/* Base SVG icon alignment */
+svg, .LemonIcon, [class*="Icon"] {
+  display: inline-block;
+  vertical-align: -0.15em;
+  flex-shrink: 0;
+  shape-rendering: geometricPrecision;
+  text-rendering: optimizeLegibility;
+}
+
+/* Button & input icon centering */
+.LemonButton svg,
+.button-primitive svg,
+button svg {
+  vertical-align: middle;
+}
+
+/* Tailwind / PostHog icon size utilities */
+.size-2 { width: 0.5rem; height: 0.5rem; }
+.size-2.5 { width: 0.625rem; height: 0.625rem; }
+.size-3 { width: 0.75rem; height: 0.75rem; }
+.size-3.5 { width: 0.875rem; height: 0.875rem; }
+.size-4 { width: 1rem; height: 1rem; }
+.size-5 { width: 1.25rem; height: 1.25rem; }
+.size-6 { width: 1.5rem; height: 1.5rem; }
+
+/* Icon semantic text colors */
+.text-primary { color: var(--color-text-primary, #111) !important; }
+.text-secondary { color: var(--color-text-secondary, #666) !important; }
+.text-tertiary { color: var(--color-text-3000-tertiary, #999) !important; }
+.text-accent { color: var(--color-accent, #1d4ed8) !important; }
+
+/* Group hover icon color transitions */
+.group:hover .group-hover\:text-primary {
+  color: var(--color-text-primary, #111) !important;
+}
+
+.group:hover .group-hover\:text-accent {
+  color: var(--color-accent, #1d4ed8) !important;
+}
+
+.LemonInput__affix {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--muted, #5f5f5f);
+}

@@ -24,7 +24,7 @@ export interface LemonTableProps<T> {
   'data-attr'?: string;
 }
 
-export function LemonTable<T extends Record<string, unknown>>({
+export function LemonTable<T>({
   columns,
   dataSource,
   rowKey,
@@ -40,11 +40,11 @@ export function LemonTable<T extends Record<string, unknown>>({
     if (typeof rowKey === 'function') {
       return rowKey(record);
     }
-    if (rowKey && record[rowKey as keyof T] !== undefined) {
-      return String(record[rowKey as keyof T]);
+    if (rowKey && (record as any)[rowKey] !== undefined) {
+      return String((record as any)[rowKey]);
     }
-    if (record.id) return String(record.id);
-    if (record.key) return String(record.key);
+    if ((record as any).id) return String((record as any).id);
+    if ((record as any).key) return String((record as any).key);
     return idx;
   };
 
@@ -101,13 +101,13 @@ export function LemonTable<T extends Record<string, unknown>>({
               dataSource.map((record, rIdx) => (
                 <tr key={String(getRowKey(record, rIdx))}>
                   {columns.map((col, cIdx) => {
-                    const val = col.dataIndex ? record[col.dataIndex] : undefined;
+                    const val = col.dataIndex ? (record as any)[col.dataIndex] : undefined;
                     return (
                       <td
                         key={cIdx}
                         className={col.align ? `text-${col.align}` : undefined}
                       >
-                        {col.render ? col.render(val, record, rIdx) : (val ?? '')}
+                        {col.render ? col.render(val, record, rIdx) : ((val as React.ReactNode) ?? '')}
                       </td>
                     );
                   })}
