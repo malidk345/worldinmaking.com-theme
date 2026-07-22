@@ -43,6 +43,7 @@ export * from './LemonTable/LemonTable';
 //   </button>
 
 export interface LemonButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'type'> {
+  htmlType?: 'button' | 'submit' | 'reset';
   type?: 'primary' | 'secondary' | 'tertiary' | 'stealth' | 'muted';
   variant?: 'primary' | 'secondary' | 'tertiary' | 'stealth' | 'muted';
   status?: 'default' | 'alt' | 'danger';
@@ -74,12 +75,14 @@ export const LemonButton = React.forwardRef<HTMLButtonElement, LemonButtonProps>
       sideIcon,
       children,
       className = '',
+      htmlType,
       disabled,
       ...props
     },
     ref
   ) => {
     const buttonType = variant || type;
+  const htmlButtonType = htmlType || 'button';
     // Exact class names from PostHog LemonButton.tsx
     const classes = [
       'LemonButton',
@@ -104,6 +107,7 @@ export const LemonButton = React.forwardRef<HTMLButtonElement, LemonButtonProps>
     return (
       <button
         ref={ref}
+        type={htmlButtonType}
         className={classes}
         aria-disabled={!!disabled || loading}
         disabled={disabled || loading}

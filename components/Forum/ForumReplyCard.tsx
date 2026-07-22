@@ -128,7 +128,7 @@ export default function ForumReplyCard({ reply, postId, isInForum = false, quest
                 <div className="!ml-auto hidden sm:flex items-center space-x-1 opacity-60 hover:opacity-100 transition-opacity">
                     <LemonButton
                         size="small"
-                        tooltip="edit reply"
+                        title="edit reply"
                         onClick={() => { }}
                         icon={<IconPencil />}
                         className="!p-1"
@@ -156,7 +156,7 @@ export default function ForumReplyCard({ reply, postId, isInForum = false, quest
                     />
                     <LemonButton
                         size="small"
-                        tooltip="reply"
+                        title="reply"
                         onClick={() => setIsReplying(!isReplying)}
                         icon={<IconMessage className="w-3.5 h-3.5" />}
                         className="!p-1 text-xs opacity-60 hover:opacity-100 font-bold lowercase flex items-center gap-1"
@@ -166,7 +166,7 @@ export default function ForumReplyCard({ reply, postId, isInForum = false, quest
                     {isAdmin && (
                         <LemonButton
                             size="small"
-                            tooltip="delete reply"
+                            title="delete reply"
                             onClick={() => {
                                 if (confirm('delete this reply?')) {
                                     deleteReply(reply.id, postId)

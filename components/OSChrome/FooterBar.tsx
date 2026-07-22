@@ -250,8 +250,8 @@ export default function FooterBar({
                             <div className="flex flex-col items-center gap-1">
                                 <span>search this page</span>
                                 <div className="flex gap-1 items-center opacity-70">
-                                    <KeyboardShortcut text="Shift" size="xsmall" />
-                                    <KeyboardShortcut text="F" size="xsmall" />
+                                    <KeyboardShortcut text="Shift" size="xs" />
+                                    <KeyboardShortcut text="F" size="xs" />
                                 </div>
                             </div>
                         </Tooltip>
