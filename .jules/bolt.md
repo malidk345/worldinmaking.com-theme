@@ -1,3 +1,7 @@
 ## 2024-05-18 - Date Instantiations Inside Render and Sort Loops
 **Learning:** React components (like the `PostsView` memoized context) and frontend utilities (like `usePosts`) often loop over items and sort them by date. Calculating `.getTime()` or `unix()` from strings using new `Date()` or `dayjs()` inside the comparison function of `.sort((a,b) => ...)` results in `$O(N \log N)$` redundant date instantiations per item. In large data arrays, this degrades client-side sorting and blocking time.
 **Action:** Always pre-calculate dates inside an initial `.map()` traversal ($O(N)$) before applying `.sort()`, utilizing the Schwartzian transform: `.map(item => ({ item, time: dayjs(item.timestamp).unix() })).sort(...).map(m => m.item)`. I applied this optimization successfully in `PostsView`, `usePosts`, and `NotificationCenter`.
+
+## 2024-05-13 - Optimize ISO 8601 Date String Sorting
+**Learning:** Database queries (e.g. from Supabase) return timestamps in ISO 8601 format, which can be safely compared lexicographically as strings. Calling `new Date()` or similar functions inside a `.sort()` comparison callback causes redundant $O(N \log N)$ date instantiations which slow down performance and increase memory usage, particularly in backend or edge environments rendering large lists.
+**Action:** Always prefer direct lexicographical string comparisons (e.g., `a.createdAt < b.createdAt ? -1 : 1`) over converting ISO 8601 strings to Date objects or numerical Unix timestamps when merely determining sort order.
