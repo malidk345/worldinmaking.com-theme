@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import { IconSearch, IconX } from '@posthog/icons'
-import OSButton from 'components/OSButton'
+import { LemonButton } from 'components/LemonUI'
 import { LemonInput } from '@/components/LemonUI'
 import { useInPageSearch } from './InPageSearchContext'
 import Mark from 'mark.js'
@@ -151,9 +151,9 @@ const InPageSearchBar: React.FC<InPageSearchBarProps> = ({
                     autoFocus
                 />
             </div>
-            <OSButton
-                size="xs"
-                variant="ghost"
+            <LemonButton
+                size="xsmall"
+                type="tertiary"
                 icon={<IconX className="size-4" />}
                 onClick={() => {
                     onSearch?.('')

@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { IconBolt, IconBook, IconCoffee, IconNight, IconScreen, IconTerminal } from '@posthog/icons';
 import { useApp } from 'context/App'
 import ScrollArea from 'components/RadixUI/ScrollArea'
-import OSButton from 'components/OSButton'
+import { LemonButton } from 'components/LemonUI'
 
 const STATIONS = [
     {
@@ -98,14 +98,14 @@ export default function AtmosphericStations() {
                                                     Mode: {station.settings.colorMode}
                                                 </span>
                                             </div>
-                                            <OSButton
-                                                variant="primary"
-                                                size="sm"
+                                            <LemonButton
+                                                type="primary"
+                                                size="small"
                                                 onClick={() => handleApplyStation(station.settings)}
                                                 className="text-xs py-1 px-3 h-auto"
                                             >
                                                 Apply Station
-                                            </OSButton>
+                                            </LemonButton>
                                         </div>
                                     </div>
                                 </div>
