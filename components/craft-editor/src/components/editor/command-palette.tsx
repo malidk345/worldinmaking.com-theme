@@ -77,7 +77,7 @@ export function CommandPalette({
       { id: 'code',      label: 'Code Block',   group: 'Insert Block', icon: <CodeSquare size={15}/>,    action: ins(() => editor.chain().focus().toggleCodeBlock().run()) },
       { id: 'divider',   label: 'Divider',      group: 'Insert Block', icon: <Minus size={15}/>,         action: ins(() => editor.chain().focus().setHorizontalRule().run()) },
       { id: 'table',     label: 'Table',        group: 'Insert Block', icon: <Table size={15}/>,         action: ins(() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()) },
-      { id: 'callout-info',    label: 'Info Callout',    group: 'Insert Block', icon: <Info size={15} className="text-blue-500"/>,     action: ins(() => (editor.chain().focus() as any).setCallout({ type: 'info' }).run()) },
+      { id: 'callout-info',    label: 'Info Callout',    group: 'Insert Block', icon: <Info size={15} className="text-primary/70"/>,     action: ins(() => (editor.chain().focus() as any).setCallout({ type: 'info' }).run()) },
       { id: 'callout-warning', label: 'Warning Callout', group: 'Insert Block', icon: <AlertTriangle size={15} className="text-gray-500"/>, action: ins(() => (editor.chain().focus() as any).setCallout({ type: 'warning' }).run()) },
       { id: 'callout-success', label: 'Success Callout', group: 'Insert Block', icon: <CheckCircle size={15} className="text-green-500"/>,  action: ins(() => (editor.chain().focus() as any).setCallout({ type: 'success' }).run()) },
       { id: 'callout-error',   label: 'Error Callout',   group: 'Insert Block', icon: <XCircle size={15} className="text-red-500"/>,       action: ins(() => (editor.chain().focus() as any).setCallout({ type: 'error' }).run()) },

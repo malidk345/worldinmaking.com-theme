@@ -12,10 +12,10 @@ export function QueryNode({ type = 'line', title = 'Page Views' }: { type?: stri
         <div className="my-6 border border-black/10 dark:border-white/10 rounded-lg overflow-hidden bg-white dark:bg-[#1C1C1E] shadow-sm font-sans">
             <div className="flex items-center justify-between px-4 py-3 border-b border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5">
                 <div className="flex items-center gap-2">
-                    <IconActivity className="size-4 text-blue-500" />
+                    <IconActivity className="size-4 text-amber-500" />
                     <span className="font-bold text-xs text-primary">{title}</span>
                 </div>
-                <span className="font-mono text-[9px] px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold uppercase">
+                <span className="font-mono text-[9px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-400 font-bold uppercase">
                     PostHog Insight
                 </span>
             </div>
@@ -25,8 +25,8 @@ export function QueryNode({ type = 'line', title = 'Page Views' }: { type?: stri
                     <svg viewBox="0 0 500 200" className="w-full h-44 overflow-visible">
                         <defs>
                             <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="rgb(59, 130, 246)" stopOpacity="0.2" />
-                                <stop offset="100%" stopColor="rgb(59, 130, 246)" stopOpacity="0.0" />
+                                <stop offset="0%" stopColor="rgb(245, 158, 11)" stopOpacity="0.2" />
+                                <stop offset="100%" stopColor="rgb(245, 158, 11)" stopOpacity="0.0" />
                             </linearGradient>
                         </defs>
                         {/* Grid lines */}
@@ -36,26 +36,26 @@ export function QueryNode({ type = 'line', title = 'Page Views' }: { type?: stri
                         {/* Area fill */}
                         <path d="M 0 150 Q 100 80, 200 120 T 400 40 L 500 80 L 500 200 L 0 200 Z" fill="url(#chart-grad)" />
                         {/* Main Path */}
-                        <path d="M 0 150 Q 100 80, 200 120 T 400 40 L 500 80" fill="none" stroke="rgb(59, 130, 246)" strokeWidth="3" />
+                        <path d="M 0 150 Q 100 80, 200 120 T 400 40 L 500 80" fill="none" stroke="rgb(245, 158, 11)" strokeWidth="3" />
                         {/* Interactive dots */}
-                        <circle cx="200" cy="120" r="5" fill="rgb(59, 130, 246)" stroke="white" strokeWidth="2" />
-                        <circle cx="400" cy="40" r="5" fill="rgb(59, 130, 246)" stroke="white" strokeWidth="2" />
+                        <circle cx="200" cy="120" r="5" fill="rgb(245, 158, 11)" stroke="white" strokeWidth="2" />
+                        <circle cx="400" cy="40" r="5" fill="rgb(245, 158, 11)" stroke="white" strokeWidth="2" />
                     </svg>
                 ) : (
                     /* Mock Bar Chart */
                     <svg viewBox="0 0 500 200" className="w-full h-44">
-                        <rect x="30" y="80" width="30" height="120" rx="3" fill="rgb(59, 130, 246)" />
-                        <rect x="110" y="40" width="30" height="160" rx="3" fill="rgb(59, 130, 246)" />
-                        <rect x="190" y="100" width="30" height="100" rx="3" fill="rgb(59, 130, 246)" />
-                        <rect x="270" y="60" width="30" height="140" rx="3" fill="rgb(59, 130, 246)" />
-                        <rect x="350" y="120" width="30" height="80" rx="3" fill="rgb(59, 130, 246)" />
-                        <rect x="430" y="30" width="30" height="170" rx="3" fill="rgb(59, 130, 246)" />
+                        <rect x="30" y="80" width="30" height="120" rx="3" fill="rgb(245, 158, 11)" />
+                        <rect x="110" y="40" width="30" height="160" rx="3" fill="rgb(245, 158, 11)" />
+                        <rect x="190" y="100" width="30" height="100" rx="3" fill="rgb(245, 158, 11)" />
+                        <rect x="270" y="60" width="30" height="140" rx="3" fill="rgb(245, 158, 11)" />
+                        <rect x="350" y="120" width="30" height="80" rx="3" fill="rgb(245, 158, 11)" />
+                        <rect x="430" y="30" width="30" height="170" rx="3" fill="rgb(245, 158, 11)" />
                     </svg>
                 )}
                 {/* Legend */}
                 <div className="flex items-center gap-4 mt-3 font-sans text-xs text-muted opacity-80">
-                    <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-blue-500" /> unique users</span>
-                    <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-blue-500/20" /> views</span>
+                    <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-amber-500" /> unique users</span>
+                    <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-amber-500/20" /> views</span>
                 </div>
             </div>
         </div>
@@ -83,7 +83,7 @@ export function SQLNode({ code = 'SELECT event, count(*) FROM events GROUP BY ev
                 </button>
             </div>
             {/* Editor Input */}
-            <div className="p-4 bg-black/10 border-b border-white/5 whitespace-pre overflow-x-auto text-[#A5B4FC]">
+            <div className="p-4 bg-black/10 border-b border-white/5 whitespace-pre overflow-x-auto text-[#FCD34D]">
                 {code}
             </div>
             {/* Table Results */}
@@ -211,7 +211,7 @@ export function CohortNode({ name = 'Power Users', count = '4,520' }: { name?: s
     return (
         <div className="my-5 border border-black/10 dark:border-white/10 rounded-lg p-4 bg-white dark:bg-[#1C1C1E] shadow-sm font-sans flex items-center justify-between">
             <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded bg-blue-500/10 flex items-center justify-center text-blue-500">
+                <div className="w-8 h-8 rounded bg-amber-500/10 flex items-center justify-center text-amber-500">
                     <IconPeople className="size-4.5" />
                 </div>
                 <div>
