@@ -147,9 +147,9 @@ export default function NotificationCenter() {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -4 }}
                             transition={{ duration: 0.15, ease: 'easeOut' }}
-                            className="absolute right-0 top-full mt-2 w-72 max-h-[420px] bg-[var(--color-bg-surface-primary)] border border-[var(--border-3000)] shadow-[0_12px_44px_-12px_rgba(0,0,0,0.25)] z-[9999] flex flex-col overflow-hidden rounded-md lowercase font-mono"
+                            className="absolute right-0 top-full mt-2 w-72 max-h-[420px] bg-white/95 dark:bg-[#121214]/95 supports-[backdrop-filter]:bg-white/80 supports-[backdrop-filter]:dark:bg-[#0a0a0c]/80 supports-[backdrop-filter]:backdrop-blur-[25px] supports-[backdrop-filter]:saturate-[190%] border border-black/10 dark:border-white/10 shadow-[0_12px_44px_-12px_rgba(0,0,0,0.25)] z-[9999] flex flex-col overflow-hidden rounded-md lowercase font-mono"
                         >
-                            <div className="px-3 py-2 border-b border-[var(--border-3000)] flex items-center justify-between bg-[var(--color-accent-3000)]">
+                            <div className="px-3 py-2 border-b border-[var(--border-3000)] flex items-center justify-between bg-transparent">
                                 <div className="flex items-center gap-2">
                                     <div className="size-1.5 rounded-full bg-[var(--primary-3000)] animate-pulse" />
                                     <h3 className="font-bold text-[10px] tracking-widest opacity-50 uppercase">activity</h3>
@@ -175,7 +175,7 @@ export default function NotificationCenter() {
                                                 key={notif.id}
                                                 className="p-2.5 rounded hover:bg-[var(--color-bg-fill-button-tertiary-hover)] border border-transparent hover:border-[var(--border-3000)] transition-all cursor-pointer group flex gap-3"
                                             >
-                                                <div className="size-7 rounded bg-[var(--color-bg-surface-primary)] border border-[var(--border-3000)] flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-[var(--primary-highlight)] transition-colors">
+                                                <div className="size-7 rounded bg-white/95 dark:bg-[#121214]/95 supports-[backdrop-filter]:bg-white/80 supports-[backdrop-filter]:dark:bg-[#0a0a0c]/80 supports-[backdrop-filter]:backdrop-blur-[25px] supports-[backdrop-filter]:saturate-[190%] border border-black/10 dark:border-white/10 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-[var(--primary-highlight)] transition-colors">
                                                     {notif.type === 'post' ? (
                                                         <IconNewspaper className="size-3.5 text-[var(--primary-3000)] opacity-60" />
                                                     ) : (
@@ -197,7 +197,7 @@ export default function NotificationCenter() {
                                 </div>
                             </ScrollArea>
 
-                            <div className="px-3 py-2 border-t border-[var(--border-3000)] bg-[var(--color-accent-3000)] flex items-center justify-center">
+                            <div className="px-3 py-2 border-t border-[var(--border-3000)] bg-transparent flex items-center justify-center">
                                 <p className="text-[9px] font-bold opacity-30 tracking-widest lowercase">system online</p>
                             </div>
                         </motion.div>

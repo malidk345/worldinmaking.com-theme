@@ -1062,7 +1062,7 @@ select.LemonSelect {
   z-index: 10000;
   display: flex;
   flex-direction: column;
-  background-color: var(--color-bg-surface-primary);
+  background-color: transparent;
   border: 1px solid var(--border-3000);
   border-radius: var(--lemon-radius-lg, 6px);
   box-shadow: var(--shadow-elevation-3000);
