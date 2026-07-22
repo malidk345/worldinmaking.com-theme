@@ -659,14 +659,14 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                                         className="group"
                                                         tooltip="right click for more options"
                                                     >
-                                                        <span>
-                                                            <IconSquare className="size-5 group-hover:hidden" />
+                                                        <div className="relative w-5 h-5 flex items-center justify-center">
+                                                            <IconSquare className="absolute size-5 transition-opacity duration-200 group-hover:opacity-0" />
                                                             {isMaximized ? (
-                                                                <IconCollapse45Chevrons className="size-6 -m-0.5 hidden group-hover:block" />
+                                                                <IconCollapse45Chevrons className="absolute size-6 -m-0.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                                             ) : (
-                                                                <IconExpand45Chevrons className="size-6 -m-0.5 hidden group-hover:block" />
+                                                                <IconExpand45Chevrons className="absolute size-6 -m-0.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                                             )}
-                                                        </span>
+                                                        </div>
                                                     </OSButton>
                                                 </ContextMenu.Trigger>
                                                 <ContextMenu.Portal>
