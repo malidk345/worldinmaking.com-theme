@@ -34,7 +34,7 @@ const CALLOUT_CONFIG: Record<CalloutType, { icon: string; label: string; classNa
     NOTE: {
         icon: 'ℹ',
         label: 'Note',
-        className: 'border-black/10 bg-black/3 dark:border-white/10 dark:bg-white/6',
+        className: 'border-black/10 bg-black/5 dark:border-white/10 dark:bg-white/5',
         iconColor: 'text-primary/70',
     },
     TIP: {
