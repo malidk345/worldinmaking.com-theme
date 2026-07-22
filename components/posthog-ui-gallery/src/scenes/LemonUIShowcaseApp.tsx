@@ -99,7 +99,7 @@ export function LemonUIShowcaseApp({ onBack }: { onBack?: () => void } = {}): JS
         <div style={{ marginTop: '1.5rem' }}>
           <LemonTabs
             activeKey={activeTab}
-            onChange={(key) => setActiveTab(key as any)}
+            onChange={(key) => setActiveTab(key as "buttons" | "inputs" | "pickers" | "overlays" | "cards" | "feedback" | "tokens")}
             tabs={[
               { key: 'buttons', label: '1. Buttons & Triggers', badge: <LemonBadge content="21" status="primary" /> },
               { key: 'inputs', label: '2. Form Controls & Inputs' },
@@ -399,9 +399,9 @@ export function LemonUIShowcaseApp({ onBack }: { onBack?: () => void } = {}): JS
             <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '1rem' }}>LemonTable Component</h3>
             <LemonTable
               columns={[
-                { title: 'User / Distinct ID', dataIndex: 'user', render: (val) => <ProfilePicture name={val} showName /> },
-                { title: 'Role', dataIndex: 'role', render: (val) => <LemonTag type="highlight">{val}</LemonTag> },
-                { title: 'Status', dataIndex: 'status', render: (val) => <LemonBadge content={val} status="success" /> },
+                { title: 'User / Distinct ID', dataIndex: 'user', render: (val) => <ProfilePicture name={val as string} showName /> },
+                { title: 'Role', dataIndex: 'role', render: (val) => <LemonTag type="highlight">{val as string}</LemonTag> },
+                { title: 'Status', dataIndex: 'status', render: (val) => <LemonBadge content={val as string} status="success" /> },
                 { title: 'Actions', key: 'actions', render: () => <More overlay={<LemonButton fullWidth>View Profile</LemonButton>} /> },
               ]}
               dataSource={[

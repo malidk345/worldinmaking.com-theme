@@ -40,11 +40,11 @@ export function LemonTable<T>({
     if (typeof rowKey === 'function') {
       return rowKey(record);
     }
-    if (rowKey && (record as any)[rowKey] !== undefined) {
-      return String((record as any)[rowKey]);
+    if (rowKey && (record as Record<string, unknown>)[rowKey as string] !== undefined) {
+      return String((record as Record<string, unknown>)[rowKey as string]);
     }
-    if ((record as any).id) return String((record as any).id);
-    if ((record as any).key) return String((record as any).key);
+    if ((record as Record<string, unknown>).id) return String((record as Record<string, unknown>).id);
+    if ((record as Record<string, unknown>).key) return String((record as Record<string, unknown>).key);
     return idx;
   };
 
@@ -101,7 +101,7 @@ export function LemonTable<T>({
               dataSource.map((record, rIdx) => (
                 <tr key={String(getRowKey(record, rIdx))}>
                   {columns.map((col, cIdx) => {
-                    const val = col.dataIndex ? (record as any)[col.dataIndex] : undefined;
+                    const val = col.dataIndex ? (record as Record<keyof T, unknown>)[col.dataIndex] : undefined;
                     return (
                       <td
                         key={cIdx}
