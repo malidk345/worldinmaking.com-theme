@@ -1,6 +1,9 @@
 import path from 'path'
+// @ts-expect-error type missing
 import tailwindcss from '@tailwindcss/vite'
+// @ts-expect-error type missing
 import { defineConfig } from 'vite'
+// @ts-expect-error type missing
 import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
