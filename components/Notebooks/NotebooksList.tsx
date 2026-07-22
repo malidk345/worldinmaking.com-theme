@@ -31,7 +31,7 @@ export const fromNodeTypeToLabel: Record<string, string> = {
   support_tickets: 'Support tickets',
 };
 
-export interface NotebookListItemType {
+export interface NotebookListItemType extends Record<string, unknown> {
   short_id: string;
   title: string;
   created_by?: {
@@ -96,7 +96,7 @@ export function NotebooksListSkeleton() {
           href={`#notebook-${short_id}`}
           className="font-semibold flex items-center gap-2 text-[var(--text-3000,#111827)] hover:text-[var(--primary-3000-hover,#1d4ed8)] hover:underline"
         >
-          {title || 'Untitled'}
+          {(title as React.ReactNode) || 'Untitled'}
           {is_template && <LemonTag type="highlight">TEMPLATE</LemonTag>}
         </a>
       ),
@@ -108,12 +108,12 @@ export function NotebooksListSkeleton() {
     {
       title: 'Created',
       dataIndex: 'created_at',
-      render: (created_at) => <span className="font-mono text-xs opacity-75">{created_at}</span>,
+      render: (created_at) => <span className="font-mono text-xs opacity-75">{created_at as React.ReactNode}</span>,
     },
     {
       title: 'Last modified',
       dataIndex: 'last_modified_at',
-      render: (last_modified_at) => <span className="font-mono text-xs opacity-75">{last_modified_at}</span>,
+      render: (last_modified_at) => <span className="font-mono text-xs opacity-75">{last_modified_at as React.ReactNode}</span>,
     },
     {
       title: '',
