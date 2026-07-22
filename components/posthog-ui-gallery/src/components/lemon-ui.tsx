@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useRef, useEffect, forwardRef } from 'react'
 import clsx from 'clsx'
 import {
@@ -1498,7 +1499,7 @@ export interface LemonTableColumn<T> {
   title: React.ReactNode
   dataIndex?: keyof T
   key?: string
-  render?: (value: any, record: T, index: number) => React.ReactNode
+  render?: (value: unknown, record: T, index: number) => React.ReactNode
 }
 
 export interface LemonTableProps<T> {

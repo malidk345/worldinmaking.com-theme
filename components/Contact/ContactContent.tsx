@@ -1,8 +1,7 @@
 "use client"
 
 import React, { useState } from 'react'
-import OSButton from 'components/OSButton'
-import { LemonInput, LemonTextArea } from '@/components/LemonUI'
+import { LemonButton, LemonInput, LemonTextArea } from '@/components/LemonUI'
 import { supabase } from 'lib/supabase'
 import { useToast } from 'context/ToastContext'
 import { IconChat, IconMessage, IconPerson, IconSend } from '@posthog/icons';
@@ -61,13 +60,13 @@ export default function ContactContent() {
                 <p className="text-sm opacity-60 max-w-xs lowercase">
                     {t('contact.sent_desc')}
                 </p>
-                <OSButton 
-                    variant="secondary" 
+                <LemonButton
+                    type="secondary"
                     onClick={() => setSent(false)}
                     className="mt-4"
                 >
                     <span className="px-4 lowercase">{t('contact.send_another')}</span>
-                </OSButton>
+                </LemonButton>
             </div>
         )
     }
@@ -128,9 +127,9 @@ export default function ContactContent() {
                 </div>
 
                 <div className="pt-2 flex justify-end">
-                    <OSButton 
-                        type="submit" 
-                        variant="primary"
+                    <LemonButton
+                        htmlType="submit"
+                        type="primary"
                         disabled={loading}
                     >
                         <div className="flex items-center gap-2">
@@ -139,7 +138,7 @@ export default function ContactContent() {
                             </span>
                             {!loading && <IconSend className="size-4 relative -top-[0.5px]" />}
                         </div>
-                    </OSButton>
+                    </LemonButton>
                 </div>
             </form>
         </div>

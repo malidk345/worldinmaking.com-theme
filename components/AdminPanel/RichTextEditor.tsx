@@ -21,7 +21,7 @@ import { IconApps, IconBookmark, IconCheckCircle, IconCollapse, IconDownload, Ic
 import Toolbar, { ToolbarElement } from 'components/RadixUI/Toolbar'
 import { Toolkit } from '../Toolkit'
 import { useApp } from '../../context/App'
-import OSButton from 'components/OSButton'
+import { LemonButton } from '@/components/LemonUI'
 import { Popover } from 'components/RadixUI/Popover'
 import { CalloutType } from 'components/editor/callout-extension'
 
@@ -380,9 +380,9 @@ const RichTextEditor = ({
                 children: (
                     <Popover
                         trigger={
-                            <OSButton size="sm">
+                            <LemonButton size="small">
                                 <IconEllipsis className="size-4" />
-                            </OSButton>
+                            </LemonButton>
                         }
                         dataScheme="primary"
                         contentClassName="w-48 p-1 border border-primary bg-bg"
@@ -433,9 +433,9 @@ const RichTextEditor = ({
                     {isMobile ? (
                         <Popover
                             trigger={
-                                <OSButton size="sm">
+                                <LemonButton size="small">
                                     <IconGear className="size-4" />
-                                </OSButton>
+                                </LemonButton>
                             }
                             dataScheme="primary"
                             contentClassName="w-56 p-2 border border-primary bg-bg"
@@ -460,17 +460,17 @@ const RichTextEditor = ({
                     )}
 
                     {onSaveDraft && (
-                        <OSButton size="sm" onClick={onSaveDraft} disabled={isSaving}>
+                        <LemonButton size="small" onClick={onSaveDraft} disabled={isSaving}>
                             <div className="flex items-center gap-1.5 lowercase px-1 font-bold">
                                 {isSaving ? <IconSpinner className="size-3.5 animate-spin" /> : <IconDownload className="size-3.5" />}
                                 <span className="hidden md:inline px-0.5">save</span>
                             </div>
-                        </OSButton>
+                        </LemonButton>
                     )}
 
                     {onPublish && (
-                        <OSButton
-                            size="sm"
+                        <LemonButton
+                            size="small"
                             onClick={onPublish}
                             disabled={isSaving}
                             className="!bg-primary !text-white hover:!bg-primary/90"
@@ -479,7 +479,7 @@ const RichTextEditor = ({
                                 <IconCheckCircle className="size-3.5" />
                                 <span className="hidden md:inline px-0.5">{isPublished ? 'update' : 'publish'}</span>
                             </div>
-                        </OSButton>
+                        </LemonButton>
                     )}
 
                     {onToggleFocusMode && (

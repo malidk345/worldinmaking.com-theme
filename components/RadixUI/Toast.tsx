@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Toast as RadixToast } from 'radix-ui'
-import OSButton from 'components/OSButton'
+import { LemonButton } from '@/components/LemonUI'
 import { IconUndo } from '@posthog/icons'
 import './css/toast.css'
 
@@ -70,9 +70,9 @@ const Toast = ({
             </div>
             {(onUndo || onAction) && (
                 <RadixToast.Action onClick={handleAction} className="[grid-area:_action]" asChild altText={typeof actionLabel === 'string' ? actionLabel : 'Action'}>
-                    <OSButton size="sm" icon={onUndo ? <IconUndo /> : undefined}>
+                    <LemonButton size="small" icon={onUndo ? <IconUndo /> : undefined}>
                         {actionAsIcon ? actionAsIcon : actionLabel}
-                    </OSButton>
+                    </LemonButton>
                 </RadixToast.Action>
             )}
         </RadixToast.Root>
