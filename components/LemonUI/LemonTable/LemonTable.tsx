@@ -107,7 +107,7 @@ export function LemonTable<T extends Record<string, unknown>>({
                         key={cIdx}
                         className={col.align ? `text-${col.align}` : undefined}
                       >
-                        {col.render ? col.render(val, record, rIdx) : (val ?? '')}
+                        {col.render ? col.render(val, record, rIdx) : ((val as React.ReactNode) ?? '')}
                       </td>
                     );
                   })}
