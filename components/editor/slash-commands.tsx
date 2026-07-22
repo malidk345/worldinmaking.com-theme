@@ -118,9 +118,9 @@ export const getSlashCommands = () => [
   },
   {
     title: 'Info Callout',
-    description: 'Blue information box.',
+    description: 'Information box.',
     searchTerms: ['callout', 'info', 'note'],
-    icon: <Info size={18} className="text-blue-500" />,
+    icon: <Info size={18} className="text-primary/70" />,
     command: ({ editor, range }: { editor: Editor; range: any }) => {
       editor.chain().focus().deleteRange(range).setCallout({ type: 'info' }).run();
     },

@@ -100,7 +100,7 @@ const adaptPost = (p: DBPost): Post | null => {
         wordCount: rawContent.split(/\s+/).filter((w) => w.length > 0).length,
         headings: sortedHeadings,
         image: p.image_url || p.image || null,
-        ribbon: p.ribbon || '#3546AB',
+        ribbon: p.ribbon || '#d97706',
         translations: adaptedTranslations,
         language: p.language || 'en',
         originalLanguage: p.originalLanguage,
@@ -195,4 +195,3 @@ export const getPostBySlug = async (slug: string): Promise<Post | null> => {
         return null;
     }
 };
-

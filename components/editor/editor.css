@@ -311,14 +311,14 @@
 .post-editor-root .callout-block p { margin-bottom: 0 !important; }
 .post-editor-root .callout-block p + p { margin-top: 0.5rem !important; }
 .post-editor-root .callout-info {
-  background-color: rgb(239 246 255 / 0.5) !important;
-  border-color: rgb(191 219 254 / 0.5) !important;
-  color: rgb(30 58 138) !important;
+  background-color: hsl(var(--muted) / 0.45) !important;
+  border-color: hsl(var(--border) / 0.65) !important;
+  color: hsl(var(--foreground) / 0.92) !important;
 }
 .dark .post-editor-root .callout-info {
-  background-color: rgb(30 58 138 / 0.2) !important;
-  border-color: rgb(29 78 216 / 0.4) !important;
-  color: rgb(219 234 254) !important;
+  background-color: hsl(var(--muted) / 0.25) !important;
+  border-color: hsl(var(--border) / 0.75) !important;
+  color: hsl(var(--foreground) / 0.94) !important;
 }
 .post-editor-root .callout-warning {
   background-color: rgb(254 243 199 / 0.5) !important;
