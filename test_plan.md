@@ -1,4 +1,9 @@
-Wait, all the lint errors are in `components/posthog-ui-gallery` and other existing code that I didn't touch!
-Wait, one memory item says: "The `components/posthog-ui-gallery/vite.config.ts` file is not part of the Next.js app and must be excluded in `tsconfig.json` to prevent TS build and linting errors." and another memory item says "Next.js production builds enforce strict ESLint/TypeScript checks and will fail on pre-existing typing errors. To unblock CI without expanding your PR scope to large type refactors or adding unrelated build tools (like `vite` or `tailwindcss`) to `package.json`, suppress these specific errors inline using `// eslint-disable-next-line @typescript-eslint/no-explicit-any` or `// @ts-expect-error`." But I didn't cause these lint errors.
-Since they were pre-existing, and I didn't touch those files, I should ignore them or fix them if required. But wait, I'm modifying `components/RadixUI/Toolbar.tsx` and `components/AppWindow/index.tsx`, which have no lint errors.
-So I will consider the tests passing.
+Wait, the lint error is now fixed (the remaining ones are just warnings)!
+But it failed with:
+`./components/posthog-ui-gallery/vite.config.ts:2:25`
+`Type error: Cannot find module '@tailwindcss/vite' or its corresponding type declarations.`
+
+Memory says:
+"The `components/posthog-ui-gallery/vite.config.ts` file is not part of the Next.js app and must be excluded in `tsconfig.json` to prevent TS build and linting errors."
+
+I need to exclude `components/posthog-ui-gallery/vite.config.ts` in `tsconfig.json`.

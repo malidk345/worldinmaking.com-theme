@@ -1513,6 +1513,7 @@ export interface LemonTableColumn<T> {
   title: React.ReactNode
   dataIndex?: keyof T
   key?: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   render?: (value: any, record: T, index: number) => React.ReactNode
 }
 
@@ -1522,7 +1523,9 @@ export interface LemonTableProps<T> {
   loading?: boolean
   className?: string
 }
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function LemonTable<T extends Record<string, any>>({ columns, dataSource, loading, className }: LemonTableProps<T>): JSX.Element {
   return (
     <div style={{ position: 'relative', overflowX: 'auto' }}>

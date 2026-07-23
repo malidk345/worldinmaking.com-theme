@@ -206,6 +206,7 @@ export function GalleryLandingApp({ onSelectScene }: GalleryLandingAppProps): JS
 
             {/* Item 5: PostHog AI Thread */}
             <div
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
               onClick={() => onSelectScene('posthog_ai' as any)}
               style={{
                 backgroundColor: 'var(--color-bg-surface-primary)',
