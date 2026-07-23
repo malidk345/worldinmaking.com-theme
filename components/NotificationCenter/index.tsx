@@ -127,6 +127,8 @@ export default function NotificationCenter() {
                 onClick={toggleOpen}
                 size="sm"
                 className={`!px-1 group/notif relative translate-y-[2px] transition-all ${isOpen ? 'bg-primary/5 dark:bg-white/10' : ''}`}
+                aria-label="Toggle notifications"
+                title="Toggle notifications"
             >
                 <div className="relative px-1 h-5 flex items-center justify-center">
                     <IconNotificationWithBadge hasUnread={hasUnread} className={`size-[18px] text-black transition-transform group-hover/notif:scale-110 ${hasUnread ? 'animate-wiggle' : ''}`} />
@@ -157,6 +159,8 @@ export default function NotificationCenter() {
                                 <button 
                                     onClick={() => setIsOpen(false)}
                                     className="p-1 hover:bg-[var(--color-bg-fill-button-tertiary-hover)] rounded transition-colors text-primary"
+                                    aria-label="Close notifications"
+                                    title="Close notifications"
                                 >
                                     <IconX className="size-3 opacity-40" />
                                 </button>
