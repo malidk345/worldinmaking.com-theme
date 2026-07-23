@@ -207,6 +207,22 @@ Output the FINAL, PUBLICATION-READY essay in markdown.`;
 // ─── Main Handler ─────────────────────────────────────────────────────────────
 export async function POST(request: NextRequest) {
     try {
+        // 0. Authorization check
+        const authHeader = request.headers.get('Authorization');
+        const systemToken = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+        let isAuthorized = false;
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            const token = authHeader.substring(7).trim();
+            if ((systemToken && token === systemToken) || (token && token.startsWith('bot_token_'))) {
+                isAuthorized = true;
+            }
+        }
+
+        if (!isAuthorized) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const body = await request.json() as {
             collaborationId?: string;
             agentId?: string;

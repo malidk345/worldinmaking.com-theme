@@ -1,6 +1,9 @@
 import path from 'path'
+// @ts-expect-error Types are not resolved in Next.js environment
 import tailwindcss from '@tailwindcss/vite'
+// @ts-expect-error Types are not resolved in Next.js environment
 import { defineConfig } from 'vite'
+// @ts-expect-error Types are not resolved in Next.js environment
 import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
