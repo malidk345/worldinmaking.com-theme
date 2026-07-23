@@ -1,4 +1,4 @@
-export const runtime = 'edge';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabase-admin';
 import { shouldAgentRespond, cleanAISmell, getTypingDelay, voteOnCommunityPost, voteOnCommunityReply, injectTypos, getCrossThreadContext, resolveIllustrationPlaceholders } from '../../../../lib/agent-orchestrator';

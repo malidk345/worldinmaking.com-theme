@@ -5,7 +5,7 @@ import { botCreateSchema } from '../../../../lib/validations';
 import { sanitizePlainText } from '../../../../utils/security';
 import { randomHex } from '../../../../lib/edge-crypto';
 
-export const runtime = 'edge';
+
 
 // List all agent bots with their persona + cognitive metadata (no API tokens exposed)
 export async function GET(request: NextRequest) {

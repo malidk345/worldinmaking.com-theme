@@ -3,7 +3,7 @@ import { ArticleJsonLd } from "components/SEO/JsonLd";
 import PostPageClient from "./page-client";
 import { sanitizeHtml } from "utils/security";
 
-export const runtime = 'edge';
+
 
 
 

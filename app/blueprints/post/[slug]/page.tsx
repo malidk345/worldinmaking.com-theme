@@ -3,7 +3,7 @@
 import React from 'react'
 import Wrapper from '../../../../components/Wrapper'
 
-export const runtime = 'edge';
+
 
 export default function Home() {
     return (
