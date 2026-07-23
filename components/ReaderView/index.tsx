@@ -18,7 +18,9 @@ import { useTranslation } from 'hooks/useTranslation'
 import { supabase } from 'lib/supabase'
 import { sanitizeHtml } from 'utils/security'
 import PostMetaTable from './PostMetaTable'
-import { LemonCollapse } from 'components/LemonUI'
+import { LemonCollapse, LemonTag, LemonCard } from 'components/LemonUI'
+import ForumAvatar from 'components/Forum/ForumAvatar'
+import ArticleActions from 'components/Community/ArticleActions'
 
 
 
@@ -67,6 +69,7 @@ interface ReaderViewProps {
     showQuestions?: boolean
     parent?: TreeMenuItem // For TreeMenu
     proseSize?: 'sm' | 'base' | 'lg'
+    proseStyle?: 'default' | 'academic'
     onSearch?: (query: string) => void
     availableLanguages?: string[]
     useExternalProvider?: boolean
@@ -97,6 +100,7 @@ const ReaderViewContent = React.memo(({
     showQuestions = false,
     parent,
     proseSize = 'sm',
+    proseStyle = 'default',
     onSearch,
     availableLanguages,
     commentThreadSlug,
@@ -389,8 +393,68 @@ const ReaderViewContent = React.memo(({
                         } : undefined}
                     >
                         <div className={`mx-auto p-4 md:p-8 transition-all ${fullWidthContent ? 'max-w-full' : contentMaxWidthClass}`}>
+                            {/* Post Title */}
+                            {title && !hideTitle && (
+                                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-primary leading-snug mb-6 mt-1">
+                                    {title}
+                                </h1>
+                            )}
+
+                            {/* LemonUI Metadata & Action Card */}
+                            <LemonCard hoverEffect={false} className="mb-6 p-4 md:p-5 flex flex-col gap-4">
+                                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/10 dark:border-white/10 pb-3">
+                                    <div className="flex items-center gap-2.5">
+                                        {body.contributors && body.contributors[0] && (
+                                            <div className="flex items-center gap-2">
+                                                <ForumAvatar
+                                                    className="size-8 rounded-full border border-black/10 dark:border-white/10"
+                                                    image={body.contributors[0].image}
+                                                />
+                                                <div className="flex flex-col">
+                                                    <span className="text-xs font-bold text-primary leading-none">
+                                                        {body.contributors[0].name}
+                                                    </span>
+                                                    {body.contributors[0].username && (
+                                                        <span className="text-[11px] text-secondary/70 mt-0.5">
+                                                            @{body.contributors[0].username}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {body.date && (
+                                            <span className="text-xs text-secondary/60">
+                                                · {new Date(body.date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                                            </span>
+                                        )}
+                                        {body.readTime && (
+                                            <span className="text-xs text-secondary/60">
+                                                · {body.readTime} min read
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* PostHog LemonTag Badges */}
+                                    {body.tags && body.tags.length > 0 && (
+                                        <div className="flex flex-wrap items-center gap-1.5">
+                                            {body.tags.map((tag, i) => (
+                                                <LemonTag key={i} type="option" className="!text-[10px] uppercase tracking-wider font-semibold">
+                                                    {tag.label}
+                                                </LemonTag>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Article Actions Toolbar */}
+                                <div className="-mb-2">
+                                    <ArticleActions slug={commentThreadSlug || bookmarkMeta?.slug} views={body.views} />
+                                </div>
+                            </LemonCard>
+
+                            {/* Featured Image */}
                             {body.featuredImage && (
-                                <div className="mb-8 rounded-[16px] md:rounded-[24px] overflow-hidden border border-black/5 dark:border-white/5 shadow-md aspect-video relative">
+                                <div className="mb-8 rounded-[16px] md:rounded-[20px] overflow-hidden border border-black/10 dark:border-white/10 shadow-sm aspect-video relative">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
                                         src={body.featuredImage}
@@ -398,32 +462,10 @@ const ReaderViewContent = React.memo(({
                                         className="w-full h-full object-cover"
                                     />
                                     {body.featuredImageCaption && (
-                                        <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-2 text-sm text-center italic text-white/80">
+                                        <div className="absolute bottom-0 left-0 right-0 bg-black/60 backdrop-blur-sm p-2 text-xs text-center italic text-white/90">
                                             {body.featuredImageCaption}
                                         </div>
                                     )}
-                                </div>
-                            )}
-
-                            {title && !hideTitle && (
-                                <h1
-                                    className={`mx-auto transition-all tracking-tight font-bold text-primary ${proseSize === 'lg' ? 'max-w-full text-2xl md:text-3xl' : 'max-w-3xl text-xl md:text-2xl'
-                                        } leading-snug mb-4 mt-2`}
-                                >
-                                    {title}
-                                </h1>
-                            )}
-
-                            {(body.date || body.contributors || (body.tags && body.tags.length > 0)) && (
-                                <div className="my-4">
-                                    <LemonCollapse title="post metadata" defaultOpen={false}>
-                                        <PostMetaTable
-                                            contributors={body.contributors}
-                                            date={body.date}
-                                            readTime={body.readTime}
-                                            tags={body.tags}
-                                        />
-                                    </LemonCollapse>
                                 </div>
                             )}
 

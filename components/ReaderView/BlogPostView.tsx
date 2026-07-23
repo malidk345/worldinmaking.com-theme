@@ -16,6 +16,13 @@ import { sanitizeHtml } from 'utils/security'
 import { useTranslation } from 'hooks/useTranslation'
 import { QueryNode, SQLNode, PythonNode, FeatureFlagNode, ExperimentNode, CohortNode } from './PostHogNodes'
 
+import ScrollArea from 'components/RadixUI/ScrollArea'
+import ForumAvatar from 'components/Forum/ForumAvatar'
+import ArticleActions from 'components/Community/ArticleActions'
+import CommentSection from 'components/Community/CommentSection'
+import { LemonCard, LemonTag, LemonButton } from 'components/LemonUI'
+import { getProseClasses } from 'constants/index'
+
 interface BlogPostViewProps {
     post: {
         id: string
@@ -214,11 +221,6 @@ const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
                 authorName={post.authors?.[0]?.name || 'World in Making'}
                 authorUrl={post.authors?.[0]?.username ? `/profile/${post.authors[0].username}` : undefined}
             />
-            <BreadcrumbJsonLd items={[
-                { name: 'Home', url: '/' },
-                { name: 'Posts', url: '/posts' },
-                { name: title, url: `/posts/${post.slug || ''}` },
-            ]} />
             <ReaderView
                 body={body}
                 title={title}
