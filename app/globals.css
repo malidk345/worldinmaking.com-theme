@@ -690,3 +690,12 @@ button svg {
   flex-shrink: 0;
   color: var(--muted, #5f5f5f);
 }
+
+/* Ensure window content does not immediately overlap the titlebar,
+   but can scroll under it naturally. Applies only to the actual scrollable area. */
+.window-content-wrapper .overflow-y-auto > *:first-child,
+.window-content-wrapper .overflow-auto > *:first-child,
+.window-content-wrapper [data-scrollable="true"] > *:first-child,
+.window-content-wrapper [data-radix-scroll-area-viewport] > div > *:first-child {
+  margin-top: 32px !important;
+}

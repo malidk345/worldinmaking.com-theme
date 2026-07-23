@@ -535,7 +535,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             data-app="AppWindow"
                             data-scheme="tertiary"
                             className={`group @container absolute !select-auto flex flex-col ${getWindowSurfaceBg(siteSettings.heaterMode)} ${getSurfaceMotionLayer(siteSettings.heaterMode, isCompositorActive)} ${isMaximized ? 'shadow-none' : (isFocused ? 'premium-shadow-active ring-1 ring-black/5 dark:ring-white/10' : 'premium-shadow-inactive')
-                                } ${dragging ? '[&_*]:select-none' : ''} ${item.minimal ? '!shadow-none' : (isMaximized ? 'rounded-none border-b border-[var(--border-3000)]' : 'border rounded-xl border-[var(--border-3000)]')} ${chrome ? 'overflow-hidden' : ''} transition-[border-radius,box-shadow,border-color,background-color] duration-[400ms] ease-[cubic-bezier(0.25,1,0.5,1)]`}
+                                } ${dragging ? '[&_*]:select-none' : ''} ${item.minimal ? '!shadow-none' : (isMaximized ? 'rounded-t-none rounded-b-xl border border-[var(--border-3000)]' : 'border rounded-xl border-[var(--border-3000)]')} ${chrome ? 'overflow-hidden' : ''} transition-[border-radius,box-shadow,border-color,background-color] duration-[400ms] ease-[cubic-bezier(0.25,1,0.5,1)]`}
                             style={{
                                 pointerEvents: 'auto',
                                 rotateX: isActiveWindowsPanelOpen ? 0 : tiltX,
@@ -821,7 +821,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             />
 
                             <div ref={contentContainerRef} className="w-full flex-1 flex flex-col bg-transparent min-h-0 relative px-0 pb-0 pt-0">
-                                <div className="w-full h-full flex-1 overflow-hidden relative bg-transparent border-0 rounded-none">
+                                <div className="w-full h-full flex-1 overflow-hidden relative bg-transparent border-0 rounded-none window-content-wrapper">
                                     {(!animating || rendered) && (
                                         item.key === 'home' ? <HomeControl /> : <WindowRouter item={item} />
                                     )}

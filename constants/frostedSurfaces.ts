@@ -16,9 +16,12 @@ export const PANEL_BG = 'bg-[var(--color-bg-surface-primary)] dark:bg-[var(--col
 export const HEATER_PANEL_BG =
     'bg-[var(--color-bg-surface-primary)]/80 dark:bg-[var(--color-bg-3000-dark)]/75 backdrop-blur-xl backdrop-saturate-150 transform-gpu'
 
+/** Solid taskbar bg — no blur */
+export const TASKBAR_BG = 'bg-[var(--color-bg-surface-primary)] dark:bg-[var(--color-bg-3000-dark)] transform-gpu'
+
 /** Taskbar — subtle frosted glass matching PostHog 3000 theme */
-export const TASKBAR_BG =
-    'bg-[var(--color-bg-surface-primary)]/90 dark:bg-[var(--color-bg-3000-dark)]/85 backdrop-blur-xl backdrop-saturate-150 transform-gpu'
+export const HEATER_TASKBAR_BG =
+    'bg-[var(--color-bg-surface-primary)]/70 dark:bg-[var(--color-bg-3000-dark)]/65 backdrop-blur-xl backdrop-saturate-150 transform-gpu'
 
 /** GPU layer hint for surfaces in motion */
 export const MOTION_LAYER = 'will-change-transform'
@@ -30,10 +33,11 @@ export const getWindowSurfaceBg = (heaterMode?: boolean) =>
 export const getPanelSurfaceBg = (heaterMode?: boolean) =>
     heaterMode ? HEATER_PANEL_BG : PANEL_BG
 
-export const getTaskbarSurfaceBg = () => TASKBAR_BG
+export const getTaskbarSurfaceBg = (heaterMode?: boolean) => 
+    heaterMode ? HEATER_TASKBAR_BG : TASKBAR_BG
 
 export const getSurfaceMotionLayer = (heaterMode?: boolean, active?: boolean) =>
     active ? (heaterMode ? HEATER_MOTION_LAYER : MOTION_LAYER) : ''
 
-export const getTaskbarMotionLayer = (active?: boolean) =>
-    active ? HEATER_MOTION_LAYER : ''
+export const getTaskbarMotionLayer = (heaterMode?: boolean, active?: boolean) =>
+    active ? (heaterMode ? HEATER_MOTION_LAYER : MOTION_LAYER) : ''

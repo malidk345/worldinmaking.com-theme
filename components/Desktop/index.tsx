@@ -220,30 +220,7 @@ export default function Desktop() {
                 </>
             )}
 
-            {/* 2001 Bliss Pattern with Parallax */}
-            <div className="absolute inset-[-50px] select-none pointer-events-none" style={{
-                transform: 'translate(calc(var(--mouse-nx, 0) * -15px), calc(var(--mouse-ny, 0) * -15px))'
-            }}>
-                <div
-                    className="absolute inset-0 opacity-40 dark:opacity-0"
-                    style={{
-                        backgroundImage: "url('https://res.cloudinary.com/dmukukwp6/image/upload/bliss_8bit_light_0b2e4ef53c.jpg')",
-                        backgroundSize: 'cover',
-                        backgroundRepeat: 'no-repeat',
-                        backgroundPosition: 'center'
-                    }}
-                />
-                <div
-                    className="absolute inset-0 opacity-0 dark:opacity-40"
-                    style={{
-                        backgroundImage: "url('https://res.cloudinary.com/dmukukwp6/image/upload/bliss_8bit_dark_703ec033d6.jpg')",
-                        backgroundSize: 'cover',
-                        backgroundRepeat: 'no-repeat',
-                        backgroundPosition: 'center'
-                    }}
-                />
-            </div>
-            
+
 
 
             <nav className="fixed top-24 left-6 sm:left-10 right-6 sm:right-auto pointer-events-none z-10">

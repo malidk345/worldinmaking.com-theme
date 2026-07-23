@@ -31,7 +31,8 @@ export default function TaskBarMenu({ isMaximized }: { isMaximized?: boolean }) 
         openSearch,
         setIsActiveWindowsPanelOpen,
         taskbarRef,
-        addWindow
+        addWindow,
+        siteSettings
     } = useApp()
     const { user, profile, isAdmin, signOut, updateProfile } = useAuth()
     const { t, lang } = useTranslation()
@@ -280,7 +281,7 @@ export default function TaskBarMenu({ isMaximized }: { isMaximized?: boolean }) 
                 ref={taskbarRef}
                 id="taskbar"
                 data-scheme="primary"
-                className={`w-full h-[40px] min-h-[40px] ${getTaskbarSurfaceBg()} ${getTaskbarMotionLayer(isAnimating)} border border-black/10 dark:border-white/10 border-b-[1px] border-b-black dark:border-b-white/80 ${isMaximized ? 'rounded-t-lg rounded-b-none shadow-none' : 'rounded-lg shadow-md'} z-[30000] flex justify-between pl-1.5 pr-2 py-1 items-center transition-all duration-[400ms] ease-[cubic-bezier(0.25,1,0.5,1)]`}
+                className={`w-full h-[40px] min-h-[40px] ${getTaskbarSurfaceBg(siteSettings.heaterMode)} ${getTaskbarMotionLayer(siteSettings.heaterMode, isAnimating)} border border-black/10 dark:border-white/10 border-b-[1px] border-b-black dark:border-b-white/80 ${isMaximized ? 'rounded-t-lg rounded-b-none shadow-none' : 'rounded-lg shadow-md'} z-[30000] flex justify-between pl-1.5 pr-2 py-1 items-center transition-all duration-[400ms] ease-[cubic-bezier(0.25,1,0.5,1)]`}
             >
                 <div className="flex items-center gap-2 px-3 py-1 pointer-events-none">
                     <svg viewBox="0 0 32 32" className="size-5 fill-current text-[var(--text-3000)]">
