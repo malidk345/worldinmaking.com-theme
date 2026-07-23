@@ -1,6 +1,6 @@
 "use client"
 
-import React from 'react'
+import React, { useMemo } from 'react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { IconMessage } from '@posthog/icons'
@@ -33,16 +33,17 @@ export default function ForumTopicSidebar({
         }
     }
 
-    const getLastActive = (channelId: number) => {
-        const channelPosts = posts.filter((post) => post.channel_id === channelId)
-        if (!channelPosts.length) return null
-
-        const latest = channelPosts.reduce((acc, current) => {
-            return new Date(current.created_at).getTime() > new Date(acc.created_at).getTime() ? current : acc
-        })
-
-        return dayjs(latest.created_at).fromNow()
-    }
+    const latestPostByChannel = useMemo(() => {
+        const acc: Record<number, string> = {};
+        for (const post of posts) {
+            if (post.channel_id) {
+                if (!acc[post.channel_id] || post.created_at > acc[post.channel_id]) {
+                    acc[post.channel_id] = post.created_at;
+                }
+            }
+        }
+        return acc;
+    }, [posts]);
 
     return (
         <aside className="w-full sticky top-10">
@@ -82,7 +83,7 @@ export default function ForumTopicSidebar({
                                             <span className={`text-xs font-semibold lowercase tracking-tight line-clamp-1 ${isActive ? 'text-primary font-bold' : 'text-primary/80 group-hover:text-primary'}`}>{channel.name}</span>
                                         </div>
                                         <div className="col-span-3 text-right text-[10px] font-normal text-secondary/60">
-                                            {getLastActive(channel.id) || '-'}
+                                            {latestPostByChannel[channel.id] ? dayjs(latestPostByChannel[channel.id]).fromNow() : '-'}
                                         </div>
                                     </div>
                                 </button>
