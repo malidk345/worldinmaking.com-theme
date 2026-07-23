@@ -119,6 +119,24 @@ export default function ArenaApp() {
                     }
                 }
 
+                const { data: commentsData, error: commentsErr } = await supabase
+                    .from('debate_comments')
+                    .select('*, profiles!debate_comments_user_id_fkey(username)')
+                    .eq('debate_id', debate.id)
+                    .order('created_at', { ascending: true });
+
+                if (!commentsErr && commentsData) {
+                    setComments(commentsData.map(c => ({
+                        id: c.id,
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        created_by: { first_name: (c.profiles as any)?.username || 'Unknown' },
+                        content: c.content,
+                        created_at: dayjs(c.created_at).fromNow()
+                    })));
+                } else {
+                    setComments([]);
+                }
+
                 const { data: turnsData, error: turnsErr } = await supabase
                     .from("debate_turns")
                     .select(`
@@ -183,8 +201,38 @@ export default function ArenaApp() {
             )
             .subscribe();
 
+        const commentsChannel = supabase
+            .channel(`debate-comments-${activeDebate.id}`)
+            .on(
+                "postgres_changes",
+                {
+                    event: "INSERT",
+                    schema: "public",
+                    table: "debate_comments",
+                    filter: `debate_id=eq.${activeDebate.id}`
+                },
+                async (payload) => {
+                    const { data: profile } = await supabase
+                        .from("profiles")
+                        .select("username")
+                        .eq("id", payload.new.user_id)
+                        .single();
+
+                    const newComment = {
+                        id: payload.new.id,
+                        created_by: { first_name: profile?.username || 'Unknown' },
+                        content: payload.new.content,
+                        created_at: dayjs(payload.new.created_at).fromNow()
+                    };
+
+                    setComments((prev) => [...prev, newComment]);
+                }
+            )
+            .subscribe();
+
         return () => {
             supabase.removeChannel(turnsChannel);
+            supabase.removeChannel(commentsChannel);
         };
     }, [activeDebate, addToast]);
 
@@ -532,13 +580,32 @@ export default function ArenaApp() {
                         itemId={activeDebate.id}
                         comments={comments}
                         onAddComment={async (text) => {
-                            const newComment = {
-                                id: String(Date.now()),
-                                created_by: { first_name: user?.user_metadata?.username ?? user?.email ?? 'You' },
-                                content: text,
-                                created_at: 'just now',
-                            };
-                            setComments((prev) => [...prev, newComment]);
+                            if (!user) {
+                                addToast("You must be logged in to comment", "error");
+                                return;
+                            }
+
+                            const { error } = await supabase
+                                .from('debate_comments')
+                                .insert({
+                                    debate_id: activeDebate.id,
+                                    user_id: user.id,
+                                    content: text
+                                });
+
+                            if (error) {
+                                console.error("Error inserting comment:", error);
+                                addToast("failed to post comment", "error");
+                            } else {
+                                // Optimistic UI update
+                                const optimisticComment = {
+                                    id: String(Date.now()),
+                                    created_by: { first_name: user.user_metadata?.username ?? user.email ?? 'You' },
+                                    content: text,
+                                    created_at: 'just now',
+                                };
+                                setComments((prev) => [...prev, optimisticComment]);
+                            }
                         }}
                     />
                 </div>

@@ -62,6 +62,8 @@
   "exclude": [
     "node_modules",
     "components/craft-editor",
-    "posthog"
+    "posthog",
+    "components/posthog-ui-gallery/vite.config.ts",
+    "components/posthog-ui-gallery/**/*"
   ]
 }
