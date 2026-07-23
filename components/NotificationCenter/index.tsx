@@ -155,6 +155,7 @@ export default function NotificationCenter() {
                                     <h3 className="font-bold text-[10px] tracking-widest opacity-50 uppercase">activity</h3>
                                 </div>
                                 <button 
+                                    aria-label="Close notifications"
                                     onClick={() => setIsOpen(false)}
                                     className="p-1 hover:bg-[var(--color-bg-fill-button-tertiary-hover)] rounded transition-colors text-primary"
                                 >
