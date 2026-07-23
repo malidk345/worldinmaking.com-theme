@@ -343,7 +343,7 @@ export function FullNotebookApp({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.8125rem' }}>
               <div style={{ padding: '0.75rem', backgroundColor: 'var(--color-bg-surface-primary)', borderRadius: 'var(--radius)', border: '1px solid var(--border-3000)' }}>
                 <div style={{ fontWeight: 600 }}>Current Draft</div>
-                <div style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem' }}>Edited by Paul D'Amora • Just now</div>
+                <div style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem' }}>Edited by Paul D&apos;Amora • Just now</div>
               </div>
 
               <div style={{ padding: '0.75rem', backgroundColor: 'var(--color-bg-surface-primary)', borderRadius: 'var(--radius)', border: '1px solid var(--border-3000)' }}>
