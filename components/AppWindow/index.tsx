@@ -223,7 +223,6 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
 
     useEffect(() => {
         setRendered(true)
-        playWindowOpen()
     }, [])
 
     useEffect(() => {
@@ -246,12 +245,10 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
     }, [item, minimizeWindow, minimizing])
 
     const handleMinimize = () => {
-        playWindowMinimize()
         setMinimizing(true)
     }
 
     const handleClose = () => {
-        playWindowClose()
         setClosing(true)
     }
 

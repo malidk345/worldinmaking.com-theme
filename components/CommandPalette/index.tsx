@@ -5,8 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { IconSearch, IconRocket, IconDocument, IconLightBulb, IconX, IconArrowRight, IconMinus, IconSparkles } from '@posthog/icons'
 import { useApp } from '../../context/App'
 import { usePosts } from '../../hooks/usePosts'
-import { playWindowOpen, playWindowClose } from '../../lib/osAudio'
-
 interface CommandPaletteProps {
     isOpen: boolean
     onClose: () => void
@@ -24,9 +22,6 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
             setQuery('')
             setSelectedIndex(0)
             setTimeout(() => inputRef.current?.focus(), 50)
-            playWindowOpen()
-        } else {
-            playWindowClose()
         }
     }, [isOpen])
 
