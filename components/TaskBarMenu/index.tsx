@@ -353,7 +353,11 @@ export default function TaskBarMenu({ isMaximized }: { isMaximized?: boolean }) 
                     >
                         <div className="flex flex-col items-center gap-1">
                             <p className="text-sm mb-0 p-1">{t('search.tooltip')}</p>
-                            <KeyboardShortcut text="/" size="sm" />
+                            <div className="flex items-center gap-1">
+                                <KeyboardShortcut text="⌘K" size="sm" />
+                                <span className="text-[10px] opacity-60">or</span>
+                                <KeyboardShortcut text="/" size="sm" />
+                            </div>
                         </div>
                     </Tooltip>
 

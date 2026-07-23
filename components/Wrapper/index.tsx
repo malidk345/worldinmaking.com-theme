@@ -1,11 +1,12 @@
 "use client"
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useApp } from '../../context/App'
 import Desktop from 'components/Desktop'
 import TaskBarMenu from 'components/TaskBarMenu'
 import AppWindow from 'components/AppWindow'
 import ActiveWindowsPanel from 'components/ActiveWindowsPanel'
+import CommandPalette from 'components/CommandPalette'
 
 export default function Wrapper() {
     const {
@@ -14,6 +15,19 @@ export default function Wrapper() {
         siteSettings,
         isActiveWindowsPanelOpen
     } = useApp()
+
+    const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault()
+                setIsCommandPaletteOpen(prev => !prev)
+            }
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [])
 
     useEffect(() => {
         if (typeof window === 'undefined') return
@@ -94,6 +108,7 @@ export default function Wrapper() {
 
             </div>
             <ActiveWindowsPanel />
+            <CommandPalette isOpen={isCommandPaletteOpen} onClose={() => setIsCommandPaletteOpen(false)} />
         </div>
     )
 }

@@ -28,6 +28,7 @@ import HomeControl from 'components/Home/Control'
 import WindowRouter from 'components/AppWindow/WindowRouter'
 import KeyboardShortcut from 'components/KeyboardShortcut'
 import { getWindowSurfaceBg, getSurfaceMotionLayer } from '../../constants/frostedSurfaces'
+import { playWindowOpen, playWindowClose, playWindowMinimize, playWindowSnap } from '../../lib/osAudio'
 
 const snapThreshold = -50
 
@@ -222,6 +223,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
 
     useEffect(() => {
         setRendered(true)
+        playWindowOpen()
     }, [])
 
     useEffect(() => {
@@ -244,10 +246,12 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
     }, [item, minimizeWindow, minimizing])
 
     const handleMinimize = () => {
+        playWindowMinimize()
         setMinimizing(true)
     }
 
     const handleClose = () => {
+        playWindowClose()
         setClosing(true)
     }
 
