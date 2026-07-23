@@ -5,20 +5,12 @@ import { cleanAISmell, resolveIllustrationPlaceholders } from '../../../../lib/a
 import { buildAgentMemoryContext, getThreadOutputContract, parseBotStructuredReply } from '../../../../lib/bot-structured-output';
 import { buildBotPrompt } from '../../../../lib/ai-provider';
 import { getHybridResearchContext } from '../../../../lib/google-drive';
+import { verifyAgentRequest } from '../../../../lib/agent-auth';
 
 export async function POST(request: NextRequest) {
     try {
         // 1. Authorization check
-        const authHeader = request.headers.get('Authorization');
-        const systemToken = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-        
-        let isAuthorized = false;
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-            const token = authHeader.substring(7).trim();
-            if (token === systemToken || token.startsWith('bot_token_')) {
-                isAuthorized = true;
-            }
-        }
+        const isAuthorized = await verifyAgentRequest(request);
 
         if (!isAuthorized) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

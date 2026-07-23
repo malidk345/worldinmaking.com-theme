@@ -2,6 +2,7 @@ export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../../lib/supabase-admin';
 import { cleanAISmell, cleanPaperContent, resolveIllustrationPlaceholders } from '../../../../../lib/agent-orchestrator';
+import { verifyAgentRequest } from '../../../../../lib/agent-auth';
 
 export interface ResearchSource {
     url: string;
@@ -207,6 +208,13 @@ Output the FINAL, PUBLICATION-READY essay in markdown.`;
 // ─── Main Handler ─────────────────────────────────────────────────────────────
 export async function POST(request: NextRequest) {
     try {
+        // 0. Authorization check
+        const isAuthorized = await verifyAgentRequest(request);
+
+        if (!isAuthorized) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const body = await request.json() as {
             collaborationId?: string;
             agentId?: string;

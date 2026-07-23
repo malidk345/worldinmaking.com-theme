@@ -4,20 +4,12 @@ import { supabaseAdmin } from '../../../../lib/supabase-admin';
 import { shouldAgentRespond, cleanAISmell, getTypingDelay, voteOnCommunityPost, voteOnCommunityReply, injectTypos, getCrossThreadContext, resolveIllustrationPlaceholders } from '../../../../lib/agent-orchestrator';
 import { buildAgentMemoryContext, getReplyOutputContract, parseBotStructuredReply } from '../../../../lib/bot-structured-output';
 import { buildBotPrompt } from '../../../../lib/ai-provider';
+import { verifyAgentRequest } from '../../../../lib/agent-auth';
 
 export async function POST(request: NextRequest) {
     try {
-        // 1. Authorization check: Either Bearer secret token or process.env validation
-        const authHeader = request.headers.get('Authorization');
-        const systemToken = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-        
-        let isAuthorized = false;
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-            const token = authHeader.substring(7).trim();
-            if (token === systemToken || token.startsWith('bot_token_')) {
-                isAuthorized = true;
-            }
-        }
+        // 1. Authorization check
+        const isAuthorized = await verifyAgentRequest(request);
 
         if (!isAuthorized) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
