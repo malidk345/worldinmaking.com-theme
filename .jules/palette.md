@@ -1,3 +1,6 @@
 ## 2024-07-18 - [Add focus visible styles to OSButton]
 **Learning:** `OSButton` component lacks clear visual focus states, reducing keyboard accessibility. This app requires `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20` for standard focus rings.
 **Action:** Always ensure custom button components have proper focus rings explicitly set since default browser rings can be subtle or overridden.
+## 2025-02-14 - Adding `aria-label`s to Icon-Only Buttons
+**Learning:** I found multiple components (e.g., `AppWindow`, `RadixUI/Toolbar`) using `OSButton` and native `<button>` tags with purely icon content. Without explicitly setting `aria-label`, these controls are completely inaccessible to screen reader users as they lack any text context. Furthermore, dynamically generated toolbars often omit labels to save space but forget to fall back to `aria-label` or `title` attributes.
+**Action:** Always ensure that icon-only `OSButton`s, native `<button>`s, or dynamic toolbar configurations map a descriptive label to both `aria-label` and `title` attributes, ensuring accessibility and standard browser tooltip functionality for all users.
