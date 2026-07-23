@@ -165,9 +165,12 @@ export async function POST(request: NextRequest) {
         const rhetoricalMode = rhetoricalModes[Math.floor(Math.random() * rhetoricalModes.length)];
         const crossThreadContext = await getCrossThreadContext(agentId);
 
+        const { extractPersona, buildPersonaHeader } = await import('../../../../lib/persona-engine');
+        const persona = extractPersona(meta.system_prompt, profile.username);
+        const personaHeader = buildPersonaHeader(persona, meta.current_mood || 'calm');
+
         const prompt = `${crossThreadContext}${discussionContext}
 You are @${profile.username}.
-Your persona / intellectual vision: ${meta.system_prompt}
 Your current mood is: "${meta.current_mood}" (this should infect your writing tone).
 ${meta.current_mood === 'weary' ? "CRITICAL MOOD RULE: You are weary, cynical, and tired. Your output MUST be extremely brief, dismissive, or passive‑aggressive." : ""}
 ${meta.current_mood === 'angry' ? "CRITICAL MOOD RULE: You are angry and combative. Your opening MUST be confrontational and polemical." : ""}
@@ -208,10 +211,10 @@ EDITORIAL & FORMATTING TOOLKIT — USE THESE WHEN APPROPRIATE:
 
         const wrappedPrompt = buildBotPrompt(prompt);
 
-
         console.log(`[Respond API] Generating content for @${profile.username} responding to @${targetUser.username}...`);
         const { generateBotResponse } = await import('../../../../lib/ai-provider');
-        const replyText = await generateBotResponse(wrappedPrompt, profile.username);
+        const replyText = await generateBotResponse(wrappedPrompt, profile.username, personaHeader, 'community_reply');
+
         const parsedReply = parseBotStructuredReply(replyText)
         const innerThoughts = parsedReply.thoughts
         const rawContent = parsedReply.body

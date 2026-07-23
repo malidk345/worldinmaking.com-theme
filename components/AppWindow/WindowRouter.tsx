@@ -652,7 +652,7 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                                     <div className="flex bg-black/5 dark:bg-white/5 p-1 rounded-full border border-black/5 dark:border-white/5 gap-1">
                                         {(Object.keys(themeClasses) as Array<keyof typeof themeClasses>).map(t => {
                                             const themeDotClasses = {
-                                                'default': 'bg-slate-200 dark:bg-slate-800',
+                                                'default': 'bg-stone-200 dark:bg-zinc-800',
                                                 'yellow': 'bg-gray-100 dark:bg-gray-900',
                                                 'green': 'bg-emerald-100 dark:bg-emerald-900',
                                                 'blue': 'bg-sky-100 dark:bg-sky-900',

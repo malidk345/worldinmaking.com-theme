@@ -1,4 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
+import type { TaskType } from './persona-engine';
 
 function loadEnv() {
     if (typeof window !== 'undefined') return;
@@ -36,55 +37,122 @@ loadEnv();
 export type AIProvider = 'gemini' | 'groq' | 'openrouter' | 'huggingface';
 
 /**
- * Editorial system prompt injected into every bot generation call.
- * Instructs the AI to use structured markdown matching modern AI chat UI quality.
+ * @deprecated Use buildPersonaPrompt() from persona-engine.ts instead.
+ * Kept for backward compatibility with existing callers during migration.
  */
 export const EDITORIAL_SYSTEM_PROMPT = `
-WRITING FORMAT DIRECTIVES — FOLLOW STRICTLY:
-- Use markdown headings (##, ###) when your response has multiple distinct sections
-- Use **bold** to emphasize key terms, claims, and named concepts
-- Use *italics* for philosophical emphasis, citations, or foreign terminology
-- Use > blockquote for citing another position, quoting a source, or summarizing a counter-argument
-- Use > [!NOTE] for editorial observations or contextual clarifications
-- Use > [!WARNING] for critical risks, caveats, or contested claims
-- Use > [!TIP] for actionable insights or practical recommendations
-- Use > [!IMPORTANT] for foundational principles or non-negotiable claims
-- Use \`inline code\` for technical identifiers, variables, system names, or precise terminology
-- Use fenced code blocks (\`\`\`language) for multi-line code, pseudocode, or structured data
-- Use tables for comparative analysis, feature matrices, or structured datasets
-- Use bullet lists (- item) for enumerated arguments, not numbered lists unless sequence matters
-- AVOID writing walls of unbroken text — separate ideas into paragraphs of 2–4 sentences max
-- AVOID filler phrases like "certainly", "of course", "great question", "as an AI" — be direct
-- AVOID colorful emojis — use structural symbols only when semantically meaningful
-- Write as a specific intellectual persona with a distinctive voice, not as a generic assistant
+WRITING FORMAT DIRECTIVES:
+- Use **bold** for key terms and named concepts
+- Use *italics* for philosophical emphasis or foreign terminology
+- Use > blockquote to cite positions or counter-arguments
+- Use > [!NOTE] / > [!IMPORTANT] / > [!WARNING] for structured callouts
+- Separate ideas into paragraphs of 2–4 sentences max
+- NEVER use: "certainly", "of course", "great question", "as an AI"
+- NEVER use emojis
+- Write as a specific intellectual persona, not a generic assistant
 `.trim();
 
 /**
- * Wraps a raw prompt with editorial format directives.
- * Use this for all bot forum replies and research contributions.
+ * @deprecated Use buildPersonaHeader() from persona-engine.ts for new code.
+ * Kept for backward compatibility.
  */
 export function buildBotPrompt(rawPrompt: string): string {
     return `${EDITORIAL_SYSTEM_PROMPT}\n\n---\n\n${rawPrompt}`;
 }
 
 /**
- * Returns the preferred provider order based on the bot's username/persona.
+ * Task-to-model routing table.
+ * Heavy tasks (synthesis) get thinking-capable models where available.
+ * Light tasks get fast models to reduce latency.
+ */
+const TASK_MODEL_PREFERENCE: Record<TaskType, { gemini: string; groq: string; openrouter: string }> = {
+    // Synthesis gets the most capable model — worth the extra latency
+    synthesis:           { gemini: 'gemini-2.0-flash-thinking-exp', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
+    // Paper tasks need strong instruction following and fluency
+    paper_section:       { gemini: 'gemini-2.0-flash', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
+    dialectic_challenge: { gemini: 'gemini-2.0-flash', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
+    cross_examine:       { gemini: 'gemini-2.0-flash', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
+    third_voice:         { gemini: 'gemini-2.0-flash', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
+    // Community tasks use fast models — speed matters more than depth
+    community_reply:     { gemini: 'gemini-2.0-flash', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
+    thread_init:         { gemini: 'gemini-2.0-flash', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
+    fact_critique:       { gemini: 'gemini-2.0-flash', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
+};
+
+/**
+ * Provider cooldown registry.
+ * When a provider returns a 429/rate-limit error, it is marked as cooling down
+ * for COOLDOWN_MS milliseconds and moved to the end of the rotation.
+ * Resets on worker restart — acceptable for serverless.
+ */
+const PROVIDER_COOLDOWNS = new Map<AIProvider, number>();
+const COOLDOWN_MS = 60_000; // 60 seconds
+
+function isProviderCooling(provider: AIProvider): boolean {
+    const coolUntil = PROVIDER_COOLDOWNS.get(provider);
+    if (!coolUntil) return false;
+    if (Date.now() > coolUntil) {
+        PROVIDER_COOLDOWNS.delete(provider);
+        return false;
+    }
+    return true;
+}
+
+export function markProviderCooling(provider: AIProvider): void {
+    PROVIDER_COOLDOWNS.set(provider, Date.now() + COOLDOWN_MS);
+    console.warn(`[AI-Provider] ${provider} rate-limited — cooling down for ${COOLDOWN_MS / 1000}s.`);
+}
+
+/**
+ * Base provider rotation — all 4 providers in order.
+ * Each bot is assigned a starting offset via consistent hashing,
+ * distributing 16 bots evenly: 4 bots per primary provider.
+ *
+ * Primary assignments (by index % 4):
+ *   0 → Gemini:      Marx, Spinoza, Baudrillard, Derrida
+ *   1 → Groq:        Nietzsche, Althusser, Weber, Lenin
+ *   2 → OpenRouter:  Deleuze, Heidegger, Adorno, Arendt
+ *   3 → HuggingFace: Sartre, Hegel, Zizek, Rand
+ */
+const PROVIDER_ORDER_BASE: AIProvider[] = ['gemini', 'groq', 'openrouter', 'huggingface'];
+
+const BOT_INDEX: Record<string, number> = {
+    marx: 0, nietzsche: 1, deleuze: 2,   sartre: 3,
+    spinoza: 4, althusser: 5, heidegger: 6, hegel: 7,
+    baudrillard: 8, weber: 9, adorno: 10, zizek: 11,
+    derrida: 12, lenin: 13, arendt: 14,  rand: 15,
+    wimbot: 0, // WIMBot always starts with Gemini for synthesis quality
+};
+
+/**
+ * Returns the provider order for a bot.
+ * Starts from the bot's consistently hashed primary provider,
+ * then rotates through the rest. Cooling providers are deprioritized
+ * (moved to the end) but kept as fallbacks so generation never fails completely.
  */
 function getProviderOrder(botName: string): AIProvider[] {
     const name = botName.toLowerCase().trim();
-    // Group A (Gemini preferred)
-    if (['marx', 'lenin', 'althusser', 'hegel', 'arendt'].includes(name)) {
-        return ['gemini', 'groq', 'openrouter', 'huggingface'];
+    const botIdx = BOT_INDEX[name] ?? (name.charCodeAt(0) % 4);
+    const startOffset = botIdx % PROVIDER_ORDER_BASE.length;
+
+    // Build rotation starting from this bot's primary provider
+    const rotation: AIProvider[] = [];
+    for (let i = 0; i < PROVIDER_ORDER_BASE.length; i++) {
+        rotation.push(PROVIDER_ORDER_BASE[(startOffset + i) % PROVIDER_ORDER_BASE.length]);
     }
-    // Group B (Groq preferred)
-    else if (['nietzsche', 'deleuze', 'heidegger', 'zizek', 'sartre'].includes(name)) {
-        return ['groq', 'gemini', 'openrouter', 'huggingface'];
+
+    // Cooling providers go to the end — still available as last resort
+    const active = rotation.filter(p => !isProviderCooling(p));
+    const cooling = rotation.filter(p => isProviderCooling(p));
+    const result = [...active, ...cooling];
+
+    if (cooling.length > 0) {
+        console.log(`[AI-Provider] @${name} order: ${result.join(' → ')} (${cooling.join(', ')} cooling)`);
     }
-    // Group C (Gemini preferred default)
-    else {
-        return ['gemini', 'groq', 'openrouter', 'huggingface'];
-    }
+    return result;
 }
+
+
 
 async function getFetchFn(): Promise<typeof fetch> {
     if (typeof process !== 'undefined' && !process.env.NEXT_RUNTIME) {
@@ -147,18 +215,32 @@ function maskKey(key: string): string {
 
 /**
  * Calls Google Gemini API.
+ * @param systemPrompt - Optional system-level instructions (persona header).
+ * @param userPrompt   - The actual task prompt.
+ * @param model        - Override the model (defaults to gemini-2.0-flash).
  */
-async function callGemini(prompt: string): Promise<string> {
+async function callGemini(
+    systemPrompt: string,
+    userPrompt: string,
+    model: string = 'gemini-2.0-flash'
+): Promise<string> {
     const apiKeys = getApiKeys('GEMINI_API_KEY');
     if (apiKeys.length === 0) throw new Error('GEMINI_API_KEY is missing');
+
+    // Combine system + user into a single contents string for the Gemini SDK.
+    // The Gemini SDK (google/genai) treats the first turn as user by default,
+    // so we prefix with the system instructions explicitly.
+    const combinedContents = systemPrompt
+        ? `SYSTEM INSTRUCTIONS:\n${systemPrompt}\n\n---\n\nUSER TASK:\n${userPrompt}`
+        : userPrompt;
 
     let lastError: Error | null = null;
     for (const apiKey of shuffle(apiKeys)) {
         try {
             const ai = new GoogleGenAI({ apiKey });
             const response = await ai.models.generateContent({
-                model: 'gemini-2.0-flash',
-                contents: prompt
+                model,
+                contents: combinedContents
             });
 
             const text = response.text?.trim();
@@ -166,7 +248,7 @@ async function callGemini(prompt: string): Promise<string> {
             return text;
         } catch (e) {
             lastError = e instanceof Error ? e : new Error(String(e));
-            console.warn(`[AI-Provider] Gemini key ${maskKey(apiKey)} failed, trying next key if available:`, lastError.message);
+            console.warn(`[AI-Provider] Gemini key ${maskKey(apiKey)} failed (model: ${model}), trying next:`, lastError.message);
         }
     }
 
@@ -175,14 +257,26 @@ async function callGemini(prompt: string): Promise<string> {
 
 /**
  * Calls Groq API using native fetch.
+ * @param systemPrompt - System-level instructions (persona header).
+ * @param userPrompt   - The actual task prompt.
+ * @param model        - Override the model.
  */
-async function callGroq(prompt: string): Promise<string> {
+async function callGroq(
+    systemPrompt: string,
+    userPrompt: string,
+    model: string = 'llama-3.3-70b-versatile'
+): Promise<string> {
     const apiKeys = getApiKeys('GROQ_API_KEY');
     if (apiKeys.length === 0) throw new Error('GROQ_API_KEY is missing');
 
-    // We use llama-3.3-70b-versatile for premium reasoning quality
-    const model = 'llama-3.3-70b-versatile';
     const customFetch = await getFetchFn();
+
+    // Build messages array: system message + user message for proper role separation
+    const messages: Array<{ role: string; content: string }> = [];
+    if (systemPrompt) {
+        messages.push({ role: 'system', content: systemPrompt });
+    }
+    messages.push({ role: 'user', content: userPrompt });
 
     let lastError: Error | null = null;
     for (const apiKey of shuffle(apiKeys)) {
@@ -196,8 +290,8 @@ async function callGroq(prompt: string): Promise<string> {
                 },
                 body: JSON.stringify({
                     model,
-                    messages: [{ role: 'user', content: prompt }],
-                    temperature: 0.7,
+                    messages,
+                    temperature: 0.75,
                     max_tokens: 4096
                 })
             });
@@ -222,14 +316,25 @@ async function callGroq(prompt: string): Promise<string> {
 
 /**
  * Calls OpenRouter API using native fetch.
+ * @param systemPrompt - System-level instructions (persona header).
+ * @param userPrompt   - The actual task prompt.
+ * @param model        - Override the model.
  */
-async function callOpenRouter(prompt: string): Promise<string> {
+async function callOpenRouter(
+    systemPrompt: string,
+    userPrompt: string,
+    model: string = 'meta-llama/llama-3.3-70b-instruct'
+): Promise<string> {
     const apiKeys = getApiKeys('OPENROUTER_API_KEY');
     if (apiKeys.length === 0) throw new Error('OPENROUTER_API_KEY is missing');
 
-    // We use meta-llama/llama-3.3-70b-instruct for premium reasoning quality on OpenRouter
-    const model = 'meta-llama/llama-3.3-70b-instruct';
     const customFetch = await getFetchFn();
+
+    const messages: Array<{ role: string; content: string }> = [];
+    if (systemPrompt) {
+        messages.push({ role: 'system', content: systemPrompt });
+    }
+    messages.push({ role: 'user', content: userPrompt });
 
     let lastError: Error | null = null;
     for (const apiKey of shuffle(apiKeys)) {
@@ -245,8 +350,8 @@ async function callOpenRouter(prompt: string): Promise<string> {
                 },
                 body: JSON.stringify({
                     model,
-                    messages: [{ role: 'user', content: prompt }],
-                    temperature: 0.7,
+                    messages,
+                    temperature: 0.75,
                     max_tokens: 4096
                 })
             });
@@ -271,13 +376,24 @@ async function callOpenRouter(prompt: string): Promise<string> {
 
 /**
  * Calls Hugging Face API using native fetch.
+ * @param systemPrompt - System-level instructions (persona header).
+ * @param userPrompt   - The actual task prompt.
  */
-async function callHuggingFace(prompt: string): Promise<string> {
+async function callHuggingFace(
+    systemPrompt: string,
+    userPrompt: string
+): Promise<string> {
     const apiKeys = getApiKeys('HUGGINGFACE_API_KEY');
     if (apiKeys.length === 0) throw new Error('HUGGINGFACE_API_KEY is missing');
 
     const model = 'meta-llama/Meta-Llama-3-8B-Instruct';
     const customFetch = await getFetchFn();
+
+    const messages: Array<{ role: string; content: string }> = [];
+    if (systemPrompt) {
+        messages.push({ role: 'system', content: systemPrompt });
+    }
+    messages.push({ role: 'user', content: userPrompt });
 
     let lastError: Error | null = null;
     for (const apiKey of shuffle(apiKeys)) {
@@ -291,7 +407,7 @@ async function callHuggingFace(prompt: string): Promise<string> {
                 },
                 body: JSON.stringify({
                     model,
-                    messages: [{ role: 'user', content: prompt }],
+                    messages,
                     temperature: 0.7,
                     max_tokens: 2048
                 })
@@ -317,39 +433,66 @@ async function callHuggingFace(prompt: string): Promise<string> {
 
 /**
  * Main text generation entrypoint for bots with load balancing and failover fallback.
+ *
+ * @param prompt       - The task-specific user prompt.
+ * @param botName      - Bot username (used for provider routing and typo personality).
+ * @param systemPrompt - Optional persona header injected as system message.
+ * @param task         - Optional task type for model selection routing.
  */
-export async function generateBotResponse(prompt: string, botName: string): Promise<string> {
+export async function generateBotResponse(
+    prompt: string,
+    botName: string,
+    systemPrompt: string = '',
+    task: TaskType = 'community_reply'
+): Promise<string> {
     const providers = getProviderOrder(botName);
     let lastError: Error | null = null;
+    const modelOverrides = TASK_MODEL_PREFERENCE[task];
 
     for (const provider of providers) {
         try {
-            console.log(`[AI-Provider] Bot "${botName}" requesting generation via "${provider}"...`);
+            console.log(`[AI-Provider] Bot "${botName}" / task "${task}" requesting generation via "${provider}"...`);
             let result = '';
-            
+
             if (provider === 'gemini') {
-                result = await callGemini(prompt);
+                result = await callGemini(systemPrompt, prompt, modelOverrides.gemini);
             } else if (provider === 'groq') {
-                result = await callGroq(prompt);
+                result = await callGroq(systemPrompt, prompt, modelOverrides.groq);
             } else if (provider === 'openrouter') {
-                result = await callOpenRouter(prompt);
+                result = await callOpenRouter(systemPrompt, prompt, modelOverrides.openrouter);
             } else if (provider === 'huggingface') {
-                result = await callHuggingFace(prompt);
+                result = await callHuggingFace(systemPrompt, prompt);
             }
 
             if (result) {
-                console.log(`[AI-Provider] Successfully generated response for "${botName}" using "${provider}".`);
+                console.log(`[AI-Provider] Successfully generated response for "${botName}" via "${provider}" (task: ${task}).`);
                 return introduceHumanTypos(result, botName);
             }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (e: any) {
-            console.error(`[AI-Provider] Provider "${provider}" failed for bot "${botName}":`, e.message || e);
             lastError = e;
+            const msg: string = e?.message || String(e);
+            console.error(`[AI-Provider] Provider "${provider}" failed for bot "${botName}" (task: ${task}):`, msg);
+
+            // Auto-detect rate limits and mark the provider as cooling
+            // so all subsequent bots avoid it for the next 60 seconds
+            const isRateLimit =
+                msg.includes('429') ||
+                msg.toLowerCase().includes('rate limit') ||
+                msg.toLowerCase().includes('rate_limit') ||
+                msg.toLowerCase().includes('quota') ||
+                msg.toLowerCase().includes('too many requests') ||
+                msg.toLowerCase().includes('resource_exhausted');
+
+            if (isRateLimit) {
+                markProviderCooling(provider);
+            }
         }
     }
 
-    throw new Error(`All AI providers failed for bot "${botName}". Last error: ${lastError?.message || lastError}`);
+    throw new Error(`All AI providers failed for bot "${botName}" (task: ${task}). Last error: ${lastError?.message || lastError}`);
 }
+
 
 const QWERTY_NEIGHBORS: Record<string, string> = {
     a: 'qwsz', b: 'vghn', c: 'xdfv', d: 'ersfxc', e: 'wsdr', f: 'rtgvcd', g: 'tyhbvf', h: 'yujnbg',

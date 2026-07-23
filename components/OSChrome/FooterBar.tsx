@@ -106,11 +106,9 @@ export default function FooterBar({
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [focusedWindow, appWindow])
 
-    // Consistent button styling for ALL icons
-    // Slightly increased from h-7 w-7 to h-8 w-8
-    // p-2 and p-1.5 adjusted to center the size-[18px] icons
-    const mainIconBtnClass = "p-2 h-8 w-8 !rounded-md"
-    const interactionBtnClass = "p-1.5 h-8 w-8 !rounded"
+    // Compact, minimal button styling
+    const mainIconBtnClass = "p-1 h-6 w-6 !rounded-md opacity-70 hover:opacity-100 transition-opacity"
+    const interactionBtnClass = "p-1 h-6 w-6 !rounded-md opacity-70 hover:opacity-100 transition-opacity"
 
     const [footerTarget, setFooterTarget] = React.useState<HTMLElement | null>(null)
 
@@ -124,10 +122,10 @@ export default function FooterBar({
     }, [appWindow?.key])
 
     const content = (
-        <div data-scheme="tertiary" className={`flex w-full items-center px-1.5 py-0.5 select-none gap-2 justify-between ${footerTarget ? 'bg-transparent' : 'bg-primary border-t border-primary'}`}>
+        <div data-scheme="tertiary" className="flex w-full items-center px-1 py-0.5 select-none gap-0.5 justify-between bg-transparent border-0">
 
             {/* LEFT SECTION: Sidebar, Nav, Separator, Bookmark, Comment */}
-            <div className="flex items-center gap-1 flex-shrink-0">
+            <div className="flex items-center gap-0.5 flex-shrink-0">
                 <div className="flex items-center">
                     {hasLeftSidebar && (
                         <Tooltip
@@ -142,9 +140,9 @@ export default function FooterBar({
                                     className={mainIconBtnClass}
                                 >
                                     {isNavVisible ? (
-                                        <IconSidebarOpen className={`${navIconClassName} size-[18px]`} />
+                                        <IconSidebarOpen className={`${navIconClassName} size-3.5`} />
                                     ) : (
-                                        <IconSidebarClose className={`${navIconClassName} size-[18px]`} />
+                                        <IconSidebarClose className={`${navIconClassName} size-3.5`} />
                                     )}
                                 </OSButton>
                             }
@@ -156,15 +154,15 @@ export default function FooterBar({
 
                 {/* Back/Forward buttons */}
                 {(showBack || showForward) && (
-                    <div className="hidden sm:flex items-center gap-0.5 ml-1 pl-1 border-l border-black/10 dark:border-white/10 h-5">
+                    <div className="hidden sm:flex items-center gap-0.5 ml-0.5 pl-0.5 border-l border-black/10 dark:border-white/10 h-3">
                         {showBack && (
                             <OSButton
                                 size="sm"
                                 onClick={goBack}
                                 disabled={!canGoBack}
-                                className="p-1 h-8 w-8 !rounded-md"
+                                className="p-0.5 h-6 w-6 !rounded-md"
                             >
-                                <IconChevronLeft className={`size-[18px] ${canGoBack ? 'opacity-100' : 'opacity-30'}`} />
+                                <IconChevronLeft className={`size-3.5 ${canGoBack ? 'opacity-100' : 'opacity-30'}`} />
                             </OSButton>
                         )}
                         {showForward && (
@@ -172,16 +170,16 @@ export default function FooterBar({
                                 size="sm"
                                 onClick={goForward}
                                 disabled={!canGoForward}
-                                className="p-1 h-8 w-8 !rounded-md"
+                                className="p-0.5 h-6 w-6 !rounded-md"
                             >
-                                <IconChevronRight className={`size-[18px] ${canGoForward ? 'opacity-100' : 'opacity-30'}`} />
+                                <IconChevronRight className={`size-3.5 ${canGoForward ? 'opacity-100' : 'opacity-30'}`} />
                             </OSButton>
                         )}
                     </div>
                 )}
 
                 {/* Separator */}
-                <div className="w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
+                <div className="w-px h-3 bg-black/10 dark:bg-white/10 mx-0.5 flex-shrink-0" />
 
                 {/* Bookmark & Comment */}
                 <div className="flex items-center gap-0.5">
@@ -194,23 +192,23 @@ export default function FooterBar({
                             active={isBookmarked}
                         >
                             {isBookmarked ? (
-                                <IconBookmarkSolid className="size-[18px] text-primary" />
+                                <IconBookmarkSolid className="size-3.5 text-primary" />
                             ) : (
-                                <IconBookmark className={`size-[18px] ${onBookmark ? 'text-primary' : 'text-primary/30'}`} />
+                                <IconBookmark className={`size-3.5 ${onBookmark ? 'text-primary' : 'text-primary/30'}`} />
                             )}
                         </OSButton>
                     } side="bottom">bookmark</Tooltip>
 
                     <Tooltip trigger={
                         <OSButton size="sm" className={interactionBtnClass} onClick={onComment} disabled={!onComment}>
-                            <IconMessage className={`size-[18px] ${onComment ? 'text-primary' : 'text-primary/30'}`} />
+                            <IconMessage className={`size-3.5 ${onComment ? 'text-primary' : 'text-primary/30'}`} />
                         </OSButton>
                     } side="bottom">comment</Tooltip>
                 </div>
             </div>
 
             {/* RIGHT SECTION: Alignments, Separator, Search, TOC */}
-            <div className="flex items-center gap-1 justify-end flex-shrink-0">
+            <div className="flex items-center gap-0.5 justify-end flex-shrink-0">
                 {rightActionButtons}
                 <div className="relative">
                     <Tooltip trigger={
@@ -220,7 +218,7 @@ export default function FooterBar({
                             onClick={toggleLanguage}
                             active={languageOpen}
                         >
-                            <IconGlobe className="size-[18px] text-primary" />
+                            <IconGlobe className="size-3.5 text-primary" />
                         </OSButton>
                     } side="bottom">language</Tooltip>
 
@@ -234,15 +232,15 @@ export default function FooterBar({
                 </div>
 
                 {/* Separator */}
-                <div className="w-px h-5 bg-black/20 dark:bg-white/20 mx-1 flex-shrink-0" />
+                <div className="w-px h-3 bg-black/10 dark:bg-white/10 mx-0.5 flex-shrink-0" />
 
                 {/* Search & TOC */}
-                <div className="flex items-center gap-1 relative">
+                <div className="flex items-center gap-0.5 relative">
                     {showSearch && (
                         <Tooltip
                             trigger={
                                 <OSButton size="sm" className={mainIconBtnClass} onClick={toggleSearch} active={searchOpen}>
-                                    <IconSearch className="size-[18px]" />
+                                    <IconSearch className="size-3.5" />
                                 </OSButton>
                             }
                             side="bottom"
@@ -280,7 +278,7 @@ export default function FooterBar({
                                     className={`${mainIconBtnClass} ${!compact ? '!w-auto !px-2' : ''}`}
                                 >
                                     <div className="flex items-center gap-2">
-                                        <IconTableOfContents className="size-[18px]" />
+                                        <IconTableOfContents className="size-3.5" />
                                         {!compact && (
                                             <div className="hidden lg:flex flex-col items-start leading-none text-left min-w-[60px]">
                                                 <span className="text-[9px] font-bold opacity-60">contents</span>

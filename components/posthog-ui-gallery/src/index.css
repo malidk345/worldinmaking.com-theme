@@ -185,11 +185,11 @@
   --glass-bg-3000-light: rgba(255, 255, 255, 0.9);
   --glass-border-3000-light: #e7e7e4;
   --link-3000-light: #1d4ed8;
-  --primary-3000-frame-bg-light: #1e3a8a;
+  --primary-3000-frame-bg-light: #d6d3d1;
   --primary-3000-button-bg-light: #fff;
   --primary-3000-button-border-light: #1e40af;
   --primary-3000-button-border-hover-light: #1e3a8a;
-  --secondary-3000-frame-bg-light: #e7e7e4;
+  --secondary-3000-frame-bg-light: #d6d3d1;
   --secondary-3000-button-bg-light: #ffffff; /* Elevated clean white buttons on top */
   --secondary-3000-button-border-light: #e7e7e4;
   --secondary-3000-button-border-hover-light: #d6d3d1;
@@ -271,10 +271,10 @@
   --color-border-secondary: var(--color-neutral-cool-600);
 
   --text-3000-dark: #fff;
-  --color-bg-3000-dark: #1d1f27;
-  --border-3000-dark: #35373e;
-  --border-bold-3000-dark: #3f4046;
-  --glass-bg-3000-dark: rgba(36, 38, 42, 0.6);
+  --color-bg-3000-dark: #121214;
+  --border-3000-dark: #27272a;
+  --border-bold-3000-dark: #3f3f46;
+  --glass-bg-3000-dark: rgba(18, 18, 20, 0.6);
   --glass-border-3000-dark: var(--border-3000-dark);
   --link-3000-dark: #f1a82c;
 
@@ -349,7 +349,7 @@ body {
   font-family: var(--font-sans);
   font-size: 0.875rem;
   line-height: 1.5;
-  background-color: var(--bg-3000, #f3f4f6);
+  background-color: var(--bg-3000, #f5f5f4);
   color: var(--text-3000, #111);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

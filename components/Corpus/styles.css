@@ -1224,7 +1224,7 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    font-family: monospace, var(--font-body);
+    font-family: var(--font-mono);
     box-shadow: inset 0 0 16px rgba(0,0,0,0.04);
     border: 1px solid rgba(0,0,0,0.06);
     overflow: hidden;
@@ -1242,7 +1242,7 @@
     position: absolute;
     inset: 0;
     padding: 0.625rem;
-    font-family: monospace;
+    font-family: var(--font-mono);
     font-size: 0.6rem;
     line-height: 1.45;
     color: color-mix(in hsl, canvasText, canvas 40%);
@@ -1267,7 +1267,7 @@
     display: flex;
     align-items: center;
     gap: 0.25rem;
-    font-family: monospace;
+    font-family: var(--font-mono);
     font-size: 0.6rem;
     font-weight: 600;
     color: var(--corpus-accent);
@@ -1280,7 +1280,7 @@
   }
 
   .corpus-doc-info {
-    font-family: var(--font-body), sans-serif;
+    font-family: var(--font-sans);
     display: flex;
     flex-direction: column;
     align-items: center;

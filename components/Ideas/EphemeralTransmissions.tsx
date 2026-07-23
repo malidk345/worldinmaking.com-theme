@@ -74,61 +74,62 @@ export default function EphemeralTransmissions() {
     }
 
     return (
-        <div className="flex flex-col h-full bg-[#0a0a0a] text-[#00ff00] font-mono text-sm">
+        <div className="h-full overflow-y-auto custom-scrollbar bg-white dark:bg-[#121214] text-primary flex flex-col">
             {/* Header */}
-            <div className="p-3 border-b border-[#00ff00]/30 flex items-center justify-between bg-[#000000]">
-                <div className="flex items-center gap-2">
-                    <IconTerminal className="size-4" />
-                    <span className="font-bold tracking-widest uppercase text-xs">Signal_Stream // 24h</span>
-                </div>
-                <div className="flex items-center gap-1 text-[#00ff00]/50 text-xs">
-                    <IconClock className="size-3" />
-                    <span>Auto-purge active</span>
+            <div className="max-w-7xl mx-auto w-full px-4 md:px-6 pt-6 pb-2 border-b border-black/5 dark:border-white/5 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-3">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary/50">
+                        SIGNAL STREAM // 24H AUTO-PURGE
+                    </span>
                 </div>
             </div>
 
-            {/* Transmissions Area */}
-            <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-                <div className="flex flex-col-reverse gap-6 min-h-full justify-end">
+            {/* Transmissions Stream */}
+            <div className="flex-1 max-w-7xl mx-auto w-full px-4 md:px-6 py-6 overflow-y-auto custom-scrollbar">
+                <div className="space-y-4">
                     {transmissions.length === 0 ? (
-                        <div className="text-center opacity-50 py-10">
+                        <div className="text-center text-xs text-secondary/60 py-12">
                             No active signals. The ether is quiet.
                         </div>
                     ) : (
                         transmissions.map(t => (
-                            <div key={t.id} className="relative pl-4 border-l-2 border-[#00ff00]/30 animate-in fade-in slide-in-from-bottom-2">
-                                <div className="absolute -left-[5px] top-0 w-2 h-2 bg-[#00ff00] rounded-full" />
-                                <div className="flex justify-between items-start mb-1 opacity-60 text-xs">
-                                    <span>User_Local</span>
-                                    <span>{formatTimeLeft(t.expiresAt)}</span>
+                            <div
+                                key={t.id}
+                                className="bg-white/60 dark:bg-[#121214]/60 backdrop-blur-xl border border-black/5 dark:border-white/5 rounded-[24px] shadow-sm p-5 transition-all"
+                            >
+                                <div className="flex justify-between items-center mb-2">
+                                    <span className="text-xs font-bold text-primary">@Local_User</span>
+                                    <span className="text-[10px] font-mono text-secondary px-2 py-0.5 bg-black/5 dark:bg-white/5 rounded-full">
+                                        {formatTimeLeft(t.expiresAt)}
+                                    </span>
                                 </div>
-                                <p className="text-[#00ff00]/90 leading-relaxed break-words">
+                                <p className="text-xs md:text-sm text-primary leading-relaxed break-words">
                                     {t.text}
                                 </p>
                             </div>
                         ))
                     )}
                 </div>
-            </ScrollArea>
+            </div>
 
-            {/* Input Area */}
-            <div className="p-4 border-t border-[#00ff00]/30 bg-[#000000]">
-                <div className="flex gap-2">
-                    <span className="text-[#00ff00] font-bold mt-2">{'>'}</span>
+            {/* Input Composer Area */}
+            <div className="p-4 border-t border-black/5 dark:border-white/5 bg-white/60 dark:bg-[#121214]/60 backdrop-blur-xl shrink-0">
+                <div className="max-w-7xl mx-auto flex gap-3 items-center">
                     <textarea
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder="Broadcast a thought to the network... (disappears in 24h)"
-                        className="flex-1 bg-transparent border-none outline-none resize-none text-[#00ff00] placeholder:text-[#00ff00]/30 min-h-[44px] py-2"
+                        className="flex-1 bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-[16px] px-4 py-2.5 outline-none resize-none text-xs text-primary placeholder:text-secondary/50"
                         rows={1}
                     />
                     <OSButton
                         variant="primary"
                         onClick={handleSend}
-                        className="bg-[#00ff00]/10 text-[#00ff00] border-[#00ff00]/30 hover:bg-[#00ff00]/20 h-fit self-end"
+                        className="h-10 px-4 rounded-[16px] flex items-center gap-1.5"
                     >
                         <IconSend className="size-4" />
+                        <span>Send</span>
                     </OSButton>
                 </div>
             </div>

@@ -197,7 +197,7 @@ async function reseed() {
         console.log(`\n[Process] Configuring '${bot.username}'...`);
 
         // Append slang/colloquial guidance to the prompt dynamically
-        const slangInstruction = " You are allowed and highly encouraged to use colloquialisms, internet slang, and informal language (including Turkish/English argo/slang) when the context or emotional intensity of the discussion warrants it, to sound like a natural, passionate human participant rather than a dry academic textbook.";
+        const slangInstruction = " You are allowed and highly encouraged to use colloquialisms, internet slang, and informal language when the context or emotional intensity of the discussion warrants it, to sound like a natural, passionate human participant rather than a dry academic textbook.";
         const promptWithSlang = bot.system_prompt.endsWith('.') 
             ? bot.system_prompt + slangInstruction
             : bot.system_prompt + '.' + slangInstruction;

@@ -210,15 +210,17 @@ export function LemonTabs<T extends string>({ activeKey, onChange, tabs, classNa
 // ── 4. LemonTag ────────────────────────────────────────────────────────────
 export interface LemonTagProps {
   type?: 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'option' | 'highlight' | 'muted';
+  size?: 'small' | 'medium';
   icon?: ReactNode;
   children: ReactNode;
   className?: string;
 }
 
-export function LemonTag({ type = 'default', icon, children, className = '' }: LemonTagProps) {
+export function LemonTag({ type = 'default', size, icon, children, className = '' }: LemonTagProps) {
   const typeClass = type !== 'default' ? `LemonTag--${type}` : '';
+  const sizeClass = size ? `LemonTag--size-${size}` : '';
   return (
-    <span className={`LemonTag ${typeClass} ${className}`}>
+    <span className={`LemonTag ${typeClass} ${sizeClass} ${className}`}>
       {icon && <span className="inline-flex shrink-0">{icon}</span>}
       <span>{children}</span>
     </span>

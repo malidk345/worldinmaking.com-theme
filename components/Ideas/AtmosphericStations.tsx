@@ -53,56 +53,52 @@ export default function AtmosphericStations() {
         updateSiteSettings(prev => ({ ...prev, ...settings }))
     }
 
-    // Attempt to guess current station based on colorMode (simplistic check for mock)
     const currentMode = siteSettings.colorMode
 
     return (
-        <div className="flex flex-col h-full bg-white dark:bg-[#1a1a1a] text-black dark:text-white">
-            <div className="p-4 border-b border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5">
-                <h2 className="text-lg font-bold flex items-center gap-2">
-                    <IconBook className="size-5" />
-                    Atmospheric Reading Stations
-                </h2>
-                <p className="text-xs opacity-60 mt-1">
-                    Select a station to change your environment&apos;s mood and optimize your cognitive load.
-                </p>
-            </div>
+        <div className="h-full overflow-y-auto custom-scrollbar bg-white dark:bg-[#121214] text-primary">
+            <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-6 pb-2 border-b border-black/5 dark:border-white/5">
+                    <div className="flex items-center gap-3">
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary/50">
+                            {STATIONS.length} READING STATIONS
+                        </span>
+                    </div>
+                </div>
 
-            <ScrollArea className="flex-1 p-4">
-                <div className="grid gap-4 max-w-2xl mx-auto pb-6">
+                <div className="space-y-4">
                     {STATIONS.map((station) => {
                         return (
                             <motion.div
                                 key={station.id}
                                 onHoverStart={() => setActiveHover(station.id)}
                                 onHoverEnd={() => setActiveHover(null)}
-                                className={`border rounded-md p-4 transition-all duration-300 ${
+                                className={`bg-white/60 dark:bg-[#121214]/60 backdrop-blur-xl border border-black/5 dark:border-white/5 rounded-[24px] shadow-sm p-5 md:p-6 transition-all duration-200 ${
                                     activeHover === station.id
-                                    ? 'border-primary shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.1)] -translate-y-1'
-                                    : 'border-black/10 dark:border-white/10 hover:border-black/30 dark:hover:border-white/30'
-                                } bg-white dark:bg-[#141414]`}
+                                    ? 'border-black/20 dark:border-white/20 shadow-md'
+                                    : 'hover:border-black/10 dark:hover:border-white/10'
+                                }`}
                             >
                                 <div className="flex items-start gap-4">
-                                    <div className={`p-3 rounded-md shrink-0 ${
-                                        currentMode === 'dark' ? 'bg-white/10 text-white' : 'bg-black/5 text-black'
-                                    }`}>
+                                    <div className="p-3 rounded-[14px] shrink-0 bg-black/5 dark:bg-white/5 text-primary">
                                         {station.icon}
                                     </div>
-                                    <div className="flex-1">
-                                        <h3 className="font-semibold mb-1 text-sm">{station.name}</h3>
-                                        <p className="text-xs opacity-70 mb-4">{station.description}</p>
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="font-bold mb-1 text-base text-primary">{station.name}</h3>
+                                        <p className="text-xs md:text-sm text-secondary/80 mb-4 leading-relaxed">{station.description}</p>
 
-                                        <div className="flex items-center justify-between mt-auto">
+                                        <div className="flex items-center justify-between mt-auto pt-2 border-t border-black/5 dark:border-white/5">
                                             <div className="flex gap-2">
-                                                <span className="text-[10px] font-mono px-1.5 py-0.5 bg-black/5 dark:bg-white/5 rounded-sm">
-                                                    Mode: {station.settings.colorMode}
+                                                <span className="text-[10px] font-mono px-2 py-0.5 bg-black/5 dark:bg-white/5 rounded-full text-secondary">
+                                                    mode: {station.settings.colorMode}
                                                 </span>
                                             </div>
                                             <OSButton
                                                 variant="primary"
                                                 size="sm"
                                                 onClick={() => handleApplyStation(station.settings)}
-                                                className="text-xs py-1 px-3 h-auto"
+                                                className="text-xs py-1 px-3"
                                             >
                                                 Apply Station
                                             </OSButton>
@@ -113,7 +109,7 @@ export default function AtmosphericStations() {
                         )
                     })}
                 </div>
-            </ScrollArea>
+            </div>
         </div>
     )
 }

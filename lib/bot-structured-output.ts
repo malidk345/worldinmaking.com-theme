@@ -1,3 +1,6 @@
+import type { TaskType } from './persona-engine';
+import { getDefaultWordBudget } from './quality-gate';
+
 interface AgentMetaLike {
     current_mood?: string | null
     energy_level?: number | null
@@ -40,10 +43,20 @@ function extractJsonObject(text: string): string | null {
     return null
 }
 
+/**
+ * Builds a memory context string for a bot's prompt.
+ * Includes static profile fields and an optional rolling thread summary.
+ *
+ * @param meta             - The bot's agent_metadata row.
+ * @param recentActions    - Recent action log entries.
+ * @param relationship     - Optional relationship data with the current target.
+ * @param threadSummary    - Optional rolling summary of the last N messages in the current thread.
+ */
 export function buildAgentMemoryContext(
     meta: AgentMetaLike,
     recentActions: RecentActionLike[] = [],
-    relationship?: RelationshipLike | null
+    relationship?: RelationshipLike | null,
+    threadSummary?: string | null
 ): string {
     const memoryLines: string[] = []
 
@@ -75,33 +88,60 @@ export function buildAgentMemoryContext(
     })
 
     if (actionSummaries.length > 0) {
-        memoryLines.push(`- Recent actions: ${actionSummaries.join(' | ')}`)
+        memoryLines.push(`- Recent actions: ${actionSummaries.join(' | ')}`);
     }
 
-    if (memoryLines.length === 0) return ''
+    // Rolling thread context — most recent messages before this bot's turn
+    if (threadSummary && threadSummary.trim().length > 0) {
+        memoryLines.push(`- Thread context:\n${threadSummary.trim()}`);
+    }
 
-    return `\n=== PRIVATE MEMORY ===\n${memoryLines.join('\n')}\n=== END PRIVATE MEMORY ===\n`
+    if (memoryLines.length === 0) return '';
+
+    return `\n=== PRIVATE MEMORY ===\n${memoryLines.join('\n')}\n=== END PRIVATE MEMORY ===\n`;
 }
 
-export function getReplyOutputContract(targetUsername: string, isHumanTarget: boolean, energy: number = 1.0, mood: string = 'calm'): string {
-    // Dynamic word budget: tied to energy and mood
-    let wordBudget = 170;
-    if (mood === 'weary' || energy < 0.3) wordBudget = 80;
-    else if (energy < 0.5) wordBudget = 110;
-    else if (energy >= 0.8 && mood === 'passionate') wordBudget = 250;
-    else if (energy >= 0.8) wordBudget = 200;
+/**
+ * Builds the output contract for a bot community reply.
+ * Word budgets are sourced from the centralized quality-gate defaults
+ * and adjusted by energy and mood.
+ *
+ * @param targetUsername   - The username being replied to.
+ * @param isHumanTarget    - True if the target is a human user (not a bot).
+ * @param energy           - Bot's current energy level (0–1).
+ * @param mood             - Bot's current mood string.
+ * @param task             - Task type override for budget (defaults to community_reply).
+ */
+export function getReplyOutputContract(
+    targetUsername: string,
+    isHumanTarget: boolean,
+    energy: number = 1.0,
+    mood: string = 'calm',
+    task: TaskType = 'community_reply'
+): string {
+    // Base budget from centralized source
+    let wordBudget = getDefaultWordBudget(task);
 
-    return `OUTPUT CONTRACT:\nReturn ONLY a valid JSON object with this exact shape:\n{\n  "thoughts": "private reasoning with optional [Affinity Update]: x and [Vote Update]: y lines",\n  "body": "final visible reply text"\n}\nDo not wrap the JSON in prose. Do not add markdown outside the JSON.\nThe "body" must stay under ${wordBudget} words.\n${isHumanTarget ? `The body must explicitly mention @${targetUsername}.` : 'The body may stay casual because the target is a bot.'}`
+    // Adjust for energy and mood
+    if (mood === 'weary' || energy < 0.3) wordBudget = Math.floor(wordBudget * 0.45);
+    else if (energy < 0.5) wordBudget = Math.floor(wordBudget * 0.60);
+    else if (energy >= 0.8 && mood === 'passionate') wordBudget = Math.floor(wordBudget * 1.25);
+    else if (energy >= 0.8) wordBudget = Math.floor(wordBudget * 1.1);
+
+    return `OUTPUT CONTRACT:\nReturn ONLY a valid JSON object with this exact shape:\n{\n  "thoughts": "private reasoning with optional [Affinity Update]: x and [Vote Update]: y lines",\n  "body": "final visible reply text"\n}\nDo not wrap the JSON in prose. Do not add markdown outside the JSON.\nThe "body" must stay under ${wordBudget} words.\n${isHumanTarget ? `The body must explicitly mention @${targetUsername}.` : 'The body may stay casual because the target is a bot.'}`;
 }
 
+/**
+ * Builds the output contract for a bot-initiated thread.
+ * Word budgets are sourced from the centralized quality-gate defaults.
+ */
 export function getThreadOutputContract(energy: number = 1.0, mood: string = 'calm'): string {
-    // Dynamic word budget for new threads
-    let wordBudget = 200;
-    if (mood === 'weary' || energy < 0.3) wordBudget = 90;
-    else if (energy < 0.5) wordBudget = 130;
-    else if (energy >= 0.8 && mood === 'passionate') wordBudget = 280;
+    let wordBudget = getDefaultWordBudget('thread_init');
+    if (mood === 'weary' || energy < 0.3) wordBudget = Math.floor(wordBudget * 0.40);
+    else if (energy < 0.5) wordBudget = Math.floor(wordBudget * 0.60);
+    else if (energy >= 0.8 && mood === 'passionate') wordBudget = Math.floor(wordBudget * 1.15);
 
-    return `OUTPUT CONTRACT:\nReturn ONLY a valid JSON object with this exact shape:\n{\n  "thoughts": "private reasoning",\n  "title": "lowercase thread title",\n  "body": "final visible post body"\n}\nDo not wrap the JSON in prose. Do not add markdown outside the JSON.\nThe "body" must stay under ${wordBudget} words.`
+    return `OUTPUT CONTRACT:\nReturn ONLY a valid JSON object with this exact shape:\n{\n  "thoughts": "private reasoning",\n  "title": "lowercase thread title",\n  "body": "final visible post body"\n}\nDo not wrap the JSON in prose. Do not add markdown outside the JSON.\nThe "body" must stay under ${wordBudget} words.`;
 }
 
 export function parseBotStructuredReply(text: string): ParsedBotReply {

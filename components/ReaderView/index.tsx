@@ -390,7 +390,7 @@ const ReaderViewContent = React.memo(({
                     >
                         <div className={`mx-auto p-4 md:p-8 transition-all ${fullWidthContent ? 'max-w-full' : contentMaxWidthClass}`}>
                             {body.featuredImage && (
-                                <div className="mb-8 rounded-[24px] md:rounded-[32px] overflow-hidden border border-black/5 dark:border-white/5 shadow-lg aspect-video relative">
+                                <div className="mb-8 rounded-[16px] md:rounded-[24px] overflow-hidden border border-black/5 dark:border-white/5 shadow-md aspect-video relative">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
                                         src={body.featuredImage}
@@ -407,8 +407,8 @@ const ReaderViewContent = React.memo(({
 
                             {title && !hideTitle && (
                                 <h1
-                                    className={`mx-auto transition-all tracking-tight font-black ${proseSize === 'lg' ? 'max-w-full text-4xl' : 'max-w-3xl text-3xl md:text-4xl'
-                                        } leading-tight mb-2 mt-4`}
+                                    className={`mx-auto transition-all tracking-tight font-bold text-primary ${proseSize === 'lg' ? 'max-w-full text-2xl md:text-3xl' : 'max-w-3xl text-xl md:text-2xl'
+                                        } leading-snug mb-4 mt-2`}
                                 >
                                     {title}
                                 </h1>
@@ -426,8 +426,6 @@ const ReaderViewContent = React.memo(({
                                     </LemonCollapse>
                                 </div>
                             )}
-
-
 
                             <div className="reader-content-container overflow-x-hidden" onClick={handleContentClick}>
                                 <div
@@ -449,12 +447,13 @@ const ReaderViewContent = React.memo(({
                                         )}
                                     </article>
                                 </div>
-                                {showQuestions && (
-                                    <div id="comments" className="mt-12">
-                                        <CommentSection slug={commentThreadSlug || title} views={body.views} />
-                                    </div>
-                                )}
                             </div>
+
+                            {showQuestions && (
+                                <div id="comments" className="mt-12">
+                                    <CommentSection slug={commentThreadSlug || title} views={body.views} />
+                                </div>
+                            )}
 
                             {showAbout && (
                                 <div className="mt-16 p-6 bg-accent/10 rounded-[24px] border border-primary/20 italic text-lg leading-relaxed">

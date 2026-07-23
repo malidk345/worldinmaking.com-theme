@@ -515,7 +515,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
     }
 
     return (
-        <div className="corpus-root flex flex-col size-full bg-white/80 dark:bg-black/80 supports-[backdrop-filter]:backdrop-blur-[60px] text-primary font-sans overflow-hidden">
+        <div className="corpus-root flex flex-col size-full bg-white dark:bg-[#121214] text-primary font-sans overflow-hidden">
             <div
                 data-scheme="tertiary"
                 className="flex w-auto mx-1 mt-1 items-center px-1.5 py-0.5 select-none gap-2 justify-between rounded-full shrink-0 z-10 h-10 overflow-x-auto custom-scrollbar no-scrollbar-on-mobile"

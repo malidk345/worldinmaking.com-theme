@@ -6,17 +6,33 @@
   --font-medium: 500;
   --font-semibold: 600;
   --font-sans:
-    'Emoji Flags Polyfill', 'RoundHog', -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', 'Roboto',
+    -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', 'Roboto',
     'Helvetica Neue', helvetica, arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
   --font-title:
-    'Emoji Flags Polyfill', 'RoundHog', -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', 'Roboto',
+    -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', 'Roboto',
     'Helvetica Neue', helvetica, arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
   --font-button:
-    'Emoji Flags Polyfill', 'RoundHog', -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', 'Roboto',
+    -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', 'Roboto',
     'Helvetica Neue', helvetica, arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
   --font-mono:
-    'Emoji Flags Polyfill', ui-monospace, 'SFMono-Regular', 'SF Mono', 'Menlo', 'Consolas', 'Liberation Mono',
+    ui-monospace, 'SFMono-Regular', 'SF Mono', 'Menlo', 'Consolas', 'Liberation Mono',
     monospace;
+  --bg: 253 253 248;
+  --accent: 229 231 224;
+  --border: 28 25 23;
+  --input-bg: 238 239 233;
+  --input-bg-hover: 238 239 233;
+  --input-border: 44 40 37;
+  --input-border-hover: 28 25 23;
+  --text-primary: 17 17 17;
+  --text-secondary: 101 103 94;
+  --text-muted: 158 160 150;
+  --tw-shadow-color: 77 79 70;
+  --primary: var(--text-primary);
+  --secondary: var(--text-secondary);
+  --muted: var(--text-muted);
+  --bg-primary: var(--primary);
+  --bg-accent: var(--accent);
 
   /* Primitive OKLCH Color Tokens */
   --color-red-50: oklch(0.971 0.013 17.38deg);
@@ -81,18 +97,18 @@
   --color-posthog-brand-yellow-saturation: 93%;
   --color-posthog-brand-yellow-lightness: 49%;
 
-  --color-posthog-3000-25: #fafafa;
-  --color-posthog-3000-50: #f3f4f6;
-  --color-posthog-3000-100: #e5e7eb;
-  --color-posthog-3000-150: #d1d5db;
-  --color-posthog-3000-200: #e2e8f0;
-  --color-posthog-3000-300: #cbd5e1;
-  --color-posthog-3000-400: #94a3b8;
-  --color-posthog-3000-500: #64748b;
-  --color-posthog-3000-600: #475569;
-  --color-posthog-3000-700: #334155;
-  --color-posthog-3000-800: #1e293b;
-  --color-posthog-3000-900: #0f172a;
+  --color-posthog-3000-25: #fafaf9;
+  --color-posthog-3000-50: #f5f5f4;
+  --color-posthog-3000-100: #e7e7e4;
+  --color-posthog-3000-150: #d6d3d1;
+  --color-posthog-3000-200: #e5e5e0;
+  --color-posthog-3000-300: #d4d4cd;
+  --color-posthog-3000-400: #a8a29e;
+  --color-posthog-3000-500: #78716c;
+  --color-posthog-3000-600: #57534e;
+  --color-posthog-3000-700: #44403c;
+  --color-posthog-3000-800: #292524;
+  --color-posthog-3000-900: #1c1917;
 
   --color-white: #fff;
   --color-black: #000;
@@ -153,9 +169,9 @@
   --color-text-warning: var(--color-yellow-700);
   --color-text-error: var(--color-red-600);
 
-  /* Border tokens */
-  --color-border-primary: rgba(0, 0, 0, 0.1);
-  --color-border-secondary: rgba(0, 0, 0, 0.15);
+  /* Border tokens — Near-Black Container Lines */
+  --color-border-primary: rgba(0, 0, 0, 0.7);
+  --color-border-secondary: rgba(0, 0, 0, 0.85);
   --color-border-info: var(--color-blue-400);
   --color-border-warning: var(--color-yellow-400);
   --color-border-error: var(--color-red-400);
@@ -166,7 +182,7 @@
   --radius-lg: 0.625rem;
   --opacity-disabled: 0.65;
 
-  /* Legacy / Deprecated Color Mappings (Navy Blue Theme + rgba(0,0,0,0.1) Borders) */
+  /* Legacy / Deprecated Color Mappings (Navy Blue Theme + Near-Black Container Borders) */
   --text-3000-light: #111;
   --color-text-secondary-3000-light: rgba(17, 17, 17, 0.7);
   --muted-3000-light: rgba(17, 17, 17, 0.6);
@@ -177,25 +193,25 @@
   --primary-3000-active-light: #1e40af;
   --secondary-3000-light: rgba(0, 0, 0, 0.04);
   --secondary-3000-hover-light: rgba(0, 0, 0, 0.07);
-  --color-accent-3000-light: rgba(0, 0, 0, 0.03);
-  --color-bg-3000-light: #f9fafb;
-  --border-3000-light: rgba(0, 0, 0, 0.1);
-  --border-bold-3000-light: rgba(0, 0, 0, 0.18);
-  --glass-bg-3000-light: rgba(255, 255, 255, 0.85);
-  --glass-border-3000-light: rgba(0, 0, 0, 0.1);
+  --color-accent-3000-light: #fafaf9;
+  --color-bg-3000-light: #f5f5f4;
+  --border-3000-light: rgba(0, 0, 0, 0.75);
+  --border-bold-3000-light: rgba(0, 0, 0, 0.9);
+  --glass-bg-3000-light: rgba(245, 245, 244, 0.85);
+  --glass-border-3000-light: rgba(0, 0, 0, 0.75);
   --link-3000-light: #1d4ed8;
-  --primary-3000-frame-bg-light: #1e3a8a;
+  --primary-3000-frame-bg-light: #d6d3d1;
   --primary-3000-button-bg-light: #fff;
   --primary-3000-button-border-light: #1e40af;
   --primary-3000-button-border-hover-light: #1e3a8a;
-  --secondary-3000-frame-bg-light: rgba(0, 0, 0, 0.04);
+  --secondary-3000-frame-bg-light: #d6d3d1;
   --secondary-3000-button-bg-light: #fff;
-  --secondary-3000-button-border-light: rgba(0, 0, 0, 0.1);
-  --secondary-3000-button-border-hover-light: rgba(0, 0, 0, 0.18);
+  --secondary-3000-button-border-light: #e7e7e4;
+  --secondary-3000-button-border-hover-light: #d6d3d1;
   --danger-3000-frame-bg-light: rgba(245, 78, 0, 0.5);
   --danger-3000-button-border-light: #e96b30;
   --danger-3000-button-border-hover-light: #f54e00;
-  --shadow-elevation-3000-light: 0 3px 0 rgba(0, 0, 0, 0.1);
+  --shadow-elevation-3000-light: 0 3px 0 #e7e7e4;
 
   --text-3000: var(--text-3000-light);
   --color-text-secondary-3000: var(--color-text-secondary-3000-light);
@@ -245,7 +261,8 @@
   --lettermark-5-bg: #8da9e7; --lettermark-5-text: #572e5e;
 }
 
-[theme='dark'] {
+[theme='dark'],
+.dark {
   --color-brand-primary-hue: var(--color-posthog-brand-yellow-hue);
   --color-brand-primary-saturation: var(--color-posthog-brand-yellow-saturation);
   --color-brand-primary-lightness: var(--color-posthog-brand-yellow-lightness);
@@ -270,10 +287,10 @@
   --color-border-secondary: var(--color-neutral-cool-600);
 
   --text-3000-dark: #fff;
-  --color-bg-3000-dark: #1d1f27;
-  --border-3000-dark: #35373e;
-  --border-bold-3000-dark: #3f4046;
-  --glass-bg-3000-dark: rgba(36, 38, 42, 0.6);
+  --color-bg-3000-dark: #121214;
+  --border-3000-dark: #27272a;
+  --border-bold-3000-dark: #3f3f46;
+  --glass-bg-3000-dark: rgba(18, 18, 20, 0.6);
   --glass-border-3000-dark: var(--border-3000-dark);
   --link-3000-dark: #f1a82c;
 
@@ -285,9 +302,9 @@
   --border-3000: var(--border-3000-dark);
   --border-bold-3000: var(--border-bold-3000-dark);
   --bg-3000: var(--color-bg-3000-dark);
-  --bg-light: var(--color-neutral-cool-900);
-  --color-bg-light: var(--color-neutral-cool-900);
-  --color-bg-table: #232429;
+  --bg-light: #121214;
+  --color-bg-light: #121214;
+  --color-bg-table: #18181b;
   --link: var(--link-3000-dark);
 
   --primary-3000-button-bg: var(--color-accent);
@@ -298,6 +315,119 @@
   --danger-3000-button-border: #c44003;
   --danger-3000-button-border-hover: #f54e00;
   --danger-3000-frame-bg: rgba(245, 78, 0, 0.5);
+}
+
+/* ─── Global Font Standardization (Community/Forum Standard) ───────────── */
+body, input, button, select, textarea, h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-sans);
+}
+
+code, pre, kbd, samp, .font-mono {
+  font-family: var(--font-mono);
+}
+
+/* ─── Community Post Detail Typography Parity (Overriding Tailwind Prose) ── */
+.prose, .reader-content-container, .reader-view-content-container, .forum-markdown {
+  font-family: var(--font-sans) !important;
+}
+
+.prose p, .reader-content-container p, .reader-view-content-container p, .forum-markdown p {
+  font-size: 13.5px !important;
+  line-height: 1.55 !important;
+  letter-spacing: -0.01em !important;
+  margin-top: 0 !important;
+  padding-bottom: 0.5rem !important;
+}
+
+.prose h1, .reader-content-container h1, .reader-view-content-container h1, .forum-markdown h1 {
+  font-size: 16px !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.02em !important;
+  line-height: 1.35 !important;
+  margin-top: 0.75rem !important;
+  margin-bottom: 0.375rem !important;
+}
+
+.prose h2, .reader-content-container h2, .reader-view-content-container h2, .forum-markdown h2 {
+  font-size: 14.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.015em !important;
+  line-height: 1.35 !important;
+  margin-top: 0.75rem !important;
+  margin-bottom: 0.25rem !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+  padding-bottom: 0.25rem !important;
+}
+
+.dark .prose h2, .dark .reader-content-container h2, .dark .reader-view-content-container h2, .dark .forum-markdown h2 {
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.prose h3, .reader-content-container h3, .reader-view-content-container h3, .forum-markdown h3 {
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  line-height: 1.35 !important;
+  margin-top: 0.625rem !important;
+  margin-bottom: 0.25rem !important;
+}
+
+.prose a, .reader-content-container a, .reader-view-content-container a, .forum-markdown a {
+  color: #000080 !important;
+  font-weight: 600 !important;
+  text-decoration: underline !important;
+  text-decoration-color: rgba(0, 0, 128, 0.3) !important;
+  text-underline-offset: 2px !important;
+}
+
+.dark .prose a, .dark .reader-content-container a, .dark .reader-view-content-container a, .dark .forum-markdown a {
+  color: #66b2ff !important;
+  text-decoration-color: rgba(102, 178, 255, 0.3) !important;
+}
+
+.prose code, .reader-content-container code, .reader-view-content-container code, .forum-markdown code {
+  font-family: var(--font-mono) !important;
+  font-size: 11.5px !important;
+  background-color: rgba(0, 0, 0, 0.07) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  padding: 0.125rem 0.375rem !important;
+  border-radius: 5px !important;
+}
+
+.dark .prose code, .dark .reader-content-container code, .dark .reader-view-content-container code, .dark .forum-markdown code {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.prose pre, .reader-content-container pre, .reader-view-content-container pre, .forum-markdown pre {
+  font-family: var(--font-mono) !important;
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+  background-color: rgba(0, 0, 0, 0.06) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  padding: 0.75rem !important;
+  border-radius: 10px !important;
+  margin-top: 0.75rem !important;
+  margin-bottom: 0.75rem !important;
+  overflow-x: auto !important;
+}
+
+.dark .prose pre, .dark .reader-content-container pre, .dark .reader-view-content-container pre, .dark .forum-markdown pre {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.backdrop-blur-3xl {
+  --tw-backdrop-blur: blur(64px);
+}
+
+/* 2. Glass Cards & Floating Glass Panels (PostHog 3000 Tokenized Glass) */
+.glass-card,
+.posthog-glass,
+.posthog-glass-panel {
+  background: var(--glass-bg-3000) !important;
+  border: 1px solid var(--border-3000) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
 }
 
 /* ─── LemonTable Styles ───────────────────────────────────────────────────── */

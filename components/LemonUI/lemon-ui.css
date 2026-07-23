@@ -29,33 +29,33 @@
   --primary-3000-active: #1e40af;
   --primary-highlight: rgba(30, 58, 138, 0.10);
 
-  --color-accent-3000: #f1f5f9;
-  --color-bg-3000: #f3f4f6;
+  --color-accent-3000: #fafaf9;
+  --color-bg-3000: #f5f5f4;
 
-  --border-3000: #e2e8f0;
-  --border-bold-3000: #cbd5e1;
-  --glass-bg-3000: rgba(255, 255, 255, 0.90);
-  --glass-border-3000: rgba(226, 232, 240, 0.4);
+  --border-3000: #e7e7e4;
+  --border-bold-3000: #d6d3d1;
+  --glass-bg-3000: rgba(245, 245, 244, 0.90);
+  --glass-border-3000: rgba(231, 231, 228, 0.4);
 
   --link-3000: #1d4ed8;
 
   /* --- Button tokens (light) --- */
-  --primary-3000-frame-bg: #1e3a8a;
+  --primary-3000-frame-bg: #d6d3d1;
   --primary-3000-button-bg: #ffffff;
   --primary-3000-button-border: #1e40af;
   --primary-3000-button-border-hover: #1e3a8a;
 
-  --secondary-3000-frame-bg: #cbd5e1;
+  --secondary-3000-frame-bg: #d6d3d1;
   --secondary-3000-button-bg: #ffffff;
-  --secondary-3000-button-border: #e2e8f0;
-  --secondary-3000-button-border-hover: #cbd5e1;
+  --secondary-3000-button-border: #e7e7e4;
+  --secondary-3000-button-border-hover: #d6d3d1;
 
   --danger-3000-frame-bg: rgba(239, 68, 68, 0.5);
   --danger-3000-button-border: #ef4444;
   --danger-3000-button-border-hover: #dc2626;
 
   /* --- Shadow --- */
-  --shadow-elevation-3000: 0 3px 0 #e2e8f0;
+  --shadow-elevation-3000: 0 3px 0 #e7e7e4;
 
   /* --- Semantic background --- */
   --color-bg-surface-primary: #ffffff;
@@ -64,8 +64,8 @@
   --color-bg-fill-button-tertiary-active: rgba(0, 0, 0, 0.10);
 
   /* --- Border --- */
-  --color-border-primary: #e2e8f0;
-  --color-border-secondary: #cbd5e1;
+  --color-border-primary: #e7e7e4;
+  --color-border-secondary: #d6d3d1;
 
   /* --- Danger highlight --- */
   --danger-highlight: rgba(239, 68, 68, 0.10);
@@ -77,16 +77,16 @@
   --color-white: #fff;
 
   /* --- Text color for links/tabs --- */
-  --lemon-link-color: #f54e01;
-  --lemon-link-color-hover: #d44301;
+  --lemon-link-color: #1d4ed8;
+  --lemon-link-color-hover: #1e3a8a;
 
   /* --- Tag colors --- */
-  --lemon-tag-default-bg: #f1f5f9;
-  --lemon-tag-default-border: #e2e8f0;
+  --lemon-tag-default-bg: #fafaf9;
+  --lemon-tag-default-border: #e7e7e4;
   --lemon-tag-default-text: #111;
-  --lemon-tag-primary-bg: rgba(245, 78, 1, 0.10);
-  --lemon-tag-primary-border: rgba(245, 78, 1, 0.25);
-  --lemon-tag-primary-text: #f54e01;
+  --lemon-tag-primary-bg: rgba(30, 58, 138, 0.10);
+  --lemon-tag-primary-border: rgba(30, 58, 138, 0.25);
+  --lemon-tag-primary-text: #1e3a8a;
   --lemon-tag-success-bg: rgba(16, 185, 129, 0.10);
   --lemon-tag-success-border: rgba(16, 185, 129, 0.30);
   --lemon-tag-success-text: #059669;
@@ -114,26 +114,26 @@
   --primary-3000-active: #8e5b03;
   --primary-highlight: rgba(241, 168, 44, 0.12);
 
-  --color-accent-3000: #1d1f27;
-  --color-bg-3000: #1d1f27;
+  --color-accent-3000: #121214;
+  --color-bg-3000: #121214;
 
-  --border-3000: #35373e;
-  --border-bold-3000: #3f4046;
-  --glass-bg-3000: rgba(36, 38, 42, 0.6);
-  --glass-border-3000: #35373e;
+  --border-3000: #27272a;
+  --border-bold-3000: #3f3f46;
+  --glass-bg-3000: rgba(18, 18, 20, 0.6);
+  --glass-border-3000: #27272a;
 
   --link-3000: #f1a82c;
 
   /* --- Button tokens (dark) --- */
-  --primary-3000-frame-bg: #1d1f27;
+  --primary-3000-frame-bg: #27272a;
   --primary-3000-button-bg: #f1a82c;
   --primary-3000-button-border: #b17816;
   --primary-3000-button-border-hover: #8e5b03;
 
-  --secondary-3000-frame-bg: #1d1f27;
-  --secondary-3000-button-bg: #232429;
-  --secondary-3000-button-border: #35373e;
-  --secondary-3000-button-border-hover: #3f4046;
+  --secondary-3000-frame-bg: #27272a;
+  --secondary-3000-button-bg: #1c1c1e;
+  --secondary-3000-button-border: #27272a;
+  --secondary-3000-button-border-hover: #3f3f46;
 
   --danger-3000-frame-bg: rgba(239, 68, 68, 0.5);
   --danger-3000-button-border: #ef4444;
@@ -209,7 +209,7 @@
   flex-shrink: 0;
   align-items: center;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-sans);
   appearance: none;
   cursor: pointer;
   user-select: none;
@@ -488,8 +488,8 @@
 }
 
 .LemonTabs__tab.LemonTabs__tab--active {
-  color: var(--primary-3000, #f54e01);
-  border-bottom-color: var(--primary-3000, #f54e01);
+  color: var(--primary-3000, #1d4ed8);
+  border-bottom-color: var(--primary-3000, #1d4ed8);
 }
 
 .dark .LemonTabs__bar {
@@ -592,7 +592,7 @@
   margin: 1em 0;
   color: var(--color-text-secondary-3000, rgba(17, 17, 17, 0.7));
   background-color: var(--color-accent-3000, #f1f5f9);
-  border-left: 3px solid var(--primary-3000, #f54e01);
+  border-left: 3px solid var(--primary-3000, #1d4ed8);
   border-radius: 0 var(--lemon-radius, 4px) var(--lemon-radius, 4px) 0;
 }
 
@@ -603,12 +603,12 @@
   border: 1px solid var(--border-3000, #e2e8f0);
   border-radius: var(--lemon-radius, 4px);
   overflow-x: auto;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.8125rem;
 }
 
 .LemonMarkdown code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.85em;
   padding: 0.15em 0.35em;
   background-color: var(--color-accent-3000, #f1f5f9);
@@ -734,7 +734,7 @@
 
 .LemonInput:focus-within,
 .LemonInput.LemonInput--focused {
-  border-color: var(--primary-3000, #f54e01);
+  border-color: var(--primary-3000, #1d4ed8);
   box-shadow: 0 0 0 2px var(--primary-highlight, rgba(245, 78, 1, 0.15));
 }
 
@@ -888,11 +888,11 @@ select.LemonSelect {
   width: 2rem;
   height: 2rem;
   border-radius: var(--lemon-radius, 4px);
-  background-color: var(--primary-3000, #f54e01);
+  background-color: var(--primary-3000, #1d4ed8);
   color: #fff;
   font-weight: 700;
   font-size: 0.875rem;
-  font-family: -apple-system, BlinkMacSystemFont, "Inter", Roboto, sans-serif;
+  font-family: var(--font-sans);
   flex-shrink: 0;
   user-select: none;
 }
@@ -948,8 +948,8 @@ select.LemonSelect {
 }
 
 .LemonTabs__tab--active {
-  color: var(--primary-3000, #f54e01) !important;
-  border-bottom-color: var(--primary-3000, #f54e01) !important;
+  color: var(--primary-3000, #1d4ed8) !important;
+  border-bottom-color: var(--primary-3000, #1d4ed8) !important;
 }
 
 .dark .LemonTabs__tab {
@@ -974,7 +974,7 @@ select.LemonSelect {
 }
 
 .LemonSwitch--checked {
-  background-color: var(--primary-3000, #f54e01);
+  background-color: var(--primary-3000, #1d4ed8);
 }
 
 .LemonSwitch__handle {

@@ -166,6 +166,54 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
     const [localPos, setLocalPos] = useState(item.position)
     const isCompositorActive = animating || dragging || leftDragResizing || closing
 
+    const [isScrolled, setIsScrolled] = useState(false)
+    const [isScrolledToBottom, setIsScrolledToBottom] = useState(false)
+    const contentContainerRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        const container = contentContainerRef.current
+        if (!container) return
+
+        let currentScrollEl: Element | null = null
+
+        const handleScroll = (e: Event) => {
+            const target = e.target as HTMLElement
+            if (!target) return
+            const scrollTop = target.scrollTop || 0
+            const scrollHeight = target.scrollHeight || 0
+            const clientHeight = target.clientHeight || 0
+
+            setIsScrolled(scrollTop > 5)
+            setIsScrolledToBottom(scrollHeight > clientHeight && scrollTop + clientHeight >= scrollHeight - 15)
+        }
+
+        const attachScrollListener = () => {
+            const scrollEl = container.querySelector('.overflow-y-auto, .overflow-auto, [data-scrollable="true"]') || container
+            if (scrollEl && scrollEl !== currentScrollEl) {
+                if (currentScrollEl) {
+                    currentScrollEl.removeEventListener('scroll', handleScroll)
+                }
+                currentScrollEl = scrollEl
+                scrollEl.addEventListener('scroll', handleScroll, { passive: true })
+                handleScroll({ target: scrollEl } as unknown as Event)
+            }
+        }
+
+        attachScrollListener()
+
+        const observer = new MutationObserver(() => {
+            attachScrollListener()
+        })
+        observer.observe(container, { childList: true, subtree: true })
+
+        return () => {
+            if (currentScrollEl) {
+                currentScrollEl.removeEventListener('scroll', handleScroll)
+            }
+            observer.disconnect()
+        }
+    }, [item.key, rendered])
+
     useEffect(() => {
         if (windowRef.current) {
             updateWindowRef(item.key, windowRef)
@@ -243,17 +291,23 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
         const maxWidth = bounds.width - inset * 2
         const maxHeight = bounds.height - inset * 2
 
-        const isMaximized =
-            size.width >= maxWidth - 5 &&
-            size.height >= maxHeight - 5 &&
-            Math.abs(position.x - inset) <= 5 &&
-            Math.abs(position.y - inset) <= 5
-
-        const newSize = isMaximized ? sizeConstraints.min : { width: maxWidth, height: maxHeight }
-        updateWindow(item, {
-            size: newSize,
-            position: isMaximized ? getDesktopCenterPosition(newSize) : { x: inset, y: inset },
-        })
+        if (isMaximized) {
+            // Restore to previous size & position
+            const prevSize = item.previousSize || { width: Math.min(840, maxWidth * 0.8), height: Math.min(580, maxHeight * 0.8) }
+            const prevPos = item.previousPosition || { x: (maxWidth - prevSize.width) / 2, y: (maxHeight - prevSize.height) / 2 }
+            updateWindow(item, {
+                size: prevSize,
+                position: prevPos,
+            })
+        } else {
+            // Save previous size & position, then Maximize
+            updateWindow(item, {
+                previousSize: item.size,
+                previousPosition: item.position,
+                size: { width: maxWidth, height: maxHeight },
+                position: { x: inset, y: inset },
+            })
+        }
     }
 
     const collapseWindow = () => {
@@ -480,7 +534,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             data-app="AppWindow"
                             data-scheme="tertiary"
                             className={`group @container absolute !select-auto flex flex-col ${getWindowSurfaceBg(siteSettings.heaterMode)} ${getSurfaceMotionLayer(siteSettings.heaterMode, isCompositorActive)} ${isMaximized ? 'shadow-none' : (isFocused ? 'premium-shadow-active border-black/5 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/10' : 'premium-shadow-inactive border-black/10 dark:border-white/10')
-                                } ${dragging ? '[&_*]:select-none' : ''} ${item.minimal ? '!shadow-none' : (isMaximized ? 'rounded-t-none rounded-b-lg border border-t-0 border-black/10 dark:border-white/10' : 'border rounded-lg border-black/10 dark:border-white/10')} ${chrome ? 'overflow-hidden' : ''} transition-[border-radius,box-shadow,border-color,background-color] duration-[400ms] ease-[cubic-bezier(0.25,1,0.5,1)]`}
+                                } ${dragging ? '[&_*]:select-none' : ''} ${item.minimal ? '!shadow-none' : (isMaximized ? 'rounded-t-none rounded-b-lg border border-black/10 dark:border-white/10 border-t-[1px] border-t-black dark:border-t-white/80' : 'border rounded-lg border-black/10 dark:border-white/10')} ${chrome ? 'overflow-hidden' : ''} transition-[border-radius,box-shadow,border-color,background-color] duration-[400ms] ease-[cubic-bezier(0.25,1,0.5,1)]`}
                             style={{
                                 pointerEvents: 'auto',
                                 rotateX: isActiveWindowsPanelOpen ? 0 : tiltX,
@@ -560,11 +614,22 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             onAnimationStart={onAnimationStart}
                             onAnimationComplete={onAnimationComplete}
                         >
+                            {/* Dynamic Atmospheric Header Gradient Overlay */}
+                            {chrome && (
+                                <div
+                                    className={`pointer-events-none absolute top-0 left-0 right-0 h-10 bg-gradient-to-b from-white via-white/90 to-transparent dark:from-[#121214] dark:via-[#121214]/90 dark:to-transparent z-20 transition-all duration-300 ${
+                                        isScrolled
+                                            ? 'opacity-100'
+                                            : 'opacity-70'
+                                    }`}
+                                />
+                            )}
+
                             {chrome && (
                                 <div
                                     data-scheme="tertiary"
                                     onDoubleClick={handleDoubleClick}
-                                    className={`flex-shrink-0 w-full flex @md:grid grid-cols-[minmax(100px,auto)_1fr_minmax(100px,auto)] gap-1 items-center py-0.5 pl-1.5 pr-0.5 bg-transparent ${siteSettings.experience === 'boring' ? '' : 'cursor-move'}`}
+                                    className={`absolute top-0.5 left-1 right-1 z-30 pointer-events-none [&_*]:pointer-events-auto flex @md:grid grid-cols-[minmax(100px,auto)_1fr_minmax(100px,auto)] gap-0.5 items-center py-0 pl-1 pr-0.5 min-h-[24px] bg-transparent border-0 opacity-70 hover:opacity-100 transition-opacity duration-200 ${siteSettings.experience === 'boring' ? '' : 'cursor-move'}`}
                                     onPointerDown={(e) => controls.start(e)}
                                 >
                                     <MenuBar
@@ -754,14 +819,14 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                  }}
                             />
 
-                            <div className={`w-full flex-1 flex flex-col bg-transparent min-h-0 relative ${isMaximized ? 'px-0 pb-0' : 'px-1.5 has-[+div:empty]:pb-1.5'} transition-[padding] duration-[400ms] ease-[cubic-bezier(0.25,1,0.5,1)]`}>
-                                <div className={`w-full h-full flex-1 overflow-hidden relative shadow-[0_0_0_1px_rgba(0,0,0,0.05)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.05)] bg-transparent ${isMaximized ? 'border-0 rounded-t-none rounded-b-lg' : 'border border-black/10 dark:border-white/10 rounded-lg'} transition-[border-radius,border-width,border-color] duration-[400ms] ease-[cubic-bezier(0.25,1,0.5,1)]`}>
+                            <div ref={contentContainerRef} className="w-full flex-1 flex flex-col bg-transparent min-h-0 relative px-0 pb-0 pt-0">
+                                <div className="w-full h-full flex-1 overflow-hidden relative bg-transparent border-0 rounded-none">
                                     {(!animating || rendered) && (
                                         item.key === 'home' ? <HomeControl /> : <WindowRouter item={item} />
                                     )}
                                 </div>
                             </div>
-                            <div id={`window-footer-${item.key}`} className="w-full bg-transparent flex-shrink-0 pb-0.5" />
+                            <div id={`window-footer-${item.key}`} className="absolute bottom-1.5 left-2 right-2 z-30 pointer-events-none [&_*]:pointer-events-auto bg-transparent border-0 flex items-center justify-between" />
 
                             {!item.fixedSize && !item.minimal && (
                                 <>

@@ -39,52 +39,51 @@ export default function Marginalia() {
         : MOCK_NOTES
 
     return (
-        <div className="flex flex-col h-full bg-white dark:bg-[#1a1a1a] text-black dark:text-white">
-            {/* Header / Toolbar */}
-            <div className="flex items-center gap-2 p-2 border-b border-black/10 dark:border-white/10 shrink-0 bg-black/5 dark:bg-white/5">
-                <IconBookmark className="size-4 opacity-70 ml-2" />
-                <span className="font-semibold text-sm">Marginalia Archive</span>
-                <div className="ml-auto flex items-center gap-2">
+        <div className="h-full overflow-y-auto custom-scrollbar bg-white dark:bg-[#121214] text-primary">
+            <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
+                {/* Header / Toolbar */}
+                <div className="flex items-center justify-between mb-6 pb-2 border-b border-black/5 dark:border-white/5">
+                    <div className="flex items-center gap-3">
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary/50">
+                            MARGINALIA ARCHIVE ({filteredNotes.length})
+                        </span>
+                    </div>
                     <input
                         type="text"
                         placeholder="Search notes or tags..."
                         value={filter}
                         onChange={(e) => setFilter(e.target.value)}
-                        className="text-xs px-2 py-1 border border-black/20 dark:border-white/20 rounded-sm bg-white dark:bg-black/50 focus:outline-none w-48"
+                        className="text-xs px-3 py-1.5 border border-black/10 dark:border-white/10 rounded-full bg-black/5 dark:bg-white/5 focus:outline-none w-48 text-primary placeholder:text-secondary/50"
                     />
                 </div>
-            </div>
 
-            {/* Content */}
-            <ScrollArea className="flex-1 p-4">
-                <div className="max-w-3xl mx-auto space-y-6 pb-8">
-                    <p className="text-sm opacity-60 italic mb-6">
-                        &quot;Your marginalia—the thoughts you scribble in the margins of the world—define your intellectual topography.&quot;
-                    </p>
-
+                <div className="space-y-4">
                     {filteredNotes.length === 0 ? (
-                        <div className="text-center py-10 opacity-50 text-sm">
+                        <div className="text-center py-12 text-xs text-secondary">
                             No notes found matching your filter.
                         </div>
                     ) : (
                         filteredNotes.map((note) => (
-                            <div key={note.id} className="group relative border border-black/10 dark:border-white/10 rounded-sm p-4 hover:border-black/30 dark:hover:border-white/30 transition-colors bg-white dark:bg-[#1a1a1a]">
-                                <div className="absolute -left-2 top-4 bottom-4 w-[2px] bg-primary/30 group-hover:bg-primary transition-colors" />
-
+                            <div
+                                key={note.id}
+                                className="group bg-white/60 dark:bg-[#121214]/60 backdrop-blur-xl border border-black/5 dark:border-white/5 rounded-[24px] shadow-sm p-5 md:p-6 transition-all"
+                            >
                                 <div className="flex justify-between items-start mb-2">
                                     <a
                                         href={note.articleUrl}
-                                        className="text-xs font-semibold flex items-center gap-1.5 hover:text-primary transition-colors"
+                                        className="text-xs font-bold text-primary flex items-center gap-1.5 hover:underline"
                                     >
-                                        <IconDocument className="size-3" />
+                                        <IconDocument className="size-4 opacity-70" />
                                         {note.articleTitle}
                                         <IconExternal className="size-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                                     </a>
-                                    <span className="text-[10px] opacity-50 font-mono">{note.date}</span>
+                                    <span className="text-[10px] font-mono text-secondary px-2 py-0.5 bg-black/5 dark:bg-white/5 rounded-full">
+                                        {note.date}
+                                    </span>
                                 </div>
 
-                                <p className="text-sm leading-relaxed text-black/80 dark:text-white/80 font-serif italic">
-                                    {note.note}
+                                <p className="text-xs md:text-sm leading-relaxed text-secondary/90 italic my-3">
+                                    &ldquo;{note.note}&rdquo;
                                 </p>
 
                                 <div className="mt-3 flex gap-2">
@@ -92,7 +91,7 @@ export default function Marginalia() {
                                         <button
                                             key={tag}
                                             onClick={() => setFilter(tag)}
-                                            className="text-[10px] px-1.5 py-0.5 bg-black/5 dark:bg-white/5 rounded-sm hover:bg-black/10 dark:hover:bg-white/10 transition-colors opacity-70"
+                                            className="text-[10px] font-mono px-2 py-0.5 bg-black/5 dark:bg-white/5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-secondary hover:text-primary"
                                         >
                                             #{tag}
                                         </button>
@@ -102,7 +101,7 @@ export default function Marginalia() {
                         ))
                     )}
                 </div>
-            </ScrollArea>
+            </div>
         </div>
     )
 }
