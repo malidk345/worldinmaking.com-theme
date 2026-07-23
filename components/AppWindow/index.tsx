@@ -533,8 +533,8 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             ref={windowRef}
                             data-app="AppWindow"
                             data-scheme="tertiary"
-                            className={`group @container absolute !select-auto flex flex-col ${getWindowSurfaceBg(siteSettings.heaterMode)} ${getSurfaceMotionLayer(siteSettings.heaterMode, isCompositorActive)} ${isMaximized ? 'shadow-none' : (isFocused ? 'premium-shadow-active border-black/5 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/10' : 'premium-shadow-inactive border-black/10 dark:border-white/10')
-                                } ${dragging ? '[&_*]:select-none' : ''} ${item.minimal ? '!shadow-none' : (isMaximized ? 'rounded-t-none rounded-b-lg border border-black/10 dark:border-white/10 border-t-[1px] border-t-black dark:border-t-white/80' : 'border rounded-lg border-black/10 dark:border-white/10')} ${chrome ? 'overflow-hidden' : ''} transition-[border-radius,box-shadow,border-color,background-color] duration-[400ms] ease-[cubic-bezier(0.25,1,0.5,1)]`}
+                            className={`group @container absolute !select-auto flex flex-col ${getWindowSurfaceBg(siteSettings.heaterMode)} ${getSurfaceMotionLayer(siteSettings.heaterMode, isCompositorActive)} ${isMaximized ? 'shadow-none' : (isFocused ? 'premium-shadow-active ring-1 ring-black/5 dark:ring-white/10' : 'premium-shadow-inactive')
+                                } ${dragging ? '[&_*]:select-none' : ''} ${item.minimal ? '!shadow-none' : (isMaximized ? 'rounded-none border-b border-[var(--border-3000)]' : 'border rounded-xl border-[var(--border-3000)]')} ${chrome ? 'overflow-hidden' : ''} transition-[border-radius,box-shadow,border-color,background-color] duration-[400ms] ease-[cubic-bezier(0.25,1,0.5,1)]`}
                             style={{
                                 pointerEvents: 'auto',
                                 rotateX: isActiveWindowsPanelOpen ? 0 : tiltX,

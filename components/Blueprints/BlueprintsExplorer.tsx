@@ -62,9 +62,7 @@ export default function BlueprintsExplorer() {
             <div className="max-w-5xl w-full mx-auto flex flex-col h-full">
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                    className="flex flex-col flex-1 overflow-hidden bg-[var(--glass-bg-3000)] border border-[var(--border-3000)] rounded-[var(--radius-lg)] shadow-[var(--shadow-elevation-3000)] backdrop-blur-md"
+                    className="flex flex-col flex-1 overflow-hidden bg-[var(--color-bg-surface-primary)] border border-[var(--border-3000)] rounded-lg shadow-sm"
                 >
                     {/* 1. Header Toolbar */}
                     <div className="flex items-center justify-between px-4 py-2 border-b border-[var(--border-3000)] shrink-0">

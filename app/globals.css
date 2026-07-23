@@ -169,9 +169,9 @@
   --color-text-warning: var(--color-yellow-700);
   --color-text-error: var(--color-red-600);
 
-  /* Border tokens — Near-Black Container Lines */
-  --color-border-primary: rgba(0, 0, 0, 0.7);
-  --color-border-secondary: rgba(0, 0, 0, 0.85);
+  /* Border tokens — Cohesive PostHog 3000 Container Lines */
+  --color-border-primary: rgba(0, 0, 0, 0.12);
+  --color-border-secondary: rgba(0, 0, 0, 0.18);
   --color-border-info: var(--color-blue-400);
   --color-border-warning: var(--color-yellow-400);
   --color-border-error: var(--color-red-400);
@@ -182,7 +182,7 @@
   --radius-lg: 0.625rem;
   --opacity-disabled: 0.65;
 
-  /* Legacy / Deprecated Color Mappings (Navy Blue Theme + Near-Black Container Borders) */
+  /* Legacy / Deprecated Color Mappings (Navy Blue Theme + Cohesive Container Borders) */
   --text-3000-light: #111;
   --color-text-secondary-3000-light: rgba(17, 17, 17, 0.7);
   --muted-3000-light: rgba(17, 17, 17, 0.6);
@@ -195,10 +195,10 @@
   --secondary-3000-hover-light: rgba(0, 0, 0, 0.07);
   --color-accent-3000-light: #fafaf9;
   --color-bg-3000-light: #f5f5f4;
-  --border-3000-light: rgba(0, 0, 0, 0.75);
-  --border-bold-3000-light: rgba(0, 0, 0, 0.9);
+  --border-3000-light: rgba(0, 0, 0, 0.12);
+  --border-bold-3000-light: rgba(0, 0, 0, 0.25);
   --glass-bg-3000-light: rgba(245, 245, 244, 0.85);
-  --glass-border-3000-light: rgba(0, 0, 0, 0.75);
+  --glass-border-3000-light: rgba(0, 0, 0, 0.12);
   --link-3000-light: #1d4ed8;
   --primary-3000-frame-bg-light: #d6d3d1;
   --primary-3000-button-bg-light: #fff;

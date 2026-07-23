@@ -2,23 +2,23 @@
 // heaterMode = true  → frosted glass (default, backdrop-blur enabled)
 // heaterMode = false → solid opaque bg, no blur (Reduce transparency mode)
 
-/** Solid window bg — no blur (matches Community Forum list inner bg) */
-export const WINDOW_BG = 'bg-white dark:bg-[#121214] transform-gpu'
+/** Solid window bg — no blur */
+export const WINDOW_BG = 'bg-[var(--color-bg-surface-primary)] dark:bg-[var(--color-bg-3000-dark)] transform-gpu'
 
 /** Frosted glass window bg — default when heaterMode is on */
 export const HEATER_WINDOW_BG =
-    'bg-white/60 dark:bg-[#121214]/60 backdrop-blur-xl transform-gpu'
+    'bg-[var(--color-bg-surface-primary)]/80 dark:bg-[var(--color-bg-3000-dark)]/75 backdrop-blur-xl backdrop-saturate-150 transform-gpu'
 
 /** Panel bg (sidebars, overlays) — solid */
-export const PANEL_BG = 'bg-white dark:bg-[#121214] transform-gpu'
+export const PANEL_BG = 'bg-[var(--color-bg-surface-primary)] dark:bg-[var(--color-bg-3000-dark)] transform-gpu'
 
 /** Frosted panel bg — default when heaterMode is on */
 export const HEATER_PANEL_BG =
-    'bg-white/60 dark:bg-[#121214]/60 backdrop-blur-xl transform-gpu'
+    'bg-[var(--color-bg-surface-primary)]/80 dark:bg-[var(--color-bg-3000-dark)]/75 backdrop-blur-xl backdrop-saturate-150 transform-gpu'
 
-/** Taskbar — always has a subtle blur regardless of heaterMode */
+/** Taskbar — subtle frosted glass matching PostHog 3000 theme */
 export const TASKBAR_BG =
-    'bg-white/70 dark:bg-[#121214]/60 backdrop-blur-2xl backdrop-saturate-150 transform-gpu'
+    'bg-[var(--color-bg-surface-primary)]/90 dark:bg-[var(--color-bg-3000-dark)]/85 backdrop-blur-xl backdrop-saturate-150 transform-gpu'
 
 /** GPU layer hint for surfaces in motion */
 export const MOTION_LAYER = 'will-change-transform'
