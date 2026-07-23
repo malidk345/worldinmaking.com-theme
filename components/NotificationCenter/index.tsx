@@ -123,7 +123,7 @@ export default function NotificationCenter() {
 
     return (
         <div className="relative">
-            <OSButton
+            <OSButton aria-label="Toggle notifications" title="Notifications"
                 onClick={toggleOpen}
                 size="sm"
                 className={`!px-1 group/notif relative translate-y-[2px] transition-all ${isOpen ? 'bg-primary/5 dark:bg-white/10' : ''}`}
@@ -154,7 +154,7 @@ export default function NotificationCenter() {
                                     <div className="size-1.5 rounded-full bg-[var(--primary-3000)] animate-pulse" />
                                     <h3 className="font-bold text-[10px] tracking-widest opacity-50 uppercase">activity</h3>
                                 </div>
-                                <button 
+                                <button aria-label="Close notifications" title="Close notifications"
                                     onClick={() => setIsOpen(false)}
                                     className="p-1 hover:bg-[var(--color-bg-fill-button-tertiary-hover)] rounded transition-colors text-primary"
                                 >
