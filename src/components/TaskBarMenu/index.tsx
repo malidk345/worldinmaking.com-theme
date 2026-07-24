@@ -322,58 +322,8 @@ function TaskBarMenu() {
                         }}
                     />
                     <div className="mx-auto transition-all duration-300 flex justify-between items-center w-full max-w-full">
-                        <div className="flex items-center pl-2">
-                            <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                                <Logo className="h-5 w-auto" />
-                            </a>
-                        </div>
+                        <div className="flex items-center pl-2" />
                         <aside data-scheme="secondary" className="flex items-center gap-0.5 py-1">
-                            {/* <MenuBar
-                        menus={[
-                            {
-                                trigger: <span className="text-red font-semibold">Get started - free</span>,
-                                items: [
-                                    {
-                                        type: 'item',
-                                        label: 'Sign up',
-                                        link: '/start',
-                                        external: true,
-                                    },
-                                    {
-                                        type: 'item',
-                                        label: 'Install with AI',
-                                    },
-                                    {
-                                        type: 'item',
-                                        label: 'Talk to a human',
-                                    },
-                                    {
-                                        type: 'separator',
-                                    },
-                                    {
-                                        type: 'item',
-                                        label: 'Login',
-                                    },
-                                ],
-                            },
-                        ]}
-                        className="[&_button]:px-2"
-                    /> */}
-                            <div className="relative mr-1">
-                                <OSButton
-                                    variant="primary"
-                                    size="md"
-                                    asLink
-                                    to={
-                                        posthogInstance
-                                            ? posthogInstance.replace(/"/g, '')
-                                            : 'https://app.posthog.com/signup'
-                                    }
-                                    className=""
-                                >
-                                    {posthogInstance ? 'Open PostHog' : 'Get started – free'}
-                                </OSButton>
-                            </div>
                             <Tooltip
                                 trigger={
                                     <OSButton onClick={() => openSearch()} size="sm" className="relative top-px">
