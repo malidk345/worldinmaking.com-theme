@@ -61,6 +61,19 @@ export default function Tooltip({
         }
     }, [other.open])
 
+    const childRef = (children as any)?.ref
+    const handleRef = useCallback(
+        (node: any) => {
+            setRef(node)
+            if (typeof childRef === 'function') {
+                childRef(node)
+            } else if (childRef && typeof childRef === 'object') {
+                childRef.current = node
+            }
+        },
+        [childRef, setRef]
+    )
+
     return (
         <span
             onMouseEnter={() => !controlled && setOpen(true)}
@@ -73,7 +86,7 @@ export default function Tooltip({
             }}
         >
             {React.cloneElement(children, {
-                ref: setRef,
+                ref: handleRef,
             })}
             {open &&
                 createPortal(

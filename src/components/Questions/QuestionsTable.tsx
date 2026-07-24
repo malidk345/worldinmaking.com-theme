@@ -132,7 +132,7 @@ const Row = ({
     const featuredImage = topics.data?.[0]?.attributes.label.startsWith('#') && extractFirstImageURL(body)
 
     return profile ? (
-        <div ref={fetchMore ? ref : null} key={question.id} className="py-2.5">
+        <div ref={fetchMore ? ref : undefined} key={question.id} className="py-2.5">
             <Link
                 state={currentPage && { previous: currentPage }}
                 to={`/questions/${permalink}`}
