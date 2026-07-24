@@ -240,7 +240,7 @@ export function SidePanelNotebooksApp({ onBack }: SidePanelNotebooksAppProps): J
                       key={nb.id}
                       size="small"
                       type="tertiary"
-                      sideIcon={<ProfilePicture name={nb.user} email="paul@posthog.com" size="xs" />}
+                      sideIcon={<ProfilePicture name={nb.user} email="paul@posthog.com" size="xsmall" />}
                       fullWidth
                       onClick={() => {
                         setSelectedNotebookTitle(nb.title)
