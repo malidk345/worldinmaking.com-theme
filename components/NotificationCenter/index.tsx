@@ -126,6 +126,7 @@ export default function NotificationCenter() {
             <OSButton
                 onClick={toggleOpen}
                 size="sm"
+                aria-label="Toggle notifications"
                 className={`!px-1 group/notif relative translate-y-[2px] transition-all ${isOpen ? 'bg-primary/5 dark:bg-white/10' : ''}`}
             >
                 <div className="relative px-1 h-5 flex items-center justify-center">
