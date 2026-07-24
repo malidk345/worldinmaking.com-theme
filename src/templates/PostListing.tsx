@@ -72,17 +72,17 @@ export const FeaturedImage = ({ url }: { url: string }) => {
     )
 }
 
-export default function Posts({ pageContext }) {
+export default function Posts({ pageContext = {} }: { pageContext?: any }) {
     const [loginModalOpen, setLoginModalOpen] = useState(false)
-    const { allPostCategory } = {}
+    const { allPostCategory } = {} as any
     const articleRef = useRef<HTMLDivElement>(null)
     const [authors, setAuthors] = useState<any[]>([])
-    const [selectedTag, setSelectedTag] = useState(pageContext.selectedTag)
-    const [root, setRoot] = useState(pageContext.root || null)
+    const [selectedTag, setSelectedTag] = useState(pageContext?.selectedTag)
+    const [root, setRoot] = useState(pageContext?.root || null)
     const [selectedAuthor, setSelectedAuthor] = useState()
-    const [sort, setSort] = useState(getSortOption(pageContext.root).label)
+    const [sort, setSort] = useState(getSortOption(pageContext?.root).label)
     const [params, setParams] = useState(
-        getParams(pageContext.root, pageContext.selectedTag, getSortOption(pageContext.root).sort, selectedAuthor)
+        getParams(pageContext?.root, pageContext?.selectedTag, getSortOption(pageContext?.root).sort, selectedAuthor)
     )
     const allTags = useMemo(
         () =>
