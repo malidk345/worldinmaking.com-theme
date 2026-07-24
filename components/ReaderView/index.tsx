@@ -400,27 +400,21 @@ const ReaderViewContent = React.memo(({
                                 </h1>
                             )}
 
-                            {/* LemonUI Metadata & Action Card */}
-                            <LemonCard hoverEffect={false} className="mb-6 p-4 md:p-5 flex flex-col gap-4">
-                                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/10 dark:border-white/10 pb-3">
-                                    <div className="flex items-center gap-2.5">
+                            {/* Community-style Author Meta Row (matches ForumQuestionCard) */}
+                            <div className="flex items-center gap-2 w-full mb-6">
+                                {/* Left: Avatar + Author + Date */}
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    {body.contributors && body.contributors[0] && (
+                                        <ForumAvatar
+                                            className="size-8 rounded-full border border-black/10 dark:border-white/10 shrink-0"
+                                            image={body.contributors[0].image}
+                                        />
+                                    )}
+                                    <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                                         {body.contributors && body.contributors[0] && (
-                                            <div className="flex items-center gap-2">
-                                                <ForumAvatar
-                                                    className="size-8 rounded-full border border-black/10 dark:border-white/10"
-                                                    image={body.contributors[0].image}
-                                                />
-                                                <div className="flex flex-col">
-                                                    <span className="text-xs font-bold text-primary leading-none">
-                                                        {body.contributors[0].name}
-                                                    </span>
-                                                    {body.contributors[0].username && (
-                                                        <span className="text-[11px] text-secondary/70 mt-0.5">
-                                                            @{body.contributors[0].username}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </div>
+                                            <strong className="text-primary font-bold text-sm leading-none">
+                                                {body.contributors[0].name}
+                                            </strong>
                                         )}
                                         {body.date && (
                                             <span className="text-xs text-secondary/60">
@@ -433,24 +427,22 @@ const ReaderViewContent = React.memo(({
                                             </span>
                                         )}
                                     </div>
+                                </div>
 
-                                    {/* PostHog LemonTag Badges */}
+                                {/* Right: Tags + Vote/Share Actions */}
+                                <div className="flex items-center gap-2 shrink-0">
                                     {body.tags && body.tags.length > 0 && (
-                                        <div className="flex flex-wrap items-center gap-1.5">
-                                            {body.tags.map((tag, i) => (
+                                        <div className="hidden sm:flex items-center gap-1">
+                                            {body.tags.slice(0, 3).map((tag, i) => (
                                                 <LemonTag key={i} type="option" className="!text-[10px] uppercase tracking-wider font-semibold">
                                                     {tag.label}
                                                 </LemonTag>
                                             ))}
                                         </div>
                                     )}
-                                </div>
-
-                                {/* Article Actions Toolbar */}
-                                <div className="-mb-2">
                                     <ArticleActions slug={commentThreadSlug || bookmarkMeta?.slug} views={body.views} />
                                 </div>
-                            </LemonCard>
+                            </div>
 
                             {/* Featured Image */}
                             {body.featuredImage && (
