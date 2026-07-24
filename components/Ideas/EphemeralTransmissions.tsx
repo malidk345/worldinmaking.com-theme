@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { IconClock, IconSend, IconTerminal } from '@posthog/icons';
 import ScrollArea from 'components/RadixUI/ScrollArea'
-import OSButton from 'components/OSButton'
+import { LemonButton } from 'components/LemonUI'
 
 interface Transmission {
     id: string
@@ -123,14 +123,14 @@ export default function EphemeralTransmissions() {
                         className="flex-1 bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-[16px] px-4 py-2.5 outline-none resize-none text-xs text-primary placeholder:text-secondary/50"
                         rows={1}
                     />
-                    <OSButton
-                        variant="primary"
+                    <LemonButton
+                        type="primary"
                         onClick={handleSend}
                         className="h-10 px-4 rounded-[16px] flex items-center gap-1.5"
                     >
                         <IconSend className="size-4" />
                         <span>Send</span>
-                    </OSButton>
+                    </LemonButton>
                 </div>
             </div>
         </div>

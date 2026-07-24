@@ -20,7 +20,7 @@ import { useToast } from '../../context/ToastContext'
 import { useTranslation } from 'hooks/useTranslation'
 import { supabase } from '../../lib/supabase'
 import { IconBrain, IconBrowser, IconCalendar, IconCheckCircle, IconDatabase, IconDocument, IconLightBulb, IconPencil, IconRocket, IconShare, IconSparkles, IconWrench } from '@posthog/icons';
-import OSButton from 'components/OSButton'
+import { LemonButton } from 'components/LemonUI'
 import WritePostPage from 'app/write-post/page'
 
 import { sanitizeHtml } from '../../utils/security'
@@ -511,12 +511,12 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                             <span>{statusConfig[nodeStatus].label} node</span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <OSButton size="sm" onClick={() => navigator.clipboard.writeText(window.location.href).then(() => addToast('node link copied', 'success')).catch(() => addToast('failed to copy node link', 'error'))}>
+                            <LemonButton size="small" onClick={() => navigator.clipboard.writeText(window.location.href).then(() => addToast('node link copied', 'success')).catch(() => addToast('failed to copy node link', 'error'))}>
                                 <div className="flex items-center gap-1.5 lowercase">
                                     <IconShare className="size-4" />
                                     <span className="hidden md:inline font-semibold">share</span>
                                 </div>
-                            </OSButton>
+                            </LemonButton>
                         </div>
                     </div>
                 </aside>
@@ -729,23 +729,23 @@ function WriteRouteView({ nodeId, item, readOnly = false }: { nodeId?: string; i
                             borderClass="border-black/10 dark:border-white/10"
                             cta={
                                 <div className="flex items-center gap-1.5 w-full">
-                                    <OSButton
-                                        size="sm"
-                                        variant="primary"
+                                    <LemonButton
+                                        size="small"
+                                        type="primary"
                                         disabled={saving}
                                         onClick={() => handleSave(nodeStatus)}
                                     >
                                         <span className="lowercase font-bold">{saving ? t('appwindow.saving') : (nodeStatus === 'published' ? t('appwindow.update') : t('appwindow.publish'))}</span>
-                                    </OSButton>
-                                    <OSButton
-                                        size="sm"
-                                        variant="default"
+                                    </LemonButton>
+                                    <LemonButton
+                                        size="small"
+                                        type="tertiary"
                                         onClick={() => handleSave('draft')}
                                         disabled={saving}
                                         className="opacity-70 hover:opacity-100"
                                     >
                                         <span className="lowercase font-bold">{t('appwindow.save_draft')}</span>
-                                    </OSButton>
+                                    </LemonButton>
                                 </div>
                             }
                         />

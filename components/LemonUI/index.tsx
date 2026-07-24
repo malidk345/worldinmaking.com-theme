@@ -14,6 +14,7 @@ import remarkGfm from 'remark-gfm';
 import './lemon-ui.css';
 
 export * from './LemonButton/LemonButton';
+import { LemonButton } from './LemonButton/LemonButton';
 export * from './LemonInput/LemonInput';
 export * from './LemonCard/LemonCard';
 export * from './LemonMarkdown/LemonMarkdown';
@@ -32,93 +33,6 @@ export * from './LemonSkeleton/LemonSkeleton';
 export * from './LemonSnack/LemonSnack';
 export * from './LemonDrawer/LemonDrawer';
 export * from './LemonTable/LemonTable';
-
-// ── 1. LemonButton (PostHog 1-to-1) ─────────────────────────────────────────
-// DOM structure mirrors posthog LemonButton.tsx exactly:
-//   <button className="LemonButton LemonButton--{type} LemonButton--status-{status} ...">
-//     <span className="LemonButton__chrome">
-//       <span className="LemonButton__icon">{icon}</span>
-//       <span className="LemonButton__content">{children}</span>
-//     </span>
-//   </button>
-
-export interface LemonButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'type'> {
-  type?: 'primary' | 'secondary' | 'tertiary' | 'stealth' | 'muted';
-  variant?: 'primary' | 'secondary' | 'tertiary' | 'stealth' | 'muted';
-  status?: 'default' | 'alt' | 'danger';
-  size?: 'xxsmall' | 'xsmall' | 'small' | 'medium' | 'large';
-  icon?: ReactNode;
-  sideIcon?: ReactNode;
-  children?: ReactNode;
-  className?: string;
-  active?: boolean;
-  fullWidth?: boolean;
-  noPadding?: boolean;
-  center?: boolean;
-  loading?: boolean;
-}
-
-export const LemonButton = React.forwardRef<HTMLButtonElement, LemonButtonProps>(
-  (
-    {
-      type = 'tertiary',
-      variant,
-      status = 'default',
-      size,
-      active = false,
-      fullWidth = false,
-      noPadding = false,
-      center = false,
-      loading = false,
-      icon,
-      sideIcon,
-      children,
-      className = '',
-      disabled,
-      ...props
-    },
-    ref
-  ) => {
-    const buttonType = variant || type;
-    // Exact class names from PostHog LemonButton.tsx
-    const classes = [
-      'LemonButton',
-      `LemonButton--${buttonType}`,
-      `LemonButton--status-${status}`,
-      size && `LemonButton--${size}`,
-      active && 'LemonButton--active',
-      loading && 'LemonButton--loading',
-      fullWidth && 'LemonButton--full-width',
-      noPadding && 'LemonButton--no-padding',
-      center && 'LemonButton--centered',
-      !children && 'LemonButton--no-content',
-      icon && 'LemonButton--has-icon',
-      sideIcon && 'LemonButton--has-side-icon',
-      className,
-    ]
-      .filter(Boolean)
-      .join(' ');
-
-    const effectiveIcon = loading ? <Spinner /> : icon;
-
-    return (
-      <button
-        ref={ref}
-        className={classes}
-        aria-disabled={!!disabled || loading}
-        disabled={disabled || loading}
-        {...props}
-      >
-        <span className="LemonButton__chrome">
-          {effectiveIcon && <span className="LemonButton__icon">{effectiveIcon}</span>}
-          {children && <span className="LemonButton__content">{children}</span>}
-          {sideIcon && <span className="LemonButton__icon">{sideIcon}</span>}
-        </span>
-      </button>
-    );
-  }
-);
-LemonButton.displayName = 'LemonButton';
 
 // ── 2. LemonSegmentedButton ─────────────────────────────────────────────────
 export interface LemonSegmentedOption<T extends string> {

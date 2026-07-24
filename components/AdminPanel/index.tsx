@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
-import OSButton from 'components/OSButton'
+import { LemonButton } from 'components/LemonUI'
 import { IconActivity, IconArrowLeft, IconChat, IconChevronDown, IconCode, IconDownload, IconGear, IconMessage, IconNewspaper, IconPencil, IconPlus, IconSearch, IconTerminal, IconTrash, IconTriangleUp, IconUser } from '@posthog/icons';
 import RichTextEditor, { saveDraftToStorage, loadDraftFromStorage, clearDraftFromStorage } from './RichTextEditor'
 import { useAdminData, AdminPost } from '../../hooks/useAdminData'
@@ -481,12 +481,12 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                             onChange={(e) => setNewPostTitle(e.target.value)}
                                             className="bg-[var(--color-bg-surface-primary)] border border-[var(--border-3000)] rounded-[var(--radius)] px-4 py-2 text-sm font-bold text-[var(--text-3000)] focus:outline-none placeholder:text-[var(--muted-3000)] w-full sm:w-64 max-w-[200px] sm:max-w-none transition-all duration-300 focus:border-[var(--primary-3000)] focus:ring-1 focus:ring-[var(--primary-highlight)]"
                                         />
-                                        <OSButton className="rounded-full flex-shrink-0" size="sm" variant="primary" onClick={handleSavePost}>
+                                        <LemonButton className="rounded-full flex-shrink-0" size="small" type="primary" onClick={handleSavePost}>
                                             <div className="flex items-center gap-1">
                                                 <IconDownload className="size-3" />
                                                 <span className="lowercase text-xs">save</span>
                                             </div>
-                                        </OSButton>
+                                        </LemonButton>
                                     </div>
                                 </div>
                             )}
@@ -512,12 +512,12 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                     >
                                         <IconArrowLeft className="size-3.5" /> back
                                     </button>
-                                    <OSButton className="rounded-full" size="sm" variant="primary" onClick={handleSavePost}>
+                                    <LemonButton className="rounded-full" size="small" type="primary" onClick={handleSavePost}>
                                         <div className="flex items-center gap-1">
                                             <IconDownload className="size-3" />
                                             <span className="lowercase text-xs">{editingPost ? (editingPost.isLocal ? 'publish' : 'update') : 'save'}</span>
                                         </div>
-                                    </OSButton>
+                                    </LemonButton>
                                 </div>
                             )}
 
@@ -688,12 +688,12 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                         </button>
                                     ))}
                                 </div>
-                                <OSButton className="rounded-full !bg-black !text-white hover:!bg-black/90 shadow-lg shadow-black/10" size="sm" onClick={() => setIsCreating(true)}>
+                                <LemonButton className="rounded-full !bg-black !text-white hover:!bg-black/90 shadow-lg shadow-black/10" size="small" onClick={() => setIsCreating(true)}>
                                     <div className="flex items-center gap-1.5 px-1 py-0.5">
                                         <IconPlus className="size-3.5" />
                                         <span className="text-xs font-bold lowercase">new node</span>
                                     </div>
-                                </OSButton>
+                                </LemonButton>
                             </div>
                         </div>
 
@@ -711,9 +711,9 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                     </div>
                                     <p className="text-xs font-bold text-black/40 lowercase mb-1">no articles found in the database</p>
                                     <p className="text-[10px] text-black/20 lowercase mb-6">your thinking hasn&apos;t been archived yet</p>
-                                    <OSButton className="rounded-full" size="sm" onClick={() => setIsCreating(true)}>
+                                    <LemonButton className="rounded-full" size="small" onClick={() => setIsCreating(true)}>
                                         <span className="lowercase font-bold px-2">create first node</span>
-                                    </OSButton>
+                                    </LemonButton>
                                 </div>
                             )}
 
@@ -767,9 +767,9 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                 </div>
                                                 <div className={`flex items-center gap-1 flex-shrink-0 transition-all duration-300 ${isMobile ? 'opacity-100' : 'opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0'}`}>
                                                     {post.published && (
-                                                        <OSButton
-                                                            size="xs"
-                                                            variant="secondary"
+                                                        <LemonButton
+                                                            size="xsmall"
+                                                            type="secondary"
                                                             onClick={() => approvePost(post.id, !post.is_approved)}
                                                             className={post.is_approved ? 'hover:!bg-[var(--color-bg-fill-button-tertiary-hover)] hover:!text-[var(--text-3000)]' : 'hover:!bg-[var(--lemon-tag-success-bg)] hover:!text-[var(--lemon-tag-success-text)] !border-[var(--lemon-tag-success-border)] !text-[var(--lemon-tag-success-text)] !bg-[var(--lemon-tag-success-bg)]'}
                                                             title={post.is_approved ? 'revoke approval' : 'approve publication'}
@@ -780,15 +780,15 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                                     <span>approve</span>
                                                                 </div>
                                                             )}
-                                                        </OSButton>
+                                                        </LemonButton>
                                                     )}
-                                                    <OSButton className="rounded-full hover:!bg-black hover:!text-white" size="xs" variant="secondary" onClick={() => handleEditClick(post)}>
+                                                    <LemonButton className="rounded-full hover:!bg-black hover:!text-white" size="xsmall" type="secondary" onClick={() => handleEditClick(post)}>
                                                         <IconPencil className="size-3" />
-                                                    </OSButton>
+                                                    </LemonButton>
                                                     {!post.isLocal && (
-                                                        <OSButton className="rounded-full hover:!bg-[var(--danger-highlight)] hover:!text-[var(--danger-3000-button-border-hover)]" size="xs" variant="secondary" onClick={() => { if (window.confirm('permanently delete this node?')) deletePost(post.id) }}>
+                                                        <LemonButton className="rounded-full hover:!bg-[var(--danger-highlight)] hover:!text-[var(--danger-3000-button-border-hover)]" size="xsmall" type="secondary" onClick={() => { if (window.confirm('permanently delete this node?')) deletePost(post.id) }}>
                                                             <IconTrash className="size-3" />
-                                                        </OSButton>
+                                                        </LemonButton>
                                                     )}
                                                 </div>
                                             </motion.div>
@@ -827,10 +827,10 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                             </div>
                             <div className="flex items-center gap-3">
                                 <span className="text-[10px] font-black text-black/20 uppercase tracking-[0.1em]">{bots.length} total</span>
-                                <OSButton size="xs" variant="primary" onClick={() => setIsCreatingBot(v => !v)}>
+                                <LemonButton size="xsmall" type="primary" onClick={() => setIsCreatingBot(v => !v)}>
                                     <IconPlus className="size-3" />
                                     <span className="text-[10px] lowercase px-1">{isCreatingBot ? 'cancel' : 'new agent'}</span>
-                                </OSButton>
+                                </LemonButton>
                             </div>
                         </div>
 
@@ -884,9 +884,9 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                     />
                                 </div>
                                 <div className="flex justify-end">
-                                    <OSButton size="xs" variant="primary" onClick={handleCreateBot} disabled={!newBotUsername.trim() || !newBotSystemPrompt.trim()}>
+                                    <LemonButton size="xsmall" type="primary" onClick={handleCreateBot} disabled={!newBotUsername.trim() || !newBotSystemPrompt.trim()}>
                                         <span className="text-[10px] lowercase px-1">create agent</span>
-                                    </OSButton>
+                                    </LemonButton>
                                 </div>
                             </div>
                         )}
@@ -931,29 +931,29 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                         }`}>
                                                         {bot.is_active ? 'active' : 'paused'}
                                                     </span>
-                                                    <OSButton
-                                                        size="xs"
-                                                        variant="secondary"
+                                                    <LemonButton
+                                                        size="xsmall"
+                                                        type="secondary"
                                                         onClick={() => editingBotId === bot.id ? setEditingBotId(null) : openEditBot(bot)}
                                                     >
                                                         <span className="text-[10px] lowercase px-1">{editingBotId === bot.id ? 'close' : 'edit'}</span>
-                                                    </OSButton>
-                                                    <OSButton
-                                                        size="xs"
-                                                        variant="secondary"
+                                                    </LemonButton>
+                                                    <LemonButton
+                                                        size="xsmall"
+                                                        type="secondary"
                                                         onClick={() => updateBot(bot.id, { is_active: !bot.is_active })}
                                                     >
                                                         <span className="text-[10px] lowercase px-1">{bot.is_active ? 'pause' : 'resume'}</span>
-                                                    </OSButton>
+                                                    </LemonButton>
                                                     {bot.is_active && (
-                                                        <OSButton
+                                                        <LemonButton
                                                             className="hover:!bg-[var(--danger-highlight)] hover:!text-[var(--danger-3000-button-border-hover)]"
-                                                            size="xs"
-                                                            variant="secondary"
+                                                            size="xsmall"
+                                                            type="secondary"
                                                             onClick={() => { if (window.confirm(`deactivate @${bot.username}?`)) deactivateBot(bot.id) }}
                                                         >
                                                             <IconTrash className="size-3" />
-                                                        </OSButton>
+                                                        </LemonButton>
                                                     )}
                                                 </div>
                                             </div>
@@ -1035,17 +1035,17 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                         </div>
                                                     </div>
                                                     <div className="flex justify-end gap-2">
-                                                        <OSButton size="xs" variant="secondary" onClick={() => setEditingBotId(null)}>
+                                                        <LemonButton size="xsmall" type="secondary" onClick={() => setEditingBotId(null)}>
                                                             <span className="text-[10px] lowercase px-1">cancel</span>
-                                                        </OSButton>
-                                                        <OSButton
-                                                            size="xs"
-                                                            variant="primary"
+                                                        </LemonButton>
+                                                        <LemonButton
+                                                            size="xsmall"
+                                                            type="primary"
                                                             onClick={handleSaveBot}
                                                             disabled={isSavingBot || !editBotUsername.trim() || !editBotSystemPrompt.trim()}
                                                         >
                                                             <span className="text-[10px] lowercase px-1">{isSavingBot ? 'saving...' : 'save changes'}</span>
-                                                        </OSButton>
+                                                        </LemonButton>
                                                     </div>
                                                 </div>
                                             )}
@@ -1111,14 +1111,14 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                         {application.status}
                                                     </span>
                                                     {application.status !== 'reviewed' && (
-                                                        <OSButton
-                                                            size="xs"
-                                                            variant="secondary"
+                                                        <LemonButton
+                                                            size="xsmall"
+                                                            type="secondary"
                                                             onClick={() => updateWriterApplicationStatus(application.id, 'reviewed')}
                                                             className="hover:!bg-black hover:!text-white"
                                                         >
                                                             <span className="text-[10px] lowercase px-1 whitespace-nowrap">mark read</span>
-                                                        </OSButton>
+                                                        </LemonButton>
                                                     )}
                                                 </div>
                                             </div>
@@ -1245,18 +1245,18 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                             {postReplies.length}
                                                             {isExpanded ? <IconTriangleUp className="size-3" /> : <IconChevronDown className="size-3" />}
                                                         </button>
-                                                        <OSButton className="rounded-full" size="xs" variant="secondary" onClick={() => {
+                                                        <LemonButton className="rounded-full" size="xsmall" type="secondary" onClick={() => {
                                                             setEditingCommentId(cp.id)
                                                             setEditingCommentContent(cp.content)
                                                             setEditingCommentTitle(cp.title)
                                                         }}>
                                                             <IconPencil className="size-3" />
-                                                        </OSButton>
-                                                        <OSButton className="rounded-full" size="xs" variant="secondary" onClick={() => {
+                                                        </LemonButton>
+                                                        <LemonButton className="rounded-full" size="xsmall" type="secondary" onClick={() => {
                                                             if (window.confirm('delete this community post?')) deleteCommunityPost(cp.id)
                                                         }}>
                                                             <IconTrash className="size-3 text-[var(--danger-3000-button-border-hover)] opacity-50 hover:opacity-100" />
-                                                        </OSButton>
+                                                        </LemonButton>
                                                     </div>
                                                 </div>
 
@@ -1276,11 +1276,11 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                                 className="w-full border border-[var(--border-3000)] rounded-[var(--radius)] bg-[var(--color-bg-surface-primary)] px-4 py-3 text-xs h-24 focus:border-[var(--primary-3000)] focus:ring-1 focus:ring-[var(--primary-highlight)] focus:outline-none resize-none font-sans transition-all duration-300 text-[var(--text-3000)]"
                                                             />
                                                             <div className="flex justify-end gap-2">
-                                                                <OSButton className="rounded-full" size="xs" variant="secondary" onClick={() => setEditingCommentId(null)}>cancel</OSButton>
-                                                                <OSButton size="xs" onClick={async () => {
+                                                                <LemonButton className="rounded-full" size="xsmall" type="secondary" onClick={() => setEditingCommentId(null)}>cancel</LemonButton>
+                                                                <LemonButton size="xsmall" onClick={async () => {
                                                                     const res = await updateCommunityPost(cp.id, { title: editingCommentTitle, content: editingCommentContent })
                                                                     if (res) setEditingCommentId(null)
-                                                                }} className="!bg-black !text-white">save changes</OSButton>
+                                                                }} className="!bg-black !text-white">save changes</LemonButton>
                                                             </div>
                                                         </div>
                                                     ) : (
@@ -1314,11 +1314,11 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                                         </div>
                                                                     </div>
                                                                     <div className="opacity-0 group-hover:opacity-100 transition-all duration-300">
-                                                                        <OSButton className="rounded-full" size="xs" variant="secondary" onClick={() => {
+                                                                        <LemonButton className="rounded-full" size="xsmall" type="secondary" onClick={() => {
                                                                             if (window.confirm('delete this reply?')) deleteCommunityReply(reply.id)
                                                                         }}>
                                                                             <IconTrash className="size-2.5 text-[var(--danger-3000-button-border-hover)]" />
-                                                                        </OSButton>
+                                                                        </LemonButton>
                                                                     </div>
                                                                 </div>
                                                             ))
@@ -1362,11 +1362,11 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                                         className="w-full border border-[var(--border-3000)] rounded-[var(--radius)] bg-[var(--color-bg-surface-primary)] px-4 py-3 text-xs h-24 focus:border-[var(--primary-3000)] focus:ring-1 focus:ring-[var(--primary-highlight)] focus:outline-none resize-none font-sans transition-all duration-300 text-[var(--text-3000)]"
                                                                     />
                                                                     <div className="flex justify-end gap-2">
-                                                                        <OSButton className="rounded-full" size="xs" variant="secondary" onClick={() => setEditingCommentId(null)}>cancel</OSButton>
-                                                                        <OSButton size="xs" onClick={async () => {
+                                                                        <LemonButton className="rounded-full" size="xsmall" type="secondary" onClick={() => setEditingCommentId(null)}>cancel</LemonButton>
+                                                                        <LemonButton size="xsmall" onClick={async () => {
                                                                             const res = await updateCommunityReply(reply.id, editingCommentContent)
                                                                             if (res) setEditingCommentId(null)
-                                                                        }} className="!bg-black !text-white">save changes</OSButton>
+                                                                        }} className="!bg-black !text-white">save changes</LemonButton>
                                                                     </div>
                                                                 </div>
                                                             ) : (
@@ -1375,17 +1375,17 @@ const AdminPanel = ({ item }: { item?: AppWindow }) => {
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-1.5 self-start pt-1">
-                                                        <OSButton className="rounded-full" size="xs" variant="secondary" onClick={() => {
+                                                        <LemonButton className="rounded-full" size="xsmall" type="secondary" onClick={() => {
                                                             setEditingCommentId(reply.id)
                                                             setEditingCommentContent(reply.content)
                                                         }}>
                                                             <IconPencil className="size-3" />
-                                                        </OSButton>
-                                                        <OSButton className="rounded-full" size="xs" variant="secondary" onClick={() => {
+                                                        </LemonButton>
+                                                        <LemonButton className="rounded-full" size="xsmall" type="secondary" onClick={() => {
                                                             if (window.confirm('permanently delete this reply?')) deleteCommunityReply(reply.id)
                                                         }}>
                                                             <IconTrash className="size-3 text-[var(--danger-3000-button-border-hover)] opacity-50 hover:opacity-100" />
-                                                        </OSButton>
+                                                        </LemonButton>
                                                     </div>
                                                 </div>
                                             )
