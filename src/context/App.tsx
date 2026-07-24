@@ -2328,15 +2328,8 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         setSearchOpen(true)
     }
 
-    const openSignIn = (onSuccess?: (user: User) => void) => {
-        addWindow(
-            <SignIn
-                onSuccess={onSuccess}
-                location={{ pathname: `community-auth-signin` }}
-                key="community-auth-signin"
-                newWindow
-            />
-        )
+    const openSignIn = () => {
+        safePush('/login', { state: { newWindow: true } })
     }
 
     const openRegister = () => {
