@@ -2058,6 +2058,37 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             )
             return [initialWindow, formWindow]
         }
+        if (location.pathname === '/login' || location.pathname === '/signup') {
+            const formWindowSize = {
+                width: Math.min(480, isSSR ? 480 : window.innerWidth * 0.9),
+                height: 580,
+            }
+            const bgWindow = createNewWindow(
+                <Start location={{ pathname: `/` }} key="/" />,
+                [],
+                { pathname: `/` },
+                isSSR,
+                taskbarHeight,
+                { zIndex: 1 }
+            )
+            const authWindow = createNewWindow(
+                element,
+                [],
+                location,
+                isSSR,
+                taskbarHeight,
+                {
+                    size: formWindowSize,
+                    position: {
+                        x: isSSR ? 100 : (window.innerWidth - formWindowSize.width) / 2,
+                        y: isSSR ? 50 : Math.max(20, (window.innerHeight - formWindowSize.height - taskbarHeight) / 2),
+                    },
+                    zIndex: 2,
+                    windowed: true,
+                }
+            )
+            return [bgWindow, authWindow]
+        }
         return [createNewWindow(element, [], location, isSSR, taskbarHeight)]
     }
 

@@ -1,10 +1,10 @@
-import React from 'react'
-
+import React, { useEffect, useState } from 'react'
 import useSWRInfinite from 'swr/infinite'
 import qs from 'qs'
 import { QuestionData, StrapiResult, StrapiRecord } from 'lib/strapi'
 import usePostHog from './usePostHog'
 import { useUser } from './useUser'
+import { fetchSupabaseCommunityPosts, formatSupabaseCommunityToStrapi } from 'lib/supabaseCommunity'
 
 type UseQuestionsOptions = {
     slug?: string
@@ -18,7 +18,7 @@ type UseQuestionsOptions = {
 
 const query = (offset: number, options?: UseQuestionsOptions, isModerator?: boolean) => {
     const { slug, topicId, profileId, limit = 20, sortBy = 'newest', filters } = options || {}
-    const params = {
+    const params: any = {
         pagination: {
             start: offset * limit,
             limit,
@@ -173,7 +173,7 @@ const query = (offset: number, options?: UseQuestionsOptions, isModerator?: bool
     }
 
     return qs.stringify(params, {
-        encodeValuesOnly: true, // prettify URL
+        encodeValuesOnly: true,
     })
 }
 
@@ -181,15 +181,30 @@ export const useQuestions = (options?: UseQuestionsOptions) => {
     const { getJwt, user } = useUser()
     const posthog = usePostHog()
     const isModerator = user?.role?.type === 'moderator'
-    const { data, size, setSize, isLoading, error, mutate, isValidating } = useSWRInfinite<
+    const [supabaseQuestions, setSupabaseQuestions] = useState<any[]>([])
+
+    useEffect(() => {
+        let isMounted = true
+        fetchSupabaseCommunityPosts(options?.slug).then((posts) => {
+            if (isMounted && posts && posts.length > 0) {
+                const formatted = posts.map(formatSupabaseCommunityToStrapi)
+                setSupabaseQuestions(formatted)
+            }
+        })
+        return () => {
+            isMounted = false
+        }
+    }, [options?.slug])
+
+    const { data, size, setSize, isLoading, error, mutate } = useSWRInfinite<
         StrapiResult<QuestionData[]>
     >(
         (offset) => `${process.env.GATSBY_SQUEAK_API_HOST}/api/questions?${query(offset, options, isModerator)}`,
         async (url: string) => {
             const jwt = await getJwt()
-            return fetch(url, user && jwt ? { headers: { Authorization: `Bearer ${jwt}` } } : undefined).then((r) =>
-                r.json()
-            )
+            return fetch(url, user && jwt ? { headers: { Authorization: `Bearer ${jwt}` } } : undefined)
+                .then((r) => r.json())
+                .catch(() => ({ data: [] }))
         },
         {
             revalidateOnFocus: false,
@@ -205,12 +220,14 @@ export const useQuestions = (options?: UseQuestionsOptions) => {
     }
 
     const questions: Omit<StrapiResult<QuestionData[]>, 'meta'> = React.useMemo(() => {
+        const strapiData = data?.reduce((acc, cur) => [...acc, ...(cur.data || [])], [] as StrapiRecord<QuestionData>[]) ?? []
+        const combined = [...strapiData, ...supabaseQuestions]
         return {
-            data: data?.reduce((acc, cur) => [...acc, ...(cur.data || [])], [] as StrapiRecord<QuestionData>[]) ?? [],
+            data: combined as any,
         }
-    }, [size, data])
+    }, [size, data, supabaseQuestions])
 
-    const total = data && data[0]?.meta?.pagination?.total
+    const total = (data && data[0]?.meta?.pagination?.total) || questions.data.length
     const hasMore = total ? questions?.data.length < total : false
     const pinnedQuestions = data?.[0]?.pinnedQuestions
 
@@ -218,8 +235,13 @@ export const useQuestions = (options?: UseQuestionsOptions) => {
         hasMore,
         questions,
         fetchMore: () => setSize(size + 1),
-        isLoading: isLoading || isValidating,
-        refresh: () => mutate(),
+        isLoading: isLoading && supabaseQuestions.length === 0,
+        refresh: () => {
+            fetchSupabaseCommunityPosts(options?.slug).then((posts) => {
+                if (posts) setSupabaseQuestions(posts.map(formatSupabaseCommunityToStrapi))
+            })
+            mutate()
+        },
         pinnedQuestions,
     }
 }
