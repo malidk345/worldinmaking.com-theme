@@ -125,8 +125,8 @@ export default function FooterBar({
     const [isBarExpanded, setIsBarExpanded] = React.useState(false)
 
     const content = (
-        <div data-scheme="tertiary" className="flex w-full items-center px-1 py-0.5 select-none gap-1 justify-start bg-transparent border-0">
-            {/* Framed Single Sidebar Icon Button (Main Trigger) */}
+        <div data-scheme="tertiary" className="flex w-full items-center px-1 py-1 select-none gap-1.5 justify-start bg-transparent border-0">
+            {/* Framed Single Sidebar Icon Button (Main Trigger - Prominent White Border & Frosted BG) */}
             <Tooltip
                 trigger={
                     <OSButton
@@ -136,7 +136,7 @@ export default function FooterBar({
                             setIsBarExpanded(!isBarExpanded)
                         }}
                         active={isBarExpanded}
-                        className="p-1 h-6.5 w-6.5 !rounded-lg border border-black/20 dark:border-white/20 bg-white/70 dark:bg-[#1c1917]/70 shadow-sm opacity-90 hover:opacity-100 transition-all flex items-center justify-center shrink-0"
+                        className="p-1.5 h-7.5 w-7.5 !rounded-xl border-2 border-white dark:border-white/20 bg-white/95 dark:bg-[#121214]/95 shadow-md backdrop-blur-md opacity-100 hover:scale-105 transition-all flex items-center justify-center shrink-0"
                     >
                         {isBarExpanded ? (
                             <IconSidebarClose className="size-4 text-primary" />
@@ -150,7 +150,7 @@ export default function FooterBar({
                 {isBarExpanded ? 'collapse options' : 'expand options'}
             </Tooltip>
 
-            {/* Horizontally Expanding Options Bar */}
+            {/* Horizontally Expanding Options Bar (Thin Frosted Background with White Border) */}
             <AnimatePresence initial={false}>
                 {isBarExpanded && (
                     <motion.div
@@ -158,7 +158,7 @@ export default function FooterBar({
                         animate={{ width: "auto", opacity: 1 }}
                         exit={{ width: 0, opacity: 0 }}
                         transition={{ duration: 0.25, ease: "easeInOut" }}
-                        className="flex items-center gap-1 overflow-hidden flex-1 justify-between"
+                        className="flex items-center gap-1.5 overflow-hidden flex-1 justify-between px-2.5 py-1 rounded-xl border border-white dark:border-white/20 bg-white/90 dark:bg-[#121214]/90 backdrop-blur-md shadow-md"
                     >
                         {/* LEFT SECTION: Sidebar, Nav, Separator, Bookmark, Comment */}
                         <div className="flex items-center gap-0.5 flex-shrink-0">
