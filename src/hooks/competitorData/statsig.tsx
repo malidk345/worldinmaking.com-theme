@@ -1,0 +1,361 @@
+export const statsig = {
+    name: 'Statsig',
+    key: 'statsig',
+    assets: {
+        icon: '/images/competitors/statsig.svg',
+        comparisonArticle: '/blog/posthog-vs-statsig',
+    },
+    products: {
+        cdp: {
+            features: {
+                realtime_streaming: true,
+            },
+        },
+        data_warehouse: {
+            features: {
+                batch_exports: true,
+                warehouse_sources: true,
+            },
+        },
+        dashboards: {
+            available: true,
+        },
+        experiments: {
+            available: true,
+            pricing: {
+                free_tier: true,
+            },
+            features: {
+                count_value_metrics: true,
+                custom_goals: true,
+                dynamic_cohorts: true,
+                funnel_tests: true,
+                experiment_analysis: true,
+                funnel_metrics: true,
+                namespacing: true,
+                native_goal_tracking: true,
+                no_code_experiments: true,
+                ratio_metrics: true,
+                recommended_run_time: true,
+                secondary_metrics: true,
+                shared_metrics_library: true,
+                split_testing: true,
+                visual_editor: true,
+            },
+            supported_tests: {
+                features: {
+                    aa_testing: true,
+                    ab_testing: true,
+                    abn_testing: true,
+                    data_warehouse_experiments: true,
+                    fake_door_testing: false,
+                    holdout_testing: true,
+                    multi_armed_bandit: 'Pro',
+                    mutually_exclusive_experiments: true,
+                    redirect_testing: true,
+                },
+            },
+            targeting: {
+                features: {
+                    cohort_integration: true,
+                    exclusion_rules: true,
+                    geographic_targeting: true,
+                    group_level_experiments: true,
+                    holdouts: true,
+                    target_by_percentage: true,
+                    target_by_person_properties: true,
+                },
+            },
+            implementation: {
+                features: {
+                    api_access: true,
+                    feature_flag_foundation: true,
+                    local_evaluation: true,
+                    json_payloads: true,
+                    multivariate_testing: true,
+                },
+            },
+            analysis: {
+                features: {
+                    llm_support: false,
+                    results_visualization: true,
+                    side_effect_monitoring: true,
+                    statistical_significance: true,
+                    statistics_engine: 'Bayesian, Frequentist, or Sequential with Bonferroni correction',
+                },
+            },
+            platforms: {
+                features: {
+                    mobile: true,
+                    web: true,
+                },
+            },
+        },
+        feature_flags: {
+            available: true,
+            pricing: {
+                free_tier: true,
+            },
+            features: {
+                boolean_flags: true,
+                early_access_management: false,
+                multivariate_flags: true,
+                json_payloads: true,
+                release_conditions: true,
+                remote_config: true,
+            },
+            implementation: {
+                features: {
+                    local_evaluation: true,
+                    bootstrapping: true,
+                    api_access: true,
+                    sdk_support: '30+',
+                },
+            },
+            targeting: {
+                features: {
+                    target_by_percentage: true,
+                    target_by_person_properties: true,
+                    target_by_cohorts: true,
+                    geographic_targeting: true,
+                    group_targeting: true,
+                },
+            },
+            management: {
+                features: {
+                    approvals: true,
+                    flag_administration: true,
+                    flag_scheduling: true,
+                    history_activity: true,
+                    instant_rollbacks: true,
+                    multi_environment: true,
+                    permissioning: true,
+                },
+            },
+            testing: {
+                features: {
+                    flag_overrides: true,
+                    toolbar_integration: false,
+                    user_assignment: true,
+                },
+            },
+            experimentation: {
+                features: {
+                    experimentation: true,
+                    correlation_analysis: true,
+                },
+            },
+            advanced: {
+                features: {
+                    persist_across_auth: true,
+                },
+            },
+        },
+        product_analytics: {
+            available: true,
+            features: {
+                advertising_analytics: false,
+                autocapture: true,
+                cohorts: true,
+                custom_events: true,
+                custom_properties: true,
+                monetization_analytics: false,
+                predictive_insights: false,
+                real_time_view: false,
+                toolbar: false,
+                user_profiles: false,
+                insights: {
+                    available: true,
+                    features: {
+                        formula_mode: true,
+                        ready_made_insight_types: false,
+                        sampling: false,
+                        sql_editor: true,
+                    },
+                },
+                trends: {
+                    available: true,
+                    features: {},
+                },
+                funnels: {
+                    available: true,
+                    features: {
+                        correlation_analysis: false,
+                    },
+                },
+                retention: {
+                    available: true,
+                    features: {},
+                },
+                user_paths: {
+                    available: 'Beta',
+                    features: {},
+                },
+                lifecycle: {
+                    available: false,
+                    features: {},
+                },
+                stickiness: {
+                    available: true,
+                    features: {},
+                },
+                group_analytics: {
+                    available: false,
+                    features: {},
+                },
+            },
+        },
+        web_analytics: {
+            available: true,
+        },
+        session_replay: {
+            available: true,
+            pricing: {
+                free_tier: '50,000 recordings',
+            },
+            features: {
+                canvas_recording: true,
+                chat_with_recordings: false,
+                clickmaps: false,
+                conditional_recording: true,
+                event_timeline: true,
+                export_to_json: false,
+                export_to_video: false,
+                filter_by_user_or_event: true,
+                identity_detection: true,
+                iframe_recording: true,
+                minimum_duration: false,
+                movement_maps: false,
+                notes_on_replays: false,
+                playlists: true,
+                privacy_masking: true,
+                retention_policy: '30 days',
+                screenshot_mode: false,
+                scrollmaps: false,
+                search_by_network: false,
+                share_replays: false,
+                single_page_app: false,
+                target_by_feature_flag: true,
+                target_by_sample: true,
+                target_by_url: false,
+                wireframe_mode: false,
+            },
+            platform_support: {
+                features: {
+                    web_app_recordings: true,
+                    mobile_app_recordings: false,
+                    ios_recordings: false,
+                    android_recordings: false,
+                    react_native_recordings: false,
+                    flutter_recordings: false,
+                },
+            },
+            analysis: {
+                features: {
+                    console_logs: true,
+                    performance_monitoring: false,
+                    network_monitor: false,
+                    dom_explorer: false,
+                },
+            },
+            ai: {
+                features: {
+                    ai_summaries: false,
+                },
+            },
+        },
+        heatmaps: {
+            available: false,
+            features: {
+                heatmaps: false,
+                rage_clicks: false,
+            },
+        },
+        surveys: {
+            available: false,
+        },
+    },
+    platform: {
+        deployment: {
+            eu_hosting: true,
+            managed_reverse_proxy: false,
+            open_source: false,
+            self_host: false,
+        },
+        pricing: {
+            free_tier: true,
+            transparent_pricing: true,
+            usage_based_pricing: true,
+            self_serve: true,
+        },
+        developer: {
+            api: true,
+            collaboration: false,
+            mobile_sdks: true,
+            native_data_sources: false,
+            proxies: false,
+            sdks: true,
+            server_side_sdks: true,
+            sql: false,
+            terraform: true,
+        },
+        tools: {
+            cms: '',
+            notebooks: false,
+            project_management_tools: '',
+        },
+        integrations: {
+            azure_blob: false,
+            bigquery: true,
+            cdp: false,
+            ci_cd_integrations: false,
+            community_integrations: false,
+            csv_exports: false,
+            customer_io: false,
+            data_warehouse: true,
+            datadog: true,
+            email_reports: false,
+            exports: true,
+            gcs: false,
+            google_ads: false,
+            hubspot: false,
+            imports: true,
+            intercom: false,
+            microsoft_teams: true,
+            redshift: true,
+            rudderstack: false,
+            s3: true,
+            salesforce: false,
+            segment: true,
+            sentry: false,
+            slack: true,
+            snowflake: true,
+            stripe: false,
+            warehouse_import: false,
+            wordpress: false,
+            zapier: false,
+            zendesk: false,
+        },
+        security: {
+            bot_blocking: false,
+            cookieless_tracking: false,
+            data_anonymization: false,
+            data_retention: false,
+            gdpr_ready: true,
+            hipaa_ready: 'Enterprise',
+            history_audit_logs: true,
+            reverse_proxy: false,
+            role_based_access_control: true,
+            saml_sso: 'Enterprise',
+            soc2_certified: true,
+            two_factor_auth: true,
+            user_privacy_options: true,
+        },
+        analytics_integration: {
+            built_in_analytics: true,
+        },
+    },
+    pricing: {
+        model: 'Usage-based',
+    },
+}

@@ -1,0 +1,37 @@
+import { Logo } from '@posthog/brand/logo'
+import { IconHeartFilled } from '@posthog/icons'
+import React from 'react'
+
+export default function Logos({
+    companyLogo,
+    companyName,
+    color = 'text-red',
+    size = 'md',
+}: {
+    companyLogo: string
+    companyName: string
+    color: string
+    size: 'sm' | 'md'
+}) {
+    return (
+        <div className="flex items-center gap-4">
+            <Logo
+                layout="logomark"
+                variant={color === 'text-white' ? 'mono' : 'gradient'}
+                color={color === 'text-white' ? 'white' : undefined}
+                className={`${size === 'sm' ? 'size-12' : 'size-20'}`}
+                width="auto"
+            />
+            {companyLogo && (
+                <>
+                    <IconHeartFilled className={`${size === 'sm' ? 'size-8' : 'size-12'} inline-block ${color}`} />
+                    <img
+                        src={companyLogo}
+                        alt={companyName || 'Company logo'}
+                        className={`${size === 'sm' ? 'h-8 @2xl:h-12' : 'h-12 @2xl:h-16'} object-contain rounded`}
+                    />
+                </>
+            )}
+        </div>
+    )
+}

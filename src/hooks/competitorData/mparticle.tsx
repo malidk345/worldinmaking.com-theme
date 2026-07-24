@@ -1,0 +1,107 @@
+export const mparticle = {
+    name: 'mParticle',
+    key: 'mparticle',
+    assets: {
+        icon: '/images/competitors/mparticle.svg',
+    },
+    products: {
+        cdp: {
+            available: true,
+            features: {
+                number_of_integrations: '250+',
+                realtime_streaming: true,
+                custom_transformations: true,
+                no_code_setup: true,
+                built_in_analytics: 'Limited',
+            },
+         },
+        product_analytics: {
+            available: 'Limited',
+        },
+        session_replay: {
+            available: false,
+        },
+        data_warehouse: {
+            available: true,
+            features: {
+                batch_exports: true,
+                warehouse_sources: true,
+            },
+        },
+    },
+    platform: {
+        analytics_integration: {
+            built_in_analytics: 'Limited',
+        },
+        deployment: {
+            open_source: false,
+            self_host: false,
+        },
+        developer: {
+            api: true,
+            collaboration: true,
+            mobile_sdks: true,
+            native_data_sources: true,
+            proxies: false,
+            sdks: true,
+            server_side_sdks: false,
+            sql: false,
+        },
+        tools: {
+            cms: '',
+            notebooks: false,
+            project_management_tools: '',
+        },
+        integrations: {
+            azure_blob: true,
+            bigquery: false,
+            ci_cd_integrations: false,
+            community_integrations: true,
+            csv_exports: false,
+            customer_io: false,
+            datadog: true,
+
+            email_reports: false,
+            exports: true,
+            gcs: true,
+            google_ads: true,
+            hubspot: true,
+            imports: true,
+            intercom: true,
+            microsoft_teams: false,
+            redshift: true,
+            s3: true,
+            segment: false,
+            sentry: false,
+            slack: true,
+            snowflake: true,
+            stripe: false,
+            warehouse_import: true,
+            wordpress: false,
+            zapier: false,
+            zendesk: true,
+        },
+        pricing: {
+            free_tier: false,
+            transparent_pricing: false,
+            usage_based_pricing: true,
+        },
+        security: {
+            bot_blocking: false,
+            cookieless_tracking: false,
+            data_anonymization: true,
+            data_retention: true,
+            gdpr_ready: true,
+            hipaa_ready: false,
+            history_audit_logs: true,
+            reverse_proxy: true,
+            saml_sso: true,
+            soc2_certified: true,
+            two_factor_auth: false,
+            user_privacy_options: true,
+        },
+    },
+    pricing: {
+        model: 'Usage-based',
+    },
+}

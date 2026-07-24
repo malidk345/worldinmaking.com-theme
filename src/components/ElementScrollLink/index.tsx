@@ -1,0 +1,138 @@
+import React, { ButtonHTMLAttributes, useEffect, useState, useContext, createContext, useMemo } from 'react'
+
+interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
+    id: string
+    label: string | React.ReactNode
+    element: React.RefObject<HTMLElement>
+    className?: string
+}
+
+interface SectionData {
+    id: string
+    isIntersecting: boolean
+    distance: number
+}
+
+interface ScrollSpyContextType {
+    sections: Record<string, SectionData>
+    setSectionData: (id: string, data: SectionData) => void
+    activeSection: string | null
+}
+
+export const ScrollSpyContext = createContext<ScrollSpyContextType>({
+    sections: {},
+    setSectionData: () => {
+        /* no-op default */
+    },
+    activeSection: null,
+})
+
+export function ScrollSpyProvider({ children }: { children: React.ReactNode }): JSX.Element {
+    const [sections, setSections] = useState<Record<string, SectionData>>({})
+
+    const setSectionData = (id: string, data: SectionData) => {
+        setSections((prev) => ({
+            ...prev,
+            [id]: data,
+        }))
+    }
+
+    const activeSection = useMemo(() => {
+        const visibleSections = Object.values(sections).filter((section) => section.isIntersecting)
+
+        if (visibleSections.length === 0) return null
+
+        return visibleSections.reduce((closest, current) => (current.distance < closest.distance ? current : closest))
+            .id
+    }, [sections])
+
+    return (
+        <ScrollSpyContext.Provider value={{ sections, setSectionData, activeSection }}>
+            {children}
+        </ScrollSpyContext.Provider>
+    )
+}
+
+export default function ElementScrollLink({ id, label, element, className = '', ...buttonProps }: Props): JSX.Element {
+    const { setSectionData, activeSection } = useContext(ScrollSpyContext)
+    const isActive = activeSection === id
+
+    useEffect(() => {
+        if (!element.current) return
+
+        const targetElement = element.current.querySelector(`#${CSS.escape(id)}`)
+        if (!targetElement) return
+
+        // Check for Radix ScrollArea container
+        const scrollViewport = element.current.closest('[data-radix-scroll-area-viewport]') as HTMLElement | null
+        // Only use viewport as root if it exists AND is actually scrollable
+        // In website mode, the viewport exists but doesn't scroll (pages are full height)
+        const viewportIsScrollable = scrollViewport && scrollViewport.scrollHeight > scrollViewport.clientHeight
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    setSectionData(id, {
+                        id,
+                        isIntersecting: entry.isIntersecting,
+                        distance: entry.boundingClientRect.top - (entry.rootBounds?.top ?? 0),
+                    })
+                })
+            },
+            {
+                root: viewportIsScrollable ? scrollViewport : null,
+                threshold: [0, 0.1],
+            }
+        )
+        observer.observe(targetElement)
+        return () => observer.disconnect()
+    }, [id, element, setSectionData])
+
+    const handleClick = () => {
+        if (!element.current) return
+
+        const targetElement = element.current.querySelector(`#${CSS.escape(id)}`)
+        if (!targetElement) return
+
+        // Update URL hash without triggering native scroll
+        window.history.pushState(null, '', `#${id}`)
+
+        // Check for Radix ScrollArea container
+        const scrollViewport = element.current.closest('[data-radix-scroll-area-viewport]') as HTMLElement | null
+        // Only use viewport scrolling if it exists AND is actually scrollable
+        // In website mode, the viewport exists but doesn't scroll (pages are full height)
+        const viewportIsScrollable = scrollViewport && scrollViewport.scrollHeight > scrollViewport.clientHeight
+
+        if (viewportIsScrollable) {
+            const parentRect = scrollViewport.getBoundingClientRect()
+            const targetRect = targetElement.getBoundingClientRect()
+            const relativeTop = targetRect.top - parentRect.top + scrollViewport.scrollTop
+            scrollViewport.scrollTo({
+                top: relativeTop,
+                behavior: 'smooth',
+            })
+        } else {
+            // Standard window scrolling fallback (used in website mode or when no viewport exists)
+            // Offset by 49px to account for fixed menu height
+            const targetPosition = targetElement.getBoundingClientRect().top + window.pageYOffset - 49
+            window.scrollTo({
+                top: targetPosition,
+                behavior: 'smooth',
+            })
+        }
+    }
+
+    return (
+        <button
+            {...buttonProps}
+            onClick={handleClick}
+            className={` [overflow-wrap:anywhere]
+                text-left text-sm py-0.5 block relative active:top-px active:scale-[.99]
+                ${isActive ? 'font-semibold text-primary' : 'text-secondary hover:text-primary '} 
+                ${className}
+            `}
+        >
+            {label}
+        </button>
+    )
+}

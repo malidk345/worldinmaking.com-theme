@@ -1,0 +1,108 @@
+export const segment = {
+    name: 'Segment',
+    key: 'segment',
+    assets: {
+        icon: '/images/competitors/segment.svg',
+    },
+    products: {
+        cdp: {
+            available: true,
+            features: {
+                number_of_integrations: '700+',
+                realtime_streaming: true,
+                custom_transformations: true,
+                no_code_setup: true,
+                built_in_analytics: false,
+            },
+        },
+        product_analytics: {
+            available: false,
+        },
+        session_replay: {
+            available: false,
+        },
+    },
+    data_warehouse: {
+        available: true,
+        features: {
+            batch_exports: true,
+            warehouse_sources: true,
+        },
+    },
+    platform: {
+        analytics_integration: {
+            built_in_analytics: false,
+        },
+        deployment: {
+            open_source: false,
+            self_host: false,
+        },
+        developer: {
+            api: true,
+            collaboration: true,
+            mobile_sdks: true,
+            native_data_sources: true,
+            proxies: true,
+            sdks: true,
+            server_side_sdks: true,
+            sql: false,
+        },
+        tools: {
+            cms: '',
+            notebooks: false,
+            project_management_tools: '',
+        },
+        integrations: {
+            azure_blob: false,
+            bigquery: true,
+            ci_cd_integrations: false,
+            community_integrations: false,
+            csv_exports: true,
+            customer_io: true,
+            datadog: true,
+
+            email_reports: false,
+            exports: true,
+            gcs: true,
+            google_ads: false,
+            hubspot: true,
+            imports: true,
+            intercom: false,
+            microsoft_teams: false,
+            redshift: false,
+            s3: true,
+            segment: false,
+            sentry: false,
+            slack: true,
+            snowflake: true,
+            stripe: true,
+            warehouse_import: true,
+            wordpress: false,
+            zapier: true,
+            zendesk: false,
+        },
+        pricing: {
+            free_tier: true,
+            // Only their "customer data pipelines" have transparent pricing so I would say no: https://segment.com/pricing/connections/
+            transparent_pricing: false,
+            usage_based_pricing: true,
+        },
+        security: {
+            bot_blocking: false,
+            cookieless_tracking: false,
+            data_anonymization: true,
+            data_retention: true,
+            gdpr_ready: true,
+            hipaa_ready: true,
+            history_audit_logs: false,
+            reverse_proxy: true,
+            saml_sso: true,
+            soc2_certified: true,
+            two_factor_auth: true,
+            user_privacy_options: true,
+        },
+    },
+    pricing: {
+        model: 'Usage-based',
+    },
+}

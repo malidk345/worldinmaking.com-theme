@@ -1,69 +1,49 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
+    "baseUrl": "./src",
+    "paths": {
+      "types/*": [
+        "./types/*"
+      ]
+    },
+    // https://www.sitepoint.com/react-with-typescript-best-practices/
+    "allowJs": true, // Allow JavaScript files to be compiled
+    "skipLibCheck": true, // Skip type checking of all declaration files
+    "esModuleInterop": true, // Disables namespace imports (import * as fs from "fs") and enables CJS/AMD/UMD style imports (import fs from "fs")
+    "allowSyntheticDefaultImports": true, // Allow default imports from modules with no default export
+    "strict": true, // Enable all strict type checking options
+    "strictNullChecks": true,
+    "forceConsistentCasingInFileNames": true, // Disallow inconsistently-cased references to the same file.
+    "module": "esnext", // Specify module code generation
+    "moduleResolution": "node", // Resolve modules using Node.js style
+    "resolveJsonModule": true, // Include modules imported with .json extension
+    "noEmit": true, // Do not emit output (meaning do not compile code, only perform type checking)
+    "jsx": "preserve", // Support JSX in .tsx files
+    "sourceMap": true, // Generate corrresponding .map file
+    "declaration": true, // Generate corresponding .d.ts file
+    "noUnusedLocals": true, // Report errors on unused locals
+    "noUnusedParameters": true, // Report errors on unused parameters
+    "experimentalDecorators": true, // Enables experimental support for ES decorators
+    "noFallthroughCasesInSwitch": true, // Report errors for fallthrough cases in switch statement
     "lib": [
       "dom",
-      "dom.iterable",
-      "esnext"
+      "es2019.array"
     ],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "baseUrl": ".",
-    "jsx": "preserve",
     "incremental": true,
+    "isolatedModules": true,
     "plugins": [
       {
         "name": "next"
       }
-    ],
-    "paths": {
-      "@/*": [
-        "./*"
-      ],
-      "components/*": [
-        "./components/*"
-      ],
-      "hooks/*": [
-        "./hooks/*"
-      ],
-      "context/*": [
-        "./context/*"
-      ],
-      "logic/*": [
-        "./logic/*"
-      ],
-      "styles/*": [
-        "./styles/*"
-      ],
-      "types/*": [
-        "./types/*"
-      ],
-      "constants": [
-        "./constants/index"
-      ]
-    }
+    ]
   },
   "include": [
-    "**/*.mts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/dev/types/**/*.ts",
-    ".next/types/**/*.ts",
-    "next-env.d.ts",
-    ".next-dev/types/**/*.ts"
+    "src/**/*",
+    ".next/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules",
-    "components/craft-editor",
-    "posthog",
-    "components/posthog-ui-gallery/vite.config.ts",
-    "components/posthog-ui-gallery/**/*"
+    "node_modules/**/*",
+    "staticfiles/**/*",
+    "frontend/dist/**/*"
   ]
 }

@@ -1,0 +1,120 @@
+import { useRouter } from 'next/navigation'
+import React from 'react'
+import useProduct from './useProduct'
+
+// Define the navigation structure with handles
+const productOSStructure = [
+    // 'Utilities & add-ons', // Section header
+    // { name: 'Overview', url: '/products?category=product_os' }, // Manual entry
+    'Core tools', // Section header
+    'api',
+    'webhooks',
+    'notebooks',
+    'Data management', // Section header
+    'profiles',
+    'activity',
+    'Developer tools', // Section header
+    'toolbar',
+    'Platform', // Section header
+    'platform_packages',
+    'posthog_slack',
+    { name: 'Self-driving', url: '/self-driving' },
+]
+
+// Build navigation items from structure and products
+const buildNavigationItems = (structure: any[], products: any[]) => {
+    return structure
+        .map((item) => {
+            // Handle manual entries with name and url
+            if (typeof item === 'object' && item.name) {
+                return item
+            }
+
+            // Handle section headers (plain strings that aren't product handles)
+            if (typeof item === 'string') {
+                const product = products.find((p) => p.handle === item)
+
+                if (!product) {
+                    // It's a section header
+                    return { name: item }
+                }
+
+                // It's a product handle - build the nav item
+                const { Icon, color, name, slug } = product
+                return {
+                    name,
+                    url: `/${slug}`,
+                    icon: Icon ? <Icon className={`size-4 text-${color}`} /> : undefined,
+                }
+            }
+
+            return null
+        })
+        .filter(Boolean)
+}
+
+// Component that renders the product OS navigation
+export const ProductOSNav = () => {
+    const products = useProduct()
+
+    const navigationItems = React.useMemo(() => {
+        if (Array.isArray(products)) {
+            return buildNavigationItems(productOSStructure, products)
+        }
+        return []
+    }, [products])
+
+    return navigationItems
+}
+
+// Hook for programmatic navigation
+export function useProductOSNavigation() {
+    const products = useProduct()
+
+    const navigation = React.useMemo(() => {
+        const children = Array.isArray(products) ? buildNavigationItems(productOSStructure, products) : []
+
+        return {
+            name: 'Context warehouse',
+            url: '/products',
+            children,
+        }
+    }, [products])
+
+    return {
+        navigation,
+        handleNavigate: (url: string) => {
+            router.push(url)
+        },
+    }
+}
+
+// Static navigation for server-side rendering
+export const productOSNav = {
+    name: 'Context warehouse',
+    url: '/products',
+    children: [
+        // { name: 'Utilities & add-ons' },
+        // { name: 'Overview', url: '/products?category=product_os' },
+        { name: 'Self-driving products' },
+        {
+            name: 'What is self-driving?',
+            url: '/self-driving',
+            badge: { title: 'Beta', className: 'uppercase !bg-blue/10 !text-blue !dark:text-white !dark:bg-blue/50' },
+        },
+        {
+            name: 'Use PostHog in Slack',
+            url: '/slack',
+            badge: { title: 'Beta', className: 'uppercase !bg-blue/10 !text-blue !dark:text-white !dark:bg-blue/50' },
+        },
+        { name: 'Platform tools' },
+        { name: 'User activity', url: '/activity' },
+        { name: 'User profiles', url: '/profiles' },
+        { name: 'Notebooks', url: '/notebooks' },
+        { name: 'Toolbar', url: '/toolbar' },
+        { name: 'Platform packages', url: '/platform-packages' },
+        { name: 'Developer tools' },
+        { name: 'API', url: '/api' },
+        { name: 'Webhooks', url: '/webhooks' },
+    ],
+}

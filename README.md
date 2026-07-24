@@ -1,36 +1,134 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<p align="center">
+  <img alt="posthoglogo" src="https://user-images.githubusercontent.com/65415371/205059737-c8a4f836-4889-4654-902e-f302b187b6a0.png">
+</p>
 
-## Getting Started
+# PostHog.com - Website, docs, blog, and handbook
 
-First, run the development server:
+<p align="center">
+  <a href='http://makeapullrequest.com'><img alt='PRs Welcome' src='https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=shields'/></a>
+  <img alt="GitHub contributors" src="https://img.shields.io/github/contributors/posthog/posthog.com"/>
+  <a href='https://posthog.com/community'><img alt="Join Community" src="https://img.shields.io/badge/community-join-blue"/></a>
+  <img alt="GitHub commit activity" src="https://img.shields.io/github/commit-activity/m/posthog/posthog.com"/>
+  <img alt="GitHub closed pull requests" src="https://img.shields.io/github/issues-pr-closed/posthog/posthog.com"/>
+</p>
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+<p align="center">
+  <a href="https://app.posthog.com/home#supportModal">Support</a> - <a href="https://posthog.com/roadmap">Roadmap</a> - <a href="https://github.com/PostHog/posthog.com/issues/new">Open an issue</a> - <a href="https://github.com/PostHog/posthog.com/blob/master/STYLEGUIDE.md">Style guide</a>
+</p>
+
+
+This is the repository for the PostHog website. We treat it like a product. It contains:
+
+- All of our written content and visuals including product features, manuals, docs, blogs, case studies, tutorials, and the handbook
+- Features like questions and answers (using [Squeak!](https://github.com/PostHog/squeak)), job listings (using [Ashby](https://www.ashbyhq.com/customers/posthog-customer-story)), pricing calculator, roadmap, API docs, and more
+- All the components, templates, logic, and styling to make this work, look pretty, and spark joy
+
+## Table of contents
+- [Quick start](#quick-start)
+- [Advanced setup](#advanced-setup)
+- [Contributing](#contributing)
+
+## Quick start
+
+> `AGENTS.md` is equipped with instructions for the most fundamental parts of running the app.
+>
+> If you find places where current documentation is lacking, email cory@posthog.com with the subject, "AGENTS.md".
+
+1. **Pre-installation**
+
+    Install [Node](https://nodejs.org/en/download/) (version 22) - if you installed Node using nvm, you can run `nvm use` to automatically switch to the correct version.
+
+    Install `pnpm`. The easiest way to do this is via `corepack use pnpm@latest-10`.
+
+
+2.  **Start developing**
+
+    Clone the repo and navigate into your new site’s directory:
+
+    ```bash
+    git clone git@github.com:PostHog/posthog.com.git && cd posthog.com/
+    ```
+
+    If you're using an Apple Silicon Mac (M1 or later) you'll need to run the following commands:
+
+    ```bash
+    rm -rf ./node_modules
+    brew install vips
+    ```
+
+    Then install the site dependencies, and start it up:
+
+    ```bash
+    pnpm install
+    pnpm start
+    ```
+
+    > **Tip:** Seeing a discrepancy between local development and staging/production? Preview the production build locally by running `gatsby build && gatsby serve`
+
+3.  **Open the source code and start editing!**
+
+    Your site is now running at `http://localhost:8001`!
+    
+    > **Note:** You'll also see a second link: `http://localhost:8001/___graphql`. This is a tool you can use to experiment with querying your data. Learn more about using this tool in the [Gatsby tutorial](https://www.gatsbyjs.org/tutorial/part-five/#introducing-graphiql).
+
+See full instructions on [developing PostHog.com locally in our manual](https://posthog.com/handbook/engineering/posthog-com/developing-the-website).
+
+## Advanced setup
+
+### Debugging errors on start
+1. Pull the latest changes from `master`
+2. Run `pnpm clean && mkdir .cache & pnpm start` or delete `node_modules` and `.cache`
+3. Make sure you're not in an activated flox environment for a different project
+4. Check builds are passing in [deployment to Vercel](https://github.com/PostHog/posthog.com/deployments)
+
+### Working on `/docs/api`?
+
+The site will load the API schema from US Cloud by default. You can override this to use your local PostHog instance with an env var:
+
+```
+POSTHOG_OPEN_API_SPEC_URL="http://127.0.0.1:8000/api/schema/" pnpm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Want Ashby job listings or GitHub contributors to load?
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+You’ll need to set environment variables for these. [See (private) instructions](https://github.com/PostHog/company-internal/blob/master/website-api-keys.md) for this.
 
-## Learn More
+### Developing the posts section
+To see your local version of the posts section, `/posts` needs to be visited directly (`http://localhost:8001/posts`)
 
-To learn more about Next.js, take a look at the following resources:
+### Cloudflare PR previews
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+[PR previews](https://github.com/PostHog/posthog.com/blob/master/.github/workflows/deploy-preview.yml) build with **`GATSBY_MINIMAL=true`** (same idea as `pnpm build:minimal`). **Post listing pages** such as `/tutorials`, `/blog`, and `/posts` are **not** generated, so those URLs may break in the preview. **Open the direct URL** to your doc or post (e.g. `/tutorials/your-slug`) to review changes. Listings and search stay aligned with production after merge to `master`. More detail: [Developing the website → PR preview deployments](https://posthog.com/handbook/engineering/posthog-com/developing-the-website#pr-preview-deployments-cloudflare-pages).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Developing the merch store
+Additional environment variables are needed to develop the merch store:
+- `SHOPIFY_APP_PASSWORD`
+- `GATSBY_MYSHOPIFY_URL`
+- `GATSBY_SHOPIFY_STOREFRONT_TOKEN`
 
-## Deploy on Vercel
+Currently, these environment variables are excluded from Vercel preview builds to disable merch store node creation and speed up build times on non-merch related PRs.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Dynamic open graph images
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+To develop a dynamic open graph image:
+
+1. Run `pnpm build` with both the `ASHBY_API_KEY` and `GITHUB_API_KEY` set.
+1. In `gatsby/onPostBuild.ts`, temporarily comment out the following:
+    ```
+    if (process.env.VERCEL_GIT_COMMIT_REF !== 'master') return
+    ```
+1. Find the generated open graph image in `public/og-images/`
+
+## Contributing
+
+We <3 contributions big and small. In priority order (although everything is appreciated) with the most helpful first:
+
+- Ask a [question in our community](https://posthog.com/questions)
+- Submit [bug reports and give us feedback in the app](https://app.posthog.com/home#supportModal)! 
+- Vote on features or get early access to beta functionality in our [roadmap](https://posthog.com/roadmap)
+- Open a PR
+    - Read [our instructions above](#quick-start) on developing PostHog.com locally
+    - Read more [detailed instructions in our manual](https://posthog.com/handbook/engineering/posthog-com/developing-the-website)
+    - For basic edits, go to the file in GitHub and click the edit button (pencil icon)
+- Open [an issue](https://github.com/PostHog/posthog.com/issues/new) or [content idea](https://github.com/PostHog/posthog.com/issues/new?assignees=andyvan-ph&labels=content&template=blog-post-idea-template.md&title=%7BContent+type%7D+-+%7Btitle%7D)

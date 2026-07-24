@@ -1,0 +1,2 @@
+/* Re-export all PostHog global styles from original location */
+@import '../styles/global.css';

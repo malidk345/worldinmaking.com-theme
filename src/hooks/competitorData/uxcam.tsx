@@ -1,0 +1,81 @@
+export const uxcam = {
+    name: 'UXCam',
+    key: 'uxcam',
+    assets: {
+        icon: '/images/competitors/uxcam.svg',
+    },
+    products: {
+        product_analytics: {
+            available: true,
+            features: {
+                autocapture: true,
+                cohorts: true,
+            },
+            group_analytics: {
+                available: false,
+            },
+            funnels: {
+                available: true,
+            },
+            user_paths: {
+                available: true,
+            },
+        },
+        session_replay: {
+            available: true,
+            features: {
+                ai_summaries: false,
+                canvas_recording: false,
+                crash_reports: true,
+                conditional_reporting: true,
+                event_timeline: true,
+                filter_by_user_or_event: true,
+                privacy_masking: true,
+            },
+            analysis: {
+                features: {
+                    console_logs: true,
+                    network_monitor: false,
+                },
+            },
+            platform_support: {
+                features: {
+                    mobile_app_recordings: true,
+                    web_app_recordings: true,
+                },
+            },
+        },
+        heatmaps: {
+            available: true,
+            features: {
+                dead_taps: true,
+                rage_clicks: true,
+                rage_taps: true,
+                scrollmaps: true,
+            },
+        },
+        experiments: {
+            available: false,
+        },
+        feature_flags: {
+            available: false,
+        },
+        surveys: {
+            available: false,
+            features: {},
+        },
+        error_tracking: {
+            available: false,
+        },
+    },
+    platform: {
+        deployment: {
+            open_source: false,
+            eu_hosting: true,
+        },
+        pricing: {
+            self_serve: false,
+            transparent_pricing: false,
+        },
+    },
+}

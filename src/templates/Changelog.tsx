@@ -1,0 +1,1069 @@
+import { useRouter } from 'next/navigation'
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+import { useUser } from 'hooks/useUser'
+import { IconArchive, IconDownload, IconPencil, IconPlus, IconShieldLock, IconX } from '@posthog/icons'
+import { ChangelogEmojiReactions } from 'components/EmojiReactions'
+import { ChangelogPRMetadata } from 'components/ChangelogPRMetadata'
+import SEO from 'components/seo'
+import Editor from 'components/Editor'
+import OSButton from 'components/OSButton'
+import { useApp } from '../context/App'
+import RoadmapWindow from 'components/Roadmap/RoadmapWindow'
+import Tooltip from 'components/RadixUI/Tooltip'
+import Timeline from 'components/Timeline'
+import { useVirtualizer } from '@tanstack/react-virtual'
+import CloudinaryImage from 'components/CloudinaryImage'
+import ScrollArea from 'components/RadixUI/ScrollArea'
+import { AnimatePresence, motion, PanInfo } from 'framer-motion'
+import Markdown from 'components/Squeak/components/Markdown'
+import Link from 'components/Link'
+import Filters from 'components/Changelog/Filters'
+import { GatsbyImage } from 'gatsby-plugin-image'
+import type { IGatsbyImageData } from 'gatsby-plugin-image'
+import { useWindow } from '../context/Window'
+import { ZoomImage } from 'components/ZoomImage'
+import { CallToAction } from 'components/CallToAction'
+import { Heading } from 'components/Heading'
+import slugify from 'slugify'
+import { Video } from 'cloudinary-react'
+import { usePathname } from 'next/navigation'
+import MediaPlayer from 'components/MediaPlayer'
+
+dayjs.extend(utc)
+
+const updateDescriptors = [
+    'mind-blowing',
+    'earth-shattering',
+    'game-changing',
+    'jaw-dropping',
+    'awe-inspiring',
+    'groundbreaking',
+    'revolutionary',
+    'show-stopping',
+    'spectacular',
+    'legendary',
+]
+
+type RoadmapNode = {
+    id: number | string
+    date: string
+    title: string
+    description?: string
+    cta?: {
+        label?: string
+        url?: string
+    }
+    media?: {
+        gatsbyImageData?: IGatsbyImageData
+    }
+    profiles?: {
+        data?: Array<{
+            id?: number | string
+            attributes?: {
+                firstName?: string
+                lastName?: string
+                avatar?: {
+                    data?: {
+                        attributes?: {
+                            url?: string
+                        }
+                    }
+                }
+                color?: string
+                teams?: {
+                    data?: Array<{
+                        attributes?: {
+                            name?: string
+                            miniCrest?: {
+                                data?: {
+                                    attributes?: {
+                                        url?: string
+                                    }
+                                }
+                            }
+                        }
+                    }>
+                }
+            }
+        }>
+    }
+    teams?: {
+        data?: Array<{
+            attributes?: {
+                name?: string
+                miniCrest?: {
+                    data?: {
+                        attributes?: {
+                            url?: string
+                        }
+                    }
+                }
+            }
+        }>
+    }
+    topic?: {
+        data?: {
+            attributes?: {
+                label?: string
+            }
+        }
+    }
+    githubUrls?: any
+    githubPRMetadata?: any
+}
+
+type ChangelogVideo = {
+    id: string
+    videoId: string
+    publishedAt: string
+    title: string
+}
+
+export const Change = ({ title, teamName, media, description, cta }) => {
+    return (
+        <>
+            <Heading as="h3" id={slugify(title, { lower: true })} className="m-0">
+                {title}
+            </Heading>
+            {teamName && <p className="m-0 text-sm opacity-60 font-semibold">{teamName} Team</p>}
+            {media?.data?.attributes?.mime === 'video/mp4' ? (
+                <div className="my-4">
+                    <ZoomImage>
+                        <Video
+                            publicId={media?.data?.attributes?.provider_metadata?.public_id}
+                            cloudName={process.env.GATSBY_CLOUDINARY_CLOUD_NAME}
+                            className="max-w-2xl w-full"
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                        />
+                    </ZoomImage>
+                </div>
+            ) : media?.data?.attributes?.url ? (
+                <div className="my-4">
+                    <ZoomImage>
+                        <CloudinaryImage src={media?.data?.attributes?.url} className="w-full" width={1500} />
+                    </ZoomImage>
+                </div>
+            ) : null}
+            <div className="mt-2">
+                <Markdown regularText={true}>{description}</Markdown>
+            </div>
+            {cta && (
+                <CallToAction type="secondary" size="md" to={cta.url}>
+                    {cta.label}
+                </CallToAction>
+            )}
+        </>
+    )
+}
+
+const Roadmap = ({
+    roadmap,
+    onClose,
+    initialActiveRoadmap,
+}: {
+    roadmap: RoadmapNode
+    onClose: () => void
+    initialActiveRoadmap: RoadmapNode | null
+}) => {
+    const { appWindow } = useWindow()
+    const { isModerator, getJwt } = useUser()
+    const { addWindow } = useApp()
+    const hasProfiles = (roadmap.profiles?.data?.length ?? 0) > 0
+    const [width, setWidth] = useState(450)
+    const [isResizing, setIsResizing] = useState(false)
+
+    const handleDragResize = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+        setIsResizing(true)
+        setWidth((prev) => Math.max(300, Math.min(800, prev - info.delta.x)))
+    }
+
+    const handleEditRoadmap = () => {
+        addWindow(
+            <RoadmapWindow
+                location={{ pathname: `edit-roadmap-${roadmap.id}` }}
+                key={`edit-roadmap`}
+                newWindow
+                id={roadmap.id}
+                status="complete"
+            />
+        )
+    }
+
+    const handleUnpublishRoadmap = async () => {
+        const confirmed = window.confirm(
+            'Unpublishing will remove this item from the changelog on the next build. You can republish it later in Strapi. No data will be lost.'
+        )
+        if (confirmed) {
+            await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/roadmaps/${roadmap.id}`, {
+                body: JSON.stringify({
+                    data: {
+                        publishedAt: null,
+                    },
+                }),
+                method: 'PUT',
+                headers: {
+                    'content-type': 'application/json',
+                    Authorization: `Bearer ${await getJwt()}`,
+                },
+            })
+            onClose()
+        }
+    }
+
+    const handleClose = () => {
+        onClose()
+    }
+
+    const containerWidth = (appWindow?.size?.width || 0) <= width ? '100%' : width
+
+    return (
+        <motion.div
+            className="border-l border-primary bg-white dark:bg-dark flex-shrink-0 relative overflow-hidden shadow-2xl"
+            initial={{ width: 0 }}
+            animate={{ width: containerWidth }}
+            exit={{ width: 0 }}
+            transition={{ duration: isResizing || !!initialActiveRoadmap ? 0 : 0.3, ease: 'easeInOut' }}
+        >
+            <motion.div
+                className="h-full flex flex-col"
+                style={{ width: containerWidth }}
+                initial={{ x: width }}
+                animate={{ x: 0 }}
+                exit={{ x: width }}
+                transition={{ duration: isResizing || !!initialActiveRoadmap ? 0 : 0.3, ease: 'easeInOut' }}
+            >
+                <div className="flex justify-between space-x-2 px-4 pt-4 pb-3.5 border-b border-primary">
+                    <div className="flex-1">
+                        <h4 className="m-0 text-lg leading-tight">{roadmap.title}</h4>
+                        <p className="m-0 opacity-50 text-sm mt-1">{dayjs.utc(roadmap.date).format('MMMM D, YYYY')}</p>
+                    </div>
+                    <aside className="">
+                        {isModerator && (
+                            <>
+                                <Tooltip
+                                    trigger={<OSButton size="md" icon={<IconPencil />} onClick={handleEditRoadmap} />}
+                                    delay={0}
+                                >
+                                    <IconShieldLock className="size-6 inline-block relative -top-px text-secondary" />{' '}
+                                    Edit roadmap item
+                                </Tooltip>
+                                <Tooltip
+                                    trigger={
+                                        <OSButton size="md" icon={<IconArchive />} onClick={handleUnpublishRoadmap} />
+                                    }
+                                    delay={0}
+                                >
+                                    <IconShieldLock className="size-6 inline-block relative -top-px text-secondary" />{' '}
+                                    Unpublish roadmap item
+                                </Tooltip>
+                            </>
+                        )}
+                        <OSButton size="md" icon={<IconX />} onClick={handleClose} />
+                    </aside>
+                </div>
+                <div className="flex-1 min-h-0">
+                    <ScrollArea className="h-full min-h-0 [&>div]:min-h-0">
+                        {roadmap.media?.gatsbyImageData && (
+                            <div className="mt-4 px-4 not-prose">
+                                <ZoomImage>
+                                    <GatsbyImage
+                                        image={roadmap.media.gatsbyImageData}
+                                        alt={roadmap.title}
+                                        className="rounded"
+                                    />
+                                </ZoomImage>
+                            </div>
+                        )}
+                        {hasProfiles && (
+                            <div
+                                data-scheme="secondary"
+                                className="py-2 mx-4 px-4 border border-primary rounded-md bg-primary mt-2"
+                            >
+                                {roadmap.profiles?.data?.map((profile) => {
+                                    const avatar = profile.attributes?.avatar?.data?.attributes?.url
+                                    const name = [profile.attributes?.firstName, profile.attributes?.lastName]
+                                        .filter(Boolean)
+                                        .join(' ')
+                                    const team = profile.attributes?.teams?.data?.[0]
+                                    return (
+                                        <Link href={`/community/profiles/${profile.id}`}
+                                            state={{ newWindow: true }}
+                                            key={profile.id}
+                                            className="group flex gap-2 items-center justify-between !no-underline"
+                                        >
+                                            <div className="flex gap-2 items-center">
+                                                {avatar && (
+                                                    <div
+                                                        className={`size-10 rounded-full overflow-hidden bg-${profile.attributes?.color}`}
+                                                    >
+                                                        <CloudinaryImage
+                                                            className={`w-full`}
+                                                            src={avatar as `https://res.cloudinary.com/${string}`}
+                                                            alt={profile.attributes?.firstName}
+                                                        />
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    <h5 className="m-0 leading-tight group-hover:!underline">{name}</h5>
+                                                    <p className="!m-0 text-sm leading-tight">
+                                                        {team?.attributes?.name}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                {team?.attributes?.miniCrest?.data?.attributes?.url && (
+                                                    <CloudinaryImage
+                                                        className="w-10"
+                                                        src={
+                                                            team.attributes.miniCrest.data.attributes
+                                                                .url as `https://res.cloudinary.com/${string}`
+                                                        }
+                                                        alt={team.attributes.name}
+                                                    />
+                                                )}
+                                            </div>
+                                        </Link>
+                                    )
+                                })}
+                            </div>
+                        )}
+                        {roadmap.description && (
+                            <div className="py-2 px-4">
+                                <Markdown>{roadmap.description}</Markdown>
+                                <div className="mt-8 mb-4 flex flex-row flex-wrap gap-1">
+                                    <ChangelogEmojiReactions roadmapId={roadmap.id} />
+                                </div>
+                            </div>
+                        )}
+                    </ScrollArea>
+                </div>
+
+                {roadmap.githubPRMetadata && (
+                    <div className="px-4 pb-4 pt-4.5 grid grid-cols-3 gap-x-3 gap-y-2 text-sm bg-primary border-t border-primary">
+                        <ChangelogPRMetadata githubPRMetadata={roadmap.githubPRMetadata} />
+                    </div>
+                )}
+
+                {roadmap.cta?.url && (
+                    <div className="mt-auto py-2 px-4 border-t border-primary">
+                        <OSButton
+                            asLink
+                            to={roadmap.cta.url}
+                            variant="secondary"
+                            width="full"
+                            state={{ newWindow: true }}
+                        >
+                            {roadmap.cta.label}
+                        </OSButton>
+                    </div>
+                )}
+
+                {/* Resize handle */}
+                <motion.div
+                    className="group absolute left-0 top-0 w-1.5 bottom-0 cursor-ew-resize !transform-none z-10"
+                    drag="x"
+                    dragMomentum={false}
+                    dragConstraints={{ left: 0, right: 0 }}
+                    onDrag={handleDragResize}
+                    onDragEnd={() => setIsResizing(false)}
+                >
+                    <div className="relative w-full h-full">
+                        <div className="hidden group-hover:block absolute inset-y-0 left-0 w-[2px] bg-primary opacity-50" />
+                    </div>
+                </motion.div>
+            </motion.div>
+        </motion.div>
+    )
+}
+
+interface RoadmapCardsProps {
+    roadmaps: RoadmapNode[]
+    setPercentageOfScrollInView: (percentage: number) => void
+    windowPercentageFromLeft: number
+    setRoadmapsPercentageFromLeft: (percentage: number) => void
+    onRoadmapClick: (roadmap: RoadmapNode) => void
+    containerWidth: number
+    startYear: number
+    endYear: number
+    activeRoadmap: RoadmapNode | null
+    hideEmpty: boolean
+    initialActiveRoadmap: RoadmapNode | null
+    videos: ChangelogVideo[]
+}
+
+const ChangelogVideo = ({ videoId, title }: { videoId: string; title: string }) => {
+    const { appWindow } = useWindow()
+    const { setWindowTitle } = useApp()
+
+    useEffect(() => {
+        if (!appWindow) return
+        setWindowTitle(appWindow, title)
+    }, [])
+    return <MediaPlayer videoId={videoId} source="youtube" />
+}
+const RoadmapCards = ({
+    startYear,
+    endYear,
+    roadmaps,
+    setPercentageOfScrollInView,
+    windowPercentageFromLeft,
+    setRoadmapsPercentageFromLeft,
+    onRoadmapClick,
+    containerWidth,
+    activeRoadmap,
+    hideEmpty,
+    initialActiveRoadmap,
+    videos,
+}: RoadmapCardsProps) => {
+    const { addWindow } = useApp()
+    const width = 340
+    const containerRef = useRef<HTMLDivElement>(null)
+
+    const getWeekOfMonth = (date: string) => {
+        return Math.min(4, Math.ceil(dayjs.utc(date).date() / 7))
+    }
+
+    const toRomanNumeral = (num: number): string => {
+        const romanNumerals: Record<number, string> = { 1: 'I', 2: 'II', 3: 'III', 4: 'IV' }
+        return romanNumerals[num] || num.toString()
+    }
+
+    // Group by individual weeks
+    const weeks = useMemo(() => {
+        const weekData: Array<{
+            year: number
+            month: number
+            weekNumber: number
+            roadmaps: RoadmapNode[]
+        }> = []
+
+        const now = dayjs.utc()
+        const currentYear = now.year()
+        const currentMonthIndex = now.month()
+        const currentWeek = getWeekOfMonth(now.format('YYYY-MM-DD'))
+
+        for (let y = startYear; y <= endYear && y <= currentYear; y++) {
+            const lastMonthIndexForYear = y === currentYear ? currentMonthIndex : 11
+            for (let m = 0; m <= lastMonthIndexForYear; m++) {
+                const monthRoadmaps = roadmaps.filter((r) => {
+                    const d = dayjs.utc(r.date)
+                    return d.year() === y && d.month() === m
+                })
+
+                // Group by week within the month
+                const weekBuckets: Record<number, RoadmapNode[]> = { 1: [], 2: [], 3: [], 4: [] }
+                monthRoadmaps.forEach((item) => {
+                    const week = getWeekOfMonth(item.date)
+                    weekBuckets[week].push(item)
+                })
+
+                // Determine which weeks to show
+                let weeksToShow = [1, 2, 3, 4]
+                const isCurrentMonth = y === currentYear && m === currentMonthIndex
+
+                if (isCurrentMonth) {
+                    // Show all weeks before current week, and current week only if it has content
+                    weeksToShow = weeksToShow.filter((w) => {
+                        if (w < currentWeek) return true
+                        if (w === currentWeek) return (weekBuckets[w]?.length || 0) > 0
+                        return false
+                    })
+                }
+
+                // Add each week as a separate entry
+                weeksToShow.forEach((weekNumber) => {
+                    const weekRoadmaps = weekBuckets[weekNumber] || []
+                    if (!hideEmpty || weekRoadmaps.length > 0) {
+                        weekData.push({
+                            year: y,
+                            month: m,
+                            weekNumber,
+                            roadmaps: weekRoadmaps,
+                        })
+                    }
+                })
+            }
+        }
+
+        return weekData
+    }, [roadmaps, startYear, endYear, hideEmpty])
+
+    const videosByWeek = useMemo(() => {
+        const map = new Map<string, ChangelogVideo[]>()
+        videos.forEach((video) => {
+            if (!video.publishedAt) return
+            const date = dayjs.utc(video.publishedAt)
+            const year = date.year()
+            const month = date.month()
+            const week = getWeekOfMonth(video.publishedAt)
+            const key = `${year}-${month}-${week}`
+            const existing = map.get(key) || []
+            existing.push(video)
+            map.set(
+                key,
+                existing.sort((a, b) => dayjs.utc(b.publishedAt).valueOf() - dayjs.utc(a.publishedAt).valueOf())
+            )
+        })
+        return map
+    }, [videos])
+
+    const virtualizer = useVirtualizer({
+        horizontal: true,
+        count: weeks.length,
+        getScrollElement: () => {
+            const viewport = containerRef.current?.closest('[data-radix-scroll-area-viewport]') as HTMLElement | null
+            return viewport
+        },
+        estimateSize: () => width,
+        overscan: 5,
+        gap: 15,
+    })
+
+    const handleRoadmapClick = (roadmap: RoadmapNode) => {
+        router.push(`?id=${roadmap.id}`)
+        onRoadmapClick(roadmap)
+    }
+
+    const scrollToIndex = (index: number) => {
+        virtualizer.scrollToIndex(index, { align: 'center' })
+    }
+
+    useLayoutEffect(() => {
+        virtualizer.measure()
+    }, [width])
+
+    useEffect(() => {
+        const viewport = containerRef.current?.closest('[data-radix-scroll-area-viewport]') as HTMLElement | null
+        if (!viewport) return
+
+        const percentageOfScrollInView = (containerWidth / viewport.scrollWidth) * 100
+        setPercentageOfScrollInView(percentageOfScrollInView)
+        virtualizer.measure()
+    }, [containerWidth])
+
+    useEffect(() => {
+        const viewport = containerRef.current?.closest('[data-radix-scroll-area-viewport]') as HTMLElement | null
+        if (!viewport) return
+        viewport.scrollTo({
+            left: (windowPercentageFromLeft / 100) * viewport.scrollWidth,
+        })
+    }, [windowPercentageFromLeft])
+
+    useEffect(() => {
+        const viewport = containerRef.current?.closest('[data-radix-scroll-area-viewport]') as HTMLElement | null
+        if (!viewport) return
+
+        const handleScroll = () => {
+            setRoadmapsPercentageFromLeft(((viewport.scrollLeft || 0) / (viewport.scrollWidth || 0)) * 100)
+        }
+
+        viewport.addEventListener('scroll', handleScroll)
+        return () => {
+            viewport.removeEventListener('scroll', handleScroll)
+        }
+    }, [])
+
+    // Scroll to latest week with roadmaps on mount
+    useEffect(() => {
+        const viewport = containerRef.current?.closest('[data-radix-scroll-area-viewport]') as HTMLElement | null
+        if (!viewport) return
+
+        const lastNonEmptyWeekIndex = weeks.reduce((lastIndex, week, index) => {
+            return week.roadmaps.length > 0 ? index : lastIndex
+        }, -1)
+
+        if (lastNonEmptyWeekIndex === -1) return
+
+        const scrollToLastWeek = () => {
+            const virtualItems = virtualizer.getVirtualItems()
+            if (virtualItems.length === 0) return
+
+            const targetIndex = Math.max(0, lastNonEmptyWeekIndex)
+            const scrollLeft = targetIndex * (width + 15)
+
+            viewport.scrollTo({
+                left: scrollLeft,
+            })
+        }
+
+        const handleInitialScroll = () => {
+            if (initialActiveRoadmap) {
+                const index = weeks.findIndex((week) => week.roadmaps.some((r) => r.id === initialActiveRoadmap.id))
+                if (index >= 0) {
+                    scrollToIndex(index)
+                    return
+                }
+            }
+            scrollToLastWeek()
+        }
+
+        const timer = setTimeout(handleInitialScroll, 100)
+        return () => clearTimeout(timer)
+    }, [weeks, width])
+
+    const handlePlayVideo = (video: ChangelogVideo) => {
+        const size = {
+            width: 500,
+            height: 467,
+        }
+        const appSettings = {
+            size: {
+                min: size,
+                max: size,
+                autoHeight: true,
+            },
+        }
+        addWindow(
+            <ChangelogVideo
+                videoId={video.videoId}
+                title={video.title}
+                newWindow
+                location={{ pathname: `changelog-video-${video.videoId}` }}
+                key={`changelog-video-${video.videoId}`}
+                appSettings={appSettings}
+                position={{
+                    x: window.innerWidth - size.width - 20,
+                    y: window.innerHeight - size.height - 20,
+                }}
+                size={size}
+            />
+        )
+    }
+
+    return (
+        <ScrollArea className="size-full [&>div>div]:size-full [&>div>div]:!flex">
+            <div className="h-full px-4">
+                <div
+                    ref={containerRef}
+                    style={{
+                        width: `${virtualizer.getTotalSize()}px`,
+                    }}
+                    className="h-full relative"
+                >
+                    {virtualizer.getVirtualItems().map((virtualColumn) => {
+                        const weekData = weeks[virtualColumn.index]
+                        const monthName = dayjs.utc().year(weekData.year).month(weekData.month).format('MMMM')
+                        const count = weekData.roadmaps.length
+                        const weekKey = `${weekData.year}-${weekData.month}-${weekData.weekNumber}`
+                        const weekVideo = videosByWeek.get(weekKey)?.[0] || null
+
+                        return (
+                            <div
+                                key={virtualColumn.index}
+                                className="flex justify-center"
+                                style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    height: '100%',
+                                    width: `${virtualColumn.size}px`,
+                                    transform: `translateX(${virtualColumn.start}px)`,
+                                }}
+                            >
+                                <div className="w-full h-full flex flex-col bg-white dark:bg-dark rounded border border-primary overflow-hidden">
+                                    <div className="flex items-center justify-between p-3 border-b border-primary">
+                                        <div>
+                                            <h4 className="m-0 text-lg font-semibold">
+                                                {monthName} {weekData.year} - Week {toRomanNumeral(weekData.weekNumber)}
+                                            </h4>
+                                            <p className="m-0 text-sm text-secondary">
+                                                {count}{' '}
+                                                {
+                                                    updateDescriptors[
+                                                        (weekData.month * 4 +
+                                                            weekData.weekNumber +
+                                                            weekData.year * 48) %
+                                                            updateDescriptors.length
+                                                    ]
+                                                }{' '}
+                                                update{count !== 1 ? 's' : ''}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <ScrollArea className="flex-1 min-h-0">
+                                        {weekVideo && (
+                                            <div className="p-2 border-b border-primary">
+                                                <button
+                                                    onClick={() => handlePlayVideo(weekVideo)}
+                                                    className="w-full aspect-video rounded border border-primary overflow-hidden bg-black relative hover:scale-[1.005] active:scale-[0.995] transition-all duration-100"
+                                                >
+                                                    <img
+                                                        src={`https://img.youtube.com/vi/${weekVideo.videoId}/hqdefault.jpg`}
+                                                        alt={weekVideo.title}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                                        <span className="text-white text-3xl drop-shadow-lg">▶</span>
+                                                    </div>
+                                                </button>
+                                            </div>
+                                        )}
+                                        <ul className="p-0 m-0 list-none">
+                                            {weekData.roadmaps.length === 0 ? (
+                                                <li className="p-4 text-center text-sm text-secondary opacity-70">
+                                                    No updates
+                                                </li>
+                                            ) : (
+                                                weekData.roadmaps.map((roadmap) => {
+                                                    const active = activeRoadmap?.id === roadmap.id
+                                                    const teamName = roadmap.teams?.data?.[0]?.attributes?.name
+                                                    const crestUrl =
+                                                        roadmap.teams?.data?.[0]?.attributes?.miniCrest?.data
+                                                            ?.attributes?.url
+
+                                                    return (
+                                                        <li
+                                                            key={roadmap.id}
+                                                            className="p-0 m-0 border-b last:border-b-0 border-primary"
+                                                        >
+                                                            <button
+                                                                data-scheme="secondary"
+                                                                className={`group w-full text-left py-2.5 px-4 flex justify-between gap-2 ${
+                                                                    active ? 'bg-primary' : 'hover:bg-primary'
+                                                                }`}
+                                                                onClick={() => handleRoadmapClick(roadmap)}
+                                                            >
+                                                                <div className="min-w-0">
+                                                                    <h5
+                                                                        className={`m-0 text-[15px] leading-tight mb-0.5 ${
+                                                                            active ? '' : 'group-hover:underline'
+                                                                        }`}
+                                                                    >
+                                                                        {roadmap.title}
+                                                                    </h5>
+                                                                    {teamName && (
+                                                                        <p className="!m-0 text-[13px] text-secondary">
+                                                                            {teamName} Team
+                                                                        </p>
+                                                                    )}
+                                                                </div>
+                                                                {crestUrl && (
+                                                                    <div className="shrink-0 leading-[0]">
+                                                                        <CloudinaryImage
+                                                                            className="w-10"
+                                                                            width={80}
+                                                                            src={
+                                                                                crestUrl as `https://res.cloudinary.com/${string}`
+                                                                            }
+                                                                        />
+                                                                    </div>
+                                                                )}
+                                                            </button>
+                                                        </li>
+                                                    )
+                                                })
+                                            )}
+                                        </ul>
+                                    </ScrollArea>
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+            </div>
+        </ScrollArea>
+    )
+}
+
+export default function Changelog({
+    data,
+}: {
+    data: {
+        allRoadmap: {
+            nodes: RoadmapNode[]
+        }
+        allChangelogVideo: {
+            nodes: ChangelogVideo[]
+        }
+    }
+}): JSX.Element {
+    const timelineContainerRef = useRef<HTMLDivElement>(null)
+    const resizeObserverRef = useRef<HTMLDivElement>(null)
+    const { href } = usePathname()
+    const [initialActiveRoadmap, setInitialActiveRoadmap] = useState(() => {
+        if (!href) return null
+        const urlObj = new URL(href)
+        const id = urlObj.searchParams.get('id')
+        if (!id) return null
+        return (data?.allRoadmap?.nodes || []).find((roadmap: RoadmapNode) => roadmap.id === parseInt(id)) || null
+    })
+    const { addWindow } = useApp()
+    const { isModerator } = useUser()
+    const [windowX, setWindowX] = useState(0)
+    const [percentageOfScrollInView, setPercentageOfScrollInView] = useState(0)
+    const [windowPercentageFromLeft, setWindowPercentageFromLeft] = useState(0)
+    const [roadmapsPercentageFromLeft, setRoadmapsPercentageFromLeft] = useState(0)
+    const [activeRoadmap, setActiveRoadmap] = useState<RoadmapNode | null>(initialActiveRoadmap)
+    const [containerWidth, setContainerWidth] = useState(0)
+    const [teamFilter, setTeamFilter] = useState('all')
+    const [categoryFilter, setCategoryFilter] = useState('all')
+    const hideEmpty = useMemo(() => teamFilter !== 'all' || categoryFilter !== 'all', [teamFilter, categoryFilter])
+    const playlistVideos = data.allChangelogVideo?.nodes || []
+
+    const handleAddFeature = () => {
+        addWindow(
+            React.createElement(RoadmapWindow, {
+                location: { pathname: `add-roadmap` },
+                key: `add-roadmap`,
+                newWindow: true,
+                status: 'complete',
+            }) as unknown as never
+        )
+    }
+
+    const handleDrag = (percentageFromLeft: number) => {
+        setWindowPercentageFromLeft(percentageFromLeft)
+    }
+
+    const filteredData = useMemo(() => {
+        let filtered = (data?.allRoadmap?.nodes || [])
+
+        if (teamFilter !== 'all') {
+            filtered = filtered.filter((roadmap: RoadmapNode) =>
+                roadmap.teams?.data?.some((team) => team.attributes?.name === teamFilter)
+            )
+        }
+
+        if (categoryFilter !== 'all') {
+            filtered = filtered.filter(
+                (roadmap: RoadmapNode) => roadmap.topic?.data?.attributes?.label === categoryFilter
+            )
+        }
+
+        return filtered
+    }, [teamFilter, categoryFilter, (data?.allRoadmap?.nodes || [])])
+
+    const roadmapsGrouped = useMemo(() => {
+        const grouped: {
+            [year: number]: {
+                [month: number]: {
+                    [week: number]: { count: number }
+                }
+            }
+        } = {}
+
+        const getWeekOfMonth = (date: string) => {
+            return Math.min(4, Math.ceil(dayjs.utc(date).date() / 7))
+        }
+
+        filteredData.forEach((roadmap: { date: string }) => {
+            const d = dayjs.utc(roadmap.date)
+            const year = d.year()
+            const month = d.month() + 1 // 1-12
+            const week = getWeekOfMonth(roadmap.date)
+
+            if (!grouped[year]) grouped[year] = {}
+            if (!grouped[year][month]) grouped[year][month] = {}
+            if (!grouped[year][month][week]) grouped[year][month][week] = { count: 0 }
+            grouped[year][month][week].count += 1
+        })
+
+        return grouped
+    }, [filteredData])
+
+    useEffect(() => {
+        if (!resizeObserverRef.current) return
+
+        const resizeObserver = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                setContainerWidth(entry.contentRect.width)
+            }
+        })
+
+        resizeObserver.observe(resizeObserverRef.current)
+
+        // Set initial width
+        setContainerWidth(resizeObserverRef.current.clientWidth)
+
+        return () => {
+            resizeObserver.disconnect()
+        }
+    }, [])
+
+    // Scroll timeline to the end on mount
+    useEffect(() => {
+        if (!timelineContainerRef.current) return
+
+        const timelineViewport = timelineContainerRef.current.closest(
+            '[data-radix-scroll-area-viewport]'
+        ) as HTMLElement | null
+        if (!timelineViewport) return
+
+        const scrollToEnd = () => {
+            timelineViewport.scrollTo({
+                left: timelineViewport.scrollWidth,
+            })
+        }
+
+        // Delay to ensure timeline is rendered
+        const timer = setTimeout(scrollToEnd, 100)
+        return () => clearTimeout(timer)
+    }, [])
+
+    useEffect(() => {
+        if (href) {
+            const urlObj = new URL(href)
+            const team = urlObj.searchParams.get('team')
+            const category = urlObj.searchParams.get('category')
+            if (team) setTeamFilter(team)
+            if (category) setCategoryFilter(category)
+        }
+    }, [href])
+
+    useEffect(() => {
+        if (initialActiveRoadmap) {
+            setInitialActiveRoadmap(null)
+        }
+    }, [])
+
+    const filterNavigate = (key: string, value: string) => {
+        if (href) {
+            const urlObj = new URL(href)
+            urlObj.searchParams.set(key, value)
+            const params = urlObj.searchParams.toString()
+            router.push(`?${params}`)
+        }
+    }
+
+    const handleDownloadCSV = () => {
+        const headers = ['Title', 'Date', 'Team', 'Description']
+        const escapeCSV = (value: unknown) => {
+            const str = value == null ? '' : String(value)
+            return `"${str.replace(/"/g, '""')}"`
+        }
+        const rows: Array<[string, string, string, string]> = filteredData.map((item: RoadmapNode) => [
+            item.title,
+            item.date,
+            item.teams?.data?.[0]?.attributes?.name || '',
+            item.description || '',
+        ])
+        const csv = [
+            headers.join(','),
+            ...rows.map((row: [string, string, string, string]) => row.map(escapeCSV).join(',')),
+        ].join('\n')
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = 'roadmap.csv'
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        URL.revokeObjectURL(url)
+    }
+
+    const handleRoadmapClose = () => {
+        setActiveRoadmap(null)
+        router.push('')
+    }
+
+    const handleRoadmapClick = (roadmap: RoadmapNode) => {
+        setActiveRoadmap(roadmap)
+    }
+
+    return (
+        <>
+            <SEO title="Changelog - PostHog" />
+            <Editor
+                hideToolbar
+                hasTabs
+                type="changelog"
+                maxWidth="100%"
+                bookmark={{
+                    title: 'Changelog',
+                    description: 'Latest updates and releases',
+                }}
+            >
+                <div
+                    data-scheme="secondary"
+                    className="bg-primary text-primary relative h-full flex border-t border-primary"
+                >
+                    <div ref={resizeObserverRef} className="flex flex-col flex-1 min-w-0 h-full">
+                        <div className="min-h-0 flex-shrink-0 flex justify-between items-center px-4 mt-2">
+                            <Filters
+                                onTeamChange={(value) => filterNavigate('team', value)}
+                                teamFilterValue={teamFilter}
+                                onCategoryChange={(value) => filterNavigate('category', value)}
+                                categoryFilterValue={categoryFilter}
+                            />
+                            {isModerator && (
+                                <div className="space-x-1">
+                                    <Tooltip
+                                        trigger={<OSButton size="md" icon={<IconPlus />} onClick={handleAddFeature} />}
+                                        delay={0}
+                                    >
+                                        <IconShieldLock className="size-6 inline-block relative -top-px text-secondary" />{' '}
+                                        Add roadmap item
+                                    </Tooltip>
+                                    <Tooltip
+                                        trigger={
+                                            <OSButton size="md" icon={<IconDownload />} onClick={handleDownloadCSV} />
+                                        }
+                                        delay={0}
+                                    >
+                                        <IconShieldLock className="size-6 inline-block relative -top-px text-secondary" />{' '}
+                                        Download as CSV
+                                    </Tooltip>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className={`min-h-0 flex-grow pt-2 ${hideEmpty ? 'mb-4' : ''}`}>
+                            <RoadmapCards
+                                startYear={2020}
+                                endYear={2026}
+                                roadmaps={filteredData}
+                                setPercentageOfScrollInView={setPercentageOfScrollInView}
+                                windowPercentageFromLeft={windowPercentageFromLeft}
+                                setRoadmapsPercentageFromLeft={setRoadmapsPercentageFromLeft}
+                                onRoadmapClick={handleRoadmapClick}
+                                containerWidth={containerWidth}
+                                activeRoadmap={activeRoadmap}
+                                hideEmpty={hideEmpty}
+                                initialActiveRoadmap={initialActiveRoadmap}
+                                videos={playlistVideos}
+                            />
+                        </div>
+                        <AnimatePresence>
+                            {!hideEmpty && (
+                                <motion.div
+                                    initial={{ height: 0 }}
+                                    animate={{ height: 'auto' }}
+                                    exit={{ height: 0 }}
+                                    className="min-h-0 flex-shrink-0 mt-auto overflow-hidden"
+                                >
+                                    <Timeline
+                                        startYear={2020}
+                                        endYear={2026}
+                                        data={roadmapsGrouped}
+                                        onDrag={handleDrag}
+                                        windowX={windowX}
+                                        setWindowX={setWindowX}
+                                        containerRef={timelineContainerRef}
+                                        percentageOfScrollInView={percentageOfScrollInView}
+                                        roadmapsPercentageFromLeft={roadmapsPercentageFromLeft}
+                                    />
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                    <AnimatePresence>
+                        {activeRoadmap && (
+                            <Roadmap
+                                roadmap={activeRoadmap}
+                                onClose={handleRoadmapClose}
+                                initialActiveRoadmap={initialActiveRoadmap}
+                            />
+                        )}
+                    </AnimatePresence>
+                </div>
+            </Editor>
+        </>
+    )
+}

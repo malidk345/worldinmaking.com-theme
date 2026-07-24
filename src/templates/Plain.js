@@ -1,0 +1,62 @@
+import { MDXProvider } from '@mdx-js/react'
+import Link from 'components/Link'
+import { PrivateLink } from 'components/PrivateLink'
+import ImageSlider from 'components/ImageSlider'
+import { Hero } from 'components/Hero'
+import { Check, Close } from 'components/Icons/Icons'
+import Layout from 'components/Layout'
+import { Section } from 'components/Section'
+import { SEO } from 'components/seo'
+import TutorialsSlider from 'components/TutorialsSlider'
+import TutorialsList from 'components/TutorialsList'
+import { MDXRenderer } from 'gatsby-plugin-mdx'
+import React from 'react'
+import { MdxCodeBlock } from '../components/CodeBlock'
+import { shortcodes } from '../mdxGlobalComponents'
+import { OverflowXSection } from '../components/OverflowXSection'
+import { Tweet } from 'components/Tweet'
+import ReaderView from 'components/ReaderView'
+
+const A = (props) => <Link {...props} />
+
+export default function Plain({ data }) {
+    const { pageData } = data
+    const { body, excerpt } = pageData
+    const { title, featuredImage, showTitle, width = 'sm', noindex, images, isInFrame, seo } = pageData?.frontmatter
+    const components = {
+        pre: MdxCodeBlock,
+        Hero,
+        Section,
+        ProductScreenshot,
+        ProductVideo,
+        FeatureSnapshot,
+        PrivateLink,
+        OverflowXSection,
+        Check,
+        Close,
+        a: A,
+        TutorialsSlider,
+        TutorialsList,
+        ImageSlider,
+        ...shortcodes,
+    }
+
+    return (
+        <ReaderView hideLeftSidebar showQuestions={!isInFrame}>
+            <SEO
+                title={seo?.metaTitle || title + ' - PostHog'}
+                description={seo?.metaDescription || excerpt}
+                article
+                image={featuredImage?.publicURL}
+                noindex={isInFrame || noindex}
+            />
+            <section className="py-12">
+                {showTitle && <h1 className="text-center">{title}</h1>}
+                <MDXProvider components={components}>
+                    <MDXRenderer images={images}>{body}</MDXRenderer>
+                </MDXProvider>
+            </section>
+        </ReaderView>
+    )
+}
+

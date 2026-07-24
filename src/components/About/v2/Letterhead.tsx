@@ -1,0 +1,52 @@
+import React from 'react'
+import Link from 'components/Link'
+import { IconXNotTwitter } from 'components/OSIcons'
+import CloudinaryImage from 'components/CloudinaryImage'
+import { useApp } from '../../../context/App'
+import { DebugContainerQuery } from 'components/DebugContainerQuery'
+
+export const Letterhead = () => {
+    const { siteSettings } = useApp()
+
+    return (
+        <div className="not-prose border-b border-primary py-4 flex flex-col gap-2 @sm:flex-row items-center justify-between">
+            <div>
+                <img
+                    className="inline-block w-auto h-auto max-w-full"
+                    src={siteSettings.theme === 'dark' ? '/brand/posthog-logo-white.svg' : '/brand/posthog-logo.svg'}
+                    alt="PostHog"
+                />
+            </div>
+            <div className="@sm:hidden uppercase text-xs tracking-wider text-center text-secondary pt-2">
+                From the desk of
+            </div>
+            <aside className="flex gap-2 items-center">
+                <div>
+                    <Link
+                        to="/community/profiles/27732"
+                        state={{ newWindow: true }}
+                        className="inline-block aspect-square size-16 rounded-full overflow-hidden bg-yellow"
+                    >
+                        <CloudinaryImage
+                            alt="James Hawkins"
+                            src="https://res.cloudinary.com/dmukukwp6/image/upload/v1738943658/James_H_5cb4c53d9a.png"
+                        />
+                    </Link>
+                </div>
+                <div className="flex flex-col gap-0 leading-none">
+                    <div className="hidden @sm:flex uppercase text-xs tracking-wider text-center text-secondary pb-0.5">
+                        From the desk of
+                    </div>
+                    <strong>James Hawkins</strong>
+                    <span className="text-secondary text-sm">Co-founder</span>
+                    <div>
+                        <IconXNotTwitter className="inline-block size-4 mr-1" />
+                        <Link to="https://x.com/james406" external className="text-sm">
+                            james406
+                        </Link>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    )
+}

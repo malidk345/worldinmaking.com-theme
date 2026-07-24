@@ -1,0 +1,101 @@
+import React, { useCallback } from 'react'
+
+interface ScrollToElementProps {
+    targetId: string
+    offset?: number
+    children: React.ReactNode
+    as?: keyof JSX.IntrinsicElements
+    className?: string
+    onClick?: (e: React.MouseEvent) => void
+    behavior?: 'auto' | 'smooth'
+    [key: string]: any
+}
+
+export const scrollToElement = (
+    targetId: string,
+    offset = 0,
+    behavior: 'auto' | 'smooth' = 'smooth',
+    align: 'start' | 'end' = 'start'
+): void => {
+    const targetElement = document.getElementById(targetId)
+    if (!targetElement) {
+        return
+    }
+
+    // Check for Radix ScrollArea container
+    const scrollViewport = targetElement.closest('[data-radix-scroll-area-viewport]') as HTMLElement
+
+    // Only use viewport scrolling if it exists AND is actually scrollable
+    // In website mode, the viewport exists but doesn't scroll (pages are full height)
+    const viewportIsScrollable = scrollViewport && scrollViewport.scrollHeight > scrollViewport.clientHeight
+
+    const taskbarOffset = 49
+    const targetRect = targetElement.getBoundingClientRect()
+
+    if (viewportIsScrollable) {
+        // Radix ScrollArea scrolling (same logic as ElementScrollLink)
+        const parentRect = scrollViewport.getBoundingClientRect()
+        const top =
+            align === 'end'
+                ? targetRect.bottom - parentRect.top + scrollViewport.scrollTop - scrollViewport.clientHeight + offset
+                : targetRect.top - parentRect.top + scrollViewport.scrollTop + offset
+
+        scrollViewport.scrollTo({
+            top,
+            behavior,
+        })
+    } else {
+        // Standard window scrolling fallback (used in website mode or when no viewport exists)
+        const top =
+            align === 'end'
+                ? targetRect.bottom + window.pageYOffset - window.innerHeight + offset
+                : targetRect.top + window.pageYOffset + offset - taskbarOffset
+
+        window.scrollTo({
+            top,
+            behavior,
+        })
+    }
+}
+
+/**
+ * A component that scrolls to a target element by ID when clicked.
+ * Works with both Radix ScrollArea containers and standard window scrolling.
+ * Can render as any HTML element (div, button, span, etc.)
+ *
+ * @param targetId - The ID of the element to scroll to
+ * @param offset - Optional offset in pixels (default: 0)
+ * @param as - HTML element to render as (default: 'div')
+ * @param behavior - Scroll behavior 'smooth' or 'auto' (default: 'smooth')
+ * @param children - Content
+ */
+export const ScrollToElement: React.FC<ScrollToElementProps> = ({
+    targetId,
+    offset = 0,
+    children,
+    onClick,
+    as: Component = 'div',
+    className,
+    behavior = 'smooth',
+    ...props
+}) => {
+    const handleClick = useCallback(
+        (e: React.MouseEvent) => {
+            scrollToElement(targetId, offset, behavior)
+
+            // Call original onClick if provided
+            if (onClick) {
+                onClick(e)
+            }
+        },
+        [targetId, offset, onClick, behavior]
+    )
+
+    return (
+        <Component {...props} className={className} onClick={handleClick}>
+            {children}
+        </Component>
+    )
+}
+
+export default ScrollToElement

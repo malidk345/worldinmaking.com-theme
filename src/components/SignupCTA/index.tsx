@@ -1,0 +1,68 @@
+import React, { useCallback } from 'react'
+import { CallToAction } from 'components/CallToAction'
+import { RenderInClient } from 'components/RenderInClient'
+import usePostHog from '../../hooks/usePostHog'
+import OSButton from 'components/OSButton'
+
+/**
+ * A signup CTA that directs to the correct region (EU or US) based on feature flag.
+ */
+export const SignupCTA = ({
+    className = '',
+    text = 'Get started - free',
+    type = 'primary',
+    width,
+    size = 'lg',
+    state,
+    ...other
+}: {
+    text?: string
+    className?: string
+    type?: string
+    width?: string
+    event?: any
+    size?: 'lg' | 'sm' | 'md' | 'xl'
+    state?: any
+}): JSX.Element => {
+    const posthog = usePostHog()
+
+    const event = other.event ?? {
+        name: `clicked ${text}`,
+        type: 'cloud',
+    }
+
+    return (
+        <RenderInClient
+            placeholder={
+                <OSButton
+                    asLink
+                    variant={type}
+                    className={className}
+                    width={width}
+                    to={`https://us.posthog.com/signup`}
+                    event={event}
+                    size={size}
+                    state={state}
+                    externalNoIcon
+                >
+                    {text}
+                </OSButton>
+            }
+            render={() => (
+                <OSButton
+                    asLink
+                    variant={type}
+                    className={className}
+                    width={width}
+                    to={`https://${posthog?.isFeatureEnabled('direct-to-eu-cloud') ? 'eu' : 'us'}.posthog.com/signup`}
+                    event={event}
+                    size={size}
+                    state={state}
+                    externalNoIcon
+                >
+                    {text}
+                </OSButton>
+            )}
+        />
+    )
+}
