@@ -133,15 +133,43 @@ function useComposedRefs(...refs) {
 }
 `;
 
-const dirs = [
-  path.join(__dirname, '../node_modules/@radix-ui/react-compose-refs/dist'),
-  path.join(__dirname, '../../worldinmaking.com-theme/node_modules/@radix-ui/react-compose-refs/dist')
+function patchAllInDir(baseDir) {
+  if (!fs.existsSync(baseDir)) return;
+  let count = 0;
+  function walk(dir) {
+    let entries;
+    try {
+      entries = fs.readdirSync(dir);
+    } catch (e) {
+      return;
+    }
+    entries.forEach(file => {
+      const full = path.join(dir, file);
+      try {
+        const stat = fs.statSync(full);
+        if (stat.isDirectory()) {
+          if (file === 'react-compose-refs') {
+            const distDir = path.join(full, 'dist');
+            if (fs.existsSync(distDir)) {
+              fs.writeFileSync(path.join(distDir, 'index.mjs'), patchedMjs);
+              fs.writeFileSync(path.join(distDir, 'index.js'), patchedJs);
+              count++;
+              console.log('Patched react-compose-refs at:', distDir);
+            }
+          } else if (file !== '.next' && file !== '.git') {
+            walk(full);
+          }
+        }
+      } catch (e) {}
+    });
+  }
+  walk(baseDir);
+  console.log(`Total react-compose-refs packages patched in ${baseDir}: ${count}`);
+}
+
+const rootDirs = [
+  path.join(__dirname, '../node_modules'),
+  path.join(__dirname, '../../worldinmaking.com-theme/node_modules')
 ];
 
-dirs.forEach(dir => {
-  if (fs.existsSync(dir)) {
-    fs.writeFileSync(path.join(dir, 'index.mjs'), patchedMjs);
-    fs.writeFileSync(path.join(dir, 'index.js'), patchedJs);
-    console.log('Successfully patched Radix react-compose-refs in:', dir);
-  }
-});
+rootDirs.forEach(dir => patchAllInDir(dir));
