@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
                     authorName: replyAuthor?.username || 'anonymous',
                     createdAt: reply.created_at
                 };
-            }).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+            }).sort((a, b) => (a.createdAt < b.createdAt ? -1 : (a.createdAt > b.createdAt ? 1 : 0)));
 
             return {
                 id: topic.id,
