@@ -1,3 +1,6 @@
 ## 2024-07-18 - [Add focus visible styles to OSButton]
 **Learning:** `OSButton` component lacks clear visual focus states, reducing keyboard accessibility. This app requires `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20` for standard focus rings.
 **Action:** Always ensure custom button components have proper focus rings explicitly set since default browser rings can be subtle or overridden.
+## 2024-05-18 - Added ARIA labels to core OS UI icon-only buttons
+**Learning:** Custom OS/desktop environments often rely heavily on icon-only controls (like window minimize/maximize, notification toggles, and mission control buttons) to save space and mimic native UI. These inherently lack semantic context, causing screen readers to announce them as blank or unhelpful generic buttons. Furthermore, relying only on a `title` or `tooltip` for context is insufficient for full accessibility.
+**Action:** Always ensure that icon-only `OSButton` (and standard `<button>`) implementations include an explicit and descriptive `aria-label`, dynamically updated if the button's function changes based on state (e.g. Maximize vs Restore, or Play vs Pause).
