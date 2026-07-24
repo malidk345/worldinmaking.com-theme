@@ -1856,7 +1856,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             }
             setWindows(windowsFiltered.map((w) => (w?.appSettings?.size?.fixed ? w : { ...w, snapped: false })))
         }, 0)
-    }, [safePush, bringToFront])
+    }, [safePush])
 
     const bringToFront = useCallback(
         (
