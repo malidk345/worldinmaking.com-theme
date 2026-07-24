@@ -1828,7 +1828,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             )
             if (nextFocusedWindow && !nextFocusedWindow.minimized && nextFocusedWindow.path) {
                 if (typeof nextFocusedWindow.path === 'string' && nextFocusedWindow.path.startsWith('/')) {
-                    safePush(${nextFocusedWindow.path})
+                    safePush(nextFocusedWindow.path + (nextFocusedWindow.location?.search || ''))
                 } else {
                     bringToFront(nextFocusedWindow)
                 }
