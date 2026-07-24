@@ -706,7 +706,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                     </div>
 
                                     <div className="flex justify-end">
-                                        <OSButton size="xs" onClick={handleMinimize}>
+                                        <OSButton size="xs" onClick={handleMinimize} aria-label="Minimize window">
                                             <IconMinus className="size-4 relative top-1" />
                                         </OSButton>
 
@@ -724,6 +724,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                                         }}
                                                         className="group"
                                                         tooltip="right click for more options"
+                                                        aria-label={isMaximized ? "Restore window" : "Maximize window"}
                                                     >
                                                         <div className="relative w-5 h-5 flex items-center justify-center">
                                                             <IconSquare className="absolute size-5 transition-opacity duration-200 group-hover:opacity-0" />
@@ -798,6 +799,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                                     size="md"
                                                     onClick={handleClose}
                                                     icon={<IconX />}
+                                                    aria-label="Close window"
                                                 />
                                             }
                                         >
@@ -921,6 +923,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                                 closeWindow(item);
                                             }}
                                             className="size-12 flex items-center justify-center bg-red-500 text-white shadow-xl rounded-full opacity-0 scale-50 group-hover/mission:opacity-100 group-hover/mission:scale-100 hover:bg-red-600 transition-all duration-[250ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
+                                            aria-label="Close window from mission control"
                                         >
                                             <IconX className="size-6" />
                                         </button>
