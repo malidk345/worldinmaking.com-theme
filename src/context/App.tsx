@@ -1814,26 +1814,30 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
     // on every provider render. `injectDynamicChildren` is referentially stable.
     const menu = useMemo(() => injectDynamicChildren(initialMenu), [injectDynamicChildren])
 
-    const closeWindow = useCallback((item: AppWindow) => {
+    const closeWindow = useCallback((item?: AppWindow) => {
         setTimeout(() => {
-            const currentWindows = windowsRef.current
-            const windowsFiltered = currentWindows.filter((el) => el.path !== item.path)
+            if (!item || !item.path) {
+                safePush('/', { state: { skipPageUpdate: true } })
+                return
+            }
+            const currentWindows = windowsRef.current || []
+            const windowsFiltered = currentWindows.filter((el) => el && el.path !== item.path)
             const nextFocusedWindow = windowsFiltered.reduce<AppWindow | undefined>(
-                (highest, current) => (current.zIndex > (highest?.zIndex ?? -1) ? current : highest),
+                (highest, current) => (current && current.zIndex > (highest?.zIndex ?? -1) ? current : highest),
                 undefined
             )
-            if (nextFocusedWindow && !nextFocusedWindow.minimized) {
-                if (nextFocusedWindow.path.startsWith('/')) {
-                    safePush(`${nextFocusedWindow.path}${nextFocusedWindow.location?.search || ''}`)
+            if (nextFocusedWindow && !nextFocusedWindow.minimized && nextFocusedWindow.path) {
+                if (typeof nextFocusedWindow.path === 'string' && nextFocusedWindow.path.startsWith('/')) {
+                    safePush(${nextFocusedWindow.path})
                 } else {
                     bringToFront(nextFocusedWindow)
                 }
             } else {
                 safePush('/', { state: { skipPageUpdate: true } })
             }
-            setWindows(windowsFiltered.map((w) => (w.appSettings?.size?.fixed ? w : { ...w, snapped: false })))
+            setWindows(windowsFiltered.map((w) => (w?.appSettings?.size?.fixed ? w : { ...w, snapped: false })))
         }, 0)
-    }, [])
+    }, [safePush, bringToFront])
 
     const bringToFront = useCallback(
         (
