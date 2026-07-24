@@ -1,5 +1,5 @@
-const SUPABASE_URL = 'https://iydypisgfaksqkjdraiu.supabase.co'
-const SUPABASE_ANON_KEY = 'sb_publishable_KTgzPl0F8_-HzMC_ZEpqMA_ZR7XPnMX'
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://iydypisgfaksqkjdraiu.supabase.co'
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_KTgzPl0F8_-HzMC_ZEpqMA_ZR7XPnMX'
 
 export interface SupabasePost {
     id: string
