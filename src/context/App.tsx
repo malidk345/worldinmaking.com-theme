@@ -2277,6 +2277,8 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             setWindows([...windows.map((w) => (w === focusedWindow ? snappedFocused : w)), newWindow])
         } else if (newWindow.appSettings?.size?.fixed) {
             setWindows([...windows.filter((w) => !w.appSettings?.size?.fixed), newWindow])
+        } else if (element?.props?.newWindow || location?.state?.newWindow) {
+            setWindows([...windows, newWindow])
         } else {
             replaceFocusedWindow(newWindow)
         }
