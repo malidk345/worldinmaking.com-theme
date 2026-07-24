@@ -530,7 +530,7 @@ const CUSTOMER_DATA: Record<string, BaseCustomer> = {
     },
     greptile: {
         name: 'Greptile',
-        // toolsUsed: ['product_analytics'],
+        toolsUsed: ['product_analytics'],
         industries: ['SaaS'],
         // users: ['Engineering', 'Product'],
         notes: 'AI code reviewer',
@@ -615,7 +615,7 @@ const CUSTOMER_DATA: Record<string, BaseCustomer> = {
     },
     jaxxon: {
         name: 'Jaxxon',
-        // toolsUsed: ['feature_flags', 'product_analytics', 'ai_observability'],
+        toolsUsed: ['feature_flags', 'product_analytics', 'ai_observability'],
         industries: ['Fashion'],
         // users: ['Engineering', 'Leadership', 'Founders'],
         notes: "Men's chains & accessories",
@@ -891,7 +891,7 @@ const CUSTOMER_DATA: Record<string, BaseCustomer> = {
     },
     resend: {
         name: 'Resend',
-        // toolsUsed: ['product_analytics', 'experiments'],
+        toolsUsed: ['product_analytics', 'experiments'],
         notes: 'Email delivery service',
         logo: ResendLogo,
         featured: true,
@@ -1041,7 +1041,7 @@ const CUSTOMER_DATA: Record<string, BaseCustomer> = {
     },
     wisprflow: {
         name: 'WisprFlow',
-        //toolsUsed: [''],
+        toolsUsed: [],
         //industries: ['Devtool'],
         // users: ['Marketing', 'Leadership', 'Customer Success'],
         notes: 'AI voice dictation',
@@ -1133,10 +1133,10 @@ export const useCustomers = () => {
 
     const customers = useMemo(() => {
         // Query only to detect which customers have case studies
-        const data = {}
+        const data: any = {}
 
         const customersWithCaseStudies = new Set(
-            ((data as any)?.allCustomers?.nodes || []).map((node: any) => node.fields.slug.split('/').pop() || '')
+            (data?.allCustomers?.nodes || []).map((node: any) => node.fields.slug.split('/').pop() || '')
         )
 
         // Precompute a map of handle -> product title to avoid O(N*M) lookups
