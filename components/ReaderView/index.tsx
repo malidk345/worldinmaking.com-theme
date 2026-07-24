@@ -20,6 +20,7 @@ import { sanitizeHtml } from 'utils/security'
 import PostMetaTable from './PostMetaTable'
 import { LemonCollapse, LemonTag, LemonCard } from 'components/LemonUI'
 import ForumAvatar from 'components/Forum/ForumAvatar'
+import ForumDays from 'components/Forum/ForumDays'
 
 
 
@@ -399,33 +400,28 @@ const ReaderViewContent = React.memo(({
                                 </h1>
                             )}
 
-                            {/* Community-style Author Meta Row (matches ForumQuestionCard) */}
-                            <div className="flex items-center gap-2 w-full mb-6">
-                                {/* Left: Avatar + Author + Date */}
-                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                            {/* Community-style Author Meta Row (matches ForumQuestionCard & ForumDays) */}
+                            <div className="flex items-center gap-2.5 w-full mb-6 pb-3 border-b border-black/5 dark:border-white/5">
+                                {body.contributors && body.contributors[0] && (
+                                    <ForumAvatar
+                                        className="size-8 rounded-full border border-black/10 dark:border-white/10 shrink-0"
+                                        image={body.contributors[0].image}
+                                    />
+                                )}
+                                <div className="flex items-center space-x-2 flex-1 min-w-0 text-sm">
                                     {body.contributors && body.contributors[0] && (
-                                        <ForumAvatar
-                                            className="size-8 rounded-full border border-black/10 dark:border-white/10 shrink-0"
-                                            image={body.contributors[0].image}
-                                        />
+                                        <strong className="text-primary font-bold text-sm leading-none">
+                                            {body.contributors[0].name}
+                                        </strong>
                                     )}
-                                    <div className="flex items-center gap-1.5 flex-wrap min-w-0 text-sm">
-                                        {body.contributors && body.contributors[0] && (
-                                            <strong className="text-primary font-bold leading-none">
-                                                {body.contributors[0].name}
-                                            </strong>
-                                        )}
-                                        {body.date && (
-                                            <span className="text-xs text-secondary/60">
-                                                · {new Date(body.date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
-                                            </span>
-                                        )}
-                                        {body.readTime && (
-                                            <span className="text-xs text-secondary/60">
-                                                · {body.readTime} min read
-                                            </span>
-                                        )}
-                                    </div>
+                                    {body.date && (
+                                        <ForumDays created={body.date} />
+                                    )}
+                                    {body.readTime && (
+                                        <span className="text-xs text-secondary/60">
+                                            · {body.readTime} min read
+                                        </span>
+                                    )}
                                 </div>
 
                                 {/* Right: Tags */}
