@@ -1,3 +1,3 @@
-## 2024-07-18 - [Add focus visible styles to OSButton]
-**Learning:** `OSButton` component lacks clear visual focus states, reducing keyboard accessibility. This app requires `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20` for standard focus rings.
-**Action:** Always ensure custom button components have proper focus rings explicitly set since default browser rings can be subtle or overridden.
+## 2024-05-18 - Taskbar Icon Buttons ARIA Labels
+**Learning:** Icon-only buttons used in utility components like taskbars (AmbientPlayer, NotificationCenter, Search, Account Menu) must have explicit `aria-label` attributes to ensure they are accessible to screen readers, since they lack visual text context.
+**Action:** Always add `aria-label` attributes describing the button's action (e.g., "Toggle ambient player", "Open search") to icon-only `<OSButton>` elements, instead of relying purely on tooltip wrappers or the `<Icon>` element alone.

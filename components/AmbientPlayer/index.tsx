@@ -105,6 +105,7 @@ export default function AmbientPlayer() {
                     <OSButton
                         onClick={togglePlay}
                         size="sm"
+                        aria-label="Toggle ambient player"
                         className={`!px-1 group/music relative translate-y-[2px] transition-all ${isPlaying ? 'bg-primary/5 dark:bg-white/10' : ''}`}
                     >
                         <div className="flex items-center justify-center gap-1.5 min-w-[32px] px-1 h-5">
