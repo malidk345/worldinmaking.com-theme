@@ -73,7 +73,7 @@ export type CustomerLogo =
 export interface Customer {
     slug: string
     name: string
-    toolsUsed: string[]
+    toolsUsed?: string[]
     toolsUsedHandles?: string[] // Original handles for product lookup
     industries?: string[]
     users?: string[]
@@ -99,7 +99,7 @@ export interface Customer {
 
 interface BaseCustomer {
     name: string
-    toolsUsed: string[]
+    toolsUsed?: string[]
     industries?: string[]
     users?: string[]
     notes?: React.ReactNode
@@ -1172,7 +1172,7 @@ export const useCustomers = () => {
                 toolsUsed:
                     customer.toolsUsed
                         ?.map((tool) => getProductTitleByHandle(tool))
-                        .filter((name): name is string => name !== undefined) || [],
+                        .filter(Boolean) as string[] || [],
                 // Dynamically check if customer has a case study
                 hasCaseStudy: customersWithCaseStudies.has(key),
             }
