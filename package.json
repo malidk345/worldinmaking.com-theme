@@ -104,6 +104,7 @@
         "@radix-ui/react-toggle-group": "^1.1.17",
         "@radix-ui/react-toolbar": "^1.1.11",
         "@radix-ui/react-tooltip": "^1.2.14",
+        "@supabase/supabase-js": "^2.110.8",
         "@tailwindcss/container-queries": "^0.1.1",
         "@tanstack/react-virtual": "^3.13.12",
         "@typecaast/react": "^0.5.4",
