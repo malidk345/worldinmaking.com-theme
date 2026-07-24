@@ -103,6 +103,7 @@ export default function AmbientPlayer() {
                 delay={200}
                 trigger={
                     <OSButton
+                        aria-label="Toggle ambient player"
                         onClick={togglePlay}
                         size="sm"
                         className={`!px-1 group/music relative translate-y-[2px] transition-all ${isPlaying ? 'bg-primary/5 dark:bg-white/10' : ''}`}
