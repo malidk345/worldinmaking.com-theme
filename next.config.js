@@ -30,6 +30,8 @@ const nextConfig = {
             '@reach/router': path.resolve(__dirname, 'shims/reach-router.ts'),
             'debug': path.resolve(__dirname, 'shims/debug.js'),
             'supports-color': path.resolve(__dirname, 'shims/supports-color.js'),
+            '@radix-ui/react-compose-refs$': path.resolve(__dirname, 'src/lib/stable-compose-refs.ts'),
+            '@radix-ui/react-compose-refs': path.resolve(__dirname, 'src/lib/stable-compose-refs.ts'),
             components: path.resolve(__dirname, 'src/components'),
             hooks: path.resolve(__dirname, 'src/hooks'),
             context: path.resolve(__dirname, 'src/context'),
