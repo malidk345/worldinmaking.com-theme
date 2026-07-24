@@ -33,15 +33,26 @@ export default function ForumTopicSidebar({
         }
     }
 
+    // ⚡ Bolt: Pre-calculate the latest post for each channel to avoid O(N) operations per channel during render.
+    // O(P) iteration instead of O(C * P) where C=channels, P=posts.
+    // Uses direct string comparison for ISO 8601 dates to avoid expensive Date parsing.
+    const latestPostByChannel = React.useMemo(() => {
+        const map = new Map<number, string>()
+        for (const post of posts) {
+            if (post.channel_id) {
+                const existing = map.get(post.channel_id)
+                if (!existing || post.created_at > existing) {
+                    map.set(post.channel_id, post.created_at)
+                }
+            }
+        }
+        return map
+    }, [posts])
+
     const getLastActive = (channelId: number) => {
-        const channelPosts = posts.filter((post) => post.channel_id === channelId)
-        if (!channelPosts.length) return null
-
-        const latest = channelPosts.reduce((acc, current) => {
-            return new Date(current.created_at).getTime() > new Date(acc.created_at).getTime() ? current : acc
-        })
-
-        return dayjs(latest.created_at).fromNow()
+        const latestCreatedAt = latestPostByChannel.get(channelId)
+        if (!latestCreatedAt) return null
+        return dayjs(latestCreatedAt).fromNow()
     }
 
     return (
