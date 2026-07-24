@@ -79,10 +79,20 @@ const PageModal = ({ children }: { children: React.ReactNode }) => {
     )
 }
 
+import WimAuthPortal from 'components/Auth/WimAuthPortal'
+
 const Router = (props) => {
     const { appWindow } = useWindow()
+    const { closeWindow } = useApp()
     const { children, path } = props
 
+    if (/^\/login|^\/signup/.test(path)) {
+        return (
+            <div className="p-6 flex items-center justify-center min-h-full bg-slate-950/90">
+                <WimAuthPortal onSuccess={() => closeWindow(appWindow)} />
+            </div>
+        )
+    }
     if (/^\/questions/.test(path)) {
         return <Inbox {...props} />
     }
