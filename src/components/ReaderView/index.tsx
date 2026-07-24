@@ -31,6 +31,13 @@ const MDXRenderer = ({ children }: any) => {
     return <>{children}</>
 }
 const getImage = (img: any) => img?.publicURL || img?.url || img
+
+const useLocation = () => {
+    if (typeof window !== 'undefined') {
+        return { pathname: window.location.pathname, search: window.location.search, hash: window.location.hash }
+    }
+    return { pathname: '/', search: '', hash: '' }
+}
 import { MDXProvider } from '@mdx-js/react'
 import ElementScrollLink, { ScrollSpyProvider } from 'components/ElementScrollLink'
 import { TreeMenu } from 'components/TreeMenu'
@@ -45,8 +52,8 @@ import { getLogo, getDarkClassForLogo } from 'constants/logos'
 import SearchProvider, { useSearch } from 'components/Editor/SearchProvider'
 import { InlineSearch } from 'components/Search/InlineSearch'
 import { algoliaIndexName, algoliaSearchClient } from 'lib/algoliaSearch'
-import { usePathname } from 'next/navigation'
 import { isMarkdownContentPath } from 'constants'
+
 import { PANEL_BG } from 'constants/frostedSurfaces'
 import { useWindow } from 'context/Window'
 import { MenuItem, useApp } from 'context/App'
@@ -57,6 +64,10 @@ import CopyMarkdownActionsDropdown, { useMarkdownUrlExists } from 'components/Ma
 import CustomerMetadata from 'components/ReaderView/CustomerMetadata'
 import { getVideoClasses } from 'constants'
 import AboutPostHog from 'components/AboutPostHog'
+
+
+const getProseClasses = (size?: any) => 'prose dark:prose-invert max-w-none'
+const useLocation = () => ({ pathname: typeof window !== 'undefined' ? window.location.pathname : '/', search: typeof window !== 'undefined' ? window.location.search : '', hash: typeof window !== 'undefined' ? window.location.hash : '' })
 
 dayjs.extend(relativeTime)
 
@@ -1550,9 +1561,9 @@ function ReaderViewContent({
                             className="flex-1 min-w-0 min-h-0 relative [mask-image:linear-gradient(to_bottom,transparent_0,black_2rem,black_calc(100%_-_2rem),transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,transparent_0,black_1rem,black_calc(100%_-_1rem),transparent_100%)]"
                         >
                             <article
-                                className={`reader-view-content-container @container/reader-content-container ${getProseClasses(
-                                    proseSize
-                                )} max-w-none relative flex-1 min-w-0`}
+                                className={`reader-view-content-container @container/reader-content-container ${
+                                    typeof getProseClasses === 'function' ? getProseClasses(proseSize) : 'prose dark:prose-invert'
+                                } max-w-none relative flex-1 min-w-0`}
                             >
                                 {header && (
                                     <header className="relative">
