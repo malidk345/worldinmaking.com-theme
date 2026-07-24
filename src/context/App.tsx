@@ -1644,6 +1644,25 @@ const getInitialSiteSettings = (): SiteSettings => {
 
 export const Provider = ({ children, element, location }: AppProviderProps) => {
     const isSSR = typeof window === 'undefined'
+    const router = useRouter()
+
+    const safePush = useCallback(
+        (url: string, opts?: any) => {
+            try {
+                if (router && typeof (router as any).push === 'function') {
+                    ;(router as any).push(url, opts)
+                } else if (typeof window !== 'undefined') {
+                    window.location.href = url
+                }
+            } catch (e) {
+                if (typeof window !== 'undefined') {
+                    window.location.href = url
+                }
+            }
+        },
+        [router]
+    )
+
     const [compact, setCompact] = useState(false)
     const constraintsRef = useRef<HTMLDivElement>(null)
     const taskbarRef = useRef<HTMLDivElement>(null)
