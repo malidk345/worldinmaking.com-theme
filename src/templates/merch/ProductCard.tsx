@@ -1,4 +1,4 @@
-import { GatsbyImage } from 'gatsby-plugin-image'
+import CloudinaryImage from 'components/CloudinaryImage'
 import React, { useMemo } from 'react'
 import { cn } from '../../utils'
 import { ShopifyProduct } from './types'
@@ -54,8 +54,7 @@ export function ProductCard(props: ProductCardProps): React.ReactElement {
                     </div>
                 )}
                 <div className="relative aspect-square bg-white flex items-center">
-                    <GatsbyImage
-                        className="aspect-square overflow-hidden"
+                    <CloudinaryImage className="aspect-square overflow-hidden"
                         image={image}
                         alt={product.title}
                         loading="lazy"

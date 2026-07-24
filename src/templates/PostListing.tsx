@@ -6,6 +6,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import Link from 'components/Link'
+import Layout from 'components/Layout'
 import TeamMember from 'components/TeamMember'
 import qs from 'qs'
 import CloudinaryImage from 'components/CloudinaryImage'
@@ -13,6 +14,8 @@ import Tooltip from 'components/RadixUI/Tooltip'
 import ProgressBar from 'components/ProgressBar'
 import slugify from 'slugify'
 import { usePaginatedPosts } from 'components/Edition/hooks/usePaginatedPosts'
+const graphql = (str: any) => str
+const useStaticQuery = (q?: any) => ({})
 import { IconSpinner } from '@posthog/icons'
 import LikeButton from 'components/Edition/LikeButton'
 import Modal from 'components/Modal'
@@ -87,25 +90,25 @@ export default function Posts({ pageContext = {} }: { pageContext?: any }) {
     const allTags = useMemo(
         () =>
             (allPostCategory?.nodes || [])
-                .flatMap((category) => category.attributes.post_tags.data)
-                .sort((a, b) => a.attributes.label.localeCompare(b.attributes.label))
+                .flatMap((category: any) => category.attributes?.post_tags?.data || [])
+                .sort((a: any, b: any) => a.attributes.label.localeCompare(b.attributes.label))
                 .filter(
-                    (tag, index, self) => index === self.findIndex((t) => t.attributes.label === tag.attributes.label)
+                    (tag: any, index: number, self: any[]) => index === self.findIndex((t: any) => t.attributes.label === tag.attributes.label)
                 ),
-        []
+        [allPostCategory]
     )
     const selectedCategory = useMemo(
-        () => (allPostCategory?.nodes || []).find((category) => category.attributes.folder === root),
-        [root]
+        () => (allPostCategory?.nodes || []).find((category: any) => category.attributes.folder === root),
+        [allPostCategory, root]
     )
-    const tags = root === null ? allTags : selectedCategory?.attributes.post_tags.data
+    const tags = root === null ? allTags : selectedCategory?.attributes?.post_tags?.data || []
     const allCategories = useMemo(
         () =>
             (allPostCategory?.nodes || []).filter(
-                (category, index, self) =>
-                    index === self.findIndex((c) => c.attributes.folder === category.attributes.folder)
+                (category: any, index: number, self: any[]) =>
+                    index === self.findIndex((c: any) => c.attributes.folder === category.attributes.folder)
             ),
-        []
+        [allPostCategory]
     )
 
     const scrollToTop = () => {
@@ -174,7 +177,8 @@ export default function Posts({ pageContext = {} }: { pageContext?: any }) {
     }, [selectedTag, root, selectedAuthor, sort])
 
     return (
-        <PostsContext.Provider value={{ setLoginModalOpen }}>
+        <div data-scheme="primary" className="w-full h-full bg-primary text-primary">
+            <PostsContext.Provider value={{ setLoginModalOpen }}>
             <SEO title="Posts - PostHog" />
             <Modal open={loginModalOpen} setOpen={setLoginModalOpen}>
                 <div className="px-4">
@@ -328,11 +332,11 @@ export default function Posts({ pageContext = {} }: { pageContext?: any }) {
                                     {
                                         content: (
                                             <div className="flex justify-between items-start w-full">
-                                                <Link className="font-semibold flex-1" to={post.attributes.slug}>
+                                                <Link className="font-semibold flex-1" to={post.attributes.slug} state={{ newWindow: true }}>
                                                     {post.attributes.title}
                                                 </Link>
                                                 {featuredImageURL ? (
-                                                    <Link href={post.attributes.slug}>
+                                                    <Link to={post.attributes.slug} state={{ newWindow: true }}>
                                                         <FeaturedImage url={featuredImageURL} />
                                                     </Link>
                                                 ) : null}
@@ -395,5 +399,6 @@ export default function Posts({ pageContext = {} }: { pageContext?: any }) {
                 )}
             </Editor>
         </PostsContext.Provider>
+    </div>
     )
 }

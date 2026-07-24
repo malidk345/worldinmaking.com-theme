@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { GatsbyImage, getImage } from 'gatsby-plugin-image'
+import CloudinaryImage from 'components/CloudinaryImage'
 import Link from 'next/link'
 import {
     StickerPineapple,
@@ -12,7 +12,6 @@ import { Navigation, Pagination, A11y } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/pagination'
 import { IconChevronDown } from '@posthog/icons'
-import CloudinaryImage from 'components/CloudinaryImage'
 
 interface FullscreenModalProps {
     image: { image: React.ReactNode; pineapple: boolean }
@@ -319,8 +318,7 @@ export const Pizza = () => {
                                 <li key={team.name} className="">
                                     <div className="flex gap-2">
                                         {teamMiniCrest && (
-                                            <GatsbyImage
-                                                image={teamMiniCrest}
+                                            <CloudinaryImage image={teamMiniCrest}
                                                 alt={`${team.name} mini crest`}
                                                 className="mr-2 size-10"
                                                 objectFit="contain"
@@ -378,8 +376,7 @@ export const Pizza = () => {
                                 <li key={team.name} className="">
                                     <div className="flex gap-2">
                                         {teamMiniCrest && (
-                                            <GatsbyImage
-                                                image={teamMiniCrest}
+                                            <CloudinaryImage image={teamMiniCrest}
                                                 alt={`${team.name} mini crest`}
                                                 className="mr-2 size-10"
                                                 objectFit="contain"
@@ -435,8 +432,7 @@ export const Pizza = () => {
                                 <li key={team.name} className="">
                                     <div className="flex gap-2">
                                         {teamMiniCrest && (
-                                            <GatsbyImage
-                                                image={teamMiniCrest}
+                                            <CloudinaryImage image={teamMiniCrest}
                                                 alt={`${team.name} mini crest`}
                                                 className="mr-2 size-10"
                                                 objectFit="contain"

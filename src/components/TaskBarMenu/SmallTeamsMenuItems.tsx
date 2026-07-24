@@ -1,5 +1,5 @@
 import { IconShieldPeople } from "@posthog/icons"
-import { GatsbyImage, getImage } from 'gatsby-plugin-image'
+import CloudinaryImage from 'components/CloudinaryImage'
 import React from 'react'
 
 export function useSmallTeamsMenuItems() {
@@ -23,7 +23,7 @@ export function useSmallTeamsMenuItems() {
                     type: 'item' as const,
                     label: `${name} Team`,
                     link: `/teams/${slug}`,
-                    icon: image ? <GatsbyImage image={image} alt={`${name} Team`} className="size-4" /> : undefined,
+                    icon: image ? <CloudinaryImage image={image} alt={`${name} Team`} className="size-4" /> : undefined,
                 }
             }
         ),

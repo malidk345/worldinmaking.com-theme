@@ -20,8 +20,7 @@ import { AnimatePresence, motion, PanInfo } from 'framer-motion'
 import Markdown from 'components/Squeak/components/Markdown'
 import Link from 'components/Link'
 import Filters from 'components/Changelog/Filters'
-import { GatsbyImage } from 'gatsby-plugin-image'
-import type { IGatsbyImageData } from 'gatsby-plugin-image'
+import type { IGatsbyImageData } from 'components/CloudinaryImage'
 import { useWindow } from '../context/Window'
 import { ZoomImage } from 'components/ZoomImage'
 import { CallToAction } from 'components/CallToAction'
@@ -271,8 +270,7 @@ const Roadmap = ({
                         {roadmap.media?.gatsbyImageData && (
                             <div className="mt-4 px-4 not-prose">
                                 <ZoomImage>
-                                    <GatsbyImage
-                                        image={roadmap.media.gatsbyImageData}
+                                    <CloudinaryImage image={roadmap.media.gatsbyImageData}
                                         alt={roadmap.title}
                                         className="rounded"
                                     />

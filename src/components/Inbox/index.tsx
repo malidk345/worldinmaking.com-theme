@@ -421,7 +421,15 @@ const AskAQuestion = ({ onSubmit }: { onSubmit: () => void }) => {
 export default function Inbox(props) {
     const { data, params } = props
     const initialTopicID = data?.topic?.squeakId
-    const permalink = params?.permalink
+    const permalink =
+        props.permalink ||
+        params?.permalink ||
+        (props.path && props.path !== '/questions' && props.path !== '/questions/subscriptions' && props.path.startsWith('/questions/')
+            ? props.path.replace(/^\/questions\/?/, '')
+            : undefined) ||
+        (typeof window !== 'undefined' && window.location.pathname.startsWith('/questions/') && window.location.pathname !== '/questions'
+            ? window.location.pathname.replace(/^\/questions\/?/, '')
+            : undefined)
     const defaultFilters = {
         subject: {
             $ne: '',
@@ -569,7 +577,7 @@ export default function Inbox(props) {
         <>
             <SEO title={(permalink && question?.attributes.subject) || data?.topic?.label || 'Forums'} />
             {ready ? (
-                <div className="@container w-full h-full flex flex-col">
+                <div className="@container w-full h-full flex flex-col bg-[#fdfdf8] dark:bg-[#1b1c1e] text-primary">
                     <div data-scheme="secondary" className={`flex @2xl:flex-row flex-col flex-grow min-h-0`}>
                         <aside
                             data-scheme="secondary"

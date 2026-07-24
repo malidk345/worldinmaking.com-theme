@@ -2,7 +2,7 @@ import { useRouter } from 'next/navigation'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 // @ts-expect-error @gatsbyjs/reach-router does not ship TypeScript declarations.
 import { useLocation } from '@gatsbyjs/reach-router'
-import { GatsbyImage, getImage } from 'gatsby-plugin-image'
+import CloudinaryImage from 'components/CloudinaryImage'
 import {
     IconCheck,
     IconArrowRight,
@@ -415,8 +415,7 @@ const FeatureCard = ({
                 </span>
             </span>
             {crest && (
-                <GatsbyImage
-                    image={crest}
+                <CloudinaryImage image={crest}
                     alt={`${team?.name ?? teamSlug} team mini crest`}
                     className="size-9 shrink-0"
                 />

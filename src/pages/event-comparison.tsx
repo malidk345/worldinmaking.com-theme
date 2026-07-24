@@ -4,7 +4,6 @@ import { pricingMenu } from '../navs'
 import Layout from 'components/Layout'
 import Link from 'components/Link'
 import Tooltip from 'components/Tooltip'
-import { StaticImage } from 'gatsby-plugin-image'
 import { IconCheck } from '@posthog/icons'
 
 const EventComparison = (): JSX.Element => {

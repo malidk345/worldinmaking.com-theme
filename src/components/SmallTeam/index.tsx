@@ -1,5 +1,5 @@
 import React from 'react'
-import { GatsbyImage, getImage } from 'gatsby-plugin-image'
+import CloudinaryImage from 'components/CloudinaryImage'
 import Tooltip from 'components/RadixUI/Tooltip'
 import Link from 'components/Link'
 
@@ -33,8 +33,7 @@ export default function SmallTeam({ slug, children, inline = false, noMiniCrest 
                 {!noMiniCrest && miniCrestImage && (
                     <span className={`invisible max-h-4 inline-flex items-center gap-1.5 ${!inline && 'p-0.5 pr-1.5 border border-primary rounded-full'}`}>
                         <span className="h-6 shrink-0 rounded-full overflow-hidden">
-                            <GatsbyImage
-                                image={miniCrestImage}
+                            <CloudinaryImage image={miniCrestImage}
                                 alt={`${team.name} mini crest`}
                                 className="size-5 shrink-0"
                             />
@@ -54,8 +53,7 @@ export default function SmallTeam({ slug, children, inline = false, noMiniCrest 
                         }`}
                 >
                     {!noMiniCrest && miniCrestImage && (
-                        <GatsbyImage
-                            image={miniCrestImage}
+                        <CloudinaryImage image={miniCrestImage}
                             alt={`${team.name} mini crest`}
                             className="size-5 shrink-0"
                         />

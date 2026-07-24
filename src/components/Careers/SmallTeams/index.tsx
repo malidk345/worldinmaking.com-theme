@@ -1,8 +1,7 @@
 import React from 'react'
-import { GatsbyImage, getImage } from 'gatsby-plugin-image'
+import CloudinaryImage from 'components/CloudinaryImage'
 import Link from 'components/Link'
 import slugify from 'slugify'
-import CloudinaryImage from 'components/CloudinaryImage'
 
 import OSButton from 'components/OSButton'
 import { DebugContainerQuery } from 'components/DebugContainerQuery'
@@ -60,8 +59,7 @@ export const SmallTeams = () => {
                                 >
                                     <div className="size-8">
                                         {gatsbyImageMiniCrest ? (
-                                            <GatsbyImage
-                                                image={gatsbyImageMiniCrest}
+                                            <CloudinaryImage image={gatsbyImageMiniCrest}
                                                 alt={`${name} Team`}
                                                 className="size-8"
                                             />

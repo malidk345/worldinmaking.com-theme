@@ -1,4 +1,4 @@
-import { IGatsbyImageData } from 'gatsby-plugin-image'
+import CloudinaryImage from 'components/CloudinaryImage'
 import { ShopifyProduct, ShopifyProductVariant } from './types'
 import { getShopifyImage } from './utils'
 

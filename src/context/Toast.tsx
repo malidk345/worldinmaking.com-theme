@@ -50,7 +50,11 @@ export const useToast = (): {
 } => {
     const toast = useContext(Context)
     if (!toast) {
-        throw new Error('useToast must be used within a ToastProvider')
+        return {
+            toasts: [],
+            addToast: () => 0,
+            removeToast: () => {},
+        }
     }
     return toast
 }

@@ -1,8 +1,6 @@
 import CloudinaryImage from 'components/CloudinaryImage'
-import { GatsbyImage, getImage } from 'gatsby-plugin-image'
 import React from 'react'
 import Link from 'components/Link'
-import { StaticImage } from 'gatsby-plugin-image'
 
 export default function Merch() {
     const data = {}
@@ -25,7 +23,7 @@ export default function Merch() {
                         className="w-full"
                         width={500}
                     />
-                    {/* <GatsbyImage image={getImage(gatsbyImageData)} /> */}
+                    {/* <CloudinaryImage image={getImage(gatsbyImageData)} /> */}
                 </Link>
             </div>
         </div>

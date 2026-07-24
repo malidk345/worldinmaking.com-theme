@@ -1,4 +1,4 @@
-import { GatsbyImage } from 'gatsby-plugin-image'
+import CloudinaryImage from 'components/CloudinaryImage'
 import React, { useEffect, useState } from 'react'
 import { cn } from '../../utils'
 import { Price } from './Price'
@@ -40,8 +40,7 @@ export function LineItem(props: LineItemsProps): React.ReactElement {
                             new
                         </div>
                     )}
-                    <GatsbyImage
-                        className="w-full rounded-md overflow-hidden aspect-square"
+                    <CloudinaryImage className="w-full rounded-md overflow-hidden aspect-square"
                         image={image}
                         alt={`${item.product.title} - ${item.title}`}
                     />

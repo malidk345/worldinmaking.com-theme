@@ -1,4 +1,4 @@
-import type { IGatsbyImageData } from 'gatsby-plugin-image'
+import type { IGatsbyImageData } from 'components/CloudinaryImage'
 import { GraphQLError } from 'graphql'
 
 export type CollectionPageContext = {

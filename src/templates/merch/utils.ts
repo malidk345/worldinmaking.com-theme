@@ -8,7 +8,7 @@ import type {
     ShopifyMediaItem,
     ShopifyProduct,
 } from './types'
-import { IUrlBuilderArgs, getImageData, IGatsbyImageData } from 'gatsby-plugin-image'
+import CloudinaryImage from 'components/CloudinaryImage'
 
 export function getCartVariables(cartItems: CartItem[], discountCode?: string): CreateCartVariables {
     const createCartVariables: CreateCartVariables = {

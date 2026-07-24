@@ -1,4 +1,4 @@
-import { GatsbyImage } from 'gatsby-plugin-image'
+import CloudinaryImage from 'components/CloudinaryImage'
 import 'keen-slider/keen-slider.min.css'
 import { useKeenSlider } from 'keen-slider/react'
 import React, { useMemo, useState, useEffect } from 'react'
@@ -20,7 +20,7 @@ const Image = ({ index, image, title }: { index: number; image: { preview: { ima
 
     return (
         <div className={`keen-slider__slide number-slide${index}} max-w-full bg-white`}>
-            <GatsbyImage className="w-full aspect-square" image={memoizedImage} alt={title} />
+            <CloudinaryImage className="w-full aspect-square" image={memoizedImage} alt={title} />
         </div>
     )
 }
@@ -66,8 +66,7 @@ export function ProductCarousel(props: ProductCarouselProps): React.ReactElement
 
     if (images.length === 1)
         return (
-            <GatsbyImage
-                className="w-full rounded-md overflow-hidden aspect-square"
+            <CloudinaryImage className="w-full rounded-md overflow-hidden aspect-square"
                 image={memoizedImage}
                 alt={product.title}
             />

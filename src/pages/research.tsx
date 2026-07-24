@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react'
-import { GatsbyImage, getImage } from 'gatsby-plugin-image'
+import CloudinaryImage from 'components/CloudinaryImage'
 import dayjs from 'dayjs'
 import SEO from 'components/seo'
 import Editor from 'components/Editor'
 import OSButton from 'components/OSButton'
 import Link from 'components/Link'
-import CloudinaryImage from 'components/CloudinaryImage'
 import { Accordion } from 'components/RadixUI/Accordion'
 import { RoughAnnotation } from 'components/Code/RoughAnnotation'
 import {
@@ -451,8 +450,7 @@ function PostCard({ post }: { post: ResearchPost }) {
         >
             <div className="relative aspect-video shrink-0 bg-primary overflow-hidden">
                 {image ? (
-                    <GatsbyImage
-                        image={image}
+                    <CloudinaryImage image={image}
                         alt={post.frontmatter.title}
                         className="!absolute inset-0 w-full h-full"
                         imgClassName="object-cover transition-transform duration-300 group-hover:scale-105"

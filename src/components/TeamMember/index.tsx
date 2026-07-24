@@ -155,9 +155,7 @@ export default function TeamMember({
     showOnlyFirstName?: boolean
     children?: JSX.Element
 }): JSX.Element | null {
-    const {
-        profiles: { nodes },
-    } = {}
+    const nodes: any[] = []
 
     const person = nodes.find(
         ({ firstName, lastName }: { firstName: string; lastName: string }) =>

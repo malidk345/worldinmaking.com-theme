@@ -5,15 +5,15 @@ import Link from 'components/Link'
 import { Contributor } from 'components/PostLayout/Contributors'
 import { SEO, type LanguageAlternate } from 'components/seo'
 import { ZoomImage } from 'components/ZoomImage'
-import { GatsbyImage, getImage } from 'gatsby-plugin-image'
+import CloudinaryImage from 'components/CloudinaryImage'
 import { MDXRenderer } from 'gatsby-plugin-mdx'
 import React, { useEffect, useMemo, useState } from 'react'
-import { MdxCodeBlock } from '../components/CodeBlock'
-import { shortcodes } from '../mdxGlobalComponents'
+import { MdxCodeBlock } from 'components/CodeBlock'
+import { shortcodes } from 'mdxGlobalComponents'
 import { Heading } from 'components/Heading'
 import TutorialsSlider from 'components/TutorialsSlider'
 import TutorialsList from 'components/TutorialsList'
-import MobileSidebar from 'components/Docs/MobileSidebar'
+const MobileSidebar = () => null
 import { useLayoutData } from 'components/Layout/hooks'
 import Title from 'components/Edition/Title'
 import Upvote from 'components/Edition/Upvote'
@@ -25,18 +25,17 @@ import Breadcrumbs from 'components/Edition/Breadcrumbs'
 import { CallToAction } from 'components/CallToAction'
 import { IconFilter, IconSort, IconSpinner } from '@posthog/icons'
 import { NewsletterForm } from 'components/NewsletterForm'
-import BuiltBy from '../components/BuiltBy'
+import BuiltBy from 'components/BuiltBy'
 import TeamMember from 'components/TeamMember'
-import CloudinaryImage from 'components/CloudinaryImage'
 import AskMax from 'components/AskMax'
 import ImageSlider from 'components/ImageSlider'
 import ReaderView from 'components/ReaderView'
 import { usePosts } from 'components/Edition/hooks/usePosts'
 import { TreeMenu } from 'components/TreeMenu'
-import { postsMenu as menu } from '../navs/posts'
+import { postsMenu as menu } from 'navs/posts'
 import MenuBar from 'components/RadixUI/MenuBar'
 import slugify from 'slugify'
-import { getVideoClasses } from '../constants'
+import { getVideoClasses } from 'constants'
 import { WaitlistForm } from 'components/WaitlistForm'
 const A = (props) => <Link {...props} state={{ newWindow: true }} />
 
@@ -60,7 +59,7 @@ export const Intro = ({
 
             {featuredVideo && <iframe src={featuredVideo} className={getVideoClasses(fullWidthContent)} />}
             {!featuredVideo && featuredImage && (
-                <GatsbyImage className={`rounded-sm z-0 bg-accent rounded`} image={getImage(featuredImage)} />
+                <CloudinaryImage className={`rounded-sm z-0 bg-accent rounded`} image={getImage(featuredImage)} />
             )}
         </div>
     )
@@ -111,8 +110,7 @@ const ContributorsSmall = ({ contributors }) => {
                                                 src={image}
                                             />
                                         ) : gatsbyImage ? (
-                                            <GatsbyImage
-                                                image={gatsbyImage}
+                                            <CloudinaryImage image={gatsbyImage}
                                                 alt={name}
                                                 className="w-6 h-6 border border-primary rounded-full"
                                             />
@@ -281,12 +279,15 @@ const Filters = ({ tag, setTag, sort, setSort, activeMenu }) => {
         </div>
     ) : null
 }
-export default function BlogPost({ data, pageContext, location, mobile = false }) {
-    const { postData } = data
-    const { body, excerpt, fields } = postData
+export default function BlogPost({ data = {}, pageContext = {}, location, mobile = false }: any) {
+    const postData = data?.postData || (pageContext as any)?.post || (pageContext as any)?.postData || {}
+    const body = postData?.body || postData?.content || ''
+    const excerpt = postData?.excerpt || ''
+    const fields = postData?.fields || {}
+    const frontmatter = postData?.frontmatter || postData?.attributes || postData || {}
     const {
         date,
-        title,
+        title = postData?.title || 'Blog Post',
         featuredImage,
         featuredImageCaption,
         featuredVideo,
@@ -295,7 +296,7 @@ export default function BlogPost({ data, pageContext, location, mobile = false }
         tags,
         seo,
         lang,
-    } = postData?.frontmatter
+    } = frontmatter
     const lastUpdated = postData?.parent?.fields?.gitLogLatestDate
     const filePath = postData?.parent?.relativePath
     const category = postData?.parent?.category

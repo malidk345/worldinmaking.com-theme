@@ -176,3 +176,6 @@ export async function postSupabaseCommunityReply(postId: number | string, conten
     }
 }
 
+export async function postSupabaseCommunityPost(data: { title: string; content: string; author?: string }) {
+    return postSupabaseCommunityQuestion(data.title, data.content)
+}

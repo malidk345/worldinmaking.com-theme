@@ -1,7 +1,6 @@
 import CloudinaryImage from 'components/CloudinaryImage'
 import React from 'react'
 import Tooltip from 'components/Tooltip'
-import { StaticImage } from 'gatsby-plugin-image'
 import ReactCountryFlag from 'react-country-flag'
 import Stickers from 'components/ProfileStickers'
 import useTeam from 'hooks/useTeam'

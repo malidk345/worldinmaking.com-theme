@@ -1,6 +1,5 @@
 import CloudinaryImage from 'components/CloudinaryImage'
 import { CallToAction } from 'components/CallToAction'
-import { StaticImage } from 'gatsby-plugin-image'
 import React, { useEffect, useState } from 'react'
 import Lottie from 'react-lottie'
 

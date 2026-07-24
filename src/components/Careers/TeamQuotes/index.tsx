@@ -1,6 +1,5 @@
 import CloudinaryImage from 'components/CloudinaryImage'
 import React from 'react'
-import { StaticImage } from 'gatsby-plugin-image'
 import Stickers from 'components/ProfileStickers'
 import slugify from 'slugify'
 import Link from 'components/Link'

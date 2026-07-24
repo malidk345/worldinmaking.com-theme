@@ -12,7 +12,7 @@ import Link from 'components/Link'
 import { MDXProvider } from '@mdx-js/react'
 import { MDXRenderer } from 'gatsby-plugin-mdx'
 import { TreeMenu } from 'components/TreeMenu'
-import { GatsbyImage, getImage } from 'gatsby-plugin-image'
+import CloudinaryImage from 'components/CloudinaryImage'
 import TemplateCTAs from 'components/TemplateCTAs'
 
 const A = (props) => <Link {...props} />
@@ -114,7 +114,7 @@ export default function Template({ data }) {
                     <h1 className="!mb-4">{title}</h1>
                     <div className="mb-4">
                         {featuredImage && (
-                            <GatsbyImage image={getImage(featuredImage)} alt={title} className="rounded" />
+                            <CloudinaryImage image={getImage(featuredImage)} alt={title} className="rounded" />
                         )}
                     </div>
                     <MDXProvider components={components}>

@@ -7,9 +7,8 @@ import boardMeetingsImg from './images/board-meetings.svg'
 import financesImg from './images/finances.svg'
 import feedbackImg from './images/feedback.svg'
 import { Logo } from '@posthog/brand/logo'
-import { StaticImage } from 'gatsby-plugin-image'
-import { CallToAction } from 'components/CallToAction'
 import CloudinaryImage from 'components/CloudinaryImage'
+import { CallToAction } from 'components/CallToAction'
 
 interface TransparencyFeatureProps {
     Image: any

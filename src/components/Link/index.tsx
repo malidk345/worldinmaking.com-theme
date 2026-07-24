@@ -5,7 +5,7 @@ import React, { useMemo } from 'react'
 import usePostHog from '../../hooks/usePostHog'
 import { IconArrowUpRight } from '@posthog/icons'
 import ContextMenu, { ContextMenuItemProps } from 'components/RadixUI/ContextMenu'
-import { useAppSettings } from '../../context/App'
+import { useAppSettings, useAppContext } from '../../context/App'
 import { useWindow } from '../../context/Window'
 
 // Helper function to create standard context menu items
@@ -145,6 +145,9 @@ export default function Link({
         }
     }, [url, isPostHogAppUrl])
 
+    const appSettings = useAppSettings()
+    const safePush = appSettings?.safePush
+
     const handleClick = async (e: React.MouseEvent<HTMLButtonElement> | React.MouseEvent<HTMLAnchorElement>) => {
         if (isPostHogAppUrl && !posthogInstance) {
             posthog?.createPersonProfile?.()
@@ -153,6 +156,16 @@ export default function Link({
             posthog.capture(event)
         }
         onClick && onClick(e)
+
+        if (internal && url && !e.defaultPrevented && !e.metaKey && !e.ctrlKey) {
+            e.preventDefault()
+            if (safePush) {
+                safePush(url, { state: linkState })
+            } else if (typeof window !== 'undefined') {
+                window.location.href = url
+            }
+            return
+        }
         if (compact && url && !internal) {
             e.preventDefault()
             if (/(eu|us|app)\.posthog\.com/.test(url)) {

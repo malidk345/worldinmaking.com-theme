@@ -3,6 +3,7 @@ import { QuestionData, StrapiRecord, TopicData } from 'lib/strapi'
 import useSWR from 'swr'
 import { useUser } from 'hooks/useUser'
 import usePostHog from 'hooks/usePostHog'
+import { postSupabaseCommunityPost } from 'lib/supabaseCommunity'
 
 type UseQuestionOptions = {
     data?: StrapiRecord<QuestionData>
@@ -195,6 +196,14 @@ export const useQuestion = (id: number | string, options?: UseQuestionOptions) =
                 }
 
                 mutate(optimisticData, false)
+            }
+
+            if (questionID) {
+                postSupabaseCommunityPost({
+                    title: `Reply to #${questionID}`,
+                    content: body,
+                    author: user?.profile ? `${user.profile.firstName || ''} ${user.profile.lastName || ''}`.trim() : 'WorldInMaking User',
+                }).catch(() => null)
             }
 
             const data = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/replies`, {

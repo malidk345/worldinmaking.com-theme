@@ -1,6 +1,6 @@
 import Layout from 'components/Layout'
 import Link from 'next/link'
-import { GatsbyImage } from 'gatsby-plugin-image'
+import CloudinaryImage from 'components/CloudinaryImage'
 import React from 'react'
 // import { getShopifyProduct } from './transforms'
 import { Drawer } from 'components/Drawer'
@@ -44,8 +44,7 @@ export default function MerchPage(props: MerchPageProps): React.ReactElement {
 
                         return (
                             <div className="group relative" key={node.shopifyId}>
-                                <GatsbyImage
-                                    className="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-md bg-accent lg:aspect-none group-hover:opacity-75 lg:h-80"
+                                <CloudinaryImage className="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-md bg-accent lg:aspect-none group-hover:opacity-75 lg:h-80"
                                     image={getShopifyImage({ image: node.featuredMedia.preview.image })}
                                     alt={node.title}
                                 />

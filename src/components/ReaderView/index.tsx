@@ -14,37 +14,48 @@ import {
     IconTableOfContents,
 } from '@posthog/icons'
 import ScrollArea from 'components/RadixUI/ScrollArea'
-import { Popover } from '../RadixUI/Popover'
+import { Popover } from 'components/RadixUI/Popover'
 import { ToggleGroup, ToggleOption } from 'components/RadixUI/ToggleGroup'
 import Tooltip from 'components/RadixUI/Tooltip'
 import Link from 'components/Link'
-import { MDXRenderer } from 'gatsby-plugin-mdx'
+const MDXRenderer = ({ children }: any) => {
+    if (!children) return null
+    if (typeof children === 'string') {
+        return (
+            <div
+                className="prose dark:prose-invert max-w-none text-primary"
+                dangerouslySetInnerHTML={{ __html: children }}
+            />
+        )
+    }
+    return <>{children}</>
+}
+const getImage = (img: any) => img?.publicURL || img?.url || img
 import { MDXProvider } from '@mdx-js/react'
 import ElementScrollLink, { ScrollSpyProvider } from 'components/ElementScrollLink'
 import { TreeMenu } from 'components/TreeMenu'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { Fieldset } from 'components/OSFieldset'
-import { ReaderViewProvider, useReaderView } from './context/ReaderViewContext'
-import { GatsbyImage, getImage } from 'gatsby-plugin-image'
+import { ReaderViewProvider, useReaderView } from 'components/ReaderView/context/ReaderViewContext'
 import CloudinaryImage from 'components/CloudinaryImage'
 import * as PostHogIcons from '@posthog/icons'
-import * as OSIcons from '../OSIcons/Icons'
-import { getLogo, getDarkClassForLogo } from '../../constants/logos'
+import * as OSIcons from 'components/OSIcons/Icons'
+import { getLogo, getDarkClassForLogo } from 'constants/logos'
 import SearchProvider, { useSearch } from 'components/Editor/SearchProvider'
 import { InlineSearch } from 'components/Search/InlineSearch'
 import { algoliaIndexName, algoliaSearchClient } from 'lib/algoliaSearch'
 import { usePathname } from 'next/navigation'
-import { getProseClasses, isMarkdownContentPath } from '../../constants'
-import { PANEL_BG } from '../../constants/frostedSurfaces'
-import { useWindow } from '../../context/Window'
-import { MenuItem, useApp } from '../../context/App'
-import { useActiveFeatureFlags, filterMenuByFlags } from '../../hooks/useActiveFeatureFlags'
+import { isMarkdownContentPath } from 'constants'
+import { PANEL_BG } from 'constants/frostedSurfaces'
+import { useWindow } from 'context/Window'
+import { MenuItem, useApp } from 'context/App'
+import { useActiveFeatureFlags, filterMenuByFlags } from 'hooks/useActiveFeatureFlags'
 import { Questions } from 'components/Squeak'
 import { DocsPageSurvey } from 'components/DocsPageSurvey'
 import CopyMarkdownActionsDropdown, { useMarkdownUrlExists } from 'components/MarkdownActionsDropdown'
-import CustomerMetadata from './CustomerMetadata'
-import { getVideoClasses } from '../../constants'
+import CustomerMetadata from 'components/ReaderView/CustomerMetadata'
+import { getVideoClasses } from 'constants'
 import AboutPostHog from 'components/AboutPostHog'
 
 dayjs.extend(relativeTime)

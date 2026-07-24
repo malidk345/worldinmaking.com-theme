@@ -1696,8 +1696,17 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         if (isSSR) {
             return [createNewWindow(element, [], location, true, taskbarHeight)]
         }
-        const urlObj = new URL(location.href)
-        const queryString = urlObj?.search.substring(1)
+        let queryString = ''
+        try {
+            if (location?.search) {
+                queryString = typeof location.search === 'string' ? (typeof location?.search === 'string' ? location.search.substring(1) : '') : ''
+            } else if (location?.href) {
+                const urlObj = new URL(location.href, typeof window !== 'undefined' ? window.location.origin : 'https://posthog.com')
+                queryString = urlObj?.search.substring(1)
+            }
+        } catch {
+            queryString = ''
+        }
         const parsed = qs.parse(queryString)
         if (parsed?.windows) return []
         return getInitialWindows(element)
@@ -1774,7 +1783,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         if (savedWindows.length === 0) return undefined
 
         // Preserve existing query parameters from the current URL
-        const currentParams = qs.parse(location.search.substring(1))
+        const currentParams = qs.parse((typeof location?.search === 'string' ? location.search.substring(1) : ''))
         const allParams = {
             ...currentParams,
             windows: savedWindows,
@@ -2025,8 +2034,8 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         if (isSSR) {
             return [createNewWindow(element, [], location, isSSR, taskbarHeight)]
         }
-        const urlObj = new URL(location.href)
-        const contact = urlObj.searchParams.get('contact')
+        let urlObj: URL | null = null; try { if (location?.href) { urlObj = new URL(location.href, typeof window !== 'undefined' ? window.location.origin : 'https://posthog.com') } } catch { urlObj = null }
+        const contact = urlObj?.searchParams.get('contact')
         if (contact) {
             const initialWindowSize = { width: window.innerWidth * 0.58, height: window.innerHeight * 0.8 }
             const formWindowWidth = window.innerWidth * 0.4
@@ -2496,7 +2505,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
     useEffect(() => {
         if (!location?.href) return
         try {
-            const urlObj = new URL(location.href)
+            let urlObj: URL | null = null; try { if (location?.href) { urlObj = new URL(location.href, typeof window !== 'undefined' ? window.location.origin : 'https://posthog.com') } } catch { urlObj = null }
             const queryString = urlObj?.search?.substring(1)
             const parsed = qs.parse(queryString)
             if (parsed?.windows || location?.state?.skipPageUpdate) {
@@ -2855,7 +2864,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
     useEffect(() => {
         if (isSSR) return
 
-        const urlObj = new URL(location.href)
+        let urlObj: URL | null = null; try { if (location?.href) { urlObj = new URL(location.href, typeof window !== 'undefined' ? window.location.origin : 'https://posthog.com') } } catch { urlObj = null }
         const queryString = urlObj?.search.substring(1)
         const parsed = qs.parse(queryString)
         const paramsWindows = parsed?.windows
@@ -2884,7 +2893,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             if (!nextWindow) return
 
             // Preserve query parameters from current URL when navigating to next window
-            const currentParams = qs.parse(location.search.substring(1))
+            const currentParams = qs.parse((typeof location?.search === 'string' ? location.search.substring(1) : ''))
             delete currentParams.windows
             const currentQueryString =
                 Object.keys(currentParams).length > 0 ? `?${qs.stringify(currentParams, { encode: false })}` : ''

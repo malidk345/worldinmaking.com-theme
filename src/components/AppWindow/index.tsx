@@ -839,7 +839,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                     </div>
                     <div
                         ref={contentRef}
-                        className={`size-full flex-grow ${
+                        className={`size-full flex-grow bg-[#fdfdf8] dark:bg-[#1b1c1e] text-primary ${
                             chrome
                                 ? `overflow-hidden rounded-lg ${hasToolbar ? 'rounded-t-none' : ''} ${
                                       item.expanded

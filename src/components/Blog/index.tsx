@@ -3,7 +3,6 @@ import Avatar from 'components/CommunityQuestions/Avatar'
 import Link from 'components/Link'
 import PostLayout from 'components/PostLayout'
 import Toggle from 'components/Toggle'
-import { GatsbyImage, getImage, ImageDataLike, StaticImage } from 'gatsby-plugin-image'
 import React, { useState } from 'react'
 import Layout from '../Layout'
 import { SEO } from '../seo'
@@ -38,7 +37,7 @@ export const Post = ({ featuredImage, slug, title, category, date, authors, imgC
         <div className="relative rounded-md overflow-hidden z-10 h-full w-full">
             <Link className="!text-white !hover:text-white cta" to={slug}>
                 {image ? (
-                    <GatsbyImage alt={title} className={imgClassName ?? 'w-full'} image={image} />
+                    <CloudinaryImage alt={title} className={imgClassName ?? 'w-full'} image={image} />
                 ) : (
                     <CloudinaryImage
                         className={imgClassName ?? 'w-full'}

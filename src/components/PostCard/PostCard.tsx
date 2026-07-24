@@ -1,6 +1,6 @@
 import Byline from 'components/Blog/BlogAuthor/Byline'
 import Link from 'next/link'
-import { GatsbyImage, IGatsbyImageData } from 'gatsby-plugin-image'
+import CloudinaryImage from 'components/CloudinaryImage'
 import React from 'react'
 import { AuthorsData } from 'types'
 import { CallToAction } from '../CallToAction'
@@ -176,8 +176,7 @@ const PostCard = ({
                             <div className="w-full rounded mb-3 overflow-hidden flex items-center justify-center">
                                 <Link href={post.fields.slug} className="featured-post-img overflow-hidden">
                                     {gatsbyImageData ? (
-                                        <GatsbyImage
-                                            className="w-full rounded-md"
+                                        <CloudinaryImage className="w-full rounded-md"
                                             image={gatsbyImageData}
                                             alt={post.excerpt}
                                         />

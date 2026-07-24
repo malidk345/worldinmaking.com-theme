@@ -53,12 +53,13 @@ function WindowRouterInner({ item }: WindowRouterProps) {
         return <NotebooksListSkeleton />
     }
     if (/^\/questions/.test(path)) {
-        return <Inbox {...props} />
+        const permalink = path.replace(/^\/questions\/?/, '')
+        return <Inbox permalink={permalink || undefined} {...props} />
     }
     if (/^\/handbook|^\/docs\/(?!api)|^\/manual/.test(path) && props.data?.post) {
         return <Handbook {...props} />
     }
-    if ((props.pageContext?.post || /^posts/.test(path)) && props.data) {
+    if (/^\/blog|^\/posts/.test(path) || props.pageContext?.post || props.data?.postData) {
         return <BlogPost {...props} />
     }
     if (['/terms', '/privacy', '/dpa', '/baa', '/subprocessors'].includes(path)) {
@@ -77,9 +78,15 @@ function WindowRouterInner({ item }: WindowRouterProps) {
     )
 }
 
-const WindowRouter = React.memo(WindowRouterInner, (prev, next) => {
+const WindowRouterMemo = React.memo(WindowRouterInner, (prev, next) => {
     return prev.item.path === next.item.path && prev.item.key === next.item.key
 })
-WindowRouter.displayName = 'WindowRouter'
+WindowRouterMemo.displayName = 'WindowRouterInner'
+
+const WindowRouter = (props: WindowRouterProps) => (
+    <div data-scheme="primary" className="bg-primary text-primary size-full flex flex-col min-h-0">
+        <WindowRouterMemo {...props} />
+    </div>
+)
 
 export default WindowRouter
