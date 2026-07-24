@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo, useCallback } from 'react'
 // Import PNG logos (not converted to React components)
 import AirbusLogo from '../components/CustomerLogos/AirbusLogo'
 import ArenaLogo from '../components/CustomerLogos/ArenaLogo'
@@ -73,7 +73,7 @@ export type CustomerLogo =
 export interface Customer {
     slug: string
     name: string
-    toolsUsed: string[]
+    toolsUsed?: string[]
     toolsUsedHandles?: string[] // Original handles for product lookup
     industries?: string[]
     users?: string[]
@@ -99,7 +99,7 @@ export interface Customer {
 
 interface BaseCustomer {
     name: string
-    toolsUsed: string[]
+    toolsUsed?: string[]
     industries?: string[]
     users?: string[]
     notes?: React.ReactNode
@@ -530,7 +530,7 @@ const CUSTOMER_DATA: Record<string, BaseCustomer> = {
     },
     greptile: {
         name: 'Greptile',
-        // toolsUsed: ['product_analytics'],
+        toolsUsed: ['product_analytics'],
         industries: ['SaaS'],
         // users: ['Engineering', 'Product'],
         notes: 'AI code reviewer',
@@ -615,7 +615,7 @@ const CUSTOMER_DATA: Record<string, BaseCustomer> = {
     },
     jaxxon: {
         name: 'Jaxxon',
-        // toolsUsed: ['feature_flags', 'product_analytics', 'ai_observability'],
+        toolsUsed: ['feature_flags', 'product_analytics', 'ai_observability'],
         industries: ['Fashion'],
         // users: ['Engineering', 'Leadership', 'Founders'],
         notes: "Men's chains & accessories",
@@ -891,7 +891,7 @@ const CUSTOMER_DATA: Record<string, BaseCustomer> = {
     },
     resend: {
         name: 'Resend',
-        // toolsUsed: ['product_analytics', 'experiments'],
+        toolsUsed: ['product_analytics', 'experiments'],
         notes: 'Email delivery service',
         logo: ResendLogo,
         featured: true,
@@ -1041,7 +1041,7 @@ const CUSTOMER_DATA: Record<string, BaseCustomer> = {
     },
     wisprflow: {
         name: 'WisprFlow',
-        //toolsUsed: [''],
+        toolsUsed: [],
         //industries: ['Devtool'],
         // users: ['Marketing', 'Leadership', 'Customer Success'],
         notes: 'AI voice dictation',
@@ -1131,68 +1131,76 @@ const CUSTOMER_DATA: Record<string, BaseCustomer> = {
 export const useCustomers = () => {
     const { products } = useProducts()
 
-    // Query only to detect which customers have case studies
-    const data = {}
+    const customers = useMemo(() => {
+        // Query only to detect which customers have case studies
+        const data: any = {}
 
-    const customersWithCaseStudies = new Set(
-        (data?.allCustomers?.nodes || []).map((node: any) => node.fields.slug.split('/').pop() || '')
-    )
+        const customersWithCaseStudies = new Set(
+            (data?.allCustomers?.nodes || []).map((node: any) => node.fields.slug.split('/').pop() || '')
+        )
 
-    const getProductTitleByHandle = (handle: string) => {
-        return products.find((product) => product.handle === handle)?.name
-    }
-
-    // Transform customer data with product titles and case study info
-    const customers = Object.entries(CUSTOMER_DATA).reduce((acc, [key, customer]) => {
-        // Use logo if available, otherwise fall back to legacy logo URLs
-        let logo = customer.logo
-        if (!logo && customer.legacyLogo && customer.legacyLogoDark) {
-            logo = {
-                light: customer.legacyLogo,
-                dark: customer.legacyLogoDark,
+        // Precompute a map of handle -> product title to avoid O(N*M) lookups
+        const productTitleMap = new Map<string, string>()
+        for (const product of products) {
+            if (product.handle && product.name) {
+                productTitleMap.set(product.handle, product.name)
             }
         }
 
-        const customerWithSlug: Customer = {
-            ...customer,
-            slug: key,
-            logo,
-            // Keep original handles for product lookup
-            toolsUsedHandles: customer.toolsUsed || [],
-            // Convert handles to human-readable product names for display
-            toolsUsed:
-                customer.toolsUsed
-                    ?.map((tool) => getProductTitleByHandle(tool))
-                    .filter((name): name is string => name !== undefined) || [],
-            // Dynamically check if customer has a case study
-            hasCaseStudy: customersWithCaseStudies.has(key),
+        const getProductTitleByHandle = (handle: string) => {
+            return productTitleMap.get(handle)
         }
 
-        // Remove legacy fields from final object
-        delete (customerWithSlug as any).legacyLogo
-        delete (customerWithSlug as any).legacyLogoDark
+        // Transform customer data with product titles and case study info
+        return Object.entries(CUSTOMER_DATA).reduce((acc, [key, customer]) => {
+            // Use logo if available, otherwise fall back to legacy logo URLs
+            let logo = customer.logo
+            if (!logo && customer.legacyLogo && customer.legacyLogoDark) {
+                logo = {
+                    light: customer.legacyLogo,
+                    dark: customer.legacyLogoDark,
+                }
+            }
 
-        return {
-            ...acc,
-            [key]: customerWithSlug,
-        }
-    }, {} as Record<string, Customer>)
+            const customerWithSlug: Customer = {
+                ...customer,
+                slug: key,
+                logo,
+                // Keep original handles for product lookup
+                toolsUsedHandles: customer.toolsUsed || [],
+                // Convert handles to human-readable product names for display
+                toolsUsed:
+                    customer.toolsUsed
+                        ?.map((tool) => getProductTitleByHandle(tool))
+                        .filter(Boolean) as string[] || [],
+                // Dynamically check if customer has a case study
+                hasCaseStudy: customersWithCaseStudies.has(key),
+            }
 
-    const getCustomer = (slug: string): Customer | undefined => {
+            // Remove legacy fields from final object
+            delete (customerWithSlug as any).legacyLogo
+            delete (customerWithSlug as any).legacyLogoDark
+
+            acc[key] = customerWithSlug
+            return acc
+        }, {} as Record<string, Customer>)
+    }, [products])
+
+    const getCustomer = useCallback((slug: string): Customer | undefined => {
         return customers[slug]
-    }
+    }, [customers])
 
-    const getCustomers = (slugs: string[]): Customer[] => {
+    const getCustomers = useCallback((slugs: string[]): Customer[] => {
         return slugs.map((slug) => customers[slug]).filter(Boolean) as Customer[]
-    }
+    }, [customers])
 
-    const hasCaseStudy = (slug: string): boolean => {
+    const hasCaseStudy = useCallback((slug: string): boolean => {
         return customers[slug]?.hasCaseStudy ?? false
-    }
+    }, [customers])
 
-    const isFeatured = (slug: string): boolean => {
+    const isFeatured = useCallback((slug: string): boolean => {
         return !!customers[slug]?.featured
-    }
+    }, [customers])
 
     return {
         customers,
