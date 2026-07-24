@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import { IconHeadphones, IconSpinner } from '@posthog/icons';
-import OSButton from 'components/OSButton'
+import { LemonButton } from '@/components/LemonUI'
 import Tooltip from 'components/RadixUI/Tooltip'
 
 // SomaFM "Groove Salad": A nicely chilled plate of ambient/downtempo beats and grooves.
@@ -102,9 +102,9 @@ export default function AmbientPlayer() {
             <Tooltip
                 delay={200}
                 trigger={
-                    <OSButton
+                    <LemonButton
                         onClick={togglePlay}
-                        size="sm"
+                        size="small"
                         className={`!px-1 group/music relative translate-y-[2px] transition-all ${isPlaying ? 'bg-primary/5 dark:bg-white/10' : ''}`}
                     >
                         <div className="flex items-center justify-center gap-1.5 min-w-[32px] px-1 h-5">
@@ -121,7 +121,7 @@ export default function AmbientPlayer() {
                                 <IconHeadphones className="size-[18px] text-black transition-transform group-hover/music:scale-110" strokeWidth={1.5} />
                             )}
                         </div>
-                    </OSButton>
+                    </LemonButton>
                 }
             >
                 <div className="p-1 px-2 text-center">

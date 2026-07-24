@@ -460,16 +460,16 @@ function NotebookBlockRow({
           paddingTop: '0.25rem',
         }}
       >
-        <LemonButton size="xsmall" type="tertiary" onClick={() => onMoveBlock('up')} disabled={index === 0} tooltip="Move up">
+        <LemonButton size="xsmall" type="tertiary" onClick={() => onMoveBlock('up')} disabled={index === 0} title="Move up">
           ▲
         </LemonButton>
-        <LemonButton size="xsmall" type="tertiary" onClick={() => onMoveBlock('down')} disabled={index === totalBlocks - 1} tooltip="Move down">
+        <LemonButton size="xsmall" type="tertiary" onClick={() => onMoveBlock('down')} disabled={index === totalBlocks - 1} title="Move down">
           ▼
         </LemonButton>
-        <LemonButton size="xsmall" type="tertiary" onClick={onOpenSlashMenu} tooltip="Add block (+)">
+        <LemonButton size="xsmall" type="tertiary" onClick={onOpenSlashMenu} title="Add block (+)">
           +
         </LemonButton>
-        <LemonButton size="xsmall" type="tertiary" onClick={onDeleteBlock} tooltip="Delete block">
+        <LemonButton size="xsmall" type="tertiary" onClick={onDeleteBlock} title="Delete block">
           🗑
         </LemonButton>
       </div>

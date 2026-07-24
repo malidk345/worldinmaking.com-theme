@@ -7,7 +7,7 @@ import { IconApps, IconBolt, IconBook, IconChat, IconChevronDown, IconDocument, 
 import { useApp } from '../../context/App'
 import { useAuth } from '../../context/AuthContext'
 import MenuBar, { MenuItemType } from 'components/RadixUI/MenuBar'
-import OSButton from 'components/OSButton'
+import { LemonButton } from '@/components/LemonUI'
 import AdminPanel from 'components/AdminPanel'
 import LoginContent from 'components/Login/LoginContent'
 import Tooltip from 'components/RadixUI/Tooltip'
@@ -237,7 +237,7 @@ export default function TaskBarMenu({ isMaximized }: { isMaximized?: boolean }) 
     const accountMenu = React.useMemo(() => [
         {
             trigger: (
-                <OSButton size="sm" className="px-1 overflow-hidden">
+                <LemonButton size="small" className="px-1 overflow-hidden">
                     <div className="flex items-center gap-1.5">
                         {profile?.avatar_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
@@ -251,7 +251,7 @@ export default function TaskBarMenu({ isMaximized }: { isMaximized?: boolean }) 
                         )}
                         <IconChevronDown className="size-3 text-[var(--text-3000)] opacity-30" />
                     </div>
-                </OSButton>
+                </LemonButton>
             ),
             items: accountMenuItems
         }
@@ -308,11 +308,11 @@ export default function TaskBarMenu({ isMaximized }: { isMaximized?: boolean }) 
                     >
                         <Tooltip
                             trigger={React.useMemo(() => (
-                                <OSButton
+                                <LemonButton
                                     onClick={handleActiveWindowsClick}
                                     disabled={totalWindows <= 0}
                                     data-active-windows
-                                    size="sm"
+                                    size="small"
                                     className="!px-0.5 group/wm relative"
                                 >
                                     <div className="flex items-center gap-1">
@@ -321,7 +321,7 @@ export default function TaskBarMenu({ isMaximized }: { isMaximized?: boolean }) 
                                             {totalWindows}
                                         </div>
                                     </div>
-                                </OSButton>
+                                </LemonButton>
                             ), [totalWindows, handleActiveWindowsClick])}
                             delay={0}
                         >
@@ -347,9 +347,9 @@ export default function TaskBarMenu({ isMaximized }: { isMaximized?: boolean }) 
 
                     <Tooltip
                         trigger={
-                            <OSButton onClick={() => openSearch()} size="sm" className="px-1 translate-y-[2px]">
+                            <LemonButton onClick={() => openSearch()} size="small" className="px-1 translate-y-[2px]">
                                 <IconSearch className="size-5 text-[var(--text-3000)]" />
-                            </OSButton>
+                            </LemonButton>
                         }
                     >
                         <div className="flex flex-col items-center gap-1">

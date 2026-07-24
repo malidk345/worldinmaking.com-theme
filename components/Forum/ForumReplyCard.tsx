@@ -13,7 +13,7 @@ import { supabase } from 'lib/supabase'
 import { useAuth } from 'context/AuthContext'
 import { useCommunity } from 'hooks/useCommunity'
 import ForumAvatar from './ForumAvatar'
-import OSButton from 'components/OSButton'
+import { LemonButton } from '@/components/LemonUI'
 import VotePicker from 'components/VotePicker'
 import { IconPencil, IconTrash, IconMessage } from '@posthog/icons'
 
@@ -126,9 +126,9 @@ export default function ForumReplyCard({ reply, postId, isInForum = false, quest
                 <ForumDays created={reply.createdAt} />
 
                 <div className="!ml-auto hidden sm:flex items-center space-x-1 opacity-60 hover:opacity-100 transition-opacity">
-                    <OSButton
-                        size="sm"
-                        tooltip="edit reply"
+                    <LemonButton
+                        size="small"
+                        title="edit reply"
                         onClick={() => { }}
                         icon={<IconPencil />}
                         className="!p-1"
@@ -154,19 +154,19 @@ export default function ForumReplyCard({ reply, postId, isInForum = false, quest
                         onDecrement={() => handleVoteChange('down')}
                         onIncrement={() => handleVoteChange('up')}
                     />
-                    <OSButton
-                        size="sm"
-                        tooltip="reply"
+                    <LemonButton
+                        size="small"
+                        title="reply"
                         onClick={() => setIsReplying(!isReplying)}
                         icon={<IconMessage className="w-3.5 h-3.5" />}
                         className="!p-1 text-xs opacity-60 hover:opacity-100 font-bold lowercase flex items-center gap-1"
                     >
                         reply
-                    </OSButton>
+                    </LemonButton>
                     {isAdmin && (
-                        <OSButton
-                            size="sm"
-                            tooltip="delete reply"
+                        <LemonButton
+                            size="small"
+                            title="delete reply"
                             onClick={() => {
                                 if (confirm('delete this reply?')) {
                                     deleteReply(reply.id, postId)
