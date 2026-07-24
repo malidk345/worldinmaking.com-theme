@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { Logo } from '@posthog/brand/logo'
 import {
     IconSearch,
     IconChatHelp,
