@@ -1824,12 +1824,12 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             )
             if (nextFocusedWindow && !nextFocusedWindow.minimized) {
                 if (nextFocusedWindow.path.startsWith('/')) {
-                    router.push(`${nextFocusedWindow.path}${nextFocusedWindow.location?.search || ''}`)
+                    safePush(`${nextFocusedWindow.path}${nextFocusedWindow.location?.search || ''}`)
                 } else {
                     bringToFront(nextFocusedWindow)
                 }
             } else {
-                router.push('/', { state: { skipPageUpdate: true } })
+                safePush('/', { state: { skipPageUpdate: true } })
             }
             setWindows(windowsFiltered.map((w) => (w.appSettings?.size?.fixed ? w : { ...w, snapped: false })))
         }, 0)
@@ -2377,7 +2377,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         // URL to it without re-running the page/window setup (skipPageUpdate).
         const dropSnappedSiblings = !!windowToExpand.snapped
         if (dropSnappedSiblings && windowToExpand.path.startsWith('/')) {
-            router.push(`${windowToExpand.path}${windowToExpand.location?.search || ''}`, {
+            safePush(`${windowToExpand.path}${windowToExpand.location?.search || ''}`, {
                 state: { skipPageUpdate: true },
             })
         }
@@ -2519,12 +2519,12 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             if (e.key === ',' && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
                 e.preventDefault()
                 // Open display options
-                router.push('/display-options', { state: { newWindow: true } })
+                safePush('/display-options', { state: { newWindow: true } })
             }
             if (e.key === '.' && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
                 e.preventDefault()
                 // Open keyboard shortcuts pane
-                router.push('/kbd', { state: { newWindow: true } })
+                safePush('/kbd', { state: { newWindow: true } })
             }
 
             // Theme toggle with m key
@@ -2655,7 +2655,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
 
                     // Navigate to the next window
                     if (nextWindow.path.startsWith('/')) {
-                        router.push(`${nextWindow.path}${nextWindow.location?.search || ''}`)
+                        safePush(`${nextWindow.path}${nextWindow.location?.search || ''}`)
                     } else {
                         bringToFront(nextWindow)
                     }
@@ -2745,7 +2745,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 return
             }
             if (e.data.type === 'navigate' && isSafeInternalPath(e.data.url)) {
-                router.push(e.data.url)
+                safePush(e.data.url)
             }
         }
 
@@ -2822,7 +2822,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             const nonWindowsQueryString =
                 Object.keys(nonWindowsParams).length > 0 ? `?${qs.stringify(nonWindowsParams, { encode: false })}` : ''
 
-            router.push(`${initialWindow.path}${nonWindowsQueryString}`, {
+            safePush(`${initialWindow.path}${nonWindowsQueryString}`, {
                 state: {
                     newWindow: true,
                     size: initialWindow.size,
@@ -2842,7 +2842,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             const currentQueryString =
                 Object.keys(currentParams).length > 0 ? `?${qs.stringify(currentParams, { encode: false })}` : ''
 
-            router.push(`${nextWindow.path}${currentQueryString}`, {
+            safePush(`${nextWindow.path}${currentQueryString}`, {
                 state: {
                     newWindow: true,
                     size: nextWindow.size,
