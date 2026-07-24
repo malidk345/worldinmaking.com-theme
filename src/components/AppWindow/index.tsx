@@ -80,6 +80,7 @@ const PageModal = ({ children }: { children: React.ReactNode }) => {
 }
 
 import WimAuthPortal from 'components/Auth/WimAuthPortal'
+import PostListing from 'templates/PostListing'
 
 const Router = (props) => {
     const { appWindow } = useWindow()
@@ -95,6 +96,9 @@ const Router = (props) => {
     }
     if (/^\/questions/.test(path)) {
         return <Inbox {...props} />
+    }
+    if (/^\/blog/.test(path)) {
+        return <PostListing {...props} activeMenu="blog" root="blog" title="Blog" />
     }
     if (/^\/handbook|^\/docs\/(?!api)|^\/manual/.test(path) && props.data?.post) {
         return <Handbook {...props} />
