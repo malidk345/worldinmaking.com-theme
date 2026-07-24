@@ -1,3 +1,6 @@
 ## 2024-07-18 - [Add focus visible styles to OSButton]
 **Learning:** `OSButton` component lacks clear visual focus states, reducing keyboard accessibility. This app requires `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/20` for standard focus rings.
 **Action:** Always ensure custom button components have proper focus rings explicitly set since default browser rings can be subtle or overridden.
+## 2024-11-20 - Add ARIA Labels to ForumRichText
+**Learning:** Found multiple instances where icon-only buttons lacked `aria-label`s, which is critical for screen reader users to understand the button's action. The `aria-label` attribute allows assistive tech to read aloud what an element is or does. In `components/Forum/ForumRichText.tsx`, a dynamically generated toolbar mapped over buttons providing only an icon and a `title`, which isn't sufficient for full accessibility compliance.
+**Action:** When creating icon-only buttons, always ensure that an `aria-label` is provided describing the action, especially if a `title` prop is already being used for tooltips. Added `aria-label` bindings explicitly mapping the button's `tooltipContent` to the generated element, and added a descriptive label to the mention list close button.
