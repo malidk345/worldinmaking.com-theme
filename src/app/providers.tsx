@@ -7,12 +7,15 @@ import '@fontsource/source-code-pro'
 import '../styles/global.css'
 import { Provider as ToastProvider } from '../context/Toast'
 import { UserProvider } from '../hooks/useUser'
+import { TooltipProvider } from '../components/RadixUI/Tooltip'
 
 // Mirror gatsby-browser.tsx wrapRootElement provider chain
 export function Providers({ children }: { children: React.ReactNode }) {
     return (
-        <ToastProvider>
-            <UserProvider>{children}</UserProvider>
-        </ToastProvider>
+        <TooltipProvider delayDuration={0}>
+            <ToastProvider>
+                <UserProvider>{children}</UserProvider>
+            </ToastProvider>
+        </TooltipProvider>
     )
 }
