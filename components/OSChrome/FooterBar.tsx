@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { createPortal } from 'react-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import OSButton from 'components/OSButton'
 import {
     IconSidebarOpen,
@@ -121,180 +122,218 @@ export default function FooterBar({
         }
     }, [appWindow?.key])
 
+    const [isBarExpanded, setIsBarExpanded] = React.useState(false)
+
     const content = (
-        <div data-scheme="tertiary" className="flex w-full items-center px-1 py-0.5 select-none gap-0.5 justify-between bg-transparent border-0">
-
-            {/* LEFT SECTION: Sidebar, Nav, Separator, Bookmark, Comment */}
-            <div className="flex items-center gap-0.5 flex-shrink-0">
-                <div className="flex items-center">
-                    {hasLeftSidebar && (
-                        <Tooltip
-                            trigger={
-                                <OSButton
-                                    size="sm"
-                                    onClick={(e) => {
-                                        e.preventDefault()
-                                        onToggleNav?.()
-                                    }}
-                                    active={isNavVisible}
-                                    className={mainIconBtnClass}
-                                >
-                                    {isNavVisible ? (
-                                        <IconSidebarOpen className={`${navIconClassName} size-3.5`} />
-                                    ) : (
-                                        <IconSidebarClose className={`${navIconClassName} size-3.5`} />
-                                    )}
-                                </OSButton>
-                            }
-                        >
-                            {isNavVisible ? 'hide' : 'show'} sidebar
-                        </Tooltip>
-                    )}
-                </div>
-
-                {/* Back/Forward buttons */}
-                {(showBack || showForward) && (
-                    <div className="hidden sm:flex items-center gap-0.5 ml-0.5 pl-0.5 border-l border-black/10 dark:border-white/10 h-3">
-                        {showBack && (
-                            <OSButton
-                                size="sm"
-                                onClick={goBack}
-                                disabled={!canGoBack}
-                                className="p-0.5 h-6 w-6 !rounded-md"
-                            >
-                                <IconChevronLeft className={`size-3.5 ${canGoBack ? 'opacity-100' : 'opacity-30'}`} />
-                            </OSButton>
+        <div data-scheme="tertiary" className="flex w-full items-center px-1 py-0.5 select-none gap-1 justify-start bg-transparent border-0">
+            {/* Framed Single Sidebar Icon Button (Main Trigger) */}
+            <Tooltip
+                trigger={
+                    <OSButton
+                        size="sm"
+                        onClick={(e) => {
+                            e.preventDefault()
+                            setIsBarExpanded(!isBarExpanded)
+                        }}
+                        active={isBarExpanded}
+                        className="p-1 h-6.5 w-6.5 !rounded-lg border border-black/20 dark:border-white/20 bg-white/70 dark:bg-[#1c1917]/70 shadow-sm opacity-90 hover:opacity-100 transition-all flex items-center justify-center shrink-0"
+                    >
+                        {isBarExpanded ? (
+                            <IconSidebarClose className="size-4 text-primary" />
+                        ) : (
+                            <IconSidebarOpen className="size-4 text-primary" />
                         )}
-                        {showForward && (
-                            <OSButton
-                                size="sm"
-                                onClick={goForward}
-                                disabled={!canGoForward}
-                                className="p-0.5 h-6 w-6 !rounded-md"
-                            >
-                                <IconChevronRight className={`size-3.5 ${canGoForward ? 'opacity-100' : 'opacity-30'}`} />
-                            </OSButton>
-                        )}
-                    </div>
-                )}
+                    </OSButton>
+                }
+                side="bottom"
+            >
+                {isBarExpanded ? 'collapse options' : 'expand options'}
+            </Tooltip>
 
-                {/* Separator */}
-                <div className="w-px h-3 bg-black/10 dark:bg-white/10 mx-0.5 flex-shrink-0" />
-
-                {/* Bookmark & Comment */}
-                <div className="flex items-center gap-0.5">
-                    <Tooltip trigger={
-                        <OSButton
-                            size="sm"
-                            className={interactionBtnClass}
-                            onClick={onBookmark}
-                            disabled={!onBookmark || bookmarkLoading}
-                            active={isBookmarked}
-                        >
-                            {isBookmarked ? (
-                                <IconBookmarkSolid className="size-3.5 text-primary" />
-                            ) : (
-                                <IconBookmark className={`size-3.5 ${onBookmark ? 'text-primary' : 'text-primary/30'}`} />
-                            )}
-                        </OSButton>
-                    } side="bottom">bookmark</Tooltip>
-
-                    <Tooltip trigger={
-                        <OSButton size="sm" className={interactionBtnClass} onClick={onComment} disabled={!onComment}>
-                            <IconMessage className={`size-3.5 ${onComment ? 'text-primary' : 'text-primary/30'}`} />
-                        </OSButton>
-                    } side="bottom">comment</Tooltip>
-                </div>
-            </div>
-
-            {/* RIGHT SECTION: Alignments, Separator, Search, TOC */}
-            <div className="flex items-center gap-0.5 justify-end flex-shrink-0">
-                {rightActionButtons}
-                <div className="relative">
-                    <Tooltip trigger={
-                        <OSButton
-                            size="sm"
-                            className={interactionBtnClass}
-                            onClick={toggleLanguage}
-                            active={languageOpen}
-                        >
-                            <IconGlobe className="size-3.5 text-primary" />
-                        </OSButton>
-                    } side="bottom">language</Tooltip>
-
-                    <LanguageSelector
-                        visible={languageOpen}
-                        onClose={() => setLanguageOpen(false)}
-                        currentLanguage={currentLanguage}
-                        availableLanguages={availableLanguages}
-                        onLanguageChange={onLanguageChange || (() => { })}
-                    />
-                </div>
-
-                {/* Separator */}
-                <div className="w-px h-3 bg-black/10 dark:bg-white/10 mx-0.5 flex-shrink-0" />
-
-                {/* Search & TOC */}
-                <div className="flex items-center gap-0.5 relative">
-                    {showSearch && (
-                        <Tooltip
-                            trigger={
-                                <OSButton size="sm" className={mainIconBtnClass} onClick={toggleSearch} active={searchOpen}>
-                                    <IconSearch className="size-3.5" />
-                                </OSButton>
-                            }
-                            side="bottom"
-                        >
-                            <div className="flex flex-col items-center gap-1">
-                                <span>search this page</span>
-                                <div className="flex gap-1 items-center opacity-70">
-                                    <KeyboardShortcut text="Shift" size="xs" />
-                                    <KeyboardShortcut text="F" size="xs" />
-                                </div>
+            {/* Horizontally Expanding Options Bar */}
+            <AnimatePresence initial={false}>
+                {isBarExpanded && (
+                    <motion.div
+                        initial={{ width: 0, opacity: 0 }}
+                        animate={{ width: "auto", opacity: 1 }}
+                        exit={{ width: 0, opacity: 0 }}
+                        transition={{ duration: 0.25, ease: "easeInOut" }}
+                        className="flex items-center gap-1 overflow-hidden flex-1 justify-between"
+                    >
+                        {/* LEFT SECTION: Sidebar, Nav, Separator, Bookmark, Comment */}
+                        <div className="flex items-center gap-0.5 flex-shrink-0">
+                            <div className="flex items-center">
+                                {hasLeftSidebar && (
+                                    <Tooltip
+                                        trigger={
+                                            <OSButton
+                                                size="sm"
+                                                onClick={(e) => {
+                                                    e.preventDefault()
+                                                    onToggleNav?.()
+                                                }}
+                                                active={isNavVisible}
+                                                className={mainIconBtnClass}
+                                            >
+                                                {isNavVisible ? (
+                                                    <IconSidebarOpen className={`${navIconClassName} size-3.5`} />
+                                                ) : (
+                                                    <IconSidebarClose className={`${navIconClassName} size-3.5`} />
+                                                )}
+                                            </OSButton>
+                                        }
+                                    >
+                                        {isNavVisible ? 'hide' : 'show'} sidebar
+                                    </Tooltip>
+                                )}
                             </div>
-                        </Tooltip>
-                    )}
 
-                    {showSearch && (
-                        <InPageSearchBar
-                            visible={searchOpen}
-                            onClose={() => setSearchOpen(false)}
-                            contentRef={searchContentRef}
-                            onSearch={onSearch}
-                            className="-top-2 right-0 -translate-y-full"
-                        />
-                    )}
+                            {/* Back/Forward buttons */}
+                            {(showBack || showForward) && (
+                                <div className="hidden sm:flex items-center gap-0.5 ml-0.5 pl-0.5 border-l border-black/10 dark:border-white/10 h-3">
+                                    {showBack && (
+                                        <OSButton
+                                            size="sm"
+                                            onClick={goBack}
+                                            disabled={!canGoBack}
+                                            className="p-0.5 h-6 w-6 !rounded-md"
+                                        >
+                                            <IconChevronLeft className={`size-3.5 ${canGoBack ? 'opacity-100' : 'opacity-30'}`} />
+                                        </OSButton>
+                                    )}
+                                    {showForward && (
+                                        <OSButton
+                                            size="sm"
+                                            onClick={goForward}
+                                            disabled={!canGoForward}
+                                            className="p-0.5 h-6 w-6 !rounded-md"
+                                        >
+                                            <IconChevronRight className={`size-3.5 ${canGoForward ? 'opacity-100' : 'opacity-30'}`} />
+                                        </OSButton>
+                                    )}
+                                </div>
+                            )}
 
-                    {showToc && (
-                        <Tooltip
-                            trigger={
-                                <OSButton
-                                    size="sm"
-                                    onClick={(e) => {
-                                        e.preventDefault()
-                                        onToggleToc?.()
-                                    }}
-                                    active={isTocVisible}
-                                    className={`${mainIconBtnClass} ${!compact ? '!w-auto !px-2' : ''}`}
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <IconTableOfContents className="size-3.5" />
-                                        {!compact && (
-                                            <div className="hidden lg:flex flex-col items-start leading-none text-left min-w-[60px]">
-                                                <span className="text-[9px] font-bold opacity-60">contents</span>
-                                                <span className="text-[11px] font-bold truncate max-w-[80px]">{title}</span>
-                                            </div>
+                            {/* Separator */}
+                            <div className="w-px h-3 bg-black/10 dark:bg-white/10 mx-0.5 flex-shrink-0" />
+
+                            {/* Bookmark & Comment */}
+                            <div className="flex items-center gap-0.5">
+                                <Tooltip trigger={
+                                    <OSButton
+                                        size="sm"
+                                        className={interactionBtnClass}
+                                        onClick={onBookmark}
+                                        disabled={!onBookmark || bookmarkLoading}
+                                        active={isBookmarked}
+                                    >
+                                        {isBookmarked ? (
+                                            <IconBookmarkSolid className="size-3.5 text-primary" />
+                                        ) : (
+                                            <IconBookmark className={`size-3.5 ${onBookmark ? 'text-primary' : 'text-primary/30'}`} />
                                         )}
-                                    </div>
-                                </OSButton>
-                            }
-                        >
-                            {isTocVisible ? 'hide' : 'show'} table of contents
-                        </Tooltip>
-                    )}
-                </div>
-            </div>
-        </div >
+                                    </OSButton>
+                                } side="bottom">bookmark</Tooltip>
+
+                                <Tooltip trigger={
+                                    <OSButton size="sm" className={interactionBtnClass} onClick={onComment} disabled={!onComment}>
+                                        <IconMessage className={`size-3.5 ${onComment ? 'text-primary' : 'text-primary/30'}`} />
+                                    </OSButton>
+                                } side="bottom">comment</Tooltip>
+                            </div>
+                        </div>
+
+                        {/* RIGHT SECTION: Alignments, Separator, Search, TOC */}
+                        <div className="flex items-center gap-0.5 justify-end flex-shrink-0">
+                            {rightActionButtons}
+                            <div className="relative">
+                                <Tooltip trigger={
+                                    <OSButton
+                                        size="sm"
+                                        className={interactionBtnClass}
+                                        onClick={toggleLanguage}
+                                        active={languageOpen}
+                                    >
+                                        <IconGlobe className="size-3.5 text-primary" />
+                                    </OSButton>
+                                } side="bottom">language</Tooltip>
+
+                                <LanguageSelector
+                                    visible={languageOpen}
+                                    onClose={() => setLanguageOpen(false)}
+                                    currentLanguage={currentLanguage}
+                                    availableLanguages={availableLanguages}
+                                    onLanguageChange={onLanguageChange || (() => { })}
+                                />
+                            </div>
+
+                            {/* Separator */}
+                            <div className="w-px h-3 bg-black/10 dark:bg-white/10 mx-0.5 flex-shrink-0" />
+
+                            {/* Search & TOC */}
+                            <div className="flex items-center gap-0.5 relative">
+                                {showSearch && (
+                                    <Tooltip
+                                        trigger={
+                                            <OSButton size="sm" className={mainIconBtnClass} onClick={toggleSearch} active={searchOpen}>
+                                                <IconSearch className="size-3.5" />
+                                            </OSButton>
+                                        }
+                                        side="bottom"
+                                    >
+                                        <div className="flex flex-col items-center gap-1">
+                                            <span>search this page</span>
+                                            <div className="flex gap-1 items-center opacity-70">
+                                                <KeyboardShortcut text="Shift" size="xs" />
+                                                <KeyboardShortcut text="F" size="xs" />
+                                            </div>
+                                        </div>
+                                    </Tooltip>
+                                )}
+
+                                {showSearch && (
+                                    <InPageSearchBar
+                                        visible={searchOpen}
+                                        onClose={() => setSearchOpen(false)}
+                                        contentRef={searchContentRef}
+                                        onSearch={onSearch}
+                                        className="-top-2 right-0 -translate-y-full"
+                                    />
+                                )}
+
+                                {showToc && (
+                                    <Tooltip
+                                        trigger={
+                                            <OSButton
+                                                size="sm"
+                                                onClick={(e) => {
+                                                    e.preventDefault()
+                                                    onToggleToc?.()
+                                                }}
+                                                active={isTocVisible}
+                                                className={`${mainIconBtnClass} ${!compact ? '!w-auto !px-2' : ''}`}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <IconTableOfContents className="size-3.5" />
+                                                    {!compact && (
+                                                        <div className="hidden lg:flex flex-col items-start leading-none text-left min-w-[60px]">
+                                                            <span className="text-[9px] font-bold opacity-60">contents</span>
+                                                            <span className="text-[11px] font-bold truncate max-w-[80px]">{title}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </OSButton>
+                                        }
+                                    >
+                                        {isTocVisible ? 'hide' : 'show'} table of contents
+                                    </Tooltip>
+                                )}
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
     )
 
     if (footerTarget) {
