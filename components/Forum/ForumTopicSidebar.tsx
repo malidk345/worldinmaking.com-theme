@@ -38,7 +38,7 @@ export default function ForumTopicSidebar({
         if (!channelPosts.length) return null
 
         const latest = channelPosts.reduce((acc, current) => {
-            return new Date(current.created_at).getTime() > new Date(acc.created_at).getTime() ? current : acc
+            return current.created_at > acc.created_at ? current : acc
         })
 
         return dayjs(latest.created_at).fromNow()
