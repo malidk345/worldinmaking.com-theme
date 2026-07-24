@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useMemo, useRef, useEffect } from 'react'
+import ReaderView from './index'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { ReaderViewProvider, useReaderView } from './context/ReaderViewContext'
@@ -19,7 +20,7 @@ import ScrollArea from 'components/RadixUI/ScrollArea'
 import ForumAvatar from 'components/Forum/ForumAvatar'
 import ArticleActions from 'components/Community/ArticleActions'
 import CommentSection from 'components/Community/CommentSection'
-import { LemonCard, LemonTag } from 'components/LemonUI'
+import { LemonCard, LemonTag, LemonButton } from 'components/LemonUI'
 import { getProseClasses } from 'constants/index'
 
 interface BlogPostViewProps {
@@ -112,9 +113,28 @@ const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
     const description = (!isOriginal && translation?.excerpt) ? translation.excerpt : (post.description || post.content.slice(0, 160))
     const isRichTextHtml = useMemo(() => serverHtml || /<\/?[a-z][\s\S]*>/i.test(content || ''), [content, serverHtml])
 
-    const wordCount = useMemo(() => content ? content.split(/\s+/).filter(Boolean).length : 0, [content])
-    const readTime = useMemo(() => Math.max(1, Math.ceil(wordCount / 200)), [wordCount])
-    const author = post.authors?.[0]
+    const body = useMemo(() => {
+        const wordCount = content ? content.split(/\s+/).filter(Boolean).length : 0;
+        const readTime = Math.max(1, Math.ceil(wordCount / 200));
+
+        return {
+            type: 'plain' as const,
+            content: content || '',
+            featuredImage: post.image || undefined,
+            contributors: post.authors?.map(a => ({ name: a.name, image: a.avatar, username: a.username || a.name })) || [],
+            date: post.date,
+            tags: post.tags?.map(t => ({ label: t })),
+            wordCount,
+            readTime,
+            views: post.views || 0,
+        };
+    }, [content, post.image, post.authors, post.date, post.tags, post.views]);
+
+    const tableOfContents = useMemo(() => post.headings?.map(h => ({
+        url: `#${h.id}`,
+        value: h.text,
+        depth: h.level - 1
+    })) || [], [post.headings]);
 
     // Normalize HTML content and inject IDs into headings for TOC linking
     const processedContent = useMemo(() => {
@@ -175,8 +195,16 @@ const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
 
     const sanitizedProcessedContent = useMemo(() => sanitizeHtml(processedContent), [processedContent])
 
+    const availableLanguages = useMemo(() => {
+        const langs = [post.originalLanguage || post.language || 'en']
+        if (post.translations) {
+            langs.push(...Object.keys(post.translations))
+        }
+        return Array.from(new Set(langs))
+    }, [post])
+
     return (
-        <div className="size-full flex flex-col overflow-hidden bg-white dark:bg-[#121214]">
+        <>
             <SEO
                 title={title}
                 description={description}
@@ -190,142 +218,98 @@ const BlogPostInner = React.memo(({ post }: BlogPostViewProps) => {
                 url={post.slug ? `/posts/${post.slug}` : '/'}
                 image={post.image || undefined}
                 datePublished={post.date}
-                authorName={author?.name || 'World in Making'}
-                authorUrl={author?.username ? `/profile/${author.username}` : undefined}
+                authorName={post.authors?.[0]?.name || 'World in Making'}
+                authorUrl={post.authors?.[0]?.username ? `/profile/${post.authors[0].username}` : undefined}
             />
-            <BreadcrumbJsonLd items={[
-                { name: 'Home', url: '/' },
-                { name: 'Posts', url: '/posts' },
-                { name: title, url: `/posts/${post.slug || ''}` },
-            ]} />
+            <ReaderView
+                body={body}
+                title={title}
+                tableOfContents={tableOfContents}
+                showQuestions
+                commentThreadSlug={post.slug || title}
+                bookmarkMeta={{
+                    postId: post.id,
+                    slug: post.slug || '',
+                    title,
+                }}
+                availableLanguages={availableLanguages}
+                useExternalProvider
+                proseSize="base"
+                contentMaxWidthClass="max-w-3xl"
+            >
+                <div className="LemonMarkdown tiptap-content mt-6">
+                    {isRichTextHtml ? (
+                        <div dangerouslySetInnerHTML={{ __html: sanitizedProcessedContent }} />
+                    ) : (
+                        <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[rehypeRaw, rehypeSlug, [rehypeSanitize, customSanitizeSchema]]}
+                            components={{
+                                img: ({ src, alt, title }: { src?: string; alt?: string; title?: string }) => {
+                                    let finalSrc = src || '';
+                                    const altText = alt || '';
 
-            <ScrollArea className="size-full">
-                <div className="max-w-3xl mx-auto py-10 px-4 sm:px-6 md:px-8">
+                                    if (altText.startsWith('illustration:')) {
+                                        const query = altText.replace('illustration:', '').trim();
+                                        const imageUrl = finalSrc || `https://loremflickr.com/800/400/${encodeURIComponent(query.replace(/\s+/g, ','))}`;
+                                        return (
+                                            <figure className="my-10 overflow-hidden rounded-[24px] bg-primary/5 border border-primary/10 shadow-lg relative group">
+                                                <div className="absolute inset-0 bg-black/5 dark:bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10 pointer-events-none" />
+                                                <CloudinaryImage
+                                                    src={imageUrl}
+                                                    alt={altText}
+                                                    title={title}
+                                                    className="w-full aspect-video hover:scale-105 transition-transform duration-700 ease-out"
+                                                    imgClassName="object-cover w-full h-auto"
+                                                    width={1200}
+                                                    height={675}
+                                                    priority={false}
+                                                />
+                                                <figcaption className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black/80 to-transparent z-20">
+                                                    <div className="text-[10px] font-mono text-white/90 text-center lowercase tracking-wider">
+                                                        ⌁ {query} ⌁
+                                                    </div>
+                                                </figcaption>
+                                            </figure>
+                                        );
+                                    }
 
-                    {/* Category badge + meta row */}
-                    <div className="flex flex-wrap items-center gap-2 mb-4">
-                        <LemonTag type="highlight" className="!text-[10px] uppercase font-bold tracking-widest">
-                            Blog
-                        </LemonTag>
-                        {post.date && (
-                            <span className="text-xs text-[var(--color-posthog-3000-600)]">
-                                {new Date(post.date).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
-                            </span>
-                        )}
-                        <span className="text-xs text-[var(--color-posthog-3000-600)]">· {readTime} min read</span>
-                    </div>
+                                    if (finalSrc.startsWith('/storage/v1/object/public/')) {
+                                        const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, '') || '';
+                                        // Replace '/public/' with '/render/image/public/' and append transformation params
+                                        finalSrc = `${baseUrl}${finalSrc}`.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
+                                        finalSrc += '?width=1200&quality=80&format=webp';
+                                    }
 
-                    {/* H1 Title */}
-                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-primary leading-[1.1] mb-4">
-                        {title}
-                    </h1>
-
-                    {/* Excerpt */}
-                    {description && (
-                        <p className="text-lg text-[var(--color-posthog-3000-600)] leading-relaxed mb-8">
-                            {description}
-                        </p>
+                                    return (
+                                        <CloudinaryImage
+                                            src={finalSrc}
+                                            alt={altText || 'Blog post image'}
+                                            title={title}
+                                                className="my-10 rounded-[18px] md:rounded-[24px] border border-black/5 dark:border-white/5 shadow-lg overflow-hidden"
+                                            imgClassName="object-contain w-full h-auto"
+                                            width={1200}
+                                            height={675}
+                                            priority={false}
+                                        />
+                                    );
+                                },
+                                ...({
+                                    query: ({ type, title }: { type?: string; title?: string }) => <QueryNode type={type} title={title} />,
+                                    sqlv2: ({ code, nodeid }: { code?: string; nodeid?: string }) => <SQLNode code={code} nodeId={nodeid} />,
+                                    pythonv2: ({ code, nodeid }: { code?: string; nodeid?: string }) => <PythonNode code={code} nodeId={nodeid} />,
+                                    featureflag: ({ name, status }: { name?: string; status?: string }) => <FeatureFlagNode name={name} status={status} />,
+                                    experiment: ({ name, status }: { name?: string; status?: string }) => <ExperimentNode name={name} status={status} />,
+                                    cohort: ({ name, count }: { name?: string; count?: string }) => <CohortNode name={name} count={count} />,
+                                } as unknown as Record<string, React.ElementType>)
+                            }}
+                        >
+                            {processedContent}
+                        </ReactMarkdown>
                     )}
-
-                    {/* Author + tags + actions card */}
-                    <LemonCard hoverEffect={false} className="mb-8 p-4 flex flex-col gap-3">
-                        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[var(--color-posthog-3000-100)] dark:border-white/10">
-                            {author ? (
-                                <div className="flex items-center gap-2.5">
-                                    <ForumAvatar className="size-8 rounded-full" image={author.avatar} />
-                                    <div className="flex flex-col leading-none">
-                                        <span className="text-sm font-bold text-primary">{author.name}</span>
-                                        {author.username && (
-                                            <span className="text-xs text-[var(--color-posthog-3000-600)] mt-0.5">@{author.username}</span>
-                                        )}
-                                    </div>
-                                </div>
-                            ) : (
-                                <span className="text-xs font-semibold text-[var(--color-posthog-3000-600)]">World in Making</span>
-                            )}
-                            {post.tags && post.tags.length > 0 && (
-                                <div className="flex flex-wrap gap-1.5">
-                                    {post.tags.map((tag, i) => (
-                                        <LemonTag key={i} type="option" className="!text-[10px] uppercase font-semibold tracking-wider">
-                                            {tag}
-                                        </LemonTag>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                        <ArticleActions slug={post.slug || title} views={post.views} />
-                    </LemonCard>
-
-                    {/* Featured image */}
-                    {post.image && (
-                        <div className="mb-10 aspect-video rounded-[20px] overflow-hidden border border-black/10 dark:border-white/10 shadow-sm">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={post.image} alt={title} className="w-full h-full object-cover" />
-                        </div>
-                    )}
-
-                    {/* Article body */}
-                    <article className={`${getProseClasses('base')} max-w-none`}>
-                        {isRichTextHtml ? (
-                            <div dangerouslySetInnerHTML={{ __html: sanitizedProcessedContent }} />
-                        ) : (
-                            <ReactMarkdown
-                                remarkPlugins={[remarkGfm]}
-                                rehypePlugins={[rehypeRaw, rehypeSlug, [rehypeSanitize, customSanitizeSchema]]}
-                                components={{
-                                    img: ({ src, alt, title: imgTitle }: { src?: string; alt?: string; title?: string }) => {
-                                        let finalSrc = src || ''
-                                        const altText = alt || ''
-                                        if (altText.startsWith('illustration:')) {
-                                            const query = altText.replace('illustration:', '').trim()
-                                            const imageUrl = finalSrc || `https://loremflickr.com/800/400/${encodeURIComponent(query.replace(/\s+/g, ','))}`
-                                            return (
-                                                <figure className="my-8 overflow-hidden rounded-[20px] bg-primary/5 border border-primary/10 shadow-md relative group">
-                                                    <CloudinaryImage src={imageUrl} alt={altText} title={imgTitle} className="w-full aspect-video hover:scale-105 transition-transform duration-700 ease-out" imgClassName="object-cover w-full h-auto" width={1200} height={675} priority={false} />
-                                                    <figcaption className="p-2.5 bg-black/80 text-[11px] font-mono text-white/90 text-center lowercase tracking-wider">⌁ {query} ⌁</figcaption>
-                                                </figure>
-                                            )
-                                        }
-                                        if (finalSrc.startsWith('/storage/v1/object/public/')) {
-                                            const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, '') || ''
-                                            finalSrc = `${baseUrl}${finalSrc}`.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=1200&quality=80&format=webp'
-                                        }
-                                        return <CloudinaryImage src={finalSrc} alt={altText || 'Blog post image'} title={imgTitle} className="my-8 rounded-[16px] md:rounded-[20px] border border-black/10 dark:border-white/10 shadow-sm overflow-hidden" imgClassName="object-contain w-full h-auto" width={1200} height={675} priority={false} />
-                                    },
-                                    ...({  
-                                        query: ({ type, title: qTitle }: { type?: string; title?: string }) => <QueryNode type={type} title={qTitle} />,
-                                        sqlv2: ({ code, nodeid }: { code?: string; nodeid?: string }) => <SQLNode code={code} nodeId={nodeid} />,
-                                        pythonv2: ({ code, nodeid }: { code?: string; nodeid?: string }) => <PythonNode code={code} nodeId={nodeid} />,
-                                        featureflag: ({ name, status }: { name?: string; status?: string }) => <FeatureFlagNode name={name} status={status} />,
-                                        experiment: ({ name, status }: { name?: string; status?: string }) => <ExperimentNode name={name} status={status} />,
-                                        cohort: ({ name, count }: { name?: string; count?: string }) => <CohortNode name={name} count={count} />,
-                                    } as unknown as Record<string, React.ElementType>)
-                                }}
-                            >
-                                {processedContent}
-                            </ReactMarkdown>
-                        )}
-                    </article>
-
-                    {/* Author bio */}
-                    {author && (
-                        <LemonCard hoverEffect={false} className="mt-12 p-5 flex items-center gap-4 bg-[var(--color-posthog-3000-50)] dark:bg-white/5">
-                            <ForumAvatar className="size-12 rounded-full shrink-0" image={author.avatar} />
-                            <div>
-                                <p className="text-sm font-bold text-primary">Written by {author.name}</p>
-                                <p className="text-xs text-[var(--color-posthog-3000-600)] mt-1">Author at World in Making. Sharing thoughts, blueprints, and engineering insights.</p>
-                            </div>
-                        </LemonCard>
-                    )}
-
-                    {/* Comments */}
-                    <div id="comments" className="mt-12 pt-8 border-t border-[var(--color-posthog-3000-100)] dark:border-white/10">
-                        <CommentSection slug={post.slug || title} views={post.views} />
-                    </div>
-
                 </div>
-            </ScrollArea>
-        </div>
+            </ReaderView>
+        </>
     )
 })
 

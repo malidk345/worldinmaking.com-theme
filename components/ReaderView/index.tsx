@@ -20,7 +20,6 @@ import { sanitizeHtml } from 'utils/security'
 import PostMetaTable from './PostMetaTable'
 import { LemonCollapse, LemonTag, LemonCard } from 'components/LemonUI'
 import ForumAvatar from 'components/Forum/ForumAvatar'
-import ArticleActions from 'components/Community/ArticleActions'
 
 
 
@@ -410,9 +409,9 @@ const ReaderViewContent = React.memo(({
                                             image={body.contributors[0].image}
                                         />
                                     )}
-                                    <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                                    <div className="flex items-center gap-1.5 flex-wrap min-w-0 text-sm">
                                         {body.contributors && body.contributors[0] && (
-                                            <strong className="text-primary font-bold text-sm leading-none">
+                                            <strong className="text-primary font-bold leading-none">
                                                 {body.contributors[0].name}
                                             </strong>
                                         )}
@@ -429,19 +428,16 @@ const ReaderViewContent = React.memo(({
                                     </div>
                                 </div>
 
-                                {/* Right: Tags + Vote/Share Actions */}
-                                <div className="flex items-center gap-2 shrink-0">
-                                    {body.tags && body.tags.length > 0 && (
-                                        <div className="hidden sm:flex items-center gap-1">
-                                            {body.tags.slice(0, 3).map((tag, i) => (
-                                                <LemonTag key={i} type="option" className="!text-[10px] uppercase tracking-wider font-semibold">
-                                                    {tag.label}
-                                                </LemonTag>
-                                            ))}
-                                        </div>
-                                    )}
-                                    <ArticleActions slug={commentThreadSlug || bookmarkMeta?.slug} views={body.views} />
-                                </div>
+                                {/* Right: Tags */}
+                                {body.tags && body.tags.length > 0 && (
+                                    <div className="flex items-center gap-1 shrink-0">
+                                        {body.tags.slice(0, 3).map((tag, i) => (
+                                            <LemonTag key={i} type="option" className="!text-[10px] uppercase tracking-wider font-semibold">
+                                                {tag.label}
+                                            </LemonTag>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Featured Image */}

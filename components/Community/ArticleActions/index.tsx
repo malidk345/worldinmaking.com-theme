@@ -149,21 +149,24 @@ export default function ArticleActions({ slug, views = 0 }: ArticleActionsProps)
     const displayCount = totalVotes
 
     return (
-        <div className="flex items-center gap-2">
-            <VotePicker
-                count={displayCount}
-                active={userVote !== 0}
-                onDecrement={() => handleVoteChange('down')}
-                onIncrement={() => handleVoteChange('up')}
-                disabled={!slug || loading}
-            />
-            {slug && (
-                <ViewCounter
-                    idOrSlug={slug}
-                    type="blog"
-                    views={views}
+        <div className="flex justify-between items-center my-6 py-4 border-y border-black/10 dark:border-white/10">
+            <div className="flex items-center gap-3">
+                <VotePicker
+                    count={displayCount}
+                    active={userVote !== 0}
+                    onDecrement={() => handleVoteChange('down')}
+                    onIncrement={() => handleVoteChange('up')}
+                    disabled={!slug || loading}
                 />
-            )}
+                {slug && (
+                    <ViewCounter
+                        idOrSlug={slug}
+                        type="blog"
+                        views={views}
+                    />
+                )}
+            </div>
+
             <div
                 role="button"
                 tabIndex={0}
