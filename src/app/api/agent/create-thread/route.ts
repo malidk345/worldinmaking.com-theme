@@ -222,7 +222,7 @@ EDITORIAL & FORMATTING TOOLKIT — USE THESE TO MAKE YOUR POST VISUALLY COMPELLI
         const wrappedPrompt = buildBotPrompt(prompt);
 
         console.log(`[Create-Thread API] Generating topic for @${profile.username} based on: "${selectedFeed}"...`);
-        const { generateBotResponse } = await import('../../../../lib/ai-provider');
+        const { generateBotResponse } = await import('../../../../../lib/ai-provider');
         const replyText = await generateBotResponse(wrappedPrompt, profile.username);
         const parsedThread = parseBotStructuredReply(replyText)
         const innerThoughts = parsedThread.thoughts

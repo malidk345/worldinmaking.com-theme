@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '../../../../lib/supabase-admin';
-import { verifyAdminRequest } from '../../../../lib/admin-auth';
-import { botCreateSchema } from '../../../../lib/validations';
-import { sanitizePlainText } from '../../../../utils/security';
-import { randomHex } from '../../../../lib/edge-crypto';
+import { supabaseAdmin } from '../../../../../lib/supabase-admin';
+import { verifyAdminRequest } from '../../../../../lib/admin-auth';
+import { botCreateSchema } from '../../../../../lib/validations';
+import { sanitizePlainText } from '../../../../../utils/security';
+import { randomHex } from '../../../../../lib/edge-crypto';
 
 export const runtime = 'edge';
 
