@@ -18,7 +18,7 @@ import { useHedgehogMode } from 'components/HedgehogMode'
 import { useSmallTeamsMenuItems } from './SmallTeamsMenuItems'
 import { useRouter } from 'next/navigation'
 
-const SparksJoyItems = {
+export const SparksJoyItems = {
     games: [
         { label: 'Dino run', link: '/dino' },
         { label: 'Pong', link: '/pong' },
@@ -30,6 +30,10 @@ const SparksJoyItems = {
         { label: 'Hog Watch', link: '/hogwatch' },
         { label: 'Hedgehog generator', link: '/hedgehog-generator' },
     ],
+}
+
+export function useMenuSelectOptions() {
+    return useMenuData()
 }
 
 export function useMenuData(): MenuType[] {

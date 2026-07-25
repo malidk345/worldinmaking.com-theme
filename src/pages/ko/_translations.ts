@@ -722,7 +722,12 @@ const koDeepMenuTranslations: Record<string, string> = {
     Insights: '인사이트',
     Invites: '초대',
     Members: '멤버',
-    Organizations: '조직',
+    'Manage organizations': '조직 관리',
+}
+
+export default function TranslationsDummy() {
+    return null
+}
     Persons: '사용자',
     Projects: '프로젝트',
     'Property definitions': '속성 정의',
@@ -1244,4 +1249,8 @@ export const translateKoHomeBody = (value: string): string => {
     return Object.entries(koHomeBodyTranslations).reduce((body, [english, korean]) => {
         return body.split(english).join(korean)
     }, value)
+}
+
+export default function TranslationsDummy() {
+    return null
 }
