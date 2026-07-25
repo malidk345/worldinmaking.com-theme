@@ -3,7 +3,6 @@ import React, { useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { useApp } from '../context/App'
 import { useWindow } from '../context/Window'
-import { isMarkdownContentPath } from '../constants'
 
 interface SEOProps {
     title: string

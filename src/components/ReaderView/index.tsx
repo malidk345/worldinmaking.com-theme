@@ -52,7 +52,7 @@ import { getLogo, getDarkClassForLogo } from 'constants/logos'
 import SearchProvider, { useSearch } from 'components/Editor/SearchProvider'
 import { InlineSearch } from 'components/Search/InlineSearch'
 import { algoliaIndexName, algoliaSearchClient } from 'lib/algoliaSearch'
-import { isMarkdownContentPath } from 'constants'
+import { isMarkdownContentPath } from '../../constants'
 
 import { PANEL_BG } from 'constants/frostedSurfaces'
 import { useWindow } from 'context/Window'
