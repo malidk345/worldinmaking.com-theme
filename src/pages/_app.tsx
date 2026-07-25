@@ -1,5 +1,4 @@
 import type { AppProps } from 'next/app'
-import 'styles/global.css'
 import { Provider } from 'context/App'
 import { Provider as ToastProvider } from 'context/Toast'
 import Wrapper from 'components/Wrapper'

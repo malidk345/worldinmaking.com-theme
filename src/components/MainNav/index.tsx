@@ -133,6 +133,25 @@ function Tooltip({
     tooltipClassName = '',
     placement = 'bottom',
 }: {
+    className?: string
+    children: React.ReactNode
+    content: React.ReactNode
+    tooltipClassName?: string
+    placement?: 'bottom' | 'top' | 'left' | 'right'
+}) {
+    const [isOpen, setIsOpen] = React.useState(false)
+
+    return (
+        <span
+            className={`relative flex ${className}`}
+            onMouseEnter={() => setIsOpen(true)}
+            onMouseLeave={() => setIsOpen(false)}
+        >
+            {children}
+            {isOpen && (
+                <div className={`absolute z-50 ${placement === 'bottom' ? 'top-full mt-2' : ''}`}>
+                    <div className={`bg-gray-900 text-white text-sm rounded py-1 px-2 ${tooltipClassName}`}>
+                        {content}
                     </div>
                 </div>
             )}

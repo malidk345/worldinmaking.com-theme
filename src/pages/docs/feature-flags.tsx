@@ -6,7 +6,6 @@ import Intro from 'components/Docs/Intro'
 import ReaderView from 'components/ReaderView'
 import OSTable from 'components/OSTable'
 import { IconCheck, IconLogomark } from '@posthog/icons'
-import FeatureFlagsInstallationPlatforms from '../../../contents/docs/feature-flags/installation/_snippets/installation-platforms'
 import { IconFlask, IconRewindPlay, IconTrends, IconMessage, IconWarning, IconDatabase } from '@posthog/icons'
 import Card from 'components/Card'
 
@@ -107,7 +106,6 @@ export const Content = () => {
             <section className="mb-8">
                 <h2 className="mb-4 mt-0">SDKs and frameworks</h2>
                 <div className="mt-4">
-                    <FeatureFlagsInstallationPlatforms columns={3} />
                 </div>
             </section>
 

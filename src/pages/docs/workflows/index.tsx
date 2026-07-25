@@ -5,7 +5,6 @@ import Intro from 'components/Docs/Intro'
 import ReaderView from 'components/ReaderView'
 import Link from 'components/Link'
 import { Caption } from 'components/Caption'
-import ChannelPlatforms from '../../../../contents/docs/workflows/_snippets/channel-platforms'
 
 export const Content = () => {
     return (
@@ -62,7 +61,6 @@ export const Content = () => {
                 <h2 className="mb-4 mt-0" id="channels-and-platforms">
                     Channels and platforms
                 </h2>
-                <ChannelPlatforms />
             </section>
 
             <section className="mb-8">

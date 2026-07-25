@@ -1,5 +1,4 @@
 import CloudinaryImage from 'components/CloudinaryImage'
-import 'keen-slider/keen-slider.min.css'
 import { useKeenSlider } from 'keen-slider/react'
 import React, { useMemo, useState, useEffect } from 'react'
 import { cn } from '../../utils'

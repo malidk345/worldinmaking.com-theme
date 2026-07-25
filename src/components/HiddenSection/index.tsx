@@ -1,7 +1,6 @@
 import { MdxHeader } from 'components/MdxAnchorHeaders'
 import React, { useState } from 'react'
 import { Heading } from 'types'
-import './style.css'
 
 interface HiddenSectionProps {
     headingType: Heading

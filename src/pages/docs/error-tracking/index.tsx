@@ -7,7 +7,6 @@ import ReaderView from 'components/ReaderView'
 import OSTable from 'components/OSTable'
 import ScrollArea from 'components/RadixUI/ScrollArea'
 import { IconCheck, IconLogomark } from '@posthog/icons'
-import InstallationPlatforms from '../../../../contents/docs/error-tracking/installation/_snippets/installation-platforms'
 import { IconRewindPlay, IconTrends, IconToggle, IconUser, IconLlmAnalytics, IconDatabase } from '@posthog/icons'
 import Card from 'components/Card'
 import Link from 'components/Link'
@@ -103,7 +102,6 @@ export const Content = () => {
             <section className="mb-8">
                 <h2 className="mb-4 mt-0">SDKs and frameworks</h2>
                 <div className="mt-4">
-                    <InstallationPlatforms columns={3} />
                 </div>
             </section>
 

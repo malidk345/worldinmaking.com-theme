@@ -19,6 +19,10 @@ const nextConfig = {
     },
 
     webpack: (config) => {
+        config.module.rules.push({
+            test: /\.(mp3)$/,
+            type: 'asset/resource',
+        });
         config.resolve.alias = {
             ...config.resolve.alias,
             'gatsby$': path.resolve(__dirname, 'shims/gatsby.tsx'),

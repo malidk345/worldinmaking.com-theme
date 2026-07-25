@@ -1,7 +1,7 @@
 import CloudinaryImage from 'components/CloudinaryImage'
 import { CallToAction } from 'components/CallToAction'
 import React, { useEffect, useState } from 'react'
-import Lottie from 'react-lottie'
+import Lottie from 'lottie-react'
 
 export default function CommunityCTA() {
     const [hog1Data, setHog1Data] = useState<any | null>(null)

@@ -1,7 +1,5 @@
 import React, { useEffect } from 'react'
 import usePostHog from '../../hooks/usePostHog'
-import './Fonts.css'
-import './SkeletonLoading.css'
 import { IProps } from './context'
 import ScrollArea from 'components/RadixUI/ScrollArea'
 

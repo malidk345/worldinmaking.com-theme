@@ -37,7 +37,7 @@ export default function Post({ children }: { children: React.ReactNode }) {
     const { compact, internalMenu } = useLayoutData()
 
     const handleArticleTransitionEnd = (e) => {
-        const hash = window?.''
+        const hash = typeof window !== 'undefined' ? window.location.hash : ''
         if (e?.propertyName === 'max-width' && hash) {
             document.getElementById(hash?.replace('#', ''))?.scrollIntoView()
         }

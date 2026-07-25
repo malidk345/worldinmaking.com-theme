@@ -67,7 +67,6 @@ import AboutPostHog from 'components/AboutPostHog'
 
 
 const getProseClasses = (size?: any) => 'prose dark:prose-invert max-w-none'
-const useLocation = () => ({ pathname: typeof window !== 'undefined' ? window.location.pathname : '/', search: typeof window !== 'undefined' ? window.location.search : '', hash: typeof window !== 'undefined' ? window.location.hash : '' })
 
 dayjs.extend(relativeTime)
 
