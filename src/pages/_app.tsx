@@ -1,10 +1,10 @@
-import type { AppProps } from 'next/app'
+import NextApp, { AppContext, AppProps } from 'next/app'
 import 'styles/global.css'
 import { Provider } from 'context/App'
 import { Provider as ToastProvider } from 'context/Toast'
 import Wrapper from 'components/Wrapper'
 import { useRouter } from 'next/router'
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 
 export default function App({ Component, pageProps }: AppProps) {
     const router = useRouter()
@@ -20,4 +20,9 @@ export default function App({ Component, pageProps }: AppProps) {
             </ToastProvider>
         </div>
     )
+}
+
+App.getInitialProps = async (appContext: AppContext) => {
+    const appProps = await NextApp.getInitialProps(appContext)
+    return { ...appProps }
 }
