@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react'
-import { GetStaticPaths, GetStaticProps } from 'next'
 import dynamic from 'next/dynamic'
 import { getBlogPost } from '../lib/blog'
 import { fetchSupabasePostBySlug, SupabasePost } from '../lib/supabaseBlog'
