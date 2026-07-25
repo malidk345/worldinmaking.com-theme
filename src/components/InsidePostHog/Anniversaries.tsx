@@ -28,7 +28,7 @@ export default function Anniversaries() {
             },
             { encodeValuesOnly: true }
         )
-        fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/profiles?${query}`)
+        fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles?${query}`)
             .then((res) => res.json())
             .then(({ data }) => {
                 const teamMembers = data.filter((teamMember) => {

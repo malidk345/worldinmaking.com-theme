@@ -81,7 +81,7 @@ const SlackPosts = () => {
             },
             { encodeValuesOnly: true }
         )
-        fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/slack-posts?${slackPostsQuery}`)
+        fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/slack-posts?${slackPostsQuery}`)
             .then((res) => res.json())
             .then((data) => {
                 if (data?.data?.length > 0) {

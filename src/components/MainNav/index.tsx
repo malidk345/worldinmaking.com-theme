@@ -63,7 +63,7 @@ export default function Orders() {
     const [orders, setOrders] = useState([])
 
     const fetchOrders = async () => {
-        const { data } = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/orders`, {
+        const { data } = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/orders`, {
             headers: {
                 Authorization: `Bearer ${await getJwt()}`,
             },
@@ -133,6 +133,40 @@ function Tooltip({
     tooltipClassName = '',
     placement = 'bottom',
 }: {
+    className?: string
+    children: React.ReactNode
+    content: React.ReactNode | string
+    tooltipClassName?: string
+    placement?: 'top' | 'bottom' | 'left' | 'right'
+}) {
+    const [referenceElement, setReferenceElement] = useState(null)
+    const [popperElement, setPopperElement] = useState(null)
+    const { styles, attributes } = usePopper(referenceElement, popperElement, {
+        placement,
+        modifiers: [
+            {
+                name: 'offset',
+                options: {
+                    offset: [0, 8],
+                },
+            },
+        ],
+    })
+
+    return (
+        <span className={`group/parent ${className}`}>
+            <span ref={setReferenceElement as any}>{children}</span>
+            {content && (
+                <div
+                    ref={setPopperElement as any}
+                    style={styles.popper}
+                    {...attributes.popper}
+                    className="z-50 hidden group-hover/parent:block"
+                >
+                    <div
+                        className={`px-2 py-1 text-sm bg-gray-900 text-white rounded-md whitespace-nowrap ${tooltipClassName}`}
+                    >
+                        {content}
                     </div>
                 </div>
             )}
@@ -480,24 +514,7 @@ export const Main = () => {
                         ) : (
                             <SignupCTA size="sm" type="outline" className="hidden sm:flex mr-2" text="Get started" />
                         )}
-                        <HoverTooltip
-                            content={() => (
-                                <div className="text-xs">
-                                    Chat with <strong>PostHog AI</strong>{' '}
-                                    <kbd className={`${keyboardShortcut} py-0 ml-0.5`}>?</kbd>
-                                </div>
-                            )}
-                        >
-                            <button
-                                className="group my-1mr-[1px] p-2 hover:bg-border dark:hover:bg-border-dark rounded-full relative"
-                                onClick={openChat}
-                            >
-                                <IconChatHelp className="opacity-50 inline-block w-6 group-hover:opacity-75" />
-                                {hasUnread && (
-                                    <span className="size-2 text-xs bg-red text-white flex justify-center items-center rounded-full absolute top-2 right-2 " />
-                                )}
-                            </button>
-                        </HoverTooltip>
+
 
                         <Tooltip
                             placement="bottom-end"

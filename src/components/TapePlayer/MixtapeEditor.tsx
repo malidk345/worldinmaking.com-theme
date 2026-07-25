@@ -252,8 +252,8 @@ export default function MixtapeEditor({ id, onSubmit }: MixtapeEditorProps): JSX
             try {
                 const jwt = await getJwt()
                 const url = isEditMode
-                    ? `${process.env.GATSBY_SQUEAK_API_HOST}/api/mixtapes/${id}`
-                    : `${process.env.GATSBY_SQUEAK_API_HOST}/api/mixtapes`
+                    ? `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/mixtapes/${id}`
+                    : `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/mixtapes`
                 const method = isEditMode ? 'PUT' : 'POST'
 
                 const response = await fetch(url, {
@@ -362,7 +362,7 @@ export default function MixtapeEditor({ id, onSubmit }: MixtapeEditorProps): JSX
         const loadMixtape = async () => {
             try {
                 const jwt = await getJwt()
-                const response = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/mixtapes/${id}?populate=*`, {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/mixtapes/${id}?populate=*`, {
                     headers: {
                         Authorization: `Bearer ${jwt}`,
                     },

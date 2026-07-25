@@ -132,7 +132,7 @@ export const Change = ({ title, teamName, media, description, cta }) => {
                     <ZoomImage>
                         <Video
                             publicId={media?.data?.attributes?.provider_metadata?.public_id}
-                            cloudName={process.env.GATSBY_CLOUDINARY_CLOUD_NAME}
+                            cloudName={process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}
                             className="max-w-2xl w-full"
                             autoPlay
                             loop
@@ -198,7 +198,7 @@ const Roadmap = ({
             'Unpublishing will remove this item from the changelog on the next build. You can republish it later in Strapi. No data will be lost.'
         )
         if (confirmed) {
-            await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/roadmaps/${roadmap.id}`, {
+            await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/roadmaps/${roadmap.id}`, {
                 body: JSON.stringify({
                     data: {
                         publishedAt: null,
@@ -771,11 +771,11 @@ const RoadmapCards = ({
 export default function Changelog({
     data,
 }: {
-    data: {
-        allRoadmap: {
+    data?: {
+        allRoadmap?: {
             nodes: RoadmapNode[]
         }
-        allChangelogVideo: {
+        allChangelogVideo?: {
             nodes: ChangelogVideo[]
         }
     }
@@ -801,7 +801,7 @@ export default function Changelog({
     const [teamFilter, setTeamFilter] = useState('all')
     const [categoryFilter, setCategoryFilter] = useState('all')
     const hideEmpty = useMemo(() => teamFilter !== 'all' || categoryFilter !== 'all', [teamFilter, categoryFilter])
-    const playlistVideos = data.allChangelogVideo?.nodes || []
+    const playlistVideos = data?.allChangelogVideo?.nodes || []
 
     const handleAddFeature = () => {
         addWindow(

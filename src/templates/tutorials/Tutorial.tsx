@@ -76,7 +76,7 @@ export default function Tutorial({ data, pageContext: { tableOfContents, menu },
                 title={title + ' - PostHog'}
                 description={description || excerpt}
                 article
-                image={`${process.env.GATSBY_CLOUDFRONT_OG_URL}/${fields.slug.replace(/\//g, '')}.jpeg`}
+                image={`${process.env.NEXT_PUBLIC_CLOUDFRONT_OG_URL}/${fields.slug.replace(/\//g, '')}.jpeg`}
                 imageType="absolute"
             />
             <div className="flex flex-col-reverse items-start @3xl:flex-row gap-8 2xl:gap-12">

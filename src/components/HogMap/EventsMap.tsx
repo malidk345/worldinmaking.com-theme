@@ -91,7 +91,7 @@ export default function EventsMap({
     const prevSelectedIdRef = useRef<number | null>(null)
     const skipNextSelectionTransitionRef = useRef<boolean>(false)
 
-    const token = typeof window !== 'undefined' ? process.env.GATSBY_MAPBOX_TOKEN : undefined
+    const token = typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_MAPBOX_TOKEN : undefined
     const styleUrl = 'mapbox://styles/mapbox/streets-v12'
 
     const { events, coordsByEventId } = useEventsMapData(isClient, token)

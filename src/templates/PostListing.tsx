@@ -163,7 +163,7 @@ export default function Posts({ pageContext = {} }: { pageContext?: any }) {
                 encodeValuesOnly: true,
             }
         )
-        fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/profiles?${query}`)
+        fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles?${query}`)
             .then((res) => res.json())
             .then((data) => {
                 setAuthors(data?.data)

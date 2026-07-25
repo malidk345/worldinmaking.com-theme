@@ -114,7 +114,7 @@ export default function Hub({ folder, sidebar, title }: { folder: string; sideba
             },
             { encodeValuesOnly: true }
         )
-        fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/post-tags?${query}`)
+        fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/post-tags?${query}`)
             .then((response) => response.json())
             .then((data) => {
                 setTags(data.data)

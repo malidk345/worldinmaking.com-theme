@@ -4,8 +4,8 @@ const handler = async (req: GatsbyFunctionRequest, res: GatsbyFunctionResponse) 
         if (!domain) {
             return res.status(400).json({ error: 'Domain is required' })
         }
-        const data = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/customers/${domain}`, {
-            headers: { Authorization: `Bearer ${process.env.GATSBY_SQUEAK_CUSTOMERS_API_KEY}` },
+        const data = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/customers/${domain}`, {
+            headers: { Authorization: `Bearer ${process.env.NEXT_PUBLIC_SQUEAK_CUSTOMERS_API_KEY}` },
         }).then((res) => res.json())
         return res.status(200).json(data)
     } catch (error) {

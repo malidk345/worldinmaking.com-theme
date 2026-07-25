@@ -1,6 +1,7 @@
 import { TooltipContent, TooltipContentProps } from 'components/GlossaryElement'
 import Tooltip from 'components/Tooltip'
 import NextLink from 'next/link'
+import { useRouter } from 'next/navigation'
 import React, { useMemo } from 'react'
 import usePostHog from '../../hooks/usePostHog'
 import { IconArrowUpRight } from '@posthog/icons'
@@ -145,6 +146,12 @@ export default function Link({
         }
     }, [url, isPostHogAppUrl])
 
+    let router: any = null
+    try {
+        router = useRouter()
+    } catch {
+        router = null
+    }
     const appSettings = useAppSettings()
     const safePush = appSettings?.safePush
 
@@ -161,6 +168,8 @@ export default function Link({
             e.preventDefault()
             if (safePush) {
                 safePush(url, { state: linkState })
+            } else if (router) {
+                router.push(url)
             } else if (typeof window !== 'undefined') {
                 window.location.href = url
             }

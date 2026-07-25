@@ -341,9 +341,9 @@ const Form = ({
     )
 }
 
-const code = process.env.GATSBY_SHOPIFY_STICKER_CODE
+const code = process.env.NEXT_PUBLIC_SHOPIFY_STICKER_CODE
 if (!code) {
-    throw new Error('GATSBY_SHOPIFY_STICKER_CODE is not set')
+    throw new Error('NEXT_PUBLIC_SHOPIFY_STICKER_CODE is not set')
 }
 
 const ApplicationSuccess = ({ isInUnitedStates }: { isInUnitedStates?: boolean }) => {

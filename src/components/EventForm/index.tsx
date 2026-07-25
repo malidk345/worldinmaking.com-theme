@@ -243,7 +243,7 @@ export default function EventForm({ onSuccess, event }: { onSuccess?: () => void
 
     const createEvent = async (eventPayload: Record<string, unknown>): Promise<any> => {
         try {
-            const response = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/events`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/events`, {
                 method: 'POST',
                 body: JSON.stringify({ data: eventPayload }),
                 headers: {
@@ -269,7 +269,7 @@ export default function EventForm({ onSuccess, event }: { onSuccess?: () => void
 
     const updateEvent = async (eventId: number, eventPayload: Record<string, unknown>): Promise<any> => {
         try {
-            const response = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/events/${eventId}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/events/${eventId}`, {
                 method: 'PUT',
                 body: JSON.stringify({ data: eventPayload }),
                 headers: {

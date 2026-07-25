@@ -31,7 +31,7 @@ export default function HTML(props: HTMLProps): JSX.Element {
                     href="/fonts/squeak-bold-webfont.woff"
                     crossOrigin="anonymous"
                 />
-                {process.env.GATSBY_POSTHOG_API_KEY && process.env.GATSBY_POSTHOG_API_HOST && (
+                {process.env.NEXT_PUBLIC_POSTHOG_API_KEY && process.env.NEXT_PUBLIC_POSTHOG_API_HOST && (
                     <script src="/scripts/posthog-init.js" />
                 )}
 

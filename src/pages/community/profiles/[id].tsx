@@ -1158,7 +1158,7 @@ export default function ProfilePage({ params }: PageProps) {
     )
 
     const { data, error, isLoading, mutate } = useSWR<StrapiRecord<ProfileData>>(
-        `${process.env.GATSBY_SQUEAK_API_HOST}/api/profiles/${id}?${profileQuery}`,
+        `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles/${id}?${profileQuery}`,
         async (url) => {
             const jwt = user && (await getJwt())
             const res = await fetch(
@@ -1188,7 +1188,7 @@ export default function ProfilePage({ params }: PageProps) {
             if (confirm('Are you sure you want to block this user and remove all of their posts and replies?')) {
                 try {
                     const jwt = await getJwt()
-                    const response = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/profile/block/${id}`, {
+                    const response = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profile/block/${id}`, {
                         method: 'PUT',
                         headers: {
                             Authorization: `Bearer ${jwt}`,
@@ -1228,7 +1228,7 @@ export default function ProfilePage({ params }: PageProps) {
         } else {
             try {
                 const jwt = await getJwt()
-                const response = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/profile/unblock/${id}`, {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profile/unblock/${id}`, {
                     method: 'PUT',
                     headers: {
                         Authorization: `Bearer ${jwt}`,
@@ -1318,7 +1318,7 @@ export default function ProfilePage({ params }: PageProps) {
                     const formData = new FormData()
                     formData.append('files', avatar)
 
-                    const uploadedImage = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/upload`, {
+                    const uploadedImage = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/upload`, {
                         method: 'POST',
                         body: formData,
                         headers: {
@@ -1353,7 +1353,7 @@ export default function ProfilePage({ params }: PageProps) {
                 }
 
                 const { data } = await fetch(
-                    `${process.env.GATSBY_SQUEAK_API_HOST}/api/profiles/${id}?populate=avatar`,
+                    `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles/${id}?populate=avatar`,
                     {
                         method: 'PUT',
                         body: JSON.stringify(body),
@@ -1411,7 +1411,7 @@ export default function ProfilePage({ params }: PageProps) {
         setGiftSubmitting(true)
         try {
             const jwt = await getJwt()
-            const response = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/points/gift`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/points/gift`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1780,7 +1780,7 @@ export default function ProfilePage({ params }: PageProps) {
                                     <OSButton
                                         asLink
                                         size="md"
-                                        to={`${process.env.GATSBY_SQUEAK_API_HOST}/admin/content-manager/collection-types/plugin::users-permissions.user/${profile?.user?.data?.id}`}
+                                        to={`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/admin/content-manager/collection-types/plugin::users-permissions.user/${profile?.user?.data?.id}`}
                                         tooltip={
                                             <>
                                                 View in Strapi{' '}
@@ -1988,7 +1988,7 @@ const Achievement = ({ title, description, image, icon, id, mutate, profile, ...
                         ],
                     },
                 }
-                await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/profiles/${user.profile.id}?populate=avatar`, {
+                await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles/${user.profile.id}?populate=avatar`, {
                     method: 'PUT',
                     body: JSON.stringify(body),
                     headers: {

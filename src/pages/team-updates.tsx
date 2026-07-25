@@ -17,7 +17,7 @@ export default function TeamUpdates() {
 
     const fetchUpdates = async () => {
         const { data } = await fetch(
-            `${process.env.GATSBY_SQUEAK_API_HOST}/api/team-updates?${qs.stringify(
+            `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/team-updates?${qs.stringify(
                 {
                     populate: ['question', 'team'],
                     sort: ['createdAt:desc'],

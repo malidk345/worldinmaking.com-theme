@@ -67,7 +67,6 @@ import AboutPostHog from 'components/AboutPostHog'
 
 
 const getProseClasses = (size?: any) => 'prose dark:prose-invert max-w-none'
-const useLocation = () => ({ pathname: typeof window !== 'undefined' ? window.location.pathname : '/', search: typeof window !== 'undefined' ? window.location.search : '', hash: typeof window !== 'undefined' ? window.location.hash : '' })
 
 dayjs.extend(relativeTime)
 
@@ -1400,7 +1399,7 @@ function ReaderViewContent({
 }: ReaderViewProps) {
     const { compact } = useApp()
     const { appWindow, activeInternalMenu } = useWindow()
-    const { hash } = usePathname()
+    const { hash } = useLocation()
     const contentRef = useRef<HTMLDivElement>(null)
     const articleColumnRef = useRef<HTMLDivElement>(null)
 

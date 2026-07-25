@@ -462,7 +462,7 @@ export default function Job({
         <>
             <SEO
                 title={`${title} - PostHog`}
-                image={`${process.env.GATSBY_CLOUDFRONT_OG_URL}/${slug.replace(/\//g, '')}.jpeg`}
+                image={`${process.env.NEXT_PUBLIC_CLOUDFRONT_OG_URL}/${slug.replace(/\//g, '')}.jpeg`}
                 imageType="absolute"
             />
             <ReaderView

@@ -45,7 +45,7 @@ const Update = ({ body, questionID, fetchUpdates }) => {
             if (!profileID || !jwt) return
             setLoading(true)
             const transformedValues = await transformValues({ body, images: images ?? [] }, profileID, jwt)
-            await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/questions/${questionID}`, {
+            await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/questions/${questionID}`, {
                 body: JSON.stringify({
                     data: {
                         body: transformedValues.body,
@@ -129,7 +129,7 @@ export function InProgress(
     )
 
     const { data, error, mutate } = useSWR<RoadmapSubscriptions>(
-        `${process.env.GATSBY_SQUEAK_API_HOST}/api/profiles/${user?.profile?.id}?${query}`,
+        `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles/${user?.profile?.id}?${query}`,
         async (url: string) => {
             if (!user) return { data: { attributes: { roadmapSubscriptions: [] } } }
             return fetch(url).then((r) => r.json())
@@ -169,7 +169,7 @@ export function InProgress(
                 return
             }
 
-            const res = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/roadmap/${props.squeakId}/subscribe`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/roadmap/${props.squeakId}/subscribe`, {
                 method: 'POST',
                 credentials: 'include',
                 headers: {
@@ -237,7 +237,7 @@ export function InProgress(
                 return
             }
 
-            const res = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/roadmap/${props.squeakId}/unsubscribe`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/roadmap/${props.squeakId}/unsubscribe`, {
                 method: 'POST',
                 credentials: 'include',
                 headers: {
@@ -311,7 +311,7 @@ export function InProgress(
             }
         )
 
-        fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/team-updates?${query}`)
+        fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/team-updates?${query}`)
             .then((res) => res.json())
             .then(({ data: updates }) => {
                 setUpdates(updates)

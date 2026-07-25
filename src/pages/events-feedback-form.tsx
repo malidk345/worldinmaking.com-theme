@@ -5,7 +5,7 @@ import { useUser } from 'hooks/useUser'
 import EmbeddedSurvey from 'components/Docs/EmbeddedSurvey'
 import ScrollArea from 'components/RadixUI/ScrollArea'
 
-const SURVEY_ID = process.env.GATSBY_EVENTS_FEEDBACK_SURVEY_ID ?? ''
+const SURVEY_ID = process.env.NEXT_PUBLIC_EVENTS_FEEDBACK_SURVEY_ID ?? ''
 
 export default function EventsFeedbackForm() {
     const { user, isLoading } = useUser()

@@ -336,25 +336,7 @@ function TaskBarMenu() {
                                     <KeyboardShortcut text="/" size="sm" />
                                 </div>
                             </Tooltip>
-                            <Tooltip
-                                trigger={
-                                    <OSButton
-                                        onClick={() => openNewChat({ path: `ask-max` })}
-                                        size="sm"
-                                        className="relative top-px"
-                                    >
-                                        <IconChatHelp className="size-5" />
-                                    </OSButton>
-                                }
-                            >
-                                <div className="flex flex-col items-center gap-1">
-                                    <p className="text-sm mb-0">Ask Max</p>
-                                    <div className="flex items-center gap-1">
-                                        <KeyboardShortcut text="Shift" size="sm" />
-                                        <KeyboardShortcut text="?" size="sm" />
-                                    </div>
-                                </div>
-                            </Tooltip>
+
                             <MenuBar menus={accountMenu} className="[&_button]:px-2" />
                         </aside>
                     </div>

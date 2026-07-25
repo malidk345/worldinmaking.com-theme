@@ -361,7 +361,7 @@ export default function BlogPost({ data = {}, pageContext = {}, location, mobile
 
     useEffect(() => {
         fetch(
-            `${process.env.GATSBY_SQUEAK_API_HOST}/api/posts?${qs.stringify(
+            `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/posts?${qs.stringify(
                 {
                     fields: ['id'],
                     filters: {
@@ -391,7 +391,7 @@ export default function BlogPost({ data = {}, pageContext = {}, location, mobile
                 title={seo?.metaTitle || title + ' - PostHog'}
                 description={seo?.metaDescription || excerpt}
                 article
-                image={`${process.env.GATSBY_CLOUDFRONT_OG_URL}/${fields.slug.replace(/\//g, '')}.jpeg`}
+                image={`${process.env.NEXT_PUBLIC_CLOUDFRONT_OG_URL}/${fields.slug.replace(/\//g, '')}.jpeg`}
                 imageType="absolute"
                 lang={lang || (languageAlternates ? 'en' : undefined)}
                 languageAlternates={languageAlternates}

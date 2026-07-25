@@ -46,7 +46,7 @@ const query = (params: any, offset: number, limit = 20, isModerator = false) => 
 export const useRoadmaps = ({ params = {}, limit }: { params?: any; limit?: number }) => {
     const { isModerator, getJwt } = useUser()
     const { data, size, setSize, isLoading, mutate, isValidating } = useSWRInfinite(
-        (offset) => `${process.env.GATSBY_SQUEAK_API_HOST}/api/roadmaps?${query(params, offset, limit, isModerator)}`,
+        (offset) => `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/roadmaps?${query(params, offset, limit, isModerator)}`,
         async (url: string) => {
             try {
                 const jwt = isModerator && (await getJwt())
@@ -93,7 +93,7 @@ export type EmojiReaction = {
 // Fetch emoji reactions for a single roadmap
 export const fetchRoadmapReactions = async (roadmapId: number | string): Promise<EmojiReaction[]> => {
     try {
-        const url = `${process.env.GATSBY_SQUEAK_API_HOST}/api/roadmap/${roadmapId}/emoji-reactions`
+        const url = `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/roadmap/${roadmapId}/emoji-reactions`
         const response = await fetch(url)
 
         if (!response.ok) {
@@ -123,7 +123,7 @@ export const addRoadmapEmojiReaction = async ({
     }
 
     const endpoint = remove ? 'remove' : 'add'
-    const url = `${process.env.GATSBY_SQUEAK_API_HOST}/api/roadmap/${roadmapId}/emoji-reactions/${endpoint}`
+    const url = `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/roadmap/${roadmapId}/emoji-reactions/${endpoint}`
 
     try {
         const response = await fetch(url, {

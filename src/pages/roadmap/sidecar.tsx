@@ -37,23 +37,20 @@ export default function RoadmapPage() {
                         A Chrome extension that shows a user's data from PostHog in any SaaS tool
                     </p>
 
-                    <Section title="Test updates safely with feature flags" titleSize="md">
-                        null
-                                    <strong>More context for debugging</strong> get to session recordings, feature flags
-                                    and events from any other SaaS product.
-                                </>,
-                                <>
-                                    <strong>Context for support teams</strong> know if users are paying customers, which
-                                    features they use and product actions they've taken.
-                                </>,
-                                <>
-                                    <strong>User data in any tool</strong> with zero integration needed.
-                                </>,
-                            ]}
-                        />
-                    </Section>
-
                     <div className="article-content px-5 lg:px-12 w-full transition-all lg:max-w-3xl mx-auto pb-6">
+                        <ul>
+                            <li>
+                                <strong>More context for debugging</strong> get to session recordings, feature flags
+                                and events from any other SaaS product.
+                            </li>
+                            <li>
+                                <strong>Context for support teams</strong> know if users are paying customers, which
+                                features they use and product actions they've taken.
+                            </li>
+                            <li>
+                                <strong>User data in any tool</strong> with zero integration needed.
+                            </li>
+                        </ul>
                         <h3 className="font-bold text-5xl mb-8 xl:mt-0">How to install</h3>
                         <ol>
                             <li>

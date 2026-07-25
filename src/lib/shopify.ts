@@ -6,9 +6,9 @@ type ShopifyHeaders = {
     'X-Shopify-Storefront-Access-Token': string
 }
 
-const shopifyURL = process.env.GATSBY_MYSHOPIFY_URL
-const shopifyStorefrontAPIVersion = process.env.GATSBY_SHOPIFY_STOREFRONT_API_VERSION
-const shopifyStorefrontAPIPassword = process.env.GATSBY_SHOPIFY_STOREFRONT_TOKEN
+const shopifyURL = process.env.NEXT_PUBLIC_MYSHOPIFY_URL
+const shopifyStorefrontAPIVersion = process.env.NEXT_PUBLIC_SHOPIFY_STOREFRONT_API_VERSION
+const shopifyStorefrontAPIPassword = process.env.NEXT_PUBLIC_SHOPIFY_STOREFRONT_TOKEN
 
 export const shopifyStorefrontUrl = `https://${shopifyURL}/api/${shopifyStorefrontAPIVersion}/graphql.json`
 

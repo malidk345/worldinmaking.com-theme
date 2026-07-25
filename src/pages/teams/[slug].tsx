@@ -316,7 +316,7 @@ export default function TeamPage(props: TeamPageProps) {
             data: {
                 attributes: { slug },
             },
-        } = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/teams`, {
+        } = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/teams`, {
             headers: {
                 Authorization: `Bearer ${jwt}`,
                 'content-type': 'application/json',

@@ -98,7 +98,7 @@ export default function RoadmapWindow({
                 },
             },
         } = await fetch(
-            `${process.env.GATSBY_SQUEAK_API_HOST}/api/roadmaps/${id}?${query}`,
+            `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/roadmaps/${id}?${query}`,
             jwt
                 ? {
                       headers: {

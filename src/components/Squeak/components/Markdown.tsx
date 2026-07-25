@@ -11,7 +11,7 @@ import Link from 'components/Link'
 const replaceMentions = (body: string) => {
     return body.replace(/@([a-zA-Z0-9_-]+\/[0-9]+|max)/g, (match, username) => {
         if (username === 'max') {
-            return `[${match}](/community/profiles/${process.env.GATSBY_AI_PROFILE_ID})`
+            return `[${match}](/community/profiles/${process.env.NEXT_PUBLIC_AI_PROFILE_ID})`
         }
         return `[${match}](/community/profiles/${username.split('/')[1]})`
     })

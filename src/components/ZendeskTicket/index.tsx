@@ -10,7 +10,7 @@ const priorities = ['low', 'normal', 'high', 'urgent']
 const PriorityDropdown = ({ priority, ticketID, setTicket }) => {
     const { getJwt } = useUser()
     const handleChange = async (priority: string) => {
-        const { ticket } = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/zendesk/${ticketID}`, {
+        const { ticket } = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/zendesk/${ticketID}`, {
             method: 'PUT',
             headers: { Authorization: `Bearer ${await getJwt()}`, 'content-type': 'application/json' },
             body: JSON.stringify({ priority }),
@@ -45,7 +45,7 @@ const GroupDropdown = ({ groupID, ticketID, setTicket, disabled }) => {
     const { getJwt } = useUser()
     const [groups, setGroups] = useState([])
     const handleChange = async (groupID: number) => {
-        const { ticket } = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/zendesk/${ticketID}`, {
+        const { ticket } = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/zendesk/${ticketID}`, {
             method: 'PUT',
             headers: { Authorization: `Bearer ${await getJwt()}`, 'content-type': 'application/json' },
             body: JSON.stringify({ group_id: groupID }),
@@ -55,7 +55,7 @@ const GroupDropdown = ({ groupID, ticketID, setTicket, disabled }) => {
     }
 
     const getGroups = async () => {
-        const { groups } = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/zendesk/groups`, {
+        const { groups } = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/zendesk/groups`, {
             headers: { Authorization: `Bearer ${await getJwt()}` },
         }).then((res) => res.json())
         return groups
@@ -101,7 +101,7 @@ const GroupDropdown = ({ groupID, ticketID, setTicket, disabled }) => {
 const StatusDropdown = ({ status, ticketID, setTicket }) => {
     const { getJwt } = useUser()
     const handleChange = async (status: string) => {
-        const { ticket } = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/zendesk/${ticketID}`, {
+        const { ticket } = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/zendesk/${ticketID}`, {
             method: 'PUT',
             headers: { Authorization: `Bearer ${await getJwt()}`, 'content-type': 'application/json' },
             body: JSON.stringify({ status }),
@@ -138,7 +138,7 @@ const Ticket = ({ status, id, group_id, setTicket, priority }) => {
                 <p className="m-0 text-sm font-semibold">ID</p>
                 <Link
                     externalNoIcon
-                    to={`https://${process.env.GATSBY_ZENDESK_SUBDOMAIN}.zendesk.com/agent/tickets/${id}`}
+                    to={`https://${process.env.NEXT_PUBLIC_ZENDESK_SUBDOMAIN}.zendesk.com/agent/tickets/${id}`}
                 >
                     {id}
                 </Link>
@@ -166,7 +166,7 @@ export default function ZendeskTicket({ question, questionID }) {
 
     const linkTicket = async () => {
         const { zendeskTicketID } = await fetch(
-            `${process.env.GATSBY_SQUEAK_API_HOST}/api/questions/${questionID}/zendesk/link`,
+            `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/questions/${questionID}/zendesk/link`,
             {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${await getJwt()}` },
@@ -176,7 +176,7 @@ export default function ZendeskTicket({ question, questionID }) {
     }
 
     const getTicket = async (id) => {
-        const { ticket } = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/zendesk/${id}`, {
+        const { ticket } = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/zendesk/${id}`, {
             headers: { Authorization: `Bearer ${await getJwt()}` },
         }).then((res) => res.json())
         return ticket
@@ -205,7 +205,7 @@ export default function ZendeskTicket({ question, questionID }) {
                 </h4>
                 <Link
                     to={`https://${
-                        process.env.GATSBY_ZENDESK_SUBDOMAIN
+                        process.env.NEXT_PUBLIC_ZENDESK_SUBDOMAIN
                     }.zendesk.com/agent/search/1?copy&type=ticket&q=${encodeURIComponent(
                         question?.attributes?.subject
                     )}`}

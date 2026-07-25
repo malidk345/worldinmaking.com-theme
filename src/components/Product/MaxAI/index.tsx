@@ -152,7 +152,7 @@ const Roadmap = () => {
             const token = await getJwt()
             const isSubscribed = !!subscribed[roadmap.id]
             const res = await fetch(
-                `${process.env.GATSBY_SQUEAK_API_HOST}/api/roadmap/${roadmap.id}/${
+                `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/roadmap/${roadmap.id}/${
                     isSubscribed ? 'unsubscribe' : 'subscribe'
                 }`,
                 {

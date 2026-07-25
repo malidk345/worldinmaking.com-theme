@@ -120,7 +120,7 @@ export const useQuestion = (id: number | string, options?: UseQuestionOptions) =
     const key =
         isValidating || options?.data
             ? null
-            : `${process.env.GATSBY_SQUEAK_API_HOST}/api/questions?${query(id, isModerator)}`
+            : `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/questions?${query(id, isModerator)}`
 
     const {
         data: question,
@@ -206,7 +206,7 @@ export const useQuestion = (id: number | string, options?: UseQuestionOptions) =
                 }).catch(() => null)
             }
 
-            const data = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/replies`, {
+            const data = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/replies`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -300,7 +300,7 @@ export const useQuestion = (id: number | string, options?: UseQuestionOptions) =
 
         try {
             const jwt = await getJwt()
-            await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/replies/${replyId}/${type}`, {
+            await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/replies/${replyId}/${type}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -343,7 +343,7 @@ export const useQuestion = (id: number | string, options?: UseQuestionOptions) =
                 )
             }
 
-            const replyRes = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/replies/${id}`, {
+            const replyRes = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/replies/${id}`, {
                 method: 'PUT',
                 body: JSON.stringify({
                     data: {
@@ -407,7 +407,7 @@ export const useQuestion = (id: number | string, options?: UseQuestionOptions) =
                 )
             }
 
-            const replyRes = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/questions/${questionID}`, {
+            const replyRes = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/questions/${questionID}`, {
                 method: 'PUT',
                 body: JSON.stringify({
                     data: {
@@ -471,7 +471,7 @@ export const useQuestion = (id: number | string, options?: UseQuestionOptions) =
                 )
             }
 
-            const replyRes = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/replies/${id}`, {
+            const replyRes = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/replies/${id}`, {
                 method: 'DELETE',
                 headers: {
                     Authorization: `Bearer ${await getJwt()}`,
@@ -520,7 +520,7 @@ export const useQuestion = (id: number | string, options?: UseQuestionOptions) =
         }
 
         try {
-            await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/questions/${questionID}`, {
+            await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/questions/${questionID}`, {
                 method: 'PUT',
                 body: JSON.stringify({
                     data: {
@@ -556,7 +556,7 @@ export const useQuestion = (id: number | string, options?: UseQuestionOptions) =
         }
 
         try {
-            await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/questions/${questionID}`, {
+            await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/questions/${questionID}`, {
                 method: 'PUT',
                 body: JSON.stringify({
                     data: {
@@ -588,7 +588,7 @@ export const useQuestion = (id: number | string, options?: UseQuestionOptions) =
         }
 
         try {
-            await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/questions/${questionID}`, {
+            await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/questions/${questionID}`, {
                 method: 'PUT',
                 body: JSON.stringify({ data: { archived: shouldArchive } }),
                 headers: {
@@ -607,7 +607,7 @@ export const useQuestion = (id: number | string, options?: UseQuestionOptions) =
             id: questionID,
             message,
         })
-        await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/escalate`, {
+        await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/escalate`, {
             method: 'POST',
             body,
             headers: {
@@ -627,7 +627,7 @@ export const useQuestion = (id: number | string, options?: UseQuestionOptions) =
             },
         })
 
-        await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/questions/${questionID}`, {
+        await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/questions/${questionID}`, {
             method: 'PUT',
             body,
             headers: {

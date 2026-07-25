@@ -430,7 +430,7 @@ export default function Collection(props: CollectionProps): React.ReactElement {
 
     const fetchOrders = async () => {
         try {
-            const { data } = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/orders`, {
+            const { data } = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/orders`, {
                 headers: {
                     Authorization: `Bearer ${await getJwt()}`,
                 },

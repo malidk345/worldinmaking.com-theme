@@ -91,7 +91,7 @@ export default function PlacesMap({
     const searchRef = useRef<any>(null)
     const searchMarkerRef = useRef<any>(null)
 
-    const token = typeof window !== 'undefined' ? process.env.GATSBY_MAPBOX_TOKEN : undefined
+    const token = typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_MAPBOX_TOKEN : undefined
     const styleUrl = 'mapbox://styles/mapbox/streets-v12'
 
     const { places, coordsByPlaceId } = usePlacesMapData(isClient, getJwt)

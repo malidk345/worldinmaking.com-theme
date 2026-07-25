@@ -85,7 +85,7 @@ export const useMixtapes = (options?: UseMixtapesOptions) => {
     )
 
     const { data, error, isLoading, mutate } = useSWR<StrapiResponse>(
-        `${process.env.GATSBY_SQUEAK_API_HOST}/api/mixtapes?${query}`,
+        `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/mixtapes?${query}`,
         async (url: string) => {
             const jwt = await getJwt()
             return fetch(

@@ -48,7 +48,7 @@ export const Questions = ({
                     {questions.data.map((question) => {
                         return (
                             <li key={question.id} className="py-4 first:pt-0">
-                                <Question id={question.id} />
+                                <Question id={question.id} question={question} />
                             </li>
                         )
                     })}

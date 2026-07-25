@@ -61,7 +61,7 @@ import OSButton from 'components/OSButton'
 dayjs.extend(relativeTime)
 
 const unpublishPendingCompany = async (companyId: number, jwt: string) => {
-    await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/pending-companies/${companyId}`, {
+    await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/pending-companies/${companyId}`, {
         method: 'PUT',
         headers: {
             Authorization: `Bearer ${jwt}`,
@@ -786,7 +786,7 @@ const ModeratorInitialView = ({
     const getPendingCompanies = async () => {
         const jwt = await getJwt()
         const response = await fetch(
-            `${process.env.GATSBY_SQUEAK_API_HOST}/api/pending-companies?populate=*&sort=createdAt:desc`,
+            `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/pending-companies?populate=*&sort=createdAt:desc`,
             {
                 headers: {
                     Authorization: `Bearer ${jwt}`,
@@ -1007,7 +1007,7 @@ const CompanyForm = ({ onSuccess, companyId }: { onSuccess?: () => void; company
             try {
                 if (!slug) return
                 const response = await fetch(
-                    `${process.env.GATSBY_SQUEAK_API_HOST}/api/companies?filters[slug][$eq]=${slug}`
+                    `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/companies?filters[slug][$eq]=${slug}`
                 )
                 const data = await response.json()
                 const exists = data?.data?.length > 0
@@ -1025,7 +1025,7 @@ const CompanyForm = ({ onSuccess, companyId }: { onSuccess?: () => void; company
             try {
                 if (!name) return
                 const response = await fetch(
-                    `${process.env.GATSBY_SQUEAK_API_HOST}/api/companies?filters[name][$eq]=${name}`
+                    `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/companies?filters[name][$eq]=${name}`
                 )
                 const data = await response.json()
                 const exists = data?.data?.length > 0
@@ -1117,7 +1117,7 @@ const CompanyForm = ({ onSuccess, companyId }: { onSuccess?: () => void; company
                     values.slug !== company?.attributes?.slug
                 // Create initial company without images in case of failure
                 const companyResponse = await fetch(
-                    `${process.env.GATSBY_SQUEAK_API_HOST}/api/${endpoint}${
+                    `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/${endpoint}${
                         canUpdate ? `/${companyId}` : ''
                     }?populate=*`,
                     {
@@ -1171,7 +1171,7 @@ const CompanyForm = ({ onSuccess, companyId }: { onSuccess?: () => void; company
                         type: 'api::profile.profile',
                     }))
                 const updateResponse = await fetch(
-                    `${process.env.GATSBY_SQUEAK_API_HOST}/api/${endpoint}/${createdCompany.data.id}`,
+                    `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/${endpoint}/${createdCompany.data.id}`,
                     {
                         method: 'PUT',
                         headers: {
@@ -1204,7 +1204,7 @@ const CompanyForm = ({ onSuccess, companyId }: { onSuccess?: () => void; company
                 }
                 if (isModerator) {
                     const { jobsCreated } = await fetch(
-                        `${process.env.GATSBY_SQUEAK_API_HOST}/api/scrape-jobs/${createdCompany.data.id}`,
+                        `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/scrape-jobs/${createdCompany.data.id}`,
                         {
                             headers: {
                                 Authorization: `Bearer ${jwt}`,
@@ -1272,7 +1272,7 @@ const CompanyForm = ({ onSuccess, companyId }: { onSuccess?: () => void; company
     const getCompany = useCallback(async () => {
         if (!companyId) return
         const jwt = await getJwt()
-        const response = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/companies/${companyId}?populate=*`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/companies/${companyId}?populate=*`, {
             headers: {
                 Authorization: `Bearer ${jwt}`,
             },
@@ -1652,7 +1652,7 @@ export default function JobsPage() {
         if (!isModerator) return
         try {
             const jwt = await getJwt()
-            const response = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/pending-companies`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/pending-companies`, {
                 headers: {
                     Authorization: `Bearer ${jwt}`,
                 },

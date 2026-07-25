@@ -491,7 +491,7 @@ function EditProfile({ profile, mutate }) {
                 const formData = new FormData()
                 formData.append('files', avatar)
 
-                const uploadedImage = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/upload`, {
+                const uploadedImage = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/upload`, {
                     method: 'POST',
                     body: formData,
                     headers: {
@@ -511,7 +511,7 @@ function EditProfile({ profile, mutate }) {
                 },
             }
 
-            const { data } = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/profiles/${id}`, {
+            const { data } = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles/${id}`, {
                 method: 'PUT',
                 body: JSON.stringify(body),
                 headers: {
@@ -636,7 +636,7 @@ export default function EditProfilePage({ location }) {
         if (user) {
             if (location?.state?.profileID && user?.role?.type === 'moderator' && user?.webmaster) {
                 const profile = await fetch(
-                    `${process.env.GATSBY_SQUEAK_API_HOST}/api/profiles/${location?.state?.profileID}?populate=*`
+                    `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles/${location?.state?.profileID}?populate=*`
                 ).then((res) => res.json())
                 editProfile = flattenStrapiResponse(profile)
             } else {

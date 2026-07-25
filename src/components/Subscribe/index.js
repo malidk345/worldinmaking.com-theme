@@ -1,7 +1,5 @@
 import CloudinaryImage from 'components/CloudinaryImage'
 import { Check } from 'components/Icons/Icons'
-import { StaticImage } from 'gatsby-plugin-image'
-import addToMailchimp from 'gatsby-plugin-mailchimp'
 import React, { useState } from 'react'
 import GitHubButton from 'react-github-btn'
 
@@ -11,7 +9,8 @@ const Form = () => {
     const handleSubmit = async (e) => {
         e.preventDefault()
         if (email) {
-            await addToMailchimp(email)
+            // Placeholder: Replace addToMailchimp logic with actual Next.js API route or mailchimp logic
+            // await fetch('/api/mailchimp', { method: 'POST', body: JSON.stringify({ email }) })
             setSubscribed(true)
         }
     }

@@ -166,11 +166,22 @@ const QuestionRow = ({
     containerRef,
     pinned = false,
 }: QuestionRowProps) => {
-    const { subject, numReplies, activeAt, replies, profile, permalink, resolved } = question
+    const q = question?.attributes || question || {}
+    const subject = q.subject || q.title || 'Community Discussion'
+    const numReplies = q.numReplies || 0
+    const activeAt = q.activeAt || q.createdAt || q.created_at
+    const replies = q.replies
+    const profile = q.profile?.data?.attributes || q.profile || {}
+    const permalink = q.permalink || String(question.id)
+    const resolved = q.resolved || false
+
     const replyList = Array.isArray(replies?.data) ? replies.data : Object.values(replies ?? {})
     const lastReply = replyList[replyList.length - 1]
     const latestAuthor = lastReply?.profile || lastReply?.attributes?.profile || profile
     const active = `/questions/${permalink}` === appWindowPath
+    const authorName = profile?.firstName
+        ? `${profile.firstName} ${profile.lastName || ''}`.trim()
+        : profile?.username || 'Community Member'
 
     return (
         <div key={question.id} ref={lastQuestionRef}>
@@ -211,7 +222,7 @@ const QuestionRow = ({
                         pinned || resolved ? 'basis-[65%]' : 'basis-[75%]'
                     }`}
                 >
-                    {profile?.firstName} {profile?.lastName}
+                    {authorName}
                     <span className="text-muted text-sm ml-1 @3xl:hidden">{numReplies}</span>
                 </div>
                 <div

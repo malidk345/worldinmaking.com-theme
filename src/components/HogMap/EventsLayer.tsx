@@ -17,7 +17,7 @@ export const useEventsMapData = (isClient: boolean, token?: string) => {
         }
         let cancelled = false
         const fetchPage = async (page: number) => {
-            const host = process.env.GATSBY_SQUEAK_API_HOST
+            const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
             if (!host) {
                 return null
             }

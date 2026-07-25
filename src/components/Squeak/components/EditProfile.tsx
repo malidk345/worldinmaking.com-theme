@@ -248,7 +248,7 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onSubmit }) => {
                 const formData = new FormData()
                 formData.append('files', avatar)
 
-                const uploadedImage = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/upload`, {
+                const uploadedImage = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/upload`, {
                     method: 'POST',
                     body: formData,
                     headers: {
@@ -268,7 +268,7 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onSubmit }) => {
                 },
             }
 
-            const { data } = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/profiles/${id}?populate=avatar`, {
+            const { data } = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles/${id}?populate=avatar`, {
                 method: 'PUT',
                 body: JSON.stringify(body),
                 headers: {

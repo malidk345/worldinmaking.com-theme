@@ -6,7 +6,7 @@ import { IContributor } from './types'
 import { Image, Transformation } from 'cloudinary-react'
 
 const isCloudinaryImage = (url: string): boolean => {
-    const cloudinaryUrlPattern = new RegExp(`https://res.cloudinary.com/${process.env.GATSBY_CLOUDINARY_CLOUD_NAME}/`)
+    const cloudinaryUrlPattern = new RegExp(`https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/`)
     return cloudinaryUrlPattern.test(url)
 }
 
@@ -28,7 +28,7 @@ export const ContributorImageSmall = ({ image, name, className = '', imgClassNam
                     <Image
                         className={`rounded-full ${imgClassName}`}
                         publicId={cloudinaryPublicId}
-                        cloudName={process.env.GATSBY_CLOUDINARY_CLOUD_NAME}
+                        cloudName={process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}
                         secure
                     >
                         <Transformation width="100" crop="scale" />

@@ -235,7 +235,7 @@ const DeleteButton = ({ questionID }: { questionID: number }) => {
     const { getJwt } = useUser()
     const handleClick = async () => {
         if (confirm('Are you sure you want to delete this thread?')) {
-            await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/questions/${questionID}`, {
+            await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/questions/${questionID}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -405,7 +405,7 @@ const AskMax = ({
     useEffect(() => {
         const askMax = async () => {
             try {
-                const response = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/ask-max`, {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/ask-max`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -722,7 +722,7 @@ export function Question(props: QuestionProps) {
                                             >
                                                 View in PostHog
                                             </Link>
-                                            <Link href={`${process.env.GATSBY_SQUEAK_API_HOST}/admin/content-manager/collection-types/api::question.question/${questionData.id}`}
+                                            <Link href={`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/admin/content-manager/collection-types/api::question.question/${questionData.id}`}
                                                 externalNoIcon
                                                 className="font-bold"
                                             >

@@ -92,7 +92,7 @@ export const usePaginatedPosts = ({ params, pageSize = POSTS_PER_PAGE, onPageCha
         }
     }, [])
 
-    const apiHost = process.env.GATSBY_SQUEAK_API_HOST || ''
+    const apiHost = process.env.NEXT_PUBLIC_SQUEAK_API_HOST || ''
     const { data, isLoading, error, mutate, isValidating } = useSWR(
         apiHost ? `${apiHost}/api/posts?${query(params, currentPage, pageSize)}` : null,
         (url: string) => fetch(url).then((r) => r.json()).catch(() => ({ data: [] }))

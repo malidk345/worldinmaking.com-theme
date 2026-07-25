@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import scrollTo from 'gatsby-plugin-smoothscroll'
 import { mergeClassList } from '../../../../lib/utils'
+
+const scrollTo = (selector: string) => {
+    document.querySelector(selector)?.scrollIntoView({ behavior: 'smooth' })
+}
 
 const ButtonLink = ({
     section,

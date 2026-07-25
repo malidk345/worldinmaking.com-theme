@@ -32,7 +32,7 @@ export default function MerchOrders(): JSX.Element {
             setErrorMessage('')
 
             try {
-                const res = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/orders/lookup`, {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/orders/lookup`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

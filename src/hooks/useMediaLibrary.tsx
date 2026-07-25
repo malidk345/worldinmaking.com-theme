@@ -61,7 +61,7 @@ export const useMediaLibrary = (options?: UseMediaLibraryOptions) => {
     const { showAll = false } = options || {}
 
     const { data, size, setSize, isLoading, error, mutate, isValidating } = useSWRInfinite<any>(
-        (offset) => (showAll ? `${process.env.GATSBY_SQUEAK_API_HOST}/api/upload/all?${query(offset, options)}` : null),
+        (offset) => (showAll ? `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/upload/all?${query(offset, options)}` : null),
         async (url: string) => {
             const jwt = await getJwt()
             const response = await fetch(url, {

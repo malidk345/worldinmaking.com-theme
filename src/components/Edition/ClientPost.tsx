@@ -84,7 +84,7 @@ export default function ClientPost({
         if (!confirmDelete) {
             setConfirmDelete(true)
         } else {
-            await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/posts/${id}`, {
+            await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/posts/${id}`, {
                 method: 'DELETE',
                 headers: {
                     Authorization: `Bearer ${await getJwt()}`,

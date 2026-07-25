@@ -199,7 +199,7 @@ export const useQuestions = (options?: UseQuestionsOptions) => {
     const { data, size, setSize, isLoading, error, mutate } = useSWRInfinite<
         StrapiResult<QuestionData[]>
     >(
-        (offset) => `${process.env.GATSBY_SQUEAK_API_HOST}/api/questions?${query(offset, options, isModerator)}`,
+        (offset) => `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/questions?${query(offset, options, isModerator)}`,
         async (url: string) => {
             const jwt = await getJwt()
             return fetch(url, user && jwt ? { headers: { Authorization: `Bearer ${jwt}` } } : undefined)

@@ -115,7 +115,7 @@ export const useEvents = (): { events: Event[]; refreshEvents: () => void; delet
                 },
                 { encodeValuesOnly: true }
             )
-            const eventsUrl = `${process.env.GATSBY_SQUEAK_API_HOST}/api/events?${eventsQuery}`
+            const eventsUrl = `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/events?${eventsQuery}`
             const response = await fetch(eventsUrl)
 
             if (!response.ok) {
@@ -146,7 +146,7 @@ export const useEvents = (): { events: Event[]; refreshEvents: () => void; delet
     const deleteEvent = async (eventId: number) => {
         if (confirm('Are you sure you want to delete this event?')) {
             try {
-                const response = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/events/${eventId}`, {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/events/${eventId}`, {
                     headers: {
                         Authorization: `Bearer ${await getJwt()}`,
                     },

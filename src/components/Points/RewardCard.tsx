@@ -131,7 +131,7 @@ export default function RewardCard({ reward, total }: { reward: Reward; total: n
 
         try {
             const jwt = await getJwt()
-            const response = await fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/points/redeem`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/points/redeem`, {
                 method: 'POST',
                 body: JSON.stringify({
                     handle: reward.handle,

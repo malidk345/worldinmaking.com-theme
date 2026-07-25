@@ -13,17 +13,17 @@ export default function Contact(props) {
         setActiveTab(tab)
         posthog?.capture(`contact: clicked ${tab} button`)
         if (typeof window !== 'undefined') {
-            window.'' = `#${tab}`
+            window.location.hash = `#${tab}`
         }
     }
 
     useEffect(() => {
-        const tab = ''.replace('#', '')
-        const demo = queryString.parse('')?.demo
+        const tab = typeof window !== 'undefined' ? window.location.hash.replace('#', '') : ''
+        const demo = typeof window !== 'undefined' ? queryString.parse(window.location.search)?.demo : undefined
         if (tab === 'contact' || tab === 'demo') {
             setActiveTab(tab)
         }
-    }, [location])
+    }, [])
 
     return (
         <>

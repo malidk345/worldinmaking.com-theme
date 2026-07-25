@@ -60,7 +60,7 @@ export function getProductImages(media: ShopifyMediaItem[]): ShopifyMediaImage[]
 
 export const getAvailableQuantity = async (id: string) => {
     try {
-        const { data } = await fetch(`https://${process.env.GATSBY_MYSHOPIFY_URL}/api/2023-10/graphql.json`, {
+        const { data } = await fetch(`https://${process.env.NEXT_PUBLIC_MYSHOPIFY_URL}/api/2023-10/graphql.json`, {
             method: 'POST',
             headers: shopifyHeaders,
             body: JSON.stringify({
@@ -85,7 +85,7 @@ export const getAvailableQuantity = async (id: string) => {
 
 export const itemIsAvailableForSale = async (item: CartItem) => {
     const product = await fetch(
-        `${process.env.GATSBY_SQUEAK_API_HOST}/api/brilliant/inventory/${
+        `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/brilliant/inventory/${
             item.shopifyId.split('gid://shopify/ProductVariant/')[1]
         }`
     ).then((res) => res.json())

@@ -73,7 +73,7 @@ export default function TapePlayer({ id }: TapePlayerProps): JSX.Element {
         try {
             const jwt = await getJwt()
             const response = await fetch(
-                `${process.env.GATSBY_SQUEAK_API_HOST}/api/mixtapes/${mixtapeId}?populate=*`,
+                `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/mixtapes/${mixtapeId}?populate=*`,
                 jwt
                     ? {
                           headers: {

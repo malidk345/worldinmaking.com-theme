@@ -88,7 +88,7 @@ const buttons = [
 const MentionProfile = ({ profile, onSelect, selectionStart, index, focused }) => {
     const { firstName, lastName, avatar, gravatarURL } = profile.attributes
     const name = [firstName, lastName].filter(Boolean).join(' ')
-    const isAI = profile.id === Number(process.env.GATSBY_AI_PROFILE_ID)
+    const isAI = profile.id === Number(process.env.NEXT_PUBLIC_AI_PROFILE_ID)
 
     return (
         <li className="border-b border-input p-1">
@@ -128,7 +128,7 @@ const MentionProfiles = ({ onSelect, onClose, body, ...other }) => {
         { attributes: { profile: { data: currentQuestion?.question?.profile?.data } } },
         ...replies?.data,
         ...(staffProfiles?.nodes || [])
-            .filter((node) => node.squeakId === Number(process.env.GATSBY_AI_PROFILE_ID))
+            .filter((node) => node.squeakId === Number(process.env.NEXT_PUBLIC_AI_PROFILE_ID))
             .map((node) => ({
                 attributes: {
                     profile: {
@@ -359,7 +359,7 @@ export default function RichText({
     const handleProfileSelect = (profile, selectionStart) => {
         const { selectionEnd } = getTextSelection()
         const mention =
-            profile.id === Number(process.env.GATSBY_AI_PROFILE_ID)
+            profile.id === Number(process.env.NEXT_PUBLIC_AI_PROFILE_ID)
                 ? `@max `
                 : `@${profile.attributes.firstName.trim().toLowerCase().replace(' ', '_')}/${profile.id} `
         setValue((prevValue) => replaceSelection(selectionStart, selectionEnd, mention, prevValue))

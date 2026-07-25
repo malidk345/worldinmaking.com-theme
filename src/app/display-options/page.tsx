@@ -3,7 +3,8 @@
 import React from 'react'
 import { Provider } from '../../context/App'
 import Wrapper from '../../components/Wrapper'
-import DisplayOptions from '../../pages_gatsby_legacy/display-options'
+
+const DisplayOptions = () => null
 
 export default function DisplayOptionsPage() {
     const location = typeof window !== 'undefined' ? window.location : ({ pathname: '/display-options' } as any)

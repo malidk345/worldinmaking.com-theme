@@ -1,7 +1,5 @@
 import { useRouter } from 'next/navigation'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-// @ts-expect-error @gatsbyjs/reach-router does not ship TypeScript declarations.
-import { useLocation } from '@gatsbyjs/reach-router'
 import CloudinaryImage from 'components/CloudinaryImage'
 import {
     IconCheck,
@@ -392,7 +390,7 @@ const FeatureCard = ({
     isPopular: boolean
     onClick: () => void
 }): JSX.Element => {
-    const crest = team?.miniCrest ? getImage(team.miniCrest) : undefined
+    const crest = team?.miniCrest ? team.miniCrest : undefined
 
     return (
         <button

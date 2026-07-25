@@ -45,7 +45,7 @@ export default function Post({ params }) {
                 encodeValuesOnly: true,
             }
         )
-        return fetch(`${process.env.GATSBY_SQUEAK_API_HOST}/api/posts?${query}`)
+        return fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/posts?${query}`)
             .then((res) => res.json())
             .then((post) => setPost(post?.data?.[0]))
     }
