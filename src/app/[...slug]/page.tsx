@@ -3,19 +3,19 @@
 export const dynamic = 'force-static'
 
 import React, { useEffect, useState } from 'react'
-import dynamic from 'next/dynamic'
+import nextDynamic from 'next/dynamic'
 import { getBlogPost } from '../../lib/blog'
 import { fetchSupabasePostBySlug, SupabasePost } from '../../lib/supabaseBlog'
 import { Provider } from '../../context/App'
 import Wrapper from '../../components/Wrapper'
 
-const BlogPostTemplate = dynamic(() => import('../../templates/BlogPost'), { ssr: false })
-const Inbox = dynamic(() => import('../../components/Inbox'), { ssr: false })
-const IdeasHub = dynamic(() => import('../../components/Ideas'), { ssr: false })
-const ProfileWrapper = dynamic(() => import('../../components/Profile'), { ssr: false })
-const NotebooksListSkeleton = dynamic(() => import('../../components/Notebooks/NotebooksList').then((m) => m.NotebooksListSkeleton), { ssr: false })
-const HandbookTemplate = dynamic(() => import('../../templates/Handbook'), { ssr: false })
-const Legal = dynamic(() => import('../../components/Legal'), { ssr: false })
+const BlogPostTemplate = nextDynamic(() => import('../../templates/BlogPost'), { ssr: false })
+const Inbox = nextDynamic(() => import('../../components/Inbox'), { ssr: false })
+const IdeasHub = nextDynamic(() => import('../../components/Ideas'), { ssr: false })
+const ProfileWrapper = nextDynamic(() => import('../../components/Profile'), { ssr: false })
+const NotebooksListSkeleton = nextDynamic(() => import('../../components/Notebooks/NotebooksList').then((m) => m.NotebooksListSkeleton), { ssr: false })
+const HandbookTemplate = nextDynamic(() => import('../../templates/Handbook'), { ssr: false })
+const Legal = nextDynamic(() => import('../../components/Legal'), { ssr: false })
 
 function BlogPostContainer({ slugStr, fullPath }: { slugStr: string; fullPath: string }) {
     const [spPost, setSpPost] = useState<SupabasePost | null>(null)
