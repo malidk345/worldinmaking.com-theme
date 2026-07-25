@@ -4,19 +4,18 @@ export const runtime = 'edge'
 
 import React, { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
-import BlogPostTemplate from '../../templates/BlogPost'
-import Inbox from '../../components/Inbox'
 import { getBlogPost } from '../../lib/blog'
 import { fetchSupabasePostBySlug, SupabasePost } from '../../lib/supabaseBlog'
-
-import IdeasHub from '../../components/Ideas'
-import ProfileWrapper from '../../components/Profile'
-import { NotebooksListSkeleton } from '../../components/Notebooks/NotebooksList'
-import HandbookTemplate from '../../templates/Handbook'
-import Legal from '../../components/Legal'
-
 import { Provider } from '../../context/App'
 import Wrapper from '../../components/Wrapper'
+
+const BlogPostTemplate = dynamic(() => import('../../templates/BlogPost'), { ssr: false })
+const Inbox = dynamic(() => import('../../components/Inbox'), { ssr: false })
+const IdeasHub = dynamic(() => import('../../components/Ideas'), { ssr: false })
+const ProfileWrapper = dynamic(() => import('../../components/Profile'), { ssr: false })
+const NotebooksListSkeleton = dynamic(() => import('../../components/Notebooks/NotebooksList').then((m) => m.NotebooksListSkeleton), { ssr: false })
+const HandbookTemplate = dynamic(() => import('../../templates/Handbook'), { ssr: false })
+const Legal = dynamic(() => import('../../components/Legal'), { ssr: false })
 
 function BlogPostContainer({ slugStr, fullPath }: { slugStr: string; fullPath: string }) {
     const [spPost, setSpPost] = useState<SupabasePost | null>(null)
