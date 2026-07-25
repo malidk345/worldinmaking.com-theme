@@ -62,3 +62,9 @@ export const MDXRenderer = ({ children }: any) => <>{children}</>
 
 export const Slice = () => null
 
+export const isMarkdownContentPath = () => false
+export const Subfeature = () => null
+export const createSlideConfig = (c: any) => c
+export const flattenMenu = (m: any) => m || []
+export const useLocation = () => ({ pathname: typeof window !== 'undefined' ? window.location.pathname : '/', search: '', hash: '' })
+
