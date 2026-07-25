@@ -46,6 +46,14 @@ const nextConfig = {
             sidebars: path.resolve(__dirname, 'src/sidebars'),
         }
 
+        config.module.rules.push({
+            test: /\.(mp3|wav|m4a|ogg)$/i,
+            type: 'asset/resource',
+            generator: {
+                filename: 'static/media/[name].[hash][ext]',
+            },
+        })
+
         config.resolve.fallback = {
             ...(config.resolve.fallback || {}),
             fs: false,
