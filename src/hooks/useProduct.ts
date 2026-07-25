@@ -45,9 +45,8 @@ const dedupe = (products) => {
     return Object.values(deduped)
 }
 
-export default function useProduct({ handle }: { handle?: string } = {}) {
-    const { products } = useProducts()
-    const extendedProducts = [
+
+const staticExtendedProducts = [
         // add alpha/beta products here, or "products" that aren't actually products (like dashboards, notebooks, etc).
         // once a product is ready to be released, it should be added to useProducts.tsx.
         // it needs either billing info or billed_with to appear in the products section. if neither of those are true, use this file.
@@ -2768,26 +2767,30 @@ export default function useProduct({ handle }: { handle?: string } = {}) {
             category: 'cdi',
             slug: 'docs/sql',
         },
-        ...products,
-    ]
+];
 
-    const allProducts = useMemo(
-        () =>
-            dedupe(
-                extendedProducts.map((product) => ({
-                    ...product,
-                    sharesFreeTier: product.sharesFreeTier
-                        ? extendedProducts.find((extendedProduct) => extendedProduct.handle === product.sharesFreeTier)
-                        : undefined,
-                    worksWith: product.worksWith
-                        ? product.worksWith.map((handle) =>
-                              extendedProducts.find((product) => product.handle === handle)
-                          )
-                        : [],
-                }))
-            ),
-        [products]
-    )
+export default function useProduct({ handle }: { handle?: string } = {}) {
+    const { products } = useProducts()
+
+    // ⚡ Bolt: Prevent array recreation on every render
+    const extendedProducts = useMemo(() => [...staticExtendedProducts, ...products], [products])
+
+
+    // ⚡ Bolt: O(1) Map lookup instead of O(N) Array.find for product relations
+    const allProducts = useMemo(() => {
+        const productByHandle = new Map(extendedProducts.map((p) => [p.handle, p]))
+        return dedupe(
+            extendedProducts.map((product) => ({
+                ...product,
+                sharesFreeTier: product.sharesFreeTier
+                    ? productByHandle.get(product.sharesFreeTier)
+                    : undefined,
+                worksWith: product.worksWith
+                    ? product.worksWith.map((h) => productByHandle.get(h)).filter(Boolean)
+                    : [],
+            }))
+        )
+    }, [extendedProducts])
 
     return handle ? allProducts.find((product) => product.handle === handle) : allProducts
 }
