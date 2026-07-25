@@ -21,8 +21,3 @@ export default function App({ Component, pageProps }: AppProps) {
         </div>
     )
 }
-
-App.getInitialProps = async (appContext: AppContext) => {
-    const appProps = await NextApp.getInitialProps(appContext)
-    return { ...appProps }
-}

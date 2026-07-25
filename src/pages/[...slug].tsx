@@ -28,7 +28,10 @@ function BlogPostContainer({ slugStr, fullPath }: { slugStr: string; fullPath: s
         }
     }, [slugStr])
 
-    const localPost = getBlogPost(slugStr)
+    let localPost: any = null
+    try {
+        localPost = getBlogPost(slugStr)
+    } catch (e) {}
 
     const title = spPost?.title || localPost?.frontmatter?.title || slugStr.replace(/-/g, ' ')
     const content = spPost?.content || localPost?.content || `# ${title}\n\nLoading content...`
@@ -137,7 +140,18 @@ export default function DynamicSlugPage({ slugArray }: { slugArray: string[] }) 
     )
 }
 
-DynamicSlugPage.getInitialProps = async (ctx: any) => {
-    const slugArray = Array.isArray(ctx.query?.slug) ? ctx.query.slug : [String(ctx.query?.slug || '')]
-    return { slugArray }
+export async function getStaticPaths() {
+    return {
+        paths: [],
+        fallback: 'blocking',
+    }
+}
+
+export async function getStaticProps({ params }: any) {
+    const slugArray = Array.isArray(params?.slug) ? params.slug : [String(params?.slug || '')]
+    return {
+        props: {
+            slugArray,
+        },
+    }
 }
