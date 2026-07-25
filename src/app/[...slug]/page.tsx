@@ -1,6 +1,6 @@
 'use client'
 
-export const runtime = 'edge'
+export const dynamic = 'force-static'
 
 import React, { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
