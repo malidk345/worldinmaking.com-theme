@@ -16,6 +16,8 @@
  * you can retrieve the current list of interested product slugs via `getProductInterests()`.
  */
 
+import usePostHog from '../hooks/usePostHog'
+
 // Property name used in PostHog - must match cookie_persisted_properties in posthog-init.js
 const PROPERTY_NAME = 'prod_interest'
 
@@ -48,7 +50,7 @@ const SLUG_ALIASES: Record<string, string> = {
 }
 
 function getPostHog() {
-    return typeof window !== 'undefined' ? window.posthog : undefined
+    return usePostHog()
 }
 
 export function getProductInterests(): string[] {

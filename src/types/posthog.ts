@@ -21,4 +21,5 @@ export type PostHog = {
     register_once: (...args: any[]) => void
     setPersonProperties: (...args: any[]) => void
     set_config: (...args: any[]) => void
+    startSessionRecording?: (...args: any[]) => void
 }

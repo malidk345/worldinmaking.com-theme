@@ -1,11 +1,8 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
+/* eslint-disable @typescript-eslint/no-var-requires, @typescript-eslint/explicit-module-boundary-types */
 
 const handler = async (_req, res) => {
-    const data = await fetch(`https://app.posthog.com/shared/gQMqaRP0ZH0V3P3XXrSDnNcqDGoe7Q.json`).then((res) =>
-        res.json()
-    )
-
-    const count = data?.insight?.result?.[0]?.aggregated_value
+    // Return a static mock count instead of fetching from PostHog API
+    const count = 5000;
 
     return res.status(200).json(count)
 }
