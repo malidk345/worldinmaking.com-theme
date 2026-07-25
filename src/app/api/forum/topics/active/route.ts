@@ -101,7 +101,8 @@ export async function GET(request: NextRequest) {
                     authorName: replyAuthor?.username || 'anonymous',
                     createdAt: reply.created_at
                 };
-            }).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+            // ⚡ Bolt: O(1) string comparison is faster than O(N log N) Date instantiations for ISO 8601 timestamps
+            }).sort((a, b) => (a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : 0));
 
             return {
                 id: topic.id,
