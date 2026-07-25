@@ -1,0 +1,155 @@
+diff --git a/src/api/contact-event.ts b/src/api/contact-event.ts
+index 200ce74..c9aba0d 100644
+--- a/src/api/contact-event.ts
++++ b/src/api/contact-event.ts
+@@ -1,9 +1,25 @@
+-import { PostHog } from 'posthog-node'
++// import { PostHog } from 'posthog-node'
+
+-const handler = async (req: GatsbyFunctionRequest, res: GatsbyFunctionResponse) => {
++class MockPostHog {
++    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, @typescript-eslint/no-empty-function
++    constructor(_key: string, _options?: any) {
++        // no-op
++    }
++    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, @typescript-eslint/no-empty-function
++    async capture(_args: any): Promise<void> {
++        // no-op
++    }
++    // eslint-disable-next-line @typescript-eslint/no-empty-function
++    async shutdown(): Promise<void> {
++        // no-op
++    }
++}
++
++// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
++const handler = async (req: any, res: any): Promise<void> => {
+     const ip = req.headers['x-forwarded-for']
+     const { distinctId, formName, ...other } = JSON.parse(req.body)
+-    const client = new PostHog(process.env.GATSBY_POSTHOG_API_KEY, {
++    const client = new MockPostHog(process.env.GATSBY_POSTHOG_API_KEY as string, {
+         host: process.env.GATSBY_POSTHOG_UI_HOST,
+         disableGeoip: false,
+     })
+diff --git a/src/api/homepage-hits.js b/src/api/homepage-hits.js
+index 4afdfbc..2d9b26f 100644
+--- a/src/api/homepage-hits.js
++++ b/src/api/homepage-hits.js
+@@ -1,11 +1,8 @@
+-/* eslint-disable @typescript-eslint/no-var-requires */
++/* eslint-disable @typescript-eslint/no-var-requires, @typescript-eslint/explicit-module-boundary-types */
+
+ const handler = async (_req, res) => {
+-    const data = await fetch(`https://us.posthog.com/shared/aH0asDUbyFXPGSo6JOPryoycVhX7EA.json`).then((res) =>
+-        res.json()
+-    )
+-
+-    const count = data?.insight?.result?.[0]?.aggregated_value
++    // Return a static mock count instead of fetching from PostHog API
++    const count = 10000;
+
+     return res.status(200).json(count)
+ }
+diff --git a/src/api/signup-count.js b/src/api/signup-count.js
+index eccda4e..ae5f8a7 100644
+--- a/src/api/signup-count.js
++++ b/src/api/signup-count.js
+@@ -1,11 +1,8 @@
+-/* eslint-disable @typescript-eslint/no-var-requires */
++/* eslint-disable @typescript-eslint/no-var-requires, @typescript-eslint/explicit-module-boundary-types */
+
+ const handler = async (_req, res) => {
+-    const data = await fetch(`https://app.posthog.com/shared/gQMqaRP0ZH0V3P3XXrSDnNcqDGoe7Q.json`).then((res) =>
+-        res.json()
+-    )
+-
+-    const count = data?.insight?.result?.[0]?.aggregated_value
++    // Return a static mock count instead of fetching from PostHog API
++    const count = 5000;
+
+     return res.status(200).json(count)
+ }
+diff --git a/src/hooks/usePostHog.ts b/src/hooks/usePostHog.ts
+index f01a68b..08dfd0a 100644
+--- a/src/hooks/usePostHog.ts
++++ b/src/hooks/usePostHog.ts
+@@ -1,7 +1,46 @@
+ import type { PostHog } from '../types/posthog'
+
++const mockPostHog: PostHog = {
++    people: {
++        // eslint-disable-next-line @typescript-eslint/no-empty-function
++        set: () => {},
++    },
++    // eslint-disable-next-line @typescript-eslint/no-empty-function
++    capture: () => {},
++    // eslint-disable-next-line @typescript-eslint/no-empty-function
++    captureException: () => {},
++    // eslint-disable-next-line @typescript-eslint/no-empty-function
++    createPersonProfile: () => {},
++    // eslint-disable-next-line @typescript-eslint/no-empty-function
++    getEarlyAccessFeatures: () => {},
++    // eslint-disable-next-line @typescript-eslint/no-empty-function
++    getSurveys: () => {},
++    // eslint-disable-next-line @typescript-eslint/no-empty-function
++    updateEarlyAccessFeatureEnrollment: () => {},
++    getFeatureFlag: () => false,
++    getFeatureFlagPayload: () => undefined,
++    get_distinct_id: () => 'mock-distinct-id',
++    get_property: () => undefined,
++    // eslint-disable-next-line @typescript-eslint/no-empty-function
++    identify: () => {},
++    isFeatureEnabled: () => false,
++    onFeatureFlags: (cb) => {
++        if (typeof cb === 'function') {
++            cb()
++        }
++    },
++    // eslint-disable-next-line @typescript-eslint/no-empty-function
++    register: () => {},
++    // eslint-disable-next-line @typescript-eslint/no-empty-function
++    register_once: () => {},
++    // eslint-disable-next-line @typescript-eslint/no-empty-function
++    setPersonProperties: () => {},
++    // eslint-disable-next-line @typescript-eslint/no-empty-function
++    set_config: () => {},
++}
++
+ const usePostHog = (): PostHog | undefined => {
+-    return typeof window !== 'undefined' ? window.posthog : undefined
++    return typeof window !== 'undefined' ? mockPostHog : undefined
+ }
+
+ export default usePostHog
+diff --git a/src/lib/productInterest.ts b/src/lib/productInterest.ts
+index a4e3979..6d4ee11 100644
+--- a/src/lib/productInterest.ts
++++ b/src/lib/productInterest.ts
+@@ -16,6 +16,8 @@
+  * you can retrieve the current list of interested product slugs via `getProductInterests()`.
+  */
+
++import usePostHog from '../hooks/usePostHog'
++
+ // Property name used in PostHog - must match cookie_persisted_properties in posthog-init.js
+ const PROPERTY_NAME = 'prod_interest'
+
+@@ -48,7 +50,7 @@ const SLUG_ALIASES: Record<string, string> = {
+ }
+
+ function getPostHog() {
+-    return typeof window !== 'undefined' ? window.posthog : undefined
++    return usePostHog()
+ }
+
+ export function getProductInterests(): string[] {
+diff --git a/src/types/posthog.ts b/src/types/posthog.ts
+index 0cbd37d..78e68f7 100644
+--- a/src/types/posthog.ts
++++ b/src/types/posthog.ts
+@@ -21,4 +21,5 @@ export type PostHog = {
+     register_once: (...args: any[]) => void
+     setPersonProperties: (...args: any[]) => void
+     set_config: (...args: any[]) => void
++    startSessionRecording?: (...args: any[]) => void
+ }
