@@ -17,7 +17,7 @@ import { Menu, MenuItem, useApp } from '../../context/App'
 import { Provider as WindowProvider, AppWindow as AppWindowType, useWindow } from '../../context/Window'
 import { ContextMenu, Dialog } from 'radix-ui'
 import Tooltip from 'components/RadixUI/Tooltip'
-import OSButton from 'components/OSButton'
+import { LemonButton } from 'components/posthog-ui-gallery/src/components/lemon-ui'
 import { Button } from 'components/Squeak/components/SubscribeButton'
 import MenuBar, { MenuItemType } from 'components/RadixUI/MenuBar'
 import { Popover } from '../RadixUI/Popover'
@@ -796,9 +796,11 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                 <div className="window-expand-control flex justify-end">
                                     <Tooltip
                                         trigger={
-                                            <OSButton
-                                                windowButton
-                                                size="md"
+                                            <LemonButton
+                                                type="tertiary"
+                                                size="xsmall"
+                                                htmlType="button"
+                                                aria-label={item.expanded ? 'Restore window' : 'Expand window'}
                                                 onClick={toggleExpanded}
                                                 icon={
                                                     item.expanded ? (
@@ -823,7 +825,16 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             )}
                             <div className="flex justify-end">
                                 <Tooltip
-                                    trigger={<OSButton windowButton size="md" onClick={handleClose} icon={<IconX />} />}
+                                    trigger={
+                                        <LemonButton
+                                            type="tertiary"
+                                            size="xsmall"
+                                            htmlType="button"
+                                            aria-label="Close window"
+                                            onClick={handleClose}
+                                            icon={<IconX />}
+                                        />
+                                    }
                                 >
                                     <div className="flex flex-col items-center gap-2">
                                         <span>Close window</span>
