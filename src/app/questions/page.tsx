@@ -6,7 +6,7 @@ import Wrapper from '../../components/Wrapper'
 import Inbox from '../../components/Inbox'
 
 export default function QuestionsPage() {
-    const location = typeof window !== 'undefined' ? window.location : ({ pathname: '/questions' } as any)
+    const location = { pathname: '/questions', hash: '', search: '' } as any
 
     return (
         <div className="h-screen w-screen overflow-hidden bg-light dark:bg-dark text-primary">

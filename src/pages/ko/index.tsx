@@ -1,6 +1,6 @@
 import React from 'react'
-import KoreanHomePage from './_KoreanHome'
-import { translateKo, translateKoHomeBody } from './_translations'
+import KoreanHomePage from 'components/Korean/_KoreanHome'
+import { translateKo, translateKoHomeBody } from 'components/Korean/_translations'
 
 export default function KoreanHome() {
     return (
