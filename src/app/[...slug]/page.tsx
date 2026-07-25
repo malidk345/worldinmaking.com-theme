@@ -1,6 +1,13 @@
 'use client'
 
-export const dynamic = 'force-static'
+export function generateStaticParams() {
+    return [
+        { slug: ['repositioning-posthog'] },
+        { slug: ['ideas'] },
+        { slug: ['questions'] },
+        { slug: ['handbook'] },
+    ]
+}
 
 import React, { useEffect, useState } from 'react'
 import nextDynamic from 'next/dynamic'
