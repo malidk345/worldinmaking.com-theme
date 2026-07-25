@@ -138,8 +138,6 @@ export default function DynamicSlugPage({ slugArray }: { slugArray: string[] }) 
     )
 }
 
-export const runtime = 'experimental-edge'
-
 DynamicSlugPage.getInitialProps = async (ctx: any) => {
     const slugArray = Array.isArray(ctx.query?.slug) ? ctx.query.slug : [String(ctx.query?.slug || '')]
     return { slugArray }
