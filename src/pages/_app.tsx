@@ -6,7 +6,7 @@ import Wrapper from 'components/Wrapper'
 import { useRouter } from 'next/router'
 import React from 'react'
 
-export const runtime = 'experimental-edge'
+export const runtime = 'edge'
 
 export default function App({ Component, pageProps }: AppProps) {
     const router = useRouter()
