@@ -723,11 +723,6 @@ const koDeepMenuTranslations: Record<string, string> = {
     Invites: '초대',
     Members: '멤버',
     'Manage organizations': '조직 관리',
-}
-
-export default function TranslationsDummy() {
-    return null
-}
     Persons: '사용자',
     Projects: '프로젝트',
     'Property definitions': '속성 정의',
