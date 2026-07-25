@@ -2772,9 +2772,11 @@ const staticExtendedProducts = [
 export default function useProduct({ handle }: { handle?: string } = {}) {
     const { products } = useProducts()
 
+    // ⚡ Bolt: Prevent array recreation on every render
     const extendedProducts = useMemo(() => [...staticExtendedProducts, ...products], [products])
 
 
+    // ⚡ Bolt: O(1) Map lookup instead of O(N) Array.find for product relations
     const allProducts = useMemo(() => {
         const productByHandle = new Map(extendedProducts.map((p) => [p.handle, p]))
         return dedupe(
