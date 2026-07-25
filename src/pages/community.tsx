@@ -89,6 +89,9 @@ const SlackPosts = () => {
                 }
                 setLoading(false)
             })
+            .catch(() => {
+                setLoading(false)
+            })
     }, [])
 
     return loading ? (
