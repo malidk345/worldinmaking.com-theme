@@ -138,23 +138,9 @@ export default function DynamicSlugPage({ slugArray }: { slugArray: string[] }) 
     )
 }
 
-export const getStaticPaths: GetStaticPaths = async () => {
-    return {
-        paths: [
-            { params: { slug: ['repositioning-posthog'] } },
-            { params: { slug: ['ideas'] } },
-            { params: { slug: ['questions'] } },
-        ],
-        fallback: 'blocking',
-    }
-}
+export const runtime = 'experimental-edge'
 
-export const getStaticProps: GetStaticProps = async ({ params }) => {
-    const slugArray = Array.isArray(params?.slug) ? params.slug : [String(params?.slug || '')]
-    return {
-        props: {
-            slugArray,
-        },
-        revalidate: 60,
-    }
+DynamicSlugPage.getInitialProps = async (ctx: any) => {
+    const slugArray = Array.isArray(ctx.query?.slug) ? ctx.query.slug : [String(ctx.query?.slug || '')]
+    return { slugArray }
 }
