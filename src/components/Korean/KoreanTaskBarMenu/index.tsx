@@ -27,7 +27,7 @@ import { useMenuData } from './menuData'
 import CloudinaryImage from 'components/CloudinaryImage'
 import MediaUploadModal from 'components/MediaUploadModal'
 import KeyboardShortcut from 'components/KeyboardShortcut'
-import { translateKo } from '../../../pages/ko/_translations'
+import { translateKo } from '../_translations'
 
 const translateMenuItem = (item: any): any => {
     if (!item || typeof item !== 'object') {

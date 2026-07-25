@@ -14,7 +14,7 @@ import { motion } from 'framer-motion'
 import HedgeHogModeEmbed from 'components/HedgehogMode'
 import ReactConfetti from 'react-confetti'
 import { useToast } from '../../../context/Toast'
-import { translateKo } from '../../../pages/ko/_translations'
+import { translateKo } from '../_translations'
 import KoreanCookieBannerToast from '../KoreanCookieBannerToast'
 
 export const useProductLinks = (): AppItem[] => {
