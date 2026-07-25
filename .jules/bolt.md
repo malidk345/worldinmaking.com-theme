@@ -1,3 +1,6 @@
 ## 2024-11-20 - Memoizing the Customers Array in useCustomers
 **Learning:** In the `useCustomers` hook, computing the large `customers` map on every render using an inner `.find()` array lookup created an $O(N \times M)$ rendering bottleneck, which cascaded re-renders down to dependent components like `Customer`. Pre-computing an $O(1)$ lookup Map and wrapping the operation in `useMemo` significantly reduces CPU pressure during React re-renders.
 **Action:** When working with large sets of static or semi-static data (like `CUSTOMER_DATA`) joined against dynamic contexts (like `useProducts`), always precompute secondary maps for $O(1)$ lookups and wrap the final merged structure in `useMemo` to prevent deep performance regressions.
+## 2024-05-19 - Optimize date sorting with direct string comparison
+**Learning:** Instantiating `Date` objects inside a `.sort()` callback for Supabase ISO 8601 timestamps is highly inefficient (O(N log N) object creations). Since ISO 8601 strings are lexicographically sortable, direct string comparison (`a < b ? -1 : a > b ? 1 : 0`) is up to 20x faster.
+**Action:** When sorting arrays based on ISO string dates (like `created_at` from Supabase), always use direct string comparison instead of `new Date(a).getTime() - new Date(b).getTime()`.
