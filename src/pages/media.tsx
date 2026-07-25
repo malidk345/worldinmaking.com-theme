@@ -27,13 +27,18 @@ export default function Media({ data }: MediaProps) {
                     description: 'Media resources and press information',
                 }}
             >
-                <div className="max-w-3xl mx-auto pb-12 px-4 @xl:px-8">
                     <MDXProvider
                         components={{ a: (props) => <Link {...props} state={{ newWindow: true }} />, ...shortcodes }}
                     >
-                        <MDXRenderer>{data.mdx.body}</MDXRenderer>
+                        {data?.mdx?.body ? (
+                            <MDXRenderer>{data.mdx.body}</MDXRenderer>
+                        ) : (
+                            <div className="prose dark:prose-invert">
+                                <h1>Media & Press</h1>
+                                <p>Brand assets, press info, and media kits for PostHog.</p>
+                            </div>
+                        )}
                     </MDXProvider>
-                </div>
             </Editor>
         </>
     )

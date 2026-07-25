@@ -66,7 +66,14 @@ export default function About({ data }: AboutProps) {
                 <div className="min-h-full px-4 @xl:px-8 py-4">
                     <div className="max-w-3xl mx-auto pb-12">
                         <MDXProvider components={mdxComponents}>
-                            <MDXRenderer>{data.mdx.body}</MDXRenderer>
+                            {data?.mdx?.body ? (
+                                <MDXRenderer>{data.mdx.body}</MDXRenderer>
+                            ) : (
+                                <div className="prose dark:prose-invert">
+                                    <h1>About PostHog</h1>
+                                    <p>We build tools to help engineering teams build better products.</p>
+                                </div>
+                            )}
                         </MDXProvider>
                     </div>
                 </div>
