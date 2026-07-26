@@ -1,6 +1,5 @@
 export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '../../../../../lib/supabase-admin';
 
 interface DBProfile {
     id: string;
@@ -27,8 +26,15 @@ interface DBTopic {
     replies: DBReply[] | null;
 }
 
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://iydypisgfaksqkjdraiu.supabase.co';
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
 export async function GET(request: NextRequest) {
     try {
+        if (!SUPABASE_SERVICE_ROLE_KEY) {
+            return NextResponse.json({ error: 'Internal Server Error: Missing service role key' }, { status: 500 });
+        }
+
         // 1. Authenticate the bot token
         const authHeader = request.headers.get('Authorization');
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -41,50 +47,42 @@ export async function GET(request: NextRequest) {
         }
 
         // Look up the bot in bot_profiles
-        const { data: bot, error: botError } = await supabaseAdmin
-            .from('bot_profiles')
-            .select('id')
-            .eq('api_token', token)
-            .eq('is_active', true)
-            .maybeSingle();
+        const botRes = await fetch(`${SUPABASE_URL}/rest/v1/bot_profiles?api_token=eq.${token}&is_active=eq.true&select=id`, {
+            headers: {
+                apikey: SUPABASE_SERVICE_ROLE_KEY,
+                Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
+            },
+            cache: 'no-store'
+        });
 
-        if (botError || !bot) {
+        if (!botRes.ok) {
+            return NextResponse.json({ error: `Database Error: ${botRes.statusText}` }, { status: 500 });
+        }
+
+        const bots = await botRes.json();
+        const bot = bots?.[0];
+
+        if (!bot) {
             return NextResponse.json({ error: 'Unauthorized: Invalid API token' }, { status: 401 });
         }
 
         // 2. Fetch the 10 most recent topics with their replies and author profiles
-        const { data: topics, error: fetchError } = await supabaseAdmin
-            .from('community_posts')
-            .select(`
-                id,
-                channel_id,
-                author_id,
-                title,
-                content,
-                created_at,
-                profiles:author_id (
-                    id,
-                    username,
-                    avatar_url
-                ),
-                replies:community_replies (
-                    id,
-                    content,
-                    author_id,
-                    created_at,
-                    profiles:author_id (
-                        id,
-                        username,
-                        avatar_url
-                    )
-                )
-            `)
-            .order('created_at', { ascending: false })
-            .limit(10);
+        const topicsRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/community_posts?select=id,channel_id,author_id,title,content,created_at,profiles:author_id(id,username,avatar_url),replies:community_replies(id,content,author_id,created_at,profiles:author_id(id,username,avatar_url))&order=created_at.desc&limit=10`,
+            {
+                headers: {
+                    apikey: SUPABASE_SERVICE_ROLE_KEY,
+                    Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
+                },
+                cache: 'no-store'
+            }
+        );
 
-        if (fetchError) {
-            return NextResponse.json({ error: `Database Error: ${fetchError.message}` }, { status: 500 });
+        if (!topicsRes.ok) {
+            return NextResponse.json({ error: `Database Error: ${topicsRes.statusText}` }, { status: 500 });
         }
+
+        const topics = await topicsRes.json();
 
         // 3. Format and sort nested replies
         const typedTopics = (topics || []) as unknown as DBTopic[];

@@ -1,6 +1,5 @@
 export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '../../../../lib/supabase-admin';
 
 function parseBotReply(content: string) {
     const thoughtsRegex = /(?:\*\*)?\[?(?:Inner\s*Thoughts(?:\s*Analysis)?|Thoughts|Private\s*Thoughts)\]?(?:\*\*)?\s*:?(?:\r?\n)+([\s\S]*?)(?=(?:\*\*)?\[?(?:Raw\s*Text|Reply|Response)\]?|$)/i
@@ -16,8 +15,15 @@ function parseBotReply(content: string) {
     }
 }
 
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://iydypisgfaksqkjdraiu.supabase.co';
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
 export async function POST(request: NextRequest) {
     try {
+        if (!SUPABASE_SERVICE_ROLE_KEY) {
+            return NextResponse.json({ error: 'Internal Server Error: Missing service role key' }, { status: 500 });
+        }
+
         // 1. Authenticate the bot token
         const authHeader = request.headers.get('Authorization');
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -30,14 +36,22 @@ export async function POST(request: NextRequest) {
         }
 
         // Look up the bot in bot_profiles
-        const { data: bot, error: botError } = await supabaseAdmin
-            .from('bot_profiles')
-            .select('id')
-            .eq('api_token', token)
-            .eq('is_active', true)
-            .maybeSingle();
+        const botRes = await fetch(`${SUPABASE_URL}/rest/v1/bot_profiles?api_token=eq.${token}&is_active=eq.true&select=id`, {
+            headers: {
+                apikey: SUPABASE_SERVICE_ROLE_KEY,
+                Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
+            },
+            cache: 'no-store'
+        });
 
-        if (botError || !bot) {
+        if (!botRes.ok) {
+            return NextResponse.json({ error: `Database Error: ${botRes.statusText}` }, { status: 500 });
+        }
+
+        const bots = await botRes.json();
+        const bot = bots?.[0];
+
+        if (!bot) {
             return NextResponse.json({ error: 'Unauthorized: Invalid API token' }, { status: 401 });
         }
 
@@ -52,30 +66,54 @@ export async function POST(request: NextRequest) {
         const { innerThoughts, rawContent } = parseBotReply(String(content))
 
         // 3. Verify topic exists
-        const { data: topicExists, error: topicError } = await supabaseAdmin
-            .from('community_posts')
-            .select('id')
-            .eq('id', topicId)
-            .maybeSingle();
+        const topicRes = await fetch(`${SUPABASE_URL}/rest/v1/community_posts?id=eq.${topicId}&select=id`, {
+            headers: {
+                apikey: SUPABASE_SERVICE_ROLE_KEY,
+                Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
+            },
+            cache: 'no-store'
+        });
 
-        if (topicError || !topicExists) {
+        if (!topicRes.ok) {
+            return NextResponse.json({ error: `Database Error: Failed to query topic. Status: ${topicRes.statusText}` }, { status: 500 });
+        }
+
+        const topics = await topicRes.json();
+        const topicExists = topics?.[0];
+
+        if (!topicExists) {
             return NextResponse.json({ error: 'Not Found: Target discussion topic does not exist' }, { status: 404 });
         }
 
         // 4. Insert the new reply (community_replies)
-        const { data: reply, error: insertError } = await supabaseAdmin
-            .from('community_replies')
-            .insert({
-                post_id: topicId,
-                author_id: bot.id,
-                content: rawContent,
-                inner_thoughts: innerThoughts || null
-            })
-            .select('*')
-            .single();
+        const replyData = {
+            post_id: topicId,
+            author_id: bot.id,
+            content: rawContent,
+            inner_thoughts: innerThoughts || null
+        };
 
-        if (insertError || !reply) {
-            return NextResponse.json({ error: `Database Error: ${insertError?.message || 'Failed to create comment'}` }, { status: 500 });
+        const replyRes = await fetch(`${SUPABASE_URL}/rest/v1/community_replies`, {
+            method: 'POST',
+            headers: {
+                apikey: SUPABASE_SERVICE_ROLE_KEY,
+                Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                'Content-Type': 'application/json',
+                Prefer: 'return=representation'
+            },
+            body: JSON.stringify(replyData),
+            cache: 'no-store'
+        });
+
+        if (!replyRes.ok) {
+            return NextResponse.json({ error: `Database Error: Failed to create comment. Status: ${replyRes.statusText}` }, { status: 500 });
+        }
+
+        const replies = await replyRes.json();
+        const reply = replies?.[0];
+
+        if (!reply) {
+            return NextResponse.json({ error: 'Database Error: Failed to retrieve created comment' }, { status: 500 });
         }
 
         return NextResponse.json({
