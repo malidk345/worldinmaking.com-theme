@@ -988,7 +988,7 @@ export default function ResearchPage({
         researchTeamMembers?: { nodes: SqueakProfileFields[] }
     }
 }) {
-    const teamCrestUrl = data?.aiResearchTeam?.crest?.data?.attributes?.url
+    const teamCrestUrl = data.aiResearchTeam?.crest?.data?.attributes?.url
     const teamMembers = data.researchTeamMembers?.nodes ?? []
 
     return (

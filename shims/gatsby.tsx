@@ -38,29 +38,38 @@ export const navigate = (to: string, options?: any) => {
     }
 }
 
-const createMockQueryData = (): any => {
-    const handler: ProxyHandler<any> = {
-        get: (_target, prop) => {
-            if (prop === 'nodes' || prop === 'edges' || prop === 'group' || prop === 'departments' || prop === 'teamMembers') {
-                return []
-            }
-            if (prop === 'totalCount' || prop === 'count') {
-                return 0
-            }
-            if (typeof prop === 'symbol' || prop === 'toJSON' || prop === 'then' || prop === 'length' || prop === 'slice') {
-                return undefined
-            }
-            if (prop === 'aiResearchTeam' || prop === 'researchTeamMembers') {
-                return createMockQueryData()
-            }
-            return new Proxy({}, handler)
-        },
-    }
-    return new Proxy({}, handler)
-}
+const mockData = {
+    allTrack: { nodes: [] },
+    allVideo: { nodes: [] },
+    allPostHogData: { nodes: [] },
+    allMdx: { nodes: [] },
+    aiResearchTeam: { crest: { data: { attributes: { url: '' } } } },
+    researchTeamMembers: { nodes: [] },
+    allSqueakTeam: { nodes: [] },
+    allDestinations: { totalCount: 0, nodes: [] },
+    allTeams: { nodes: [] },
+    profiles: { totalCount: 0, nodes: [] },
+    team: { totalCount: 0, attributes: {} },
+    allSlackEmoji: { totalCount: 0 },
+    allTeamsData: { nodes: [] },
+    allAshbyJobPosting: { nodes: [] },
+    allTeamSlugs: { nodes: [] },
+    sdks: { nodes: [] },
+    frameworks: { nodes: [] },
+    allReward: { nodes: [] },
+    nodes: [],
+    edges: [],
+    group: [],
+    departments: [],
+    teamMembers: [],
+    totalCount: 0,
+    count: 0,
+    search: '',
+    state: {}
+};
 
 export const useStaticQuery = (_query?: any) => {
-    return createMockQueryData()
+    return mockData;
 }
 
 export const graphql = (_strings: TemplateStringsArray, ..._values: any[]) => {
@@ -77,7 +86,7 @@ export const Script = (props: any) => {
     return <script {...props} />
 }
 
-export const StaticQuery = ({ render }: any) => (render ? render(createMockQueryData()) : null)
+export const StaticQuery = ({ render }: any) => (render ? render(mockData) : null)
 
 export const MDXRenderer = ({ children }: any) => <>{children}</>
 
@@ -87,5 +96,5 @@ export const isMarkdownContentPath = () => false
 export const Subfeature = () => null
 export const createSlideConfig = (c: any) => c
 export const flattenMenu = (m: any) => m || []
-export const useLocation = () => ({ pathname: typeof window !== 'undefined' ? window.location.pathname : '/', search: '', hash: '' })
+export const useLocation = () => ({ pathname: typeof window !== 'undefined' ? window.location.pathname : '/', search: '', hash: '', state: {} })
 export const SlidesTemplate = (props: any) => <div {...props}>{props.children}</div>

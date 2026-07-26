@@ -1,4 +1,3 @@
-import { useStaticQuery } from 'gatsby'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import Editor from 'components/Editor'
 import OSTable from 'components/OSTable'
