@@ -4,6 +4,7 @@ const replacePath = (p: string) => p?.replace(/\/+$/, '') || '/'
 import { usePost } from './hooks'
 import Menu from './Menu'
 import { IMenu } from './types'
+const flattenMenu = (m: any) => (Array.isArray(m) ? m : [])
 
 export default function TableOfContents({
     handleLinkClick,

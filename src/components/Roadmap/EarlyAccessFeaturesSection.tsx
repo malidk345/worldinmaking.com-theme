@@ -661,7 +661,7 @@ const bySignupAvailability = (a: EarlyAccessFeature, b: EarlyAccessFeature): num
 
 export default function EarlyAccessFeaturesSection(): JSX.Element | null {
     const roadmapRootRef = useRef<HTMLDivElement>(null)
-    const location = useLocation()
+    const location = typeof window !== 'undefined' ? window.location : ({ pathname: '/', search: '', hash: '' } as any)
     const { grouped, loading, teamForFeature } = useRoadmapEarlyAccessFeatures()
     const [query, setQuery] = useState('')
     const [teamFilter, setTeamFilter] = useState('all')
@@ -672,7 +672,7 @@ export default function EarlyAccessFeaturesSection(): JSX.Element | null {
 
     useEffect(() => setMounted(true), [])
 
-    const { allSqueakTeam } = useStaticQuery<{ allSqueakTeam: { nodes: SqueakTeamNode[] } }>(null)
+    const allSqueakTeam = { nodes: [] }
 
     const { teamInfoBySlug, peopleByTeamSlug } = useMemo(() => {
         const teams: Record<string, TeamInfo> = {}

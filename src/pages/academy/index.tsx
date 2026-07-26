@@ -7,6 +7,13 @@ import CloudinaryImage from 'components/CloudinaryImage'
 import PostQuote from 'components/Academy/PostQuote'
 import { AppIcon } from 'components/OSIcons/AppIcon'
 
+const Subfeature = (props: any) => (
+    <div className="p-4 border border-border rounded">
+        <h4 className="font-semibold text-lg">{props.title}</h4>
+        <p className="text-sm opacity-80">{props.description}</p>
+    </div>
+)
+
 const subfeatures = [
     {
         title: 'Step 1: Peel it from the side',

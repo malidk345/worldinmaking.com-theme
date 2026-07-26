@@ -13,6 +13,7 @@ import TerminalView from 'components/AI/TerminalView'
 import usePostHog from 'hooks/usePostHog'
 import Demos from 'components/Home/Test/Demos'
 const PRODUCT_HANDLE = 'posthog_ai'
+const createSlideConfig = (c: any) => c
 
 const CustomDemoSlide = () => {
     return (
