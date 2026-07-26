@@ -38,8 +38,26 @@ export const navigate = (to: string, options?: any) => {
     }
 }
 
+const createMockQueryData = (): any => {
+    const handler: ProxyHandler<any> = {
+        get: (_target, prop) => {
+            if (prop === 'nodes' || prop === 'edges' || prop === 'group' || prop === 'departments' || prop === 'teamMembers') {
+                return []
+            }
+            if (prop === 'totalCount' || prop === 'count') {
+                return 0
+            }
+            if (typeof prop === 'symbol' || prop === 'toJSON' || prop === 'then') {
+                return undefined
+            }
+            return new Proxy({}, handler)
+        },
+    }
+    return new Proxy({}, handler)
+}
+
 export const useStaticQuery = (_query?: any) => {
-    return {}
+    return createMockQueryData()
 }
 
 export const graphql = (_strings: TemplateStringsArray, ..._values: any[]) => {
@@ -56,7 +74,7 @@ export const Script = (props: any) => {
     return <script {...props} />
 }
 
-export const StaticQuery = ({ render }: any) => render ? render({}) : null
+export const StaticQuery = ({ render }: any) => (render ? render(createMockQueryData()) : null)
 
 export const MDXRenderer = ({ children }: any) => <>{children}</>
 
@@ -67,4 +85,6 @@ export const Subfeature = () => null
 export const createSlideConfig = (c: any) => c
 export const flattenMenu = (m: any) => m || []
 export const useLocation = () => ({ pathname: typeof window !== 'undefined' ? window.location.pathname : '/', search: '', hash: '' })
+export const SlidesTemplate = (props: any) => <div {...props}>{props.children}</div>
+
 

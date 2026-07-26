@@ -3,6 +3,7 @@ import { IconSend } from '@posthog/icons'
 import React from 'react'
 import ScrollArea from 'components/RadixUI/ScrollArea'
 import SEO from 'components/seo'
+import { Script } from 'gatsby'
 
 const formConfig = {
     type: 'lead' as const,
