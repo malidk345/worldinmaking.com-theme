@@ -12,6 +12,7 @@ const ProfileWrapper = dynamic(() => import('../components/Profile'), { ssr: fal
 const NotebooksListSkeleton = dynamic(() => import('../components/Notebooks/NotebooksList').then((m) => m.NotebooksListSkeleton), { ssr: false })
 const HandbookTemplate = dynamic(() => import('../templates/Handbook'), { ssr: false })
 const Legal = dynamic(() => import('../components/Legal'), { ssr: false })
+const DisplayOptions = dynamic(() => import('../components/DisplayOptions'), { ssr: false })
 
 function BlogPostContainer({ slugStr, fullPath }: { slugStr: string; fullPath: string }) {
     const [spPost, setSpPost] = useState<SupabasePost | null>(null)
@@ -95,6 +96,8 @@ export default function DynamicSlugPage() {
         element = <Inbox key={fullPath} path={fullPath} permalink={slugStr} />
     } else if (['terms', 'privacy', 'dpa', 'baa', 'subprocessors'].includes(rootSegment)) {
         element = <Legal key={fullPath} defaultTab={'/' + rootSegment} />
+    } else if (rootSegment === 'display-options') {
+        element = <DisplayOptions key={fullPath} />
     } else if (rootSegment === 'handbook' || rootSegment === 'docs' || rootSegment === 'manual') {
         const handbookData = {
             data: {

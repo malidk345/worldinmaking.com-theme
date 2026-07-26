@@ -4,7 +4,7 @@ import React from 'react'
 import { Provider } from '../../context/App'
 import Wrapper from '../../components/Wrapper'
 
-const DisplayOptions = () => null
+import DisplayOptions from '../../components/DisplayOptions'
 
 export default function DisplayOptionsPage() {
     const location = typeof window !== 'undefined' ? window.location : ({ pathname: '/display-options' } as any)
