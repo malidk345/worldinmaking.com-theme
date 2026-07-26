@@ -1089,8 +1089,11 @@ const ValidationSchema = Yup.object().shape({
     location: Yup.string().nullable(),
 })
 
-export default function ProfilePage({ params }: PageProps) {
-    const id = parseInt(params.id || params['*'])
+import { useRouter } from 'next/router'
+export default function ProfilePage() {
+    const router = useRouter()
+    const params = router.query
+    const id = parseInt((params?.id || params?.['*']) as string)
     const posthog = usePostHog()
     const { addToast } = useToast()
     const { user, getJwt } = useUser()

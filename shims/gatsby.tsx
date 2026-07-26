@@ -8,9 +8,7 @@ export const Link = React.forwardRef<HTMLAnchorElement, any>((props, ref) => {
     const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
         if (onClick) onClick(e)
         if (e.defaultPrevented) return
-
         if (e.metaKey || e.ctrlKey) return
-
         if (state && typeof window !== 'undefined') {
             window.history.pushState(state, '', targetUrl)
         }
@@ -41,15 +39,25 @@ export const navigate = (to: string, options?: any) => {
 const createMockQueryData = (): any => {
     const handler: ProxyHandler<any> = {
         get: (_target, prop) => {
-            if (prop === 'nodes' || prop === 'edges' || prop === 'group' || prop === 'departments' || prop === 'teamMembers') {
-                return []
+            if (typeof prop === 'string') {
+                if (['nodes', 'edges', 'group', 'departments', 'teamMembers', 'jobs', 'achievements', 'teams', 'staticRoadmaps', 'pipelines', 'testimonials', 'staffProfiles', 'allSqueakTeam', 'sdks', 'frameworks', 'allTeams'].includes(prop)) {
+                    return []
+                }
+                if (['totalCount', 'count'].includes(prop)) {
+                    return 0
+                }
+                if (['id', 'strapiID', 'main', 'state', 'aiResearchTeam', 'search'].includes(prop)) {
+                    return undefined
+                }
+                if (['then', 'toJSON', '$typeof', 'Symbol(Symbol.toPrimitive)', 'startsWith'].includes(prop)) {
+                    return undefined
+                }
+                if (prop === 'allPostCategory') {
+                    return { nodes: [] }
+                }
             }
-            if (prop === 'totalCount' || prop === 'count') {
-                return 0
-            }
-            if (typeof prop === 'symbol' || prop === 'toJSON' || prop === 'then') {
-                return undefined
-            }
+            if (typeof prop === 'symbol') return undefined
+
             return new Proxy({}, handler)
         },
     }
@@ -86,5 +94,3 @@ export const createSlideConfig = (c: any) => c
 export const flattenMenu = (m: any) => m || []
 export const useLocation = () => ({ pathname: typeof window !== 'undefined' ? window.location.pathname : '/', search: '', hash: '' })
 export const SlidesTemplate = (props: any) => <div {...props}>{props.children}</div>
-
-
