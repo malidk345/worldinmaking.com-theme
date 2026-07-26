@@ -94,14 +94,12 @@ export const Screensaver: React.FC<ScreensaverProps> = ({ isActive, onDismiss })
                     height: `${logoSizeRef.current.height}px`,
                 }}
             >
-                <Suspense fallback={null}>
-                    <Lottie
-                        options={defaultOptions}
-                        height={logoSizeRef.current.height}
-                        width={logoSizeRef.current.width}
-                        eventListeners={[]}
-                    />
-                </Suspense>
+                <Lottie
+                    options={defaultOptions}
+                    height={logoSizeRef.current.height}
+                    width={logoSizeRef.current.width}
+                    eventListeners={[]}
+                />
             </div>
 
             <div className="absolute bottom-8 w-full @md:w-auto @md:left-1/2 transform @md:-translate-x-1/2 text-white/50 text-sm text-center">

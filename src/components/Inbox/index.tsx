@@ -659,18 +659,16 @@ export default function Inbox(props) {
                                             )}
                                             {isLoading && (
                                                 <div className="flex items-center justify-center py-8 h-full">
-                                                    <Suspense fallback={null}>
-                                                        <Lottie
-                                                            animationData={hourglassAnimation}
-                                                            className="size-6 opacity-75 dark:hidden"
-                                                            title="Loading questions..."
-                                                        />
-                                                        <Lottie
-                                                            animationData={hourglassAnimationWhite}
-                                                            className="size-6 opacity-75 hidden dark:block"
-                                                            title="Loading questions..."
-                                                        />
-                                                    </Suspense>
+                                                    <Lottie
+                                                        animationData={hourglassAnimation}
+                                                        className="size-6 opacity-75 dark:hidden"
+                                                        title="Loading questions..."
+                                                    />
+                                                    <Lottie
+                                                        animationData={hourglassAnimationWhite}
+                                                        className="size-6 opacity-75 hidden dark:block"
+                                                        title="Loading questions..."
+                                                    />
                                                 </div>
                                             )}
                                         </div>
