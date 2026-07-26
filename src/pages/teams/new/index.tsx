@@ -18,7 +18,7 @@ export default function NewTeam(props: TeamPageProps) {
     const isModerator = user?.role?.type === 'moderator'
     const onSaveRef = useRef<(() => void) | null>(null)
 
-    const data = {}
+    const data = { allSqueakTeam: { nodes: [] } }
 
     // Create teams navigation for sidebar
     const teamsNavigation = useMemo(() => {
