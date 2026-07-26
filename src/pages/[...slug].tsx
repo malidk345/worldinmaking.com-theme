@@ -92,8 +92,8 @@ export default function DynamicSlugPage() {
         element = <ProfileWrapper key={fullPath} path={fullPath} />
     } else if (rootSegment === 'notebooks') {
         element = <NotebooksListSkeleton key={fullPath} path={fullPath} />
-    } else if (rootSegment === 'questions') {
-        element = <Inbox key={fullPath} path={fullPath} permalink={slugStr} />
+    } else if (rootSegment === 'questions' || rootSegment === 'forum' || rootSegment === 'community') {
+        element = <Inbox key={fullPath} path={fullPath} permalink={slugStr !== 'questions' && slugStr !== 'forum' && slugStr !== 'community' ? slugStr : undefined} />
     } else if (['terms', 'privacy', 'dpa', 'baa', 'subprocessors'].includes(rootSegment)) {
         element = <Legal key={fullPath} defaultTab={'/' + rootSegment} />
     } else if (rootSegment === 'display-options') {
