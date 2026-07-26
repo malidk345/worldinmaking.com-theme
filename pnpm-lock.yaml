@@ -540,9 +540,6 @@ importers:
       postcss:
         specifier: ^8.4.14
         version: 8.5.23
-      postinstall-postinstall:
-        specifier: ^2.1.0
-        version: 2.1.0
       prettier:
         specifier: ^2.1.0
         version: 2.8.8
@@ -7483,9 +7480,6 @@ packages:
   posthog-node@4.18.0:
     resolution: {integrity: sha512-XROs1h+DNatgKh/AlIlCtDxWzwrKdYDb2mOs58n4yN8BkGN9ewqeQwG5ApS4/IzwCb7HPttUkOVulkYatd2PIw==}
     engines: {node: '>=15.0.0'}
-
-  postinstall-postinstall@2.1.0:
-    resolution: {integrity: sha512-7hQX6ZlZXIoRiWNrbMQaLzUUfH+sSx39u8EJ9HYuDc1kLo9IXKWjM5RSquZN1ad5GnH8CGFM78fsAAQi3OKEEQ==}
 
   preact@10.27.1:
     resolution: {integrity: sha512-V79raXEWch/rbqoNc7nT9E4ep7lu+mI3+sBmfRD4i1M73R3WLYcCtdI0ibxGVf4eQL8ZIz2nFacqEC+rmnOORQ==}
@@ -17834,8 +17828,6 @@ snapshots:
     transitivePeerDependencies:
       - debug
       - supports-color
-
-  postinstall-postinstall@2.1.0: {}
 
   preact@10.27.1: {}
 

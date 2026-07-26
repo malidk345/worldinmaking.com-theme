@@ -1,4 +1,3 @@
-export const runtime = 'experimental-edge';
 import React, { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 
@@ -142,5 +141,4 @@ export default function DynamicSlugPage() {
         </div>
     )
 }
-
 
