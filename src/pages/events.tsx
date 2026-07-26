@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import SEO from 'components/seo'
 import Explorer from 'components/Explorer'
 import ScrollArea from 'components/RadixUI/ScrollArea'
@@ -245,14 +245,18 @@ export const EventsContent = ({ initialSelectedId, initialSelectedEvent }: Event
         return `${event.date}-${event.id}-${slug}`
     }
 
-    const today = new Date()
-    const pastEvents = eventsData
-        .filter((event) => new Date(event.date) < today)
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    const { pastEvents, upcomingEvents } = useMemo(() => {
+        const todayStr = new Date().toISOString().split('T')[0]
+        const past = eventsData
+            .filter((event) => event.date < todayStr)
+            .sort((a, b) => b.date.localeCompare(a.date)) // descending
 
-    const upcomingEvents = eventsData
-        .filter((event) => new Date(event.date) >= today)
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        const upcoming = eventsData
+            .filter((event) => event.date >= todayStr)
+            .sort((a, b) => a.date.localeCompare(b.date)) // ascending
+
+        return { pastEvents: past, upcomingEvents: upcoming }
+    }, [eventsData])
 
     const displayEvents = activeTab === 'past' ? pastEvents : upcomingEvents
 
@@ -324,8 +328,8 @@ export const EventsContent = ({ initialSelectedId, initialSelectedEvent }: Event
 
                 if (event) {
                     // Determine if event is past or upcoming and switch tab
-                    const today = new Date()
-                    const isUpcoming = new Date(event.date) >= today
+                    const todayStr = new Date().toISOString().split('T')[0]
+                    const isUpcoming = event.date >= todayStr
                     setActiveTab(isUpcoming ? 'upcoming' : 'past')
 
                     // Select event without updating hash (since we're reading from it)
@@ -655,8 +659,7 @@ export const EventsContent = ({ initialSelectedId, initialSelectedEvent }: Event
                                                         asLink
                                                         to={selectedEvent.link}
                                                         variant={
-                                                            new Date(selectedEvent.date) >=
-                                                            new Date(new Date().toISOString().split('T')[0])
+                                                            selectedEvent.date >= new Date().toISOString().split('T')[0]
                                                                 ? 'primary'
                                                                 : 'secondary'
                                                         }
