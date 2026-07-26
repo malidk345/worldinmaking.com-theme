@@ -1,3 +1,4 @@
+import { useStaticQuery } from 'gatsby'
 import React, { useState } from 'react'
 import { Fieldset } from 'components/OSFieldset'
 import Link from 'components/Link'

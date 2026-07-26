@@ -266,7 +266,7 @@ export default function Team({
     const { user, getJwt } = useUser()
     const isModerator = user?.role?.type === 'moderator'
     const {
-        allSlackEmoji: { totalCount: totalSlackEmojis },
+        allSlackEmoji = { totalCount: 0 },
         allTeams,
         allTeamSlugs,
         allAshbyJobPosting,

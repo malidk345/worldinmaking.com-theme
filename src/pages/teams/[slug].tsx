@@ -173,7 +173,7 @@ export default function TeamPage(props: TeamPageProps) {
         (node: any) => node?.fields?.slug === `/teams/${slug}/objectives`
     )?.body
     const teamData = data?.allSqueakTeam?.nodes?.find((node: any) => node?.slug === slug)
-    const { totalCount: totalSlackEmojis } = data?.allSlackEmoji || {}
+    const totalSlackEmojis = data?.allSlackEmoji?.totalCount || 0
     const allTeams = data?.allTeamsData || { nodes: [] }
     const allAshbyJobPosting = data?.allAshbyJobPosting || { nodes: [] }
     const hasTeam = Boolean((team as any)?.id || teamData || body || objectives)

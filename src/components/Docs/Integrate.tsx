@@ -1,3 +1,4 @@
+import { useStaticQuery } from 'gatsby'
 import React from 'react'
 import List from 'components/List'
 import { getLogo } from '../../constants/logos'

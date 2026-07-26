@@ -1,3 +1,4 @@
+import { useStaticQuery } from 'gatsby'
 interface GitHubPage {
     title: string
     html_url: string

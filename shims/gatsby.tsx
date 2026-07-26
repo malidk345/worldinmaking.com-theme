@@ -47,8 +47,11 @@ const createMockQueryData = (): any => {
             if (prop === 'totalCount' || prop === 'count') {
                 return 0
             }
-            if (typeof prop === 'symbol' || prop === 'toJSON' || prop === 'then') {
+            if (typeof prop === 'symbol' || prop === 'toJSON' || prop === 'then' || prop === 'length' || prop === 'slice') {
                 return undefined
+            }
+            if (prop === 'aiResearchTeam' || prop === 'researchTeamMembers') {
+                return createMockQueryData()
             }
             return new Proxy({}, handler)
         },
@@ -86,5 +89,3 @@ export const createSlideConfig = (c: any) => c
 export const flattenMenu = (m: any) => m || []
 export const useLocation = () => ({ pathname: typeof window !== 'undefined' ? window.location.pathname : '/', search: '', hash: '' })
 export const SlidesTemplate = (props: any) => <div {...props}>{props.children}</div>
-
-
