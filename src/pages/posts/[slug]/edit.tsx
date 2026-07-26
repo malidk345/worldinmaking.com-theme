@@ -6,7 +6,10 @@ import SEO from 'components/seo'
 import { communityMenu } from '../../../navs'
 import { useUser } from 'hooks/useUser'
 
-export default function Edit({ location: { state } }) {
+export default function Edit() {
+    const router = useRouter()
+    const state = {} as any // mock location state or get it elsewhere
+
     const { fetchUser } = useUser()
     const [loading, setLoading] = useState(true)
     useEffect(() => {

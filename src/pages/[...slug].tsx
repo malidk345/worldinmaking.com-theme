@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { getBlogPost } from '../lib/blog'
+
 import { fetchSupabasePostBySlug, SupabasePost } from '../lib/supabaseBlog'
 import { Provider } from '../context/App'
 import Wrapper from '../components/Wrapper'
@@ -28,10 +28,7 @@ function BlogPostContainer({ slugStr, fullPath }: { slugStr: string; fullPath: s
         }
     }, [slugStr])
 
-    let localPost: any = null
-    try {
-        localPost = getBlogPost(slugStr)
-    } catch (e) {}
+    let localPost: any = null;
 
     const title = spPost?.title || localPost?.frontmatter?.title || slugStr.replace(/-/g, ' ')
     const content = spPost?.content || localPost?.content || `# ${title}\n\nLoading content...`
@@ -74,7 +71,12 @@ function BlogPostContainer({ slugStr, fullPath }: { slugStr: string; fullPath: s
     return <BlogPostTemplate {...(pageData as any)} />
 }
 
-export default function DynamicSlugPage({ slugArray }: { slugArray: string[] }) {
+
+import { useRouter } from 'next/router'
+export default function DynamicSlugPage() {
+    const router = useRouter()
+    const slugArray = Array.isArray(router.query?.slug) ? router.query.slug : [String(router.query?.slug || '')]
+
     const slugs = slugArray || ['repositioning-posthog']
     const rootSegment = slugs[0]
     const slugStr = slugs[slugs.length - 1]
@@ -140,18 +142,6 @@ export default function DynamicSlugPage({ slugArray }: { slugArray: string[] }) 
     )
 }
 
-export async function getStaticPaths() {
-    return {
-        paths: [],
-        fallback: 'blocking',
-    }
-}
 
-export async function getStaticProps({ params }: any) {
-    const slugArray = Array.isArray(params?.slug) ? params.slug : [String(params?.slug || '')]
-    return {
-        props: {
-            slugArray,
-        },
-    }
-}
+
+export const runtime = 'experimental-edge';
