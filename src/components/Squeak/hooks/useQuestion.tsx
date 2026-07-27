@@ -4,7 +4,7 @@ import useSWR from 'swr'
 import { useUser } from 'hooks/useUser'
 import usePostHog from 'hooks/usePostHog'
 import {
-    postSupabaseCommunityPost,
+    postSupabaseCommunityReply,
     fetchSupabaseCommunityPosts,
     fetchSupabaseCommunityReplies,
     formatSupabaseCommunityToStrapi,
@@ -271,11 +271,7 @@ export const useQuestion = (id: number | string, options?: UseQuestionOptions) =
             }
 
             if (questionID) {
-                postSupabaseCommunityPost({
-                    title: `Reply to #${questionID}`,
-                    content: body,
-                    author: user?.profile ? `${user.profile.firstName || ''} ${user.profile.lastName || ''}`.trim() : 'WorldInMaking User',
-                }).catch(() => null)
+                postSupabaseCommunityReply(questionID, body).catch(() => null)
             }
 
             const data = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/replies`, {
