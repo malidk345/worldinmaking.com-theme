@@ -3,6 +3,7 @@ import { useLayoutData } from 'components/Layout/hooks'
 import qs from 'qs'
 import React, { useEffect, useState } from 'react'
 
+export const config = { runtime: 'experimental-edge' };
 export const getServerSideProps = ({ params }: { params: { slug: string } }) => ({ props: { params } })
 
 const Skeleton = () => {
