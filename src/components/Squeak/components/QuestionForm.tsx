@@ -18,6 +18,7 @@ import { useApp } from '../../../context/App'
 import Link from 'components/Link'
 import Input from 'components/OSForm/input'
 import { OSSelect } from 'components/OSForm'
+import { postSupabaseCommunityQuestion } from 'lib/supabaseCommunity'
 
 type QuestionFormValues = {
     subject: string
@@ -396,6 +397,8 @@ export const QuestionForm = ({
                 slug,
                 subject,
             })
+
+            postSupabaseCommunityQuestion(subject, body, slug).catch(() => null)
         }
 
         return questionData
