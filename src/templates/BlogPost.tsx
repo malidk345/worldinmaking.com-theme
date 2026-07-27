@@ -19,7 +19,7 @@ import Title from 'components/Edition/Title'
 import Upvote from 'components/Edition/Upvote'
 import LikeButton from 'components/Edition/LikeButton'
 import { Questions } from 'components/Squeak'
-import { useLocation } from '@gatsbyjs/reach-router'
+import { useRouter } from 'next/router'
 import qs from 'qs'
 import Breadcrumbs from 'components/Edition/Breadcrumbs'
 import { CallToAction } from 'components/CallToAction'
@@ -279,7 +279,7 @@ const Filters = ({ tag, setTag, sort, setSort, activeMenu }) => {
         </div>
     ) : null
 }
-export default function BlogPost({ data = {}, pageContext = {}, location, mobile = false }: any) {
+export default function BlogPost({ data = {}, pageContext = {}, mobile = false }: any) {
     const postData = data?.postData || (pageContext as any)?.post || (pageContext as any)?.postData || {}
     const body = postData?.body || postData?.content || ''
     const excerpt = postData?.excerpt || ''
@@ -331,7 +331,22 @@ export default function BlogPost({ data = {}, pageContext = {}, location, mobile
     const { tableOfContents, askMax, localizedRoot } = pageContext
     const languageAlternates = pageContext.languageAlternates as LanguageAlternate[] | undefined
     const { fullWidthContent, theoMode } = useLayoutData()
-    const { pathname } = useLocation()
+
+    const router = useRouter()
+    const [loc, setLoc] = useState(() => {
+        const asPath = router?.asPath || ''
+        const pathname = asPath.split('?')[0].split('#')[0] || '/'
+        return { pathname }
+    })
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            setLoc({
+                pathname: window.location.pathname,
+            })
+        }
+    }, [router?.asPath])
+    const { pathname } = location
     const [postID, setPostID] = useState()
     const [posthogInstance, setPosthogInstance] = useState()
 

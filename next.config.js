@@ -26,8 +26,6 @@ const nextConfig = {
             'gatsby-plugin-image': path.resolve(__dirname, 'shims/gatsby-plugin-image.tsx'),
             'gatsby-plugin-mdx': path.resolve(__dirname, 'shims/gatsby.tsx'),
             'gatsby-plugin-breakpoints': path.resolve(__dirname, 'shims/gatsby.tsx'),
-            '@gatsbyjs/reach-router': path.resolve(__dirname, 'shims/reach-router.ts'),
-            '@reach/router': path.resolve(__dirname, 'shims/reach-router.ts'),
             'debug': path.resolve(__dirname, 'shims/debug.js'),
             'supports-color': path.resolve(__dirname, 'shims/supports-color.js'),
             '@radix-ui/react-compose-refs$': path.resolve(__dirname, 'src/lib/stable-compose-refs.ts'),

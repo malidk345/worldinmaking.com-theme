@@ -1,4 +1,4 @@
-import { useNavigate } from '@gatsbyjs/reach-router'
+import { useRouter } from 'next/router'
 import React, { useState, useRef, useEffect } from 'react'
 import { Field, Form, Formik } from 'formik'
 import { useUser, User } from 'hooks/useUser'
@@ -128,7 +128,16 @@ function QuestionFormMain({
     const { user, logout } = useUser()
     const { status } = useAppStatus()
     const { websiteMode } = useApp()
-    const navigate = useNavigate()
+    const router = useRouter()
+    const navigate = (to: string, options?: any) => {
+        if (typeof window !== 'undefined') {
+            if (options?.replace) {
+                router.replace(to)
+            } else {
+                router.push(to)
+            }
+        }
+    }
 
     return (
         <div className={`flex-1 mb-1`}>

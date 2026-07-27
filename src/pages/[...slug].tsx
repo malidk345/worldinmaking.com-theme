@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 
 import { fetchSupabasePostBySlug, SupabasePost } from '../lib/supabaseBlog'
-import { useLocation } from '@gatsbyjs/reach-router'
+import { useRouter } from 'next/router'
 
 import BlogPostTemplate from '../templates/BlogPost'
 import Inbox from '../components/Inbox'
@@ -73,8 +73,20 @@ function BlogPostContainer({ slugStr, fullPath }: { slugStr: string; fullPath: s
 
 
 export default function DynamicSlugPage() {
-    const location = useLocation()
-    const pathSegments = location.pathname.split('/').filter(Boolean)
+    const router = useRouter()
+    const [location, setLocation] = React.useState(() => {
+        const asPath = router?.asPath || ''
+        const pathname = asPath.split('?')[0].split('#')[0] || '/'
+        return { pathname }
+    })
+    React.useEffect(() => {
+        if (typeof window !== 'undefined') {
+            setLocation({
+                pathname: window.location.pathname,
+            })
+        }
+    }, [router?.asPath])
+    const pathSegments = (location?.pathname || '').split('/').filter(Boolean)
 
     const slugs = pathSegments.length > 0 ? pathSegments : ['questions']
     const rootSegment = slugs[0]
