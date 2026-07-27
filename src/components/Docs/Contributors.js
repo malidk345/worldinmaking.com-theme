@@ -1,5 +1,5 @@
 import React from 'react'
-import { GatsbyImage, getImage } from 'gatsby-plugin-image'
+import Image from 'next/image'
 
 export default function Contributors({ contributors, className }) {
     return (
@@ -7,16 +7,20 @@ export default function Contributors({ contributors, className }) {
             {contributors &&
                 contributors.map((contributor, index) => {
                     const { avatar, url, username } = contributor
-                    const image = getImage(avatar)
+                    const imageUrl = avatar?.publicURL || avatar?.url || avatar || ''
                     return (
                         <li key={index}>
                             <a href={url}>
-                                <GatsbyImage
-                                    imgClassName="rounded-full max-w-[37px]"
-                                    image={image}
-                                    alt={username}
-                                    title={username}
-                                />
+                                {imageUrl && (
+                                    <Image
+                                        className="rounded-full max-w-[37px]"
+                                        src={imageUrl}
+                                        alt={username}
+                                        title={username}
+                                        width={37}
+                                        height={37}
+                                    />
+                                )}
                             </a>
                         </li>
                     )

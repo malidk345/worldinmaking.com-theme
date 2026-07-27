@@ -1,3 +1,4 @@
+import Image from "next/image"
 import { useRouter } from 'next/navigation'
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -43,7 +44,9 @@ const useLocation = () => {
         if (router?.asPath) {
             pathname = router.asPath.split('?')[0].split('#')[0]
         }
-    } catch (e) {}
+    } catch (e) {
+        // ignore
+    }
 
     if (typeof window !== 'undefined') {
         pathname = window.location.pathname
@@ -262,12 +265,14 @@ const ContributorsSmall = ({ contributors }) => {
                                         src={image}
                                     />
                                 ) : gatsbyImage ? (
-                                    <GatsbyImage
-                                        image={gatsbyImage}
+                                    <Image
+                                        src={gatsbyImage?.publicURL || gatsbyImage?.url || gatsbyImage || ''}
                                         alt={name}
                                         className={`w-6 h-6 border border-primary rounded-full overflow-hidden bg-${
                                             color ? color : 'red'
                                         }`}
+                                        width={24}
+                                        height={24}
                                     />
                                 ) : (
                                     ''
@@ -1605,11 +1610,13 @@ function ReaderViewContent({
                                 >
                                     {body?.featuredImage && !body?.featuredVideo && (
                                         <div className="not-prose mb-6 relative">
-                                            <div className="text-center">
-                                                <GatsbyImage
-                                                    image={getImage(body.featuredImage)}
+                                            <div className="text-center relative min-h-[300px]">
+                                                <Image
+                                                    src={body.featuredImage?.publicURL || body.featuredImage?.url || body.featuredImage || ''}
                                                     alt={title}
                                                     className="rounded"
+                                                    fill
+                                                    style={{ objectFit: 'contain' }}
                                                 />
                                             </div>
                                             {body.featuredImageCaption && (

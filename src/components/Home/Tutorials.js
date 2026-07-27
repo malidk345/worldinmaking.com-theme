@@ -1,6 +1,6 @@
 import { CallToAction } from 'components/CallToAction'
 import Link from 'components/Link'
-import { GatsbyImage, getImage } from 'gatsby-plugin-image'
+import Image from 'next/image'
 import React from 'react'
 import { heading, section } from './classes'
 
@@ -18,13 +18,15 @@ export default function Tutorials({ title, subtitle, cta }) {
                         slug,
                         frontmatter: { featuredImage, title },
                     } = tutorial
-                    const image = getImage(featuredImage)
+                    const imageUrl = featuredImage?.publicURL || featuredImage?.url || featuredImage || ''
                     return (
                         <li key={index} className="">
                             <Link href={slug}
                                 className="relative rounded block bg-light dark:bg-dark border border-primary"
                             >
-                                <GatsbyImage className="bg-accent" image={image} alt={title} />
+                                {imageUrl && (
+                                    <Image className="bg-accent" src={imageUrl} alt={title} fill style={{ objectFit: 'cover' }} />
+                                )}
                                 <div className="rounded-md absolute p-4 top-0 left-0 w-full h-full">
                                     <h4 className="text-xl m-0 leading-6">{title}</h4>
                                 </div>

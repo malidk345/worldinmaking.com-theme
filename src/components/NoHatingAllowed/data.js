@@ -1,5 +1,4 @@
 import React from 'react'
-import { StaticImage } from 'gatsby-plugin-image'
 import Link from 'components/Link'
 import CloudinaryImage from 'components/CloudinaryImage'
 

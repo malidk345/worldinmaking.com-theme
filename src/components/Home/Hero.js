@@ -11,7 +11,6 @@ import { SignupCTA } from 'components/SignupCTA'
 import Modal from 'components/Modal'
 import { IconX } from '@posthog/icons'
 import { motion } from 'framer-motion'
-import { StaticImage } from 'gatsby-plugin-image'
 import Board from './Board'
 import { useUser } from 'hooks/useUser'
 export const FeatureStrip = ({ className = '' }) => {
