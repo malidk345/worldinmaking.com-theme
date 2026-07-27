@@ -80,7 +80,7 @@ const PageModal = ({ children }: { children: React.ReactNode }) => {
 }
 
 import WimAuthPortal from 'components/Auth/WimAuthPortal'
-import PostListing from 'templates/PostListing'
+import PostListing from '../../templates/PostListing'
 
 const Router = (props) => {
     const { appWindow } = useWindow()

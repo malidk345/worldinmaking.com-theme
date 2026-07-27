@@ -1,5 +1,5 @@
 import { AppProps } from 'next/app'
-import 'styles/global.css'
+import '../styles/global.css'
 import { Provider } from 'context/App'
 import { Provider as ToastProvider } from 'context/Toast'
 import Wrapper from 'components/Wrapper'
@@ -18,12 +18,22 @@ export default function App({ Component, pageProps }: AppProps) {
 
     React.useEffect(() => {
         if (typeof window !== 'undefined') {
-            setLocation({ pathname: window.location.pathname, search: window.location.search, hash: window.location.hash, state: null, key: 'default' })
+            setLocation({
+                pathname: window.location.pathname,
+                search: window.location.search,
+                hash: window.location.hash,
+                state: null,
+                key: 'default',
+            })
         }
     }, [router?.asPath])
 
     return (
-        <div data-scheme="primary" suppressHydrationWarning className="h-screen w-screen overflow-hidden bg-light dark:bg-dark text-primary">
+        <div
+            data-scheme="primary"
+            suppressHydrationWarning
+            className="h-screen w-screen overflow-hidden bg-light dark:bg-dark text-primary"
+        >
             <ToastProvider>
                 <Provider element={<Component {...pageProps} />} location={location as any}>
                     <Wrapper />

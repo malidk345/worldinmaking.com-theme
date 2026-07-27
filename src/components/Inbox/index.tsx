@@ -14,8 +14,8 @@ import { ToggleGroup } from 'components/RadixUI/ToggleGroup'
 import { useToast } from '../../context/Toast'
 import { QuestionData, StrapiRecord } from 'lib/strapi'
 import { useUser } from 'hooks/useUser'
-import hourglassAnimation from 'images/icons8-hourglass.json'
-import hourglassAnimationWhite from 'images/icons8-hourglass-white.json'
+import hourglassAnimation from '../../images/icons8-hourglass.json'
+import hourglassAnimationWhite from '../../images/icons8-hourglass-white.json'
 import { useInView } from 'react-intersection-observer'
 import useTopicsNav from '../../navs/useTopicsNav'
 import { useWindow } from '../../context/Window'
@@ -249,7 +249,9 @@ const QuestionRow = ({
                     }`}
                 >
                     <Tooltip trigger={<span suppressHydrationWarning>{dayjs(activeAt).fromNow()}</span>}>
-                        <span suppressHydrationWarning>{dayjs(activeAt).format('dddd, MMMM D, YYYY')} at {dayjs(activeAt).format('h:mm A')}</span>
+                        <span suppressHydrationWarning>
+                            {dayjs(activeAt).format('dddd, MMMM D, YYYY')} at {dayjs(activeAt).format('h:mm A')}
+                        </span>
                     </Tooltip>{' '}
                     <span className="hidden @3xl:inline-block">
                         by {latestAuthor?.firstName} {latestAuthor?.lastName}
@@ -291,131 +293,135 @@ interface QuestionToolbarProps {
     menuValue: string
 }
 
-const QuestionToolbar = React.memo(({
-    containerRef,
-    bottomContainerRef,
-    setBottomHeight,
-    question,
-    user,
-    notificationsEnabled,
-    setNotificationsEnabled,
-    setSubscription,
-    addToast,
-    sideBySide,
-    handleSideBySide,
-    expandable,
-    expandOrCollapse,
-    isMobile,
-    menuValue,
-}: QuestionToolbarProps) => {
-    const router = useRouter()
-    const navigate = (to: string, options?: any) => {
-        if (typeof window !== 'undefined') {
-            if (options?.replace) {
-                router.replace(to)
-            } else {
-                router.push(to)
+const QuestionToolbar = React.memo(
+    ({
+        containerRef,
+        bottomContainerRef,
+        setBottomHeight,
+        question,
+        user,
+        notificationsEnabled,
+        setNotificationsEnabled,
+        setSubscription,
+        addToast,
+        sideBySide,
+        handleSideBySide,
+        expandable,
+        expandOrCollapse,
+        isMobile,
+        menuValue,
+    }: QuestionToolbarProps) => {
+        const router = useRouter()
+        const navigate = (to: string, options?: any) => {
+            if (typeof window !== 'undefined') {
+                if (options?.replace) {
+                    router.replace(to)
+                } else {
+                    router.push(to)
+                }
             }
         }
-    }
-    return (
-        <div className="bg-accent border-t border-primary px-4 py-2 flex gap-2 items-center sticky bottom-0 z-10">
-            <OSButton
-                variant="secondary"
-                size="xs"
-                onClick={() => {
-                    if (!containerRef.current) return
-                    const containerHeight = containerRef.current.getBoundingClientRect().height
-                    setBottomHeight(containerHeight)
-                    document.getElementById('question-form-button')?.click()
-                    setTimeout(() => {
-                        const viewport = bottomContainerRef.current?.querySelector('[data-radix-scroll-area-viewport]')
-                        viewport?.scrollTo({
-                            top: viewport.scrollHeight,
-                            behavior: 'smooth',
-                        })
-                    }, 300)
-                }}
-            >
-                Reply
-            </OSButton>
-            <div className="ml-auto flex space-x-2">
-                {question?.id && user && (
-                    <Switch
-                        checked={notificationsEnabled}
-                        onChange={(checked) => {
-                            setNotificationsEnabled(checked)
-                            setSubscription({
-                                contentType: 'question',
-                                id: question.id,
-                                subscribe: checked,
+        return (
+            <div className="bg-accent border-t border-primary px-4 py-2 flex gap-2 items-center sticky bottom-0 z-10">
+                <OSButton
+                    variant="secondary"
+                    size="xs"
+                    onClick={() => {
+                        if (!containerRef.current) return
+                        const containerHeight = containerRef.current.getBoundingClientRect().height
+                        setBottomHeight(containerHeight)
+                        document.getElementById('question-form-button')?.click()
+                        setTimeout(() => {
+                            const viewport = bottomContainerRef.current?.querySelector(
+                                '[data-radix-scroll-area-viewport]'
+                            )
+                            viewport?.scrollTo({
+                                top: viewport.scrollHeight,
+                                behavior: 'smooth',
                             })
-                            addToast({
-                                description: checked
-                                    ? "You'll be notified of replies by email."
-                                    : "You won't receive notifications for this thread.",
-                                title: checked ? 'Thread notifications enabled' : 'Thread notifications disabled',
-                                onUndo: () => {
-                                    setNotificationsEnabled(!checked)
-                                    setSubscription({
-                                        contentType: 'question',
-                                        id: question.id,
-                                        subscribe: !checked,
-                                    })
-                                },
-                            })
-                        }}
-                        label="Thread notifications"
-                    />
-                )}
+                        }, 300)
+                    }}
+                >
+                    Reply
+                </OSButton>
+                <div className="ml-auto flex space-x-2">
+                    {question?.id && user && (
+                        <Switch
+                            checked={notificationsEnabled}
+                            onChange={(checked) => {
+                                setNotificationsEnabled(checked)
+                                setSubscription({
+                                    contentType: 'question',
+                                    id: question.id,
+                                    subscribe: checked,
+                                })
+                                addToast({
+                                    description: checked
+                                        ? "You'll be notified of replies by email."
+                                        : "You won't receive notifications for this thread.",
+                                    title: checked ? 'Thread notifications enabled' : 'Thread notifications disabled',
+                                    onUndo: () => {
+                                        setNotificationsEnabled(!checked)
+                                        setSubscription({
+                                            contentType: 'question',
+                                            id: question.id,
+                                            subscribe: !checked,
+                                        })
+                                    },
+                                })
+                            }}
+                            label="Thread notifications"
+                        />
+                    )}
 
-                <div className="ml-2 pl-2 border-l border-primary flex items-center gap-1">
-                    <ToggleGroup
-                        title="Layout"
-                        hideTitle={true}
-                        options={layoutOptions}
-                        onValueChange={(value) => handleSideBySide(value === 'side-by-side')}
-                        value={sideBySide ? 'side-by-side' : 'stacked'}
-                        size="sm"
-                    />
-                    <Tooltip
-                        trigger={
-                            <span>
-                                <OSButton
-                                    size="sm"
-                                    className="relative"
-                                    style={{ width: 26, height: 26 }}
-                                    icon={
-                                        <IconChevronDown
-                                            className={`w-6 absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 ${
-                                                sideBySide
-                                                    ? expandable
-                                                        ? 'rotate-90'
-                                                        : '-rotate-90'
-                                                    : expandable
-                                                    ? 'rotate-180'
-                                                    : ''
-                                            }`}
-                                        />
-                                    }
-                                    onClick={() => {
-                                        if (isMobile && sideBySide) {
-                                            navigate(menuValue)
-                                        } else {
-                                            expandOrCollapse(expandable)
+                    <div className="ml-2 pl-2 border-l border-primary flex items-center gap-1">
+                        <ToggleGroup
+                            title="Layout"
+                            hideTitle={true}
+                            options={layoutOptions}
+                            onValueChange={(value) => handleSideBySide(value === 'side-by-side')}
+                            value={sideBySide ? 'side-by-side' : 'stacked'}
+                            size="sm"
+                        />
+                        <Tooltip
+                            trigger={
+                                <span>
+                                    <OSButton
+                                        size="sm"
+                                        className="relative"
+                                        style={{ width: 26, height: 26 }}
+                                        icon={
+                                            <IconChevronDown
+                                                className={`w-6 absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 ${
+                                                    sideBySide
+                                                        ? expandable
+                                                            ? 'rotate-90'
+                                                            : '-rotate-90'
+                                                        : expandable
+                                                        ? 'rotate-180'
+                                                        : ''
+                                                }`}
+                                            />
                                         }
-                                    }}
-                                />
-                            </span>
-                        }
-                    >
-                        {expandable ? 'Expand' : 'Collapse'}
-                    </Tooltip>
+                                        onClick={() => {
+                                            if (isMobile && sideBySide) {
+                                                navigate(menuValue)
+                                            } else {
+                                                expandOrCollapse(expandable)
+                                            }
+                                        }}
+                                    />
+                                </span>
+                            }
+                        >
+                            {expandable ? 'Expand' : 'Collapse'}
+                        </Tooltip>
+                    </div>
                 </div>
             </div>
-        </div>
-    )
-})
+        )
+    }
+)
 QuestionToolbar.displayName = 'QuestionToolbar'
 
 const AskAQuestion = ({ onSubmit }: { onSubmit: () => void }) => {
@@ -473,10 +479,15 @@ export default function Inbox(props) {
     const permalink =
         props.permalink ||
         params?.permalink ||
-        (props.path && props.path !== '/questions' && props.path !== '/questions/subscriptions' && props.path.startsWith('/questions/')
+        (props.path &&
+        props.path !== '/questions' &&
+        props.path !== '/questions/subscriptions' &&
+        props.path.startsWith('/questions/')
             ? props.path.replace(/^\/questions\/?/, '')
             : undefined) ||
-        (typeof window !== 'undefined' && window.location.pathname.startsWith('/questions/') && window.location.pathname !== '/questions'
+        (typeof window !== 'undefined' &&
+        window.location.pathname.startsWith('/questions/') &&
+        window.location.pathname !== '/questions'
             ? window.location.pathname.replace(/^\/questions\/?/, '')
             : undefined)
     const defaultFilters = {
@@ -539,18 +550,21 @@ export default function Inbox(props) {
         })
     }, [])
 
-    const expandOrCollapse = useCallback((expandable: boolean) => {
-        if (!containerRef.current) return
-        if (sideBySide) {
-            const containerWidth = containerRef.current.getBoundingClientRect().width
-            const minWidth = isMobile ? 0 : 400
-            setSideWidth(expandable ? containerWidth : minWidth)
-        } else {
-            const containerHeight = containerRef.current.getBoundingClientRect().height
-            const minHeight = 45
-            setBottomHeight(expandable ? containerHeight : minHeight)
-        }
-    }, [sideBySide, isMobile])
+    const expandOrCollapse = useCallback(
+        (expandable: boolean) => {
+            if (!containerRef.current) return
+            if (sideBySide) {
+                const containerWidth = containerRef.current.getBoundingClientRect().width
+                const minWidth = isMobile ? 0 : 400
+                setSideWidth(expandable ? containerWidth : minWidth)
+            } else {
+                const containerHeight = containerRef.current.getBoundingClientRect().height
+                const minHeight = 45
+                setBottomHeight(expandable ? containerHeight : minHeight)
+            }
+        },
+        [sideBySide, isMobile]
+    )
 
     const handleVerticalDrag = (_event, info) => {
         if (!containerRef.current) return
@@ -610,7 +624,9 @@ export default function Inbox(props) {
         if (!containerRef.current) return
 
         if (sideBySide) {
-            setSideWidth((prev) => (prev !== Math.max(400, SIDE_WIDTH_DEFAULT) ? Math.max(400, SIDE_WIDTH_DEFAULT) : prev))
+            setSideWidth((prev) =>
+                prev !== Math.max(400, SIDE_WIDTH_DEFAULT) ? Math.max(400, SIDE_WIDTH_DEFAULT) : prev
+            )
         } else {
             setBottomHeight((prev) => (prev !== bottomHeightDefault ? bottomHeightDefault : prev))
         }
@@ -626,7 +642,10 @@ export default function Inbox(props) {
         <>
             <SEO title={(permalink && question?.attributes.subject) || data?.topic?.label || 'Forums'} />
             {ready ? (
-                <div suppressHydrationWarning className="@container w-full h-full flex flex-col bg-[#fdfdf8] dark:bg-[#1b1c1e] text-primary">
+                <div
+                    suppressHydrationWarning
+                    className="@container w-full h-full flex flex-col bg-[#fdfdf8] dark:bg-[#1b1c1e] text-primary"
+                >
                     <div data-scheme="secondary" className={`flex @2xl:flex-row flex-col flex-grow min-h-0`}>
                         <aside
                             data-scheme="secondary"

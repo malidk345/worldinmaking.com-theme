@@ -169,7 +169,7 @@ importers:
         version: 0.23.13
       '@typescript-eslint/eslint-plugin':
         specifier: ^4.20.0
-        version: 4.33.0(@typescript-eslint/parser@4.33.0(eslint@7.32.0(supports-color@10.2.2))(supports-color@10.2.2)(typescript@4.9.5))(eslint@7.32.0(supports-color@10.2.2))(supports-color@10.2.2)(typescript@4.9.5)
+        version: 4.33.0(@typescript-eslint/parser@4.33.0(eslint@7.32.0(supports-color@10.2.2))(supports-color@10.2.2)(typescript@5.8.2))(eslint@7.32.0(supports-color@10.2.2))(supports-color@10.2.2)(typescript@5.8.2)
       '@wistia/wistia-player-react':
         specifier: ^0.1.17
         version: 0.1.18(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(webpack@5.109.0(postcss@8.5.23))
@@ -253,7 +253,7 @@ importers:
         version: 3.4.1(kea@3.1.6(react@18.3.1))
       kea-typegen:
         specifier: ^3.1.6
-        version: 3.8.3(supports-color@10.2.2)(typescript@4.9.5)
+        version: 3.8.3(supports-color@10.2.2)(typescript@5.8.2)
       keen-slider:
         specifier: ^6.8.6
         version: 6.8.6
@@ -455,9 +455,6 @@ importers:
       tsparticles-preset-stars:
         specifier: ^2.11.0
         version: 2.12.0
-      typescript:
-        specifier: ^4.0.2
-        version: 4.9.5
       unist-util-visit:
         specifier: ^1.4.0
         version: 1.4.1
@@ -512,7 +509,7 @@ importers:
         version: 1.8.10
       '@typescript-eslint/parser':
         specifier: ^4.5.0
-        version: 4.33.0(eslint@7.32.0(supports-color@10.2.2))(supports-color@10.2.2)(typescript@4.9.5)
+        version: 4.33.0(eslint@7.32.0(supports-color@10.2.2))(supports-color@10.2.2)(typescript@5.8.2)
       autoprefixer:
         specifier: ^10.4.7
         version: 10.5.4(postcss@8.5.23)
@@ -555,6 +552,9 @@ importers:
       tailwindcss:
         specifier: ^3.4.14
         version: 3.4.19(yaml@2.9.0)
+      typescript:
+        specifier: ^5.8.2
+        version: 5.8.2
       webpack:
         specifier: '5'
         version: 5.109.0(postcss@8.5.23)
@@ -8718,9 +8718,9 @@ packages:
   typedarray-to-buffer@3.1.5:
     resolution: {integrity: sha512-zdu8XMNEDepKKR+XYOXAVPtWui0ly0NtohUscw+UmaHiAWT8hrV1rr//H6V+0DvJ3OQ19S979M0laLfX8rm82Q==}
 
-  typescript@4.9.5:
-    resolution: {integrity: sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==}
-    engines: {node: '>=4.2.0'}
+  typescript@5.8.2:
+    resolution: {integrity: sha512-aJn6wq13/afZp/jT9QZmwEjDqqvSGp1VT5GVg+f/t6/oVyrgXM6BY1h9BRh/O5p3PlUPAe+WuiEZOmb/49RqoQ==}
+    engines: {node: '>=14.17'}
     hasBin: true
 
   unbox-primitive@1.1.0:
@@ -13318,10 +13318,10 @@ snapshots:
     dependencies:
       '@types/yargs-parser': 21.0.3
 
-  '@typescript-eslint/eslint-plugin@4.33.0(@typescript-eslint/parser@4.33.0(eslint@7.32.0(supports-color@10.2.2))(supports-color@10.2.2)(typescript@4.9.5))(eslint@7.32.0(supports-color@10.2.2))(supports-color@10.2.2)(typescript@4.9.5)':
+  '@typescript-eslint/eslint-plugin@4.33.0(@typescript-eslint/parser@4.33.0(eslint@7.32.0(supports-color@10.2.2))(supports-color@10.2.2)(typescript@5.8.2))(eslint@7.32.0(supports-color@10.2.2))(supports-color@10.2.2)(typescript@5.8.2)':
     dependencies:
-      '@typescript-eslint/experimental-utils': 4.33.0(eslint@7.32.0(supports-color@10.2.2))(supports-color@10.2.2)(typescript@4.9.5)
-      '@typescript-eslint/parser': 4.33.0(eslint@7.32.0(supports-color@10.2.2))(supports-color@10.2.2)(typescript@4.9.5)
+      '@typescript-eslint/experimental-utils': 4.33.0(eslint@7.32.0(supports-color@10.2.2))(supports-color@10.2.2)(typescript@5.8.2)
+      '@typescript-eslint/parser': 4.33.0(eslint@7.32.0(supports-color@10.2.2))(supports-color@10.2.2)(typescript@5.8.2)
       '@typescript-eslint/scope-manager': 4.33.0
       debug: 4.4.3(supports-color@10.2.2)
       eslint: 7.32.0(supports-color@10.2.2)
@@ -13329,18 +13329,18 @@ snapshots:
       ignore: 5.3.2
       regexpp: 3.2.0
       semver: 7.8.5
-      tsutils: 3.21.0(typescript@4.9.5)
+      tsutils: 3.21.0(typescript@5.8.2)
     optionalDependencies:
-      typescript: 4.9.5
+      typescript: 5.8.2
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/experimental-utils@4.33.0(eslint@7.32.0(supports-color@10.2.2))(supports-color@10.2.2)(typescript@4.9.5)':
+  '@typescript-eslint/experimental-utils@4.33.0(eslint@7.32.0(supports-color@10.2.2))(supports-color@10.2.2)(typescript@5.8.2)':
     dependencies:
       '@types/json-schema': 7.0.15
       '@typescript-eslint/scope-manager': 4.33.0
       '@typescript-eslint/types': 4.33.0
-      '@typescript-eslint/typescript-estree': 4.33.0(supports-color@10.2.2)(typescript@4.9.5)
+      '@typescript-eslint/typescript-estree': 4.33.0(supports-color@10.2.2)(typescript@5.8.2)
       eslint: 7.32.0(supports-color@10.2.2)
       eslint-scope: 5.1.1
       eslint-utils: 3.0.0(eslint@7.32.0(supports-color@10.2.2))
@@ -13348,15 +13348,15 @@ snapshots:
       - supports-color
       - typescript
 
-  '@typescript-eslint/parser@4.33.0(eslint@7.32.0(supports-color@10.2.2))(supports-color@10.2.2)(typescript@4.9.5)':
+  '@typescript-eslint/parser@4.33.0(eslint@7.32.0(supports-color@10.2.2))(supports-color@10.2.2)(typescript@5.8.2)':
     dependencies:
       '@typescript-eslint/scope-manager': 4.33.0
       '@typescript-eslint/types': 4.33.0
-      '@typescript-eslint/typescript-estree': 4.33.0(supports-color@10.2.2)(typescript@4.9.5)
+      '@typescript-eslint/typescript-estree': 4.33.0(supports-color@10.2.2)(typescript@5.8.2)
       debug: 4.4.3(supports-color@10.2.2)
       eslint: 7.32.0(supports-color@10.2.2)
     optionalDependencies:
-      typescript: 4.9.5
+      typescript: 5.8.2
     transitivePeerDependencies:
       - supports-color
 
@@ -13367,7 +13367,7 @@ snapshots:
 
   '@typescript-eslint/types@4.33.0': {}
 
-  '@typescript-eslint/typescript-estree@4.33.0(supports-color@10.2.2)(typescript@4.9.5)':
+  '@typescript-eslint/typescript-estree@4.33.0(supports-color@10.2.2)(typescript@5.8.2)':
     dependencies:
       '@typescript-eslint/types': 4.33.0
       '@typescript-eslint/visitor-keys': 4.33.0
@@ -13375,9 +13375,9 @@ snapshots:
       globby: 11.1.0
       is-glob: 4.0.3
       semver: 7.8.5
-      tsutils: 3.21.0(typescript@4.9.5)
+      tsutils: 3.21.0(typescript@5.8.2)
     optionalDependencies:
-      typescript: 4.9.5
+      typescript: 5.8.2
     transitivePeerDependencies:
       - supports-color
 
@@ -14213,10 +14213,10 @@ snapshots:
 
   commondir@1.0.1: {}
 
-  compatfactory@3.0.0(typescript@4.9.5):
+  compatfactory@3.0.0(typescript@5.8.2):
     dependencies:
       helpertypes: 0.0.19
-      typescript: 4.9.5
+      typescript: 5.8.2
 
   compute-scroll-into-view@2.0.4: {}
 
@@ -16368,15 +16368,15 @@ snapshots:
       kea: 3.1.6(react@18.3.1)
       url-pattern: 1.0.3
 
-  kea-typegen@3.8.3(supports-color@10.2.2)(typescript@4.9.5):
+  kea-typegen@3.8.3(supports-color@10.2.2)(typescript@5.8.2):
     dependencies:
       '@babel/core': 7.29.7(supports-color@10.2.2)
       '@babel/preset-env': 7.29.7(@babel/core@7.29.7(supports-color@10.2.2))(supports-color@10.2.2)
       '@babel/preset-typescript': 7.29.7(@babel/core@7.29.7(supports-color@10.2.2))(supports-color@10.2.2)
       prettier: 3.9.6
       recast: 0.23.12
-      ts-clone-node: 3.0.0(typescript@4.9.5)
-      typescript: 4.9.5
+      ts-clone-node: 3.0.0(typescript@5.8.2)
+      typescript: 5.8.2
       yargs: 16.2.2
     transitivePeerDependencies:
       - supports-color
@@ -19191,10 +19191,10 @@ snapshots:
 
   trough@2.2.0: {}
 
-  ts-clone-node@3.0.0(typescript@4.9.5):
+  ts-clone-node@3.0.0(typescript@5.8.2):
     dependencies:
-      compatfactory: 3.0.0(typescript@4.9.5)
-      typescript: 4.9.5
+      compatfactory: 3.0.0(typescript@5.8.2)
+      typescript: 5.8.2
 
   ts-dedent@2.3.0: {}
 
@@ -19245,10 +19245,10 @@ snapshots:
     dependencies:
       tsparticles-engine: 2.12.0
 
-  tsutils@3.21.0(typescript@4.9.5):
+  tsutils@3.21.0(typescript@5.8.2):
     dependencies:
       tslib: 1.14.1
-      typescript: 4.9.5
+      typescript: 5.8.2
 
   tween-functions@1.2.0: {}
 
@@ -19305,7 +19305,7 @@ snapshots:
     dependencies:
       is-typedarray: 1.0.0
 
-  typescript@4.9.5: {}
+  typescript@5.8.2: {}
 
   unbox-primitive@1.1.0:
     dependencies:

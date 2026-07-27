@@ -9,7 +9,7 @@ import CloudinaryImage from 'components/CloudinaryImage'
 import { MDXRenderer } from 'gatsby-plugin-mdx'
 import React, { useEffect, useMemo, useState } from 'react'
 import { MdxCodeBlock } from 'components/CodeBlock'
-import { shortcodes } from 'mdxGlobalComponents'
+import { shortcodes } from '../../src/mdxGlobalComponents'
 import { Heading } from 'components/Heading'
 import TutorialsSlider from 'components/TutorialsSlider'
 import TutorialsList from 'components/TutorialsList'
@@ -110,7 +110,8 @@ const ContributorsSmall = ({ contributors }) => {
                                                 src={image}
                                             />
                                         ) : gatsbyImage ? (
-                                            <CloudinaryImage image={gatsbyImage}
+                                            <CloudinaryImage
+                                                image={gatsbyImage}
                                                 alt={name}
                                                 className="w-6 h-6 border border-primary rounded-full"
                                             />
@@ -476,4 +477,3 @@ export default function BlogPost({ data = {}, pageContext = {}, mobile = false }
         </>
     )
 }
-
