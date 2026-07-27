@@ -1,3 +1,4 @@
+export const runtime = 'experimental-edge'
 import ClientPost from 'components/Edition/ClientPost'
 import { useLayoutData } from 'components/Layout/hooks'
 import qs from 'qs'
