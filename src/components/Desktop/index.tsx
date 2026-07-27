@@ -152,7 +152,12 @@ function Desktop() {
                     <ReactConfetti
                         recycle={false}
                         numberOfPieces={800}
-                        confettiSource={{ x: 0, y: 0, w: window.innerWidth, h: window.innerHeight }}
+                        confettiSource={{
+                            x: 0,
+                            y: 0,
+                            w: typeof window !== 'undefined' ? window.innerWidth : 1280,
+                            h: typeof window !== 'undefined' ? window.innerHeight : 800,
+                        }}
                         initialVelocityY={-8}
                         initialVelocityX={5}
                         gravity={0.15}

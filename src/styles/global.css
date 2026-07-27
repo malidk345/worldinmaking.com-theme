@@ -165,6 +165,36 @@
 }
 
 @layer utilities {
+    :root {
+        --bg: 253 253 248;
+        --accent: 229 231 224;
+        --border: 191 193 183;
+        --input-bg: 238 239 233;
+        --input-bg-hover: 238 239 233;
+        --input-border: 210 211 204;
+        --input-border-hover: 210 211 204;
+        --text-primary: 17 17 17;
+        --text-secondary: 101 103 94;
+        --text-muted: 158 160 150;
+        --tw-shadow-color: 77 79 70;
+        --primary: var(--text-primary);
+    }
+
+    .dark {
+        --bg: 30 31 35;
+        --accent: 37 38 43;
+        --border: 50 52 58;
+        --input-bg: 37 38 43;
+        --input-bg-hover: 45 46 55;
+        --input-border: 60 62 70;
+        --input-border-hover: 70 72 80;
+        --text-primary: 255 255 255;
+        --text-secondary: 180 182 190;
+        --text-muted: 130 132 140;
+        --tw-shadow-color: 0 0 0;
+        --primary: var(--text-primary);
+    }
+
     .light [data-scheme='primary'] {
         --bg: 253 253 248;
         --accent: 229 231 224;
@@ -3072,6 +3102,22 @@ div[data-radix-popper-content-wrapper] {
     background: rgb(253 253 248);
     color: inherit;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+/* Fix menu and popover transparency matching wimpos 1-to-1 */
+[data-radix-popper-content-wrapper],
+.radix-menu-content,
+[role="menu"],
+[role="popover"] {
+    background-color: rgb(var(--bg));
+    opacity: 1;
+}
+.dark [data-radix-popper-content-wrapper],
+.dark .radix-menu-content,
+.dark [role="menu"],
+.dark [role="popover"] {
+    background-color: rgb(var(--bg));
+    opacity: 1;
 }
 /* Dark mode match for bg-primary in dark scheme */
 .dark .ph-mapbox-popup .mapboxgl-popup-content {

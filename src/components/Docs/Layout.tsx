@@ -1,6 +1,12 @@
 import React from 'react'
 import { MDXProvider } from '@mdx-js/react'
-import { MDXRenderer } from 'gatsby-plugin-mdx'
+const MDXRenderer = ({ children }: any) => {
+    if (!children) return null
+    if (typeof children === 'string') {
+        return <div dangerouslySetInnerHTML={{ __html: children }} />
+    }
+    return <>{children}</>
+}
 
 import { animateScroll as scroll } from 'react-scroll'
 import { usePathname } from 'next/navigation'

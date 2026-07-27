@@ -7,11 +7,6 @@ export const Link = React.forwardRef<HTMLAnchorElement, any>((props, ref) => {
 
     const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
         if (onClick) onClick(e)
-        if (e.defaultPrevented) return
-        if (e.metaKey || e.ctrlKey) return
-        if (state && typeof window !== 'undefined') {
-            window.history.pushState(state, '', targetUrl)
-        }
     }
 
     return (
@@ -24,10 +19,6 @@ Link.displayName = 'GatsbyNextLink'
 
 export const navigate = (to: string, options?: any) => {
     if (typeof window !== 'undefined') {
-        const state = options?.state
-        if (state) {
-            window.history.pushState(state, '', to)
-        }
         if (options?.replace) {
             window.location.replace(to)
         } else {
@@ -92,5 +83,25 @@ export const isMarkdownContentPath = () => false
 export const Subfeature = () => null
 export const createSlideConfig = (c: any) => c
 export const flattenMenu = (m: any) => m || []
-export const useLocation = () => ({ pathname: typeof window !== 'undefined' ? window.location.pathname : '/', search: '', hash: '' })
+
+export const useLocation = () => {
+    let pathname = '/'
+    let search = ''
+    let hash = ''
+    try {
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const router = useNextRouter()
+        if (router?.asPath) {
+            pathname = router.asPath.split('?')[0].split('#')[0]
+        }
+    } catch (e) {}
+
+    if (typeof window !== 'undefined') {
+        pathname = window.location.pathname
+        search = window.location.search
+        hash = window.location.hash
+    }
+    return { pathname, search, hash }
+}
+
 export const SlidesTemplate = (props: any) => <div {...props}>{props.children}</div>

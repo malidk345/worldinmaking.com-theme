@@ -3,7 +3,13 @@ import { BorderWrapper } from 'components/BorderWrapper'
 import { Caption } from 'components/Caption'
 import { FloatedImage } from 'components/FloatedImage'
 import { ImageBlock } from 'components/ImageBlock'
-import { MDXRenderer } from 'gatsby-plugin-mdx'
+const MDXRenderer = ({ children }: any) => {
+    if (!children) return null
+    if (typeof children === 'string') {
+        return <Markdown>{children}</Markdown>
+    }
+    return <>{children}</>
+}
 import React, { useEffect, useState } from 'react'
 import { shortcodes } from '../../mdxGlobalComponents'
 import Link from 'components/Link'

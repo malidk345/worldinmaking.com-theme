@@ -28,7 +28,13 @@ import { IconWarning, IconCheck, IconX } from '@posthog/icons'
 import { CallToAction } from 'components/CallToAction'
 import Tooltip from 'components/Tooltip'
 import NewsletterForm from 'components/NewsletterForm'
-import { MDXRenderer } from 'gatsby-plugin-mdx'
+const MDXRenderer = ({ children }: any) => {
+    if (!children) return null
+    if (typeof children === 'string') {
+        return <div dangerouslySetInnerHTML={{ __html: children }} />
+    }
+    return <>{children}</>
+}
 import { MDXProvider } from '@mdx-js/react'
 import { useState } from 'react'
 import SidebarSection from 'components/PostLayout/SidebarSection'

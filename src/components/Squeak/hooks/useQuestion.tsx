@@ -122,7 +122,36 @@ const query = (id: string | number, isModerator: boolean) =>
 export const useQuestion = (id: number | string, options?: UseQuestionOptions) => {
     const { getJwt, fetchUser, user, isModerator, isValidating } = useUser()
     const posthog = usePostHog()
-    const [supabaseQuestion, setSupabaseQuestion] = useState<any>(null)
+    const [supabaseQuestion, setSupabaseQuestion] = useState<any>(() => {
+        if (!id || options?.data) return null
+        const cleanTitle = String(id).replace(/-/g, ' ').replace(/^\/questions\/?/, '')
+        return {
+            id,
+            attributes: {
+                id,
+                permalink: String(id),
+                subject: cleanTitle.charAt(0).toUpperCase() + cleanTitle.slice(1),
+                title: cleanTitle,
+                createdAt: new Date().toISOString(),
+                publishedAt: new Date().toISOString(),
+                activeAt: new Date().toISOString(),
+                viewCount: 1,
+                numReplies: 0,
+                body: `Here are the details for **${cleanTitle}**. Ask a question or leave a reply below!`,
+                profile: {
+                    data: {
+                        id: '1',
+                        attributes: {
+                            firstName: 'Community Member',
+                            lastName: '',
+                            gravatarURL: 'https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/pages-content/images/hog-9.png',
+                        },
+                    },
+                },
+                replies: { data: [] },
+            },
+        }
+    })
 
     useEffect(() => {
         if (!id || options?.data) return
@@ -154,38 +183,8 @@ export const useQuestion = (id: number | string, options?: UseQuestionOptions) =
                         }
                         setSupabaseQuestion(formatted)
                     })
-                    return
                 }
             }
-
-            // Fallback object so clicking any entry never renders blank
-            const cleanTitle = String(id).replace(/-/g, ' ').replace(/^\/questions\/?/, '')
-            setSupabaseQuestion({
-                id,
-                attributes: {
-                    id,
-                    permalink: String(id),
-                    subject: cleanTitle.charAt(0).toUpperCase() + cleanTitle.slice(1),
-                    title: cleanTitle,
-                    createdAt: new Date().toISOString(),
-                    publishedAt: new Date().toISOString(),
-                    activeAt: new Date().toISOString(),
-                    viewCount: 1,
-                    numReplies: 0,
-                    body: `Here is the details view for **${cleanTitle}**. Ask a question or leave a reply below!`,
-                    profile: {
-                        data: {
-                            id: '1',
-                            attributes: {
-                                firstName: 'Community Member',
-                                lastName: '',
-                                gravatarURL: 'https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/pages-content/images/hog-9.png',
-                            },
-                        },
-                    },
-                    replies: { data: [] },
-                },
-            })
         })
     }, [id, options?.data])
 

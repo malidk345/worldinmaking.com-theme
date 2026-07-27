@@ -7,8 +7,7 @@ import { NotebooksListSkeleton } from 'components/Notebooks/NotebooksList'
 import Inbox from 'components/Inbox'
 import Handbook from '../../templates/Handbook'
 import BlogPost from '../../templates/BlogPost'
-import Legal from 'components/Legal'
-import { AppWindow as AppWindowType } from '../../context/Window'
+import PostListing from '../../templates/PostListing'
 
 export interface WindowRouterProps {
     item: AppWindowType & { children?: React.ReactNode }
@@ -43,6 +42,9 @@ function WindowRouterInner({ item }: WindowRouterProps) {
     }
 
     // 4. Route-based resolution
+    if (path === '/display-options') {
+        return <DisplayOptions />
+    }
     if (/^\/ideas|^\/blueprints/.test(path)) {
         return <IdeasHub />
     }
@@ -52,14 +54,14 @@ function WindowRouterInner({ item }: WindowRouterProps) {
     if (/^\/notebooks/.test(path)) {
         return <NotebooksListSkeleton />
     }
-    if (/^\/questions/.test(path)) {
-        const permalink = path.replace(/^\/questions\/?/, '')
+    if (/^\/questions|^\/forum|^\/community/.test(path)) {
+        const permalink = path.replace(/^\/(questions|forum|community)\/?/, '')
         return <Inbox permalink={permalink || undefined} {...props} />
     }
-    if (/^\/handbook|^\/docs\/(?!api)|^\/manual/.test(path) && props.data?.post) {
-        return <Handbook {...props} />
+    if (path === '/blog' || path === '/posts') {
+        return <PostListing {...props} />
     }
-    if (/^\/blog|^\/posts/.test(path) || props.pageContext?.post || props.data?.postData) {
+    if (/^\/(blog|posts)\/.+/.test(path) || props.pageContext?.post || props.data?.postData) {
         return <BlogPost {...props} />
     }
     if (['/terms', '/privacy', '/dpa', '/baa', '/subprocessors'].includes(path)) {
@@ -79,7 +81,11 @@ function WindowRouterInner({ item }: WindowRouterProps) {
 }
 
 const WindowRouterMemo = React.memo(WindowRouterInner, (prev, next) => {
-    return prev.item.path === next.item.path && prev.item.key === next.item.key
+    return (
+        prev.item.path === next.item.path &&
+        prev.item.key === next.item.key &&
+        JSON.stringify(prev.item.props) === JSON.stringify(next.item.props)
+    )
 })
 WindowRouterMemo.displayName = 'WindowRouterInner'
 

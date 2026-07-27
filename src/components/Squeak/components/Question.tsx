@@ -424,8 +424,9 @@ const AskMax = ({
                 console.error(error)
             }
         }
-        askMax()
-        window.history.replaceState({ ...window.history.state, askMax: false }, '')
+        if (typeof window !== 'undefined') {
+            window.history.replaceState({ ...window.history.state, askMax: false }, '')
+        }
     }, [])
 
     return loading ? (

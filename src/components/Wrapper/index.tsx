@@ -16,7 +16,7 @@ const WindowList = React.memo(function WindowList() {
     const { windows } = useAppWindows()
 
     return (
-        <div className="flex size-full justify-center items-center">
+        <div suppressHydrationWarning className="flex size-full justify-center items-center">
             {windows.map((item) => (
                 <AppWindow item={item} key={item.key} />
             ))}

@@ -5,14 +5,14 @@ import { fetchSupabasePostBySlug, SupabasePost } from '../lib/supabaseBlog'
 import { Provider } from '../context/App'
 import Wrapper from '../components/Wrapper'
 
-const BlogPostTemplate = dynamic(() => import('../templates/BlogPost'), { ssr: false })
-const Inbox = dynamic(() => import('../components/Inbox'), { ssr: false })
-const IdeasHub = dynamic(() => import('../components/Ideas'), { ssr: false })
-const ProfileWrapper = dynamic(() => import('../components/Profile'), { ssr: false })
-const NotebooksListSkeleton = dynamic(() => import('../components/Notebooks/NotebooksList').then((m) => m.NotebooksListSkeleton), { ssr: false })
-const HandbookTemplate = dynamic(() => import('../templates/Handbook'), { ssr: false })
-const Legal = dynamic(() => import('../components/Legal'), { ssr: false })
-const DisplayOptions = dynamic(() => import('../components/DisplayOptions'), { ssr: false })
+import BlogPostTemplate from '../templates/BlogPost'
+import Inbox from '../components/Inbox'
+import IdeasHub from '../components/Ideas'
+import ProfileWrapper from '../components/Profile'
+import { NotebooksListSkeleton } from '../components/Notebooks/NotebooksList'
+import HandbookTemplate from '../templates/Handbook'
+import Legal from '../components/Legal'
+import DisplayOptions from '../components/DisplayOptions'
 
 function BlogPostContainer({ slugStr, fullPath }: { slugStr: string; fullPath: string }) {
     const [spPost, setSpPost] = useState<SupabasePost | null>(null)
@@ -76,9 +76,11 @@ function BlogPostContainer({ slugStr, fullPath }: { slugStr: string; fullPath: s
 import { useRouter } from 'next/router'
 export default function DynamicSlugPage() {
     const router = useRouter()
-    const slugArray = Array.isArray(router.query?.slug) ? router.query.slug : [String(router.query?.slug || '')]
+    const pathSegments = typeof window !== 'undefined' 
+        ? window.location.pathname.split('/').filter(Boolean) 
+        : (Array.isArray(router.query?.slug) ? router.query.slug : [String(router.query?.slug || '')])
 
-    const slugs = slugArray || ['repositioning-posthog']
+    const slugs = pathSegments.length > 0 ? pathSegments : ['questions']
     const rootSegment = slugs[0]
     const slugStr = slugs[slugs.length - 1]
     const fullPath = '/' + slugs.join('/')
@@ -136,12 +138,6 @@ export default function DynamicSlugPage() {
         element = <BlogPostContainer key={fullPath} slugStr={slugStr} fullPath={fullPath} />
     }
 
-    return (
-        <div className="h-screen w-screen overflow-hidden bg-light dark:bg-dark text-primary">
-            <Provider element={element} location={location}>
-                <Wrapper />
-            </Provider>
-        </div>
-    )
+    return element
 }
 

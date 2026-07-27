@@ -1,11 +1,7 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { Logo } from '@posthog/brand/logo'
+import React, { useCallback, useEffect, useState } from 'react'
 import {
     IconSearch,
-    IconChatHelp,
     IconUser,
-    IconApp,
-    IconMessage,
     IconNotification,
     IconLock,
     IconBookmark,
@@ -18,7 +14,7 @@ import {
     IconPinFilled,
     IconBadge,
 } from '@posthog/icons'
-import { useAppActions, useAppSettings } from '../../context/App'
+import { useAppActions } from '../../context/App'
 
 import MenuBar, { MenuType } from 'components/RadixUI/MenuBar'
 import ActiveWindowsPanel from 'components/ActiveWindowsPanel'
@@ -36,14 +32,10 @@ function TaskBarMenu() {
     const {
         openSearch,
         openSignIn,
-        openNewChat,
         setIsNotificationsPanelOpen,
-        setIsActiveWindowsPanelOpen,
         addWindow,
         taskbarRef,
-        updateTaskbarHeight,
     } = useAppActions()
-    const { posthogInstance } = useAppSettings()
     const [isAnimating, setIsAnimating] = useState(false)
 
     const { user, notifications, logout, isModerator } = useUser()
@@ -52,7 +44,6 @@ function TaskBarMenu() {
     const isLoggedIn = !!user
 
     useEffect(() => {
-        // Reset animation state after it completes
         if (isAnimating) {
             const timer = setTimeout(() => setIsAnimating(false), 500)
             return () => clearTimeout(timer)
@@ -83,12 +74,7 @@ function TaskBarMenu() {
         [taskbarRef]
     )
 
-    const handleActiveWindowsClick = () => {
-        setIsActiveWindowsPanelOpen(true)
-    }
-
     const handleSignInClick = () => {
-        // Close the menu by blurring the active element
         if (document.activeElement instanceof HTMLElement) {
             document.activeElement.blur()
         }
@@ -97,30 +83,47 @@ function TaskBarMenu() {
 
     const avatarURL = getAvatarURL(user?.profile)
 
+    // Format site navigation menus for inclusion inside the Person Icon dropdown
+    const mainNavSections = menuData.slice(1).flatMap((menuSection, idx) => {
+        const sectionItems: any[] = []
+        if (typeof menuSection.trigger === 'string') {
+            sectionItems.push({
+                type: 'item' as const,
+                label: menuSection.trigger,
+                disabled: true,
+            })
+        }
+        if (Array.isArray(menuSection.items)) {
+            sectionItems.push(...menuSection.items)
+        }
+        if (idx < menuData.length - 2) {
+            sectionItems.push({ type: 'separator' as const })
+        }
+        return sectionItems
+    })
+
     const accountMenu: MenuType[] = [
         {
             trigger: (
                 <>
                     {isLoggedIn ? (
-                        <>
-                            <div className="relative flex items-center gap-1.5">
-                                {avatarURL ? (
-                                    <CloudinaryImage
-                                        src={avatarURL}
-                                        imgClassName={`size-6 rounded-full overflow-hidden bg-${
-                                            user?.profile?.color ?? 'white dark:bg-dark'
-                                        }`}
-                                        width={48}
-                                        alt=""
-                                    />
-                                ) : (
-                                    <IconUser className="size-6" />
-                                )}
-                                {notifications?.length > 0 && (
-                                    <span className="absolute top-4 -right-1 size-2.5 bg-red border border-bg-primary rounded-full" />
-                                )}
-                            </div>
-                        </>
+                        <div className="relative flex items-center gap-1.5">
+                            {avatarURL ? (
+                                <CloudinaryImage
+                                    src={avatarURL}
+                                    imgClassName={`size-6 rounded-full overflow-hidden bg-${
+                                        user?.profile?.color ?? 'white dark:bg-dark'
+                                    }`}
+                                    width={48}
+                                    alt=""
+                                />
+                            ) : (
+                                <IconUser className="size-6" />
+                            )}
+                            {notifications?.length > 0 && (
+                                <span className="absolute top-4 -right-1 size-2.5 bg-red border border-bg-primary rounded-full" />
+                            )}
+                        </div>
                     ) : (
                         <IconUser className="size-6" />
                     )}
@@ -181,24 +184,8 @@ function TaskBarMenu() {
                           },
                       ]),
 
-                // Integrated PostHog Header Menus into Person Icon Menu
-                ...menuData.flatMap((menuSection, idx) => {
-                    const sectionItems: any[] = []
-                    if (typeof menuSection.trigger === 'string') {
-                        sectionItems.push({
-                            type: 'item' as const,
-                            label: menuSection.trigger,
-                            disabled: true,
-                        })
-                    }
-                    if (Array.isArray(menuSection.items)) {
-                        sectionItems.push(...menuSection.items)
-                    }
-                    if (idx < menuData.length - 1) {
-                        sectionItems.push({ type: 'separator' as const })
-                    }
-                    return sectionItems
-                }),
+                // All site navigation menus (Community, Company, Resources, etc.) placed inside Person Icon
+                ...mainNavSections,
 
                 ...(isModerator
                     ? [
@@ -302,7 +289,6 @@ function TaskBarMenu() {
                         isAnimating ? MOTION_LAYER : ''
                     } skin-classic:bg-accent wallpaper-keyboard-garden:dark:bg-black/15 border-secondary rounded pl-0.5 pr-2 shadow-2xl`}
                 >
-                    {/* Top and bottom edges of the 3D box — visible during rotation */}
                     <div
                         aria-hidden="true"
                         className="absolute top-0 left-0 right-0 bg-accent pointer-events-none"
@@ -347,6 +333,4 @@ function TaskBarMenu() {
     )
 }
 
-// Memoized so it survives Wrapper re-renders (e.g. the navigate() on window
-// open/close); it still updates when it reads changed context.
 export default React.memo(TaskBarMenu)

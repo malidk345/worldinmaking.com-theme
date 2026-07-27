@@ -32,52 +32,44 @@ export interface SupabaseCommunityReply {
     }
 }
 
-export async function fetchSupabaseCommunityPosts(slug?: string): Promise<SupabaseCommunityPost[]> {
-    try {
-        let url = `${SUPABASE_URL}/rest/v1/community_posts?select=id,title,content,created_at,view_count,author_id,profiles(id,username,avatar_url)&order=created_at.desc`
-        if (slug) {
-            // For a specific blog post comment section: only fetch comments matching post_slug or title comment_<slug>_*
-            url += `&or=(post_slug.eq.${slug},title.ilike.comment_${encodeURIComponent(slug)}_*)`
-        } else {
-            // For main Community Forum: EXCLUDE all blog post comments! (post_slug is null AND title does not start with comment_)
-            url += `&post_slug=is.null&title=not.ilike.comment_*`
-        }
+const memoryCache: Record<string, { data: any; timestamp: number }> = {}
+const CACHE_TTL_MS = 60000
 
+async function fetchWithCache(url: string): Promise<any> {
+    const now = Date.now()
+    if (memoryCache[url] && now - memoryCache[url].timestamp < CACHE_TTL_MS) {
+        return memoryCache[url].data
+    }
+    try {
         const res = await fetch(url, {
             headers: {
                 apikey: SUPABASE_ANON_KEY,
                 Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
             },
-            cache: 'no-store',
         })
-        if (!res.ok) return []
+        if (!res.ok) return memoryCache[url]?.data || []
         const data = await res.json()
-        return Array.isArray(data) ? data : []
-    } catch (e) {
-        console.error('Error fetching Supabase community posts:', e)
-        return []
+        const result = Array.isArray(data) ? data : []
+        memoryCache[url] = { data: result, timestamp: now }
+        return result
+    } catch {
+        return memoryCache[url]?.data || []
     }
 }
 
-export async function fetchSupabaseCommunityReplies(postId: number | string): Promise<SupabaseCommunityReply[]> {
-    try {
-        const res = await fetch(
-            `${SUPABASE_URL}/rest/v1/community_replies?post_id=eq.${postId}&select=id,post_id,content,created_at,author_id,profiles(id,username,avatar_url)&order=created_at.asc`,
-            {
-                headers: {
-                    apikey: SUPABASE_ANON_KEY,
-                    Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-                },
-                cache: 'no-store',
-            }
-        )
-        if (!res.ok) return []
-        const data = await res.json()
-        return Array.isArray(data) ? data : []
-    } catch (e) {
-        console.error('Error fetching Supabase community replies:', e)
-        return []
+export async function fetchSupabaseCommunityPosts(slug?: string): Promise<SupabaseCommunityPost[]> {
+    let url = `${SUPABASE_URL}/rest/v1/community_posts?select=id,title,content,created_at,view_count,author_id,profiles(id,username,avatar_url)&order=created_at.desc`
+    if (slug) {
+        url += `&or=(post_slug.eq.${slug},title.ilike.comment_${encodeURIComponent(slug)}_*)`
+    } else {
+        url += `&post_slug=is.null&title=not.ilike.comment_*`
     }
+    return fetchWithCache(url)
+}
+
+export async function fetchSupabaseCommunityReplies(postId: number | string): Promise<SupabaseCommunityReply[]> {
+    const url = `${SUPABASE_URL}/rest/v1/community_replies?post_id=eq.${postId}&select=id,post_id,content,created_at,author_id,profiles(id,username,avatar_url)&order=created_at.asc`
+    return fetchWithCache(url)
 }
 
 export function formatSupabaseCommunityToStrapi(post: SupabaseCommunityPost) {

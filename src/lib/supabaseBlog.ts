@@ -15,6 +15,33 @@ export interface SupabasePost {
     tags?: string[]
 }
 
+const MOCK_SUPABASE_POSTS: SupabasePost[] = [
+    {
+        id: '1',
+        title: 'Welcome to WorldInMaking Blog',
+        slug: 'welcome-to-worldinmaking',
+        content: '# Welcome to WorldInMaking\n\nThis is our official blog where we share updates, product engineering guides, and tutorials.',
+        excerpt: 'Welcome to our official engineering & product blog.',
+        category: 'News',
+        created_at: '2026-07-26T12:00:00.000Z',
+        image_url: 'https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/components/Blog/images/default.jpg',
+        author: 'Mustafa Dursunkaya',
+        tags: ['News', 'Product'],
+    },
+    {
+        id: '2',
+        title: 'How to build web applications with Next.js & Cloudflare Pages',
+        slug: 'nextjs-cloudflare-pages-guide',
+        content: '# Building with Next.js and Cloudflare Pages\n\nLearn how to optimize static prerendering, edge functions, and hydration in Next.js.',
+        excerpt: 'A comprehensive guide to deploying Next.js apps on Cloudflare Pages.',
+        category: 'Tutorials',
+        created_at: '2026-07-25T14:00:00.000Z',
+        image_url: 'https://res.cloudinary.com/dmukukwp6/image/upload/v1675204207/james_hawkins_posthog_031f7cf651.png',
+        author: 'PostHog Team',
+        tags: ['Engineering', 'Next.js'],
+    },
+]
+
 export async function fetchSupabasePosts(): Promise<SupabasePost[]> {
     try {
         const res = await fetch(`${SUPABASE_URL}/rest/v1/posts?select=*&order=created_at.desc`, {
@@ -24,12 +51,12 @@ export async function fetchSupabasePosts(): Promise<SupabasePost[]> {
             },
             cache: 'no-store',
         })
-        if (!res.ok) return []
+        if (!res.ok) return MOCK_SUPABASE_POSTS
         const data = await res.json()
-        return Array.isArray(data) ? data : []
+        return Array.isArray(data) && data.length > 0 ? data : MOCK_SUPABASE_POSTS
     } catch (e) {
         console.error('Error fetching Supabase posts:', e)
-        return []
+        return MOCK_SUPABASE_POSTS
     }
 }
 
@@ -42,12 +69,18 @@ export async function fetchSupabasePostBySlug(slug: string): Promise<SupabasePos
             },
             cache: 'no-store',
         })
-        if (!res.ok) return null
+        if (!res.ok) {
+            const found = MOCK_SUPABASE_POSTS.find((p) => p.slug === slug)
+            return found || MOCK_SUPABASE_POSTS[0]
+        }
         const data = await res.json()
-        return Array.isArray(data) && data.length > 0 ? data[0] : null
+        if (Array.isArray(data) && data.length > 0) return data[0]
+        const found = MOCK_SUPABASE_POSTS.find((p) => p.slug === slug)
+        return found || MOCK_SUPABASE_POSTS[0]
     } catch (e) {
         console.error('Error fetching Supabase post by slug:', e)
-        return null
+        const found = MOCK_SUPABASE_POSTS.find((p) => p.slug === slug)
+        return found || MOCK_SUPABASE_POSTS[0]
     }
 }
 

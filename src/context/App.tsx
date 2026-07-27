@@ -1644,6 +1644,12 @@ const getInitialSiteSettings = (): SiteSettings => {
 
 export const Provider = ({ children, element, location }: AppProviderProps) => {
     const isSSR = typeof window === 'undefined'
+    const [hasMounted, setHasMounted] = useState(false)
+
+    useEffect(() => {
+        setHasMounted(true)
+    }, [])
+
     const router = useRouter()
 
     const safePush = useCallback(
@@ -1937,22 +1943,30 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
     }, [])
 
     function getWindowBasedSizeConstraints() {
+        const isHydrated = hasMounted && typeof window !== 'undefined'
+        const viewportW = isHydrated ? window.innerWidth : 1280
+        const viewportH = isHydrated ? window.innerHeight : 800
+
         return {
             min: {
-                width: isSSR ? 0 : window.innerWidth * 0.2,
-                height: isSSR ? 0 : window.innerHeight * 0.2,
+                width: viewportW * 0.2,
+                height: viewportH * 0.2,
             },
             max: {
-                width: isSSR ? 0 : window.innerWidth * 0.9,
-                height: isSSR ? 0 : window.innerHeight * 0.9,
+                width: viewportW * 0.9,
+                height: viewportH * 0.9,
             },
         }
     }
 
     function getDesktopCenterPosition(size: { width: number; height: number }) {
+        const isHydrated = hasMounted && typeof window !== 'undefined'
+        const viewportW = isHydrated ? window.innerWidth : 1280
+        const viewportH = isHydrated ? window.innerHeight : 800
+
         return {
-            x: isSSR ? 0 : window.innerWidth / 2 - size.width / 2,
-            y: isSSR ? 0 : (window.innerHeight - taskbarHeight) / 2 - size.height / 2,
+            x: Math.max(0, viewportW / 2 - size.width / 2),
+            y: Math.max(0, (viewportH - taskbarHeight) / 2 - size.height / 2),
         }
     }
 
@@ -1961,21 +1975,24 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             return getDesktopCenterPosition(size)
         }
 
+        const isHydrated = hasMounted && typeof window !== 'undefined'
+        const viewportW = isHydrated ? window.innerWidth : 1280
+        const viewportH = isHydrated ? window.innerHeight : 800
+
         if (appSettings[key]?.position?.topCenter) {
-            // Check if desktop (screen width >= 768px)
-            const isDesktop = !isSSR && window.innerWidth >= 768
+            const isDesktop = viewportW >= 768
             const topOffset = isDesktop ? 100 : 0
 
             return {
-                x: isSSR ? 0 : window.innerWidth / 2 - size.width / 2,
+                x: Math.max(0, viewportW / 2 - size.width / 2),
                 y: topOffset,
             }
         }
 
         if (key?.startsWith('ask-max')) {
             return {
-                x: isSSR ? 0 : window.innerWidth - size.width - 20,
-                y: isSSR ? 0 : window.innerHeight - size.height - 20,
+                x: Math.max(0, viewportW - size.width - 20),
+                y: Math.max(0, viewportH - size.height - 20),
             }
         }
 
@@ -1989,7 +2006,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         if (previousWindow && !previousWindow.key?.startsWith('ask-max')) {
             const potentialX = previousWindow.position.x + 10
 
-            const screenMidpoint = isSSR ? 0 : window.innerWidth / 2
+            const screenMidpoint = viewportW / 2
             const windowRightEdge = potentialX + size.width
             const amountOnRight = Math.max(0, windowRightEdge - screenMidpoint)
             const proportionOnRight = amountOnRight / size.width
@@ -2012,17 +2029,21 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         if (settings?.size?.fixed) {
             return settings.size.min
         }
+        const isHydrated = hasMounted && typeof window !== 'undefined'
+        const viewportW = isHydrated ? window.innerWidth : 1280
+        const viewportH = isHydrated ? window.innerHeight : 800
+
         const defaultSize =
             settings?.size?.max ||
             (key?.startsWith('ask-max')
                 ? appSettings['ask-max']?.size?.max
                 : {
-                      width: isSSR ? 0 : window.innerWidth * 0.9,
-                      height: isSSR ? 0 : window.innerHeight * 0.9,
+                      width: viewportW * 0.9,
+                      height: viewportH * 0.9,
                   })
         return {
-            width: Math.min(defaultSize.width, isSSR ? 0 : window.innerWidth * 0.9),
-            height: Math.min(defaultSize.height, isSSR ? 0 : window.innerHeight * 0.9),
+            width: Math.min(defaultSize.width, viewportW * 0.9),
+            height: Math.min(defaultSize.height, viewportH * 0.9),
         }
     }
 

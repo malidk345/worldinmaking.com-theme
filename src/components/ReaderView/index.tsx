@@ -32,11 +32,25 @@ const MDXRenderer = ({ children }: any) => {
 }
 const getImage = (img: any) => img?.publicURL || img?.url || img
 
+import { useRouter as useNextRouter } from 'next/router'
+
 const useLocation = () => {
+    let pathname = '/'
+    let search = ''
+    let hash = ''
+    try {
+        const router = useNextRouter()
+        if (router?.asPath) {
+            pathname = router.asPath.split('?')[0].split('#')[0]
+        }
+    } catch (e) {}
+
     if (typeof window !== 'undefined') {
-        return { pathname: window.location.pathname, search: window.location.search, hash: window.location.hash }
+        pathname = window.location.pathname
+        search = window.location.search
+        hash = window.location.hash
     }
-    return { pathname: '/', search: '', hash: '' }
+    return { pathname, search, hash }
 }
 import { MDXProvider } from '@mdx-js/react'
 import ElementScrollLink, { ScrollSpyProvider } from 'components/ElementScrollLink'

@@ -238,8 +238,8 @@ const QuestionRow = ({
                         pinned || resolved ? 'basis-[30%]' : 'basis-[25%]'
                     }`}
                 >
-                    <Tooltip trigger={dayjs(activeAt).fromNow()}>
-                        {dayjs(activeAt).format('dddd, MMMM D, YYYY')} at {dayjs(activeAt).format('h:mm A')}
+                    <Tooltip trigger={<span suppressHydrationWarning>{dayjs(activeAt).fromNow()}</span>}>
+                        <span suppressHydrationWarning>{dayjs(activeAt).format('dddd, MMMM D, YYYY')} at {dayjs(activeAt).format('h:mm A')}</span>
                     </Tooltip>{' '}
                     <span className="hidden @3xl:inline-block">
                         by {latestAuthor?.firstName} {latestAuthor?.lastName}
@@ -588,7 +588,7 @@ export default function Inbox(props) {
         <>
             <SEO title={(permalink && question?.attributes.subject) || data?.topic?.label || 'Forums'} />
             {ready ? (
-                <div className="@container w-full h-full flex flex-col bg-[#fdfdf8] dark:bg-[#1b1c1e] text-primary">
+                <div suppressHydrationWarning className="@container w-full h-full flex flex-col bg-[#fdfdf8] dark:bg-[#1b1c1e] text-primary">
                     <div data-scheme="secondary" className={`flex @2xl:flex-row flex-col flex-grow min-h-0`}>
                         <aside
                             data-scheme="secondary"

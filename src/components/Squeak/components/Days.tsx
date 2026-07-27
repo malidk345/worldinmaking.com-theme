@@ -23,7 +23,7 @@ const Edit = ({ image, color, name, date, profileID, text }) => {
                     >
                         {name}
                     </Link>{' '}
-                    <span className="text-secondary">{text}</span> <span>{dayjs(date).fromNow()}</span>
+                    <span className="text-secondary">{text}</span> <span suppressHydrationWarning>{dayjs(date).fromNow()}</span>
                 </span>
             </span>
         </li>
@@ -40,7 +40,7 @@ export const Days = ({ created, edits, profile }: { created: string | undefined;
         <Tooltip
             trigger={
                 <div className="max-h-[160px] overflow-y-auto">
-                    <span className="text-sm text-muted relative cursor-default">
+                    <span suppressHydrationWarning className="text-sm text-muted relative cursor-default">
                         {hasEdits ? 'Edited ' : ''}
                         {dayjs(hasEdits ? edits[0].date : created).fromNow()}
                     </span>
