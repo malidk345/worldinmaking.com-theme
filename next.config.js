@@ -23,7 +23,6 @@ const nextConfig = {
             ...config.resolve.alias,
             'gatsby$': path.resolve(__dirname, 'shims/gatsby.tsx'),
             gatsby: path.resolve(__dirname, 'shims/gatsby.tsx'),
-            'gatsby-plugin-image': path.resolve(__dirname, 'shims/gatsby-plugin-image.tsx'),
             'gatsby-plugin-mdx': path.resolve(__dirname, 'shims/gatsby.tsx'),
             'gatsby-plugin-breakpoints': path.resolve(__dirname, 'shims/gatsby.tsx'),
             'debug': path.resolve(__dirname, 'shims/debug.js'),

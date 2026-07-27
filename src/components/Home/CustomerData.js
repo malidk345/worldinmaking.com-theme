@@ -1,5 +1,4 @@
 import CloudinaryImage from 'components/CloudinaryImage'
-import { StaticImage } from 'gatsby-plugin-image'
 import React from 'react'
 import ReactCountryFlag from 'react-country-flag'
 import { Privacy } from 'components/NotProductIcons'

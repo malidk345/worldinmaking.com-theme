@@ -1,6 +1,5 @@
 import CloudinaryImage from 'components/CloudinaryImage'
 import React from 'react'
-import { StaticImage } from 'gatsby-plugin-image'
 import Link from 'components/Link'
 import { IconEllipsis } from '@posthog/icons'
 import { CallToAction } from 'components/CallToAction'

@@ -1,6 +1,5 @@
 import React from 'react'
 import Link from 'components/Link'
-import { GatsbyImage, getImage } from 'gatsby-plugin-image'
 import OSButton from 'components/OSButton'
 
 export default function ResourceItem({ title, description, Image, gatsbyImage, url, type }) {

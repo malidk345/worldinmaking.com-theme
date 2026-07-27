@@ -2,7 +2,6 @@ import CloudinaryImage from 'components/CloudinaryImage'
 import AnimateIntoView from 'components/AnimateIntoView'
 import { CallToAction } from 'components/CallToAction'
 import { SignupCTA } from 'components/SignupCTA'
-import { StaticImage } from 'gatsby-plugin-image'
 import React from 'react'
 import blurb from './images/blurb.svg'
 
