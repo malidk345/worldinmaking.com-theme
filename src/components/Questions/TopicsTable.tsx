@@ -110,7 +110,7 @@ export const TopicsTable = ({ topics, topicGroup, className = '' }) => {
             </li>
             <li className="list-none px-[2px] divide-y divide-primary">
                 {topics?.data?.length > 0 &&
-                    topics.data.filter(Boolean).map((topic) => {
+                    topics?.data?.filter(Boolean).map((topic) => {
                         const {
                             id,
                             attributes: { label, slug, questions },
