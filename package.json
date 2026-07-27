@@ -18,7 +18,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "pages:build": "npx --legacy-peer-deps @cloudflare/next-on-pages@1",
+    "pages:build": "pnpm dlx @cloudflare/next-on-pages@1",
     "start": "next start",
     "format": "prettier --write \"**/*.{html,js,ts,tsx,json,yml,css,scss}\"",
     "storybook": "start-storybook -s ./static -p 6006",
