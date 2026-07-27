@@ -103,7 +103,7 @@ const Row = ({
         attributes: { profile, subject, permalink, replies, createdAt, resolved, topics, activeAt, body },
     } = question
 
-    const latestAuthor = replies?.data?.[replies.data.length - 1]?.attributes?.profile || profile
+    const latestAuthor = replies?.data?.[replies?.data?.length - 1]?.attributes?.profile || profile
     const numReplies =
         replies?.data?.filter(
             // Hide replies that have been marked unhelpful from PostHog AI from the count
@@ -129,7 +129,7 @@ const Row = ({
             : 'needs-response'
         : null
 
-    const featuredImage = topics.data?.[0]?.attributes.label.startsWith('#') && extractFirstImageURL(body)
+    const featuredImage = topics?.data?.[0]?.attributes.label.startsWith('#') && extractFirstImageURL(body)
 
     return profile ? (
         <div ref={fetchMore ? ref : undefined} key={question.id} className="py-2.5">
@@ -199,7 +199,7 @@ const Row = ({
                     <div className="hidden md:block md:col-span-3 text-sm font-normal text-secondary">
                         <div className="text-primary dark:text-primary-dark font-medium opacity-60 line-clamp-2">
                             {dayjs(sortBy === 'activity' ? activeAt : createdAt).fromNow()} by{' '}
-                            {profile.data?.attributes?.firstName} {profile.data?.attributes?.lastName} {}
+                            {profile?.data?.attributes?.firstName} {profile?.data?.attributes?.lastName} {}
                         </div>
                     </div>
                 </div>
@@ -223,7 +223,7 @@ export const QuestionsTable = ({
     pinnedQuestions,
     showStatus = true,
 }: QuestionsTableProps) => {
-    const questionsFiltered = questions.data.length > 0 && questions.data.filter(Boolean)
+    const questionsFiltered = questions?.data?.length > 0 && questions?.data?.filter(Boolean)
     return (
         <ul className="m-0 p-0 list-none">
             <li className="grid grid-cols-12 pl-2 pr-3 py-1.5 items-center text-secondary !text-sm bg-accent rounded">
@@ -233,7 +233,7 @@ export const QuestionsTable = ({
             </li>
             {pinnedQuestions?.data?.length > 0 ? (
                 <li className="list-none">
-                    {pinnedQuestions.data.filter(Boolean).map((question) => {
+                    {pinnedQuestions?.data?.filter(Boolean).map((question) => {
                         return (
                             <Row
                                 showStatus={showStatus}

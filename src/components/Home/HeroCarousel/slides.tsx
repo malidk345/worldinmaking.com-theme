@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { IconFlag, IconLightBulb, IconRocket, IconSearch, IconSparkles } from '@posthog/icons'
 import Link from 'components/Link'
 import Tooltip from 'components/RadixUI/Tooltip'
@@ -85,33 +85,40 @@ const ProductItem = ({ product }: { product: any }) => {
 export const OnePlaceSlide = () => {
     const allProducts = useProduct() as any[]
     const managedPlatforms = useSourcePlatforms()
-    const selfHosted = SELF_HOSTED_SOURCES.map((s) => ({
-        label: s.name,
-        url: `/docs/data-warehouse/sources/${s.slug}`,
-        image: getLogo(s.logo),
-    }))
-    const platforms = [...managedPlatforms, ...selfHosted].sort((a, b) => a.label.localeCompare(b.label))
+    const platforms = useMemo(() => {
+        const selfHosted = SELF_HOSTED_SOURCES.map((s) => ({
+            label: s.name,
+            url: `/docs/data-warehouse/sources/${s.slug}`,
+            image: getLogo(s.logo),
+        }))
+        return [...managedPlatforms, ...selfHosted].sort((a, b) => a.label.localeCompare(b.label))
+    }, [managedPlatforms])
     const sourceCount = platforms.length
 
     const { allDestinations } = {}
     const destinationCount = allDestinations?.totalCount || 0
 
-    const pickedSources = pickedSourceSlugs
+    const pickedSources = useMemo(() => pickedSourceSlugs
         .map((slug) => platforms.find((p: any) => p.url.endsWith(`/${slug}`)))
-        .filter(Boolean)
+        .filter(Boolean), [platforms])
 
-    const pickedDestinations = pickedDestinationSlugs
-        .map((slug) => allDestinations?.nodes?.find((n: any) => n.slug === slug))
-        .filter(Boolean)
-        .map((n: any) => ({
-            label: n.name,
-            url: n.mdx?.fields?.slug || `/docs/cdp/destinations/${n.slug}`,
-            image: getIconUrl(n.icon_url),
-        }))
+    const exportDestinations = useMemo(() => {
+        const destBySlug = new Map(allDestinations?.nodes?.map((n: any) => [n.slug, n]) || [])
+        const pickedDestinations = pickedDestinationSlugs
+            .map((slug) => destBySlug.get(slug))
+            .filter(Boolean)
+            .map((n: any) => ({
+                label: n.name,
+                url: n.mdx?.fields?.slug || `/docs/cdp/destinations/${n.slug}`,
+                image: getIconUrl(n.icon_url),
+            }))
+        return [...batchExportItems, ...pickedDestinations]
+    }, [allDestinations])
 
-    const exportDestinations = [...batchExportItems, ...pickedDestinations]
-
-    const manageProducts = manageQueryHandles.map((h) => allProducts.find((p: any) => p.handle === h))
+    const manageProducts = useMemo(() => {
+        const productByHandle = new Map(allProducts.map((p: any) => [p.handle, p]))
+        return manageQueryHandles.map((h) => productByHandle.get(h)).filter(Boolean)
+    }, [allProducts])
     return (
         <div className="rounded p-4 flex flex-col h-full">
             <div className="relative mb-6 @3xl:mb-0 @3xl:min-h-[184px]">
@@ -413,7 +420,10 @@ const PostHogAIEmptyState = () => (
 
 export const UnderstandUsageSlide = () => {
     const allProducts = useProduct() as any[]
-    const products = analyticsHandles.map((h) => allProducts.find((p: any) => p.handle === h)).filter(Boolean)
+    const products = useMemo(() => {
+        const productByHandle = new Map(allProducts.map((p: any) => [p.handle, p]))
+        return analyticsHandles.map((h) => productByHandle.get(h)).filter(Boolean)
+    }, [allProducts])
 
     return (
         <div className="rounded p-4 relative h-full flex flex-col bg-[#F3F4F0] dark:bg-[#131316]">
@@ -452,7 +462,10 @@ export const UnderstandUsageSlide = () => {
 
 export const DebugFixSlide = () => {
     const allProducts = useProduct() as any[]
-    const products = debugHandles.map((h) => allProducts.find((p: any) => p.handle === h))
+    const products = useMemo(() => {
+        const productByHandle = new Map(allProducts.map((p: any) => [p.handle, p]))
+        return debugHandles.map((h) => productByHandle.get(h))
+    }, [allProducts])
 
     return (
         <div className="rounded pt-4 px-4 bg-primary">
@@ -509,11 +522,13 @@ export const DebugFixSlide = () => {
 
 export const TestRolloutSlide = () => {
     const allProducts = useProduct() as any[]
-    const productByHandle = Object.fromEntries(allProducts.map((product: any) => [product.handle, product]))
-    const groupedProducts = rolloutGroups.map((group) => ({
-        ...group,
-        products: group.handles.map((handle) => productByHandle[handle]).filter(Boolean),
-    }))
+    const groupedProducts = useMemo(() => {
+        const productByHandle = new Map(allProducts.map((p: any) => [p.handle, p]))
+        return rolloutGroups.map((group) => ({
+            ...group,
+            products: group.handles.map((handle) => productByHandle.get(handle)).filter(Boolean),
+        }))
+    }, [allProducts])
 
     return (
         <div className="rounded p-4 pb-6">
