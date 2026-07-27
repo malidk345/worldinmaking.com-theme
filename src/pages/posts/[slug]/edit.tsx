@@ -1,3 +1,4 @@
+export const runtime = 'experimental-edge';
 import { useRouter } from 'next/router'
 import React, { useEffect, useState } from 'react'
 import NewPost from 'components/Edition/NewPost'
