@@ -346,7 +346,7 @@ export default function BlogPost({ data = {}, pageContext = {}, mobile = false }
             })
         }
     }, [router?.asPath])
-    const { pathname } = location
+    const { pathname } = loc
     const [postID, setPostID] = useState()
     const [posthogInstance, setPosthogInstance] = useState()
 
