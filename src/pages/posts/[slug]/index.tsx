@@ -3,6 +3,8 @@ import { useLayoutData } from 'components/Layout/hooks'
 import qs from 'qs'
 import React, { useEffect, useState } from 'react'
 
+export const getServerSideProps = ({ params }: { params: { slug: string } }) => ({ props: { params } })
+
 const Skeleton = () => {
     const { fullWidthContent } = useLayoutData()
     return (
@@ -20,11 +22,11 @@ const Skeleton = () => {
     )
 }
 
-export default function Post({ params }) {
+export default function Post({ params }: { params?: { slug?: string } }) {
     const [post, setPost] = useState(null)
 
     const getPost = () => {
-        const slug = `/posts/${params.slug}`
+        const slug = `/posts/${params?.slug || ''}`
         const query = qs.stringify(
             {
                 filters: {
@@ -51,8 +53,10 @@ export default function Post({ params }) {
     }
 
     useEffect(() => {
-        getPost()
-    }, [params])
+        if (params?.slug) {
+            getPost()
+        }
+    }, [params?.slug])
 
     return post ? <ClientPost {...post.attributes} id={post.id} getPost={getPost} /> : <Skeleton />
 }

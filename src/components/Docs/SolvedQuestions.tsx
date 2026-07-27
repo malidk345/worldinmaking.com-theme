@@ -124,7 +124,7 @@ export default function SolvedQuestions({
                                                 <IconMessage className="size-4" />
                                                 {replyCount} {replyCount === 1 ? 'reply' : 'replies'}
                                             </span>
-                                            {resolvedAt && <span>Solved {dayjs(resolvedAt).fromNow()}</span>}
+                                            {resolvedAt && <span suppressHydrationWarning>Solved {dayjs(resolvedAt).fromNow()}</span>}
                                         </div>
                                     </div>
                                 </div>

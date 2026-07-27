@@ -60,7 +60,7 @@ const Questions = ({ questions }: { questions: Omit<StrapiResult<QuestionData[]>
                                     {topics?.data[0].attributes.label}
                                 </span>
                                 <span className="flex-shrink-0 text-black dark:text-white text-xs flex space-x-1 items-center opacity-70">
-                                    <span>{dayjs(activeAt).fromNow()}</span>
+                                    <span suppressHydrationWarning>{dayjs(activeAt).fromNow()}</span>
                                 </span>
                             </span>
                         </Link>

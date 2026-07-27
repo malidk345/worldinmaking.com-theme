@@ -2,38 +2,51 @@ import { Html, Head, Main, NextScript } from 'next/document'
 
 const themeScript = `(function () {
     window.__onThemeChange = function () {}
-    function setTheme(newTheme) {
-        window.__theme = newTheme
-        if (document.body) document.body.className = newTheme
-        if (document.documentElement) document.documentElement.className = newTheme
-        window.__onThemeChange(newTheme)
-    }
     var preferredTheme
+    var siteSettings = {}
     var darkQuery = window.matchMedia('(prefers-color-scheme: dark)')
     try {
         preferredTheme = localStorage.getItem('theme') || 'light'
     } catch (err) {}
-    window.__setPreferredTheme = function (theme) {
-        const newTheme = theme === 'system' ? (darkQuery.matches ? 'dark' : 'light') : theme
-        setTheme(newTheme)
-        try {
-            localStorage.setItem('theme', newTheme)
-        } catch (err) {}
-        return newTheme
-    }
-    setTheme(preferredTheme === 'system' ? (darkQuery.matches ? 'dark' : 'light') : preferredTheme)
-
     try {
-        if (document.body) {
-            document.body.setAttribute('data-skin', 'modern')
-            var siteSettings = JSON.parse(localStorage.getItem('siteSettings') || '{}')
-            document.body.setAttribute('data-wallpaper', siteSettings.wallpaper || 'keyboard-garden')
-            document.body.setAttribute(
-                'data-reduce-transparency',
-                siteSettings.reduceTransparency ? 'true' : 'false'
-            )
-        }
+        siteSettings = JSON.parse(localStorage.getItem('siteSettings') || '{}')
     } catch (err) {}
+
+    var theme = preferredTheme === 'system' ? (darkQuery.matches ? 'dark' : 'light') : preferredTheme
+    var skin = siteSettings.skin || 'modern'
+    var wallpaper = siteSettings.wallpaper || 'keyboard-garden'
+    var reduceTransparency = siteSettings.reduceTransparency ? 'true' : 'false'
+
+    function applyAttributes(el) {
+        if (!el) return
+        el.className = theme
+        el.setAttribute('data-skin', skin)
+        el.setAttribute('data-wallpaper', wallpaper)
+        el.setAttribute('data-reduce-transparency', reduceTransparency)
+    }
+
+    window.__theme = theme
+    if (document.documentElement) applyAttributes(document.documentElement)
+
+    window.__setPreferredTheme = function (newThemeChoice) {
+        const nextTheme = newThemeChoice === 'system' ? (darkQuery.matches ? 'dark' : 'light') : newThemeChoice
+        window.__theme = nextTheme
+        if (document.documentElement) document.documentElement.className = nextTheme
+        if (document.body) document.body.className = nextTheme
+        window.__onThemeChange(nextTheme)
+        try {
+            localStorage.setItem('theme', nextTheme)
+        } catch (err) {}
+        return nextTheme
+    }
+
+    if (document.body) {
+        applyAttributes(document.body)
+    } else {
+        document.addEventListener('DOMContentLoaded', function () {
+            if (document.body) applyAttributes(document.body)
+        })
+    }
 })()`
 
 export default function Document() {
@@ -49,3 +62,4 @@ export default function Document() {
         </Html>
     )
 }
+

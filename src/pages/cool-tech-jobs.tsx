@@ -217,7 +217,7 @@ const JobsByDepartment = ({
                                 </span>
                             </Link>
                             {showPosted && (
-                                <p className="m-0 pt-1 opacity-60 text-sm flex-[0_0_6rem] text-right">
+                                <p className="m-0 pt-1 opacity-60 text-sm flex-[0_0_6rem] text-right" suppressHydrationWarning>
                                     {dayjs(postedDate).fromNow()}
                                 </p>
                             )}
@@ -367,7 +367,7 @@ const CompanyRows = ({
                         cells: [
                             {
                                 content: showPosted ? (
-                                    <span className="text-sm">{dayjs(postedDate).fromNow()}</span>
+                                    <span className="text-sm" suppressHydrationWarning>{dayjs(postedDate).fromNow()}</span>
                                 ) : (
                                     <em className="text-sm opacity-60">Unknown</em>
                                 ),
@@ -855,7 +855,7 @@ const ModeratorInitialView = ({
                                         <span className="font-semibold text-sm leading-none">
                                             {company.attributes.name}
                                         </span>
-                                        <span className="text-xs opacity-40 whitespace-nowrap">
+                                        <span className="text-xs opacity-40 whitespace-nowrap" suppressHydrationWarning>
                                             {dayjs(company.attributes.createdAt).fromNow()}
                                         </span>
                                         {perks.length > 0 ? (

@@ -432,12 +432,12 @@ const Details = ({ profile, isEditing, setFieldValue, values, errors, isTeamMemb
                     {isTeamMember ? (
                         <>
                             <span className="font-semibold">Joined PostHog</span>
-                            <span>{dayjs(profile.startDate).fromNow()}</span>
+                            <span suppressHydrationWarning>{dayjs(profile.startDate).fromNow()}</span>
                         </>
                     ) : (
                         <>
                             <span className="font-semibold">Community member since</span>
-                            <span>{dayjs(profile.createdAt).format('MMMM D, YYYY')}</span>
+                            <span suppressHydrationWarning>{dayjs(profile.createdAt).format('MMMM D, YYYY')}</span>
                         </>
                     )}
                 </p>

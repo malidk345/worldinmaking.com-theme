@@ -1,68 +1,67 @@
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://iydypisgfaksqkjdraiu.supabase.co'
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_KTgzPl0F8_-HzMC_ZEpqMA_ZR7XPnMX'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
-export const isSupabaseConfigured = true
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://iydypisgfaksqkjdraiu.supabase.co'
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_KTgzPl0F8_-HzMC_ZEpqMA_ZR7XPnMX'
 
-export const supabase = {
-    from: (table: string) => ({
-        select: (selectQuery = '*') => ({
+let client: SupabaseClient | null = null
+let isConfigured = false
+
+if (supabaseUrl && supabaseKey) {
+    try {
+        const trimmedUrl = supabaseUrl.trim().replace(/^["'](.*)["\']$/, '$1')
+        const trimmedKey = supabaseKey.trim().replace(/^["'](.*)["\']$/, '$1')
+
+        client = createClient(trimmedUrl, trimmedKey, {
+            auth: {
+                detectSessionInUrl: false,
+                flowType: 'pkce',
+                autoRefreshToken: true,
+                persistSession: true,
+                storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+            },
+        })
+        isConfigured = true
+    } catch (e) {
+        console.error('[Supabase] Init failed:', e)
+        isConfigured = false
+    }
+}
+
+const mockClient = {
+    from: () => ({
+        select: () => ({
             data: [],
             error: null,
-            order: function () { return this; },
-            eq: function () { return this; },
-            limit: function () { return this; },
-            single: async () => ({ data: null, error: null }),
-            maybeSingle: async () => ({ data: null, error: null }),
-            then: async (resolve: any) => {
-                try {
-                    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=${encodeURIComponent(selectQuery)}`, {
-                        headers: {
-                            apikey: SUPABASE_ANON_KEY,
-                            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-                        },
-                    })
-                    const data = res.ok ? await res.json() : []
-                    resolve({ data, error: res.ok ? null : new Error('Supabase fetch error') })
-                } catch (e) {
-                    resolve({ data: [], error: e })
-                }
-            },
+            order: function () { return this },
+            eq: function () { return this },
+            limit: function () { return this },
+            single: function () { return { data: null, error: null } },
+            maybeSingle: function () { return { data: null, error: null } },
         }),
-        insert: async (rows: any) => {
-            try {
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
-                    method: 'POST',
-                    headers: {
-                        apikey: SUPABASE_ANON_KEY,
-                        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-                        'Content-Type': 'application/json',
-                        Prefer: 'return=representation',
-                    },
-                    body: JSON.stringify(rows),
-                })
-                const data = res.ok ? await res.json() : null
-                return { data, error: res.ok ? null : new Error('Insert failed') }
-            } catch (e) {
-                return { data: null, error: e }
-            }
-        },
-        update: async (values: any) => ({ data: values, error: null }),
-        delete: async () => ({ data: null, error: null }),
-        upsert: async (values: any) => ({ data: values, error: null }),
+        insert: () => ({ data: null, error: null }),
+        update: () => ({ data: null, error: null }),
+        delete: () => ({ data: null, error: null }),
+        upsert: () => ({ data: null, error: null }),
+        eq: function () { return this },
+        single: function () { return { data: null, error: null } },
+        order: function () { return this },
     }),
     channel: () => ({
-        on: function () { return this; },
-        subscribe: function () { return this; },
+        on: function () { return this },
+        subscribe: function () { return this },
     }),
     removeChannel: () => {},
     auth: {
         getUser: async () => ({ data: { user: null }, error: null }),
         getSession: async () => ({ data: { session: null }, error: null }),
-        signInWithOtp: async () => ({ error: null }),
-        signInWithPassword: async () => ({ error: null }),
-        signUp: async () => ({ error: null }),
+        signInWithOtp: async () => ({ error: { message: 'Supabase not configured' } }),
+        signInWithPassword: async () => ({ error: { message: 'Supabase not configured' } }),
+        signUp: async () => ({ error: { message: 'Supabase not configured' } }),
         signOut: async () => ({}),
         onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-        exchangeCodeForSession: async () => ({ data: null, error: null }),
+        exchangeCodeForSession: async () => ({ data: null, error: { message: 'Supabase not configured' } }),
     },
-} as any
+}
+
+export const supabase = (client || mockClient) as SupabaseClient
+export const isSupabaseConfigured = isConfigured

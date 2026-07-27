@@ -1,4 +1,4 @@
-import { useRouter } from 'next/navigation'
+import { useNavigate } from '@gatsbyjs/reach-router'
 import React, { useState, useRef, useEffect } from 'react'
 import { Field, Form, Formik } from 'formik'
 import { useUser, User } from 'hooks/useUser'
@@ -128,6 +128,7 @@ function QuestionFormMain({
     const { user, logout } = useUser()
     const { status } = useAppStatus()
     const { websiteMode } = useApp()
+    const navigate = useNavigate()
 
     return (
         <div className={`flex-1 mb-1`}>
@@ -157,7 +158,7 @@ function QuestionFormMain({
                 onSubmit={(values) => {
                     if (values.url) {
                         posthog?.capture('community honeypot rejection')
-                        return router.push('/')
+                        return navigate('/')
                     }
                     onSubmit(values, user)
                 }}

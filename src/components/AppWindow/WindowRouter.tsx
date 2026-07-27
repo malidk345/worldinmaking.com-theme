@@ -8,9 +8,13 @@ import Inbox from 'components/Inbox'
 import Handbook from '../../templates/Handbook'
 import BlogPost from '../../templates/BlogPost'
 import PostListing from '../../templates/PostListing'
+import WorldInMakingHome from 'components/Home/WorldInMakingHome'
+import DisplayOptions from 'components/DisplayOptions'
+import Legal from 'components/Legal'
+import { AppWindow } from '../../context/Window'
 
 export interface WindowRouterProps {
-    item: AppWindowType & { children?: React.ReactNode }
+    item: AppWindow & { children?: React.ReactNode }
 }
 
 function WindowRouterInner({ item }: WindowRouterProps) {
@@ -42,6 +46,9 @@ function WindowRouterInner({ item }: WindowRouterProps) {
     }
 
     // 4. Route-based resolution
+    if (path === '/manifesto' || path === '/about-wim' || path === '/world-in-making') {
+        return <WorldInMakingHome />
+    }
     if (path === '/display-options') {
         return <DisplayOptions />
     }

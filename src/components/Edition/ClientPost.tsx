@@ -1,4 +1,4 @@
-import { useRouter } from 'next/navigation'
+import { useRouter } from 'next/router'
 import { CallToAction } from 'components/CallToAction'
 import ClientPostMarkdown from 'components/Squeak/components/ClientPostMarkdown'
 import { ZoomImage } from 'components/ZoomImage'
@@ -11,7 +11,7 @@ import Title from './Title'
 import { useLayoutData } from 'components/Layout/hooks'
 import Upvote from './Upvote'
 import { Questions } from 'components/Squeak'
-import { usePathname } from 'next/navigation'
+import { useLocation } from '@gatsbyjs/reach-router'
 import { Contributors } from '../../templates/BlogPost'
 import Link from 'components/Link'
 
@@ -75,7 +75,8 @@ export default function ClientPost({
     slug: string
     post_tags: { data: { id: number }[] }
 }) {
-    const pathname = usePathname()
+    const location = useLocation()
+    const pathname = location.pathname || ''
     const { fullWidthContent } = useLayoutData()
     const { mutate } = useContext(PostsContext)
     const [confirmDelete, setConfirmDelete] = useState(false)

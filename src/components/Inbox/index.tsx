@@ -1,4 +1,4 @@
-import { useRouter } from 'next/navigation'
+import { useNavigate } from '@gatsbyjs/reach-router'
 import React, { useEffect, useRef, useState, useMemo, useCallback, lazy, Suspense } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useQuestions } from 'hooks/useQuestions'
@@ -38,6 +38,7 @@ const Menu = ({ onValueChange }: { onValueChange: (value: string) => void }) => 
     const { user } = useUser()
     const topicsNav = useTopicsNav()
     const { appWindow } = useWindow()
+    const navigate = useNavigate()
 
     const filteredTopicsNav = useMemo(() => {
         return [
@@ -71,7 +72,7 @@ const Menu = ({ onValueChange }: { onValueChange: (value: string) => void }) => 
                     defaultValue={defaultValue}
                     onValueChange={(value) => {
                         onValueChange(value)
-                        router.push(value)
+                        navigate(value)
                     }}
                     groups={[
                         {
@@ -298,6 +299,7 @@ const QuestionToolbar = React.memo(({
     isMobile,
     menuValue,
 }: QuestionToolbarProps) => {
+    const navigate = useNavigate()
     return (
         <div className="bg-accent border-t border-primary px-4 py-2 flex gap-2 items-center sticky bottom-0 z-10">
             <OSButton
@@ -380,7 +382,7 @@ const QuestionToolbar = React.memo(({
                                     }
                                     onClick={() => {
                                         if (isMobile && sideBySide) {
-                                            router.push(menuValue)
+                                            navigate(menuValue)
                                         } else {
                                             expandOrCollapse(expandable)
                                         }
@@ -399,6 +401,7 @@ const QuestionToolbar = React.memo(({
 QuestionToolbar.displayName = 'QuestionToolbar'
 
 const AskAQuestion = ({ onSubmit }: { onSubmit: () => void }) => {
+    const navigate = useNavigate()
     const { addToast } = useToast()
     const { appWindow } = useWindow()
     const { closeWindow, setWindowTitle } = useApp()
@@ -416,9 +419,7 @@ const AskAQuestion = ({ onSubmit }: { onSubmit: () => void }) => {
                     closeWindow(appWindow)
                     if (data?.attributes?.permalink) {
                         setTimeout(() => {
-                            router.push(`/questions/${data.attributes.permalink}`, {
-                                state: { askMax: true },
-                            })
+                            navigate(`/questions/${data.attributes.permalink}`)
                         }, 0)
                     }
                 }}
@@ -430,6 +431,7 @@ const AskAQuestion = ({ onSubmit }: { onSubmit: () => void }) => {
 }
 
 export default function Inbox(props) {
+    const navigate = useNavigate()
     const { data, params } = props
     const initialTopicID = data?.topic?.squeakId
     const permalink =
@@ -552,7 +554,7 @@ export default function Inbox(props) {
             if (user) {
                 setShowSubscribedQuestions(true)
             } else {
-                router.push('/questions')
+                navigate('/questions')
             }
             setReady(true)
         } else if (props.path === '/questions' || initialTopicID) {

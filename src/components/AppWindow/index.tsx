@@ -97,14 +97,15 @@ const Router = (props) => {
     if (/^\/questions/.test(path)) {
         return <Inbox {...props} />
     }
-    if (/^\/blog/.test(path)) {
-        return <PostListing {...props} activeMenu="blog" root="blog" title="Blog" />
+    if (path === '/blog' || path === '/posts') {
+        const root = path.replace('/', '')
+        return <PostListing {...props} activeMenu={root} root={root} title={root === 'blog' ? 'Blog' : 'Posts'} />
+    }
+    if (/^\/(blog|posts)\/.+/.test(path) || props.pageContext?.post || props.data?.postData) {
+        return <BlogPost {...props} />
     }
     if (/^\/handbook|^\/docs\/(?!api)|^\/manual/.test(path) && props.data?.post) {
         return <Handbook {...props} />
-    }
-    if ((props.pageContext?.post || /^posts/.test(path)) && props.data) {
-        return <BlogPost {...props} />
     }
     if (['/terms', '/privacy', '/dpa', '/baa', '/subprocessors'].includes(path)) {
         return <Legal defaultTab={path}>{children}</Legal>

@@ -1,5 +1,6 @@
 import React from 'react'
 import NextLink from 'next/link'
+import { useRouter as useNextRouter } from 'next/router'
 
 export const Link = React.forwardRef<HTMLAnchorElement, any>((props, ref) => {
     const { to, href, children, state, activeClassName, onClick, ...other } = props

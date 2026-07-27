@@ -1,11 +1,15 @@
-import { useRouter } from 'next/navigation'
+import { useRouter } from 'next/router'
 import React, { useEffect, useState } from 'react'
 import NewPost from 'components/Edition/NewPost'
 import Layout from 'components/Layout'
 import SEO from 'components/seo'
 import { communityMenu } from '../../navs'
 import { useUser } from 'hooks/useUser'
+
+export const getServerSideProps = () => ({ props: {} })
+
 export default function New() {
+    const router = useRouter()
     const { fetchUser } = useUser()
     const [loading, setLoading] = useState(true)
     useEffect(() => {

@@ -78,11 +78,10 @@ const Collapsed = ({ setExpanded, replies, resolvedBy, isInForum }: CollapsedPro
     const maxAvatars = Math.min(replyCount - 1, 3)
     const {
         question: {
-            profile: {
-                data: { id: questionProfileID },
-            },
+            profile,
         },
     } = useContext(CurrentQuestionContext)
+    const questionProfileID = profile?.data?.id
 
     const badgeText = getBadge(questionProfileID, reply?.attributes?.profile?.data?.id)
     const avatars: any[] = []
@@ -178,12 +177,11 @@ const getComunityClasses = (reply, isResolution) => {
 const Expanded = ({ replies, isInForum }: ExpandedProps) => {
     const {
         question: {
-            profile: {
-                data: { id: questionProfileID },
-            },
+            profile,
             resolvedBy,
         },
     } = useContext(CurrentQuestionContext)
+    const questionProfileID = profile?.data?.id
     return (
         <>
             {replies.data.map((reply) => {

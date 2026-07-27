@@ -19,7 +19,7 @@ import Title from 'components/Edition/Title'
 import Upvote from 'components/Edition/Upvote'
 import LikeButton from 'components/Edition/LikeButton'
 import { Questions } from 'components/Squeak'
-import { usePathname } from 'next/navigation'
+import { useLocation } from '@gatsbyjs/reach-router'
 import qs from 'qs'
 import Breadcrumbs from 'components/Edition/Breadcrumbs'
 import { CallToAction } from 'components/CallToAction'
@@ -331,7 +331,7 @@ export default function BlogPost({ data = {}, pageContext = {}, location, mobile
     const { tableOfContents, askMax, localizedRoot } = pageContext
     const languageAlternates = pageContext.languageAlternates as LanguageAlternate[] | undefined
     const { fullWidthContent, theoMode } = useLayoutData()
-    const pathname = usePathname()
+    const { pathname } = useLocation()
     const [postID, setPostID] = useState()
     const [posthogInstance, setPosthogInstance] = useState()
 

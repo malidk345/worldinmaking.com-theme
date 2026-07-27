@@ -1,5 +1,4 @@
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://iydypisgfaksqkjdraiu.supabase.co'
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_KTgzPl0F8_-HzMC_ZEpqMA_ZR7XPnMX'
+import { fetchWithCache, SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-rest'
 
 export interface SupabasePost {
     id: string
@@ -44,15 +43,8 @@ const MOCK_SUPABASE_POSTS: SupabasePost[] = [
 
 export async function fetchSupabasePosts(): Promise<SupabasePost[]> {
     try {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/posts?select=*&order=created_at.desc`, {
-            headers: {
-                apikey: SUPABASE_ANON_KEY,
-                Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-            },
-            cache: 'no-store',
-        })
-        if (!res.ok) return MOCK_SUPABASE_POSTS
-        const data = await res.json()
+        const url = `${SUPABASE_URL}/rest/v1/posts?select=*&order=created_at.desc`
+        const data = await fetchWithCache(url)
         return Array.isArray(data) && data.length > 0 ? data : MOCK_SUPABASE_POSTS
     } catch (e) {
         console.error('Error fetching Supabase posts:', e)
@@ -62,18 +54,8 @@ export async function fetchSupabasePosts(): Promise<SupabasePost[]> {
 
 export async function fetchSupabasePostBySlug(slug: string): Promise<SupabasePost | null> {
     try {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/posts?slug=eq.${encodeURIComponent(slug)}&select=*`, {
-            headers: {
-                apikey: SUPABASE_ANON_KEY,
-                Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-            },
-            cache: 'no-store',
-        })
-        if (!res.ok) {
-            const found = MOCK_SUPABASE_POSTS.find((p) => p.slug === slug)
-            return found || MOCK_SUPABASE_POSTS[0]
-        }
-        const data = await res.json()
+        const url = `${SUPABASE_URL}/rest/v1/posts?slug=eq.${encodeURIComponent(slug)}&select=*`
+        const data = await fetchWithCache(url)
         if (Array.isArray(data) && data.length > 0) return data[0]
         const found = MOCK_SUPABASE_POSTS.find((p) => p.slug === slug)
         return found || MOCK_SUPABASE_POSTS[0]

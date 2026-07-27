@@ -171,6 +171,7 @@ export const useQuestion = (id: number | string, options?: UseQuestionOptions) =
                                     createdAt: r.created_at,
                                     profile: {
                                         data: {
+                                            id: r.profiles?.id || r.author_id || 'community',
                                             attributes: {
                                                 firstName: r.profiles?.username || 'Community Member',
                                                 gravatarURL: r.profiles?.avatar_url || 'https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/pages-content/images/hog-9.png',

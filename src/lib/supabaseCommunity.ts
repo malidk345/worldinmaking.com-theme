@@ -1,9 +1,7 @@
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from './supabase'
+import { fetchWithCache, SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-rest'
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://iydypisgfaksqkjdraiu.supabase.co'
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_KTgzPl0F8_-HzMC_ZEpqMA_ZR7XPnMX'
-
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+export { supabase, fetchWithCache, SUPABASE_URL, SUPABASE_ANON_KEY }
 
 export interface SupabaseCommunityPost {
     id: number | string
@@ -29,31 +27,6 @@ export interface SupabaseCommunityReply {
         id: string
         username: string
         avatar_url: string
-    }
-}
-
-const memoryCache: Record<string, { data: any; timestamp: number }> = {}
-const CACHE_TTL_MS = 60000
-
-async function fetchWithCache(url: string): Promise<any> {
-    const now = Date.now()
-    if (memoryCache[url] && now - memoryCache[url].timestamp < CACHE_TTL_MS) {
-        return memoryCache[url].data
-    }
-    try {
-        const res = await fetch(url, {
-            headers: {
-                apikey: SUPABASE_ANON_KEY,
-                Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-            },
-        })
-        if (!res.ok) return memoryCache[url]?.data || []
-        const data = await res.json()
-        const result = Array.isArray(data) ? data : []
-        memoryCache[url] = { data: result, timestamp: now }
-        return result
-    } catch {
-        return memoryCache[url]?.data || []
     }
 }
 

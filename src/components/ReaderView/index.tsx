@@ -342,7 +342,7 @@ const EditHistoryPopover = ({ commits }: { commits: any[] }) => {
                                 <p className="text-sm m-0">{commit.author.login}</p>
                             </Link>
                             <div className="flex items-center gap-2">
-                                <p className="text-xs opacity-60 m-0">{dayjs(commit.date).fromNow()}</p>
+                                <p className="text-xs opacity-60 m-0" suppressHydrationWarning>{dayjs(commit.date).fromNow()}</p>
                                 <Link href={commit.url} externalNoIcon>
                                     <IconPullRequest className="size-4" />
                                 </Link>

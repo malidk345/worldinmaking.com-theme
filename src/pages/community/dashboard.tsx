@@ -8,6 +8,7 @@ import Link from 'components/Link'
 import useTopicsNav from '../../navs/useTopicsNav'
 
 export default function CommunityPage() {
+    const router = useRouter()
     const { user, fetchUser } = useUser()
     const { questions, isLoading, fetchMore } = useQuestions({
         filters: {

@@ -1,4 +1,4 @@
-import { useRouter } from 'next/navigation'
+import { useNavigate } from '@gatsbyjs/reach-router'
 import CloudinaryImage from 'components/CloudinaryImage'
 import React, { useState, createContext, useEffect, useContext, useRef } from 'react'
 import { Replies } from './Replies'
@@ -233,6 +233,7 @@ const EscalateButton = ({ escalate, escalated }) => {
 
 const DeleteButton = ({ questionID }: { questionID: number }) => {
     const { getJwt } = useUser()
+    const navigate = useNavigate()
     const handleClick = async () => {
         if (confirm('Are you sure you want to delete this thread?')) {
             await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/questions/${questionID}`, {
@@ -243,7 +244,7 @@ const DeleteButton = ({ questionID }: { questionID: number }) => {
                 },
                 body: JSON.stringify({ data: { publishedAt: null } }),
             })
-            await router.push('/questions')
+            navigate('/questions')
         }
     }
     return (

@@ -36,7 +36,7 @@ const Notification = ({ url, title, excerpt, date, count, onDismiss }) => {
                         </div>
                         <div className="flex-shrink-0 text-sm font-normal text-right flex items-center space-x-4">
                             <p className="m-0 text-sm font-bold text-red">+{count}</p>
-                            <div className="text-primary dark:text-primary-dark font-medium opacity-60 line-clamp-2">
+                            <div className="text-primary dark:text-primary-dark font-medium opacity-60 line-clamp-2" suppressHydrationWarning>
                                 {dayjs(date).fromNow()}
                             </div>
                         </div>
