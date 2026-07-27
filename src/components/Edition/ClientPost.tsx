@@ -11,7 +11,6 @@ import Title from './Title'
 import { useLayoutData } from 'components/Layout/hooks'
 import Upvote from './Upvote'
 import { Questions } from 'components/Squeak'
-import { useRouter } from 'next/router'
 import { Contributors } from '../../templates/BlogPost'
 import Link from 'components/Link'
 

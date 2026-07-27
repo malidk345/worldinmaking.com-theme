@@ -4,6 +4,7 @@ import qs from 'qs'
 import React, { useEffect, useState } from 'react'
 
 export const getServerSideProps = ({ params }: { params: { slug: string } }) => ({ props: { params } })
+export const runtime = 'experimental-edge'
 
 const Skeleton = () => {
     const { fullWidthContent } = useLayoutData()

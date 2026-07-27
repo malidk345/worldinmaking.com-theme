@@ -7,6 +7,7 @@ import { communityMenu } from '../../../navs'
 import { useUser } from 'hooks/useUser'
 
 export const getServerSideProps = () => ({ props: {} })
+export const runtime = 'experimental-edge'
 
 export default function Edit() {
     const router = useRouter()
