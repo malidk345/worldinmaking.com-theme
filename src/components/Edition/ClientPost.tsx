@@ -5,13 +5,13 @@ import { ZoomImage } from 'components/ZoomImage'
 import SEO from 'components/seo'
 import dayjs from 'dayjs'
 import { useUser } from 'hooks/useUser'
-import React, { useContext, useState } from 'react'
+import React, { useContext, useState, useEffect } from 'react'
 import { PostsContext } from './Posts'
 import Title from './Title'
 import { useLayoutData } from 'components/Layout/hooks'
 import Upvote from './Upvote'
 import { Questions } from 'components/Squeak'
-import { useLocation } from '@gatsbyjs/reach-router'
+import { useRouter } from 'next/router'
 import { Contributors } from '../../templates/BlogPost'
 import Link from 'components/Link'
 
@@ -75,8 +75,21 @@ export default function ClientPost({
     slug: string
     post_tags: { data: { id: number }[] }
 }) {
-    const location = useLocation()
-    const pathname = location.pathname || ''
+    const router = useRouter()
+    const [location, setLocation] = useState(() => {
+        const asPath = router?.asPath || ''
+        const pathname = asPath.split('?')[0].split('#')[0] || '/'
+        return { pathname }
+    })
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            setLocation({
+                pathname: window.location.pathname,
+            })
+        }
+    }, [router?.asPath])
+    const pathname = location?.pathname || ''
     const { fullWidthContent } = useLayoutData()
     const { mutate } = useContext(PostsContext)
     const [confirmDelete, setConfirmDelete] = useState(false)

@@ -1,4 +1,4 @@
-import { useNavigate } from '@gatsbyjs/reach-router'
+import { useRouter } from 'next/router'
 import React, { useEffect, useRef, useState, useMemo, useCallback, lazy, Suspense } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useQuestions } from 'hooks/useQuestions'
@@ -38,7 +38,16 @@ const Menu = ({ onValueChange }: { onValueChange: (value: string) => void }) => 
     const { user } = useUser()
     const topicsNav = useTopicsNav()
     const { appWindow } = useWindow()
-    const navigate = useNavigate()
+    const router = useRouter()
+    const navigate = (to: string, options?: any) => {
+        if (typeof window !== 'undefined') {
+            if (options?.replace) {
+                router.replace(to)
+            } else {
+                router.push(to)
+            }
+        }
+    }
 
     const filteredTopicsNav = useMemo(() => {
         return [
@@ -299,7 +308,16 @@ const QuestionToolbar = React.memo(({
     isMobile,
     menuValue,
 }: QuestionToolbarProps) => {
-    const navigate = useNavigate()
+    const router = useRouter()
+    const navigate = (to: string, options?: any) => {
+        if (typeof window !== 'undefined') {
+            if (options?.replace) {
+                router.replace(to)
+            } else {
+                router.push(to)
+            }
+        }
+    }
     return (
         <div className="bg-accent border-t border-primary px-4 py-2 flex gap-2 items-center sticky bottom-0 z-10">
             <OSButton
@@ -401,7 +419,16 @@ const QuestionToolbar = React.memo(({
 QuestionToolbar.displayName = 'QuestionToolbar'
 
 const AskAQuestion = ({ onSubmit }: { onSubmit: () => void }) => {
-    const navigate = useNavigate()
+    const router = useRouter()
+    const navigate = (to: string, options?: any) => {
+        if (typeof window !== 'undefined') {
+            if (options?.replace) {
+                router.replace(to)
+            } else {
+                router.push(to)
+            }
+        }
+    }
     const { addToast } = useToast()
     const { appWindow } = useWindow()
     const { closeWindow, setWindowTitle } = useApp()
@@ -431,7 +458,16 @@ const AskAQuestion = ({ onSubmit }: { onSubmit: () => void }) => {
 }
 
 export default function Inbox(props) {
-    const navigate = useNavigate()
+    const router = useRouter()
+    const navigate = (to: string, options?: any) => {
+        if (typeof window !== 'undefined') {
+            if (options?.replace) {
+                router.replace(to)
+            } else {
+                router.push(to)
+            }
+        }
+    }
     const { data, params } = props
     const initialTopicID = data?.topic?.squeakId
     const permalink =
