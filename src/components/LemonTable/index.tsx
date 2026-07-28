@@ -1,5 +1,4 @@
 import React from 'react'
-import './LemonTable.css'
 
 export interface Column<T> {
     title?: React.ReactNode
