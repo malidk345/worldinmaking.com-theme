@@ -6,7 +6,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import Link from 'components/Link'
-import Layout from 'components/Layout'
 import TeamMember from 'components/TeamMember'
 import qs from 'qs'
 import CloudinaryImage from 'components/CloudinaryImage'
@@ -14,9 +13,7 @@ import Tooltip from 'components/RadixUI/Tooltip'
 import ProgressBar from 'components/ProgressBar'
 import slugify from 'slugify'
 import { usePaginatedPosts } from 'components/Edition/hooks/usePaginatedPosts'
-const graphql = (str: any) => str
-const useStaticQuery = (q?: any) => ({})
-import { IconSpinner } from '@posthog/icons'
+import { IconSpinner, IconLayoutGrid, IconList } from '@posthog/icons'
 import LikeButton from 'components/Edition/LikeButton'
 import Modal from 'components/Modal'
 import { Authentication } from 'components/Squeak'
@@ -37,46 +34,70 @@ const sortOptions = [
 const getSortOption = (root?: string | null) =>
     sortOptions[root && ['blog', 'changelog', 'newsletter', 'spotlight'].includes(root) ? 1 : 0]
 
-export const FeaturedImage = ({ url }: { url: string }) => {
-    const [isSmallImageLoaded, setIsSmallImageLoaded] = useState(false)
-    const [isLargeImageLoaded, setIsLargeImageLoaded] = useState(false)
+export const BlogCard = ({ post }: { post: any }) => {
+    const title = post.attributes?.title || 'Untitled Post'
+    const slug = post.attributes?.slug || '#'
+    const date = post.attributes?.date ? dayjs(post.attributes.date).format('MMM D, YYYY') : ''
+    const category = post.attributes?.post_category?.data?.attributes?.label
+    const featuredImage =
+        post.attributes?.featuredImage?.url ||
+        'https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/components/Blog/images/default.jpg'
+    const authors = post.attributes?.authors?.data || []
 
     return (
-        <Tooltip
-            trigger={
-                <div data-scheme="secondary" className="bg-primary max-h-8 max-w-48 overflow-hidden">
-                    <CloudinaryImage
-                        src={url as `https://res.cloudinary.com/${string}`}
-                        imgClassName={`max-h-8 max-w-48 h-auto w-auto object-contain ${
-                            !isSmallImageLoaded ? 'hidden' : ''
-                        }`}
-                        width={200}
-                        onLoad={() => setIsSmallImageLoaded(true)}
-                    />
-                </div>
-            }
-        >
-            <div className="relative min-h-4 min-w-12 max-h-72 max-w-72 transition-all">
-                {!isLargeImageLoaded && (
-                    <div className="flex items-center justify-center">
-                        <div className="w-full">
-                            <ProgressBar title="image" chrome={false} />
-                        </div>
-                    </div>
-                )}
-                <CloudinaryImage
-                    src={url as `https://res.cloudinary.com/${string}`}
-                    width={400}
-                    onLoad={() => setIsLargeImageLoaded(true)}
-                    className={!isLargeImageLoaded ? 'hidden' : ''}
+        <div className="relative rounded-xl overflow-hidden z-10 h-64 w-full group border border-black/10 dark:border-white/10 shadow-md hover:shadow-xl transition-all duration-300">
+            <Link className="!text-white !hover:text-white flex flex-col h-full w-full" to={slug}>
+                <img
+                    alt={title}
+                    className="w-full h-full object-cover absolute inset-0 group-hover:scale-105 transition-transform duration-500"
+                    src={featuredImage}
                 />
-            </div>
-        </Tooltip>
+                <div className="bg-gradient-to-t from-black/95 via-black/50 to-black/20 absolute inset-0 p-5 flex flex-col justify-between h-full w-full">
+                    <div className="flex justify-between items-center">
+                        {category && (
+                            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-md text-white uppercase tracking-wider border border-white/20">
+                                {category}
+                            </span>
+                        )}
+                        <span className="text-xs text-white/80 font-medium ml-auto">{date}</span>
+                    </div>
+                    <div>
+                        <h3 className="m-0 text-base md:text-lg font-bold text-white leading-snug line-clamp-2 drop-shadow-md group-hover:underline decoration-white/50 underline-offset-4">
+                            {title}
+                        </h3>
+                        {authors.length > 0 && (
+                            <div className="flex items-center gap-2 mt-3 pt-2 border-t border-white/15">
+                                {authors.slice(0, 2).map((author: any, idx: number) => {
+                                    const name =
+                                        [author.attributes?.firstName, author.attributes?.lastName]
+                                            .filter(Boolean)
+                                            .join(' ') || 'WorldInMaking'
+                                    const avatar =
+                                        author.attributes?.avatar?.url ||
+                                        'https://res.cloudinary.com/dmukukwp6/image/upload/v1675204207/james_hawkins_posthog_031f7cf651.png'
+                                    return (
+                                        <div key={idx} className="flex items-center gap-1.5">
+                                            <img
+                                                src={avatar}
+                                                className="w-5 h-5 rounded-full object-cover border border-white/30"
+                                                alt={name}
+                                            />
+                                            <span className="text-xs text-white/90 font-medium">{name}</span>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </Link>
+        </div>
     )
 }
 
 export default function Posts({ pageContext = {} }: { pageContext?: any }) {
     const [loginModalOpen, setLoginModalOpen] = useState(false)
+    const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid')
     const { allPostCategory } = {} as any
     const articleRef = useRef<HTMLDivElement>(null)
     const [authors, setAuthors] = useState<any[]>([])
@@ -87,21 +108,7 @@ export default function Posts({ pageContext = {} }: { pageContext?: any }) {
     const [params, setParams] = useState(
         getParams(pageContext?.root, pageContext?.selectedTag, getSortOption(pageContext?.root).sort, selectedAuthor)
     )
-    const allTags = useMemo(
-        () =>
-            (allPostCategory?.nodes || [])
-                .flatMap((category: any) => category.attributes?.post_tags?.data || [])
-                .sort((a: any, b: any) => a.attributes.label.localeCompare(b.attributes.label))
-                .filter(
-                    (tag: any, index: number, self: any[]) => index === self.findIndex((t: any) => t.attributes.label === tag.attributes.label)
-                ),
-        [allPostCategory]
-    )
-    const selectedCategory = useMemo(
-        () => (allPostCategory?.nodes || []).find((category: any) => category.attributes.folder === root),
-        [allPostCategory, root]
-    )
-    const tags = root === null ? allTags : selectedCategory?.attributes?.post_tags?.data || []
+
     const allCategories = useMemo(
         () =>
             (allPostCategory?.nodes || []).filter(
@@ -126,14 +133,9 @@ export default function Posts({ pageContext = {} }: { pageContext?: any }) {
     const { posts, isValidating, totalPages, currentPage, nextPage, prevPage, hasNextPage, hasPrevPage, goToPage } =
         usePaginatedPosts({ params, onPageChange: handlePageChange })
 
-    const handleFilterChange = (filters) => {
+    const handleFilterChange = (filters: any) => {
         if (filters.post_tags) {
-            const currentRoot = filters.root?.value || root
-            const exists = allCategories
-                .find((category) => category.attributes.folder === currentRoot)
-                ?.attributes.post_tags.data.some((tag) => tag.attributes.label === filters.post_tags.value)
-            const selectedTag = currentRoot === null || exists ? filters.post_tags.value : null
-            setSelectedTag(selectedTag)
+            setSelectedTag(filters.post_tags.value)
         }
         if (filters.root) {
             setRoot(filters.root.value)
@@ -147,27 +149,15 @@ export default function Posts({ pageContext = {} }: { pageContext?: any }) {
         const query = qs.stringify(
             {
                 sort: ['firstName'],
-                pagination: {
-                    page: 1,
-                    pageSize: 100,
-                },
-                filters: {
-                    authorPosts: {
-                        title: {
-                            $notNull: true,
-                        },
-                    },
-                },
+                pagination: { page: 1, pageSize: 100 },
+                filters: { authorPosts: { title: { $notNull: true } } },
             },
-            {
-                encodeValuesOnly: true,
-            }
+            { encodeValuesOnly: true }
         )
         fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles?${query}`)
             .then((res) => res.json())
-            .then((data) => {
-                setAuthors(data?.data)
-            })
+            .then((data) => setAuthors(data?.data || []))
+            .catch(() => {})
     }, [])
 
     useEffect(() => {
@@ -179,227 +169,150 @@ export default function Posts({ pageContext = {} }: { pageContext?: any }) {
     return (
         <div data-scheme="primary" className="w-full h-full bg-primary text-primary">
             <PostsContext.Provider value={{ setLoginModalOpen }}>
-            <SEO title="Posts - PostHog" />
-            <Modal open={loginModalOpen} setOpen={setLoginModalOpen}>
-                <div className="px-4">
-                    <div className="p-4 max-w-[450px] mx-auto relative rounded-md dark:bg-dark bg-light mt-12 border border-input">
-                        <p className="m-0 text-sm font-bold dark:text-white">
-                            Note: PostHog.com authentication is separate from your PostHog app.
-                        </p>
-                        <p className="text-sm my-2 dark:text-white">
-                            We suggest signing up with your personal email. Soon you'll be able to link your PostHog app
-                            account.
-                        </p>
-                        <Authentication
-                            onAuth={() => setLoginModalOpen(false)}
-                            showBanner={false}
-                            showProfile={false}
-                        />
+                <SEO title="Posts - PostHog" />
+                <Modal open={loginModalOpen} setOpen={setLoginModalOpen}>
+                    <div className="px-4">
+                        <div className="p-4 max-w-[450px] mx-auto relative rounded-md dark:bg-dark bg-light mt-12 border border-input">
+                            <p className="m-0 text-sm font-bold dark:text-white">
+                                Note: PostHog.com authentication is separate from your PostHog app.
+                            </p>
+                            <p className="text-sm my-2 dark:text-white">
+                                We suggest signing up with your personal email.
+                            </p>
+                            <Authentication
+                                onAuth={() => setLoginModalOpen(false)}
+                                showBanner={false}
+                                showProfile={false}
+                            />
+                        </div>
                     </div>
-                </div>
-            </Modal>
-            <Editor
-                articleRef={articleRef}
-                title="posts"
-                type="psheet"
-                maxWidth="100%"
-                dataToFilter={posts}
-                handleFilterChange={handleFilterChange}
-                showFilters
-                sortOptions={sortOptions.map((option) => ({
-                    label: option.label,
-                    value: option.label,
-                }))}
-                onSortChange={(value) => setSort(value)}
-                defaultSortValue={sort}
-                availableFilters={[
-                    {
-                        label: 'category',
-                        value: 'root',
-                        initialValue: root,
-                        options: [
-                            {
-                                label: 'All',
-                                value: null,
-                            },
-                            ...allCategories.map((category) => ({
-                                label: category.attributes.label,
-                                value: category.attributes.folder,
-                            })),
-                        ],
-                        operator: 'eq',
-                    },
-                    ...(tags?.length > 0
-                        ? [
-                              {
-                                  label: 'tags',
-                                  value: 'post_tags',
-                                  initialValue: selectedTag,
-                                  options: [
-                                      {
-                                          label: 'All',
-                                          value: null,
-                                      },
-                                      ...tags.map((tag) => ({
-                                          label: tag.attributes.label,
-                                          value: tag.attributes.label,
-                                      })),
-                                  ],
-                                  operator: 'includes',
-                              },
-                          ]
-                        : []),
-                    ...(authors.length > 0
-                        ? [
-                              {
-                                  label: 'author',
-                                  value: 'authors',
-                                  options: [
-                                      {
-                                          label: 'All',
-                                          value: null,
-                                      },
-                                      ...authors.map((author) => {
-                                          const name = [author.attributes.firstName, author.attributes.lastName]
-                                              .filter(Boolean)
-                                              .join(' ')
-                                          return {
-                                              label: name,
-                                              value: author.id,
-                                          }
-                                      }),
-                                  ],
-                                  operator: 'includes',
-                              },
-                          ]
-                        : []),
-                ]}
-            >
-                {posts.length > 0 && (
-                    <OSTable
-                        width="full"
-                        pagination={{
-                            totalPages,
-                            currentPage,
-                            nextPage,
-                            prevPage,
-                            hasNextPage,
-                            hasPrevPage,
-                            goToPage,
-                        }}
-                        rowAlignment="top"
-                        columns={[
-                            {
-                                name: '',
-                                align: 'center',
-                                width: '40px',
-                            },
-                            {
-                                name: 'Date',
-                                align: 'left',
-                                width: '120px',
-                            },
-                            {
-                                name: 'Title',
-                                align: 'left',
-                                width: '3fr',
-                            },
-                            {
-                                name: 'Tags',
-                                align: 'left',
-                                width: '1fr',
-                            },
-                            {
-                                name: 'Author(s)',
-                                align: 'left',
-                                width: '1fr',
-                            },
-                        ]}
-                        rows={posts.map((post, index) => {
-                            const featuredImageURL = post.attributes?.featuredImage?.url
-                            return {
-                                cells: [
-                                    {
-                                        content: <LikeButton postID={post.id} slug={post.attributes.slug} />,
-                                    },
-                                    {
-                                        content: (
-                                            <span className="text-muted font-semibold">
-                                                {dayjs(post.attributes.date).format('MMM D, YYYY')}
-                                            </span>
-                                        ),
-                                    },
-                                    {
-                                        content: (
-                                            <div className="flex justify-between items-start w-full">
-                                                <Link className="font-semibold flex-1" to={post.attributes.slug} state={{ newWindow: true }}>
+                </Modal>
+                <Editor
+                    articleRef={articleRef}
+                    title="posts"
+                    type="psheet"
+                    maxWidth="100%"
+                    dataToFilter={posts}
+                    handleFilterChange={handleFilterChange}
+                    showFilters
+                    sortOptions={sortOptions.map((option) => ({
+                        label: option.label,
+                        value: option.label,
+                    }))}
+                    onSortChange={(value) => setSort(value)}
+                    defaultSortValue={sort}
+                >
+                    <div className="flex justify-end items-center mb-4 gap-2">
+                        <button
+                            onClick={() => setViewMode('grid')}
+                            className={`p-1.5 rounded-md transition-colors ${
+                                viewMode === 'grid'
+                                    ? 'bg-black/10 dark:bg-white/20 text-primary font-bold'
+                                    : 'text-muted hover:bg-black/5 dark:hover:bg-white/10'
+                            }`}
+                            title="Grid View"
+                        >
+                            <IconLayoutGrid className="size-4" />
+                        </button>
+                        <button
+                            onClick={() => setViewMode('table')}
+                            className={`p-1.5 rounded-md transition-colors ${
+                                viewMode === 'table'
+                                    ? 'bg-black/10 dark:bg-white/20 text-primary font-bold'
+                                    : 'text-muted hover:bg-black/5 dark:hover:bg-white/10'
+                            }`}
+                            title="Table View"
+                        >
+                            <IconList className="size-4" />
+                        </button>
+                    </div>
+
+                    {posts.length > 0 && viewMode === 'grid' && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
+                            {posts.map((post) => (
+                                <BlogCard key={post.id} post={post} />
+                            ))}
+                        </div>
+                    )}
+
+                    {posts.length > 0 && viewMode === 'table' && (
+                        <OSTable
+                            width="full"
+                            pagination={{
+                                totalPages,
+                                currentPage,
+                                nextPage,
+                                prevPage,
+                                hasNextPage,
+                                hasPrevPage,
+                                goToPage,
+                            }}
+                            rowAlignment="top"
+                            columns={[
+                                { name: '', align: 'center', width: '40px' },
+                                { name: 'Date', align: 'left', width: '120px' },
+                                { name: 'Title', align: 'left', width: '3fr' },
+                                { name: 'Tags', align: 'left', width: '1fr' },
+                                { name: 'Author(s)', align: 'left', width: '1fr' },
+                            ]}
+                            rows={posts.map((post) => {
+                                return {
+                                    cells: [
+                                        { content: <LikeButton postID={post.id} slug={post.attributes.slug} /> },
+                                        {
+                                            content: (
+                                                <span className="text-muted font-semibold">
+                                                    {dayjs(post.attributes.date).format('MMM D, YYYY')}
+                                                </span>
+                                            ),
+                                        },
+                                        {
+                                            content: (
+                                                <Link className="font-semibold flex-1" to={post.attributes.slug}>
                                                     {post.attributes.title}
                                                 </Link>
-                                                {featuredImageURL ? (
-                                                    <Link to={post.attributes.slug} state={{ newWindow: true }}>
-                                                        <FeaturedImage url={featuredImageURL} />
-                                                    </Link>
-                                                ) : null}
-                                            </div>
-                                        ),
-                                        className: '!flex-row !pl-[.3rem] gap-2 text-left',
-                                    },
-                                    {
-                                        content: (
-                                            <ul className="list-none m-0 p-0">
-                                                <li className="text-sm">
-                                                    {(post.attributes?.post_tags?.data || []).map((tag: any, index: number) => {
-                                                        const label = tag?.attributes?.label || 'Article'
-                                                        const base =
-                                                            post.attributes?.post_category?.data?.attributes?.folder || 'posts'
-                                                        const url = `/${base}/${slugify(label, { lower: true })}`
-                                                        const isLast =
-                                                            index === (post.attributes?.post_tags?.data?.length || 1) - 1
+                                            ),
+                                        },
+                                        {
+                                            content: (
+                                                <span className="text-sm text-secondary">
+                                                    {post.attributes.post_category?.data?.attributes?.label || 'Article'}
+                                                </span>
+                                            ),
+                                        },
+                                        {
+                                            content: (
+                                                <ul className="list-none m-0 p-0 flex flex-wrap gap-1">
+                                                    {(post.attributes?.authors?.data || []).map((author: any) => {
+                                                        const name = [
+                                                            author.attributes?.firstName,
+                                                            author.attributes?.lastName,
+                                                        ]
+                                                            .filter(Boolean)
+                                                            .join(' ') || 'WorldInMaking'
+                                                        const photo = author.attributes?.avatar?.url
                                                         return (
-                                                            <React.Fragment key={tag.id || index}>
-                                                                <Link to={url}>
-                                                                    {label}
-                                                                </Link>
-                                                                {!isLast && ', '}
-                                                            </React.Fragment>
+                                                            <li key={author.id || name}>
+                                                                <TeamMember name={name} photo={photo} />
+                                                            </li>
                                                         )
                                                     })}
-                                                </li>
-                                            </ul>
-                                        ),
-                                    },
-                                    {
-                                        content: (
-                                            <ul className="list-none m-0 p-0 flex flex-wrap gap-1">
-                                                {(post.attributes?.authors?.data || []).map((author: any) => {
-                                                    const name = [
-                                                        author.attributes?.firstName,
-                                                        author.attributes?.lastName,
-                                                    ]
-                                                        .filter(Boolean)
-                                                        .join(' ') || 'WorldInMaking'
-                                                    const photo = author.attributes?.avatar?.url
-                                                    return (
-                                                        <li key={author.id || name}>
-                                                            <TeamMember name={name} photo={photo} />
-                                                        </li>
-                                                    )
-                                                })}
-                                            </ul>
-                                        ),
-                                    },
-                                ],
-                            }
-                        })}
-                    />
-                )}
-                {isValidating && !posts.length && (
-                    <div className="flex items-center justify-center">
-                        <IconSpinner className="size-7 opacity-60 animate-spin" />
-                    </div>
-                )}
-            </Editor>
-        </PostsContext.Provider>
-    </div>
+                                                </ul>
+                                            ),
+                                        },
+                                    ],
+                                }
+                            })}
+                        />
+                    )}
+
+                    {isValidating && !posts.length && (
+                        <div className="flex items-center justify-center py-12">
+                            <IconSpinner className="size-7 opacity-60 animate-spin" />
+                        </div>
+                    )}
+                </Editor>
+            </PostsContext.Provider>
+        </div>
     )
 }
