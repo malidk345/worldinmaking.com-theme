@@ -1,3 +1,5 @@
+@import '../components/LemonTable/LemonTable.css';
+
 @layer base, components, not-prose, utilities;
 
 @tailwind base;
