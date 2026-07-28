@@ -178,25 +178,28 @@ export const useQuestion = (id: number | string, options?: UseQuestionOptions) =
                 const formatted = formatSupabaseCommunityToStrapi(targetPost as any)
                 fetchSupabaseCommunityReplies(targetPost.id).then((replies) => {
                     if (replies && replies.length > 0) {
-                        formatted.attributes.replies.data = replies.map((r) => ({
-                            id: r.id,
-                            attributes: {
+                        formatted.attributes.replies.data = replies.map((r) => {
+                            const pObj = Array.isArray(r.profiles) ? (r.profiles as any)[0] : r.profiles
+                            return {
                                 id: r.id,
-                                body: r.content,
-                                createdAt: r.created_at,
-                                profile: {
-                                    data: {
-                                        id: r.profiles?.id || r.author_id || 'community',
-                                        attributes: {
-                                            firstName: r.profiles?.username || 'Community Member',
-                                            gravatarURL:
-                                                r.profiles?.avatar_url ||
-                                                'https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/pages-content/images/hog-9.png',
+                                attributes: {
+                                    id: r.id,
+                                    body: r.content,
+                                    createdAt: r.created_at,
+                                    profile: {
+                                        data: {
+                                            id: pObj?.id || r.author_id || 'community',
+                                            attributes: {
+                                                firstName: pObj?.username || 'Community Member',
+                                                gravatarURL:
+                                                    pObj?.avatar_url ||
+                                                    'https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/pages-content/images/hog-9.png',
+                                            },
                                         },
                                     },
                                 },
-                            },
-                        }))
+                            }
+                        })
                         formatted.attributes.numReplies = replies.length
                     }
                     setSupabaseQuestion(formatted)

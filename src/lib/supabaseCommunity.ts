@@ -46,9 +46,10 @@ export async function fetchSupabaseCommunityReplies(postId: number | string): Pr
 }
 
 export function formatSupabaseCommunityToStrapi(post: SupabaseCommunityPost) {
-    const username = post.profiles?.username || 'Community Member'
+    const profileObj = Array.isArray(post.profiles) ? (post.profiles as any)[0] : post.profiles
+    const username = profileObj?.username || 'Community Member'
     const avatarUrl =
-        post.profiles?.avatar_url ||
+        profileObj?.avatar_url ||
         'https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/pages-content/images/hog-9.png'
 
     const isComment = post.title?.startsWith('comment_')
@@ -68,7 +69,7 @@ export function formatSupabaseCommunityToStrapi(post: SupabaseCommunityPost) {
             numReplies: 0,
             profile: {
                 data: {
-                    id: post.profiles?.id || '1',
+                    id: profileObj?.id || '1',
                     attributes: {
                         firstName: username,
                         lastName: '',

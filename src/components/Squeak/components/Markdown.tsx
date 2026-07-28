@@ -1,6 +1,7 @@
 import React from 'react'
 import Highlight, { defaultProps, Language } from 'prism-react-renderer'
 import ReactMarkdown, { Components } from 'react-markdown'
+import rehypeRaw from 'rehype-raw'
 import rehypeSanitize from 'rehype-sanitize'
 import { ZoomImage } from 'components/ZoomImage'
 import { TransformImage } from 'react-markdown/lib/ast-to-react'
@@ -9,6 +10,7 @@ import { cn } from '../../../utils'
 import Link from 'components/Link'
 
 const replaceMentions = (body: string) => {
+    if (!body || typeof body !== 'string') return ''
     return body.replace(/@([a-zA-Z0-9_-]+\/[0-9]+|max)/g, (match, username) => {
         if (username === 'max') {
             return `[${match}](/community/profiles/${process.env.NEXT_PUBLIC_AI_PROFILE_ID})`
@@ -39,7 +41,7 @@ export const Markdown = ({
             allowedElements={allowedElements}
             remarkPlugins={[remarkGfm]}
             transformImageUri={transformImageUri}
-            rehypePlugins={[rehypeSanitize]}
+            rehypePlugins={[rehypeRaw, rehypeSanitize]}
             className={cn(
                 'markdown prose dark:prose-invert prose-sm max-w-full text-primary [&_a]:font-semibold break-words [overflow-wrap:anywhere]',
                 !regularText,
