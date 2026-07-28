@@ -44,3 +44,6 @@ __pycache__
 /.claude/worktrees/
 .env*
 .next/
+
+worldinmaking.com-theme/
+pages-build-log.txt
