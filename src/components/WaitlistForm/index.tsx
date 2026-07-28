@@ -1,6 +1,5 @@
 import React from 'react'
 import usePostHog from '../../hooks/usePostHog'
-import useProduct from '../../hooks/useProduct'
 import SurveySignup from 'components/SurveySignup'
 
 // The "PostHog Desktop waitlist" survey — the same list the /roadmap card and the in-app
@@ -38,7 +37,7 @@ export function WaitlistForm({
     showDiscord = true,
 }: WaitlistFormProps) {
     const posthog = usePostHog()
-    const selectedProduct = useProduct({ handle: productHandle })
+    const selectedProduct = undefined
     // Only apply the PostHog Code question id when we're actually using its survey —
     // callers that pass their own surveyId (e.g. Replay Vision) have different questions.
     const effectiveQuestionId =

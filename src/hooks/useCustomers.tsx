@@ -60,7 +60,7 @@ import WittyWorksLogo from '../components/CustomerLogos/WittyWorksLogo'
 import YCombinatorLogo from '../components/CustomerLogos/YCombinatorLogo'
 import ZealotLogo from '../images/customers/zealot-light.png'
 const ZealotLogoDark = ZealotLogo
-import useProducts from './useProducts'
+// useProducts hook removed — product title mapping disabled
 import JaxxonLogo from 'components/CustomerLogos/JaxxonLogo'
 
 export type CustomerLogo =
@@ -1129,7 +1129,7 @@ const CUSTOMER_DATA: Record<string, BaseCustomer> = {
 }
 
 export const useCustomers = () => {
-    const { products } = useProducts()
+    const products: any[] = []
 
     const customers = useMemo(() => {
         // Query only to detect which customers have case studies
