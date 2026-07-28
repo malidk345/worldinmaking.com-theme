@@ -18,6 +18,7 @@ import ScrollArea from 'components/RadixUI/ScrollArea'
 import { Popover } from 'components/RadixUI/Popover'
 import { ToggleGroup, ToggleOption } from 'components/RadixUI/ToggleGroup'
 import Tooltip from 'components/RadixUI/Tooltip'
+import Link from 'components/Link'
 import ClientPostMarkdown from 'components/Squeak/components/ClientPostMarkdown'
 
 const MDXRenderer = ({ children }: any) => {
