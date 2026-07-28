@@ -888,12 +888,30 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                               }
                             : {}),
                     }}
+                    initial={{
+                        scale: 0.08,
+                        x: item.fromOrigin?.x || position.x,
+                        y: item.fromOrigin?.y || position.y,
+                        width: size.width,
+                        height: size.height,
+                    }}
                     animate={{
                         scale: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.scale : 1,
                         x: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.x : Math.round(position.x),
                         y: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.y : Math.round(position.y),
                         width: size.width,
                         height: size.height,
+                    }}
+                    exit={{
+                        scale: 0.005,
+                        x: position.x,
+                        y: position.y,
+                        transition: {
+                            type: 'spring',
+                            stiffness: 350,
+                            damping: 25,
+                            mass: 0.8,
+                        },
                     }}
                     transition={
                         siteSettings?.performanceBoost
@@ -903,6 +921,33 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                   stiffness: 300,
                                   damping: 30,
                                   mass: 0.8,
+                                  scale: {
+                                      type: 'spring',
+                                      stiffness: 300,
+                                      damping: 30,
+                                      mass: 0.8,
+                                      delay: 0.02,
+                                  },
+                                  width: {
+                                      duration: dragging ? 0 : 0.35,
+                                      type: dragging ? false : 'tween',
+                                      ease: [0.25, 1, 0.5, 1],
+                                  },
+                                  height: {
+                                      duration: dragging ? 0 : 0.35,
+                                      type: dragging ? false : 'tween',
+                                      ease: [0.25, 1, 0.5, 1],
+                                  },
+                                  x: {
+                                      duration: dragging ? 0 : 0.35,
+                                      type: dragging ? false : 'tween',
+                                      ease: [0.25, 1, 0.5, 1],
+                                  },
+                                  y: {
+                                      duration: dragging ? 0 : 0.35,
+                                      type: dragging ? false : 'tween',
+                                      ease: [0.25, 1, 0.5, 1],
+                                  },
                               }
                     }
                     drag={isActiveWindowsPanelOpen ? false : !item.fixedSize}
