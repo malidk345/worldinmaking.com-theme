@@ -1,6 +1,7 @@
 import { useRouter } from 'next/router'
 import React, { useEffect, useState } from 'react'
-import NewPost from 'components/Edition/NewPost'
+import dynamic from 'next/dynamic';
+const EditPost = dynamic(() => import('components/Edition/EditPost'), { ssr: false });
 import Layout from 'components/Layout'
 import SEO from 'components/seo'
 import { communityMenu } from '../../../navs'
@@ -30,7 +31,7 @@ export default function Edit() {
             <Layout parent={communityMenu} activeInternalMenu={communityMenu.children[0]}>
                 <SEO title="Edit post - PostHog" noindex />
                 <section className="px-5">
-                    <NewPost initialValues={state.initialValues} id={state.id} />
+                    <EditPost />
                 </section>
             </Layout>
         )

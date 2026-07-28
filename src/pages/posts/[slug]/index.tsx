@@ -1,4 +1,5 @@
-import ClientPost from 'components/Edition/ClientPost'
+import dynamic from 'next/dynamic';
+const ClientPost = dynamic(() => import('components/Edition/ClientPost'), { ssr: false });
 import { useLayoutData } from 'components/Layout/hooks'
 import qs from 'qs'
 import React, { useEffect, useState } from 'react'

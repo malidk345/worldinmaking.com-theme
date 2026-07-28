@@ -1,29 +1,25 @@
-export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
 
 interface DBProfile {
-    id: string;
-    username: string | null;
+    first_name: string | null;
+    last_name: string | null;
     avatar_url: string | null;
 }
 
 interface DBReply {
-    id: number;
+    id: string;
     content: string;
-    author_id: string;
     created_at: string;
-    profiles: DBProfile | DBProfile[] | null;
+    profiles: DBProfile | null;
 }
 
 interface DBTopic {
-    id: number;
-    channel_id: number | null;
-    author_id: string;
+    id: string;
     title: string;
     content: string;
     created_at: string;
-    profiles: DBProfile | DBProfile[] | null;
-    replies: DBReply[] | null;
+    profiles: DBProfile | null;
+    community_replies: DBReply[];
 }
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://iydypisgfaksqkjdraiu.supabase.co';
@@ -35,19 +31,14 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Internal Server Error: Missing service role key' }, { status: 500 });
         }
 
-        // 1. Authenticate the bot token
-        const authHeader = request.headers.get('Authorization');
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return NextResponse.json({ error: 'Unauthorized: Missing or invalid authorization header format' }, { status: 401 });
-        }
+        const url = new URL(request.url);
+        const limit = parseInt(url.searchParams.get('limit') || '5', 10);
 
-        const token = authHeader.substring(7).trim();
-        if (!token) {
-            return NextResponse.json({ error: 'Unauthorized: Token is empty' }, { status: 401 });
-        }
+        // Use a simpler query first to avoid complex PostgREST joins if they are slow or problematic
+        // We'll fetch topics, then their replies manually to ensure we get what we need reliably
 
-        // Look up the bot in bot_profiles
-        const botRes = await fetch(`${SUPABASE_URL}/rest/v1/bot_profiles?api_token=eq.${token}&is_active=eq.true&select=id`, {
+        // 1. Fetch recent topics
+        const topicsRes = await fetch(`${SUPABASE_URL}/rest/v1/community_posts?select=id,title,content,created_at,profiles(first_name,last_name,avatar_url)&order=created_at.desc&limit=${limit}`, {
             headers: {
                 apikey: SUPABASE_SERVICE_ROLE_KEY,
                 Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
@@ -55,63 +46,58 @@ export async function GET(request: NextRequest) {
             cache: 'no-store'
         });
 
-        if (!botRes.ok) {
-            return NextResponse.json({ error: `Database Error: ${botRes.statusText}` }, { status: 500 });
+        if (!topicsRes.ok) {
+            return NextResponse.json({ error: `Database Error: Failed to fetch topics. Status: ${topicsRes.statusText}` }, { status: 500 });
         }
 
-        const bots = await botRes.json();
-        const bot = bots?.[0];
+        const topics = await topicsRes.json();
 
-        if (!bot) {
-            return NextResponse.json({ error: 'Unauthorized: Invalid API token' }, { status: 401 });
+        if (!topics || topics.length === 0) {
+             return NextResponse.json({
+                success: true,
+                topics: []
+            });
         }
 
-        // 2. Fetch the 10 most recent topics with their replies and author profiles
-        const topicsRes = await fetch(
-            `${SUPABASE_URL}/rest/v1/community_posts?select=id,channel_id,author_id,title,content,created_at,profiles:author_id(id,username,avatar_url),replies:community_replies(id,content,author_id,created_at,profiles:author_id(id,username,avatar_url))&order=created_at.desc&limit=10`,
-            {
+        const formattedTopics = [];
+
+        // 2. For each topic, fetch its latest replies
+        for (const topic of topics) {
+             const repliesRes = await fetch(`${SUPABASE_URL}/rest/v1/community_replies?post_id=eq.${topic.id}&select=id,content,created_at,profiles(first_name,last_name,avatar_url)&order=created_at.asc&limit=50`, {
                 headers: {
                     apikey: SUPABASE_SERVICE_ROLE_KEY,
                     Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
                 },
                 cache: 'no-store'
+            });
+
+            let replies = [];
+            if (repliesRes.ok) {
+                replies = await repliesRes.json();
             }
-        );
-
-        if (!topicsRes.ok) {
-            return NextResponse.json({ error: `Database Error: ${topicsRes.statusText}` }, { status: 500 });
-        }
-
-        const topics = await topicsRes.json();
-
-        // 3. Format and sort nested replies
-        const typedTopics = (topics || []) as unknown as DBTopic[];
-        const formattedTopics = typedTopics.map((topic) => {
-            const author = Array.isArray(topic.profiles) ? topic.profiles[0] : topic.profiles;
-            const repliesArray = topic.replies || [];
             
-            const sortedReplies = repliesArray.map((reply) => {
-                const replyAuthor = Array.isArray(reply.profiles) ? reply.profiles[0] : reply.profiles;
-                return {
-                    id: reply.id,
-                    content: reply.content,
-                    authorId: reply.author_id,
-                    authorName: replyAuthor?.username || 'anonymous',
-                    createdAt: reply.created_at
-                };
-            }).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-
-            return {
+            formattedTopics.push({
                 id: topic.id,
-                channelId: topic.channel_id,
-                authorId: topic.author_id,
-                authorName: author?.username || 'anonymous',
                 title: topic.title,
                 content: topic.content,
                 createdAt: topic.created_at,
-                replies: sortedReplies
-            };
-        });
+                author: {
+                    firstName: topic.profiles?.first_name || 'Anonymous',
+                    lastName: topic.profiles?.last_name || '',
+                    avatarUrl: topic.profiles?.avatar_url || ''
+                },
+                replies: replies.map((reply: any) => ({
+                    id: reply.id,
+                    content: reply.content,
+                    createdAt: reply.created_at,
+                    author: {
+                        firstName: reply.profiles?.first_name || 'Anonymous',
+                        lastName: reply.profiles?.last_name || '',
+                        avatarUrl: reply.profiles?.avatar_url || ''
+                    }
+                }))
+            });
+        }
 
         return NextResponse.json({
             success: true,
@@ -123,3 +109,5 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: `Internal Server Error: ${errorMessage}` }, { status: 500 });
     }
 }
+
+export const runtime = 'edge';

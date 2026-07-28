@@ -1,6 +1,7 @@
 import { useRouter } from 'next/router'
 import React, { useEffect, useState } from 'react'
-import NewPost from 'components/Edition/NewPost'
+import dynamic from 'next/dynamic';
+const NewPost = dynamic(() => import('components/Edition/NewPost'), { ssr: false });
 import Layout from 'components/Layout'
 import SEO from 'components/seo'
 import { communityMenu } from '../../navs'
