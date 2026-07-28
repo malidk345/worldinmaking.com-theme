@@ -1,3 +1,7 @@
 ## 2024-11-20 - Memoizing the Customers Array in useCustomers
 **Learning:** In the `useCustomers` hook, computing the large `customers` map on every render using an inner `.find()` array lookup created an $O(N \times M)$ rendering bottleneck, which cascaded re-renders down to dependent components like `Customer`. Pre-computing an $O(1)$ lookup Map and wrapping the operation in `useMemo` significantly reduces CPU pressure during React re-renders.
 **Action:** When working with large sets of static or semi-static data (like `CUSTOMER_DATA`) joined against dynamic contexts (like `useProducts`), always precompute secondary maps for $O(1)$ lookups and wrap the final merged structure in `useMemo` to prevent deep performance regressions.
+
+## 2024-11-20 - Replace O(N^2) array flatten with flatMap
+**Learning:** Using `reduce` with array spread (`[...acc, ...curr]`) inside `useMemo` hooks (like `useJobs`, `useRoadmaps`, `useQuestions`, etc.) creates an $O(N^2)$ operation as a new array is allocated and the entire accumulator is copied on every iteration. In components that fetch paginated data via SWR, this can cause significant main thread blocking during React renders when data arrays get large.
+**Action:** Always use `.flatMap()` (or `.flat()`) when flattening nested array structures in data fetching hooks. It processes the array in a single pass ($O(N)$) and uses significantly less memory and CPU.
