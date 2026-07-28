@@ -7,8 +7,8 @@ import SEO from 'components/seo'
 import { communityMenu } from '../../../navs'
 import { useUser } from 'hooks/useUser'
 
-export const config = { runtime: 'experimental-edge' };
-export const getServerSideProps = () => ({ props: {} })
+export const getStaticProps = () => ({ props: {} })
+export const getStaticPaths = () => ({ paths: [], fallback: true })
 
 export default function Edit() {
     const router = useRouter()
