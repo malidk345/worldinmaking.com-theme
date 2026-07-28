@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router'
-import React, { useEffect, useRef, useState, useMemo, useCallback, lazy, Suspense } from 'react'
+import React, { useEffect, useRef, useState, useMemo, useCallback, Suspense } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useQuestions } from 'hooks/useQuestions'
 import ScrollArea from 'components/RadixUI/ScrollArea'
@@ -31,8 +31,10 @@ import SearchProvider, { useSearch } from 'components/Editor/SearchProvider'
 import { InlineSearch, AlgoliaSearchResults } from 'components/Search/InlineSearch'
 dayjs.extend(relativeTime)
 
+import dynamic from 'next/dynamic'
+
 // lottie-react bundles lottie-web (~600 KiB); load it on demand instead of on every page.
-const Lottie = typeof window !== 'undefined' ? lazy(() => import('lottie-react')) : () => null
+const Lottie = dynamic(() => import('lottie-react'), { ssr: false, loading: () => null })
 
 const Menu = ({ onValueChange }: { onValueChange: (value: string) => void }) => {
     const { user } = useUser()

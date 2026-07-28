@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useRef, useCallback, lazy, Suspense } from 'react'
+import React, { useEffect, useState, useRef, useCallback, Suspense } from 'react'
+import dynamic from 'next/dynamic'
 
-const Lottie = typeof window !== 'undefined' ? lazy(() => import('lottie-react')) : () => null
+const Lottie = dynamic(() => import('lottie-react'), { ssr: false, loading: () => null })
 
 interface ScreensaverProps {
     isActive: boolean

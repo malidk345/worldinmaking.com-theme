@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react'
-import { DotLottiePlayer, PlayerEvents } from '@dotlottie/react-player'
+import dynamic from 'next/dynamic'
+const DotLottiePlayerModule = dynamic(() => import('@dotlottie/react-player').then(m => ({ default: m.DotLottiePlayer })), { ssr: false, loading: () => null })
+const DotLottiePlayer = DotLottiePlayerModule as any
 import { IconMusicEighthNote } from 'components/OSIcons'
 import { useIntersectionObserver } from 'hooks/useIntersectionObserver'
 
