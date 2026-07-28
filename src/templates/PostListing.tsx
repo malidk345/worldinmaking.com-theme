@@ -308,7 +308,7 @@ export default function Posts({ pageContext = {} }: { pageContext?: any }) {
                                 },
                             ]}
                             dataSource={posts}
-                            loading={isLoading || isValidating}
+                            loading={isLoading && posts.length === 0}
                             pagination={{
                                 totalPages,
                                 currentPage,
