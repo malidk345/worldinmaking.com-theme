@@ -2169,7 +2169,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         const lastClickedElementRect = getLastClickedElementRect()
 
         // Windowed (centered/cascaded) is default for regular pages so windows stack over each other.
-        const isMobileClient = !isSSR && typeof window !== 'undefined' && window.innerWidth < 768
+        const isMobileClient = hasMounted && typeof window !== 'undefined' && window.innerWidth < 768
         const canWindow = (isSSR || window.innerWidth >= 768) && !isMobileClient
         const isWindowed =
             targetState?.windowed ??
@@ -2180,8 +2180,8 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 !settings?.modal)
         const shouldExpand = isMobileClient && !settings?.size?.fixed
         const bounds = constraintsRef.current?.getBoundingClientRect()
-        const fullW = bounds ? bounds.width : (!isSSR && typeof window !== 'undefined' ? window.innerWidth - 16 : 1200)
-        const fullH = bounds ? bounds.height : (!isSSR && typeof window !== 'undefined' ? window.innerHeight - taskbarHeight - 16 : 800)
+        const fullW = bounds ? bounds.width : (hasMounted && typeof window !== 'undefined' ? window.innerWidth - 16 : 1200)
+        const fullH = bounds ? bounds.height : (hasMounted && typeof window !== 'undefined' ? window.innerHeight - taskbarHeight - 16 : 800)
 
         const finalSize = shouldExpand ? { width: fullW, height: fullH } : size
         const finalPos = shouldExpand ? { x: 0, y: 0 } : position
@@ -2247,7 +2247,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         const existingWindow = windows.find((w) => w.path === targetPath)
         const newWindow = createNewWindow(element, windows, location, isSSR, taskbarHeight)
         
-        const isMobileClient = typeof window !== 'undefined' && window.innerWidth < 768
+        const isMobileClient = hasMounted && typeof window !== 'undefined' && window.innerWidth < 768
         if (isMobileClient && !newWindow.fixedSize) {
             const bounds = constraintsRef.current?.getBoundingClientRect()
             const fullW = bounds ? bounds.width : window.innerWidth - 16
@@ -2288,10 +2288,10 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 return prev.map((w) => (w.key === existing.key ? { ...w, zIndex: maxZ + 1, minimized: false } : w))
             }
 
-            const isMobileClient = typeof window !== 'undefined' && window.innerWidth < 768
+            const isMobileClient = hasMounted && typeof window !== 'undefined' && window.innerWidth < 768
             const bounds = constraintsRef.current?.getBoundingClientRect()
-            const fullW = bounds ? bounds.width : (typeof window !== 'undefined' ? window.innerWidth - 16 : 1200)
-            const fullH = bounds ? bounds.height : (typeof window !== 'undefined' ? window.innerHeight - taskbarHeight - 16 : 800)
+            const fullW = bounds ? bounds.width : (hasMounted && typeof window !== 'undefined' ? window.innerWidth - 16 : 1200)
+            const fullH = bounds ? bounds.height : (hasMounted && typeof window !== 'undefined' ? window.innerHeight - taskbarHeight - 16 : 800)
 
             const size = isMobileClient && !item.fixedSize ? { width: fullW, height: fullH } : (item.size || { width: 900, height: 650 })
             const position = isMobileClient && !item.fixedSize ? { x: 0, y: 0 } : (item.position || getPositionDefaults(key, size, prev))
