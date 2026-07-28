@@ -9,6 +9,15 @@ import remarkGfm from 'remark-gfm'
 import { cn } from '../../../utils'
 import Link from 'components/Link'
 
+const cleanMdxContent = (content: string): string => {
+    if (!content || typeof content !== 'string') return ''
+    let cleaned = content.replace(/^---[\s\S]*?---\s*/, '')
+    cleaned = cleaned.replace(/^import\s+[\s\S]*?from\s+['"].*?['"];?\s*/gm, '')
+    cleaned = cleaned.replace(/^export\s+[\s\S]*?;\s*/gm, '')
+    cleaned = cleaned.replace(/<Array\s+[\s\S]*?\/>/gi, '')
+    return cleaned.trim()
+}
+
 const replaceMentions = (body: string) => {
     if (!body || typeof body !== 'string') return ''
     return body.replace(/@([a-zA-Z0-9_-]+\/[0-9]+|max)/g, (match, username) => {
@@ -81,7 +90,7 @@ export const Markdown = ({
                 ...components,
             }}
         >
-            {replaceMentions(children)}
+            {cleanMdxContent(replaceMentions(children))}
         </ReactMarkdown>
     )
 }
