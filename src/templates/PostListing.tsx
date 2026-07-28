@@ -348,20 +348,20 @@ export default function Posts({ pageContext = {} }: { pageContext?: any }) {
                                         content: (
                                             <ul className="list-none m-0 p-0">
                                                 <li className="text-sm">
-                                                    {post.attributes.post_tags.data.map((tag, index) => {
-                                                        const label = tag.attributes.label
+                                                    {(post.attributes?.post_tags?.data || []).map((tag: any, index: number) => {
+                                                        const label = tag?.attributes?.label || 'Article'
                                                         const base =
-                                                            post.attributes.post_category.data.attributes.folder
+                                                            post.attributes?.post_category?.data?.attributes?.folder || 'posts'
                                                         const url = `/${base}/${slugify(label, { lower: true })}`
                                                         const isLast =
-                                                            index === post.attributes.post_tags.data.length - 1
+                                                            index === (post.attributes?.post_tags?.data?.length || 1) - 1
                                                         return (
-                                                            <>
-                                                                <Link key={tag.id} to={url}>
+                                                            <React.Fragment key={tag.id || index}>
+                                                                <Link to={url}>
                                                                     {label}
                                                                 </Link>
                                                                 {!isLast && ', '}
-                                                            </>
+                                                            </React.Fragment>
                                                         )
                                                     })}
                                                 </li>
@@ -371,16 +371,17 @@ export default function Posts({ pageContext = {} }: { pageContext?: any }) {
                                     {
                                         content: (
                                             <ul className="list-none m-0 p-0 flex flex-wrap gap-1">
-                                                {post.attributes.authors.data.map((author) => {
+                                                {(post.attributes?.authors?.data || []).map((author: any) => {
                                                     const name = [
-                                                        author.attributes.firstName,
-                                                        author.attributes.lastName,
+                                                        author.attributes?.firstName,
+                                                        author.attributes?.lastName,
                                                     ]
                                                         .filter(Boolean)
-                                                        .join(' ')
+                                                        .join(' ') || 'WorldInMaking'
+                                                    const photo = author.attributes?.avatar?.url
                                                     return (
-                                                        <li key={author.id}>
-                                                            <TeamMember name={name} photo />
+                                                        <li key={author.id || name}>
+                                                            <TeamMember name={name} photo={photo} />
                                                         </li>
                                                     )
                                                 })}

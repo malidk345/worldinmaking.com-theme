@@ -54,30 +54,36 @@ export async function fetchSupabasePosts(): Promise<SupabasePost[]> {
 
 export async function fetchSupabasePostBySlug(slug: string): Promise<SupabasePost | null> {
     try {
-        const url = `${SUPABASE_URL}/rest/v1/posts?slug=eq.${encodeURIComponent(slug)}&select=*`
+        const cleanSlugStr = slug.replace(/^\/posts\/?/, '').replace(/^\/blog\/?/, '')
+        const url = `${SUPABASE_URL}/rest/v1/posts?slug=eq.${encodeURIComponent(cleanSlugStr)}&select=*`
         const data = await fetchWithCache(url)
         if (Array.isArray(data) && data.length > 0) return data[0]
-        const found = MOCK_SUPABASE_POSTS.find((p) => p.slug === slug)
+        const found = MOCK_SUPABASE_POSTS.find((p) => p.slug === cleanSlugStr)
         return found || MOCK_SUPABASE_POSTS[0]
     } catch (e) {
         console.error('Error fetching Supabase post by slug:', e)
-        const found = MOCK_SUPABASE_POSTS.find((p) => p.slug === slug)
+        const cleanSlugStr = slug.replace(/^\/posts\/?/, '').replace(/^\/blog\/?/, '')
+        const found = MOCK_SUPABASE_POSTS.find((p) => p.slug === cleanSlugStr)
         return found || MOCK_SUPABASE_POSTS[0]
     }
 }
 
 export function formatSupabasePostToStrapi(post: SupabasePost) {
     const avatarUrl = post.author_avatar || 'https://res.cloudinary.com/dmukukwp6/image/upload/v1675204207/james_hawkins_posthog_031f7cf651.png'
+    const imageUrl = post.image_url && post.image_url.trim() !== '' ? post.image_url : 'https://res.cloudinary.com/dmukukwp6/image/upload/v1675204207/james_hawkins_posthog_031f7cf651.png'
+    const rawSlug = post.slug || 'default'
+    const cleanSlug = rawSlug.startsWith('/') ? rawSlug : `/posts/${rawSlug}`
+
     return {
         id: post.id,
         attributes: {
-            title: post.title,
-            slug: post.slug,
-            body: post.content,
-            excerpt: post.excerpt || post.title,
+            title: post.title || 'Untitled Post',
+            slug: cleanSlug,
+            body: post.content || '',
+            excerpt: post.excerpt || post.title || '',
             date: post.created_at ? post.created_at.split('T')[0] : '2026-01-01',
             featuredImage: {
-                url: post.image_url || 'https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/components/Blog/images/default.jpg',
+                url: imageUrl,
             },
             authors: {
                 data: [
@@ -102,12 +108,12 @@ export function formatSupabasePostToStrapi(post: SupabasePost) {
                 data: {
                     attributes: {
                         label: post.category || 'Articles',
-                        folder: 'blog',
+                        folder: 'posts',
                     },
                 },
             },
             post_tags: {
-                data: (Array.isArray(post.tags) ? post.tags : [post.category || 'Article']).map((tag) => ({
+                data: (Array.isArray(post.tags) && post.tags.length > 0 ? post.tags : [post.category || 'Article']).map((tag) => ({
                     attributes: { label: String(tag) },
                 })),
             },
