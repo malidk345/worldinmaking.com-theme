@@ -2,7 +2,7 @@ import { Form, Formik, useFormikContext } from 'formik'
 import React, { createContext, InputHTMLAttributes, RefObject, useContext, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { button } from 'components/CallToAction'
-import { usePathname } from 'next/navigation'
+import { useLocation } from 'hooks/useLocation'
 import Confetti from 'react-confetti'
 import usePostHog from 'hooks/usePostHog'
 import * as Yup from 'yup'
@@ -392,7 +392,9 @@ const Input = (props: InputHTMLAttributes<HTMLInputElement>) => {
 }
 
 export default function HubSpotForm({
-    formID,
+    title,
+    subtitle,
+    formId: formID,
     customFields,
     customMessage,
     onSubmit,
@@ -402,7 +404,7 @@ export default function HubSpotForm({
     ...other
 }: IProps) {
     const posthog = usePostHog()
-    const { href } = usePathname()
+    const { href } = useLocation()
     const [openOptions, setOpenOptions] = useState<string[]>([])
     const [form, setForm] = useState<{ fields: Field[]; buttonText: string; message: string; name: string }>({
         fields: [],

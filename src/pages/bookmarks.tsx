@@ -41,7 +41,7 @@ const Bookmark = ({ title, description, url }: { title: string; description: str
 
     useEffect(() => {
         const img = new Image()
-        const src = `https://d36j3rcgc2qfsv.cloudfront.net/${url
+        const src = `https://d36j3rcgc2qfsv.cloudfront.net/${(url || '')
             .replace('https://posthog.com/', '')
             .replace(/\//g, '')}.jpeg`
         img.src = src

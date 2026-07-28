@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { usePathname } from 'next/navigation'
+import { useLocation } from 'hooks/useLocation'
 import { IconLink } from '../OSIcons'
 
 export const CopyAnchor = ({ id = '', hovered }: { id: string; hovered: boolean }): JSX.Element => {
     const [visible, setVisible] = useState(false)
-    const { href } = usePathname()
+    const { href } = useLocation()
     const handleClick = () => {
         const url = `${href.replace(/#.*/, '')}#${id}`
         window.history.replaceState(null, '', `#${id}`)
@@ -41,7 +41,7 @@ export const CopyAnchor = ({ id = '', hovered }: { id: string; hovered: boolean 
 
 export const AdvisoryAnchor = ({ id = '' }: { id: string }): JSX.Element => {
     const [copied, setCopied] = useState(false)
-    const { href } = usePathname()
+    const { href } = useLocation()
     // Copy the shareable link without toggling the parent <details>. Stopping propagation and
     // the default action keeps the surrounding <summary> from opening/closing on click.
     const handleClick = (e: React.MouseEvent) => {

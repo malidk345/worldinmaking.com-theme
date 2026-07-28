@@ -178,7 +178,7 @@ export default function Menu({
                         className={`${buttonClasses} ${!topLevel ? 'group' : ''} ${color ? '!py-1' : ''} ${
                             isActive ? 'active' : ''
                         }`}
-                        to={menuType === 'scroll' ? url.replace(pathname + '#', '') : url}
+                        to={menuType === 'scroll' ? (url ? url.replace((pathname || '') + '#', '') : '') : url}
                         {...menuLinkProps}
                     >
                         <AnimatePresence>

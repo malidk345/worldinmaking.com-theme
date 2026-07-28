@@ -9,7 +9,7 @@ const MDXRenderer = ({ children }: any) => {
 }
 
 import { animateScroll as scroll } from 'react-scroll'
-import { usePathname } from 'next/navigation'
+import { useLocation } from 'hooks/useLocation'
 import { shortcodes } from '../../mdxGlobalComponents'
 import MainSidebar from './MainSidebar'
 import MobileSidebar from './MobileSidebar'

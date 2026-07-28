@@ -406,14 +406,14 @@ export default function BlogPost({ data = {}, pageContext = {}, mobile = false }
                 title={seo?.metaTitle || title + ' - PostHog'}
                 description={seo?.metaDescription || excerpt}
                 article
-                image={`${process.env.NEXT_PUBLIC_CLOUDFRONT_OG_URL}/${fields.slug.replace(/\//g, '')}.jpeg`}
+                image={`${process.env.NEXT_PUBLIC_CLOUDFRONT_OG_URL}/${(fields?.slug || '').replace(/\//g, '')}.jpeg`}
                 imageType="absolute"
                 lang={lang || (languageAlternates ? 'en' : undefined)}
                 languageAlternates={languageAlternates}
                 // Standard.site document rkey (only for /blog posts; this template is shared with other sections)
                 documentRkey={
                     fields?.slug?.startsWith('/blog/')
-                        ? fields.slug.replace(/^\/blog\//, '').replace(/\/$/, '')
+                        ? (fields.slug || '').replace(/^\/blog\//, '').replace(/\/$/, '')
                         : undefined
                 }
             />

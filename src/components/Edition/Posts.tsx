@@ -12,7 +12,7 @@ import { IconChat } from '@posthog/icons'
 import SidebarSection from 'components/PostLayout/SidebarSection'
 import { useQuestions } from 'hooks/useQuestions'
 import { QuestionData, StrapiResult } from 'lib/strapi'
-import { usePathname } from 'next/navigation'
+import { useLocation } from 'hooks/useLocation'
 import { communityMenu, companyMenu } from '../../navs'
 import NewPost from './NewPost'
 import { PostProvider } from 'components/PostLayout/context'
@@ -187,7 +187,7 @@ const menusByRoot = {
 
 const Router = ({ children, prev }: { children: React.ReactNode; prev: string | null }) => {
     const { fullWidthContent } = useLayoutData()
-    const pathname = usePathname()
+    const { pathname } = useLocation()
 
     return (
         <div
@@ -343,13 +343,14 @@ export default function Posts({
 }) {
     const didMount = useRef(false)
     const [loginModalOpen, setLoginModalOpen] = useState(false)
-    const pathname = usePathname()
+    const { pathname } = useLocation()
+    const safePathname = pathname || '/'
     const [newPostModalOpen, setNewPostModalOpen] = useState(false)
-    const [root, setRoot] = useState(pathname.split('/')[1] !== 'posts' ? pathname.split('/')[1] : undefined)
+    const [root, setRoot] = useState(safePathname.split('/')[1] !== 'posts' ? safePathname.split('/')[1] : undefined)
     const [sort, setSort] = useState(getSortOption(root).label)
     const [tag, setTag] = useState(initialTag)
     const [prev, setPrev] = useState<string | null>(null)
-    const [activeMenu, setActiveMenu] = useState(menu.find(({ url }) => url?.split('/')[1] === pathname.split('/')[1]))
+    const [activeMenu, setActiveMenu] = useState(menu.find(({ url }) => url?.split('/')[1] === safePathname.split('/')[1]))
     const [layoutMenu, setLayoutMenu] = useState(
         menusByRoot[root] || {
             parent: communityMenu,

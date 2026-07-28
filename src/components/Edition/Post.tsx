@@ -1,12 +1,13 @@
 import Link from 'components/Link'
 import React, { useEffect, useRef } from 'react'
-import { usePathname } from 'next/navigation'
+import { useLocation } from 'hooks/useLocation'
 import { useBreakpoint } from 'hooks/useBreakpoint'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import isToday from 'dayjs/plugin/isToday'
 import { useLayoutData } from 'components/Layout/hooks'
 import LikeButton from './LikeButton'
+
 dayjs.extend(relativeTime)
 dayjs.extend(isToday)
 
@@ -21,9 +22,9 @@ export default function Post({
     slug,
     fetchMore,
     articleView,
-}) {
-    const containerRef = useRef()
-    const pathname = usePathname()
+}: any) {
+    const containerRef = useRef<HTMLLIElement>(null)
+    const { pathname } = useLocation()
     const category = post_category?.data?.attributes?.label
     const active = pathname === slug
     const breakpoints = useBreakpoint()
@@ -35,7 +36,7 @@ export default function Post({
             containerRef?.current?.scrollIntoView({ block: 'center', inline: 'nearest' })
             window.scrollTo({ top: 0 })
         }
-    }, [articleView])
+    }, [articleView, active, breakpoints.sm])
 
     const imageURL = featuredImage?.image?.data?.attributes?.url || featuredImage?.url
     const defaultImage = post_category?.data?.attributes?.defaultImage?.data?.attributes?.url
@@ -79,7 +80,7 @@ export default function Post({
                             <span className={`ml-1 inline-flex items-center space-x-1 font-medium leading-none`}>
                                 <span className="text-[.933rem]">by</span>
                                 <ul className={`m-0 p-0 list-none flex`}>
-                                    {authors?.data?.map(({ id, attributes: { firstName, lastName } }) => {
+                                    {authors?.data?.map(({ id, attributes: { firstName, lastName } }: any) => {
                                         const name = [firstName, lastName].filter(Boolean).join(' ')
                                         return (
                                             <li className='even:before:content-[","] even:before:mr-1' key={id}>
@@ -105,6 +106,7 @@ export default function Post({
                                         !imageURL && defaultImage ? 'object-contain' : 'object-cover'
                                     }`}
                                     src={imageURL || defaultImage || '/images/og/default.png'}
+                                    alt=""
                                 />
                             )}
                         </span>

@@ -380,12 +380,12 @@ export default function Handbook({ data: { post, postHogSource }, pageContext: {
         TemplateParameters: TemplateParametersFactory(templateConfigs),
         SourceParameters: SourceParametersFactory({ sourceFields }),
         SourceTables: SourceTablesFactory({ tables: sourceTables }),
-        TeamRoadmap: (props) => TeamRoadmap({ team: title?.replace(/team/gi, '').trim(), ...props }),
-        TeamMembers: (props) => TeamMembers({ team: title?.replace(/team/gi, '').trim(), ...props }),
+        TeamRoadmap: (props) => TeamRoadmap({ team: (title || '').replace(/team/gi, '').trim(), ...props }),
+        TeamMembers: (props) => TeamMembers({ team: (title || '').replace(/team/gi, '').trim(), ...props }),
         CategoryData,
         TutorialTags,
         // Emoji,
-        TeamUpdate: (props) => TeamUpdate({ teamName: title?.replace(/team/gi, '').trim(), ...props }),
+        TeamUpdate: (props) => TeamUpdate({ teamName: (title || '').replace(/team/gi, '').trim(), ...props }),
         CopyCode,
         TeamMember,
         DestinationsLibraryCallout,
@@ -440,7 +440,7 @@ export default function Handbook({ data: { post, postHogSource }, pageContext: {
                 title={seo?.metaTitle || `${title} - ${breadcrumbBase.name} - PostHog`}
                 description={seo?.metaDescription || excerpt}
                 article
-                image={`${process.env.NEXT_PUBLIC_CLOUDFRONT_OG_URL}/${slug.replace(/\//g, '')}.jpeg`}
+                image={`${process.env.NEXT_PUBLIC_CLOUDFRONT_OG_URL}/${(slug || '').replace(/\//g, '')}.jpeg`}
                 imageType="absolute"
                 // Flag-gated pages are always noindexed: the content ships in the static
                 // HTML, so we at least keep it out of search engines while in beta.

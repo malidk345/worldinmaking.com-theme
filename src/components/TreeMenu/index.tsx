@@ -2,8 +2,8 @@ import React, { useEffect, useState, useMemo, useRef } from 'react'
 import * as Collapsible from '@radix-ui/react-collapsible'
 import { IconChevronRight, IconPlus, IconArrowUpRight } from '@posthog/icons'
 import { motion, AnimatePresence } from 'framer-motion'
-import { usePathname } from 'next/navigation'
-const replacePath = (p: string) => p?.replace(/\/+$/, '') || '/'
+import { useLocation } from 'hooks/useLocation'
+const replacePath = (p?: string) => (typeof p === 'string' ? p.replace(/\/+$/, '') : '') || '/'
 import OSButton from 'components/OSButton'
 import Link from 'components/Link'
 import { useWindow } from '../../context/Window'
@@ -349,10 +349,10 @@ function SidebarCollapsibleItem({
 }
 
 const getActiveItem = (items: MenuItem[], currentUrl?: string): MenuItem | undefined => {
-    if (!currentUrl) return undefined
+    if (!currentUrl || typeof currentUrl !== 'string') return undefined
     const url = currentUrl.replace(/\/$/, '')
     for (const item of items) {
-        if (item.url?.replace(/\/$/, '') === url && !getActiveItem(item.children || [], url)) {
+        if (item.url && typeof item.url === 'string' && item.url.replace(/\/$/, '') === url && !getActiveItem(item.children || [], url)) {
             return item
         }
         if (item.children?.length) {
@@ -608,7 +608,8 @@ function TreeMenuItem({
 }) {
     const [open, setOpen] = useState(false)
     const hasChildren = item.children && item.children.length > 0
-    const pathname = replacePath(usePathname())
+    const { pathname: rawPathname } = useLocation()
+    const pathname = replacePath(rawPathname)
 
     const handleOpenChange = (open: boolean) => {
         setOpen(open)

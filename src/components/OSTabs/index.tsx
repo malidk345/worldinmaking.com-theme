@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Tabs } from 'radix-ui'
 import ScrollArea from 'components/RadixUI/ScrollArea'
-import { usePathname } from 'next/navigation'
+import { useLocation } from 'hooks/useLocation'
 import { useWindow } from '../../context/Window'
 
 interface TabItem {
@@ -59,11 +59,10 @@ export default function OSTabs({
     scrollable = true,
     scrollAreaClasses = '',
 }: OSTabsProps): JSX.Element {
-    const { state } = usePathname()
+    const { state } = useLocation()
     const initialOrderedTabs = (state as any)?.orderedTabs
     const [controlledValue, setControlledValue] = useState(defaultValue || tabs[0]?.value)
 
-    // Only use orderedTabs logic for horizontal orientation
     const [orderedTabs, setOrderedTabs] = useState<TabItem[][]>(
         orientation === 'horizontal' ? (initialOrderedTabs?.length > 0 ? initialOrderedTabs : [tabs]) : [tabs]
     )
@@ -95,7 +94,6 @@ export default function OSTabs({
             const tabWidths: number[] = []
             tabs.forEach((tab) => {
                 const clonedTab = existingTab.cloneNode(true) as HTMLElement
-                // Handle ReactNode labels by converting to string
                 if (typeof tab.label === 'string') {
                     clonedTab.textContent = tab.label
                 } else {
@@ -103,146 +101,139 @@ export default function OSTabs({
                 }
                 tempContainer.appendChild(clonedTab)
                 tabWidths.push(clonedTab.getBoundingClientRect().width + 4)
-                tempContainer.removeChild(clonedTab)
             })
 
             document.body.removeChild(tempContainer)
 
-            const rows: TabItem[][] = []
-            let currentRow: TabItem[] = []
+            const rows: TabItem[][] = [[]]
             let currentRowWidth = 0
 
             tabs.forEach((tab, index) => {
                 const tabWidth = tabWidths[index]
 
-                if (currentRowWidth + tabWidth > containerWidth && currentRow.length > 0) {
-                    rows.push([...currentRow])
-                    currentRow = [tab]
+                if (currentRowWidth + tabWidth > containerWidth && rows[0].length > 0) {
+                    rows.push([tab])
                     currentRowWidth = tabWidth
                 } else {
-                    currentRow.push(tab)
+                    rows[rows.length - 1].push(tab)
                     currentRowWidth += tabWidth
                 }
             })
 
-            if (currentRow.length > 0) {
-                rows.push(currentRow)
-            }
+            const activeRowIndex = rows.findIndex((row) => row.some((t) => t.value === currentActiveValue))
 
-            if (rows.length > 1) {
-                const activeTabRowIndex = rows.findIndex((row) => row.some((tab) => tab.value === currentActiveValue))
-
-                if (activeTabRowIndex !== -1 && activeTabRowIndex !== rows.length - 1) {
-                    const activeRow = rows.splice(activeTabRowIndex, 1)[0]
-                    rows.push(activeRow)
-                }
+            if (activeRowIndex > 0) {
+                const activeRow = rows.splice(activeRowIndex, 1)[0]
+                rows.unshift(activeRow)
             }
 
             setOrderedTabs(rows)
-            return rows
         },
         [tabs, value, controlledValue, orientation]
     )
 
     useEffect(() => {
-        if (orientation === 'vertical' || !ref.current || animating) return
+        if (!animating) {
+            calculateTabRows()
+        }
+    }, [animating, calculateTabRows])
 
-        calculateTabRows()
+    useEffect(() => {
+        const handleResize = () => {
+            calculateTabRows()
+        }
 
-        const resizeObserver = new ResizeObserver(() => calculateTabRows())
-        resizeObserver.observe(ref.current)
-        return () => resizeObserver.disconnect()
-    }, [calculateTabRows, orientation, animating])
+        window.addEventListener('resize', handleResize)
+        return () => window.removeEventListener('resize', handleResize)
+    }, [calculateTabRows])
 
-    const TabContentContainer = useMemo(() => (scrollable ? ScrollArea : 'div'), [scrollable])
+    const handleTabChange = (newValue: string) => {
+        setControlledValue(newValue)
+
+        const activeRowIndex = orderedTabs.findIndex((row) => row.some((t) => t.value === newValue))
+
+        if (activeRowIndex > 0) {
+            const newOrderedTabs = [...orderedTabs]
+            const activeRow = newOrderedTabs.splice(activeRowIndex, 1)[0]
+            newOrderedTabs.unshift(activeRow)
+            setOrderedTabs(newOrderedTabs)
+
+            if (onValueChange) {
+                const formattedRows = newOrderedTabs.map((row) =>
+                    row.map((tab) => ({
+                        value: tab.value,
+                        label: tab.label,
+                        triggerDataScheme: tab.triggerDataScheme,
+                    }))
+                )
+                onValueChange(newValue, formattedRows)
+            }
+        } else if (onValueChange) {
+            const formattedRows = orderedTabs.map((row) =>
+                row.map((tab) => ({
+                    value: tab.value,
+                    label: tab.label,
+                    triggerDataScheme: tab.triggerDataScheme,
+                }))
+            )
+            onValueChange(newValue, formattedRows)
+        }
+    }
+
+    const currentTab = useMemo(() => {
+        const activeVal = value !== undefined ? value : controlledValue
+        return tabs.find((t) => t.value === activeVal)
+    }, [tabs, value, controlledValue])
+
+    const activeValue = value !== undefined ? value : controlledValue
 
     return (
-        <>
+        <div ref={ref} className={`flex flex-col h-full ${className}`}>
             <Tabs.Root
-                ref={ref}
-                onValueChange={(value) => {
-                    setControlledValue(value)
-
-                    // Only calculate ordered tabs for horizontal orientation and when no extraTabRowContent
-                    // `/start` uses extraTabRowContent which displays on the far right side.
-                    // it's incompatible with the stacked tabs logic, so it has to be skipped.
-                    // on the homepage, tabs are vertical so we also want to skip it there too.
-                    if (orientation === 'horizontal' && !extraTabRowContent) {
-                        const orderedTabsWithoutContent = calculateTabRows(value)?.map((row) =>
-                            row.map(
-                                (tab): TabTriggerData => ({
-                                    value: tab.value,
-                                    label: tab.label,
-                                    triggerDataScheme: tab.triggerDataScheme,
-                                })
-                            )
-                        )
-                        onValueChange?.(value, orderedTabsWithoutContent || [])
-                    } else {
-                        const verticalTabsData: TabTriggerData[][] = [
-                            tabs.map(
-                                (tab): TabTriggerData => ({
-                                    value: tab.value,
-                                    label: tab.label,
-                                    triggerDataScheme: tab.triggerDataScheme,
-                                })
-                            ),
-                        ]
-                        onValueChange?.(value, verticalTabsData)
-                    }
-                }}
-                defaultValue={defaultValue || tabs[0]?.value}
-                value={value || controlledValue}
-                className={`relative flex ${orientation === 'horizontal' ? 'flex-col' : 'flex-row'} ${
-                    padding ? 'pt-1  px-2 pb-2' : ''
-                } min-h-0 bg-primary ${className}`}
+                value={activeValue}
+                onValueChange={handleTabChange}
+                orientation={orientation}
+                className={`flex ${orientation === 'vertical' ? 'flex-row' : 'flex-col'} flex-grow min-h-0`}
             >
-                <div className={tabContainerClassName}>
-                    <Tabs.List
-                        className={`flex-shrink-0 flex flex-col ${orientation === 'horizontal' ? '' : 'h-full'}`}
-                    >
-                        {orderedTabs.map((row, rowIndex) => (
-                            <div
-                                key={rowIndex}
+                <div
+                    className={`flex flex-col border-b border-border dark:border-border-dark ${
+                        padding ? 'px-4' : ''
+                    } ${tabContainerClassName || ''}`}
+                >
+                    {orderedTabs.map((row, rowIndex) => (
+                        <div key={rowIndex} className="flex items-center justify-between">
+                            <Tabs.List
                                 className={`flex ${
-                                    orientation === 'horizontal'
-                                        ? `items-center${!centerTabs ? ' ml-4' : ''}`
-                                        : 'flex-col gap-px h-full'
-                                } ${centerTabs ? 'justify-center ml-0' : ''}`}
+                                    orientation === 'vertical' ? 'flex-col' : 'flex-row'
+                                } ${centerTabs ? 'justify-center' : ''} ${tabsClassName}`}
                             >
                                 {row.map((tab) => (
                                     <Tabs.Trigger
                                         key={tab.value}
                                         value={tab.value}
-                                        data-scheme={triggerDataScheme}
-                                        className={`${tabTriggerClassName} data-[state=active]:bg-primary px-2 py-1 border border-transparent relative -bottom-px z-10 text-sm select-none text-primary data-[state=active]:border-primary border-b-0 rounded-t-sm`}
+                                        className={`px-4 py-2 font-medium text-sm border-b-2 border-transparent data-[state=active]:border-red dark:data-[state=active]:border-red data-[state=active]:font-bold ${tabTriggerClassName || ''}`}
                                     >
                                         {tab.label}
                                     </Tabs.Trigger>
                                 ))}
-                                {rowIndex === orderedTabs.length - 1 && extraTabRowContent}
-                            </div>
-                        ))}
-                    </Tabs.List>
+                            </Tabs.List>
+                            {rowIndex === 0 && extraTabRowContent}
+                        </div>
+                    ))}
                 </div>
-                {tabs.map((tab) => (
-                    <Tabs.Content data-scheme="primary" key={tab.value} value={tab.value} className="flex-1 h-full">
-                        <TabContentContainer
-                            className={`@container bg-primary h-full min-h-0 ${
-                                border ? 'border border-primary rounded-md' : ''
-                            }`}
-                            viewportClasses={scrollAreaClasses}
-                        >
-                            <div
-                                data-scheme={tabContentDataScheme}
-                                className={`@container ${contentPadding ? 'p-4 @2xl:p-6' : ''} ${tabContentClassName}`}
-                            >
-                                {tab.content}
-                            </div>
-                        </TabContentContainer>
-                    </Tabs.Content>
-                ))}
+
+                <div className={`flex-grow min-h-0 ${contentPadding ? 'p-4' : ''} ${tabContentClassName || ''}`}>
+                    {currentTab && (
+                        <Tabs.Content key={currentTab.value} value={currentTab.value} className="h-full">
+                            {scrollable ? (
+                                <ScrollArea className={`h-full ${scrollAreaClasses}`}>{currentTab.content}</ScrollArea>
+                            ) : (
+                                currentTab.content
+                            )}
+                        </Tabs.Content>
+                    )}
+                </div>
             </Tabs.Root>
-        </>
+        </div>
     )
 }

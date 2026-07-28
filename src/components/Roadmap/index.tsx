@@ -23,7 +23,7 @@ import UpdateWrapper from './UpdateWrapper'
 import RoadmapForm from 'components/RoadmapForm'
 import Link from 'components/Link'
 import slugify from 'slugify'
-import { usePathname } from 'next/navigation'
+import { useLocation } from 'hooks/useLocation'
 import Slider from 'components/Slider'
 import CommunityLayout from 'components/Community/Layout'
 import { companyMenu } from '../../navs'
@@ -118,7 +118,7 @@ export const VoteBox = ({ likeCount, liked }) => {
 export const Feature = ({ id, title, teams, description, likeCount, onLike, onUpdate, githubUrls }) => {
     const { user, likeRoadmap } = useUser()
     const { openSignIn } = useApp()
-    const { search } = usePathname()
+    const { search } = useLocation()
     const [loading, setLoading] = useState(false)
     const teamName = teams?.data?.[0]?.attributes?.name
     const liked = user?.profile?.roadmapLikes?.some(({ id: roadmapID }) => roadmapID === id)
@@ -250,7 +250,7 @@ interface RoadmapProps {
 }
 
 export default function Roadmap({ searchQuery = '' }: RoadmapProps) {
-    const { search } = usePathname()
+    const { search } = useLocation()
     const { user } = useUser()
     const [sortBy, setSortBy] = useState('popular')
     const [tableSort, setTableSort] = useState('popular')

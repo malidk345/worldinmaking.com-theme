@@ -3,7 +3,7 @@ import React, { Dispatch, InputHTMLAttributes, SetStateAction, useRef, useState 
 import { useFormik } from 'formik'
 import { button } from 'components/CallToAction'
 import * as Yup from 'yup'
-import { usePathname } from 'next/navigation'
+import { useLocation } from 'hooks/useLocation'
 import Link from 'components/Link'
 import { animateScroll as scroll } from 'react-scroll'
 import { motion } from 'framer-motion'
@@ -276,16 +276,16 @@ const ValidationSchema = Yup.object().shape({
 })
 
 export default function Contact({
+    fields = defaultFields,
     initialValues = {},
     onSubmit,
 }: {
-    initialValues?: {
-        [k: string]: any
-    }
+    fields?: Field[]
+    initialValues?: Record<string, any>
     onSubmit?: () => void
 }) {
     const posthog = usePostHog()
-    const { href } = usePathname()
+    const { href } = useLocation()
     const [submitted, setSubmitted] = useState(false)
     const [openOptions, setOpenOptions] = useState<string[]>([])
     const [confetti, setConfetti] = useState(true)

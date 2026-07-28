@@ -4,7 +4,7 @@ import Spinner from 'components/Spinner'
 import { child, container } from 'components/CallToAction'
 
 import Link from 'components/Link'
-import { usePathname } from 'next/navigation'
+import { useLocation } from 'hooks/useLocation'
 import { useBreakpoint } from 'hooks/useBreakpoint'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'

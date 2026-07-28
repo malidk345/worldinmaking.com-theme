@@ -4,7 +4,7 @@ import { useUser } from 'hooks/useUser'
 import React, { useContext, useEffect, useState } from 'react'
 import { PostsContext, sortOptions } from '../Posts'
 import TableOfContents from 'components/PostLayout/TableOfContents'
-import { usePathname } from 'next/navigation'
+import { useLocation } from 'hooks/useLocation'
 import { useBreakpoint } from 'hooks/useBreakpoint'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -26,7 +26,7 @@ const UserBar = () => {
     const { user, logout, isModerator } = useUser()
     const name = [user?.profile.firstName, user?.profile.lastName].filter(Boolean).join(' ')
     const { setNewPostModalOpen, newPostModalOpen, setLoginModalOpen, articleView } = useContext(PostsContext)
-    const pathname = usePathname()
+    const { pathname } = useLocation()
     return (
         <div className="flex gap-1 flex-col @xs:flex-row items-center justify-between w-full">
             {user ? (
@@ -336,7 +336,7 @@ export default function Default({ children }) {
     const { user, logout, isModerator } = useUser()
     const name = [user?.profile.firstName, user?.profile.lastName].filter(Boolean).join(' ')
     const { setNewPostModalOpen, newPostModalOpen, setLoginModalOpen, articleView } = useContext(PostsContext)
-    const pathname = usePathname()
+    const { pathname } = useLocation()
     const { fullWidthContent, theoMode } = useLayoutData()
 
     return (

@@ -4,7 +4,7 @@ import { Logo } from '@posthog/brand/logo'
 import React from 'react'
 import { IProps, LinkListItem } from './LinkList'
 import { GitHub, LinkedIn, YouTube, Twitter } from 'components/Icons/Icons'
-import { usePathname } from 'next/navigation'
+import { useLocation } from 'hooks/useLocation'
 const linklist: IProps[] = [
     {
         title: 'Products',
@@ -357,7 +357,7 @@ const FooterMenuItem = ({ title, url, className = '', marginBottom = '1' }) => {
 }
 
 export function Footer(): JSX.Element {
-    const { pathname, state } = usePathname()
+    const { pathname, state } = useLocation()
     if (pathname === '/newsletter-fbc' || (state as { isComingFromAd?: boolean })?.isComingFromAd) {
         return <></>
     }

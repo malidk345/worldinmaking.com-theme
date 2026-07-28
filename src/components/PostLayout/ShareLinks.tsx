@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { usePathname } from 'next/navigation'
+import { useLocation } from 'hooks/useLocation'
 import { LinkedIn, LinkIcon, Mail, Twitter } from 'components/Icons'
 import { usePost } from './hooks'
 import Tooltip from 'components/Tooltip'
@@ -26,10 +26,10 @@ const ShareLink = ({ children, url }: { children: React.ReactNode; url: string }
 
 export default function ShareLinks(): JSX.Element | null {
     const { title } = usePost()
-    const { href } = usePathname()
+    const { href } = useLocation()
     const [copied, setCopied] = useState(false)
     const handleCopyClick = () => {
-        const url = `${href.replace(/#.*/, '')}`
+        const url = `${(href || '').replace(/#.*/, '')}`
         navigator.clipboard.writeText(url)
         setCopied(true)
         setTimeout(() => {

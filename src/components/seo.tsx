@@ -1,6 +1,6 @@
 'use client'
 import React, { useEffect } from 'react'
-import { usePathname } from 'next/navigation'
+import { useLocation } from '../hooks/useLocation'
 import { useApp } from '../context/App'
 import { useWindow } from '../context/Window'
 
@@ -56,7 +56,7 @@ export const SEO = ({
     const appWindow = windowContext?.appWindow
     const appContext = useApp()
     const setWindowTitle = appContext?.setWindowTitle
-    const pathname = usePathname() || '/'
+    const { pathname } = useLocation()
 
     const { defaultTitle, titleTemplate, defaultDescription, siteUrl, defaultImage, twitterUsername } = SITE_METADATA
 
