@@ -9,6 +9,8 @@ import { ChatOverlay } from 'hooks/useChat'
 import AppContainer from 'components/AppContainer'
 import { TooltipProvider } from 'components/RadixUI/Tooltip'
 
+import ActiveWindowsPanel from 'components/ActiveWindowsPanel'
+
 // Isolates the `windows` subscription so that opening/closing a window only
 // re-renders this list, not the whole Wrapper (and therefore not the desktop,
 // taskbar, etc.).
@@ -42,6 +44,7 @@ export default function Wrapper() {
                 <SearchOverlay />
                 <ChatOverlay />
                 <CookieBannerToast />
+                <ActiveWindowsPanel />
             </AppContainer>
         </TooltipProvider>
     )

@@ -13,8 +13,9 @@ import {
     IconPeople,
     IconPinFilled,
     IconBadge,
+    IconApps,
 } from '@posthog/icons'
-import { useAppActions } from '../../context/App'
+import { useApp, useAppActions } from '../../context/App'
 
 import MenuBar, { MenuType } from 'components/RadixUI/MenuBar'
 import ActiveWindowsPanel from 'components/ActiveWindowsPanel'
@@ -36,6 +37,12 @@ function TaskBarMenu() {
         addWindow,
         taskbarRef,
     } = useAppActions()
+    const {
+        windows,
+        isActiveWindowsPanelOpen,
+        setIsActiveWindowsPanelOpen,
+    } = useApp()
+    const totalWindows = windows.length
     const [isAnimating, setIsAnimating] = useState(false)
 
     const { user, notifications, logout, isModerator } = useUser()
@@ -320,6 +327,32 @@ function TaskBarMenu() {
                                 <div className="flex flex-col items-center gap-1">
                                     <p className="text-sm mb-0">Search</p>
                                     <KeyboardShortcut text="/" size="sm" />
+                                </div>
+                            </Tooltip>
+
+                            <Tooltip
+                                trigger={
+                                    <OSButton
+                                        onClick={() => setIsActiveWindowsPanelOpen(!isActiveWindowsPanelOpen)}
+                                        disabled={totalWindows <= 0}
+                                        size="sm"
+                                        className="relative top-px !px-1.5 flex items-center gap-1.5"
+                                        aria-label={`Active windows (${totalWindows})`}
+                                    >
+                                        <IconApps className="size-5" />
+                                        {totalWindows > 0 && (
+                                            <span className="bg-primary/10 text-primary px-1.5 py-0.2 rounded text-[11px] font-bold min-w-[1.25rem] text-center border border-primary/20">
+                                                {totalWindows}
+                                            </span>
+                                        )}
+                                    </OSButton>
+                                }
+                            >
+                                <div className="flex flex-col items-center gap-1 text-center p-0.5">
+                                    <p className="text-sm font-semibold mb-0">Active Windows ({totalWindows})</p>
+                                    <span className="text-xs text-secondary leading-tight">
+                                        {totalWindows === 0 ? 'No open windows' : 'Toggle Mission Control grid'}
+                                    </span>
                                 </div>
                             </Tooltip>
 
