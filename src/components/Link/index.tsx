@@ -6,7 +6,7 @@ import React, { useMemo } from 'react'
 import usePostHog from '../../hooks/usePostHog'
 import { IconArrowUpRight } from '@posthog/icons'
 import ContextMenu, { ContextMenuItemProps } from 'components/RadixUI/ContextMenu'
-import { useAppSettings, useAppContext } from '../../context/App'
+import { useAppSettings, useAppContext, useAppActions } from '../../context/App'
 import { useWindow } from '../../context/Window'
 
 // Helper function to create standard context menu items
@@ -153,6 +153,7 @@ export default function Link({
         router = null
     }
     const appSettings = useAppSettings()
+    const { addWindow } = useAppActions()
     const safePush = appSettings?.safePush
 
     const handleClick = async (e: React.MouseEvent<HTMLButtonElement> | React.MouseEvent<HTMLAnchorElement>) => {
@@ -164,7 +165,24 @@ export default function Link({
         }
         onClick && onClick(e)
 
-        if (internal && url && !e.defaultPrevented && !e.metaKey && !e.ctrlKey) {
+        if (internal && url && !e.defaultPrevented) {
+            const target = e.currentTarget as HTMLElement
+            const rect = target?.getBoundingClientRect ? target.getBoundingClientRect() : null
+            const fromOrigin = rect ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : undefined
+
+            // If inside an existing window OR newWindow requested OR Ctrl/Cmd click -> INSTANT OS WINDOW SUMMON!
+            if ((appWindow && appWindow.key !== 'home') || linkState?.newWindow || e.metaKey || e.ctrlKey) {
+                e.preventDefault()
+                addWindow({
+                    key: `${url}-${Date.now()}`,
+                    path: url,
+                    title: url.split('/').pop() || 'window',
+                    fromOrigin,
+                    ...linkState,
+                })
+                return
+            }
+
             e.preventDefault()
             if (safePush) {
                 safePush(url, { state: linkState })
