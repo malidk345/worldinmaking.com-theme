@@ -71,7 +71,7 @@ export function LemonTable<T>({
 
     return (
         <div className="w-full my-4">
-            <div className={tableClasses} data-attr={dataAttr}>
+            <div className={tableClasses} data-attr={dataAttr || 'lemon-table'}>
                 <div className="LemonTable__content">
                     <table>
                         <colgroup>
@@ -89,7 +89,6 @@ export function LemonTable<T>({
                                     </th>
                                 ))}
                             </tr>
-                        ))}
                         </thead>
                         <tbody>
                             {loading ? (
