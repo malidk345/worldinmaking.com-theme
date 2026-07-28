@@ -1,4 +1,5 @@
 import React from 'react'
+import './LemonTable.css'
 
 export interface Column<T> {
     title?: React.ReactNode
@@ -75,7 +76,12 @@ export function LemonTable<T>({
                     <table>
                         <colgroup>
                             {columns.map((col, idx) => (
-                                <col key={`col-${idx}`} style={{ width: col.width === 0 ? '1%' : col.width }} />
+                                <col
+                                    key={`col-${idx}`}
+                                    style={{
+                                        width: typeof col.width === 'number' ? `${col.width}px` : col.width,
+                                    }}
+                                />
                             ))}
                         </colgroup>
                         <thead>
