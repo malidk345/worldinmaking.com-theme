@@ -5,6 +5,6 @@ const EditPostPage = dynamic(() => import('components/posts/EditPostPage'), {
     loading: () => null,
 })
 
-export const getStaticProps = () => ({ props: {} })
-export const getStaticPaths = () => ({ paths: [], fallback: 'blocking' })
+export const runtime = 'edge'
+
 export default EditPostPage
