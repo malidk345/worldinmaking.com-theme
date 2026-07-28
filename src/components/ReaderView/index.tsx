@@ -1710,7 +1710,7 @@ function ReaderViewContent({
                                                 }`}
                                             >
                                                 <MDXProvider components={mdxComponents}>
-                                                    <>{body.content}</>
+                                                    <MDXRenderer>{body.content}</MDXRenderer>
                                                 </MDXProvider>
                                             </div>
                                         ) : (
