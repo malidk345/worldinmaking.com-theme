@@ -266,10 +266,44 @@ export const useQuestions = (options?: UseQuestionsOptions) => {
 
     useEffect(() => {
         let isMounted = true
-        fetchSupabaseCommunityPosts(options?.slug).then((posts) => {
+        const cleanSlug = options?.slug?.replace(/^\/posts\/?/, '').replace(/^\/questions\/?/, '')
+        fetchSupabaseCommunityPosts(cleanSlug).then(async (posts) => {
             if (isMounted && posts && posts.length > 0) {
-                const formatted = posts.map(formatSupabaseCommunityToStrapi)
-                setSupabaseQuestions(formatted)
+                const formatted = await Promise.all(
+                    posts.map(async (post) => {
+                        const fmt = formatSupabaseCommunityToStrapi(post)
+                        const replies = await fetchSupabaseCommunityReplies(post.id)
+                        if (replies && replies.length > 0) {
+                            fmt.attributes.replies.data = replies.map((r) => {
+                                const pObj = Array.isArray(r.profiles) ? (r.profiles as any)[0] : r.profiles
+                                return {
+                                    id: r.id,
+                                    attributes: {
+                                        id: r.id,
+                                        body: r.content,
+                                        createdAt: r.created_at,
+                                        profile: {
+                                            data: {
+                                                id: pObj?.id || r.author_id || 'community',
+                                                attributes: {
+                                                    firstName: pObj?.username || 'Community Member',
+                                                    gravatarURL:
+                                                        pObj?.avatar_url ||
+                                                        'https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/pages-content/images/hog-9.png',
+                                                },
+                                            },
+                                        },
+                                    },
+                                }
+                            })
+                            fmt.attributes.numReplies = replies.length
+                        }
+                        return fmt
+                    })
+                )
+                if (isMounted) {
+                    setSupabaseQuestions(formatted)
+                }
             }
         })
         return () => {
@@ -306,7 +340,7 @@ export const useQuestions = (options?: UseQuestionsOptions) => {
     const questions: Omit<StrapiResult<QuestionData[]>, 'meta'> = React.useMemo(() => {
         const strapiData = data?.reduce((acc, cur) => [...acc, ...(cur.data || [])], [] as StrapiRecord<QuestionData>[]) ?? []
         const combined = [...strapiData, ...supabaseQuestions]
-        const finalData = combined.length > 0 ? combined : MOCK_COMMUNITY_POSTS
+        const finalData = combined.length > 0 ? combined : (options?.slug ? [] : MOCK_COMMUNITY_POSTS)
         return {
             data: finalData as any,
         }

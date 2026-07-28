@@ -18,16 +18,12 @@ import ScrollArea from 'components/RadixUI/ScrollArea'
 import { Popover } from 'components/RadixUI/Popover'
 import { ToggleGroup, ToggleOption } from 'components/RadixUI/ToggleGroup'
 import Tooltip from 'components/RadixUI/Tooltip'
-import Link from 'components/Link'
+import ClientPostMarkdown from 'components/Squeak/components/ClientPostMarkdown'
+
 const MDXRenderer = ({ children }: any) => {
     if (!children) return null
     if (typeof children === 'string') {
-        return (
-            <div
-                className="prose dark:prose-invert max-w-none text-primary"
-                dangerouslySetInnerHTML={{ __html: children }}
-            />
-        )
+        return <ClientPostMarkdown>{children}</ClientPostMarkdown>
     }
     return <>{children}</>
 }
@@ -1743,7 +1739,7 @@ function ReaderViewContent({
                                                 Community questions
                                             </h3>
                                             <Questions
-                                                slug={appWindow?.path}
+                                                slug={appWindow?.path || pathname}
                                                 parentName={activeInternalMenu?.name}
                                                 className={`mx-auto transition-all ${
                                                     fullWidthContent || body?.type !== 'mdx'

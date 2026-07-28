@@ -1,6 +1,7 @@
 import React from 'react'
 import Highlight, { defaultProps, Language } from 'prism-react-renderer'
 import ReactMarkdown from 'react-markdown'
+import rehypeRaw from 'rehype-raw'
 import rehypeSanitize from 'rehype-sanitize'
 import { ZoomImage } from 'components/ZoomImage'
 import { TransformImage } from 'react-markdown/lib/ast-to-react'
@@ -22,7 +23,7 @@ export const ClientPostMarkdown = ({
             allowedElements={allowedElements}
             remarkPlugins={[remarkGfm]}
             transformImageUri={transformImageUri}
-            rehypePlugins={[rehypeSanitize]}
+            rehypePlugins={[rehypeRaw, rehypeSanitize]}
             className=""
             components={{
                 pre: ({ children }) => {
