@@ -236,7 +236,7 @@ export default function Posts({ pageContext = {} }: { pageContext?: any }) {
                         </button>
                     </div>
 
-                    {posts.length > 0 && viewMode === 'table' && (
+                    {viewMode === 'table' && (
                         <LemonTable
                             columns={[
                                 {
