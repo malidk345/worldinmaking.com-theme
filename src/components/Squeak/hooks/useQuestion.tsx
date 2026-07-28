@@ -154,37 +154,53 @@ export const useQuestion = (id: number | string, options?: UseQuestionOptions) =
     })
 
     useEffect(() => {
-        if (!id || options?.data) return
+        if (!id) return
+        const cleanId = String(id).replace(/^\/questions\/?/, '')
+
         fetchSupabaseCommunityPosts().then((posts) => {
-            if (posts && posts.length > 0) {
-                const cleanId = String(id).replace(/^\/questions\/?/, '')
-                const found = posts.find((p) => String(p.id) === cleanId || String(p.title).toLowerCase().includes(cleanId.toLowerCase().replace(/-/g, ' ')))
-                if (found) {
-                    const formatted = formatSupabaseCommunityToStrapi(found)
-                    fetchSupabaseCommunityReplies(found.id).then((replies) => {
-                        if (replies && replies.length > 0) {
-                            formatted.attributes.replies.data = replies.map((r) => ({
+            let found = posts && posts.length > 0
+                ? posts.find(
+                      (p) =>
+                          String(p.id) === cleanId ||
+                          String(p.title).toLowerCase().includes(cleanId.toLowerCase().replace(/-/g, ' '))
+                  )
+                : null
+
+            const targetPost = found || (options?.data ? {
+                id: options.data.id,
+                title: options.data.attributes?.title || options.data.attributes?.subject,
+                content: options.data.attributes?.body,
+                created_at: options.data.attributes?.createdAt,
+                profiles: null
+            } : null)
+
+            if (targetPost) {
+                const formatted = formatSupabaseCommunityToStrapi(targetPost as any)
+                fetchSupabaseCommunityReplies(targetPost.id).then((replies) => {
+                    if (replies && replies.length > 0) {
+                        formatted.attributes.replies.data = replies.map((r) => ({
+                            id: r.id,
+                            attributes: {
                                 id: r.id,
-                                attributes: {
-                                    id: r.id,
-                                    body: r.content,
-                                    createdAt: r.created_at,
-                                    profile: {
-                                        data: {
-                                            id: r.profiles?.id || r.author_id || 'community',
-                                            attributes: {
-                                                firstName: r.profiles?.username || 'Community Member',
-                                                gravatarURL: r.profiles?.avatar_url || 'https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/pages-content/images/hog-9.png',
-                                            },
+                                body: r.content,
+                                createdAt: r.created_at,
+                                profile: {
+                                    data: {
+                                        id: r.profiles?.id || r.author_id || 'community',
+                                        attributes: {
+                                            firstName: r.profiles?.username || 'Community Member',
+                                            gravatarURL:
+                                                r.profiles?.avatar_url ||
+                                                'https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/pages-content/images/hog-9.png',
                                         },
                                     },
                                 },
-                            }))
-                            formatted.attributes.numReplies = replies.length
-                        }
-                        setSupabaseQuestion(formatted)
-                    })
-                }
+                            },
+                        }))
+                        formatted.attributes.numReplies = replies.length
+                    }
+                    setSupabaseQuestion(formatted)
+                })
             }
         })
     }, [id, options?.data])
@@ -224,7 +240,23 @@ export const useQuestion = (id: number | string, options?: UseQuestionOptions) =
         })
     }
 
-    const questionData: StrapiRecord<QuestionData> | undefined = question || options?.data || supabaseQuestion
+    const questionData: StrapiRecord<QuestionData> | undefined =
+        question ||
+        (supabaseQuestion
+            ? {
+                  ...options?.data,
+                  ...supabaseQuestion,
+                  attributes: {
+                      ...options?.data?.attributes,
+                      ...supabaseQuestion?.attributes,
+                      body: supabaseQuestion?.attributes?.body || options?.data?.attributes?.body,
+                      replies:
+                          supabaseQuestion?.attributes?.replies?.data?.length > 0
+                              ? supabaseQuestion.attributes.replies
+                              : options?.data?.attributes?.replies || { data: [] },
+                  },
+              }
+            : options?.data)
     const questionID = typeof id !== 'string' ? id : question?.id
 
     const reply = async (body: string) => {
@@ -270,8 +302,9 @@ export const useQuestion = (id: number | string, options?: UseQuestionOptions) =
                 mutate(optimisticData, false)
             }
 
-            if (questionID) {
-                postSupabaseCommunityReply(questionID, body).catch(() => null)
+            const targetPostId = questionData?.id || questionID || id
+            if (targetPostId) {
+                postSupabaseCommunityReply(targetPostId, body).catch(() => null)
             }
 
             const data = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/replies`, {
