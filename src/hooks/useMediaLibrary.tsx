@@ -101,7 +101,7 @@ export const useMediaLibrary = (options?: UseMediaLibraryOptions) => {
                 }))
         }
 
-        return data?.reduce((acc, cur) => [...acc, ...(cur.data || [])], [] as any[]) ?? []
+        return data?.flatMap((cur: any) => cur.data || []) ?? []
     }, [data, showAll, user, options?.search, options?.tag])
 
     const total = data && data[0]?.meta?.pagination?.total
