@@ -152,35 +152,12 @@ const KeyboardGarden = () => (
     </>
 )
 
-const BlueDotMatrix = () => (
-    <>
-        <div className="absolute inset-0 bg-[#0B0F19] dark:bg-[#070A12]" />
-        <div
-            className="absolute inset-0 opacity-45 dark:opacity-65 pointer-events-none"
-            style={{
-                backgroundImage: `radial-gradient(rgba(59, 130, 246, 0.45) 1.2px, transparent 1.2px)`,
-                backgroundSize: '24px 24px',
-            }}
-        />
-        <div
-            className="absolute inset-0 opacity-25 dark:opacity-40 pointer-events-none"
-            style={{
-                backgroundImage: `radial-gradient(rgba(99, 102, 241, 0.6) 1.8px, transparent 1.8px)`,
-                backgroundSize: '48px 48px',
-                backgroundPosition: '12px 12px',
-            }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-tr from-blue-900/20 via-transparent to-indigo-950/40 pointer-events-none" />
-    </>
-)
-
 // Visibility classes written out in full so Tailwind's JIT scanner can see them.
 const SCENES: { key: string; Scene: React.FC; visible: string }[] = [
     { key: 'hogzilla', Scene: Hogzilla, visible: 'wallpaper-hogzilla:block' },
     { key: 'startup-monopoly', Scene: StartupMonopoly, visible: 'wallpaper-startup-monopoly:block' },
     { key: 'office-party', Scene: OfficeParty, visible: 'wallpaper-office-party:block' },
     { key: 'keyboard-garden', Scene: KeyboardGarden, visible: 'wallpaper-keyboard-garden:block' },
-    { key: 'blue-dot-matrix', Scene: BlueDotMatrix, visible: 'wallpaper-blue-dot-matrix:block' },
 ]
 
 export interface WallpaperGlow {
@@ -193,7 +170,6 @@ export const WALLPAPER_GLOW: Record<string, WallpaperGlow> = {
     hogzilla: { light: '#FF9528', dark: '#9370F0' },
     'startup-monopoly': { light: '#37B878', dark: '#96B4F0' },
     'office-party': { light: '#FF6E54', dark: '#D084F8' },
-    'blue-dot-matrix': { light: '#3B82F6', dark: '#60A5FA' },
 }
 
 export const DEFAULT_WALLPAPER_GLOW: WallpaperGlow = WALLPAPER_GLOW['keyboard-garden']
