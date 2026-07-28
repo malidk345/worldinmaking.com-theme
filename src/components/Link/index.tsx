@@ -166,30 +166,26 @@ export default function Link({
         onClick && onClick(e)
 
         if (internal && url && !e.defaultPrevented) {
+            e.preventDefault()
+
             const target = e.currentTarget as HTMLElement
             const rect = target?.getBoundingClientRect ? target.getBoundingClientRect() : null
             const fromOrigin = rect ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : undefined
 
-            // If inside an existing window OR newWindow requested OR Ctrl/Cmd click -> INSTANT OS WINDOW SUMMON!
-            if ((appWindow && appWindow.key !== 'home') || linkState?.newWindow || e.metaKey || e.ctrlKey) {
-                e.preventDefault()
-                addWindow({
-                    key: `${url}-${Date.now()}`,
-                    path: url,
-                    title: url.split('/').pop() || 'window',
-                    fromOrigin,
-                    ...linkState,
-                })
-                return
-            }
+            // 1. INSTANT WINDOW SUMMON (0ms) - Pop open window immediately
+            addWindow({
+                key: `${url}-${Date.now()}`,
+                path: url,
+                title: url.split('/').pop() || 'window',
+                fromOrigin,
+                ...linkState,
+            })
 
-            e.preventDefault()
+            // 2. INSTANT URL SYNC (0ms) - Update browser URL bar immediately
             if (safePush) {
-                safePush(url, { state: linkState })
+                safePush(url, { state: { ...linkState, skipPageUpdate: true } })
             } else if (router) {
                 router.push(url)
-            } else if (typeof window !== 'undefined') {
-                window.location.href = url
             }
             return
         }
