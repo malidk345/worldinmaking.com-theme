@@ -1,44 +1,20 @@
 import { getParams, PostsContext } from 'components/Edition/Posts'
 import Editor from 'components/Editor'
-import OSTable from 'components/OSTable'
 import SEO from 'components/seo'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
+import isToday from 'dayjs/plugin/isToday'
 import Link from 'components/Link'
-import TeamMember from 'components/TeamMember'
 import qs from 'qs'
-import CloudinaryImage from 'components/CloudinaryImage'
-import Tooltip from 'components/RadixUI/Tooltip'
-import ProgressBar from 'components/ProgressBar'
-import slugify from 'slugify'
 import { usePaginatedPosts } from 'components/Edition/hooks/usePaginatedPosts'
 import { IconSpinner } from '@posthog/icons'
-
-const GridIcon = (props: any) => (
-    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" {...props}>
-        <rect x="3" y="3" width="7" height="7" />
-        <rect x="14" y="3" width="7" height="7" />
-        <rect x="14" y="14" width="7" height="7" />
-        <rect x="3" y="14" width="7" height="7" />
-    </svg>
-)
-
-const ListIcon = (props: any) => (
-    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" {...props}>
-        <line x1="8" y1="6" x2="21" y2="6" />
-        <line x1="8" y1="12" x2="21" y2="12" />
-        <line x1="8" y1="18" x2="21" y2="18" />
-        <line x1="3" y1="6" x2="3.01" y2="6" />
-        <line x1="3" y1="12" x2="3.01" y2="12" />
-        <line x1="3" y1="18" x2="3.01" y2="18" />
-    </svg>
-)
 import LikeButton from 'components/Edition/LikeButton'
 import Modal from 'components/Modal'
 import { Authentication } from 'components/Squeak'
 
 dayjs.extend(relativeTime)
+dayjs.extend(isToday)
 
 const sortOptions = [
     {
@@ -54,70 +30,60 @@ const sortOptions = [
 const getSortOption = (root?: string | null) =>
     sortOptions[root && ['blog', 'changelog', 'newsletter', 'spotlight'].includes(root) ? 1 : 0]
 
-export const BlogCard = ({ post }: { post: any }) => {
-    const title = post.attributes?.title || 'Untitled Post'
-    const slug = post.attributes?.slug || '#'
-    const date = post.attributes?.date ? dayjs(post.attributes.date).format('MMM D, YYYY') : ''
-    const category = post.attributes?.post_category?.data?.attributes?.label
-    const featuredImage =
-        post.attributes?.featuredImage?.url ||
-        'https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/components/Blog/images/default.jpg'
-    const authors = post.attributes?.authors?.data || []
+function WimposPostRow({ id, title, date, publishedAt, authors, slug }: any) {
+    const day = dayjs(date || publishedAt)
 
     return (
-        <div className="relative rounded-xl overflow-hidden z-10 h-64 w-full group border border-black/10 dark:border-white/10 shadow-md hover:shadow-xl transition-all duration-300">
-            <Link className="!text-white !hover:text-white flex flex-col h-full w-full" to={slug}>
-                <img
-                    alt={title}
-                    className="w-full h-full object-cover absolute inset-0 group-hover:scale-105 transition-transform duration-500"
-                    src={featuredImage}
-                />
-                <div className="bg-gradient-to-t from-black/95 via-black/50 to-black/20 absolute inset-0 p-5 flex flex-col justify-between h-full w-full">
-                    <div className="flex justify-between items-center">
-                        {category && (
-                            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-md text-white uppercase tracking-wider border border-white/20">
-                                {category}
+        <li className="flex gap-2.5 items-center py-1.5 border-b border-black/5 dark:border-white/5 last:border-b-0">
+            <div className="flex-shrink-0">
+                <LikeButton slug={slug} postID={id} />
+            </div>
+            <span className="flex items-center flex-shrink-0 flex-grow min-w-0">
+                <Link
+                    state={{ newWindow: true }}
+                    className="m-0 font-semibold border-t border-b !leading-tight line-clamp-2 text-inherit flex-grow relative border-transparent hover:scale-[1.005] hover:top-[-.5px] active:top-[.5px] active:scale-[.995] transition-all"
+                    to={slug}
+                >
+                    <div className="flex items-baseline gap-2 flex-wrap sm:flex-nowrap">
+                        <span className="mr-1 flex-1 line-clamp-1 font-semibold text-primary text-[15px]">{title}</span>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                            <span className="font-medium leading-none text-[.813rem] text-secondary">
+                                {day.isToday() ? 'Today' : day.fromNow()}
                             </span>
-                        )}
-                        <span className="text-xs text-white/80 font-medium ml-auto">{date}</span>
+                            {authors?.data?.length > 0 && (
+                                <span className="ml-1 inline-flex items-center space-x-1 font-medium leading-none">
+                                    <span className="text-[.813rem] text-muted">by</span>
+                                    <ul className="m-0 p-0 list-none flex flex-wrap">
+                                        {authors.data.map(({ id: authorId, attributes }: any) => {
+                                            const name =
+                                                [attributes?.firstName, attributes?.lastName]
+                                                    .filter(Boolean)
+                                                    .join(' ') || 'WorldInMaking'
+                                            return (
+                                                <li className='even:before:content-[","] even:before:mr-1' key={authorId || name}>
+                                                    <Link
+                                                        className="text-[.813rem] text-secondary hover:text-primary"
+                                                        to={`/community/profiles/${authorId || 1}`}
+                                                        state={{ newWindow: true }}
+                                                    >
+                                                        {name}
+                                                    </Link>
+                                                </li>
+                                            )
+                                        })}
+                                    </ul>
+                                </span>
+                            )}
+                        </div>
                     </div>
-                    <div>
-                        <h3 className="m-0 text-base md:text-lg font-bold text-white leading-snug line-clamp-2 drop-shadow-md group-hover:underline decoration-white/50 underline-offset-4">
-                            {title}
-                        </h3>
-                        {authors.length > 0 && (
-                            <div className="flex items-center gap-2 mt-3 pt-2 border-t border-white/15">
-                                {authors.slice(0, 2).map((author: any, idx: number) => {
-                                    const name =
-                                        [author.attributes?.firstName, author.attributes?.lastName]
-                                            .filter(Boolean)
-                                            .join(' ') || 'WorldInMaking'
-                                    const avatar =
-                                        author.attributes?.avatar?.url ||
-                                        'https://res.cloudinary.com/dmukukwp6/image/upload/v1675204207/james_hawkins_posthog_031f7cf651.png'
-                                    return (
-                                        <div key={idx} className="flex items-center gap-1.5">
-                                            <img
-                                                src={avatar}
-                                                className="w-5 h-5 rounded-full object-cover border border-white/30"
-                                                alt={name}
-                                            />
-                                            <span className="text-xs text-white/90 font-medium">{name}</span>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </Link>
-        </div>
+                </Link>
+            </span>
+        </li>
     )
 }
 
 export default function Posts({ pageContext = {} }: { pageContext?: any }) {
     const [loginModalOpen, setLoginModalOpen] = useState(false)
-    const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid')
     const { allPostCategory } = {} as any
     const articleRef = useRef<HTMLDivElement>(null)
     const [authors, setAuthors] = useState<any[]>([])
@@ -127,15 +93,6 @@ export default function Posts({ pageContext = {} }: { pageContext?: any }) {
     const [sort, setSort] = useState(getSortOption(pageContext?.root).label)
     const [params, setParams] = useState(
         getParams(pageContext?.root, pageContext?.selectedTag, getSortOption(pageContext?.root).sort, selectedAuthor)
-    )
-
-    const allCategories = useMemo(
-        () =>
-            (allPostCategory?.nodes || []).filter(
-                (category: any, index: number, self: any[]) =>
-                    index === self.findIndex((c: any) => c.attributes.folder === category.attributes.folder)
-            ),
-        [allPostCategory]
     )
 
     const scrollToTop = () => {
@@ -150,7 +107,7 @@ export default function Posts({ pageContext = {} }: { pageContext?: any }) {
         scrollToTop()
     }
 
-    const { posts, isValidating, totalPages, currentPage, nextPage, prevPage, hasNextPage, hasPrevPage, goToPage } =
+    const { posts, isLoading, isValidating, totalPages, currentPage, nextPage, prevPage, hasNextPage, hasPrevPage, goToPage } =
         usePaginatedPosts({ params, onPageChange: handlePageChange })
 
     const handleFilterChange = (filters: any) => {
@@ -222,111 +179,15 @@ export default function Posts({ pageContext = {} }: { pageContext?: any }) {
                     onSortChange={(value) => setSort(value)}
                     defaultSortValue={sort}
                 >
-                    <div className="flex justify-end items-center mb-4 gap-2">
-                        <button
-                            onClick={() => setViewMode('grid')}
-                            className={`p-1.5 rounded-md transition-colors ${
-                                viewMode === 'grid'
-                                    ? 'bg-black/10 dark:bg-white/20 text-primary font-bold'
-                                    : 'text-muted hover:bg-black/5 dark:hover:bg-white/10'
-                            }`}
-                            title="Grid View"
-                        >
-                            <GridIcon className="size-4" />
-                        </button>
-                        <button
-                            onClick={() => setViewMode('table')}
-                            className={`p-1.5 rounded-md transition-colors ${
-                                viewMode === 'table'
-                                    ? 'bg-black/10 dark:bg-white/20 text-primary font-bold'
-                                    : 'text-muted hover:bg-black/5 dark:hover:bg-white/10'
-                            }`}
-                            title="Table View"
-                        >
-                            <ListIcon className="size-4" />
-                        </button>
-                    </div>
-
-                    {posts.length > 0 && viewMode === 'grid' && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
-                            {posts.map((post) => (
-                                <BlogCard key={post.id} post={post} />
+                    {posts.length > 0 && (
+                        <ul className="list-none p-0 m-0 space-y-1 my-2">
+                            {posts.map(({ id, attributes }: any) => (
+                                <WimposPostRow key={id} id={id} {...attributes} />
                             ))}
-                        </div>
+                        </ul>
                     )}
 
-                    {posts.length > 0 && viewMode === 'table' && (
-                        <OSTable
-                            width="full"
-                            pagination={{
-                                totalPages,
-                                currentPage,
-                                nextPage,
-                                prevPage,
-                                hasNextPage,
-                                hasPrevPage,
-                                goToPage,
-                            }}
-                            rowAlignment="top"
-                            columns={[
-                                { name: '', align: 'center', width: '40px' },
-                                { name: 'Date', align: 'left', width: '120px' },
-                                { name: 'Title', align: 'left', width: '3fr' },
-                                { name: 'Tags', align: 'left', width: '1fr' },
-                                { name: 'Author(s)', align: 'left', width: '1fr' },
-                            ]}
-                            rows={posts.map((post) => {
-                                return {
-                                    cells: [
-                                        { content: <LikeButton postID={post.id} slug={post.attributes.slug} /> },
-                                        {
-                                            content: (
-                                                <span className="text-muted font-semibold">
-                                                    {dayjs(post.attributes.date).format('MMM D, YYYY')}
-                                                </span>
-                                            ),
-                                        },
-                                        {
-                                            content: (
-                                                <Link className="font-semibold flex-1" to={post.attributes.slug}>
-                                                    {post.attributes.title}
-                                                </Link>
-                                            ),
-                                        },
-                                        {
-                                            content: (
-                                                <span className="text-sm text-secondary">
-                                                    {post.attributes.post_category?.data?.attributes?.label || 'Article'}
-                                                </span>
-                                            ),
-                                        },
-                                        {
-                                            content: (
-                                                <ul className="list-none m-0 p-0 flex flex-wrap gap-1">
-                                                    {(post.attributes?.authors?.data || []).map((author: any) => {
-                                                        const name = [
-                                                            author.attributes?.firstName,
-                                                            author.attributes?.lastName,
-                                                        ]
-                                                            .filter(Boolean)
-                                                            .join(' ') || 'WorldInMaking'
-                                                        const photo = author.attributes?.avatar?.url
-                                                        return (
-                                                            <li key={author.id || name}>
-                                                                <TeamMember name={name} photo={photo} />
-                                                            </li>
-                                                        )
-                                                    })}
-                                                </ul>
-                                            ),
-                                        },
-                                    ],
-                                }
-                            })}
-                        />
-                    )}
-
-                    {isValidating && !posts.length && (
+                    {(isLoading || isValidating) && !posts.length && (
                         <div className="flex items-center justify-center py-12">
                             <IconSpinner className="size-7 opacity-60 animate-spin" />
                         </div>
