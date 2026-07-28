@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react'
-import { useBreakpoint } from 'gatsby-plugin-breakpoints'
+import { useBreakpoint } from 'hooks/useBreakpoint'
 import { Structure } from '../../Structure'
 import Slider from 'react-slick'
 import SliderNav from '../../SliderNav'

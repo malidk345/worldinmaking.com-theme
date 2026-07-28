@@ -1,7 +1,7 @@
 import React from 'react'
 import { RadioGroup } from '@headlessui/react'
 import Combobox from './Combobox'
-import { useBreakpoint } from 'gatsby-plugin-breakpoints'
+import { useBreakpoint } from 'hooks/useBreakpoint'
 import { locationFactor } from './compensation_data/location_factor'
 import { sfBenchmark } from './compensation_data/sf_benchmark'
 import { levelModifier } from './compensation_data/level_modifier'

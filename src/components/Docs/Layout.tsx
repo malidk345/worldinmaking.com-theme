@@ -188,7 +188,7 @@ export default function DocsLayout({
                                     <section className="article-content handbook-docs-content">
                                         {children}
                                         <MDXProvider components={components}>
-                                            <MDXRenderer>{body}</MDXRenderer>
+                                            <>{body}</>
                                         </MDXProvider>
                                     </section>
                                     <CommunityQuestions />

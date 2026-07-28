@@ -13,9 +13,8 @@ import SidebarSection from 'components/PostLayout/SidebarSection'
 import Topics from 'components/PostLayout/Topics'
 import { SEO } from 'components/seo'
 import { ZoomImage } from 'components/ZoomImage'
-import { useBreakpoint } from 'gatsby-plugin-breakpoints'
+import { useBreakpoint } from 'hooks/useBreakpoint'
 import CloudinaryImage from 'components/CloudinaryImage'
-import { MDXRenderer } from 'gatsby-plugin-mdx'
 import React, { useEffect, useState } from 'react'
 import { animateScroll as scroll } from 'react-scroll'
 import { shortcodes } from '../../mdxGlobalComponents'
@@ -99,7 +98,7 @@ export default function Tutorial({ data, pageContext: { tableOfContents, menu },
                         {view === 'Article' ? (
                             <div className="article-content">
                                 <MDXProvider components={components}>
-                                    <MDXRenderer>{body}</MDXRenderer>
+                                    <>{body}</>
                                 </MDXProvider>
                             </div>
                         ) : (

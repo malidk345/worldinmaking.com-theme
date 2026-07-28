@@ -7,7 +7,6 @@ import useTeamUpdates from 'hooks/useTeamUpdates'
 import { kebabCase } from 'lib/utils'
 import React, { useState, useEffect, useMemo } from 'react'
 import { MDXProvider } from '@mdx-js/react'
-import { MDXRenderer } from 'gatsby-plugin-mdx'
 import Tooltip from 'components/RadixUI/Tooltip'
 import SEO from 'components/seo'
 import SideModal from 'components/Modal/SideModal'
@@ -762,7 +761,7 @@ export default function Team({
                         <MDXProvider
                             components={{ PrivateLink, TaskOwnershipTable, SmallTeam, TeamMember: TeamMemberComponent }}
                         >
-                            <MDXRenderer>{body}</MDXRenderer>
+                            <>{body}</>
                         </MDXProvider>
                     </div>
                 </>

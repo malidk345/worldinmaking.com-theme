@@ -10,7 +10,6 @@ import { sfBenchmark } from 'components/CompensationCalculator/compensation_data
 import { benefits } from 'components/Careers/Benefits'
 import { Department, Location, Timezone } from 'components/NotProductIcons'
 import { MDXProvider } from '@mdx-js/react'
-import { MDXRenderer } from 'gatsby-plugin-mdx'
 import { companyMenu } from '../navs'
 import TeamMember from 'components/TeamMember'
 import { Accordion } from 'components/RadixUI/Accordion'
@@ -748,13 +747,13 @@ export default function Job({
                                                                     TeamMember,
                                                                 }}
                                                             >
-                                                                <MDXRenderer>{mission.body}</MDXRenderer>
+                                                                <>{mission.body}</>
                                                             </MDXProvider>
                                                         )}
                                                         <MDXProvider
                                                             components={{ HideFromJobPosting: () => null, TeamMember }}
                                                         >
-                                                            <MDXRenderer>{objectives.body}</MDXRenderer>
+                                                            <>{objectives.body}</>
                                                         </MDXProvider>
                                                     </div>
                                                 ),

@@ -154,7 +154,7 @@ export default function ContentViewer({ content, title, initialIndex, scrollToTo
                         <Markdown>{currentContent.body}</Markdown>
                     ) : (
                         <MDXProvider components={components}>
-                            <MDXRenderer>{currentContent.body}</MDXRenderer>
+                            <>{currentContent.body}</>
                         </MDXProvider>
                     )}
                 </div>

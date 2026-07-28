@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Plus, Minus } from 'components/Icons/Icons'
 import { motion } from 'framer-motion'
-import { useBreakpoint } from 'gatsby-plugin-breakpoints'
+import { useBreakpoint } from 'hooks/useBreakpoint'
 
 export default function Accordion({ title, titleClasses, children }) {
     const [open, setOpen] = useState(false)

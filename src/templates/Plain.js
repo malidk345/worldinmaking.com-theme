@@ -9,7 +9,6 @@ import { Section } from 'components/Section'
 import { SEO } from 'components/seo'
 import TutorialsSlider from 'components/TutorialsSlider'
 import TutorialsList from 'components/TutorialsList'
-import { MDXRenderer } from 'gatsby-plugin-mdx'
 import React from 'react'
 import { MdxCodeBlock } from '../components/CodeBlock'
 import { shortcodes } from '../mdxGlobalComponents'
@@ -53,7 +52,7 @@ export default function Plain({ data }) {
             <section className="py-12">
                 {showTitle && <h1 className="text-center">{title}</h1>}
                 <MDXProvider components={components}>
-                    <MDXRenderer images={images}>{body}</MDXRenderer>
+                    <MDXRenderer images={images}>{body}</>
                 </MDXProvider>
             </section>
         </ReaderView>

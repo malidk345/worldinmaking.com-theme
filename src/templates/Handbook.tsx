@@ -79,7 +79,7 @@ const renderAvailabilityIcon = (availability: 'full' | 'partial' | 'none') => {
 
 const MDX = ({ body }) => (
     <MDXProvider components={{}}>
-        <MDXRenderer>{body}</MDXRenderer>
+        <>{body}</>
     </MDXProvider>
 )
 

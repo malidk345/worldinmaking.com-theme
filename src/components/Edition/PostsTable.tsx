@@ -5,7 +5,7 @@ import { child, container } from 'components/CallToAction'
 
 import Link from 'components/Link'
 import { usePathname } from 'next/navigation'
-import { useBreakpoint } from 'gatsby-plugin-breakpoints'
+import { useBreakpoint } from 'hooks/useBreakpoint'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import isToday from 'dayjs/plugin/isToday'

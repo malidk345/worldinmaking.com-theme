@@ -6,7 +6,6 @@ import Link from 'components/Link'
 import { Section } from 'components/Section'
 import { SEO } from 'components/seo'
 import TutorialsSlider from 'components/TutorialsSlider'
-import { MDXRenderer } from 'gatsby-plugin-mdx'
 import GithubSlugger from 'github-slugger'
 import React from 'react'
 import { shortcodes } from '../mdxGlobalComponents'
@@ -127,7 +126,7 @@ export default function Pipeline({ data, pageContext: { next, previous } }) {
                 <h1 className="text-center mt-0 mb-12 hidden lg:block">{title}</h1>
                 <article>
                     <MDXProvider components={{ ...shortcodes, Section, TutorialsSlider, Documentation }}>
-                        <MDXRenderer>{body}</MDXRenderer>
+                        <>{body}</>
                     </MDXProvider>
                 </article>
                 <div className="mt-12">

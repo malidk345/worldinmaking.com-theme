@@ -1,7 +1,6 @@
 import React from 'react'
 import Editor from 'components/Editor'
 import SEO from 'components/seo'
-import { MDXRenderer } from 'gatsby-plugin-mdx'
 import { MDXProvider } from '@mdx-js/react'
 import Link from 'components/Link'
 import { shortcodes } from '../mdxGlobalComponents'
@@ -31,7 +30,7 @@ export default function Media({ data }: MediaProps) {
                         components={{ a: (props) => <Link {...props} state={{ newWindow: true }} />, ...shortcodes }}
                     >
                         {data?.mdx?.body ? (
-                            <MDXRenderer>{data.mdx.body}</MDXRenderer>
+                            <>{data.mdx.body}</>
                         ) : (
                             <div className="prose dark:prose-invert">
                                 <h1>Media & Press</h1>

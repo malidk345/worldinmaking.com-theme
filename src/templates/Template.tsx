@@ -10,7 +10,6 @@ import { InlineCode } from 'components/InlineCode'
 import { ZoomImage } from 'components/ZoomImage'
 import Link from 'components/Link'
 import { MDXProvider } from '@mdx-js/react'
-import { MDXRenderer } from 'gatsby-plugin-mdx'
 import { TreeMenu } from 'components/TreeMenu'
 import CloudinaryImage from 'components/CloudinaryImage'
 import TemplateCTAs from 'components/TemplateCTAs'
@@ -118,7 +117,7 @@ export default function Template({ data }) {
                         )}
                     </div>
                     <MDXProvider components={components}>
-                        <MDXRenderer>{body}</MDXRenderer>
+                        <>{body}</>
                     </MDXProvider>
                     <div className="mb-12">
                         <TemplateCTAs

@@ -8,7 +8,6 @@ import * as OpenAPISampler from 'openapi-sampler'
 import React, { useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { MDXProvider } from '@mdx-js/react'
-import { MDXRenderer } from 'gatsby-plugin-mdx'
 import { shortcodes } from '../mdxGlobalComponents'
 import { MdxCodeBlock } from 'components/CodeBlock'
 import { InlineCode } from 'components/InlineCode'
@@ -640,7 +639,7 @@ export default function ApiEndpoint({ data }: { data: ApiEndpointData }): JSX.El
                     {overviewNode?.body && (
                         <div className="article-content mt-6">
                             <MDXProvider components={components}>
-                                <MDXRenderer>{overviewNode.body}</MDXRenderer>
+                                <>{overviewNode.body}</>
                             </MDXProvider>
                             <SectionDivider />
                         </div>
@@ -679,7 +678,7 @@ export default function ApiEndpoint({ data }: { data: ApiEndpointData }): JSX.El
                                             <div className="article-content">
                                                 <div className="text-primary">
                                                     <MDXProvider components={components}>
-                                                        <MDXRenderer>{mdxNode.body}</MDXRenderer>
+                                                        <>{mdxNode.body}</>
                                                     </MDXProvider>
                                                 </div>
                                             </div>

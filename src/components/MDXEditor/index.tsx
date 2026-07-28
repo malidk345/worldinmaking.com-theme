@@ -32,7 +32,6 @@ import {
     CAN_UNDO_COMMAND,
 } from 'lexical'
 import { mergeRegister } from '@lexical/utils'
-import { MDXRenderer } from 'gatsby-plugin-mdx'
 import { MDXProvider } from '@mdx-js/react'
 import Link from 'components/Link'
 
@@ -145,7 +144,7 @@ export default function MDXEditor({
         >
             {(isSSR && mdxBody) || readOnly ? (
                 <MDXProvider components={{ a: Link, ...mdxComponents }}>
-                    <MDXRenderer>{mdxBody}</MDXRenderer>
+                    <>{mdxBody}</>
                 </MDXProvider>
             ) : (
                 <MDXEditorComponent

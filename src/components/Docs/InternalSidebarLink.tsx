@@ -2,7 +2,7 @@ import { useActions } from 'kea'
 import { scrollspyCaptureLogic } from 'logic/scrollspyCaptureLogic'
 import React from 'react'
 import { Link } from 'react-scroll'
-import { useBreakpoint } from 'gatsby-plugin-breakpoints'
+import { useBreakpoint } from 'hooks/useBreakpoint'
 import { useLayoutData } from 'components/Layout/hooks'
 
 export default function InternalSidebarLink({ url, name, depth, onClick, className = '', style = {} }) {

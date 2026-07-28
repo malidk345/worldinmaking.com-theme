@@ -8,7 +8,6 @@ import CloudinaryImage from 'components/CloudinaryImage'
 import { PRODUCT_COUNT, CUSTOMER_COUNT } from '../constants/index'
 import { James, Plus, Tim } from 'components/Signatures'
 import SEO from 'components/seo'
-import { MDXRenderer } from 'gatsby-plugin-mdx'
 import { MDXProvider } from '@mdx-js/react'
 import { shortcodes } from '../mdxGlobalComponents'
 import Link from 'components/Link'
@@ -67,7 +66,7 @@ export default function About({ data }: AboutProps) {
                     <div className="max-w-3xl mx-auto pb-12">
                         <MDXProvider components={mdxComponents}>
                             {data?.mdx?.body ? (
-                                <MDXRenderer>{data.mdx.body}</MDXRenderer>
+                                <>{data.mdx.body}</>
                             ) : (
                                 <div className="prose dark:prose-invert">
                                     <h1>About PostHog</h1>
