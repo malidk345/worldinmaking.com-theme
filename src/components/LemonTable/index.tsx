@@ -32,94 +32,92 @@ export function LemonTable<T extends Record<string, any>>({
     dataSource,
     loading = false,
     className = '',
-    emptyText = 'No data available',
+    emptyText = 'No data',
     onRowClick,
     pagination,
 }: LemonTableProps<T>): JSX.Element {
     return (
-        <div className={`LemonTable__wrapper w-full my-4 rounded-lg border border-black/10 dark:border-white/10 overflow-hidden bg-primary/40 shadow-xs ${className}`}>
+        <div className={`LemonTable relative w-full overflow-x-auto ${className}`}>
             {loading && (
-                <div className="LemonTable__loader w-full h-0.5 bg-accent relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary/20 overflow-hidden z-20">
                     <div className="w-full h-full bg-primary animate-pulse" />
                 </div>
             )}
-            <div className="LemonTable__content w-full overflow-x-auto">
-                <table className="LemonTable w-full text-left border-collapse font-sans text-xs sm:text-sm">
-                    <thead>
-                        <tr className="LemonTable__header-row border-b border-black/10 dark:border-white/10 bg-black/4 dark:bg-white/5 text-[11px] font-bold uppercase tracking-wider text-secondary">
-                            {columns.map((col, idx) => (
-                                <th
-                                    key={col.key || String(col.dataIndex) || idx}
-                                    style={{ width: col.width }}
-                                    className={`LemonTable__header px-3.5 py-2.5 font-bold uppercase text-[11px] tracking-wider text-secondary select-none ${
-                                        col.align === 'center'
-                                            ? 'text-center'
-                                            : col.align === 'right'
-                                            ? 'text-right'
-                                            : 'text-left'
-                                    }`}
-                                >
-                                    {col.title}
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-black/5 dark:divide-white/5">
-                        {dataSource.length === 0 && !loading && (
-                            <tr>
-                                <td colSpan={columns.length} className="px-4 py-8 text-center text-muted text-xs">
-                                    <div className="LemonTable__empty-state">{emptyText}</div>
-                                </td>
-                            </tr>
-                        )}
-                        {dataSource.map((row, rIdx) => (
-                            <tr
-                                key={row.id || rIdx}
-                                onClick={() => onRowClick?.(row)}
-                                className={`LemonTable__row hover:bg-black/3 dark:hover:bg-white/4 transition-colors ${
-                                    onRowClick ? 'cursor-pointer' : ''
+            <table className="w-full text-left border-collapse font-sans text-xs sm:text-sm">
+                <thead>
+                    <tr className="border-b border-black/10 dark:border-white/10 text-[11px] font-bold uppercase tracking-wider text-muted/70">
+                        {columns.map((col, idx) => (
+                            <th
+                                key={col.key || String(col.dataIndex) || idx}
+                                style={{ width: col.width }}
+                                className={`py-2 px-3 select-none ${
+                                    col.align === 'center'
+                                        ? 'text-center'
+                                        : col.align === 'right'
+                                        ? 'text-right'
+                                        : 'text-left'
                                 }`}
                             >
-                                {columns.map((col, cIdx) => {
-                                    const val = col.dataIndex ? row[col.dataIndex as string] : undefined
-                                    return (
-                                        <td
-                                            key={col.key || cIdx}
-                                            className={`px-3.5 py-3 align-middle text-primary ${
-                                                col.align === 'center'
-                                                    ? 'text-center'
-                                                    : col.align === 'right'
-                                                    ? 'text-right'
-                                                    : 'text-left'
-                                            }`}
-                                        >
-                                            {col.render ? col.render(val, row, rIdx) : String(val ?? '')}
-                                        </td>
-                                    )
-                                })}
-                            </tr>
+                                {col.title}
+                            </th>
                         ))}
-                    </tbody>
-                </table>
-            </div>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-black/5 dark:divide-white/5">
+                    {dataSource.length === 0 && !loading && (
+                        <tr>
+                            <td colSpan={columns.length} className="py-8 px-3 text-center text-muted text-xs">
+                                {emptyText}
+                            </td>
+                        </tr>
+                    )}
+                    {dataSource.map((row, rIdx) => (
+                        <tr
+                            key={row.id || rIdx}
+                            onClick={() => onRowClick?.(row)}
+                            className={`hover:bg-accent/40 transition-colors ${
+                                onRowClick ? 'cursor-pointer' : ''
+                            }`}
+                        >
+                            {columns.map((col, cIdx) => {
+                                const val = col.dataIndex ? row[col.dataIndex as string] : undefined
+                                return (
+                                    <td
+                                        key={col.key || cIdx}
+                                        className={`py-2.5 px-3 align-middle text-primary text-xs ${
+                                            col.align === 'center'
+                                                ? 'text-center'
+                                                : col.align === 'right'
+                                                ? 'text-right'
+                                                : 'text-left'
+                                        }`}
+                                    >
+                                        {col.render ? col.render(val, row, rIdx) : String(val ?? '')}
+                                    </td>
+                                );
+                            })}
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
 
             {pagination && (
-                <div className="LemonTable__pagination flex items-center justify-between px-3.5 py-2.5 bg-black/3 dark:bg-white/5 border-t border-black/10 dark:border-white/10 text-xs font-medium text-secondary">
-                    <div>
+                <div className="flex items-center justify-between py-3 px-1 border-t border-black/10 dark:border-white/10 text-xs text-muted mt-2">
+                    <span>
                         Page {pagination.currentPage + 1} of {Math.max(1, pagination.totalPages)}
-                    </div>
+                    </span>
                     <div className="flex items-center space-x-2">
                         <button
                             disabled={!pagination.hasPrevPage}
                             onClick={pagination.prevPage}
-                            className="px-2.5 py-1 rounded bg-accent hover:opacity-80 disabled:opacity-40 disabled:pointer-events-none transition-all font-medium text-xs"
+                            className="px-2 py-1 rounded bg-accent/60 hover:bg-accent disabled:opacity-30 disabled:pointer-events-none transition-all font-medium text-xs text-primary"
                         >
-                            Prev
+                            Previous
                         </button>
                         <button
                             disabled={!pagination.hasNextPage}
                             onClick={pagination.nextPage}
-                            className="px-2.5 py-1 rounded bg-accent hover:opacity-80 disabled:opacity-40 disabled:pointer-events-none transition-all font-medium text-xs"
+                            className="px-2 py-1 rounded bg-accent/60 hover:bg-accent disabled:opacity-30 disabled:pointer-events-none transition-all font-medium text-xs text-primary"
                         >
                             Next
                         </button>
