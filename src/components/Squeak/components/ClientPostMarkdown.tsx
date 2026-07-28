@@ -36,7 +36,7 @@ export const ClientPostMarkdown = ({
             remarkPlugins={[remarkGfm]}
             transformImageUri={transformImageUri}
             rehypePlugins={[rehypeRaw, rehypeSanitize]}
-            className="prose dark:prose-invert max-w-full text-primary leading-relaxed [&_h1]:text-2xl [&_h1]:font-bold [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:text-lg [&_p]:my-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+            className="markdown prose dark:prose-invert prose-sm max-w-full text-primary font-sans text-sm leading-relaxed [&_a]:font-semibold break-words [overflow-wrap:anywhere] [&_p]:my-2.5 [&_h1]:text-xl [&_h1]:font-bold [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:text-base [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
             components={{
                 pre: ({ children }) => {
                     return (
