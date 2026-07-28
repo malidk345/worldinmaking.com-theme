@@ -37,21 +37,21 @@ export function LemonTable<T extends Record<string, any>>({
     pagination,
 }: LemonTableProps<T>): JSX.Element {
     return (
-        <div className={`LemonTableContainer w-full my-4 rounded-xl border border-black/10 dark:border-white/10 bg-primary/40 backdrop-blur-md shadow-sm overflow-hidden ${className}`}>
+        <div className={`LemonTable__wrapper w-full my-4 rounded-lg border border-black/10 dark:border-white/10 overflow-hidden bg-primary/40 shadow-xs ${className}`}>
             {loading && (
-                <div className="w-full h-0.5 bg-accent overflow-hidden relative">
+                <div className="LemonTable__loader w-full h-0.5 bg-accent relative overflow-hidden">
                     <div className="w-full h-full bg-primary animate-pulse" />
                 </div>
             )}
-            <div className="w-full overflow-x-auto">
-                <table className="LemonTable w-full text-left border-collapse font-sans text-sm">
+            <div className="LemonTable__content w-full overflow-x-auto">
+                <table className="LemonTable w-full text-left border-collapse font-sans text-xs sm:text-sm">
                     <thead>
-                        <tr className="border-b border-black/10 dark:border-white/10 bg-black/4 dark:bg-white/5 text-[11px] font-bold uppercase tracking-wider text-secondary">
+                        <tr className="LemonTable__header-row border-b border-black/10 dark:border-white/10 bg-black/4 dark:bg-white/5 text-[11px] font-bold uppercase tracking-wider text-secondary">
                             {columns.map((col, idx) => (
                                 <th
                                     key={col.key || String(col.dataIndex) || idx}
                                     style={{ width: col.width }}
-                                    className={`px-4 py-3 select-none ${
+                                    className={`LemonTable__header px-3.5 py-2.5 font-bold uppercase text-[11px] tracking-wider text-secondary select-none ${
                                         col.align === 'center'
                                             ? 'text-center'
                                             : col.align === 'right'
@@ -67,8 +67,8 @@ export function LemonTable<T extends Record<string, any>>({
                     <tbody className="divide-y divide-black/5 dark:divide-white/5">
                         {dataSource.length === 0 && !loading && (
                             <tr>
-                                <td colSpan={columns.length} className="px-4 py-8 text-center text-muted text-sm">
-                                    {emptyText}
+                                <td colSpan={columns.length} className="px-4 py-8 text-center text-muted text-xs">
+                                    <div className="LemonTable__empty-state">{emptyText}</div>
                                 </td>
                             </tr>
                         )}
@@ -76,7 +76,7 @@ export function LemonTable<T extends Record<string, any>>({
                             <tr
                                 key={row.id || rIdx}
                                 onClick={() => onRowClick?.(row)}
-                                className={`group hover:bg-black/4 dark:hover:bg-white/4 transition-colors ${
+                                className={`LemonTable__row hover:bg-black/3 dark:hover:bg-white/4 transition-colors ${
                                     onRowClick ? 'cursor-pointer' : ''
                                 }`}
                             >
@@ -85,7 +85,7 @@ export function LemonTable<T extends Record<string, any>>({
                                     return (
                                         <td
                                             key={col.key || cIdx}
-                                            className={`px-4 py-3.5 align-middle text-primary ${
+                                            className={`px-3.5 py-3 align-middle text-primary ${
                                                 col.align === 'center'
                                                     ? 'text-center'
                                                     : col.align === 'right'
@@ -104,7 +104,7 @@ export function LemonTable<T extends Record<string, any>>({
             </div>
 
             {pagination && (
-                <div className="flex items-center justify-between px-4 py-3 bg-black/3 dark:bg-white/5 border-t border-black/10 dark:border-white/10 text-xs font-medium text-secondary">
+                <div className="LemonTable__pagination flex items-center justify-between px-3.5 py-2.5 bg-black/3 dark:bg-white/5 border-t border-black/10 dark:border-white/10 text-xs font-medium text-secondary">
                     <div>
                         Page {pagination.currentPage + 1} of {Math.max(1, pagination.totalPages)}
                     </div>
@@ -112,14 +112,14 @@ export function LemonTable<T extends Record<string, any>>({
                         <button
                             disabled={!pagination.hasPrevPage}
                             onClick={pagination.prevPage}
-                            className="px-3 py-1.5 rounded-md bg-accent hover:opacity-80 disabled:opacity-40 disabled:pointer-events-none transition-all font-medium"
+                            className="px-2.5 py-1 rounded bg-accent hover:opacity-80 disabled:opacity-40 disabled:pointer-events-none transition-all font-medium text-xs"
                         >
-                            Previous
+                            Prev
                         </button>
                         <button
                             disabled={!pagination.hasNextPage}
                             onClick={pagination.nextPage}
-                            className="px-3 py-1.5 rounded-md bg-accent hover:opacity-80 disabled:opacity-40 disabled:pointer-events-none transition-all font-medium"
+                            className="px-2.5 py-1 rounded bg-accent hover:opacity-80 disabled:opacity-40 disabled:pointer-events-none transition-all font-medium text-xs"
                         >
                             Next
                         </button>

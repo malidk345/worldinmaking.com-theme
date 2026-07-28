@@ -326,6 +326,22 @@
         }
     }
 
+    /* PostHog LemonTable BEM styles */
+    .LemonTable {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    .LemonTable__header {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .LemonTable__row {
+        transition: background-color 0.15s ease-in-out;
+    }
+
     /* only overrides from modern */
     .light[data-skin='classic'] [data-scheme='secondary'] {
     }
