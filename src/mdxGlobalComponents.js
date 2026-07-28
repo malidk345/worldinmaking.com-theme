@@ -32,7 +32,6 @@ import OSButton from './components/OSButton'
 import { OSQuote } from './components/OSQuote'
 import { OverflowXSection } from './components/OverflowXSection'
 import { PrivateLink } from './components/PrivateLink'
-import { ProductOS } from './components/Product/ProductOS'
 import QuickLinks from './components/QuickLinks'
 import { Quote2 } from './components/Quote2'
 import { RainbowText } from './components/RainbowText'
@@ -115,7 +114,6 @@ export const shortcodes = {
     OSButton,
     Link,
     PrivateLink,
-    ProductOS,
     ProductScreenshot,
     ProductVideo,
     Competitor,

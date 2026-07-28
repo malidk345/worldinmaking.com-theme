@@ -1,8 +1,7 @@
 import React from 'react'
-import CodeBlock from 'components/Home/CodeBlock'
 
 export default function SnippetRenderer() {
-    const data = {}
+    const data: any = {}
 
     if (!data?.mdx?.rawBody) {
         return null
@@ -15,7 +14,9 @@ export default function SnippetRenderer() {
 
     return (
         <div className="max-w-4xl overflow-x-auto overflow-y-hidden">
-            <CodeBlock code={snippetCode} language="html" hideNumbers={false} lineNumberStart={1} tooltips={[]} />
+            <pre>
+                <code>{snippetCode}</code>
+            </pre>
         </div>
     )
 }

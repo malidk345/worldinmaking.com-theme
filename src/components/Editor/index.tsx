@@ -22,7 +22,6 @@ import {
     ReloadIcon,
 } from '@radix-ui/react-icons'
 import { IconLink } from '../OSIcons/Icons'
-import useProduct from 'hooks/useProduct'
 import { SearchProvider } from './SearchProvider'
 import { SearchBar } from './SearchBar'
 import { getProseClasses } from '../../constants/index'
@@ -238,9 +237,6 @@ export function Editor({
     const [showSearch, setShowSearch] = useState(false)
     const [isModifierKeyPressed, setIsModifierKeyPressed] = useState(false)
     const [isHovering, setIsHovering] = useState(false)
-    const products = useProduct() as { slug: string; name: string; type: string }[]
-    // take the product name passed in and check the useProduct hook to get the product's display name
-    const getProductName = (type: string) => products.find((p) => p.type === type)?.name || type
     // if we're filtering to a product, show the filter button in an active/open state
     const searchContentRef = useRef(null)
     const { addWindow, focusedWindow } = useApp()

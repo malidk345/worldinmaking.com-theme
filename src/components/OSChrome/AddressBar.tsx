@@ -7,7 +7,6 @@ import { useUser } from 'hooks/useUser'
 import { useApp } from '../../context/App'
 import { useToast } from '../../context/Toast'
 import Link from 'components/Link'
-import { useCartStore } from '../../templates/merch/store'
 import { Select } from 'components/RadixUI/Select'
 interface AddressBarProps {
   selectOptions: any[]

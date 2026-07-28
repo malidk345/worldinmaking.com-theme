@@ -1,4 +1,6 @@
-import type { CartCreateReponse, CartResponse, CreateCartVariables } from 'templates/merch/types'
+type CartCreateReponse = any
+type CartResponse = any
+type CreateCartVariables = any
 
 type ShopifyHeaders = {
     Accept: string

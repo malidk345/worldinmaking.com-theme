@@ -78,7 +78,6 @@ import { useActiveFeatureFlags, filterMenuByFlags } from 'hooks/useActiveFeature
 import { Questions } from 'components/Squeak'
 import { DocsPageSurvey } from 'components/DocsPageSurvey'
 import CopyMarkdownActionsDropdown, { useMarkdownUrlExists } from 'components/MarkdownActionsDropdown'
-import CustomerMetadata from 'components/ReaderView/CustomerMetadata'
 import { getVideoClasses } from 'constants'
 import AboutPostHog from 'components/AboutPostHog'
 
@@ -1422,12 +1421,6 @@ function ReaderViewContent({
     const contentRef = useRef<HTMLDivElement>(null)
     const articleColumnRef = useRef<HTMLDivElement>(null)
 
-    // Check if this is a customer page and get customer key
-    const isCustomerPage = appWindow?.path?.startsWith('/customers/')
-    const customerSlug = isCustomerPage ? appWindow.path.split('/').pop() : null
-    // Handle slug-to-key mapping (e.g., great-expectations → greatexpectations)
-    const customerKey = customerSlug ? customerSlug.replace(/-/g, '') : null
-
     const { isNavVisible, isTocVisible, isNarrow, fullWidthContent, backgroundImage, toggleNav, toggleToc } =
         useReaderView()
 
@@ -1719,10 +1712,6 @@ function ReaderViewContent({
                                                           '[&>*:not(.OSTable):not(.Table)]:max-w-2xl'
                                                 }`}
                                             >
-                                                {isCustomerPage && customerKey && (
-                                                    <CustomerMetadata customerKey={customerKey} />
-                                                )}
-
                                                 <MDXProvider components={mdxComponents}>
                                                     <MDXRenderer>{body.content}</MDXRenderer>
                                                 </MDXProvider>

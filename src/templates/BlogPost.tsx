@@ -36,7 +36,7 @@ import { postsMenu as menu } from 'navs/posts'
 import MenuBar from 'components/RadixUI/MenuBar'
 import slugify from 'slugify'
 import { getVideoClasses } from 'constants'
-import { WaitlistForm } from 'components/WaitlistForm'
+
 const A = (props) => <Link {...props} state={{ newWindow: true }} />
 
 export const Intro = ({
@@ -325,7 +325,7 @@ export default function BlogPost({ data = {}, pageContext = {}, mobile = false }
         BuiltBy,
         TeamMember,
         ImageSlider,
-        WaitlistForm,
+
         ...shortcodes,
     }
     const initialTag = undefined

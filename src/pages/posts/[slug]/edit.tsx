@@ -31,7 +31,7 @@ export default function Edit() {
             <Layout parent={communityMenu} activeInternalMenu={communityMenu.children[0]}>
                 <SEO title="Edit post - PostHog" noindex />
                 <section className="px-5">
-                    <EditPost />
+                    <EditPost initialValues={state.initialValues} id={state.id} />
                 </section>
             </Layout>
         )

@@ -1,22 +1,12 @@
-import React, { Fragment, useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import SEO from 'components/seo'
 import { CallToAction } from 'components/CallToAction'
 import * as Icons from '@posthog/icons'
 import Link from 'components/Link'
-import { IconBold, IconLink } from 'components/OSIcons'
-import ScrollArea from 'components/RadixUI/ScrollArea'
-import { RadioGroup } from 'components/RadixUI/RadioGroup'
-import usePostHog from '../../hooks/usePostHog'
-import { useApp } from '../../context/App'
-import { useWindow } from '../../context/Window'
-import CodeBlock from '../Home/CodeBlock'
-import ContactForm from '../Home/ContactForm'
 import { usePathname } from 'next/navigation'
 import OSTabs from 'components/OSTabs'
 import CloudinaryImage from 'components/CloudinaryImage'
-import { DebugContainerQuery } from 'components/DebugContainerQuery'
 import Loading from 'components/Loading'
-import ProgressBar from 'components/ProgressBar'
 
 const AIInstall = ({ setActiveTab }) => (
     <div
@@ -26,7 +16,6 @@ const AIInstall = ({ setActiveTab }) => (
         <div className="flex-1 p-4 @2xl:p-6">
             <h3>Install with AI in a single prompt</h3>
             <p className="text-[15px]">Paste into your terminal or code editor and make AI do the work.</p>
-            null
             <p className="border-t border-primary pt-4 mt-6 text-sm">
                 Not into AI?{' '}
                 <button className="cursor-pointer font-semibold underline" onClick={() => setActiveTab('signup')}>
@@ -49,10 +38,6 @@ const AIInstall = ({ setActiveTab }) => (
                     className="hidden dark:block"
                     imgClassName=""
                 />
-                <div className="absolute right-[-3.5rem] top-10 rotate-[45deg] bg-red py-2 px-12 text-white font-code font-semibold">
-                    Now with AI <Icons.IconSparkles className="size-4 inline-block ml-1" />
-                </div>
-                {/* <img src="https://res.cloudinary.com/dmukukwp6/image/upload/yc_approved_347c12b8e6.png" /> */}
             </div>
         </div>
     </div>
@@ -75,14 +60,6 @@ const BoomerInstall = () => (
 
 export default function Start({ subdomain = 'app', initialTab = 'ai' }) {
     const [activeTab, setActiveTab] = useState(initialTab)
-    const { search } = usePathname()
-    useEffect(() => {
-        const params = new URLSearchParams(search)
-        const flow = params.get('flow')
-        if (flow) {
-            setCurrentFlow(flow)
-        }
-    }, [search])
 
     return (
         <>

@@ -8,7 +8,6 @@ import Inbox from 'components/Inbox'
 import Handbook from '../../templates/Handbook'
 import BlogPost from '../../templates/BlogPost'
 import PostListing from '../../templates/PostListing'
-import WorldInMakingHome from 'components/Home/WorldInMakingHome'
 import DisplayOptions from 'components/DisplayOptions'
 import Legal from 'components/Legal'
 import { AppWindow } from '../../context/Window'
@@ -47,7 +46,7 @@ function WindowRouterInner({ item }: WindowRouterProps) {
 
     // 4. Route-based resolution
     if (path === '/manifesto' || path === '/about-wim' || path === '/world-in-making') {
-        return <WorldInMakingHome />
+        return null
     }
     if (path === '/display-options') {
         return <DisplayOptions />
