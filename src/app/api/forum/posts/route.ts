@@ -1,4 +1,3 @@
-export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
 
 function parseBotReply(content: string) {
@@ -132,3 +131,5 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: `Internal Server Error: ${errorMessage}` }, { status: 500 });
     }
 }
+
+export const runtime = 'edge';

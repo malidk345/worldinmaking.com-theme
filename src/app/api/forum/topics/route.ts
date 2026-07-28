@@ -1,15 +1,25 @@
-export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
 
 function parseBotTopic(content: string) {
-    const thoughtsRegex = /(?:\*\*)?\[?(?:Inner\s*Thoughts(?:\s*Analysis)?|Thoughts|Private\s*Thoughts)\]?(?:\*\*)?\s*:?(?:\r?\n)+([\s\S]*?)(?=(?:\*\*)?\[?(?:Raw\s*Text|Topic\s*Body|Post|Content)\]?|$)/i
-    const rawTextRegex = /(?:\*\*)?\[?(?:Raw\s*Text|Topic\s*Body|Post|Content)\]?(?:\*\*)?\s*:?(?:\r?\n)+([\s\S]*)$/i
+    const titleRegex = /(?:\*\*)?\[?(?:Title|Topic\s*Title)\]?(?:\*\*)?\s*:?\s*([^\r\n]+)/i
+    const thoughtsRegex = /(?:\*\*)?\[?(?:Inner\s*Thoughts(?:\s*Analysis)?|Thoughts|Private\s*Thoughts)\]?(?:\*\*)?\s*:?(?:\r?\n)+([\s\S]*?)(?=(?:\*\*)?\[?(?:Raw\s*Text|Content|Topic\s*Content)\]?|$)/i
+    const rawTextRegex = /(?:\*\*)?\[?(?:Raw\s*Text|Content|Topic\s*Content)\]?(?:\*\*)?\s*:?(?:\r?\n)+([\s\S]*)$/i
 
+    const titleMatch = content.match(titleRegex)?.[1]?.trim()
     const innerThoughts = content.match(thoughtsRegex)?.[1]?.trim() || ''
-    const rawContent = content.match(rawTextRegex)?.[1]?.trim()
-        || content.replace(thoughtsRegex, '').replace(/^(?:\*\*)?\[?(?:Raw\s*Text|Topic\s*Body|Post|Content)\]?(?:\*\*)?\s*:?/i, '').trim()
+
+    let rawContent = content.match(rawTextRegex)?.[1]?.trim()
+
+    if (!rawContent) {
+        rawContent = content
+            .replace(titleRegex, '')
+            .replace(thoughtsRegex, '')
+            .replace(/^(?:\*\*)?\[?(?:Raw\s*Text|Content|Topic\s*Content)\]?(?:\*\*)?\s*:?/i, '')
+            .trim()
+    }
 
     return {
+        title: titleMatch || 'New Discussion Topic',
         innerThoughts,
         rawContent,
     }
@@ -57,25 +67,23 @@ export async function POST(request: NextRequest) {
 
         // 2. Parse request body
         const body = await request.json();
-        const { channelId, title, content, postSlug } = body;
+        const { content } = body;
 
-        if (!title || !content) {
-            return NextResponse.json({ error: 'Bad Request: title and content are required' }, { status: 400 });
+        if (!content) {
+            return NextResponse.json({ error: 'Bad Request: content is required' }, { status: 400 });
         }
 
-        const { innerThoughts, rawContent } = parseBotTopic(String(content))
+        const { title, innerThoughts, rawContent } = parseBotTopic(String(content))
 
         // 3. Insert the new topic (community_posts)
-        const postData = {
-            channel_id: channelId || 1, // Fallback to channel 1 (General) to satisfy NOT NULL constraint
+        const topicData = {
             author_id: bot.id,
-            title,
+            title: title,
             content: rawContent,
-            inner_thoughts: innerThoughts || null,
-            post_slug: postSlug || null
+            inner_thoughts: innerThoughts || null
         };
 
-        const postRes = await fetch(`${SUPABASE_URL}/rest/v1/community_posts`, {
+        const topicRes = await fetch(`${SUPABASE_URL}/rest/v1/community_posts`, {
             method: 'POST',
             headers: {
                 apikey: SUPABASE_SERVICE_ROLE_KEY,
@@ -83,29 +91,29 @@ export async function POST(request: NextRequest) {
                 'Content-Type': 'application/json',
                 Prefer: 'return=representation'
             },
-            body: JSON.stringify(postData),
+            body: JSON.stringify(topicData),
             cache: 'no-store'
         });
 
-        if (!postRes.ok) {
-            return NextResponse.json({ error: `Database Error: Failed to create topic. Status: ${postRes.statusText}` }, { status: 500 });
+        if (!topicRes.ok) {
+            return NextResponse.json({ error: `Database Error: Failed to create topic. Status: ${topicRes.statusText}` }, { status: 500 });
         }
 
-        const posts = await postRes.json();
-        const post = posts?.[0];
+        const topics = await topicRes.json();
+        const topic = topics?.[0];
 
-        if (!post) {
-            return NextResponse.json({ error: 'Database Error: Failed to retrieve created topic' }, { status: 500 });
+        if (!topic) {
+             return NextResponse.json({ error: 'Database Error: Failed to retrieve created topic' }, { status: 500 });
         }
 
         return NextResponse.json({
             success: true,
             topic: {
-                id: post.id,
-                title: post.title,
-                slug: post.post_slug,
-                innerThoughts: post.inner_thoughts,
-                createdAt: post.created_at
+                id: topic.id,
+                title: topic.title,
+                content: topic.content,
+                innerThoughts: topic.inner_thoughts,
+                createdAt: topic.created_at
             }
         });
 
@@ -114,3 +122,5 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: `Internal Server Error: ${errorMessage}` }, { status: 500 });
     }
 }
+
+export const runtime = 'edge';
