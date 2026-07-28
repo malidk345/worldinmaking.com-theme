@@ -1,5 +1,14 @@
 import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react'
-import { AnimatePresence, motion, PanInfo, useDragControls } from 'framer-motion'
+import {
+    AnimatePresence,
+    motion,
+    PanInfo,
+    useDragControls,
+    useMotionValue,
+    useSpring,
+    useTransform,
+    useVelocity,
+} from 'framer-motion'
 import {
     IconChevronDown,
     IconDocument,
@@ -186,7 +195,18 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
         menu: appMenu,
         taskbarRef,
         closeWindow,
+        isActiveWindowsPanelOpen,
     } = useApp()
+
+    const motionX = useMotionValue(0)
+    const motionY = useMotionValue(0)
+    const xVelocity = useVelocity(motionX)
+    const yVelocity = useVelocity(motionY)
+    const smoothXVelocity = useSpring(xVelocity, { damping: 40, stiffness: 300 })
+    const smoothYVelocity = useSpring(yVelocity, { damping: 40, stiffness: 300 })
+    const tiltX = useTransform(smoothYVelocity, [-1000, 1000], [6, -6])
+    const tiltY = useTransform(smoothXVelocity, [-1000, 1000], [-6, 6])
+
     const isSSR = typeof window === 'undefined'
     const controls = useDragControls()
     const sizeConstraints = item.sizeConstraints
@@ -194,6 +214,45 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
     const previousSize = item.previousSize
     const position = item.position
     const previousPosition = item.previousPosition
+
+    const activePanelIndex = useMemo(() => windows.findIndex((w) => w.key === item.key), [windows, item.key])
+    const totalWindows = windows.length
+
+    const missionControlLayout = useMemo(() => {
+        if (!isActiveWindowsPanelOpen || activePanelIndex === -1 || typeof window === 'undefined') return null
+
+        const screenWidth = window.innerWidth
+        const screenHeight = window.innerHeight
+        const padding = 80
+
+        const availableW = screenWidth - padding * 2
+        const availableH = screenHeight - padding * 2 - 80
+
+        const cols = Math.ceil(Math.sqrt(totalWindows))
+        const rows = Math.ceil(totalWindows / cols)
+
+        const cellW = availableW / cols
+        const cellH = availableH / rows
+
+        const col = activePanelIndex % cols
+        const row = Math.floor(activePanelIndex / cols)
+
+        const cx = padding + col * cellW + cellW / 2
+        const cy = padding + row * cellH + cellH / 2
+
+        const maxW = cellW * 0.85
+        const maxH = cellH * 0.85
+
+        const scaleX = maxW / size.width
+        const scaleY = maxH / size.height
+        let scale = Math.min(scaleX, scaleY, 0.45)
+        if (scale < 0.1) scale = 0.1
+
+        const targetX = cx - size.width / 2
+        const targetY = cy - size.height / 2
+
+        return { x: targetX, y: targetY, scale }
+    }, [isActiveWindowsPanelOpen, activePanelIndex, totalWindows, size.width, size.height])
     const [snapIndicator, setSnapIndicator] = useState<'left' | 'right' | null>(null)
     const [windowOptionsTooltipVisible, setWindowOptionsTooltipVisible] = useState(false)
     const [menu, setMenu] = useState<IMenu[]>([])
@@ -772,6 +831,11 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                                   maxHeight: item.appSettings.size.autoHeight
                                       ? undefined
                                       : item.sizeConstraints.min.height,
+                              }
+                            : missionControlLayout
+                            ? {
+                                  transform: `translate3d(${missionControlLayout.x}px, ${missionControlLayout.y}px, 0) scale(${missionControlLayout.scale})`,
+                                  transition: 'transform 0.3s cubic-bezier(0.2, 0, 0.2, 1)',
                               }
                             : undefined
                     }
