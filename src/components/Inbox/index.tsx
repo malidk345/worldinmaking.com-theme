@@ -503,6 +503,10 @@ export default function Inbox(props) {
         },
         topics: { id: { $eq: initialTopicID } },
     }
+    const [mounted, setMounted] = useState(false)
+    useEffect(() => {
+        setMounted(true)
+    }, [])
     const [ready, setReady] = useState(props.path !== '/questions/subscriptions')
     const [filters, setFilters] = useState(defaultFilters)
     const { addToast } = useToast()
@@ -725,7 +729,7 @@ export default function Inbox(props) {
                                                     </div>
                                                 </div>
                                             )}
-                                            {isLoading && (
+                                            {isLoading && mounted && (
                                                 <div className="flex items-center justify-center py-8 h-full">
                                                     <Lottie
                                                         animationData={hourglassAnimation}

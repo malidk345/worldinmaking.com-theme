@@ -318,9 +318,13 @@ const MaxReply = ({ children, isInForum }: { children: React.ReactNode; isInForu
 
 const Loading = () => {
     const lottieRef = useRef(null)
+    const [mounted, setMounted] = useState(false)
+    useEffect(() => {
+        setMounted(true)
+    }, [])
     return (
         <div className="size-12">
-            <DotLottiePlayer loop lottieRef={lottieRef} src="/lotties/loading.lottie" autoplay />
+            {mounted && <DotLottiePlayer loop lottieRef={lottieRef} src="/lotties/loading.lottie" autoplay />}
         </div>
     )
 }
