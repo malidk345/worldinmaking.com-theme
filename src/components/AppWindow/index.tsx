@@ -245,13 +245,14 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
         return coveredArea / currentArea < 0.8
     }, [windows, item, position, size])
 
+    const safeAppMenu = Array.isArray(appMenu) ? appMenu : []
     const parent =
-        (appMenu as Menu).find(({ children, url }) => {
+        safeAppMenu.find(({ children, url }: any) => {
             const currentURL = item?.path
             return currentURL === url?.split('?')[0] || recursiveSearch(children, currentURL)
         }) ||
-        appMenu.find(({ url }) => url === `/${item?.path?.split('/')[1]}`) ||
-        appMenu.find(({ name }) => name === 'Docs')
+        safeAppMenu.find(({ url }: any) => url === `/${item?.path?.split('/')[1]}`) ||
+        safeAppMenu.find(({ name }: any) => name === 'Docs')
 
     const internalMenu = parent?.children || []
 
