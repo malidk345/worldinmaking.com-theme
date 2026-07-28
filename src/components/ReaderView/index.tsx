@@ -427,6 +427,37 @@ interface TableOfContentsProps {
 }
 
 const TableOfContents = ({ tableOfContents, contentRef, title = 'Jump to:', className = '' }: TableOfContentsProps) => {
+    if (!tableOfContents || tableOfContents.length === 0) {
+        return null
+    }
+
+    return (
+        <ScrollSpyProvider>
+            <div className={`not-prose ${className}`}>
+                {title && <h4 className="font-semibold text-muted m-0 mb-1 text-sm">{title}</h4>}
+                <ul className="list-none m-0 p-0 flex flex-col">
+                    {tableOfContents.map((navItem) => {
+                        return (
+                            <li className="relative leading-none m-0" key={navItem.url}>
+                                <ElementScrollLink
+                                    id={navItem.url}
+                                    label={navItem.value}
+                                    className="hover:underline"
+                                    element={contentRef}
+                                    style={{
+                                        paddingLeft: `${navItem.depth || 0}rem`,
+                                    }}
+                                />
+                            </li>
+                        )
+                    })}
+                </ul>
+            </div>
+        </ScrollSpyProvider>
+    )
+}
+
+const RecentPostsSection = () => {
     const [recentPosts, setRecentPosts] = useState<SupabasePost[]>([])
 
     useEffect(() => {
@@ -441,56 +472,46 @@ const TableOfContents = ({ tableOfContents, contentRef, title = 'Jump to:', clas
         }
     }, [])
 
-    const hasToc = Array.isArray(tableOfContents) && tableOfContents.length > 0
+    if (!recentPosts.length) return null
 
     return (
-        <ScrollSpyProvider>
-            <div className={`not-prose space-y-6 ${className}`}>
-                {hasToc && (
-                    <div>
-                        {title && <h4 className="font-semibold text-muted m-0 mb-2 text-xs uppercase tracking-wider">{title}</h4>}
-                        <ul className="list-none m-0 p-0 flex flex-col space-y-1">
-                            {tableOfContents.map((navItem) => {
-                                return (
-                                    <li className="relative leading-none m-0" key={navItem.url}>
-                                        <ElementScrollLink
-                                            id={navItem.url}
-                                            label={navItem.value}
-                                            className="hover:underline text-sm opacity-80 hover:opacity-100"
-                                            element={contentRef}
-                                            style={{
-                                                paddingLeft: `${navItem.depth || 0}rem`,
-                                            }}
-                                        />
-                                    </li>
-                                )
-                            })}
-                        </ul>
-                    </div>
-                )}
-
-                <div>
-                    <h4 className="font-semibold text-muted m-0 mb-2 text-xs uppercase tracking-wider">Son Gönderiler / Recent Posts</h4>
-                    <div className="flex flex-col space-y-2">
-                        {recentPosts.map((post) => (
-                            <Link
-                                key={post.id || post.slug}
-                                href={`/posts/${post.slug}`}
-                                state={{ newWindow: true }}
-                                className="group block p-2 rounded-lg bg-accent/40 hover:bg-accent/80 transition-all border border-border-primary/20"
-                            >
-                                <span className="block text-xs font-semibold text-primary group-hover:text-link line-clamp-2">
-                                    {post.title}
-                                </span>
-                                <span className="block text-[10px] text-muted mt-1">
-                                    {post.author || 'WorldInMaking'} • {post.created_at ? post.created_at.split('T')[0] : ''}
-                                </span>
-                            </Link>
-                        ))}
-                    </div>
-                </div>
+        <div className="not-prose my-10 pt-8 border-t border-primary/20">
+            <h3 className="text-xl font-bold text-primary mb-6">Son Gönderiler / Recent Posts</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {recentPosts.map((post) => (
+                    <Link
+                        key={post.id || post.slug}
+                        href={`/posts/${post.slug}`}
+                        state={{ newWindow: true }}
+                        className="group flex flex-col justify-between p-4 rounded-xl bg-accent/30 hover:bg-accent/70 transition-all border border-primary/10 hover:shadow-md"
+                    >
+                        <div>
+                            {post.image_url && (
+                                <div className="aspect-video w-full mb-3 rounded-lg overflow-hidden relative bg-accent">
+                                    <img
+                                        src={post.image_url}
+                                        alt={post.title}
+                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                    />
+                                </div>
+                            )}
+                            <h4 className="text-sm font-semibold text-primary group-hover:text-link line-clamp-2 mb-2">
+                                {post.title}
+                            </h4>
+                            {post.excerpt && (
+                                <p className="text-xs text-secondary line-clamp-2 mb-3 opacity-80">
+                                    {post.excerpt}
+                                </p>
+                            )}
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] text-muted pt-2 border-t border-primary/10">
+                            <span>{post.author || 'WorldInMaking'}</span>
+                            <span>{post.created_at ? post.created_at.split('T')[0] : ''}</span>
+                        </div>
+                    </Link>
+                ))}
             </div>
-        </ScrollSpyProvider>
+        </div>
     )
 }
 
@@ -1796,6 +1817,7 @@ function ReaderViewContent({
                                             <DocsPageSurvey filePath={filePath} />
                                         </div>
                                     )}
+                                     <RecentPostsSection />
                                 </div>
                             </article>
                         </ScrollArea>

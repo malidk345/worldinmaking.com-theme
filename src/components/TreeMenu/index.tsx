@@ -418,7 +418,7 @@ export function TreeMenu(props: TreeMenuProps) {
         setActiveItem(item)
     }
 
-    const items = useMemo(() => props.items, [])
+    const items = useMemo(() => props.items || [], [props.items])
     const sections = useMemo(() => buildSections(items || []), [items])
 
     useEffect(() => {
