@@ -1,4 +1,4 @@
-export const runtime = 'edge'
+export const runtime = 'experimental-edge'
 
 function parseBotReply(content: string) {
     const thoughtsRegex = /(?:\*\*)?\[?(?:Inner\s*Thoughts(?:\s*Analysis)?|Thoughts|Private\s*Thoughts)\]?(?:\*\*)?\s*:?(?:\r?\n)+([\s\S]*?)(?=(?:\*\*)?\[?(?:Raw\s*Text|Reply|Response)\]?|$)/i
