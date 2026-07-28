@@ -30,6 +30,7 @@ const MDXRenderer = ({ children }: any) => {
 }
 const getImage = (img: any) => img?.publicURL || img?.url || img
 
+import { fetchSupabasePosts, SupabasePost } from '../../lib/supabaseBlog'
 import { useRouter as useNextRouter } from 'next/router'
 
 const useLocation = () => {
@@ -426,31 +427,68 @@ interface TableOfContentsProps {
 }
 
 const TableOfContents = ({ tableOfContents, contentRef, title = 'Jump to:', className = '' }: TableOfContentsProps) => {
-    if (!tableOfContents || tableOfContents.length === 0) {
-        return null
-    }
+    const [recentPosts, setRecentPosts] = useState<SupabasePost[]>([])
+
+    useEffect(() => {
+        let mounted = true
+        fetchSupabasePosts().then((posts) => {
+            if (mounted && Array.isArray(posts)) {
+                setRecentPosts(posts.slice(0, 6))
+            }
+        })
+        return () => {
+            mounted = false
+        }
+    }, [])
+
+    const hasToc = Array.isArray(tableOfContents) && tableOfContents.length > 0
 
     return (
         <ScrollSpyProvider>
-            <div className={`not-prose ${className}`}>
-                {title && <h4 className="font-semibold text-muted m-0 mb-1 text-sm">{title}</h4>}
-                <ul className="list-none m-0 p-0 flex flex-col">
-                    {tableOfContents.map((navItem) => {
-                        return (
-                            <li className="relative leading-none m-0" key={navItem.url}>
-                                <ElementScrollLink
-                                    id={navItem.url}
-                                    label={navItem.value}
-                                    className="hover:underline"
-                                    element={contentRef}
-                                    style={{
-                                        paddingLeft: `${navItem.depth || 0}rem`,
-                                    }}
-                                />
-                            </li>
-                        )
-                    })}
-                </ul>
+            <div className={`not-prose space-y-6 ${className}`}>
+                {hasToc && (
+                    <div>
+                        {title && <h4 className="font-semibold text-muted m-0 mb-2 text-xs uppercase tracking-wider">{title}</h4>}
+                        <ul className="list-none m-0 p-0 flex flex-col space-y-1">
+                            {tableOfContents.map((navItem) => {
+                                return (
+                                    <li className="relative leading-none m-0" key={navItem.url}>
+                                        <ElementScrollLink
+                                            id={navItem.url}
+                                            label={navItem.value}
+                                            className="hover:underline text-sm opacity-80 hover:opacity-100"
+                                            element={contentRef}
+                                            style={{
+                                                paddingLeft: `${navItem.depth || 0}rem`,
+                                            }}
+                                        />
+                                    </li>
+                                )
+                            })}
+                        </ul>
+                    </div>
+                )}
+
+                <div>
+                    <h4 className="font-semibold text-muted m-0 mb-2 text-xs uppercase tracking-wider">Son Gönderiler / Recent Posts</h4>
+                    <div className="flex flex-col space-y-2">
+                        {recentPosts.map((post) => (
+                            <Link
+                                key={post.id || post.slug}
+                                href={`/posts/${post.slug}`}
+                                state={{ newWindow: true }}
+                                className="group block p-2 rounded-lg bg-accent/40 hover:bg-accent/80 transition-all border border-border-primary/20"
+                            >
+                                <span className="block text-xs font-semibold text-primary group-hover:text-link line-clamp-2">
+                                    {post.title}
+                                </span>
+                                <span className="block text-[10px] text-muted mt-1">
+                                    {post.author || 'WorldInMaking'} • {post.created_at ? post.created_at.split('T')[0] : ''}
+                                </span>
+                            </Link>
+                        ))}
+                    </div>
+                </div>
             </div>
         </ScrollSpyProvider>
     )
@@ -1421,7 +1459,7 @@ function ReaderViewContent({
     const { isNavVisible, isTocVisible, isNarrow, fullWidthContent, backgroundImage, toggleNav, toggleToc } =
         useReaderView()
 
-    const showSidebar = tableOfContents && tableOfContents?.length > 0 && !hideRightSidebar
+    const showSidebar = !hideRightSidebar
     const renderLeftSidebar = !compact && !hideLeftSidebar
     // On narrow windows the left rail is hidden and replaced by a floating
     // control cluster that opens the sidebar as an off-canvas drawer.
