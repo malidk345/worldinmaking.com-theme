@@ -4,7 +4,7 @@ import qs from 'qs'
 import { QuestionData, StrapiResult, StrapiRecord } from 'lib/strapi'
 import usePostHog from './usePostHog'
 import { useUser } from './useUser'
-import { fetchSupabaseCommunityPosts, formatSupabaseCommunityToStrapi } from 'lib/supabaseCommunity'
+import { fetchSupabaseCommunityPosts, fetchSupabaseCommunityReplies, formatSupabaseCommunityToStrapi } from 'lib/supabaseCommunity'
 
 type UseQuestionsOptions = {
     slug?: string
