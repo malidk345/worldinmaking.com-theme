@@ -5,6 +5,5 @@ const PostPage = dynamic(() => import('components/posts/PostPage'), {
     loading: () => null,
 })
 
-export const runtime = 'experimental-edge'
 
 export default PostPage
