@@ -75,6 +75,7 @@ export default function DisplayOptions(): JSX.Element {
                 <div className="grid grid-cols-2 gap-2">
                     {[
                         { id: 'keyboard-garden', label: 'Keyboard Garden' },
+                        { id: 'custom-pro', label: 'Custom Pro Grid' },
                         { id: 'hogzilla', label: 'Hogzilla' },
                         { id: 'startup-monopoly', label: 'Startup Monopoly' },
                         { id: 'office-party', label: 'Office Party' },

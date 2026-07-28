@@ -152,12 +152,43 @@ const KeyboardGarden = () => (
     </>
 )
 
+const CustomProWallpaper = () => (
+    <>
+        {/* Light Mode Wallpaper */}
+        <div className={`absolute inset-0 bg-gradient-to-br from-[#F8FAFC] via-[#F1F5F9] to-[#E2E8F0] opacity-100 dark:opacity-0 ${FADE_OPACITY}`}>
+            <div
+                className="absolute inset-0 opacity-40 pointer-events-none"
+                style={{
+                    backgroundImage: `radial-gradient(rgba(148, 163, 184, 0.4) 1.2px, transparent 1.2px)`,
+                    backgroundSize: '24px 24px',
+                }}
+            />
+            <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-blue-400/20 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-indigo-300/20 rounded-full blur-3xl pointer-events-none" />
+        </div>
+
+        {/* Dark Mode Wallpaper */}
+        <div className={`absolute inset-0 bg-[#0B0F19] opacity-0 dark:opacity-100 ${FADE_OPACITY}`}>
+            <div
+                className="absolute inset-0 opacity-40 pointer-events-none"
+                style={{
+                    backgroundImage: `radial-gradient(rgba(59, 130, 246, 0.35) 1.2px, transparent 1.2px)`,
+                    backgroundSize: '28px 28px',
+                }}
+            />
+            <div className="absolute top-1/3 left-1/3 w-[600px] h-[600px] bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-1/3 right-1/4 w-[700px] h-[700px] bg-purple-600/15 rounded-full blur-3xl pointer-events-none" />
+        </div>
+    </>
+)
+
 // Visibility classes written out in full so Tailwind's JIT scanner can see them.
 const SCENES: { key: string; Scene: React.FC; visible: string }[] = [
     { key: 'hogzilla', Scene: Hogzilla, visible: 'wallpaper-hogzilla:block' },
     { key: 'startup-monopoly', Scene: StartupMonopoly, visible: 'wallpaper-startup-monopoly:block' },
     { key: 'office-party', Scene: OfficeParty, visible: 'wallpaper-office-party:block' },
     { key: 'keyboard-garden', Scene: KeyboardGarden, visible: 'wallpaper-keyboard-garden:block' },
+    { key: 'custom-pro', Scene: CustomProWallpaper, visible: 'wallpaper-custom-pro:block' },
 ]
 
 export interface WallpaperGlow {
@@ -170,6 +201,7 @@ export const WALLPAPER_GLOW: Record<string, WallpaperGlow> = {
     hogzilla: { light: '#FF9528', dark: '#9370F0' },
     'startup-monopoly': { light: '#37B878', dark: '#96B4F0' },
     'office-party': { light: '#FF6E54', dark: '#D084F8' },
+    'custom-pro': { light: '#3B82F6', dark: '#818CF8' },
 }
 
 export const DEFAULT_WALLPAPER_GLOW: WallpaperGlow = WALLPAPER_GLOW['keyboard-garden']
