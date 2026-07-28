@@ -174,7 +174,7 @@ export default function Link({
 
             // DIRECT WORLDINMAKING ADDWINDOW CALL (0ms latency window pop & URL pushState)
             addWindow({
-                key: `${url}-${Date.now()}`,
+                key: linkState?.newWindow ? `${url}-${Date.now()}` : url,
                 path: url,
                 title: url.split('/').pop() || 'window',
                 fromOrigin,

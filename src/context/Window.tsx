@@ -86,6 +86,8 @@ interface WindowProviderProps {
     hasDeveloperMode: boolean
     setHasDeveloperMode: (hasDeveloperMode: boolean) => void
     animating?: boolean
+    addWindow?: (item: any) => void
+    navigate?: (path: string) => void
 }
 
 interface WindowContextType {
@@ -108,6 +110,8 @@ interface WindowContextType {
     hasDeveloperMode: boolean
     setHasDeveloperMode: (hasDeveloperMode: boolean) => void
     animating?: boolean
+    addWindow?: (item: any) => void
+    navigate?: (path: string) => void
 }
 
 export const Context = createContext<WindowContextType>({
@@ -145,6 +149,8 @@ export const Context = createContext<WindowContextType>({
         // No-op default implementation
     },
     animating: false,
+    addWindow: () => {},
+    navigate: () => {},
 })
 
 export const Provider = ({
@@ -168,6 +174,8 @@ export const Provider = ({
     hasDeveloperMode,
     setHasDeveloperMode,
     animating,
+    addWindow,
+    navigate,
 }: WindowProviderProps) => {
     // Memoize so unrelated AppWindow state changes (e.g. `closing`, dragging, snap
     // indicators) don't create a new value identity and re-render every useWindow()
@@ -193,6 +201,8 @@ export const Provider = ({
             hasDeveloperMode,
             setHasDeveloperMode,
             animating,
+            addWindow,
+            navigate,
         }),
         [
             appWindow,
@@ -214,6 +224,8 @@ export const Provider = ({
             hasDeveloperMode,
             setHasDeveloperMode,
             animating,
+            addWindow,
+            navigate,
         ]
     )
 

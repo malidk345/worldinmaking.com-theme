@@ -1,4 +1,3 @@
-import { useRouter } from 'next/navigation'
 import React, { useEffect } from 'react'
 import { useApp } from '../../context/App'
 import SidePanel from 'components/SidePanel'
@@ -50,11 +49,7 @@ export default function ActiveWindowsPanel() {
     }, [isActiveWindowsPanelOpen])
 
     const handleWindowClick = (appWindow: any) => {
-        if (appWindow.path.startsWith('/')) {
-            router.push(`${appWindow.path}`)
-        } else {
-            bringToFront(appWindow)
-        }
+        bringToFront(appWindow)
         closeActiveWindowsPanel()
     }
 
@@ -94,7 +89,7 @@ export default function ActiveWindowsPanel() {
                                 className="group"
                             >
                                 <span className={`truncate flex-1 ${window.minimized ? 'italic opacity-60' : ''}`}>
-                                    {window.meta?.title || 'Untitled'}
+                                    {window.meta?.title || window.title || 'Untitled'}
                                 </span>
                                 <button
                                     onClick={(e) => {

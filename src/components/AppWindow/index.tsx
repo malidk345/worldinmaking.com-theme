@@ -90,8 +90,85 @@ const PageModal = ({ children }: { children: React.ReactNode }) => {
 
 import WimAuthPortal from 'components/Auth/WimAuthPortal'
 import PostListing from '../../templates/PostListing'
+import { fetchSupabasePostBySlug, SupabasePost } from '../../lib/supabaseBlog'
 
-const Router = (props) => {
+function BlogRouteView(props: any) {
+    const rawPath = props.path || ''
+    const slugStr = rawPath.replace(/^\/(blog|posts)\/?/, '')
+    const [spPost, setSpPost] = useState<SupabasePost | null>(null)
+    const [loading, setLoading] = useState(!props.data?.postData && !props.data?.post)
+
+    useEffect(() => {
+        if (!props.data?.postData && !props.data?.post && slugStr) {
+            let mounted = true
+            setLoading(true)
+            fetchSupabasePostBySlug(slugStr).then((res) => {
+                if (mounted) {
+                    setSpPost(res)
+                    setLoading(false)
+                }
+            })
+            return () => {
+                mounted = false
+            }
+        }
+    }, [slugStr, props.data?.postData, props.data?.post])
+
+    if (props.data?.postData || props.data?.post) {
+        return <BlogPost {...props} />
+    }
+
+    if (loading) {
+        return (
+            <div className="p-8 text-center text-primary font-bold lowercase">
+                <p>fetching post content...</p>
+            </div>
+        )
+    }
+
+    const title = spPost?.title || slugStr.replace(/-/g, ' ')
+    const content = spPost?.content || `# ${title}\n\nNo content found for this post.`
+    const date = spPost?.created_at ? spPost.created_at.split('T')[0] : '2026-01-01'
+    const author = spPost?.author || 'WorldInMaking'
+
+    const postData = {
+        body: content,
+        excerpt: spPost?.excerpt || title,
+        frontmatter: {
+            title,
+            date,
+            featuredImage: spPost?.image_url ? { publicURL: spPost.image_url } : null,
+            featuredVideo: null,
+            contributors: [
+                {
+                    name: author,
+                    role: 'Author',
+                    image: spPost?.author_avatar || 'https://res.cloudinary.com/dmukukwp6/image/upload/v1675204207/james_hawkins_posthog_031f7cf651.png',
+                },
+            ],
+        },
+        fields: {
+            slug: rawPath,
+        },
+    }
+
+    const pageData = {
+        ...props,
+        data: {
+            postData,
+            post: postData,
+        },
+        pageContext: {
+            tableOfContents: [],
+            askMax: true,
+            localizedRoot: '/blog',
+        },
+    }
+
+    return <BlogPost {...(pageData as any)} />
+}
+
+const Router = (props: any) => {
     const { appWindow } = useWindow()
     const { closeWindow } = useApp()
     const { children, path } = props
@@ -111,7 +188,7 @@ const Router = (props) => {
         return <PostListing {...props} activeMenu={root} root={root} title={root === 'blog' ? 'Blog' : 'Posts'} />
     }
     if (/^\/(blog|posts)\/.+/.test(path) || props.pageContext?.post || props.data?.postData) {
-        return <BlogPost {...props} />
+        return <BlogRouteView {...props} />
     }
     if (/^\/handbook|^\/docs\/(?!api)|^\/manual/.test(path) && props.data?.post) {
         return <Handbook {...props} />
@@ -135,15 +212,18 @@ const Router = (props) => {
 const WindowContainer = ({ children, closing }: { children: React.ReactNode; closing: boolean }) => {
     const { closeWindow } = useApp()
     const { appWindow } = useWindow()
+    if (appWindow?.minimized) {
+        return null
+    }
     return (
         <AnimatePresence
             onExitComplete={() => {
-                if (closing) {
+                if (closing && appWindow) {
                     closeWindow(appWindow)
                 }
             }}
         >
-            {children}
+            {!closing && children}
         </AnimatePresence>
     )
 }
@@ -196,7 +276,15 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
         taskbarRef,
         closeWindow,
         isActiveWindowsPanelOpen,
+        addWindow,
     } = useApp()
+
+    const navigate = useCallback(
+        (path: string) => {
+            updateWindow(item, { path })
+        },
+        [item, updateWindow]
+    )
 
     const motionX = useMotionValue(0)
     const motionY = useMotionValue(0)
@@ -387,50 +475,43 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
         updateWindow(item, update)
     }
 
-    const handleDoubleClick = () => {
-        const newSize = beyondViewport(sizeConstraints.max)
-            ? { width: window.innerWidth, height: window.innerHeight - taskbarHeight }
-            : sizeConstraints.max
-        updateWindow(item, {
-            size: newSize,
-            position: getDesktopCenterPosition(newSize),
-        })
-    }
-
-    const toggleMaximize = () => {
-        if (item.fixedSize) return
-        if (isMaximized()) {
-            collapseWindow()
-        } else {
-            expandWindow()
-        }
-    }
-
     const toggleExpanded = () => {
         if (item.fixedSize) return
-        if (item.expanded) {
+        const bounds = constraintsRef.current?.getBoundingClientRect()
+        const fullW = bounds ? bounds.width : (typeof window !== 'undefined' ? window.innerWidth - 16 : 1200)
+        const fullH = bounds ? bounds.height : (typeof window !== 'undefined' ? window.innerHeight - taskbarHeight : 800)
+
+        const isMax = item.expanded || (item.size.width >= fullW - 10 && item.size.height >= fullH - 10)
+
+        if (isMax) {
+            const prevSize = item.previousSize || { width: Math.min(900, fullW * 0.8), height: Math.min(650, fullH * 0.8) }
+            const prevPos = item.previousPosition || { x: Math.max(0, (fullW - prevSize.width) / 2), y: Math.max(0, (fullH - prevSize.height) / 2) }
             updateWindow(item, {
+                size: prevSize,
+                position: prevPos,
                 expanded: false,
                 windowed: true,
                 snapped: false,
             })
         } else {
-            // Expanding a side-by-side window drops the other and takes over the screen.
-            expandWindow(item)
+            updateWindow(item, {
+                previousSize: item.size,
+                previousPosition: item.position,
+                size: { width: fullW, height: fullH },
+                position: { x: 0, y: 0 },
+                expanded: true,
+                windowed: false,
+                snapped: false,
+            })
         }
     }
 
+    const handleDoubleClick = () => {
+        toggleExpanded()
+    }
+
     const collapseWindow = () => {
-        const isBeyondViewport = beyondViewport(previousSize)
-        const newSize = isBeyondViewport
-            ? { width: window.innerWidth - 40, height: window.innerHeight - 40 - taskbarHeight }
-            : previousSize
-        updateWindow(item, {
-            size: newSize,
-            position: isBeyondViewport ? getDesktopCenterPosition(newSize) : previousPosition,
-            expanded: false,
-            snapped: false,
-        })
+        toggleExpanded()
     }
 
     const getActiveWindowsButtonPosition = () => {
@@ -759,6 +840,8 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
             hasDeveloperMode={hasDeveloperMode}
             setHasDeveloperMode={setHasDeveloperMode}
             animating={animating}
+            addWindow={addWindow}
+            navigate={navigate}
         >
             <WindowContainer closing={closing}>
                 {item.appSettings?.size?.fixed && (
@@ -769,17 +852,9 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                         }`}
                     />
                 )}
-                <div
-                    onMouseDown={handleMouseDown}
-                    onAnimationEnd={(e) => {
-                        if (e.currentTarget !== e.target) return
-                        if (closing) {
-                            closeWindow(item)
-                        } else {
-                            onAnimationComplete()
-                        }
-                    }}
-                    ref={(el) => {
+                <motion.div
+                    onPointerDownCapture={handleMouseDown}
+                    ref={(el: HTMLDivElement | null) => {
                         const mutableRef = windowRef as React.MutableRefObject<HTMLDivElement | null>
                         mutableRef.current = el
                         if (el && !skipsOpenAnimation) {
@@ -793,52 +868,52 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                     data-windowed={item.windowed || undefined}
                     data-snapped={item.snapped || undefined}
                     data-scheme="tertiary"
-                    className={`@container relative overflow-hidden ${
-                        item.appSettings?.size?.fixed
-                            ? closing
-                                ? 'animate-window-slide-up'
-                                : !skipsOpenAnimation
-                                ? 'animate-window-slide-down'
-                                : ''
-                            : closing
-                            ? 'animate-window-pop-out'
-                            : !skipsOpenAnimation
-                            ? 'animate-window-pop-in'
-                            : ''
-                    } ${
-                        item.appSettings?.size?.fixed
-                            ? '!absolute top-2 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-1rem)]'
-                            : item.windowed
-                            ? 'h-[95%] w-[80%]'
-                            : 'size-full'
-                    } !select-auto flex flex-col border-primary ${WINDOW_BG} ${
+                    className={`group @container absolute pointer-events-auto !select-auto flex flex-col border-primary ${WINDOW_BG} ${
                         isCompositorActive ? MOTION_LAYER : ''
                     } rounded-lg ${item.appSettings?.size?.fixed ? 'border' : item.expanded ? 'border-t' : ''} ${
                         item.expanded ? 'shadow-none' : 'shadow-md'
-                    } ${
-                        item.expanded
-                            ? 'rounded-tr-none rounded-tl-none'
-                            : item.snapped === 'left'
-                            ? 'rounded-tl-none rounded-tr-none rounded-br-none border-r'
-                            : item.snapped === 'right'
-                            ? 'rounded-tl-none rounded-tr-none rounded-bl-none'
-                            : ''
                     }`}
-                    style={
-                        item.appSettings?.size?.fixed
+                    style={{
+                        pointerEvents: 'auto',
+                        rotateX: isActiveWindowsPanelOpen ? 0 : tiltX,
+                        rotateY: isActiveWindowsPanelOpen ? 0 : tiltY,
+                        transformPerspective: 1200,
+                        zIndex: isActiveWindowsPanelOpen ? 10001 + activePanelIndex : item.zIndex,
+                        ...(item.appSettings?.size?.fixed
                             ? {
                                   maxWidth: item.sizeConstraints.min.width,
                                   maxHeight: item.appSettings.size.autoHeight
                                       ? undefined
                                       : item.sizeConstraints.min.height,
                               }
-                            : missionControlLayout
-                            ? {
-                                  transform: `translate3d(${missionControlLayout.x}px, ${missionControlLayout.y}px, 0) scale(${missionControlLayout.scale})`,
-                                  transition: 'transform 0.3s cubic-bezier(0.2, 0, 0.2, 1)',
+                            : {}),
+                    }}
+                    animate={{
+                        scale: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.scale : 1,
+                        x: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.x : Math.round(position.x),
+                        y: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.y : Math.round(position.y),
+                        width: size.width,
+                        height: size.height,
+                    }}
+                    transition={
+                        siteSettings?.performanceBoost
+                            ? { duration: 0 }
+                            : {
+                                  type: 'spring',
+                                  stiffness: 300,
+                                  damping: 30,
+                                  mass: 0.8,
                               }
-                            : undefined
                     }
+                    drag={isActiveWindowsPanelOpen ? false : !item.fixedSize}
+                    dragControls={controls}
+                    dragListener={false}
+                    dragMomentum={false}
+                    dragConstraints={false}
+                    onDrag={handleDrag}
+                    onDragEnd={handleDragEnd}
+                    onAnimationStart={onAnimationStart}
+                    onAnimationComplete={onAnimationComplete}
                 >
                     <div className={`${hasToolbar ? 'bg-primary flex items-center py-0.5 px-1' : ''}`}>
                         {hasToolbar && (
@@ -854,10 +929,27 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                         <div
                             data-scheme="tertiary"
                             onDoubleClick={handleDoubleClick}
-                            className={`inline-flex gap-1 items-center py-0.5 pl-1.5 pr-0.5 skin-classic:bg-primary opacity-40 hover:opacity-75 transition-opacity duration-100 ${
+                            className={`inline-flex gap-1 items-center py-0.5 pl-1.5 pr-0.5 skin-classic:bg-primary opacity-80 md:opacity-60 md:hover:opacity-100 transition-opacity duration-100 ${
                                 hasToolbar ? 'flex-1 justify-end' : 'absolute z-20 right-1 top-1'
                             }`}
                         >
+                            <div className="window-minimize-control flex justify-end">
+                                <Tooltip
+                                    trigger={
+                                        <OSButton
+                                            windowButton
+                                            size="md"
+                                            onClick={() => minimizeWindow(item)}
+                                            icon={<IconMinus />}
+                                            aria-label="Minimize window"
+                                        />
+                                    }
+                                >
+                                    <div className="flex flex-col items-center gap-2">
+                                        <span>Minimize window</span>
+                                    </div>
+                                </Tooltip>
+                            </div>
                             {!item.fixedSize && (
                                 <div className="window-expand-control flex justify-end">
                                     <Tooltip
@@ -921,7 +1013,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                     >
                         <Router {...item.props}>{item.element}</Router>
                     </div>
-                </div>
+                </motion.div>
             </WindowContainer>
         </WindowProvider>
     )

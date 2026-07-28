@@ -1857,34 +1857,22 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
     // on every provider render. `injectDynamicChildren` is referentially stable.
     const menu = useMemo(() => injectDynamicChildren(initialMenu), [injectDynamicChildren])
 
-    const closeWindow = useCallback((item?: AppWindow) => {
-        setTimeout(() => {
-            if (!item || !item.path) {
-                safePush('/', { state: { skipPageUpdate: true } })
-                return
-            }
-            const currentWindows = windowsRef.current || []
-            const windowsFiltered = currentWindows.filter((el) => el && el.path !== item.path)
-            const nextFocusedWindow = windowsFiltered.reduce<AppWindow | undefined>(
-                (highest, current) => (current && current.zIndex > (highest?.zIndex ?? -1) ? current : highest),
-                undefined
-            )
-            if (nextFocusedWindow && !nextFocusedWindow.minimized && nextFocusedWindow.path) {
-                if (typeof nextFocusedWindow.path === 'string' && nextFocusedWindow.path.startsWith('/')) {
-                    safePush(nextFocusedWindow.path + (nextFocusedWindow.location?.search || ''))
-                } else {
-                    bringToFront(nextFocusedWindow)
-                }
-            } else {
-                safePush('/', { state: { skipPageUpdate: true } })
-            }
-            setWindows(windowsFiltered.map((w) => (w?.appSettings?.size?.fixed ? w : { ...w, snapped: false })))
-        }, 0)
-    }, [safePush])
+    const closeWindow = useCallback((itemOrKey?: string | AppWindow) => {
+        if (!itemOrKey) return
+        const targetKey = typeof itemOrKey === 'string' ? itemOrKey : itemOrKey.key || itemOrKey.path
+        setWindows((prev) => {
+            const filtered = prev.filter((w) => w.key !== targetKey && w.path !== targetKey && w !== itemOrKey)
+            const sorted = [...filtered].sort((a, b) => a.zIndex - b.zIndex)
+            return sorted.map((w, idx) => ({
+                ...w,
+                zIndex: idx + 1,
+            }))
+        })
+    }, [])
 
     const bringToFront = useCallback(
         (
-            item: AppWindow,
+            itemOrKey: string | AppWindow,
             location?: Location,
             additional: {
                 expanded?: boolean
@@ -1894,15 +1882,23 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 position?: { x: number; y: number }
             } = {}
         ) => {
-            setWindows((windows) =>
-                windows.map((el) => ({
-                    ...el,
-                    zIndex: el === item ? windows.length : el.zIndex < item.zIndex ? el.zIndex : el.zIndex - 1,
-                    minimized: item === el ? false : el.minimized,
-                    location: item === el ? location || el.location : el.location,
-                    ...(el === item ? additional : {}),
-                }))
-            )
+            const key = typeof itemOrKey === 'string' ? itemOrKey : itemOrKey?.key || itemOrKey?.path
+            setWindows((prev) => {
+                const existing = prev.find((w) => w.key === key || w.path === key || w === itemOrKey)
+                if (!existing) return prev
+                const maxZIndex = Math.max(...prev.map((w) => w.zIndex), 0)
+
+                return prev.map((el) => {
+                    const isTarget = el.key === existing.key || el.path === existing.path || el === existing
+                    return {
+                        ...el,
+                        zIndex: isTarget ? maxZIndex + 1 : el.zIndex > existing.zIndex ? el.zIndex - 1 : el.zIndex,
+                        minimized: isTarget ? false : el.minimized,
+                        location: isTarget ? location || el.location : el.location,
+                        ...(isTarget ? additional : {}),
+                    }
+                })
+            })
         },
         []
     )
@@ -1943,12 +1939,14 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         [windows]
     )
 
-    const setWindowTitle = useCallback((appWindow: AppWindow, title: string) => {
-        setWindows((windows) => windows.map((w) => (w === appWindow ? { ...appWindow, meta: { title } } : w)))
+    const setWindowTitle = useCallback((itemOrKey: string | AppWindow, title: string) => {
+        const key = typeof itemOrKey === 'string' ? itemOrKey : itemOrKey?.key || itemOrKey?.path
+        setWindows((windows) => windows.map((w) => (w.key === key || w.path === key || w === itemOrKey ? { ...w, meta: { title } } : w)))
     }, [])
 
-    const minimizeWindow = useCallback((appWindow: AppWindow) => {
-        setWindows((windows) => windows.map((w) => (w === appWindow ? { ...appWindow, minimized: true } : w)))
+    const minimizeWindow = useCallback((itemOrKey: string | AppWindow) => {
+        const key = typeof itemOrKey === 'string' ? itemOrKey : itemOrKey?.key || itemOrKey?.path
+        setWindows((windows) => windows.map((w) => (w.key === key || w.path === key || w === itemOrKey ? { ...w, minimized: true } : w)))
     }, [])
 
     function getWindowBasedSizeConstraints() {
@@ -2170,11 +2168,9 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         const settings = appSettings[keyToUse]
         const lastClickedElementRect = getLastClickedElementRect()
 
-        // Windowed (centered, 85%×95%) is the default for regular pages. Fixed,
-        // modal, minimal, and ask-max windows manage their own sizing, and mobile
-        // falls back to full-screen since a centered window reads poorly on narrow
-        // viewports.
-        const canWindow = isSSR || window.innerWidth >= 768
+        // Windowed (centered/cascaded) is default for regular pages so windows stack over each other.
+        const isMobileClient = !isSSR && typeof window !== 'undefined' && window.innerWidth < 768
+        const canWindow = (isSSR || window.innerWidth >= 768) && !isMobileClient
         const isWindowed =
             targetState?.windowed ??
             (canWindow &&
@@ -2182,17 +2178,18 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 !settings?.size?.fixed &&
                 !element?.props?.minimal &&
                 !settings?.modal)
-        const shouldExpand =
-            targetState?.expanded ??
-            (!keyToUse?.startsWith('ask-max') &&
-                !settings?.size?.fixed &&
-                !element?.props?.minimal &&
-                !settings?.modal &&
-                !isWindowed)
+        const shouldExpand = isMobileClient && !settings?.size?.fixed
+        const bounds = constraintsRef.current?.getBoundingClientRect()
+        const fullW = bounds ? bounds.width : (!isSSR && typeof window !== 'undefined' ? window.innerWidth - 16 : 1200)
+        const fullH = bounds ? bounds.height : (!isSSR && typeof window !== 'undefined' ? window.innerHeight - taskbarHeight - 16 : 800)
 
+        const finalSize = shouldExpand ? { width: fullW, height: fullH } : size
+        const finalPos = shouldExpand ? { x: 0, y: 0 } : position
+
+        const maxZ = Math.max(...windows.map((w) => w.zIndex), 0)
         const newWindow: AppWindow = {
             element,
-            zIndex: windows.length + 1,
+            zIndex: maxZ + 1,
             key: element?.key,
             coordinates: location?.state?.coordinates || { x: 0, y: 0 },
             minimized: false,
@@ -2204,9 +2201,9 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 params: element?.props?.params,
                 path: targetPath,
             },
-            size,
+            size: finalSize,
             previousSize: size,
-            position,
+            position: finalPos,
             previousPosition: position,
             sizeConstraints:
                 settings?.size?.fixed && settings.size
@@ -2225,7 +2222,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             appSettings: appSettings[keyToUse],
             location: targetLocation,
             expanded: shouldExpand,
-            snapped: targetState?.snapped || false,
+            snapped: false,
             windowed: isWindowed,
         }
 
@@ -2249,62 +2246,25 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         const targetLocation = element?.props?.location || location
         const existingWindow = windows.find((w) => w.path === targetPath)
         const newWindow = createNewWindow(element, windows, location, isSSR, taskbarHeight)
-        const isSideBySide = location?.state?.sideBySide && focusedWindow && !isSSR
-
-        if (isSideBySide) {
-            const sideSnap = getSnapDimensions(location?.state?.sideBySide)
-            newWindow.size = sideSnap.size
-            newWindow.position = sideSnap.position
-            newWindow.snapped = location?.state?.sideBySide
-            newWindow.expanded = false
-            // Snapped windows render full-bleed so the flex container can split
-            // them 50/50; a windowed (85%) width would break the side-by-side layout.
+        
+        const isMobileClient = typeof window !== 'undefined' && window.innerWidth < 768
+        if (isMobileClient && !newWindow.fixedSize) {
+            const bounds = constraintsRef.current?.getBoundingClientRect()
+            const fullW = bounds ? bounds.width : window.innerWidth - 16
+            const fullH = bounds ? bounds.height : window.innerHeight - taskbarHeight - 16
+            newWindow.expanded = true
             newWindow.windowed = false
-        }
-
-        if (newWindow.key !== '/' && !isSideBySide && !newWindow.appSettings?.size?.fixed) {
-            if (focusedWindow?.snapped) {
-                const sideSnap = getSnapDimensions(focusedWindow.snapped)
-                newWindow.size = sideSnap.size
-                newWindow.position = sideSnap.position
-                newWindow.snapped = focusedWindow.snapped
-                newWindow.expanded = false
-                newWindow.windowed = false
-            } else if (focusedWindow) {
-                // Navigating in place: keep the focused window's current display mode
-                // (windowed vs. expanded) so pages don't jump between sizes.
-                newWindow.expanded = focusedWindow.expanded ?? false
-                newWindow.windowed = focusedWindow.expanded ? false : focusedWindow.windowed ?? newWindow.windowed
-                newWindow.snapped = false
-            }
+            newWindow.snapped = false
+            newWindow.size = { width: fullW, height: fullH }
+            newWindow.position = { x: 0, y: 0 }
+        } else {
+            newWindow.snapped = false
+            newWindow.expanded = false
+            newWindow.windowed = true
         }
 
         if (existingWindow) {
-            if (existingWindow.snapped && !isSideBySide) {
-                bringToFront(existingWindow, targetLocation)
-            } else {
-                bringToFront(existingWindow, targetLocation, {
-                    expanded: newWindow.expanded,
-                    windowed: newWindow.windowed,
-                    snapped: newWindow.snapped,
-                    size: newWindow.size,
-                    position: newWindow.position,
-                })
-            }
-        } else if (isSideBySide && !windows.some((w) => w.key === newWindow.key)) {
-            const focusedSide = location?.state?.sideBySide === 'left' ? 'right' : 'left'
-            const sideSnap = getSnapDimensions(focusedSide)
-            const snappedFocused = {
-                ...focusedWindow,
-                previousSize: focusedWindow.size,
-                previousPosition: focusedWindow.position,
-                size: sideSnap.size,
-                position: sideSnap.position,
-                snapped: focusedSide as const,
-                expanded: false,
-                windowed: false,
-            }
-            setWindows([...windows.map((w) => (w === focusedWindow ? snappedFocused : w)), newWindow])
+            bringToFront(existingWindow, targetLocation)
         } else if (newWindow.appSettings?.size?.fixed) {
             setWindows([...windows.filter((w) => !w.appSettings?.size?.fixed), newWindow])
         } else {
@@ -2328,8 +2288,13 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 return prev.map((w) => (w.key === existing.key ? { ...w, zIndex: maxZ + 1, minimized: false } : w))
             }
 
-            const size = item.size || { width: 900, height: 650 }
-            const position = item.position || getPositionDefaults(key, size, prev)
+            const isMobileClient = typeof window !== 'undefined' && window.innerWidth < 768
+            const bounds = constraintsRef.current?.getBoundingClientRect()
+            const fullW = bounds ? bounds.width : (typeof window !== 'undefined' ? window.innerWidth - 16 : 1200)
+            const fullH = bounds ? bounds.height : (typeof window !== 'undefined' ? window.innerHeight - taskbarHeight - 16 : 800)
+
+            const size = isMobileClient && !item.fixedSize ? { width: fullW, height: fullH } : (item.size || { width: 900, height: 650 })
+            const position = isMobileClient && !item.fixedSize ? { x: 0, y: 0 } : (item.position || getPositionDefaults(key, size, prev))
             const maxZ = Math.max(...prev.map((w) => w.zIndex), 0)
 
             const newWin: AppWindow = {
@@ -2338,12 +2303,12 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 title: item.title || path.split('/').pop() || 'Window',
                 size,
                 position,
-                previousSize: size,
-                previousPosition: position,
+                previousSize: item.size || { width: 900, height: 650 },
+                previousPosition: item.position || { x: 50, y: 50 },
                 zIndex: maxZ + 1,
                 minimized: false,
-                windowed: true,
-                expanded: false,
+                windowed: !isMobileClient || !!item.fixedSize,
+                expanded: isMobileClient && !item.fixedSize,
                 snapped: false,
                 fromOrigin: item.fromOrigin,
                 props: { path },
