@@ -30,9 +30,12 @@ export interface SupabaseCommunityReply {
     }
 }
 
-export async function fetchSupabaseCommunityPosts(slug?: string): Promise<SupabaseCommunityPost[]> {
+export async function fetchSupabaseCommunityPosts(slug?: string, postId?: number | string): Promise<SupabaseCommunityPost[]> {
     let url = `${SUPABASE_URL}/rest/v1/community_posts?select=id,title,content,created_at,view_count,author_id,profiles(id,username,avatar_url)&order=created_at.desc`
-    if (slug) {
+    if (postId || (slug && !isNaN(Number(slug)))) {
+        const idToUse = postId || slug
+        url += `&id=eq.${idToUse}`
+    } else if (slug) {
         url += `&or=(post_slug.eq.${slug},title.ilike.comment_${encodeURIComponent(slug)}_*)`
     } else {
         url += `&post_slug=is.null&title=not.ilike.comment_*`

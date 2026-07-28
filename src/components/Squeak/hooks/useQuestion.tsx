@@ -157,7 +157,7 @@ export const useQuestion = (id: number | string, options?: UseQuestionOptions) =
         if (!id) return
         const cleanId = String(id).replace(/^\/questions\/?/, '')
 
-        fetchSupabaseCommunityPosts().then((posts) => {
+        fetchSupabaseCommunityPosts(cleanId, cleanId).then((posts) => {
             let found = posts && posts.length > 0
                 ? posts.find(
                       (p) =>
