@@ -1,21 +1,28 @@
 import React from 'react'
+import './LemonTable.css'
 
-export interface LemonTableColumn<T> {
-    title: React.ReactNode
+export interface Column<T> {
+    title?: React.ReactNode
     dataIndex?: keyof T | string
     key?: string
-    align?: 'left' | 'center' | 'right'
     width?: string | number
     render?: (value: any, record: T, index: number) => React.ReactNode
+    align?: 'left' | 'center' | 'right'
+    className?: string
+    sorter?: (a: T, b: T) => number
 }
 
 export interface LemonTableProps<T> {
-    columns: LemonTableColumn<T>[]
+    columns: Column<T>[]
     dataSource: T[]
-    loading?: boolean
+    rowKey?: keyof T | ((record: T) => string | number)
     className?: string
-    emptyText?: React.ReactNode
-    onRowClick?: (record: T) => void
+    embedded?: boolean
+    stealth?: boolean
+    size?: 'small' | 'middle'
+    loading?: boolean
+    emptyState?: React.ReactNode
+    'data-attr'?: string
     pagination?: {
         currentPage: number
         totalPages: number
@@ -27,97 +34,112 @@ export interface LemonTableProps<T> {
     }
 }
 
-export function LemonTable<T extends Record<string, any>>({
+export function LemonTable<T>({
     columns,
     dataSource,
-    loading = false,
+    rowKey,
     className = '',
-    emptyText = 'No data',
-    onRowClick,
+    embedded = false,
+    stealth = false,
+    size,
+    loading = false,
+    emptyState = 'No entries matching your filters!',
+    'data-attr': dataAttr,
     pagination,
-}: LemonTableProps<T>): JSX.Element {
+}: LemonTableProps<T>) {
+    const getRowKey = (record: T, idx: number): string | number => {
+        if (typeof rowKey === 'function') {
+            return rowKey(record)
+        }
+        if (rowKey && (record as any)[rowKey] !== undefined) {
+            return String((record as any)[rowKey])
+        }
+        if ((record as any).id) return String((record as any).id)
+        if ((record as any).key) return String((record as any).key)
+        return idx
+    }
+
+    const tableClasses = [
+        'LemonTable',
+        size && size !== 'middle' && `LemonTable--${size}`,
+        embedded && 'LemonTable--embedded',
+        stealth && 'LemonTable--stealth',
+        className,
+    ]
+        .filter(Boolean)
+        .join(' ')
+
     return (
-        <div className={`LemonTable relative w-full overflow-x-auto ${className}`}>
-            {loading && (
-                <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary/20 overflow-hidden z-20">
-                    <div className="w-full h-full bg-primary animate-pulse" />
-                </div>
-            )}
-            <table className="w-full text-left border-collapse font-sans text-xs sm:text-sm">
-                <thead>
-                    <tr className="border-b border-black/10 dark:border-white/10 text-[11px] font-bold uppercase tracking-wider text-muted/70">
-                        {columns.map((col, idx) => (
-                            <th
-                                key={col.key || String(col.dataIndex) || idx}
-                                style={{ width: col.width }}
-                                className={`py-2 px-3 select-none ${
-                                    col.align === 'center'
-                                        ? 'text-center'
-                                        : col.align === 'right'
-                                        ? 'text-right'
-                                        : 'text-left'
-                                }`}
-                            >
-                                {col.title}
-                            </th>
+        <div className="w-full my-4">
+            <div className={tableClasses} data-attr={dataAttr}>
+                <div className="LemonTable__content">
+                    <table>
+                        <colgroup>
+                            {columns.map((col, idx) => (
+                                <col key={`col-${idx}`} style={{ width: col.width === 0 ? '1%' : col.width }} />
+                            ))}
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                {columns.map((col, idx) => (
+                                    <th key={idx} className={col.align ? `text-${col.align}` : undefined}>
+                                        <div className="LemonTable__header-content">
+                                            <div>{col.title}</div>
+                                        </div>
+                                    </th>
+                                ))}
+                            </tr>
                         ))}
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-black/5 dark:divide-white/5">
-                    {dataSource.length === 0 && !loading && (
-                        <tr>
-                            <td colSpan={columns.length} className="py-8 px-3 text-center text-muted text-xs">
-                                {emptyText}
-                            </td>
-                        </tr>
-                    )}
-                    {dataSource.map((row, rIdx) => (
-                        <tr
-                            key={row.id || rIdx}
-                            onClick={() => onRowClick?.(row)}
-                            className={`hover:bg-accent/40 transition-colors ${
-                                onRowClick ? 'cursor-pointer' : ''
-                            }`}
-                        >
-                            {columns.map((col, cIdx) => {
-                                const val = col.dataIndex ? row[col.dataIndex as string] : undefined
-                                return (
-                                    <td
-                                        key={col.key || cIdx}
-                                        className={`py-2.5 px-3 align-middle text-primary text-xs ${
-                                            col.align === 'center'
-                                                ? 'text-center'
-                                                : col.align === 'right'
-                                                ? 'text-right'
-                                                : 'text-left'
-                                        }`}
-                                    >
-                                        {col.render ? col.render(val, row, rIdx) : String(val ?? '')}
+                        </thead>
+                        <tbody>
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={columns.length} className="text-center py-8 opacity-60">
+                                        Loading...
                                     </td>
-                                );
-                            })}
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+                                </tr>
+                            ) : dataSource.length === 0 ? (
+                                <tr>
+                                    <td colSpan={columns.length} className="LemonTable__empty-state text-center py-8 opacity-75">
+                                        {emptyState}
+                                    </td>
+                                </tr>
+                            ) : (
+                                dataSource.map((record, rIdx) => (
+                                    <tr key={String(getRowKey(record, rIdx))}>
+                                        {columns.map((col, cIdx) => {
+                                            const val = col.dataIndex ? (record as any)[col.dataIndex] : undefined
+                                            return (
+                                                <td key={cIdx} className={col.align ? `text-${col.align}` : undefined}>
+                                                    {col.render ? col.render(val, record, rIdx) : ((val as React.ReactNode) ?? '')}
+                                                </td>
+                                            )
+                                        })}
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
             {pagination && (
-                <div className="flex items-center justify-between py-3 px-1 border-t border-black/10 dark:border-white/10 text-xs text-muted mt-2">
-                    <span>
+                <div className="flex items-center justify-between py-2 px-1 text-xs text-secondary opacity-80 mt-2">
+                    <div>
                         Page {pagination.currentPage + 1} of {Math.max(1, pagination.totalPages)}
-                    </span>
+                    </div>
                     <div className="flex items-center space-x-2">
                         <button
                             disabled={!pagination.hasPrevPage}
                             onClick={pagination.prevPage}
-                            className="px-2 py-1 rounded bg-accent/60 hover:bg-accent disabled:opacity-30 disabled:pointer-events-none transition-all font-medium text-xs text-primary"
+                            className="px-2.5 py-1 rounded bg-accent hover:opacity-80 disabled:opacity-40 disabled:pointer-events-none transition-all font-medium text-xs text-primary"
                         >
                             Previous
                         </button>
                         <button
                             disabled={!pagination.hasNextPage}
                             onClick={pagination.nextPage}
-                            className="px-2 py-1 rounded bg-accent/60 hover:bg-accent disabled:opacity-30 disabled:pointer-events-none transition-all font-medium text-xs text-primary"
+                            className="px-2.5 py-1 rounded bg-accent hover:opacity-80 disabled:opacity-40 disabled:pointer-events-none transition-all font-medium text-xs text-primary"
                         >
                             Next
                         </button>
