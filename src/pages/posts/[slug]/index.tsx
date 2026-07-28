@@ -5,6 +5,6 @@ const PostPage = dynamic(() => import('components/posts/PostPage'), {
     loading: () => null,
 })
 
-export const runtime = 'experimental-edge'
-
+export const getStaticProps = () => ({ props: {} })
+export const getStaticPaths = () => ({ paths: [], fallback: false })
 export default PostPage
