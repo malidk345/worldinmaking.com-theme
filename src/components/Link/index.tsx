@@ -172,18 +172,14 @@ export default function Link({
             const rect = target?.getBoundingClientRect ? target.getBoundingClientRect() : null
             const fromOrigin = rect ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : undefined
 
-            // 1. INSTANT WINDOW SUMMON (0ms) - Pop open window immediately
-            addWindow({
-                key: `${url}-${Date.now()}`,
-                path: url,
-                title: url.split('/').pop() || 'window',
-                fromOrigin,
+            const targetState = {
                 ...linkState,
-            })
+                newWindow: true,
+                fromOrigin,
+            }
 
-            // 2. INSTANT URL SYNC (0ms) - Update browser URL bar immediately
             if (safePush) {
-                safePush(url, { state: { ...linkState, skipPageUpdate: true } })
+                safePush(url, { state: targetState })
             } else if (router) {
                 router.push(url)
             }
