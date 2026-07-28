@@ -25,7 +25,7 @@ export const usePosts = ({ params }: { params?: any }) => {
         (url: string) => fetch(url).then((r) => r.json())
     )
     const posts = React.useMemo(() => {
-        return data?.reduce((acc, cur) => [...(acc || []), ...(cur.data || [])], []) ?? []
+        return data?.flatMap((cur) => cur.data || []) ?? []
     }, [size, data])
 
     const total = data && data[0]?.meta?.pagination?.total

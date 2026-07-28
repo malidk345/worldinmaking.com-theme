@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import useSWRInfinite from 'swr/infinite'
 import qs from 'qs'
-import { QuestionData, StrapiResult, StrapiRecord } from 'lib/strapi'
+import { QuestionData, StrapiResult, } from 'lib/strapi'
 import usePostHog from './usePostHog'
 import { useUser } from './useUser'
 import { fetchSupabaseCommunityPosts, formatSupabaseCommunityToStrapi } from 'lib/supabaseCommunity'
@@ -304,7 +304,7 @@ export const useQuestions = (options?: UseQuestionsOptions) => {
     }
 
     const questions: Omit<StrapiResult<QuestionData[]>, 'meta'> = React.useMemo(() => {
-        const strapiData = data?.reduce((acc, cur) => [...acc, ...(cur.data || [])], [] as StrapiRecord<QuestionData>[]) ?? []
+        const strapiData = data?.flatMap((cur) => cur.data || []) ?? []
         const combined = [...strapiData, ...supabaseQuestions]
         const finalData = combined.length > 0 ? combined : MOCK_COMMUNITY_POSTS
         return {
