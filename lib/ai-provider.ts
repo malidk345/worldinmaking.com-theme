@@ -34,7 +34,7 @@ loadEnv();
 /**
  * Supported providers list in order of fallback.
  */
-export type AIProvider = 'gemini' | 'groq' | 'openrouter' | 'huggingface';
+export type AIProvider = 'gemini' | 'grok' | 'groq' | 'openrouter' | 'huggingface';
 
 /**
  * @deprecated Use buildPersonaPrompt() from persona-engine.ts instead.
@@ -65,18 +65,18 @@ export function buildBotPrompt(rawPrompt: string): string {
  * Heavy tasks (synthesis) get thinking-capable models where available.
  * Light tasks get fast models to reduce latency.
  */
-const TASK_MODEL_PREFERENCE: Record<TaskType, { gemini: string; groq: string; openrouter: string }> = {
+const TASK_MODEL_PREFERENCE: Record<TaskType, { gemini: string; grok: string; groq: string; openrouter: string }> = {
     // Synthesis gets the most capable model — worth the extra latency
-    synthesis:           { gemini: 'gemini-2.0-flash-thinking-exp', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
+    synthesis:           { gemini: 'gemini-2.0-flash-thinking-exp', grok: 'grok-2-latest', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
     // Paper tasks need strong instruction following and fluency
-    paper_section:       { gemini: 'gemini-2.0-flash', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
-    dialectic_challenge: { gemini: 'gemini-2.0-flash', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
-    cross_examine:       { gemini: 'gemini-2.0-flash', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
-    third_voice:         { gemini: 'gemini-2.0-flash', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
+    paper_section:       { gemini: 'gemini-2.0-flash', grok: 'grok-2-latest', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
+    dialectic_challenge: { gemini: 'gemini-2.0-flash', grok: 'grok-2-latest', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
+    cross_examine:       { gemini: 'gemini-2.0-flash', grok: 'grok-2-latest', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
+    third_voice:         { gemini: 'gemini-2.0-flash', grok: 'grok-2-latest', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
     // Community tasks use fast models — speed matters more than depth
-    community_reply:     { gemini: 'gemini-2.0-flash', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
-    thread_init:         { gemini: 'gemini-2.0-flash', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
-    fact_critique:       { gemini: 'gemini-2.0-flash', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
+    community_reply:     { gemini: 'gemini-2.0-flash', grok: 'grok-2-latest', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
+    thread_init:         { gemini: 'gemini-2.0-flash', grok: 'grok-2-latest', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
+    fact_critique:       { gemini: 'gemini-2.0-flash', grok: 'grok-2-latest', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
 };
 
 /**
@@ -104,17 +104,10 @@ export function markProviderCooling(provider: AIProvider): void {
 }
 
 /**
- * Base provider rotation — all 4 providers in order.
- * Each bot is assigned a starting offset via consistent hashing,
- * distributing 16 bots evenly: 4 bots per primary provider.
- *
- * Primary assignments (by index % 4):
- *   0 → Gemini:      Marx, Spinoza, Baudrillard, Derrida
- *   1 → Groq:        Nietzsche, Althusser, Weber, Lenin
- *   2 → OpenRouter:  Deleuze, Heidegger, Adorno, Arendt
- *   3 → HuggingFace: Sartre, Hegel, Zizek, Rand
+ * Base provider rotation — all 5 providers in order.
+ * Each bot is assigned a starting offset via consistent hashing.
  */
-const PROVIDER_ORDER_BASE: AIProvider[] = ['gemini', 'groq', 'openrouter', 'huggingface'];
+const PROVIDER_ORDER_BASE: AIProvider[] = ['gemini', 'grok', 'groq', 'openrouter', 'huggingface'];
 
 const BOT_INDEX: Record<string, number> = {
     marx: 0, nietzsche: 1, deleuze: 2,   sartre: 3,
@@ -127,21 +120,18 @@ const BOT_INDEX: Record<string, number> = {
 /**
  * Returns the provider order for a bot.
  * Starts from the bot's consistently hashed primary provider,
- * then rotates through the rest. Cooling providers are deprioritized
- * (moved to the end) but kept as fallbacks so generation never fails completely.
+ * then rotates through the rest.
  */
 function getProviderOrder(botName: string): AIProvider[] {
     const name = botName.toLowerCase().trim();
-    const botIdx = BOT_INDEX[name] ?? (name.charCodeAt(0) % 4);
+    const botIdx = BOT_INDEX[name] ?? (name.charCodeAt(0) % 5);
     const startOffset = botIdx % PROVIDER_ORDER_BASE.length;
 
-    // Build rotation starting from this bot's primary provider
     const rotation: AIProvider[] = [];
     for (let i = 0; i < PROVIDER_ORDER_BASE.length; i++) {
         rotation.push(PROVIDER_ORDER_BASE[(startOffset + i) % PROVIDER_ORDER_BASE.length]);
     }
 
-    // Cooling providers go to the end — still available as last resort
     const active = rotation.filter(p => !isProviderCooling(p));
     const cooling = rotation.filter(p => isProviderCooling(p));
     const result = [...active, ...cooling];
@@ -151,8 +141,6 @@ function getProviderOrder(botName: string): AIProvider[] {
     }
     return result;
 }
-
-
 
 async function getFetchFn(): Promise<typeof fetch> {
     if (typeof process !== 'undefined' && !process.env.NEXT_RUNTIME) {
@@ -169,30 +157,34 @@ async function getFetchFn(): Promise<typeof fetch> {
 
 /**
  * Collects every configured API key for a provider so that requests can rotate
- * across multiple accounts instead of hammering (and exhausting/rate-limiting)
- * a single one. Supports three ways to configure keys, all optional/combinable:
+ * across multiple accounts. Supports:
  *   - `${BASE}S` — comma-separated list, e.g. GEMINI_API_KEYS="key1,key2,key3"
- *   - `${BASE}` — the original single-key variable, e.g. GEMINI_API_KEY
- *   - `${BASE}_2`, `${BASE}_3`, ... — numbered variables, useful on platforms
- *     where the dashboard UI makes long comma-separated values awkward.
+ *   - `${BASE}` — single key, e.g. GEMINI_API_KEY or GROK_API_KEY / XAI_API_KEY
+ *   - `${BASE}_2`, `${BASE}_3`, ... — numbered variables
  */
 function getApiKeys(baseName: string): string[] {
     const keys: string[] = [];
-
-    const combined = process.env[`${baseName}S`];
-    if (combined) {
-        keys.push(...combined.split(',').map((k) => k.trim()).filter(Boolean));
+    const bases = [baseName];
+    if (baseName === 'GROK_API_KEY') {
+        bases.push('XAI_API_KEY');
     }
 
-    const single = process.env[baseName];
-    if (single && !keys.includes(single)) {
-        keys.push(single);
-    }
+    for (const base of bases) {
+        const combined = process.env[`${base}S`];
+        if (combined) {
+            keys.push(...combined.split(',').map((k) => k.trim()).filter(Boolean));
+        }
 
-    for (let i = 2; i <= 10; i++) {
-        const numbered = process.env[`${baseName}_${i}`];
-        if (numbered && !keys.includes(numbered)) {
-            keys.push(numbered);
+        const single = process.env[base];
+        if (single && !keys.includes(single)) {
+            keys.push(single);
+        }
+
+        for (let i = 2; i <= 10; i++) {
+            const numbered = process.env[`${base}_${i}`];
+            if (numbered && !keys.includes(numbered)) {
+                keys.push(numbered);
+            }
         }
     }
 
@@ -227,24 +219,46 @@ async function callGemini(
     const apiKeys = getApiKeys('GEMINI_API_KEY');
     if (apiKeys.length === 0) throw new Error('GEMINI_API_KEY is missing');
 
-    // Combine system + user into a single contents string for the Gemini SDK.
-    // The Gemini SDK (google/genai) treats the first turn as user by default,
-    // so we prefix with the system instructions explicitly.
     const combinedContents = systemPrompt
         ? `SYSTEM INSTRUCTIONS:\n${systemPrompt}\n\n---\n\nUSER TASK:\n${userPrompt}`
         : userPrompt;
 
     let lastError: Error | null = null;
+    const customFetch = await getFetchFn();
+
     for (const apiKey of shuffle(apiKeys)) {
         try {
-            const ai = new GoogleGenAI({ apiKey });
-            const response = await ai.models.generateContent({
-                model,
-                contents: combinedContents
+            if (GoogleGenAI) {
+                try {
+                    const ai = new GoogleGenAI({ apiKey });
+                    const response = await ai.models.generateContent({
+                        model,
+                        contents: combinedContents
+                    });
+                    const text = response.text?.trim();
+                    if (text) return text;
+                } catch (sdkErr) {
+                    console.warn(`[AI-Provider] Gemini SDK attempt failed, using REST API...`, (sdkErr as Error)?.message);
+                }
+            }
+
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+            const res = await customFetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: combinedContents }] }]
+                })
             });
 
-            const text = response.text?.trim();
-            if (!text) throw new Error('Gemini returned empty response');
+            if (!res.ok) {
+                const errText = await res.text();
+                throw new Error(`Gemini HTTP Error ${res.status}: ${errText}`);
+            }
+
+            const data = await res.json();
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+            if (!text) throw new Error('Gemini REST API returned empty response');
             return text;
         } catch (e) {
             lastError = e instanceof Error ? e : new Error(String(e));
@@ -253,6 +267,63 @@ async function callGemini(
     }
 
     throw lastError || new Error('All Gemini API keys failed');
+}
+
+/**
+ * Calls Grok (xAI) API using native fetch.
+ * @param systemPrompt - System-level instructions (persona header).
+ * @param userPrompt   - The actual task prompt.
+ * @param model        - Override model (defaults to grok-2-latest).
+ */
+async function callGrok(
+    systemPrompt: string,
+    userPrompt: string,
+    model: string = 'grok-2-latest'
+): Promise<string> {
+    const apiKeys = getApiKeys('GROK_API_KEY');
+    if (apiKeys.length === 0) throw new Error('GROK_API_KEY / XAI_API_KEY is missing');
+
+    const customFetch = await getFetchFn();
+    const messages: Array<{ role: string; content: string }> = [];
+    if (systemPrompt) {
+        messages.push({ role: 'system', content: systemPrompt });
+    }
+    messages.push({ role: 'user', content: userPrompt });
+
+    let lastError: Error | null = null;
+    for (const apiKey of shuffle(apiKeys)) {
+        try {
+            console.log(`[AI-Provider] Sending request to Grok (xAI) using model: ${model} (key ${maskKey(apiKey)})`);
+            const res = await customFetch('https://api.x.ai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model,
+                    messages,
+                    temperature: 0.7,
+                    max_tokens: 4096
+                })
+            });
+
+            if (!res.ok) {
+                const errText = await res.text();
+                throw new Error(`Grok HTTP Error ${res.status}: ${errText}`);
+            }
+
+            const data = await res.json();
+            const text = data.choices?.[0]?.message?.content?.trim();
+            if (!text) throw new Error('Grok returned empty response');
+            return text;
+        } catch (e) {
+            lastError = e instanceof Error ? e : new Error(String(e));
+            console.warn(`[AI-Provider] Grok key ${maskKey(apiKey)} failed, trying next:`, lastError.message);
+        }
+    }
+
+    throw lastError || new Error('All Grok API keys failed');
 }
 
 /**
@@ -456,6 +527,8 @@ export async function generateBotResponse(
 
             if (provider === 'gemini') {
                 result = await callGemini(systemPrompt, prompt, modelOverrides.gemini);
+            } else if (provider === 'grok') {
+                result = await callGrok(systemPrompt, prompt, modelOverrides.grok);
             } else if (provider === 'groq') {
                 result = await callGroq(systemPrompt, prompt, modelOverrides.groq);
             } else if (provider === 'openrouter') {
