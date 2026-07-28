@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import useSWRInfinite from 'swr/infinite'
 import qs from 'qs'
-import { QuestionData, StrapiResult, StrapiRecord } from 'lib/strapi'
+import { QuestionData, StrapiResult, } from 'lib/strapi'
 import usePostHog from './usePostHog'
 import { useUser } from './useUser'
 import { fetchSupabaseCommunityPosts, formatSupabaseCommunityToStrapi } from 'lib/supabaseCommunity'
