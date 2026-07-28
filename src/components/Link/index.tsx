@@ -172,17 +172,14 @@ export default function Link({
             const rect = target?.getBoundingClientRect ? target.getBoundingClientRect() : null
             const fromOrigin = rect ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : undefined
 
-            const targetState = {
-                ...linkState,
-                newWindow: true,
+            // DIRECT WORLDINMAKING ADDWINDOW CALL (0ms latency window pop & URL pushState)
+            addWindow({
+                key: `${url}-${Date.now()}`,
+                path: url,
+                title: url.split('/').pop() || 'window',
                 fromOrigin,
-            }
-
-            if (safePush) {
-                safePush(url, { state: targetState })
-            } else if (router) {
-                router.push(url)
-            }
+                ...linkState,
+            })
             return
         }
         if (compact && url && !internal) {

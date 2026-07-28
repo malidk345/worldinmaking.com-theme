@@ -2312,8 +2312,52 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         }
     }
 
-    const addWindow = (element: WindowElement) => {
-        updatePages(element)
+    const addWindow = (item: any) => {
+        if (React.isValidElement(item)) {
+            updatePages(item)
+            return
+        }
+
+        const key = item.key || item.path
+        const path = item.path || '/'
+
+        setWindows((prev) => {
+            const existing = prev.find((w) => w.key === key || w.path === path)
+            if (existing) {
+                const maxZ = Math.max(...prev.map((w) => w.zIndex), 0)
+                return prev.map((w) => (w.key === existing.key ? { ...w, zIndex: maxZ + 1, minimized: false } : w))
+            }
+
+            const size = item.size || { width: 900, height: 650 }
+            const position = item.position || getPositionDefaults(key, size, prev)
+            const maxZ = Math.max(...prev.map((w) => w.zIndex), 0)
+
+            const newWin: AppWindow = {
+                key,
+                path,
+                title: item.title || path.split('/').pop() || 'Window',
+                size,
+                position,
+                previousSize: size,
+                previousPosition: position,
+                zIndex: maxZ + 1,
+                minimized: false,
+                windowed: true,
+                expanded: false,
+                snapped: false,
+                fromOrigin: item.fromOrigin,
+                props: { path },
+            }
+            return [...prev, newWin]
+        })
+
+        if (typeof window !== 'undefined' && window.history) {
+            try {
+                window.history.pushState({ windowKey: key }, '', path)
+            } catch (e) {
+                console.error(e)
+            }
+        }
     }
 
     const updateWindowRef = (appWindow: AppWindow, ref: React.RefObject<HTMLDivElement>) => {
