@@ -13,7 +13,27 @@ import Tooltip from 'components/RadixUI/Tooltip'
 import ProgressBar from 'components/ProgressBar'
 import slugify from 'slugify'
 import { usePaginatedPosts } from 'components/Edition/hooks/usePaginatedPosts'
-import { IconSpinner, IconLayoutGrid, IconList } from '@posthog/icons'
+import { IconSpinner } from '@posthog/icons'
+
+const GridIcon = (props: any) => (
+    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <rect x="3" y="3" width="7" height="7" />
+        <rect x="14" y="3" width="7" height="7" />
+        <rect x="14" y="14" width="7" height="7" />
+        <rect x="3" y="14" width="7" height="7" />
+    </svg>
+)
+
+const ListIcon = (props: any) => (
+    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <line x1="8" y1="6" x2="21" y2="6" />
+        <line x1="8" y1="12" x2="21" y2="12" />
+        <line x1="8" y1="18" x2="21" y2="18" />
+        <line x1="3" y1="6" x2="3.01" y2="6" />
+        <line x1="3" y1="12" x2="3.01" y2="12" />
+        <line x1="3" y1="18" x2="3.01" y2="18" />
+    </svg>
+)
 import LikeButton from 'components/Edition/LikeButton'
 import Modal from 'components/Modal'
 import { Authentication } from 'components/Squeak'
@@ -212,7 +232,7 @@ export default function Posts({ pageContext = {} }: { pageContext?: any }) {
                             }`}
                             title="Grid View"
                         >
-                            <IconLayoutGrid className="size-4" />
+                            <GridIcon className="size-4" />
                         </button>
                         <button
                             onClick={() => setViewMode('table')}
@@ -223,7 +243,7 @@ export default function Posts({ pageContext = {} }: { pageContext?: any }) {
                             }`}
                             title="Table View"
                         >
-                            <IconList className="size-4" />
+                            <ListIcon className="size-4" />
                         </button>
                     </div>
 
