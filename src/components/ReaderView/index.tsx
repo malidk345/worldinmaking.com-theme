@@ -1709,28 +1709,25 @@ function ReaderViewContent({
                                             )}
                                         </div>
                                     )}
-                                    {tableOfContents &&
-                                        tableOfContents.length > 0 &&
-                                        !hideMobileTableOfContents &&
-                                        !hideRightSidebar && (
-                                            <div
-                                                id="mobile-toc"
-                                                data-scheme="secondary"
-                                                className={`@4xl/app-reader:hidden mt-4 transition-all ${
-                                                    fullWidthContent || body?.type !== 'mdx'
-                                                        ? 'max-w-full'
-                                                        : contentMaxWidthClass
-                                                        ? contentMaxWidthClass
-                                                        : 'mx-auto max-w-2xl'
-                                                }`}
-                                            >
-                                                <TableOfContents
-                                                    tableOfContents={tableOfContents}
-                                                    contentRef={contentRef}
-                                                    title="Contents"
-                                                />
-                                            </div>
-                                        )}
+                                    {!hideMobileTableOfContents && !hideRightSidebar && (
+                                        <div
+                                            id="mobile-toc"
+                                            data-scheme="secondary"
+                                            className={`md:hidden mt-4 mb-6 transition-all ${
+                                                fullWidthContent || body?.type !== 'mdx'
+                                                    ? 'max-w-full'
+                                                    : contentMaxWidthClass
+                                                    ? contentMaxWidthClass
+                                                    : 'mx-auto max-w-2xl'
+                                            }`}
+                                        >
+                                            <TableOfContents
+                                                tableOfContents={tableOfContents}
+                                                contentRef={contentRef}
+                                                title="Jump to:"
+                                            />
+                                        </div>
+                                    )}
                                     {body?.featuredVideo && (
                                         <iframe
                                             src={body.featuredVideo}
@@ -1803,12 +1800,16 @@ function ReaderViewContent({
                             </article>
                         </ScrollArea>
                         {showSidebar && (
-                            <FloatingTOC
-                                isTocVisible={isTocVisible}
-                                toggleToc={toggleToc}
-                                tableOfContents={tableOfContents}
-                                contentRef={contentRef}
-                            />
+                            <aside
+                                data-scheme="secondary"
+                                className="hidden md:block w-72 flex-shrink-0 border-l border-primary p-4 overflow-y-auto h-full"
+                            >
+                                <TableOfContents
+                                    tableOfContents={tableOfContents}
+                                    contentRef={contentRef}
+                                    title="Jump to:"
+                                />
+                            </aside>
                         )}
                     </div>
                 </div>
