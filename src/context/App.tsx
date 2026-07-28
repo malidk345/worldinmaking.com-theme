@@ -1,4 +1,3 @@
-import { useRouter } from 'next/router'
 /* eslint-disable @typescript-eslint/no-empty-function */
 import React, {
     createContext,
@@ -1650,13 +1649,23 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         setHasMounted(true)
     }, [])
 
-    const router = useRouter()
+    const routerRef = useRef<any>(null)
+    useEffect(() => {
+        // Capture router on client only to avoid SSR crash
+        try {
+            // eslint-disable-next-line @typescript-eslint/no-var-requires
+            routerRef.current = require('next/router').default
+        } catch (e) {
+            // ignore
+        }
+    }, [])
 
     const safePush = useCallback(
         (url: string, opts?: any) => {
             try {
-                if (router && typeof (router as any).push === 'function') {
-                    ;(router as any).push(url, opts)
+                const r = routerRef.current
+                if (r && typeof r.push === 'function') {
+                    r.push(url, undefined, opts)
                 } else if (typeof window !== 'undefined') {
                     window.location.href = url
                 }
@@ -1666,7 +1675,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 }
             }
         },
-        [router]
+        []
     )
 
     const [compact, setCompact] = useState(false)
