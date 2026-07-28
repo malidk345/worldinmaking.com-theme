@@ -1,17 +1,6 @@
 import React from 'react'
 import CloudinaryImage from 'components/CloudinaryImage'
-
-/**
- * Wallpapers
- *
- * Renders every desktop scene; visibility is driven by `body[data-wallpaper]`,
- * set from localStorage in theme-init.js before React hydrates (and kept in sync
- * by App.tsx). That way the saved wallpaper paints on first frame — no flash of
- * the default scene.
- *
- * Light ↔ dark within a scene is a CSS fade via the persistent `dark` class.
- * Scene ↔ scene is an instant swap.
- */
+import { useLayoutData } from 'components/Layout/hooks'
 
 const FADE_OPACITY = 'transition-opacity duration-700 ease-in-out'
 const FADE_COLORS = 'transition-colors duration-700 ease-in-out'
@@ -157,38 +146,37 @@ const CustomProWallpaper = () => (
         {/* Light Mode Wallpaper */}
         <div className={`absolute inset-0 bg-gradient-to-br from-[#F8FAFC] via-[#F1F5F9] to-[#E2E8F0] opacity-100 dark:opacity-0 ${FADE_OPACITY}`}>
             <div
-                className="absolute inset-0 opacity-40 pointer-events-none"
+                className="absolute inset-0 opacity-50 pointer-events-none"
                 style={{
-                    backgroundImage: `radial-gradient(rgba(148, 163, 184, 0.4) 1.2px, transparent 1.2px)`,
+                    backgroundImage: `radial-gradient(rgba(59, 130, 246, 0.4) 1.4px, transparent 1.4px)`,
                     backgroundSize: '24px 24px',
                 }}
             />
-            <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-blue-400/20 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-indigo-300/20 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute top-1/4 left-1/4 w-[550px] h-[550px] bg-blue-400/25 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-1/4 right-1/4 w-[650px] h-[650px] bg-indigo-300/25 rounded-full blur-3xl pointer-events-none" />
         </div>
 
         {/* Dark Mode Wallpaper */}
         <div className={`absolute inset-0 bg-[#0B0F19] opacity-0 dark:opacity-100 ${FADE_OPACITY}`}>
             <div
-                className="absolute inset-0 opacity-40 pointer-events-none"
+                className="absolute inset-0 opacity-45 pointer-events-none"
                 style={{
-                    backgroundImage: `radial-gradient(rgba(59, 130, 246, 0.35) 1.2px, transparent 1.2px)`,
+                    backgroundImage: `radial-gradient(rgba(59, 130, 246, 0.45) 1.4px, transparent 1.4px)`,
                     backgroundSize: '28px 28px',
                 }}
             />
-            <div className="absolute top-1/3 left-1/3 w-[600px] h-[600px] bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute bottom-1/3 right-1/4 w-[700px] h-[700px] bg-purple-600/15 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute top-1/3 left-1/3 w-[650px] h-[650px] bg-blue-600/20 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-1/3 right-1/4 w-[750px] h-[750px] bg-purple-600/20 rounded-full blur-3xl pointer-events-none" />
         </div>
     </>
 )
 
-// Visibility classes written out in full so Tailwind's JIT scanner can see them.
-const SCENES: { key: string; Scene: React.FC; visible: string }[] = [
-    { key: 'hogzilla', Scene: Hogzilla, visible: 'wallpaper-hogzilla:block' },
-    { key: 'startup-monopoly', Scene: StartupMonopoly, visible: 'wallpaper-startup-monopoly:block' },
-    { key: 'office-party', Scene: OfficeParty, visible: 'wallpaper-office-party:block' },
-    { key: 'keyboard-garden', Scene: KeyboardGarden, visible: 'wallpaper-keyboard-garden:block' },
-    { key: 'custom-pro', Scene: CustomProWallpaper, visible: 'wallpaper-custom-pro:block' },
+const SCENES: { key: string; Scene: React.FC }[] = [
+    { key: 'hogzilla', Scene: Hogzilla },
+    { key: 'startup-monopoly', Scene: StartupMonopoly },
+    { key: 'office-party', Scene: OfficeParty },
+    { key: 'keyboard-garden', Scene: KeyboardGarden },
+    { key: 'custom-pro', Scene: CustomProWallpaper },
 ]
 
 export interface WallpaperGlow {
@@ -209,14 +197,25 @@ export const DEFAULT_WALLPAPER_GLOW: WallpaperGlow = WALLPAPER_GLOW['keyboard-ga
 export const getWallpaperGlow = (wallpaper: string): WallpaperGlow =>
     WALLPAPER_GLOW[wallpaper] ?? DEFAULT_WALLPAPER_GLOW
 
-export default function Wallpapers(): JSX.Element {
+export default function Wallpapers({ wallpaper: propWallpaper }: { wallpaper?: string }): JSX.Element {
+    const { siteSettings } = useLayoutData()
+    const activeWallpaper = propWallpaper || siteSettings?.wallpaper || 'keyboard-garden'
+
     return (
         <div className="fixed inset-0 -z-10 select-none overflow-hidden pointer-events-none">
-            {SCENES.map(({ key, Scene, visible }) => (
-                <div key={key} className={`hidden ${visible} absolute inset-0`}>
-                    <Scene />
-                </div>
-            ))}
+            {SCENES.map(({ key, Scene }) => {
+                const isVisible = activeWallpaper === key
+                return (
+                    <div
+                        key={key}
+                        className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+                            isVisible ? 'opacity-100 z-10' : 'opacity-0 z-0'
+                        }`}
+                    >
+                        <Scene />
+                    </div>
+                )
+            })}
         </div>
     )
 }
