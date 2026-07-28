@@ -1605,7 +1605,7 @@ export interface SiteSettings {
     theme: 'light' | 'dark'
     skinMode: 'modern' | 'classic'
     cursor: 'default' | 'xl' | 'james'
-    wallpaper: 'keyboard-garden' | 'hogzilla' | 'startup-monopoly' | 'office-party'
+    wallpaper: 'keyboard-garden' | 'hogzilla' | 'startup-monopoly' | 'office-party' | 'blue-dot-matrix'
     screensaverDisabled?: boolean
     reduceTransparency?: boolean
     clickBehavior?: 'single' | 'double'

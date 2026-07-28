@@ -78,6 +78,7 @@ export default function DisplayOptions(): JSX.Element {
                         { id: 'hogzilla', label: 'Hogzilla' },
                         { id: 'startup-monopoly', label: 'Startup Monopoly' },
                         { id: 'office-party', label: 'Office Party' },
+                        { id: 'blue-dot-matrix', label: 'Blue Dot Matrix' },
                     ].map((wp) => (
                         <button
                             key={wp.id}
