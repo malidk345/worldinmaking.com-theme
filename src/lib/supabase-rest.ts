@@ -39,7 +39,9 @@ export async function fetchWithCache(url: string, options?: RequestInit): Promis
 
         const data = await res.json()
         const result = Array.isArray(data) ? data : data
-        memoryCache[url] = { data: result, timestamp: now }
+        if (Array.isArray(result) ? result.length > 0 : Boolean(result)) {
+            memoryCache[url] = { data: result, timestamp: now }
+        }
         return result
     } catch (err) {
         console.error('[fetchWithCache] Request failed:', url, err)

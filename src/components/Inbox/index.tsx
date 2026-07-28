@@ -513,7 +513,7 @@ export default function Inbox(props) {
         filters,
     })
     const { appWindow } = useWindow()
-    const bottomHeightDefault = useMemo(() => ((appWindow?.size.height || 0) * 3) / 5, [appWindow?.size.height])
+    const bottomHeightDefault = useMemo(() => Math.max(380, ((appWindow?.size?.height || 600) * 3) / 5), [appWindow?.size?.height])
     const [bottomHeight, setBottomHeight] = useState(bottomHeightDefault)
     const [sideWidth, setSideWidth] = useState(SIDE_WIDTH_DEFAULT)
     const [notificationsEnabled, setNotificationsEnabled] = useState(false)
@@ -528,7 +528,16 @@ export default function Inbox(props) {
     const [showSubscribedQuestions, setShowSubscribedQuestions] = useState(false)
     const { questions: subscribedQuestions } = useSubscribedQuestions()
     const [menuValue, setMenuValue] = useState('')
-    const isMobile = useMemo(() => appWindow?.size.width < 896, [appWindow?.size.width])
+    const isMobile = useMemo(() => (appWindow?.size?.width || 1024) < 896, [appWindow?.size?.width])
+
+    useEffect(() => {
+        if (permalink) {
+            if (bottomHeight <= 45) {
+                const containerH = containerRef.current?.getBoundingClientRect().height || 500
+                setBottomHeight(Math.max(350, containerH * 0.6))
+            }
+        }
+    }, [permalink])
 
     const expandable = useMemo(() => {
         if (!containerRef.current) return true

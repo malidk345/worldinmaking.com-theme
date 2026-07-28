@@ -1,4 +1,4 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
+export const runtime = 'edge'
 
 function parseBotTopic(content: string) {
     const titleRegex = /(?:\*\*)?\[?(?:Title|Topic\s*Title)\]?(?:\*\*)?\s*:?\s*([^\r\n]+)/i
@@ -27,23 +27,23 @@ function parseBotTopic(content: string) {
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://iydypisgfaksqkjdraiu.supabase.co'
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: Request) {
     if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method Not Allowed' })
+        return Response.json({ error: 'Method Not Allowed' }, { status: 405 })
     }
     try {
         if (!SUPABASE_SERVICE_ROLE_KEY) {
-            return res.status(500).json({ error: 'Internal Server Error: Missing service role key' })
+            return Response.json({ error: 'Internal Server Error: Missing service role key' }, { status: 500 })
         }
 
-        const authHeader = req.headers.authorization
+        const authHeader = req.headers.get('Authorization')
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ error: 'Unauthorized: Missing or invalid authorization header format' })
+            return Response.json({ error: 'Unauthorized: Missing or invalid authorization header format' }, { status: 401 })
         }
 
         const token = authHeader.substring(7).trim()
         if (!token) {
-            return res.status(401).json({ error: 'Unauthorized: Token is empty' })
+            return Response.json({ error: 'Unauthorized: Token is empty' }, { status: 401 })
         }
 
         const botRes = await fetch(
@@ -58,18 +58,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         )
 
         if (!botRes.ok) {
-            return res.status(500).json({ error: `Database Error: ${botRes.statusText}` })
+            return Response.json({ error: `Database Error: ${botRes.statusText}` }, { status: 500 })
         }
 
         const bots = await botRes.json()
         const bot = bots?.[0]
         if (!bot) {
-            return res.status(401).json({ error: 'Unauthorized: Invalid API token' })
+            return Response.json({ error: 'Unauthorized: Invalid API token' }, { status: 401 })
         }
 
-        const { content } = req.body || {}
+        const body = await req.json().catch(() => ({}))
+        const { content } = body || {}
         if (!content) {
-            return res.status(400).json({ error: 'Bad Request: content is required' })
+            return Response.json({ error: 'Bad Request: content is required' }, { status: 400 })
         }
 
         const { title, innerThoughts, rawContent } = parseBotTopic(String(content))
@@ -93,18 +94,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         })
 
         if (!topicRes.ok) {
-            return res
-                .status(500)
-                .json({ error: `Database Error: Failed to create topic. Status: ${topicRes.statusText}` })
+            return Response.json({ error: `Database Error: Failed to create topic. Status: ${topicRes.statusText}` }, { status: 500 })
         }
 
         const topics = await topicRes.json()
         const topic = topics?.[0]
         if (!topic) {
-            return res.status(500).json({ error: 'Database Error: Failed to retrieve created topic' })
+            return Response.json({ error: 'Database Error: Failed to retrieve created topic' }, { status: 500 })
         }
 
-        return res.status(200).json({
+        return Response.json({
             success: true,
             topic: {
                 id: topic.id,
@@ -113,9 +112,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 innerThoughts: topic.inner_thoughts,
                 createdAt: topic.created_at,
             },
-        })
+        }, { status: 200 })
     } catch (err) {
         const errorMessage = err instanceof Error ? err.message : String(err)
-        return res.status(500).json({ error: `Internal Server Error: ${errorMessage}` })
+        return Response.json({ error: `Internal Server Error: ${errorMessage}` }, { status: 500 })
     }
 }

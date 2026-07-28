@@ -122,39 +122,11 @@ const query = (id: string | number, isModerator: boolean) =>
 export const useQuestion = (id: number | string, options?: UseQuestionOptions) => {
     const { getJwt, fetchUser, user, isModerator, isValidating } = useUser()
     const posthog = usePostHog()
-    const [supabaseQuestion, setSupabaseQuestion] = useState<any>(() => {
-        if (!id || options?.data) return null
-        const cleanTitle = String(id).replace(/-/g, ' ').replace(/^\/questions\/?/, '')
-        return {
-            id,
-            attributes: {
-                id,
-                permalink: String(id),
-                subject: cleanTitle.charAt(0).toUpperCase() + cleanTitle.slice(1),
-                title: cleanTitle,
-                createdAt: new Date().toISOString(),
-                publishedAt: new Date().toISOString(),
-                activeAt: new Date().toISOString(),
-                viewCount: 1,
-                numReplies: 0,
-                body: `Here are the details for **${cleanTitle}**. Ask a question or leave a reply below!`,
-                profile: {
-                    data: {
-                        id: '1',
-                        attributes: {
-                            firstName: 'Community Member',
-                            lastName: '',
-                            gravatarURL: 'https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/pages-content/images/hog-9.png',
-                        },
-                    },
-                },
-                replies: { data: [] },
-            },
-        }
-    })
+    const [supabaseQuestion, setSupabaseQuestion] = useState<any>(null)
 
     useEffect(() => {
         if (!id) return
+        setSupabaseQuestion(null)
         const cleanId = String(id).replace(/^\/questions\/?/, '')
 
         fetchSupabaseCommunityPosts(cleanId, cleanId).then((posts) => {
@@ -747,7 +719,7 @@ export const useQuestion = (id: number | string, options?: UseQuestionOptions) =
         question: questionData,
         reply,
         error,
-        isLoading: isValidating || (isLoading && !questionData),
+        isLoading: !questionData,
         isError: error,
         handlePublishReply,
         handleResolve,

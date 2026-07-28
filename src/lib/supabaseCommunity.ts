@@ -36,7 +36,8 @@ export async function fetchSupabaseCommunityPosts(slug?: string, postId?: number
         const idToUse = postId || slug
         url += `&id=eq.${idToUse}`
     } else if (slug) {
-        url += `&or=(post_slug.eq.${slug},title.ilike.comment_${encodeURIComponent(slug)}_*)`
+        const words = slug.replace(/[^a-zA-Z0-9\s-]/g, '').split(/[-_\s]+/).filter((w) => w.length > 2).slice(0, 3).join('%')
+        url += `&or=(post_slug.eq.${encodeURIComponent(slug)},title.ilike.*${encodeURIComponent(words)}*,title.ilike.comment_${encodeURIComponent(slug)}_*)`
     } else {
         url += `&post_slug=is.null&title=not.ilike.comment_*`
     }

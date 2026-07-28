@@ -6,5 +6,5 @@ const PostPage = dynamic(() => import('components/posts/PostPage'), {
 })
 
 export const getStaticProps = ({ params }: { params: { slug: string } }) => ({ props: { params } })
-export const getStaticPaths = () => ({ paths: [], fallback: true })
+export const getStaticPaths = () => ({ paths: [], fallback: 'blocking' })
 export default PostPage
