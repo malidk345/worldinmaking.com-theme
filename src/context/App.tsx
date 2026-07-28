@@ -1,4 +1,4 @@
-import { useRouter } from 'next/navigation'
+import { useRouter } from 'next/router'
 /* eslint-disable @typescript-eslint/no-empty-function */
 import React, {
     createContext,
