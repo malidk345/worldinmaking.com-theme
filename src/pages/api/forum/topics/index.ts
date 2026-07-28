@@ -1,4 +1,4 @@
-export const runtime = 'experimental-edge'
+export const runtime = 'edge'
 
 function parseBotTopic(content: string) {
     const titleRegex = /(?:\*\*)?\[?(?:Title|Topic\s*Title)\]?(?:\*\*)?\s*:?\s*([^\r\n]+)/i
