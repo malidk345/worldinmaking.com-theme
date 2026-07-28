@@ -26,6 +26,8 @@ const Skeleton = () => {
 
 export default function Post({ params }: { params?: { slug?: string } }) {
     const [post, setPost] = useState(null)
+    const [mounted, setMounted] = useState(false)
+    useEffect(() => { setMounted(true) }, [])
 
     const getPost = () => {
         const slug = `/posts/${params?.slug || ''}`
@@ -60,5 +62,6 @@ export default function Post({ params }: { params?: { slug?: string } }) {
         }
     }, [params?.slug])
 
+    if (!mounted) return null
     return post ? <ClientPost {...post.attributes} id={post.id} getPost={getPost} /> : <Skeleton />
 }

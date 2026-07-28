@@ -13,6 +13,8 @@ export default function New() {
     const router = useRouter()
     const { fetchUser } = useUser()
     const [loading, setLoading] = useState(true)
+    const [mounted, setMounted] = useState(false)
+    useEffect(() => { setMounted(true) }, [])
     useEffect(() => {
         fetchUser()
             .then((user) => {
@@ -23,6 +25,7 @@ export default function New() {
             })
             .catch(() => router.push('/posts'))
     }, [])
+    if (!mounted) return null
     return (
         !loading && (
             <Layout parent={communityMenu} activeInternalMenu={communityMenu.children[0]}>
