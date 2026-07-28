@@ -52,6 +52,7 @@ export default function OSTabs({
     extraTabRowContent,
     onValueChange,
     tabContainerClassName,
+    tabsClassName = '',
     centerTabs = false,
     tabTriggerClassName,
     tabContentClassName,

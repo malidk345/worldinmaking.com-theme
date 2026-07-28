@@ -409,7 +409,7 @@ const renderSectionItems = (
 export function TreeMenu(props: TreeMenuProps) {
     const { watchPath = true, variant = 'listed', appearance = 'os', rootHeading, activeUrl } = props
     const { appWindow } = useWindow()
-    const pathname = usePathname()
+    const { pathname } = useLocation()
     const [activeItem, setActiveItem] = useState<MenuItem | undefined>(
         props.activeItem || getActiveItem(props.items || [], activeUrl ?? pathname)
     )

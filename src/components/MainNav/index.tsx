@@ -19,7 +19,7 @@ import {
 import { Placement } from '@popperjs/core'
 import * as icons from '@posthog/icons'
 import { IconExternal } from '@posthog/icons'
-import { usePathname } from 'next/navigation'
+import { useLocation } from 'hooks/useLocation'
 import { CallToAction } from 'components/CallToAction'
 import { useLayoutData } from 'components/Layout/hooks'
 import { SignupCTA } from 'components/SignupCTA'
@@ -393,7 +393,7 @@ export const Main = () => {
         setHedgehogModeEnabled,
         compact,
     } = useLayoutData()
-    const pathname = usePathname()
+    const { pathname } = useLocation()
     const { websiteTheme } = useValues(layoutLogic)
     const [posthogInstance, setPosthogInstance] = useState<string>()
     const [mediaModalOpen, setMediaModalOpen] = useState(false)
@@ -737,7 +737,7 @@ export const Main = () => {
 }
 
 export const Mobile = () => {
-    const { pathname, state } = usePathname()
+    const { pathname, state } = useLocation()
     if (pathname === '/newsletter-fbc' || (state as { isComingFromAd?: boolean })?.isComingFromAd) {
         return <></>
     }
