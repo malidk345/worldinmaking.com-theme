@@ -1042,9 +1042,11 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                     </div>
                     <div
                         ref={contentRef}
-                        className={`size-full flex-grow bg-[#fdfdf8] dark:bg-[#1b1c1e] text-primary ${
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onTouchStart={(e) => e.stopPropagation()}
+                        className={`size-full flex-grow overflow-y-auto overscroll-y-contain touch-pan-y scroll-smooth [webkit-overflow-scrolling:touch] bg-[#fdfdf8] dark:bg-[#1b1c1e] text-primary ${
                             chrome
-                                ? `overflow-hidden rounded-lg ${hasToolbar ? 'rounded-t-none' : ''} ${
+                                ? `rounded-lg ${hasToolbar ? 'rounded-t-none' : ''} ${
                                       item.expanded
                                           ? 'rounded-tr-none rounded-tl-none'
                                           : item.snapped === 'left'
