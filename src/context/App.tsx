@@ -1751,10 +1751,21 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
     // Hydrate client-only state before first paint to avoid layout flash
     useIsomorphicLayoutEffect(() => {
         const compactValue = window !== window.parent
-        const isMobileValue = window.innerWidth < 768
+        const isMobileValue = window.innerWidth < 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
         setCompact(compactValue)
         setIsMobile(isMobileValue)
         setSiteSettings(getInitialSiteSettings())
+
+        if (isMobileValue) {
+            setWindows((prev) =>
+                prev.map((w) => ({
+                    ...w,
+                    expanded: true,
+                    windowed: false,
+                    position: { x: 0, y: 0 },
+                }))
+            )
+        }
     }, [])
 
     const destinationNav = useDataPipelinesNav({ type: 'destination' })
@@ -2170,7 +2181,6 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
 
         // Windowed (centered/cascaded) is default for regular pages so windows stack over each other.
         const isMobileClient =
-            hasMounted &&
             typeof window !== 'undefined' &&
             (window.innerWidth < 768 ||
                 /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))
@@ -2252,7 +2262,6 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         const newWindow = createNewWindow(element, windows, location, isSSR, taskbarHeight)
         
         const isMobileClient =
-            hasMounted &&
             typeof window !== 'undefined' &&
             (window.innerWidth < 768 ||
                 /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))
@@ -2317,7 +2326,6 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             }
 
             const isMobileClient =
-                hasMounted &&
                 typeof window !== 'undefined' &&
                 (window.innerWidth < 768 ||
                     /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))
