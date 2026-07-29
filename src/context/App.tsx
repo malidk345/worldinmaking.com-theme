@@ -2286,10 +2286,30 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             return
         }
 
+        const isForumPath = (p: string) => typeof p === 'string' && /^\/(questions|community)/.test(p)
         const key = item.key || item.path
         const path = item.path || '/'
 
         setWindows((prev) => {
+            if (isForumPath(path)) {
+                const existingForum = prev.find((w) => isForumPath(w.path))
+                if (existingForum) {
+                    const maxZ = Math.max(...prev.map((w) => w.zIndex), 0)
+                    return prev.map((w) =>
+                        w.key === existingForum.key
+                            ? {
+                                  ...w,
+                                  key: 'forum-main-window',
+                                  path,
+                                  zIndex: maxZ + 1,
+                                  minimized: false,
+                                  props: { ...w.props, path },
+                              }
+                            : w
+                    )
+                }
+            }
+
             const existing = prev.find((w) => w.key === key || w.path === path)
             if (existing) {
                 const maxZ = Math.max(...prev.map((w) => w.zIndex), 0)
