@@ -18,6 +18,15 @@ import { AnimatePresence } from 'framer-motion'
 // taskbar, etc.).
 const WindowList = React.memo(function WindowList() {
     const { windows } = useAppWindows()
+    const [mounted, setMounted] = React.useState(false)
+
+    React.useEffect(() => {
+        setMounted(true)
+    }, [])
+
+    if (!mounted) {
+        return <div suppressHydrationWarning className="relative size-full overflow-hidden pointer-events-none" />
+    }
 
     return (
         <div suppressHydrationWarning className="relative size-full overflow-hidden pointer-events-none">
@@ -30,9 +39,15 @@ const WindowList = React.memo(function WindowList() {
     )
 })
 
+import CommandPalette from 'components/CommandPalette'
+import FooterBar from 'components/OSChrome/FooterBar'
+import AuthModal from 'components/Auth/AuthModal'
+import { useApp } from '../../context/App'
+
 export default function Wrapper() {
     const { constraintsRef } = useAppActions()
     const { compact } = useAppSettings()
+    const { isAuthModalOpen, setIsAuthModalOpen, authModalView } = useApp()
 
     return (
         <TooltipProvider delayDuration={300}>
@@ -49,6 +64,13 @@ export default function Wrapper() {
                 <ChatOverlay />
                 <CookieBannerToast />
                 <ActiveWindowsPanel />
+                <FooterBar />
+                <CommandPalette />
+                <AuthModal
+                    isOpen={!!isAuthModalOpen}
+                    onClose={() => setIsAuthModalOpen?.(false)}
+                    initialView={authModalView || 'sign-in'}
+                />
             </AppContainer>
         </TooltipProvider>
     )

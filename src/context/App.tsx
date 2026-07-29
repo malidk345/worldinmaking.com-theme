@@ -2408,24 +2408,22 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         setSearchOpen(true)
     }
 
-    const openSignIn = () => {
-        safePush('/login', { state: { newWindow: true } })
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
+    const [authModalView, setAuthModalView] = useState<'sign-in' | 'sign-up' | 'forgot-password'>('sign-in')
+
+    const openSignIn = (onSuccess?: (user: User) => void) => {
+        setAuthModalView('sign-in')
+        setIsAuthModalOpen(true)
     }
 
     const openRegister = () => {
-        addWindow(
-            <Register location={{ pathname: `community-auth-register` }} key="community-auth-register" newWindow />
-        )
+        setAuthModalView('sign-up')
+        setIsAuthModalOpen(true)
     }
 
     const openForgotPassword = () => {
-        addWindow(
-            <ForgotPassword
-                location={{ pathname: `community-auth-forgot-password` }}
-                key="community-auth-forgot-password"
-                newWindow
-            />
-        )
+        setAuthModalView('forgot-password')
+        setIsAuthModalOpen(true)
     }
 
     const openStart = ({ subdomain, initialTab }: { subdomain?: string; initialTab?: string }) => {
@@ -3192,6 +3190,9 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                                 chatOpen,
                                 setChatOpen,
                                 chatParams,
+                                isAuthModalOpen,
+                                setIsAuthModalOpen,
+                                authModalView,
                                 updateTaskbarHeight,
                             }}
                         >

@@ -4,6 +4,7 @@ import { CallToAction } from 'components/CallToAction'
 import { useApp } from '../../../../context/App'
 import { useWindow } from '../../../../context/Window'
 import { User, useUser } from '../../../../hooks/useUser'
+import Wizard from 'components/Wizard'
 import Input from '../../../../components/OSForm/input'
 
 import SecurityHog from '../../../../images/security-hog.png'
@@ -83,7 +84,80 @@ const SignInForm: React.FC<SignInFormProps> = ({ onSuccess }) => {
 
     return (
         <div className="size-full">
-            null
+            <Wizard
+                leftNavigation={
+                    <button className="text-sm text-red dark:text-yellow font-semibold" onClick={openForgotPassword}>
+                        Forgot password?
+                    </button>
+                }
+                rightNavigation={
+                    <div className="flex items-center space-x-2">
+                        <CallToAction
+                            disabled={isSubmitting}
+                            type="primary"
+                            size="sm"
+                            onClick={submitForm}
+                            className="flex-shrink-0"
+                        >
+                            {isSubmitting ? <IconSpinner className="size-4 animate-spin my-0.5" /> : 'Login'}
+                        </CallToAction>
+                    </div>
+                }
+            >
+                <div className="bg-accent flex gap-6 px-8 py-6 flex-1 pt-10">
+                    <div className="max-w-20">
+                        <img src={SecurityHog} className="w-20" />
+                    </div>
+                    <div data-scheme="primary" className="flex-1">
+                        <h3 className="text-base font-semibold leading-tight mb-2">The hedgehogs missed you</h3>
+                        <PostHogButton label="Sign in with PostHog" className="mt-3 mb-2" />
+                        <div className="flex items-center gap-2 text-xs text-muted my-2">
+                            <span className="flex-1 border-t border-border" />
+                            or
+                            <span className="flex-1 border-t border-border" />
+                        </div>
+                        <p className="text-xs text-red dark:text-orange mb-2">
+                            The email and password below are separate from your PostHog app account.{' '}
+                            <Link
+                                to="https://app.posthog.com"
+                                external
+                                className="text-primary font-semibold underline"
+                            >
+                                Go to app
+                            </Link>
+                        </p>
+                        <form onSubmit={handleSubmit} className="space-y-2 mb-4">
+                            <Input
+                                label="Email"
+                                type="email"
+                                size="sm"
+                                direction="row"
+                                touched={!!touched.email}
+                                error={errors.email}
+                                {...getFieldProps('email')}
+                            />
+                            <Input
+                                label="Password"
+                                type="password"
+                                size="sm"
+                                direction="row"
+                                touched={!!touched.password}
+                                error={errors.password}
+                                {...getFieldProps('password')}
+                            />
+                            <button type="submit" className="hidden" />
+                        </form>
+                        {errorMessage && <p className="text-red text-sm -mt-2 mb-2 font-bold">{errorMessage}</p>}
+
+                        <div className="text-sm">
+                            No account yet?{' '}
+                            <button className="text-red dark:text-yellow font-semibold" onClick={openRegister}>
+                                Register here
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </Wizard>
         </div>
     )
 }

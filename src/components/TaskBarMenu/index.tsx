@@ -344,7 +344,7 @@ function TaskBarMenu() {
                                     >
                                         <IconApps className="size-5" />
                                         {totalWindows > 0 && (
-                                            <span className="bg-primary/10 text-primary px-1.5 py-0.2 rounded text-[11px] font-bold min-w-[1.25rem] text-center border border-primary/20">
+                                            <span suppressHydrationWarning className="bg-primary/10 text-primary px-1.5 py-0.2 rounded text-[11px] font-bold min-w-[1.25rem] text-center border border-primary/20">
                                                 {totalWindows}
                                             </span>
                                         )}
@@ -352,8 +352,8 @@ function TaskBarMenu() {
                                 }
                             >
                                 <div className="flex flex-col items-center gap-1 text-center p-0.5">
-                                    <p className="text-sm font-semibold mb-0">Active Windows ({totalWindows})</p>
-                                    <span className="text-xs text-secondary leading-tight">
+                                    <p suppressHydrationWarning className="text-sm font-semibold mb-0">Active Windows ({totalWindows})</p>
+                                    <span suppressHydrationWarning className="text-xs text-secondary leading-tight">
                                         {totalWindows === 0 ? 'No open windows' : 'Toggle Mission Control grid'}
                                     </span>
                                 </div>

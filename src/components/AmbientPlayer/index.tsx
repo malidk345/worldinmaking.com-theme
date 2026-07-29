@@ -12,6 +12,7 @@ const STREAMS = [
 ]
 
 export default function AmbientPlayer() {
+    const [mounted, setMounted] = useState(false)
     const [isPlaying, setIsPlaying] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [hasError, setHasError] = useState(false)
@@ -19,6 +20,12 @@ export default function AmbientPlayer() {
     const audioRef = useRef<HTMLAudioElement | null>(null)
 
     useEffect(() => {
+        setMounted(true)
+    }, [])
+
+    useEffect(() => {
+        if (!mounted) return
+
         const audio = new Audio()
         audio.volume = 0.5
         audio.src = STREAMS[streamIndex]
@@ -94,6 +101,14 @@ export default function AmbientPlayer() {
             <span className="w-[2px] bg-primary rounded-t-sm animate-[eq_0.9s_ease-in-out_infinite_alternate]" style={{ height: '80%' }} />
         </div>
     )
+
+    if (!mounted) {
+        return (
+            <OSButton size="sm" className="!px-1.5 h-7 flex items-center justify-center">
+                <IconHeadphones className="size-5 text-primary opacity-60" />
+            </OSButton>
+        )
+    }
 
     return (
         <>

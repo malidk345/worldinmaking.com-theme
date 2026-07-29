@@ -119,25 +119,6 @@ const KeyboardGarden = () => (
                 backgroundPosition: 'right bottom',
             }}
         />
-
-        <div className="absolute grid bottom-24 md:bottom-0 -right-4 xs:right-8 md:right-0">
-            <CloudinaryImage
-                loading="lazy"
-                src="https://res.cloudinary.com/dmukukwp6/image/upload/9000_hedge_light_42c729131e.png"
-                width={1555}
-                height={1262}
-                className={`col-start-1 row-start-1 opacity-100 dark:opacity-0 w-full max-w-full md:w-[777px] ${FADE_OPACITY}`}
-                draggable={false}
-            />
-            <CloudinaryImage
-                loading="lazy"
-                src="https://res.cloudinary.com/dmukukwp6/image/upload/9000_hedge_dark_b36706e924.png"
-                width={1555}
-                height={1262}
-                className={`col-start-1 row-start-1 opacity-0 dark:opacity-100 w-full max-w-full md:w-[777px] ${FADE_OPACITY}`}
-                draggable={false}
-            />
-        </div>
     </>
 )
 
