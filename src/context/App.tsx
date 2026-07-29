@@ -2169,7 +2169,11 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         const lastClickedElementRect = getLastClickedElementRect()
 
         // Windowed (centered/cascaded) is default for regular pages so windows stack over each other.
-        const isMobileClient = hasMounted && typeof window !== 'undefined' && window.innerWidth < 768
+        const isMobileClient =
+            hasMounted &&
+            typeof window !== 'undefined' &&
+            (window.innerWidth < 768 ||
+                /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))
         const canWindow = (isSSR || window.innerWidth >= 768) && !isMobileClient
         const isWindowed =
             targetState?.windowed ??
@@ -2178,7 +2182,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 !settings?.size?.fixed &&
                 !element?.props?.minimal &&
                 !settings?.modal)
-        const shouldExpand = isMobileClient && !settings?.size?.fixed
+        const shouldExpand = isMobileClient
         const bounds = constraintsRef.current?.getBoundingClientRect()
         const fullW = bounds ? bounds.width : (hasMounted && typeof window !== 'undefined' ? window.innerWidth - 16 : 1200)
         const fullH = bounds ? bounds.height : (hasMounted && typeof window !== 'undefined' ? window.innerHeight - taskbarHeight - 16 : 800)
@@ -2247,8 +2251,12 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         const existingWindow = windows.find((w) => w.path === targetPath)
         const newWindow = createNewWindow(element, windows, location, isSSR, taskbarHeight)
         
-        const isMobileClient = hasMounted && typeof window !== 'undefined' && window.innerWidth < 768
-        if (isMobileClient && !newWindow.fixedSize) {
+        const isMobileClient =
+            hasMounted &&
+            typeof window !== 'undefined' &&
+            (window.innerWidth < 768 ||
+                /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))
+        if (isMobileClient) {
             const bounds = constraintsRef.current?.getBoundingClientRect()
             const fullW = bounds ? bounds.width : window.innerWidth - 16
             const fullH = bounds ? bounds.height : window.innerHeight - taskbarHeight - 16
@@ -2288,13 +2296,17 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 return prev.map((w) => (w.key === existing.key ? { ...w, zIndex: maxZ + 1, minimized: false } : w))
             }
 
-            const isMobileClient = hasMounted && typeof window !== 'undefined' && window.innerWidth < 768
+            const isMobileClient =
+                hasMounted &&
+                typeof window !== 'undefined' &&
+                (window.innerWidth < 768 ||
+                    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))
             const bounds = constraintsRef.current?.getBoundingClientRect()
             const fullW = bounds ? bounds.width : (hasMounted && typeof window !== 'undefined' ? window.innerWidth - 16 : 1200)
             const fullH = bounds ? bounds.height : (hasMounted && typeof window !== 'undefined' ? window.innerHeight - taskbarHeight - 16 : 800)
 
-            const size = isMobileClient && !item.fixedSize ? { width: fullW, height: fullH } : (item.size || { width: 900, height: 650 })
-            const position = isMobileClient && !item.fixedSize ? { x: 0, y: 0 } : (item.position || getPositionDefaults(key, size, prev))
+            const size = isMobileClient ? { width: fullW, height: fullH } : (item.size || { width: 900, height: 650 })
+            const position = isMobileClient ? { x: 0, y: 0 } : (item.position || getPositionDefaults(key, size, prev))
             const maxZ = Math.max(...prev.map((w) => w.zIndex), 0)
 
             const newWin: AppWindow = {
@@ -2307,8 +2319,8 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 previousPosition: item.position || { x: 50, y: 50 },
                 zIndex: maxZ + 1,
                 minimized: false,
-                windowed: !isMobileClient || !!item.fixedSize,
-                expanded: isMobileClient && !item.fixedSize,
+                windowed: !isMobileClient,
+                expanded: isMobileClient || item.expanded,
                 snapped: false,
                 fromOrigin: item.fromOrigin,
                 props: { path },
