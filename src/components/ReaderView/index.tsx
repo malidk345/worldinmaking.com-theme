@@ -457,64 +457,6 @@ const TableOfContents = ({ tableOfContents, contentRef, title = 'Jump to:', clas
     )
 }
 
-const RecentPostsSection = () => {
-    const [recentPosts, setRecentPosts] = useState<SupabasePost[]>([])
-
-    useEffect(() => {
-        let mounted = true
-        fetchSupabasePosts().then((posts) => {
-            if (mounted && Array.isArray(posts)) {
-                setRecentPosts(posts.slice(0, 6))
-            }
-        })
-        return () => {
-            mounted = false
-        }
-    }, [])
-
-    if (!recentPosts.length) return null
-
-    return (
-        <div className="not-prose my-10 pt-8 border-t border-primary/20">
-            <h3 className="text-xl font-bold text-primary mb-6">Son Gönderiler / Recent Posts</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {recentPosts.map((post) => (
-                    <Link
-                        key={post.id || post.slug}
-                        href={`/posts/${post.slug}`}
-                        state={{ newWindow: true }}
-                        className="group flex flex-col justify-between p-4 rounded-xl bg-accent/30 hover:bg-accent/70 transition-all border border-primary/10 hover:shadow-md"
-                    >
-                        <div>
-                            {post.image_url && (
-                                <div className="aspect-video w-full mb-3 rounded-lg overflow-hidden relative bg-accent">
-                                    <img
-                                        src={post.image_url}
-                                        alt={post.title}
-                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                    />
-                                </div>
-                            )}
-                            <h4 className="text-sm font-semibold text-primary group-hover:text-link line-clamp-2 mb-2">
-                                {post.title}
-                            </h4>
-                            {post.excerpt && (
-                                <p className="text-xs text-secondary line-clamp-2 mb-3 opacity-80">
-                                    {post.excerpt}
-                                </p>
-                            )}
-                        </div>
-                        <div className="flex items-center justify-between text-[11px] text-muted pt-2 border-t border-primary/10">
-                            <span>{post.author || 'WorldInMaking'}</span>
-                            <span>{post.created_at ? post.created_at.split('T')[0] : ''}</span>
-                        </div>
-                    </Link>
-                ))}
-            </div>
-        </div>
-    )
-}
-
 export default function ReaderView({
     body = {} as ReaderViewProps['body'],
     title,
@@ -1817,7 +1759,6 @@ function ReaderViewContent({
                                             <DocsPageSurvey filePath={filePath} />
                                         </div>
                                     )}
-                                     <RecentPostsSection />
                                 </div>
                             </article>
                         </ScrollArea>
