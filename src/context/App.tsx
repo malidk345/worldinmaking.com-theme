@@ -1757,9 +1757,13 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         setSiteSettings(getInitialSiteSettings())
 
         if (isMobileValue) {
+            const bounds = constraintsRef.current?.getBoundingClientRect()
+            const fullW = bounds ? bounds.width : window.innerWidth - 16
+            const fullH = bounds ? bounds.height : window.innerHeight - taskbarHeight - 16
             setWindows((prev) =>
                 prev.map((w) => ({
                     ...w,
+                    size: { width: fullW, height: fullH },
                     expanded: true,
                     windowed: true,
                     position: { x: 0, y: 0 },
@@ -2194,8 +2198,8 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 !settings?.modal)
         const shouldExpand = isMobileClient
         const bounds = constraintsRef.current?.getBoundingClientRect()
-        const fullW = bounds ? bounds.width : (hasMounted && typeof window !== 'undefined' ? window.innerWidth - 16 : 1200)
-        const fullH = bounds ? bounds.height : (hasMounted && typeof window !== 'undefined' ? window.innerHeight - taskbarHeight - 16 : 800)
+        const fullW = bounds ? bounds.width : (typeof window !== 'undefined' ? window.innerWidth - 16 : 1200)
+        const fullH = bounds ? bounds.height : (typeof window !== 'undefined' ? window.innerHeight - taskbarHeight - 16 : 800)
 
         const finalSize = shouldExpand ? { width: fullW, height: fullH } : size
         const finalPos = shouldExpand ? { x: 0, y: 0 } : position
@@ -2330,8 +2334,8 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 (window.innerWidth < 768 ||
                     /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))
             const bounds = constraintsRef.current?.getBoundingClientRect()
-            const fullW = bounds ? bounds.width : (hasMounted && typeof window !== 'undefined' ? window.innerWidth - 16 : 1200)
-            const fullH = bounds ? bounds.height : (hasMounted && typeof window !== 'undefined' ? window.innerHeight - taskbarHeight - 16 : 800)
+            const fullW = bounds ? bounds.width : (typeof window !== 'undefined' ? window.innerWidth - 16 : 1200)
+            const fullH = bounds ? bounds.height : (typeof window !== 'undefined' ? window.innerHeight - taskbarHeight - 16 : 800)
 
             const size = isMobileClient ? { width: fullW, height: fullH } : (item.size || { width: 900, height: 650 })
             const position = isMobileClient ? { x: 0, y: 0 } : (item.position || getPositionDefaults(key, size, prev))

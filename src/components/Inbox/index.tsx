@@ -532,7 +532,10 @@ export default function Inbox(props) {
     const [showSubscribedQuestions, setShowSubscribedQuestions] = useState(false)
     const { questions: subscribedQuestions } = useSubscribedQuestions()
     const [menuValue, setMenuValue] = useState('')
-    const isMobile = useMemo(() => (appWindow?.size?.width || 1024) < 896, [appWindow?.size?.width])
+    const isMobile = useMemo(() => {
+        if (typeof window !== 'undefined' && window.innerWidth < 896) return true
+        return (appWindow?.size?.width || (typeof window !== 'undefined' ? window.innerWidth : 1024)) < 896
+    }, [appWindow?.size?.width])
 
     useEffect(() => {
         if (permalink) {
