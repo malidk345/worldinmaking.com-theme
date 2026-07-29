@@ -161,7 +161,7 @@ const SidebarContent = ({
                     className="fixed inset-0 z-[9999] flex items-center justify-center"
                     onClick={(e) => { if (e.target === e.currentTarget) setAskOpen(false) }}
                 >
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                    <div className="absolute inset-0 bg-black/50" />
                     <div
                         className="relative z-10 bg-accent border border-primary rounded-xl shadow-2xl w-full max-w-xl mx-4 max-h-[90vh] overflow-y-auto"
                         onClick={(e) => e.stopPropagation()}
@@ -179,6 +179,7 @@ const SidebarContent = ({
                         <div className="p-4">
                             <QuestionForm
                                 showTopicSelector
+                                disclaimer={false}
                                 onSubmit={(_values, _type, data) => {
                                     setAskOpen(false)
                                     onSubmitQuestion()
