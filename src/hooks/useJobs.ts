@@ -51,7 +51,7 @@ export default function useJobs(): {
         }
     )
     const jobs = useMemo(() => {
-        return data?.reduce((acc, cur) => [...acc, ...(cur.data || [])], []) ?? []
+        return /* ⚡ Bolt: Replaced O(N^2) spread within reduce with O(N) flatMap for better rendering performance */ data?.flatMap((cur) => cur.data || []) ?? []
     }, [size, data])
 
     return {

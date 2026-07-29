@@ -46,7 +46,8 @@ const query = (params: any, offset: number, limit = 20, isModerator = false) => 
 export const useRoadmaps = ({ params = {}, limit }: { params?: any; limit?: number }) => {
     const { isModerator, getJwt } = useUser()
     const { data, size, setSize, isLoading, mutate, isValidating } = useSWRInfinite(
-        (offset) => `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/roadmaps?${query(params, offset, limit, isModerator)}`,
+        (offset) =>
+            `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/roadmaps?${query(params, offset, limit, isModerator)}`,
         async (url: string) => {
             try {
                 const jwt = isModerator && (await getJwt())
@@ -64,7 +65,7 @@ export const useRoadmaps = ({ params = {}, limit }: { params?: any; limit?: numb
         }
     )
     const roadmaps = React.useMemo(() => {
-        return data?.reduce((acc, cur) => [...(acc || []), ...(cur.data || [])], []) ?? []
+        return /* ⚡ Bolt: Replaced O(N^2) spread within reduce with O(N) flatMap for better rendering performance */ data?.flatMap((cur) => cur.data || []) ?? []
     }, [size, data])
 
     const total = data && data[0]?.meta?.pagination?.total
