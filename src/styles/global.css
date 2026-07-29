@@ -6,6 +6,21 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+    html, body, #__next, #___gatsby {
+        overflow: hidden !important;
+        overscroll-behavior: none !important;
+        height: 100% !important;
+        width: 100% !important;
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        touch-action: none;
+    }
+}
+
 @layer components {
     .markdown.prose {
         img {
