@@ -39,10 +39,10 @@ jobs:
 
             - name: Fix typos
               run: |
-                  codespell ./contents -w -S "./contents/images/*,./contents/docs/_media/*" -q 8 -I ./.codespellignore
+                  codespell ./contents -w -S "./contents/images/*,./contents/docs/_media/*" -q 8
                   git add .
                   [ "$(git status -s)" = "" ] && exit 0 || git commit -m "Fix typos"
 
             - name: Push changes
               run: |
-                  git push
+                  git push || true

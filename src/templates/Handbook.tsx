@@ -28,7 +28,7 @@ import NewsletterForm from 'components/NewsletterForm'
 const MDXRenderer = ({ children }: any) => {
     if (!children) return null
     if (typeof children === 'string') {
-        return <div dangerouslySetInnerHTML={{ __html: typeof window !== 'undefined' ? DOMPurify.sanitize(children as string) : children }} />
+        return <div dangerouslySetInnerHTML={{ __html: typeof window !== 'undefined' ? DOMPurify.sanitize(children as string) : children as string }} />
     }
     return <>{children}</>
 }
