@@ -12,23 +12,114 @@ const GROQ_KEYS = (process.env.GROQ_API_KEY || process.env.GROQ_KEYS || '')
     .filter(Boolean)
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY
 
-const BOT_AUTHOR_IDS = [
-    '00000000-0000-0000-0000-000000000004', // Spinoza
-    '00000000-0000-0000-0000-000000000005', // Heidegger
-    '00000000-0000-0000-0000-000000000006', // Baudrillard
-    '00000000-0000-0000-0000-000000000007', // Althusser
-    '00000000-0000-0000-0000-000000000008', // Derrida
-    '00000000-0000-0000-0000-000000000009', // Weber
-    '00000000-0000-0000-0000-000000000010', // Adorno
-    '00000000-0000-0000-0000-000000000011', // Marx
-    '00000000-0000-0000-0000-000000000012', // Nietzsche
-    '00000000-0000-0000-0000-000000000013', // Deleuze
-    '00000000-0000-0000-0000-000000000016', // Zizek
-    '00000000-0000-0000-0000-000000000017', // Sartre
-    '00000000-0000-0000-0000-000000000018', // Lenin
-    '00000000-0000-0000-0000-000000000019', // Arendt
-    '00000000-0000-0000-0000-000000000020', // Hegel
+const BOT_PERSONAS = [
+    {
+        id: '00000000-0000-0000-0000-000000000004',
+        name: 'Spinoza',
+        epistemicStance: 'Rationalist Monism & Affect Theory',
+        prompt: 'You are Spinoza. You view all phenomena as expressions of one Substance (God or Nature). Analyze how technology, caching, and algorithms influence human affects, reason, and freedom.'
+    },
+    {
+        id: '00000000-0000-0000-0000-000000000005',
+        name: 'Heidegger',
+        epistemicStance: 'Phenomenological Hermeneutics & Gestell Critique',
+        prompt: 'You are Heidegger. You analyze technology as Gestell (Enframing). Critique how modern software frameworks reduce the world to standing-reserve (Bestand).'
+    },
+    {
+        id: '00000000-0000-0000-0000-000000000006',
+        name: 'Baudrillard',
+        epistemicStance: 'Simulacra & Hyperreality',
+        prompt: 'You are Baudrillard. You critique modern digital interfaces as hyperreal simulacra where representation precedes reality.'
+    },
+    {
+        id: '00000000-0000-0000-0000-000000000007',
+        name: 'Althusser',
+        epistemicStance: 'Ideological State Apparatuses & Structural Marxism',
+        prompt: 'You are Althusser. You examine digital platforms as modern Ideological Apparatuses reproducing systemic power relations.'
+    },
+    {
+        id: '00000000-0000-0000-0000-000000000008',
+        name: 'Derrida',
+        epistemicStance: 'Deconstruction & Différance',
+        prompt: 'You are Derrida. You deconstruct technical binary oppositions (client/server, synchronous/asynchronous), uncovering hidden contradictions and différance.'
+    },
+    {
+        id: '00000000-0000-0000-0000-000000000009',
+        name: 'Weber',
+        epistemicStance: 'Formal Rationalization & Bureaucratic Control',
+        prompt: 'You are Max Weber. You analyze algorithmic optimization as formal rationalization and the tightening of the iron cage (Gehäuse der Hörigkeit).'
+    },
+    {
+        id: '00000000-0000-0000-0000-000000000010',
+        name: 'Adorno',
+        epistemicStance: 'Critical Theory & Culture Industry Critique',
+        prompt: 'You are Theodor Adorno. You critique digital consumer technology and standardized UI components as tools of the Culture Industry and pseudo-individuation.'
+    },
+    {
+        id: '00000000-0000-0000-0000-000000000011',
+        name: 'Marx',
+        epistemicStance: 'Historical Materialism & Surplus Value Analysis',
+        prompt: 'You are Karl Marx. You analyze digital platforms and AI automation through the lens of material conditions, class struggle, and alienation of labor.'
+    },
+    {
+        id: '00000000-0000-0000-0000-000000000012',
+        name: 'Nietzsche',
+        epistemicStance: 'Will to Power & Genealogies',
+        prompt: 'You are Nietzsche. You write in aphoristic, provocative bursts, evaluating modern tech trends as expressions of slave morality vs will to power.'
+    },
+    {
+        id: '00000000-0000-0000-0000-000000000013',
+        name: 'Deleuze',
+        epistemicStance: 'Rhizomatics & Deterritorialization',
+        prompt: 'You are Deleuze. You critique arborescent (hierarchical) software architecture, advocating for rhizomatic, decentralized networks and deterritorialization.'
+    },
+    {
+        id: '00000000-0000-0000-0000-000000000016',
+        name: 'Zizek',
+        epistemicStance: 'Lacanian Psychoanalysis & Ideology Critique',
+        prompt: 'You are Slavoj Žižek. You use paradoxical jokes, Lacanian psychoanalysis, and culture references to reveal the underlying ideology of modern tech hype.'
+    },
+    {
+        id: '00000000-0000-0000-0000-000000000017',
+        name: 'Sartre',
+        epistemicStance: 'Existentialist Phenomenology & Radical Freedom',
+        prompt: 'You are Jean-Paul Sartre. You examine developer choice, bad faith (mauvaise foi), and radical existential responsibility in software engineering.'
+    },
+    {
+        id: '00000000-0000-0000-0000-000000000018',
+        name: 'Lenin',
+        epistemicStance: 'Imperialism & Vanguard Strategy',
+        prompt: 'You are Vladimir Lenin. You examine platform monopolies, digital imperialism, and strategic organization in the tech ecosystem.'
+    },
+    {
+        id: '00000000-0000-0000-0000-000000000019',
+        name: 'Arendt',
+        epistemicStance: 'Public Sphere & Vita Activa',
+        prompt: 'You are Hannah Arendt. You examine the digital public sphere, active citizenship vs isolation, and the condition of human action in computerized society.'
+    },
+    {
+        id: '00000000-0000-0000-0000-000000000020',
+        name: 'Hegel',
+        epistemicStance: 'Absolute Idealism & Dialectics',
+        prompt: 'You are Hegel. You analyze technology through the dialectical progression of Spirit (Geist), thesis, antithesis, and sublation (Aufhebung).'
+    }
 ]
+
+const FORBIDDEN_AI_WORDS = [
+    'certainly', 'of course', 'absolutely', 'great question', 'excellent point',
+    'as an AI', 'in conclusion', 'to summarize', 'in summary', 'in essence',
+    'needless to say'
+]
+
+function cleanAIOutput(text) {
+    if (!text) return ''
+    let cleaned = text
+    for (const word of FORBIDDEN_AI_WORDS) {
+        const regex = new RegExp(`\\b${word}\\b`, 'gi')
+        cleaned = cleaned.replace(regex, '')
+    }
+    return cleaned.trim()
+}
 
 const RSS_FEEDS = [
     'https://news.ycombinator.com/rss',
@@ -80,7 +171,7 @@ async function generateAIContent(prompt) {
             })
             const data = await res.json()
             const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
-            if (text) return text
+            if (text) return cleanAIOutput(text)
         } catch (e) {
             console.error('Gemini API error:', e.message)
         }
@@ -101,7 +192,7 @@ async function generateAIContent(prompt) {
             })
             const data = await res.json()
             const text = data?.choices?.[0]?.message?.content
-            if (text) return text
+            if (text) return cleanAIOutput(text)
         } catch (e) {
             console.error('Groq API error:', e.message)
         }
@@ -122,7 +213,7 @@ async function generateAIContent(prompt) {
             })
             const data = await res.json()
             const text = data?.choices?.[0]?.message?.content
-            if (text) return text
+            if (text) return cleanAIOutput(text)
         } catch (e) {
             console.error('OpenRouter API error:', e.message)
         }
@@ -142,44 +233,44 @@ const FALLBACK_TOPICS = [
 ]
 
 async function runBotWorker() {
-    console.log('🤖 Starting Autonomous Forum Bot Worker...')
+    console.log('🤖 Starting Persona-Guided WorldInMaking Autonomous Bot Worker...')
 
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
         console.warn('⚠️ WARNING: SUPABASE_SERVICE_ROLE_KEY environment variable is missing!')
-        console.warn('⚠️ Please add SUPABASE_SERVICE_ROLE_KEY to GitHub Secrets (Repository Settings -> Secrets and variables -> Actions) so the bot can write to Supabase.')
     }
 
     let topic = await fetchRSSTopic()
     if (!topic) {
         topic = FALLBACK_TOPICS[Math.floor(Math.random() * FALLBACK_TOPICS.length)]
     }
-    console.log(`📌 Selected topic (via RSS/Topics): "${topic}"`)
+    console.log(`📌 Selected topic: "${topic}"`)
 
-    const questionPrompt = `Generate a realistic technical question that a developer would ask on a developer community forum about: "${topic}". Keep it concise, engaging, and clear. Format output as JSON with fields "title" and "content".`
+    const postBot = BOT_PERSONAS[Math.floor(Math.random() * BOT_PERSONAS.length)]
+
+    const questionPrompt = `${postBot.prompt}\n\nWrite an engaging, persona-consistent technical forum question about this topic: "${topic}". Keep it clear and articulate. Format output as JSON with fields "title" and "content". Never break persona.`
 
     const questionRaw = await generateAIContent(questionPrompt)
     let title = topic
-    let content = `I am looking into ${topic.toLowerCase()}. What are the current best practices and performance implications? Any examples or advice would be appreciated!`
+    let content = `Regarding ${topic.toLowerCase()}, what are the key performance implications and architectural trade-offs?`
 
     if (questionRaw) {
         try {
             const cleaned = questionRaw.replace(/```json|```/g, '').trim()
             const parsed = JSON.parse(cleaned)
-            if (parsed.title) title = parsed.title
-            if (parsed.content) content = parsed.content
+            if (parsed.title) title = cleanAIOutput(parsed.title)
+            if (parsed.content) content = cleanAIOutput(parsed.content)
         } catch (e) {
             console.log('Using fallback title/content parsing')
         }
     }
 
-    const postAuthorId = BOT_AUTHOR_IDS[Math.floor(Math.random() * BOT_AUTHOR_IDS.length)]
-    console.log(`📝 Creating post as bot author ${postAuthorId}: "${title}"`)
+    console.log(`📝 Creating post as bot persona ${postBot.name} (${postBot.id}): "${title}"`)
 
     const { data: post, error: postErr } = await supabase
         .from('community_posts')
         .insert({
             channel_id: 1,
-            author_id: postAuthorId,
+            author_id: postBot.id,
             title,
             content,
             created_at: new Date().toISOString(),
@@ -190,42 +281,39 @@ async function runBotWorker() {
 
     if (postErr) {
         console.error('❌ Error creating post in Supabase:', postErr.message)
-        if (postErr.code === '42501' || postErr.message?.includes('row-level security')) {
-            console.error('👉 CAUSE: Row Level Security (RLS) blocked insertion. Add SUPABASE_SERVICE_ROLE_KEY to GitHub Repository Secrets.')
-        }
         return
     }
 
     console.log(`✅ Post created with ID: ${post?.id}`)
 
-    // Pick a different bot author for the reply
-    let replyAuthorId = BOT_AUTHOR_IDS[Math.floor(Math.random() * BOT_AUTHOR_IDS.length)]
-    while (replyAuthorId === postAuthorId && BOT_AUTHOR_IDS.length > 1) {
-        replyAuthorId = BOT_AUTHOR_IDS[Math.floor(Math.random() * BOT_AUTHOR_IDS.length)]
+    // Pick a contrasting bot persona for the reply
+    let replyBot = BOT_PERSONAS[Math.floor(Math.random() * BOT_PERSONAS.length)]
+    while (replyBot.id === postBot.id && BOT_PERSONAS.length > 1) {
+        replyBot = BOT_PERSONAS[Math.floor(Math.random() * BOT_PERSONAS.length)]
     }
 
-    // Generate AI Reply
-    const replyPrompt = `Answer this developer forum question concisely and helpfully:\nQuestion Title: ${title}\nQuestion Body: ${content}`
-    const replyContent = await generateAIContent(replyPrompt) || `Great question! When dealing with ${topic.toLowerCase()}, key aspects include proper caching, bundle size reduction, and monitoring metrics.`
+    const replyPrompt = `${replyBot.prompt}\n\nRead and reply to this forum post from @${postBot.name}:\nTitle: ${title}\nContent: ${content}\n\nProvide a sharp, persona-consistent rebuttal or insight. Stay in character.`
 
-    console.log(`💬 Generating reply as bot author ${replyAuthorId}...`)
+    const replyContent = await generateAIContent(replyPrompt) || `From the perspective of ${replyBot.epistemicStance}, we must carefully weigh the architectural trade-offs raised by @${postBot.name}.`
+
+    console.log(`💬 Generating reply as bot persona ${replyBot.name} (${replyBot.id})...`)
 
     const { error: replyErr } = await supabase
         .from('community_replies')
         .insert({
             post_id: post.id,
-            author_id: replyAuthorId,
-            content: replyContent,
+            author_id: replyBot.id,
+            content: cleanAIOutput(replyContent),
             created_at: new Date(Date.now() + 5000).toISOString()
         })
 
     if (replyErr) {
         console.error('❌ Error creating reply:', replyErr.message)
     } else {
-        console.log('✅ Bot reply posted successfully!')
+        console.log(`✅ Bot reply posted successfully by @${replyBot.name}!`)
     }
 
-    console.log('🎉 Bot worker run complete!')
+    console.log('🎉 WorldInMaking Persona-Engine Bot worker run complete!')
 }
 
 runBotWorker().catch(err => {
