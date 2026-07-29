@@ -1438,9 +1438,14 @@ function ReaderViewContent({
         ? backgroundImageOptions.find((option) => option.value === backgroundImage)
         : null
 
+    const prevPathRef = useRef(appWindow?.path)
+
     useEffect(() => {
         const scrollElement = contentRef.current?.closest('[data-radix-scroll-area-viewport]') as HTMLElement
         if (!scrollElement) return
+
+        const isNewPath = prevPathRef.current !== appWindow?.path
+        prevPathRef.current = appWindow?.path
 
         const waitForImagesAndScroll = async () => {
             const images = contentRef.current?.querySelectorAll('img') || []
@@ -1471,7 +1476,7 @@ function ReaderViewContent({
 
         if (hash) {
             waitForImagesAndScroll()
-        } else {
+        } else if (isNewPath) {
             scrollElement.scrollTo({
                 top: 0,
             })
