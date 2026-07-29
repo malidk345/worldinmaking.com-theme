@@ -217,9 +217,7 @@ const Router = (props: any) => {
 const WindowContainer = ({ children, closing }: { children: React.ReactNode; closing: boolean }) => {
     const { closeWindow } = useApp()
     const { appWindow } = useWindow()
-    if (appWindow?.minimized) {
-        return null
-    }
+
     return (
         <AnimatePresence
             onExitComplete={() => {
@@ -228,7 +226,7 @@ const WindowContainer = ({ children, closing }: { children: React.ReactNode; clo
                 }
             }}
         >
-            {!closing && children}
+            {(!closing && !appWindow?.minimized) && children}
         </AnimatePresence>
     )
 }
@@ -297,8 +295,8 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
     const yVelocity = useVelocity(motionY)
     const smoothXVelocity = useSpring(xVelocity, { damping: 40, stiffness: 300 })
     const smoothYVelocity = useSpring(yVelocity, { damping: 40, stiffness: 300 })
-    const tiltX = useTransform(smoothYVelocity, [-1000, 1000], [6, -6])
-    const tiltY = useTransform(smoothXVelocity, [-1000, 1000], [-6, 6])
+    const tiltX = useTransform(smoothYVelocity, [-1000, 1000], [12, -12])
+    const tiltY = useTransform(smoothXVelocity, [-1000, 1000], [-12, 12])
 
     const isSSR = typeof window === 'undefined'
     const controls = useDragControls()
@@ -894,36 +892,39 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             : {}),
                     }}
                     initial={{
-                        scale: 0.2,
+                        scale: 0.95,
                         opacity: 0,
+                        filter: 'blur(8px)',
                         x: Math.round(position.x),
-                        y: Math.round(position.y),
+                        y: Math.round(position.y) + 20,
                         width: size.width,
                         height: size.height,
                     }}
                     animate={{
                         scale: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.scale : 1,
                         opacity: 1,
+                        filter: 'blur(0px)',
                         x: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.x : Math.round(position.x),
                         y: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.y : Math.round(position.y),
                         width: size.width,
                         height: size.height,
                     }}
                     exit={{
-                        scale: 0.2,
+                        scale: 0.95,
                         opacity: 0,
+                        filter: 'blur(8px)',
                         x: Math.round(position.x),
-                        y: Math.round(position.y),
+                        y: Math.round(position.y) + 20,
                         transition: {
-                            duration: 0.2,
-                            ease: [0.32, 0, 0.67, 0],
+                            duration: 0.4,
+                            ease: [0.25, 1, 0.5, 1],
                         },
                     }}
                     transition={
                         siteSettings?.performanceBoost
                             ? { duration: 0 }
                             : {
-                                  duration: dragging ? 0 : 0.28,
+                                  duration: dragging ? 0 : 0.4,
                                   ease: [0.16, 1, 0.3, 1],
                               }
                     }

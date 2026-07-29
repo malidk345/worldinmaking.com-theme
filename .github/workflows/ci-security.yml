@@ -34,7 +34,7 @@ jobs:
                     --error \
                     --metrics=off \
                     --verbose \
-                    src/ gatsby/ plugins/ api/ *.js *.ts *.tsx
+                    --include 'src/**/*' --include 'gatsby/**/*' --include 'plugins/**/*' --include 'api/**/*' --include '*.js' --include '*.ts' --include '*.tsx' .
 
     # scans GitHub Actions and other repo-wide config
     semgrep-general:

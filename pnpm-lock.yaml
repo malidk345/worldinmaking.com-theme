@@ -206,6 +206,9 @@ importers:
       deepmerge:
         specifier: ^4.3.1
         version: 4.3.1
+      dompurify:
+        specifier: ^3.4.12
+        version: 3.4.12
       dotenv:
         specifier: ^10.0.0
         version: 10.0.0
@@ -489,6 +492,9 @@ importers:
       '@types/chart.js':
         specifier: ^2.9.31
         version: 2.9.41
+      '@types/dompurify':
+        specifier: ^3.2.0
+        version: 3.2.0
       '@types/mark.js':
         specifier: ^8.11.12
         version: 8.11.12
@@ -3917,6 +3923,10 @@ packages:
 
   '@types/dom-speech-recognition@0.0.1':
     resolution: {integrity: sha512-udCxb8DvjcDKfk1WTBzDsxFbLgYxmQGKrE/ricoMqHRNjSlSUCcamVTA5lIQqzY10mY5qCY0QDwBfFEwhfoDPw==}
+
+  '@types/dompurify@3.2.0':
+    resolution: {integrity: sha512-Fgg31wv9QbLDA0SpTOXO3MaxySc4DKGLi8sna4/Utjo4r3ZRPdCt4UQee8BWr+Q5z21yifghREPJGYaEOEIACg==}
+    deprecated: This is a stub types definition. dompurify provides its own type definitions, so you do not need this installed.
 
   '@types/earcut@3.0.0':
     resolution: {integrity: sha512-k/9fOUGO39yd2sCjrbAJvGDEQvRwRnQIZlBz43roGwUZo5SHAmyVvSFyaVVZkicRVCaDXPKlbxrUcBuJoSWunQ==}
@@ -13170,6 +13180,10 @@ snapshots:
       '@types/ms': 2.1.0
 
   '@types/dom-speech-recognition@0.0.1': {}
+
+  '@types/dompurify@3.2.0':
+    dependencies:
+      dompurify: 3.4.12
 
   '@types/earcut@3.0.0': {}
 
