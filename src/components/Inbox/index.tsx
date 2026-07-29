@@ -113,9 +113,19 @@ const SidebarContent = ({
     onMenuValueChange: (value: string) => void
     onSubmitQuestion: () => void
 }) => {
-    const { addWindow } = useApp()
     const { searchQuery } = useSearch()
     const isSearching = searchQuery.length >= 2
+    const [askOpen, setAskOpen] = useState(false)
+    const router = useRouter()
+    const navigate = (to: string, options?: any) => {
+        if (typeof window !== 'undefined') {
+            if (options?.replace) {
+                router.replace(to)
+            } else {
+                router.push(to)
+            }
+        }
+    }
 
     return (
         <div className="flex flex-col h-full">
@@ -125,16 +135,7 @@ const SidebarContent = ({
                         variant="primary"
                         size="md"
                         width="full"
-                        onClick={() =>
-                            addWindow(
-                                <AskAQuestion
-                                    newWindow
-                                    location={{ pathname: `ask-a-question` }}
-                                    key={`ask-a-question`}
-                                    onSubmit={onSubmitQuestion}
-                                />
-                            )
-                        }
+                        onClick={() => setAskOpen(true)}
                     >
                         Ask a question
                     </OSButton>
@@ -153,6 +154,47 @@ const SidebarContent = ({
                     <Menu onValueChange={onMenuValueChange} />
                 )}
             </ScrollArea>
+
+            {/* Ask a question modal */}
+            {askOpen && (
+                <div
+                    className="fixed inset-0 z-[9999] flex items-center justify-center"
+                    onClick={(e) => { if (e.target === e.currentTarget) setAskOpen(false) }}
+                >
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                    <div
+                        className="relative z-10 bg-accent border border-primary rounded-xl shadow-2xl w-full max-w-xl mx-4 max-h-[90vh] overflow-y-auto"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between px-4 pt-4 pb-2 border-b border-primary">
+                            <h2 className="font-bold text-base">Ask a question</h2>
+                            <button
+                                onClick={() => setAskOpen(false)}
+                                className="text-primary hover:text-primary/70 transition-colors text-xl leading-none"
+                                aria-label="Close"
+                            >
+                                ×
+                            </button>
+                        </div>
+                        <div className="p-4">
+                            <QuestionForm
+                                showTopicSelector
+                                onSubmit={(_values, _type, data) => {
+                                    setAskOpen(false)
+                                    onSubmitQuestion()
+                                    if (data?.attributes?.permalink) {
+                                        setTimeout(() => {
+                                            navigate(`/questions/${data.attributes.permalink}`)
+                                        }, 0)
+                                    }
+                                }}
+                                initialView="question-form"
+                                slug="/questions"
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
