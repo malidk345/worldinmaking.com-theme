@@ -1,16 +1,16 @@
-"use client"
-
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useApp } from '../../context/App'
 import { useWindow } from '../../context/Window'
 import { useToast } from '../../context/Toast'
+import { useUser } from '../../hooks/useUser'
 import OSButton from 'components/OSButton'
 import Loading from 'components/Loading'
 import Tooltip from 'components/RadixUI/Tooltip'
 import dayjs from 'dayjs'
 import { IconBook, IconBookmark, IconChevronLeft, IconChevronRight, IconDocument, IconExternal, IconPlus, IconRefresh, IconShare, IconSidebarClose, IconSidebarOpen, IconSparkles, IconStack, IconTrash, IconUser } from '@posthog/icons';
 import { LemonTag } from '../posthog-ui-gallery/src/components/lemon-ui'
+import '../Corpus/styles.css'
 
 interface PublicProfileProps {
     username: string
@@ -57,6 +57,19 @@ interface SavedPostItem {
     saved_at: string
 }
 
+const t = (key: string): string => {
+    const translations: Record<string, string> = {
+        'profile.copied_success': 'copied to clipboard',
+        'profile.copied_failed': 'Failed to copy link for',
+        'profile.create_node_failed': 'Failed to create document',
+        'profile.delete_node_failed': 'Failed to delete document',
+        'profile.delete_post_failed': 'Failed to delete post',
+        'profile.update_success': 'Profile updated successfully',
+        'profile.update_failed': 'Failed to update profile',
+    }
+    return translations[key] || key
+}
+
 function relativeTime(iso: string): string {
     const diff = Date.now() - new Date(iso).getTime()
     const mins = Math.floor(diff / 60_000)
@@ -82,15 +95,23 @@ function toPostPath(slug: string) {
 }
 
 export default function PublicProfile({ username }: PublicProfileProps) {
-    const { user, profile: authProfile, updateProfile } = useAuth()
+    const { user: squeakUser } = useUser()
+    const [currentAuthUser, setCurrentAuthUser] = useState<any>(null)
     const { addWindow, isMobile } = useApp()
     const { addToast } = useToast()
-    const { t } = useTranslation()
     const windowCtx = useWindow()
     const goBack = windowCtx?.goBack
     const goForward = windowCtx?.goForward
     const canGoBack = windowCtx?.canGoBack || false
     const canGoForward = windowCtx?.canGoForward || false
+
+    useEffect(() => {
+        if (supabase) {
+            supabase.auth.getUser().then(({ data }) => {
+                if (data?.user) setCurrentAuthUser(data.user)
+            }).catch(() => {})
+        }
+    }, [])
 
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
@@ -120,7 +141,22 @@ export default function PublicProfile({ username }: PublicProfileProps) {
     })
 
     const normalizedUsername = useMemo(() => decodeURIComponent(username || '').trim(), [username])
-    const isOwner = !!authProfile?.username && authProfile.username.toLowerCase() === normalizedUsername.toLowerCase()
+    const authUsername = currentAuthUser?.user_metadata?.username || squeakUser?.username || ''
+    const isOwner = !!authUsername && authUsername.toLowerCase() === normalizedUsername.toLowerCase()
+
+    const updateProfile = useCallback(async (updates: Partial<ProfileData>) => {
+        if (!profile?.id) return false
+        try {
+            const { error } = await supabase
+                .from('profiles')
+                .update(updates)
+                .eq('id', profile.id)
+            return !error
+        } catch {
+            return false
+        }
+    }, [profile?.id])
+
     const displayName = profile?.username || normalizedUsername
     const publicProfilePath = normalizedUsername ? `/profile/${encodeURIComponent(normalizedUsername)}` : '/profile'
 
@@ -383,7 +419,8 @@ export default function PublicProfile({ username }: PublicProfileProps) {
 
     useEffect(() => {
         const loadSavedPosts = async () => {
-            if (!isOwner || !user?.id) {
+            const activeUserId = currentAuthUser?.id || profile?.id
+            if (!isOwner || !activeUserId) {
                 setSavedPosts([])
                 return
             }
@@ -393,7 +430,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
             const { data, error } = await supabase
                 .from('user_saved_posts')
                 .select('post_slug, post_title, saved_at')
-                .eq('user_id', user.id)
+                .eq('user_id', activeUserId)
                 .order('saved_at', { ascending: false })
 
             if (!error && data) {
@@ -406,7 +443,7 @@ export default function PublicProfile({ username }: PublicProfileProps) {
         }
 
         void loadSavedPosts()
-    }, [isOwner, user?.id])
+    }, [isOwner, currentAuthUser?.id, profile?.id])
 
     useEffect(() => {
         setSidebarOpen(!isMobile)
