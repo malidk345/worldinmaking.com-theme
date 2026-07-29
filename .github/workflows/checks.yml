@@ -33,7 +33,7 @@ jobs:
 
             - name: Configure Git
               run: |
-                  git fetch origin master:master
+                  git fetch origin main:main || git fetch origin master:master || true
                   git config user.name PostHog Bot
                   git config user.email hey@posthog.com
 
