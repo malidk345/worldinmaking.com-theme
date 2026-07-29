@@ -6,7 +6,10 @@ const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_P
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY
-const GROQ_API_KEY = process.env.GROQ_API_KEY
+const GROQ_KEYS = (process.env.GROQ_API_KEY || process.env.GROQ_KEYS || '')
+    .split(',')
+    .map(k => k.trim())
+    .filter(Boolean)
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY
 
 const BOT_AUTHOR_IDS = [
@@ -43,12 +46,12 @@ async function generateAIContent(prompt) {
         }
     }
 
-    if (GROQ_API_KEY) {
+    for (const key of GROQ_KEYS) {
         try {
             const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${GROQ_API_KEY}`,
+                    'Authorization': `Bearer ${key}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
