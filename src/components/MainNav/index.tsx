@@ -563,7 +563,7 @@ export const Main = () => {
                                                 <li className="px-1">
                                                     <Link
                                                         className="group/item flex items-center text-sm px-2 py-2 rounded-sm hover:bg-border dark:hover:bg-border-dark"
-                                                        to={`/community/profiles/${user?.profile.id}`}
+                                                        to={`/profile/${user?.username || user?.profile?.id}`}
                                                     >
                                                         <IconUser className="opacity-50 inline-block w-6 group-hover/parent:opacity-75 mr-2" />
                                                         My profile

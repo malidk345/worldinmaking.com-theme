@@ -88,11 +88,12 @@ export const Profile = ({ user }: { user: User }) => {
     const { profile, email } = user
     const { id } = profile
     const name = [profile.firstName, profile.lastName].filter(Boolean).join(' ')
+    const handle = user?.username || profile?.username || id
 
     return (
         <div>
             <Link
-                to={`/community/profiles/${id}`}
+                to={`/profile/${handle}`}
                 className="group flex items-center space-x-2 mt-2 mb-1 -mx-2 relative active:top-[1px] active:scale-[.99] hover:bg-primary hover:bg-accent rounded p-2"
             >
                 <Avatar src={getAvatarURL(user?.profile)} className={`w-[40px] h-[40px]`} color={profile.color} />

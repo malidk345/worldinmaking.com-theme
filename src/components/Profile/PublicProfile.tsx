@@ -1,10 +1,10 @@
 import React from 'react'
-import ProfilePage from '../../pages/community/profiles/[id]'
+import ProfileView from './ProfileView'
 
 interface PublicProfileProps {
     username: string
 }
 
 export default function PublicProfile({ username }: PublicProfileProps) {
-    return <ProfilePage />
+    return <ProfileView profileIdOrUsername={username} />
 }

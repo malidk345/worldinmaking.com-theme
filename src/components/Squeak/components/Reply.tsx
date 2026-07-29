@@ -345,6 +345,14 @@ export default function Reply({ reply, badgeText, isInForum = false }: ReplyProp
     )
     const isMax = profile?.data?.id === Number(process.env.NEXT_PUBLIC_AI_PROFILE_ID)
 
+    const replyAttrs = profile?.data?.attributes
+    const replyHandle =
+        replyAttrs?.username ||
+        replyAttrs?.user?.data?.attributes?.username ||
+        (replyAttrs?.firstName ? replyAttrs.firstName.toLowerCase().replace(/\s+/g, '-') : null) ||
+        profile?.data?.id ||
+        ''
+
     return profile?.data ? (
         <div className={`transition-opacity duration-300 ${pendingDelete ? 'opacity-30 pointer-events-none' : ''}`}>
             <div className={`pb-1 flex items-center space-x-2 ${isInForum ? 'pr-8' : ''}`}>
@@ -354,7 +362,7 @@ export default function Reply({ reply, badgeText, isInForum = false }: ReplyProp
                             <div className="relative">
                                 <Link
                                     className="flex items-center !text-black dark:!text-white"
-                                    to={`/profile/${profile.data.attributes?.username || profile.data.id}`}
+                                    to={`/profile/${replyHandle}`}
                                 >
                                     <div className="mr-2 relative ml-[-2px]">
                                         <Avatar
@@ -388,7 +396,7 @@ export default function Reply({ reply, badgeText, isInForum = false }: ReplyProp
                 ) : (
                     <Link
                         className="flex items-center !text-black dark:!text-white"
-                        to={`/profile/${profile.data.attributes?.username || profile.data.id}`}
+                        to={`/profile/${replyHandle}`}
                     >
                         <div className="mr-2 relative ml-[-2px]">
                             <Avatar

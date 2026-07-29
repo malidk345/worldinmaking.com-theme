@@ -894,10 +894,10 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             : {}),
                     }}
                     initial={{
-                        scale: 0.2,
+                        scale: item.fromOrigin ? 0.4 : 0.94,
                         opacity: 0,
-                        x: Math.round(position.x),
-                        y: Math.round(position.y),
+                        x: item.fromOrigin ? item.fromOrigin.x : Math.round(position.x),
+                        y: item.fromOrigin ? item.fromOrigin.y : Math.round(position.y),
                         width: size.width,
                         height: size.height,
                     }}
@@ -910,21 +910,23 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                         height: size.height,
                     }}
                     exit={{
-                        scale: 0.2,
+                        scale: 0.95,
                         opacity: 0,
-                        x: Math.round(position.x),
-                        y: Math.round(position.y),
                         transition: {
-                            duration: 0.2,
+                            duration: 0.18,
                             ease: [0.32, 0, 0.67, 0],
                         },
                     }}
                     transition={
                         siteSettings?.performanceBoost
                             ? { duration: 0 }
+                            : dragging
+                            ? { duration: 0 }
                             : {
-                                  duration: dragging ? 0 : 0.28,
-                                  ease: [0.16, 1, 0.3, 1],
+                                  type: 'spring',
+                                  stiffness: 380,
+                                  damping: 32,
+                                  mass: 0.8,
                               }
                     }
                     drag={isActiveWindowsPanelOpen ? false : !item.fixedSize}

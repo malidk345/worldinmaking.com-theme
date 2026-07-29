@@ -1,6 +1,4 @@
 import React from 'react'
-import PublicProfile from './PublicProfile'
+import ProfileView from './ProfileView'
 
-export default function ProfileWrapper(props: any) {
-    return <PublicProfile {...props} />
-}
+export default ProfileView

@@ -253,9 +253,15 @@ const QuestionRow = ({
                     ${active ? 'font-bold bg-accent' : ''}
                     ${pinned ? 'bg-accent border-b border-primary' : ''}
                 `}
-                onClick={() => {
-                    if (!containerRef.current) return
-                    if (bottomHeight <= 45) {
+                onClick={(e: any) => {
+                    if (e && e.preventDefault) {
+                        e.preventDefault()
+                    }
+                    if (typeof window !== 'undefined') {
+                        window.history.pushState(null, '', `/questions/${permalink}`)
+                        window.dispatchEvent(new Event('popstate'))
+                    }
+                    if (containerRef.current && bottomHeight <= 45) {
                         setBottomHeight(containerRef.current.getBoundingClientRect().height * 0.8)
                     }
                 }}

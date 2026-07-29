@@ -797,8 +797,18 @@ hr {
     }
 }
 
-.app-scrollbar-corner {
-    background: transparent;
+.app-scroll-viewport {
+    scroll-behavior: smooth;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+[data-app='AppWindow'] .app-scroll-viewport {
+    scroll-behavior: smooth;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    transform: translateZ(0);
+    backface-visibility: hidden;
 }
 
 /* Native fallback for overflow containers that do not use the shared

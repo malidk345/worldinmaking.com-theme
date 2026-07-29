@@ -10,7 +10,12 @@ type ProfileProps = {
 }
 
 export const Profile = ({ className, profile }: ProfileProps) => {
-    const handle = profile?.attributes?.username || profile?.id || ''
+    const handle =
+        profile?.attributes?.username ||
+        profile?.attributes?.user?.data?.attributes?.username ||
+        (profile?.attributes?.firstName ? profile.attributes.firstName.toLowerCase().replace(/\s+/g, '-') : null) ||
+        profile?.id ||
+        ''
     return profile?.attributes ? (
         <Link
             className={`flex items-center relative !no-underline hover:!underline ${className}`}
