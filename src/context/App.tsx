@@ -2299,7 +2299,9 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             return
         }
 
-        const isForumPath = (p: string) => typeof p === 'string' && /^\/(questions|community)/.test(p)
+        const isForumPath = (p: string) =>
+            typeof p === 'string' &&
+            (/^\/questions/.test(p) || (p.startsWith('/community') && !p.startsWith('/community/profiles') && !p.startsWith('/community/achievements')))
         const key = item.key || item.path
         const path = item.path || '/'
 

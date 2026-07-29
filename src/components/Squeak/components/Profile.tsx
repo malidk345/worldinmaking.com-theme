@@ -10,11 +10,11 @@ type ProfileProps = {
 }
 
 export const Profile = ({ className, profile }: ProfileProps) => {
+    const handle = profile?.attributes?.username || profile?.id || ''
     return profile?.attributes ? (
         <Link
-            state={{ newWindow: true }}
             className={`flex items-center relative !no-underline hover:!underline ${className}`}
-            to={`/community/profiles/${profile.id}`}
+            to={`/profile/${handle}`}
         >
             <div className="w-[44px] h-[44px] ml-[-2px] rounded-full mr-[10px] overflow-hidden">
                 <Avatar

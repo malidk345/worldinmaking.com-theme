@@ -711,7 +711,7 @@ export function Question(props: QuestionProps) {
                                 </h4>
                                 <div className="grid grid-cols-2">
                                     <div>
-                                        <Link href={`/community/profiles/${questionData?.attributes?.profile?.data?.id}`}
+                                        <Link href={`/profile/${questionData?.attributes?.profile?.data?.attributes?.username || questionData?.attributes?.profile?.data?.id}`}
                                             className="text-yellow font-bold"
                                         >
                                             {questionData?.attributes?.profile?.data?.attributes?.firstName

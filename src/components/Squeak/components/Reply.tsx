@@ -353,9 +353,8 @@ export default function Reply({ reply, badgeText, isInForum = false }: ReplyProp
                         trigger={
                             <div className="relative">
                                 <Link
-                                    state={{ newWindow: true }}
                                     className="flex items-center !text-black dark:!text-white"
-                                    to={`/community/profiles/${profile.data.id}`}
+                                    to={`/profile/${profile.data.attributes?.username || profile.data.id}`}
                                 >
                                     <div className="mr-2 relative ml-[-2px]">
                                         <Avatar
@@ -388,9 +387,8 @@ export default function Reply({ reply, badgeText, isInForum = false }: ReplyProp
                     </Tooltip>
                 ) : (
                     <Link
-                        state={{ newWindow: true }}
                         className="flex items-center !text-black dark:!text-white"
-                        to={`/community/profiles/${profile.data.id}`}
+                        to={`/profile/${profile.data.attributes?.username || profile.data.id}`}
                     >
                         <div className="mr-2 relative ml-[-2px]">
                             <Avatar

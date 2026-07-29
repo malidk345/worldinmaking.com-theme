@@ -5,6 +5,7 @@ import Link from 'components/Link'
 import Markdown from 'components/Squeak/components/Markdown'
 import { Questions } from 'components/Squeak'
 import { useUser } from 'hooks/useUser'
+import { supabase } from 'lib/supabase'
 import useSWR from 'swr'
 import { ProfileData, StrapiRecord } from 'lib/strapi'
 import getAvatarURL from '../../../components/Squeak/util/getAvatar'
@@ -15,6 +16,7 @@ import { usePosts } from 'components/Edition/hooks/usePosts'
 import PostsTable from 'components/Edition/PostsTable'
 import { sortOptions } from 'components/Edition/Posts'
 import NotFoundPage from 'components/NotFoundPage'
+import PublicProfile from 'components/Profile/PublicProfile'
 import ScrollArea from 'components/RadixUI/ScrollArea'
 import { Popover } from 'components/RadixUI/Popover'
 import Stickers from 'components/Stickers/Index'
@@ -1093,7 +1095,8 @@ import { useRouter } from 'next/router'
 export default function ProfilePage() {
     const router = useRouter()
     const params = router.query
-    const id = parseInt((params?.id || params?.['*']) as string)
+    const rawId = (params?.id || params?.username || params?.['*']) as string
+    const id = /^\d+$/.test(rawId) ? parseInt(rawId) : rawId || ''
     const posthog = usePostHog()
     const { addToast } = useToast()
     const { user, getJwt } = useUser()
@@ -1104,7 +1107,7 @@ export default function ProfilePage() {
     const [giftSubmitting, setGiftSubmitting] = useState(false)
     const [giftConfirming, setGiftConfirming] = useState(false)
 
-    const isCurrentUser = user?.profile?.id === id
+    const isCurrentUser = String(user?.profile?.id) === String(id) || user?.username?.toLowerCase() === String(id).toLowerCase()
     const isModerator = user?.role?.type === 'moderator'
 
     const profileQuery = qs.stringify(
@@ -1160,24 +1163,122 @@ export default function ProfilePage() {
         }
     )
 
-    const { data, error, isLoading, mutate } = useSWR<StrapiRecord<ProfileData>>(
-        `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles/${id}?${profileQuery}`,
+    const isNumericId = /^\d+$/.test(String(id))
+
+    const { data: swrData, error, isLoading, mutate } = useSWR<StrapiRecord<ProfileData>>(
+        id && isNumericId ? `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles/${id}?${profileQuery}` : null,
         async (url) => {
-            const jwt = user && (await getJwt())
-            const res = await fetch(
-                url,
-                jwt
-                    ? {
-                          headers: {
-                              Authorization: `Bearer ${jwt}`,
-                          },
-                      }
-                    : undefined
-            )
-            const { data } = await res.json()
-            return data
+            try {
+                const jwt = user && (await getJwt())
+                const res = await fetch(
+                    url,
+                    jwt
+                        ? {
+                              headers: {
+                                  Authorization: `Bearer ${jwt}`,
+                              },
+                          }
+                        : undefined
+                )
+                if (!res.ok) return null
+                const { data } = await res.json()
+                return data
+            } catch {
+                return null
+            }
         }
     )
+
+    const [fallbackProfile, setFallbackProfile] = useState<StrapiRecord<ProfileData> | null>(null)
+
+    useEffect(() => {
+        if (!swrData && id) {
+            const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(id))
+            const rawId = String(id).toLowerCase()
+
+            const fetchFallback = async () => {
+                try {
+                    let dbProfile: any = null
+                    if (supabase) {
+                        let query = supabase.from('profiles').select('*')
+                        if (isUuid) {
+                            query = query.eq('id', id)
+                        } else {
+                            query = query.ilike('username', rawId)
+                        }
+                        const { data } = await query.maybeSingle()
+                        if (data) dbProfile = data
+                    }
+
+                    if (dbProfile) {
+                        const capitalizedUsername = (dbProfile.username || rawId)
+                            .split(/[-_]/)
+                            .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+                            .join(' ')
+
+                        setFallbackProfile({
+                            id: dbProfile.id,
+                            attributes: {
+                                firstName: capitalizedUsername,
+                                lastName: '',
+                                biography: dbProfile.bio || 'Philosopher & Community Theorist',
+                                location: dbProfile.location || '',
+                                website: dbProfile.website || '',
+                                twitter: dbProfile.twitter || '',
+                                github: dbProfile.github || '',
+                                linkedin: dbProfile.linkedin || '',
+                                pronouns: dbProfile.pronouns || '',
+                                reputation: 500,
+                                avatar: dbProfile.avatar_url ? { data: { attributes: { url: dbProfile.avatar_url } } } : null,
+                                companyRole: dbProfile.role || 'Resident Philosopher',
+                                achievements: [],
+                                teams: { data: [] }
+                            }
+                        } as any)
+                    } else if (user?.profile && (String(user.profile.id) === String(id) || user.username?.toLowerCase() === rawId)) {
+                        setFallbackProfile({
+                            id: user.profile.id,
+                            attributes: user.profile
+                        } as any)
+                    } else {
+                        const cleanName = rawId
+                            .split(/[-_]/)
+                            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                            .join(' ')
+
+                        setFallbackProfile({
+                            id: String(id),
+                            attributes: {
+                                firstName: cleanName,
+                                lastName: '',
+                                biography: 'PostHog Resident Thinker & Community Member',
+                                reputation: 250,
+                                avatar: { data: { attributes: { url: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(rawId)}` } } },
+                                companyRole: 'Resident Philosopher',
+                                achievements: [],
+                                teams: { data: [] }
+                            }
+                        } as any)
+                    }
+                } catch {
+                    setFallbackProfile({
+                        id: String(id),
+                        attributes: {
+                            firstName: String(id),
+                            lastName: '',
+                            reputation: 100,
+                            achievements: [],
+                            teams: { data: [] }
+                        }
+                    } as any)
+                }
+            }
+
+            void fetchFallback()
+        }
+    }, [swrData, id, user])
+
+    const data = swrData || fallbackProfile
 
     if (error) {
         posthog?.capture('squeak error', {
@@ -1466,8 +1567,11 @@ export default function ProfilePage() {
     if (!profile && isLoading) {
         return <ProfileSkeleton />
     } else if (!profile && !isLoading) {
-        // if profile wasn't found after loading, show 404 page
-        return <NotFoundPage />
+        return (
+            <div className="h-full w-full bg-light dark:bg-dark overflow-auto">
+                <PublicProfile username={String(id)} />
+            </div>
+        )
     }
 
     return (
