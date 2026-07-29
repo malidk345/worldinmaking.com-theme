@@ -1,0 +1,13 @@
+<<<<<<< SEARCH
+    const yVelocity = useVelocity(motionY)
+    const smoothXVelocity = useSpring(xVelocity, { damping: 40, stiffness: 300 })
+    const smoothYVelocity = useSpring(yVelocity, { damping: 40, stiffness: 300 })
+    const tiltX = useTransform(smoothYVelocity, [-1000, 1000], [6, -6])
+    const tiltY = useTransform(smoothXVelocity, [-1000, 1000], [-6, 6])
+=======
+    const yVelocity = useVelocity(motionY)
+    const smoothXVelocity = useSpring(xVelocity, { damping: 40, stiffness: 300 })
+    const smoothYVelocity = useSpring(yVelocity, { damping: 40, stiffness: 300 })
+    const tiltX = useTransform(smoothYVelocity, [-1000, 1000], [12, -12])
+    const tiltY = useTransform(smoothXVelocity, [-1000, 1000], [-12, 12])
+>>>>>>> REPLACE

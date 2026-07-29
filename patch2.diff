@@ -1,0 +1,58 @@
+<<<<<<< SEARCH
+                    initial={{
+                        scale: 0.2,
+                        opacity: 0,
+                        x: Math.round(position.x),
+                        y: Math.round(position.y),
+                        width: size.width,
+                        height: size.height,
+                    }}
+                    animate={{
+                        scale: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.scale : 1,
+                        opacity: 1,
+                        x: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.x : Math.round(position.x),
+                        y: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.y : Math.round(position.y),
+                        width: size.width,
+                        height: size.height,
+                    }}
+                    exit={{
+                        scale: 0.2,
+                        opacity: 0,
+                        x: Math.round(position.x),
+                        y: Math.round(position.y),
+                        transition: {
+                            duration: 0.2,
+                            ease: [0.32, 0, 0.67, 0],
+                        },
+                    }}
+=======
+                    initial={{
+                        scale: 0.95,
+                        opacity: 0,
+                        filter: 'blur(8px)',
+                        x: Math.round(position.x),
+                        y: Math.round(position.y) + 20,
+                        width: size.width,
+                        height: size.height,
+                    }}
+                    animate={{
+                        scale: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.scale : 1,
+                        opacity: 1,
+                        filter: 'blur(0px)',
+                        x: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.x : Math.round(position.x),
+                        y: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.y : Math.round(position.y),
+                        width: size.width,
+                        height: size.height,
+                    }}
+                    exit={{
+                        scale: 0.95,
+                        opacity: 0,
+                        filter: 'blur(8px)',
+                        x: Math.round(position.x),
+                        y: Math.round(position.y) + 20,
+                        transition: {
+                            duration: 0.4,
+                            ease: [0.25, 1, 0.5, 1],
+                        },
+                    }}
+>>>>>>> REPLACE
