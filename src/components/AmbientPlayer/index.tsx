@@ -3,73 +3,85 @@ import { IconHeadphones, IconSpinner } from '@posthog/icons'
 import OSButton from 'components/OSButton'
 import Tooltip from 'components/RadixUI/Tooltip'
 
-// SomaFM "Groove Salad": A nicely chilled plate of ambient/downtempo beats and grooves.
-const AUDIO_SRC = 'https://ice1.somafm.com/groovesalad-128-mp3'
+const STREAMS = [
+    'https://ice6.somafm.com/groovesalad-128-mp3',
+    'https://ice2.somafm.com/groovesalad-128-mp3',
+    'https://ice1.somafm.com/groovesalad-128-mp3',
+    'https://ice4.somafm.com/groovesalad-128-mp3',
+    'https://stream.zeno.fm/f3v6ch180d0uv',
+]
 
 export default function AmbientPlayer() {
     const [isPlaying, setIsPlaying] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [hasError, setHasError] = useState(false)
+    const [streamIndex, setStreamIndex] = useState(0)
     const audioRef = useRef<HTMLAudioElement | null>(null)
 
     useEffect(() => {
-        const audio = new Audio(AUDIO_SRC)
-        audio.crossOrigin = 'anonymous'
+        const audio = new Audio()
         audio.volume = 0.5
+        audio.src = STREAMS[streamIndex]
 
-        audio.addEventListener('error', () => {
-            console.warn('Focus stream not reachable.')
-            setHasError(true)
-            setIsLoading(false)
-            setIsPlaying(false)
-        })
+        const handleError = () => {
+            console.warn('Stream failed:', STREAMS[streamIndex])
+            if (streamIndex < STREAMS.length - 1) {
+                setStreamIndex((prev) => prev + 1)
+            } else {
+                setHasError(true)
+                setIsLoading(false)
+                setIsPlaying(false)
+            }
+        }
 
-        audio.addEventListener('playing', () => {
+        const handlePlaying = () => {
             setIsLoading(false)
             setIsPlaying(true)
-        })
+            setHasError(false)
+        }
 
-        audio.addEventListener('pause', () => {
+        const handlePause = () => {
             setIsPlaying(false)
-        })
+        }
 
-        audio.addEventListener('waiting', () => {
+        const handleWaiting = () => {
             setIsLoading(true)
-        })
+        }
+
+        audio.addEventListener('error', handleError)
+        audio.addEventListener('playing', handlePlaying)
+        audio.addEventListener('pause', handlePause)
+        audio.addEventListener('waiting', handleWaiting)
 
         audioRef.current = audio
 
         return () => {
+            audio.removeEventListener('error', handleError)
+            audio.removeEventListener('playing', handlePlaying)
+            audio.removeEventListener('pause', handlePause)
+            audio.removeEventListener('waiting', handleWaiting)
             audio.pause()
             audio.src = ''
         }
-    }, [])
+    }, [streamIndex])
 
     const togglePlay = () => {
         if (!audioRef.current) return
 
-        if (hasError) {
-            setHasError(false)
-            setIsLoading(true)
-            audioRef.current.load()
-            audioRef.current.play().catch((err) => {
-                console.error("Audio playback retry failed:", err)
-                setHasError(true)
-                setIsLoading(false)
-                setIsPlaying(false)
-            })
-            return
-        }
-
         if (isPlaying) {
             audioRef.current.pause()
         } else {
+            setHasError(false)
             setIsLoading(true)
             audioRef.current.play().catch((err) => {
-                console.error("Audio playback failed:", err)
-                setHasError(true)
-                setIsLoading(false)
-                setIsPlaying(false)
+                console.warn('Playback error, trying next mirror stream:', err)
+                if (streamIndex < STREAMS.length - 1) {
+                    setStreamIndex((prev) => prev + 1)
+                } else {
+                    setHasError(true)
+                    setIsLoading(false)
+                    setIsPlaying(false)
+                }
             })
         }
     }

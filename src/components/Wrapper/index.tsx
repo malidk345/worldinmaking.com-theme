@@ -11,6 +11,8 @@ import { TooltipProvider } from 'components/RadixUI/Tooltip'
 
 import ActiveWindowsPanel from 'components/ActiveWindowsPanel'
 
+import { AnimatePresence } from 'framer-motion'
+
 // Isolates the `windows` subscription so that opening/closing a window only
 // re-renders this list, not the whole Wrapper (and therefore not the desktop,
 // taskbar, etc.).
@@ -19,9 +21,11 @@ const WindowList = React.memo(function WindowList() {
 
     return (
         <div suppressHydrationWarning className="relative size-full overflow-hidden pointer-events-none">
-            {windows.map((item) => (
-                <AppWindow item={item} key={item.key} />
-            ))}
+            <AnimatePresence>
+                {windows.map((item) => (
+                    <AppWindow item={item} key={item.key} />
+                ))}
+            </AnimatePresence>
         </div>
     )
 })

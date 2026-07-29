@@ -27,6 +27,7 @@ import { useMenuData } from './menuData'
 import CloudinaryImage from 'components/CloudinaryImage'
 import MediaUploadModal from 'components/MediaUploadModal'
 import KeyboardShortcut from 'components/KeyboardShortcut'
+import AmbientPlayer from 'components/AmbientPlayer'
 import { MOTION_LAYER, TASKBAR_BG } from '../../constants/frostedSurfaces'
 
 function TaskBarMenu() {
@@ -317,6 +318,8 @@ function TaskBarMenu() {
                     <div className="mx-auto transition-all duration-300 flex justify-between items-center w-full max-w-full">
                         <div className="flex items-center pl-2" />
                         <aside data-scheme="secondary" className="flex items-center gap-0.5 py-1">
+                            <AmbientPlayer />
+
                             <Tooltip
                                 trigger={
                                     <OSButton onClick={() => openSearch()} size="sm" className="relative top-px">

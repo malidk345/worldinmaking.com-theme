@@ -168,11 +168,16 @@ function BlogRouteView(props: any) {
     return <BlogPost {...(pageData as any)} />
 }
 
+import TapePlayer from 'components/TapePlayer'
+
 const Router = (props: any) => {
     const { appWindow } = useWindow()
     const { closeWindow } = useApp()
     const { children, path } = props
 
+    if (/^\/tape-player|^\/mixtapes/.test(path)) {
+        return <TapePlayer {...props} />
+    }
     if (/^\/login|^\/signup/.test(path)) {
         return (
             <div className="p-6 flex items-center justify-center min-h-full bg-slate-950/90">
@@ -889,65 +894,37 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             : {}),
                     }}
                     initial={{
-                        scale: 0.08,
-                        x: item.fromOrigin?.x || position.x,
-                        y: item.fromOrigin?.y || position.y,
+                        scale: 0.2,
+                        opacity: 0,
+                        x: Math.round(position.x),
+                        y: Math.round(position.y),
                         width: size.width,
                         height: size.height,
                     }}
                     animate={{
                         scale: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.scale : 1,
+                        opacity: 1,
                         x: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.x : Math.round(position.x),
                         y: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.y : Math.round(position.y),
                         width: size.width,
                         height: size.height,
                     }}
                     exit={{
-                        scale: 0.005,
-                        x: position.x,
-                        y: position.y,
+                        scale: 0.2,
+                        opacity: 0,
+                        x: Math.round(position.x),
+                        y: Math.round(position.y),
                         transition: {
-                            type: 'spring',
-                            stiffness: 350,
-                            damping: 25,
-                            mass: 0.8,
+                            duration: 0.2,
+                            ease: [0.32, 0, 0.67, 0],
                         },
                     }}
                     transition={
                         siteSettings?.performanceBoost
                             ? { duration: 0 }
                             : {
-                                  type: 'spring',
-                                  stiffness: 300,
-                                  damping: 30,
-                                  mass: 0.8,
-                                  scale: {
-                                      type: 'spring',
-                                      stiffness: 300,
-                                      damping: 30,
-                                      mass: 0.8,
-                                      delay: 0.02,
-                                  },
-                                  width: {
-                                      duration: dragging ? 0 : 0.35,
-                                      type: dragging ? false : 'tween',
-                                      ease: [0.25, 1, 0.5, 1],
-                                  },
-                                  height: {
-                                      duration: dragging ? 0 : 0.35,
-                                      type: dragging ? false : 'tween',
-                                      ease: [0.25, 1, 0.5, 1],
-                                  },
-                                  x: {
-                                      duration: dragging ? 0 : 0.35,
-                                      type: dragging ? false : 'tween',
-                                      ease: [0.25, 1, 0.5, 1],
-                                  },
-                                  y: {
-                                      duration: dragging ? 0 : 0.35,
-                                      type: dragging ? false : 'tween',
-                                      ease: [0.25, 1, 0.5, 1],
-                                  },
+                                  duration: dragging ? 0 : 0.28,
+                                  ease: [0.16, 1, 0.3, 1],
                               }
                     }
                     drag={isActiveWindowsPanelOpen ? false : !item.fixedSize}
