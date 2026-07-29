@@ -83,6 +83,11 @@ const TOPICS = [
 async function runBotWorker() {
     console.log('🤖 Starting Autonomous Forum Bot Worker...')
 
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        console.warn('⚠️ WARNING: SUPABASE_SERVICE_ROLE_KEY environment variable is missing!')
+        console.warn('⚠️ Please add SUPABASE_SERVICE_ROLE_KEY to GitHub Secrets (Repository Settings -> Secrets and variables -> Actions) so the bot can write to Supabase.')
+    }
+
     const topic = TOPICS[Math.floor(Math.random() * TOPICS.length)]
     console.log(`📌 Selected topic: "${topic}"`)
 
@@ -118,6 +123,9 @@ async function runBotWorker() {
 
     if (postErr) {
         console.error('❌ Error creating post in Supabase:', postErr.message)
+        if (postErr.code === '42501' || postErr.message?.includes('row-level security')) {
+            console.error('👉 CAUSE: Row Level Security (RLS) blocked insertion. Add SUPABASE_SERVICE_ROLE_KEY to GitHub Repository Secrets.')
+        }
         return
     }
 
