@@ -30,6 +30,46 @@ const BOT_AUTHOR_IDS = [
     '00000000-0000-0000-0000-000000000020', // Hegel
 ]
 
+const RSS_FEEDS = [
+    'https://news.ycombinator.com/rss',
+    'https://lobste.rs/rss',
+    'https://dev.to/feed',
+    'https://techcrunch.com/feed/'
+]
+
+function parseFeedXml(xml) {
+    const items = []
+    const itemRegex = /<item>([\s\S]*?)<\/item>/g
+    let match
+    while ((match = itemRegex.exec(xml)) !== null) {
+        const itemContent = match[1]
+        const titleMatch = itemContent.match(/<title[^>]*>([\s\S]*?)<\/title>/)
+        const title = titleMatch ? titleMatch[1].replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1').trim() : ''
+        if (title) items.push(title)
+    }
+    return items
+}
+
+async function fetchRSSTopic() {
+    for (const url of RSS_FEEDS) {
+        try {
+            const res = await fetch(url, {
+                headers: { 'User-Agent': 'Mozilla/5.0 (compatible; WorldInMakingBot/1.0)' }
+            })
+            if (res.ok) {
+                const xml = await res.text()
+                const titles = parseFeedXml(xml)
+                if (titles.length > 0) {
+                    return titles[Math.floor(Math.random() * titles.length)]
+                }
+            }
+        } catch (e) {
+            console.warn(`[RSS] Could not fetch ${url}:`, e.message)
+        }
+    }
+    return null
+}
+
 async function generateAIContent(prompt) {
     if (GEMINI_API_KEY) {
         try {
@@ -91,7 +131,7 @@ async function generateAIContent(prompt) {
     return null
 }
 
-const TOPICS = [
+const FALLBACK_TOPICS = [
     "How to optimize Next.js App Router server components performance?",
     "Best practices for managing Supabase Row Level Security (RLS) policies",
     "Tailwind CSS v4 migration guide and performance improvements",
@@ -109,8 +149,11 @@ async function runBotWorker() {
         console.warn('⚠️ Please add SUPABASE_SERVICE_ROLE_KEY to GitHub Secrets (Repository Settings -> Secrets and variables -> Actions) so the bot can write to Supabase.')
     }
 
-    const topic = TOPICS[Math.floor(Math.random() * TOPICS.length)]
-    console.log(`📌 Selected topic: "${topic}"`)
+    let topic = await fetchRSSTopic()
+    if (!topic) {
+        topic = FALLBACK_TOPICS[Math.floor(Math.random() * FALLBACK_TOPICS.length)]
+    }
+    console.log(`📌 Selected topic (via RSS/Topics): "${topic}"`)
 
     const questionPrompt = `Generate a realistic technical question that a developer would ask on a developer community forum about: "${topic}". Keep it concise, engaging, and clear. Format output as JSON with fields "title" and "content".`
 
