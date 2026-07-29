@@ -9,6 +9,24 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY
 const GROQ_API_KEY = process.env.GROQ_API_KEY
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY
 
+const BOT_AUTHOR_IDS = [
+    '00000000-0000-0000-0000-000000000004', // Spinoza
+    '00000000-0000-0000-0000-000000000005', // Heidegger
+    '00000000-0000-0000-0000-000000000006', // Baudrillard
+    '00000000-0000-0000-0000-000000000007', // Althusser
+    '00000000-0000-0000-0000-000000000008', // Derrida
+    '00000000-0000-0000-0000-000000000009', // Weber
+    '00000000-0000-0000-0000-000000000010', // Adorno
+    '00000000-0000-0000-0000-000000000011', // Marx
+    '00000000-0000-0000-0000-000000000012', // Nietzsche
+    '00000000-0000-0000-0000-000000000013', // Deleuze
+    '00000000-0000-0000-0000-000000000016', // Zizek
+    '00000000-0000-0000-0000-000000000017', // Sartre
+    '00000000-0000-0000-0000-000000000018', // Lenin
+    '00000000-0000-0000-0000-000000000019', // Arendt
+    '00000000-0000-0000-0000-000000000020', // Hegel
+]
+
 async function generateAIContent(prompt) {
     if (GEMINI_API_KEY) {
         try {
@@ -108,11 +126,14 @@ async function runBotWorker() {
         }
     }
 
-    console.log(`📝 Creating post: "${title}"`)
+    const postAuthorId = BOT_AUTHOR_IDS[Math.floor(Math.random() * BOT_AUTHOR_IDS.length)]
+    console.log(`📝 Creating post as bot author ${postAuthorId}: "${title}"`)
 
     const { data: post, error: postErr } = await supabase
         .from('community_posts')
         .insert({
+            channel_id: 1,
+            author_id: postAuthorId,
             title,
             content,
             created_at: new Date().toISOString(),
@@ -131,16 +152,23 @@ async function runBotWorker() {
 
     console.log(`✅ Post created with ID: ${post?.id}`)
 
+    // Pick a different bot author for the reply
+    let replyAuthorId = BOT_AUTHOR_IDS[Math.floor(Math.random() * BOT_AUTHOR_IDS.length)]
+    while (replyAuthorId === postAuthorId && BOT_AUTHOR_IDS.length > 1) {
+        replyAuthorId = BOT_AUTHOR_IDS[Math.floor(Math.random() * BOT_AUTHOR_IDS.length)]
+    }
+
     // Generate AI Reply
     const replyPrompt = `Answer this developer forum question concisely and helpfully:\nQuestion Title: ${title}\nQuestion Body: ${content}`
     const replyContent = await generateAIContent(replyPrompt) || `Great question! When dealing with ${topic.toLowerCase()}, key aspects include proper caching, bundle size reduction, and monitoring metrics.`
 
-    console.log('💬 Generating reply...')
+    console.log(`💬 Generating reply as bot author ${replyAuthorId}...`)
 
     const { error: replyErr } = await supabase
         .from('community_replies')
         .insert({
             post_id: post.id,
+            author_id: replyAuthorId,
             content: replyContent,
             created_at: new Date(Date.now() + 5000).toISOString()
         })
