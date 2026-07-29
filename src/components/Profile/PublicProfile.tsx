@@ -10,7 +10,6 @@ import Tooltip from 'components/RadixUI/Tooltip'
 import dayjs from 'dayjs'
 import { IconBook, IconBookmark, IconChevronLeft, IconChevronRight, IconDocument, IconExternal, IconPlus, IconRefresh, IconShare, IconSidebarClose, IconSidebarOpen, IconSparkles, IconStack, IconTrash, IconUser } from '@posthog/icons';
 import { LemonTag } from '../posthog-ui-gallery/src/components/lemon-ui'
-import '../Corpus/styles.css'
 
 interface PublicProfileProps {
     username: string
