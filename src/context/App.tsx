@@ -1761,7 +1761,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 prev.map((w) => ({
                     ...w,
                     expanded: true,
-                    windowed: false,
+                    windowed: true,
                     position: { x: 0, y: 0 },
                 }))
             )
@@ -2270,7 +2270,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             const fullW = bounds ? bounds.width : window.innerWidth - 16
             const fullH = bounds ? bounds.height : window.innerHeight - taskbarHeight - 16
             newWindow.expanded = true
-            newWindow.windowed = false
+            newWindow.windowed = true
             newWindow.snapped = false
             newWindow.size = { width: fullW, height: fullH }
             newWindow.position = { x: 0, y: 0 }
@@ -2347,7 +2347,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 previousPosition: item.position || { x: 50, y: 50 },
                 zIndex: maxZ + 1,
                 minimized: false,
-                windowed: !isMobileClient,
+                windowed: true,
                 expanded: isMobileClient || item.expanded,
                 snapped: false,
                 fromOrigin: item.fromOrigin,
