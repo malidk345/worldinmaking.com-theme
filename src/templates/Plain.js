@@ -52,7 +52,7 @@ export default function Plain({ data }) {
             <section className="py-12">
                 {showTitle && <h1 className="text-center">{title}</h1>}
                 <MDXProvider components={components}>
-                    <MDXRenderer images={images}>{body}</>
+                    <MDXRenderer images={images}>{body}</MDXRenderer>
                 </MDXProvider>
             </section>
         </ReaderView>

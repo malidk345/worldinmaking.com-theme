@@ -875,8 +875,8 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                     data-scheme="tertiary"
                     className={`group @container absolute pointer-events-auto !select-auto flex flex-col border-primary ${WINDOW_BG} ${
                         isCompositorActive ? MOTION_LAYER : ''
-                    } rounded-lg ${item.appSettings?.size?.fixed ? 'border' : item.expanded ? 'border-t' : ''} ${
-                        item.expanded ? 'shadow-none' : 'shadow-md'
+                    } rounded-3xl ${item.appSettings?.size?.fixed ? 'border' : item.expanded ? 'border-t rounded-none' : ''} ${
+                        item.expanded ? 'shadow-none' : ''
                     }`}
                     style={{
                         pointerEvents: 'auto',
@@ -884,6 +884,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                         rotateY: isActiveWindowsPanelOpen ? 0 : tiltY,
                         transformPerspective: 1200,
                         zIndex: isActiveWindowsPanelOpen ? 10001 + activePanelIndex : item.zIndex,
+                        boxShadow: item.expanded ? 'none' : 'inset 0 1px 0 0 rgba(255, 255, 255, 0.15), 0 12px 48px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.05)',
                         ...(item.appSettings?.size?.fixed
                             ? {
                                   maxWidth: item.sizeConstraints.min.width,
@@ -894,7 +895,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             : {}),
                     }}
                     initial={{
-                        scale: 0.2,
+                        scale: 0.95,
                         opacity: 0,
                         x: Math.round(position.x),
                         y: Math.round(position.y),
@@ -910,21 +911,21 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                         height: size.height,
                     }}
                     exit={{
-                        scale: 0.2,
+                        scale: 0.95,
                         opacity: 0,
                         x: Math.round(position.x),
                         y: Math.round(position.y),
                         transition: {
-                            duration: 0.2,
-                            ease: [0.32, 0, 0.67, 0],
+                            duration: 0.25,
+                            ease: [0.25, 1, 0.5, 1],
                         },
                     }}
                     transition={
                         siteSettings?.performanceBoost
                             ? { duration: 0 }
                             : {
-                                  duration: dragging ? 0 : 0.28,
-                                  ease: [0.16, 1, 0.3, 1],
+                                  duration: dragging ? 0 : 0.4,
+                                  ease: [0.25, 1, 0.5, 1],
                               }
                     }
                     drag={isActiveWindowsPanelOpen ? false : !item.fixedSize}
@@ -1023,14 +1024,14 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                         onTouchStart={(e) => e.stopPropagation()}
                         className={`size-full flex-grow overflow-y-auto overscroll-y-contain touch-pan-y scroll-smooth [webkit-overflow-scrolling:touch] bg-[#fdfdf8] dark:bg-[#1b1c1e] text-primary ${
                             chrome
-                                ? `rounded-lg ${hasToolbar ? 'rounded-t-none' : ''} ${
+                                ? `rounded-2xl ${hasToolbar ? 'rounded-t-none' : ''} ${
                                       item.expanded
-                                          ? 'rounded-tr-none rounded-tl-none'
+                                          ? 'rounded-tr-none rounded-tl-none rounded-bl-none rounded-br-none'
                                           : item.snapped === 'left'
                                           ? 'rounded-tl-none rounded-tr-none rounded-br-none'
                                           : item.snapped === 'right'
                                           ? 'rounded-tl-none rounded-tr-none rounded-bl-none'
-                                          : ''
+                                          : 'm-1'
                                   }`
                                 : ''
                         }`}
