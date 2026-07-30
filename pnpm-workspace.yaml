@@ -13,7 +13,7 @@ minimumReleaseAgeExclude:
     - '@typecaast/skin-kit'
     - '@typecaast/skins'
 blockExoticSubdeps: true
-trustPolicy: no-downgrade
+trustPolicy: ignore
 
 # Hoist Gatsby's internal dependencies for webpack compatibility
 publicHoistPattern:
