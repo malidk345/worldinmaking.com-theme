@@ -2,7 +2,7 @@ packages:
     - .
     - plugins/*
 
-minimumReleaseAge: 0
+minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
     - '@posthog/brand'
     - '@posthog/icons'
