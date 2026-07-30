@@ -1,7 +1,7 @@
 on:
     push:
         branches:
-            - master
+            - main
     pull_request:
 
 name: Security
@@ -34,7 +34,7 @@ jobs:
                     --error \
                     --metrics=off \
                     --verbose \
-                    src/ gatsby/ plugins/ api/ *.js *.ts *.tsx
+                    src/ gatsby/ api/ *.js *.ts *.tsx
 
     # scans GitHub Actions and other repo-wide config
     semgrep-general:
@@ -59,7 +59,6 @@ jobs:
                     --verbose \
                     --exclude ./src/ \
                     --exclude ./gatsby/ \
-                    --exclude ./plugins/ \
                     --exclude ./api/ \
                     --exclude ./contents/ \
                     .

@@ -1,6 +1,6 @@
-name: Bundle baseline (master)
+name: Bundle baseline (main)
 
-# Produces the master baseline that deploy-preview.yml diffs each PR against. Builds the
+# Produces the main baseline that deploy-preview.yml diffs each PR against. Builds the
 # site the same way the preview build does (GATSBY_MINIMAL + EMIT_WEBPACK_STATS) and caches
 # the resulting reports. Path-filtered so content/docs-only commits don't trigger a build —
 # only changes that can move the JS bundle do.
@@ -8,7 +8,7 @@ name: Bundle baseline (master)
 on:
     push:
         branches:
-            - master
+            - main
         paths:
             - 'src/**'
             - 'gatsby-*'
