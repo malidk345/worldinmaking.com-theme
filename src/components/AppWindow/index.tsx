@@ -33,7 +33,7 @@ import { Popover } from '../RadixUI/Popover'
 import { FileMenu } from '../RadixUI/FileMenu'
 import { IMenu } from 'components/PostLayout/types'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter } from 'next/router'
 import Inbox from 'components/Inbox'
 import Handbook from '../../templates/Handbook'
 import BlogPost from '../../templates/BlogPost'
@@ -918,15 +918,11 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                         },
                     }}
                     transition={
-                        siteSettings?.performanceBoost
-                            ? { duration: 0 }
-                            : dragging
+                        siteSettings?.performanceBoost || dragging
                             ? { duration: 0 }
                             : {
-                                  type: 'spring',
-                                  stiffness: 380,
-                                  damping: 32,
-                                  mass: 0.8,
+                                  duration: 0.2,
+                                  ease: [0.16, 1, 0.3, 1],
                               }
                     }
                     drag={isActiveWindowsPanelOpen ? false : !item.fixedSize}

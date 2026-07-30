@@ -809,6 +809,8 @@ hr {
     -webkit-overflow-scrolling: touch;
     transform: translateZ(0);
     backface-visibility: hidden;
+    will-change: scroll-position, transform;
+    contain: content;
 }
 
 /* Native fallback for overflow containers that do not use the shared

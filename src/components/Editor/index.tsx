@@ -22,6 +22,7 @@ import {
     ReloadIcon,
 } from '@radix-ui/react-icons'
 import { IconLink } from '../OSIcons/Icons'
+import useProduct from 'hooks/useProduct'
 import { SearchProvider } from './SearchProvider'
 import { SearchBar } from './SearchBar'
 import { getProseClasses } from '../../constants/index'
@@ -109,7 +110,7 @@ type EditorActionButton = {
 }
 
 const ScrollWrapper = ({ scrollable, children }: { scrollable: boolean; children: React.ReactNode }) =>
-    scrollable ? <ScrollArea>{children}</ScrollArea> : <>{children}</>
+    <div className="w-full flex-1 overflow-y-auto app-scroll-viewport">{children}</div>
 
 const contentWidthOptions: ToggleOption[] = [
     {
@@ -237,6 +238,9 @@ export function Editor({
     const [showSearch, setShowSearch] = useState(false)
     const [isModifierKeyPressed, setIsModifierKeyPressed] = useState(false)
     const [isHovering, setIsHovering] = useState(false)
+    const products = useProduct() as { slug: string; name: string; type: string }[]
+    // take the product name passed in and check the useProduct hook to get the product's display name
+    const getProductName = (type: string) => products.find((p) => p.type === type)?.name || type
     // if we're filtering to a product, show the filter button in an active/open state
     const searchContentRef = useRef(null)
     const { addWindow, focusedWindow } = useApp()
@@ -525,12 +529,12 @@ export function Editor({
 
     return (
         <SearchProvider onSearchChange={onSearchChange}>
-            <div className={`@container w-full h-full flex flex-col min-h-1 ${className}`}>
-                <div className="flex flex-col flex-grow min-h-0">
+            <div className={`@container w-full h-full flex flex-col ${className}`}>
+                <div className="flex flex-col flex-1 min-h-0">
                     <main
                         data-app="Editor"
                         data-scheme="primary"
-                        className="@container/editor flex-1 relative h-full flex flex-col"
+                        className="@container/editor flex-1 relative h-full flex flex-col min-h-0"
                     >
                         <SearchBar
                             visible={showSearch}

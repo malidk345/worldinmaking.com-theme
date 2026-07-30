@@ -3,20 +3,36 @@ import { IconHeadphones, IconSpinner } from '@posthog/icons'
 import OSButton from 'components/OSButton'
 import Tooltip from 'components/RadixUI/Tooltip'
 
-const STREAMS = [
-    'https://ice6.somafm.com/groovesalad-128-mp3',
-    'https://ice2.somafm.com/groovesalad-128-mp3',
-    'https://ice1.somafm.com/groovesalad-128-mp3',
-    'https://ice4.somafm.com/groovesalad-128-mp3',
-    'https://stream.zeno.fm/f3v6ch180d0uv',
+const STATIONS = [
+    {
+        name: 'Groove Salad',
+        desc: 'Downtempo & Ambient Beats',
+        url: 'https://ice2.somafm.com/groovesalad-128-mp3',
+    },
+    {
+        name: 'DEF CON Radio',
+        desc: 'Hacker & Cyberpunk Beats',
+        url: 'https://ice1.somafm.com/defcon-128-mp3',
+    },
+    {
+        name: 'Drone Zone',
+        desc: 'Atmospheric Deep Space Ambient',
+        url: 'https://ice4.somafm.com/dronezone-128-mp3',
+    },
+    {
+        name: 'Lofi Study Beats',
+        desc: 'Relaxing Focus & Chill Beats',
+        url: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3',
+    },
 ]
 
 export default function AmbientPlayer() {
     const [mounted, setMounted] = useState(false)
+    const [shouldPlay, setShouldPlay] = useState(false)
     const [isPlaying, setIsPlaying] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [hasError, setHasError] = useState(false)
-    const [streamIndex, setStreamIndex] = useState(0)
+    const [stationIndex, setStationIndex] = useState(0)
     const audioRef = useRef<HTMLAudioElement | null>(null)
 
     useEffect(() => {
@@ -26,18 +42,20 @@ export default function AmbientPlayer() {
     useEffect(() => {
         if (!mounted) return
 
+        const currentStation = STATIONS[stationIndex]
         const audio = new Audio()
-        audio.volume = 0.5
-        audio.src = STREAMS[streamIndex]
+        audio.volume = 0.6
+        audio.src = currentStation.url
 
-        const handleError = () => {
-            console.warn('Stream failed:', STREAMS[streamIndex])
-            if (streamIndex < STREAMS.length - 1) {
-                setStreamIndex((prev) => prev + 1)
+        const handleError = (e: any) => {
+            console.warn('Audio stream error for station:', currentStation.name, e)
+            if (stationIndex < STATIONS.length - 1) {
+                setStationIndex((prev) => prev + 1)
             } else {
                 setHasError(true)
                 setIsLoading(false)
                 setIsPlaying(false)
+                setShouldPlay(false)
             }
         }
 
@@ -62,6 +80,14 @@ export default function AmbientPlayer() {
 
         audioRef.current = audio
 
+        if (shouldPlay) {
+            setIsLoading(true)
+            audio.play().catch((err) => {
+                console.warn('Playback blocked or failed:', err)
+                handleError(err)
+            })
+        }
+
         return () => {
             audio.removeEventListener('error', handleError)
             audio.removeEventListener('playing', handlePlaying)
@@ -70,27 +96,24 @@ export default function AmbientPlayer() {
             audio.pause()
             audio.src = ''
         }
-    }, [streamIndex])
+    }, [mounted, stationIndex, shouldPlay])
 
     const togglePlay = () => {
-        if (!audioRef.current) return
-
-        if (isPlaying) {
-            audioRef.current.pause()
+        if (shouldPlay) {
+            setShouldPlay(false)
+            if (audioRef.current) {
+                audioRef.current.pause()
+            }
         } else {
             setHasError(false)
             setIsLoading(true)
-            audioRef.current.play().catch((err) => {
-                console.warn('Playback error, trying next mirror stream:', err)
-                if (streamIndex < STREAMS.length - 1) {
-                    setStreamIndex((prev) => prev + 1)
-                } else {
-                    setHasError(true)
-                    setIsLoading(false)
-                    setIsPlaying(false)
-                }
-            })
+            setShouldPlay(true)
         }
+    }
+
+    const nextStation = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        setStationIndex((prev) => (prev + 1) % STATIONS.length)
     }
 
     const eqAnimation = (
@@ -109,6 +132,8 @@ export default function AmbientPlayer() {
             </OSButton>
         )
     }
+
+    const currentStation = STATIONS[stationIndex]
 
     return (
         <>
@@ -143,13 +168,29 @@ export default function AmbientPlayer() {
                     </OSButton>
                 }
             >
-                <div className="flex flex-col items-center gap-1 p-1 max-w-48 text-center">
+                <div className="flex flex-col items-center gap-1 p-2 max-w-56 text-center">
                     <p className="text-sm font-bold mb-0">
-                        {isPlaying ? 'Focus Audio Playing' : isLoading ? 'Connecting to Stream...' : 'Ambient Focus Audio'}
+                        {isPlaying ? '♪ Playing Focus Audio' : isLoading ? 'Connecting to Stream...' : 'Ambient Focus Audio'}
                     </p>
-                    <p className="text-[11px] opacity-70 mb-0 leading-tight">
-                        {isPlaying ? 'SomaFM Groove Salad (Downtempo/Chill)' : 'Click to stream ambient music for deep work'}
+                    <p className="text-xs font-semibold text-primary mb-0 leading-tight">
+                        {currentStation.name} ({currentStation.desc})
                     </p>
+                    <div className="mt-1 flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={togglePlay}
+                            className="text-xs px-2 py-0.5 rounded bg-primary text-secondary hover:opacity-90 font-medium"
+                        >
+                            {isPlaying ? 'Pause' : 'Play'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={nextStation}
+                            className="text-xs px-2 py-0.5 rounded bg-accent border border-primary hover:bg-primary/10 font-medium"
+                        >
+                            Next Station ↻
+                        </button>
+                    </div>
                 </div>
             </Tooltip>
         </>

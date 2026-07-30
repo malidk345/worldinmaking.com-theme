@@ -420,23 +420,23 @@ const AskMax = ({
     useEffect(() => {
         const askMax = async () => {
             try {
-                const response = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/ask-max`, {
+                const response = await fetch('/api/philosopher-bot', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        Authorization: `Bearer ${await getJwt()}`,
                     },
                     body: JSON.stringify({
-                        question,
-                        manual,
-                        withContext,
+                        question: typeof question === 'string' ? question : question?.title || question?.subject || 'Philosophical Query',
+                        philosopher: 'Nietzsche',
+                        taskType: 'community_reply',
                     }),
                 }).then((res) => res.json())
-                setConfident(response.confident)
+                setConfident(response?.confident ?? true)
                 setLoading(false)
                 refresh()
             } catch (error) {
                 console.error(error)
+                setLoading(false)
             }
         }
         if (typeof window !== 'undefined') {

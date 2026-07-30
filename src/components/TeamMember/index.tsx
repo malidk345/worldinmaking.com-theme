@@ -2,7 +2,7 @@ import CloudinaryImage from 'components/CloudinaryImage'
 import Tooltip from 'components/Tooltip'
 import React from 'react'
 import ReactCountryFlag from 'react-country-flag'
-import Link from 'next/link'
+import Link from 'components/Link'
 
 export const TeamMemberLink = ({
     firstName,
@@ -31,16 +31,15 @@ export const TeamMemberLink = ({
     photo?: boolean
     showOnlyFirstName?: boolean
     children?: JSX.Element
-    href?: string
 }): JSX.Element => {
     const displayName = showOnlyFirstName ? firstName : [firstName, lastName].filter(Boolean).join(' ')
-    const avatarUrl = avatar?.formats?.thumbnail?.url
+    const avatarUrl = (avatar as any)?.formats?.thumbnail?.url || (avatar as any)?.url || (typeof avatar === 'string' ? avatar : null)
 
     // The invisible block is necessary to make sure we have the proper width
     // with the `relative inline-block` parent when we include a photo
     return (
         <span className="relative inline-block">
-            <Link href={href || (squeakId ? `/community/profiles/${squeakId}` : '')} state={{ newWindow: true }}>
+            <Link to={href || (squeakId ? `/profile/${squeakId}` : '')}>
                 {photo && (
                     <span className="invisible max-h-4 inline-flex items-center gap-1.5 p-0.5 pr-1.5 border border-primary rounded-full">
                         <span className="h-6 shrink-0 rounded-full overflow-hidden">
@@ -155,24 +154,21 @@ export default function TeamMember({
     showOnlyFirstName?: boolean
     children?: JSX.Element
 }): JSX.Element | null {
-    const nodes: any[] = []
+    const staticData: any = typeof useStaticQuery === 'function' ? useStaticQuery(null) : {}
+    const nodes = staticData?.profiles?.nodes || []
 
     const person = nodes.find(
         ({ firstName, lastName }: { firstName: string; lastName: string }) =>
             `${firstName} ${lastName}`.toLowerCase() === name.toLowerCase()
-    )
+    ) || {
+        firstName: name,
+        squeakId: name.toLowerCase().replace(/\s+/g, '-'),
+        color: 'red',
+    }
 
-    return person ? (
-        <>
-            {children ? (
-                <TeamMemberLink {...person} photo={photo} className={className} showOnlyFirstName={showOnlyFirstName}>
-                    {children}
-                </TeamMemberLink>
-            ) : (
-                <TeamMemberLink {...person} photo={photo} className={className} showOnlyFirstName={showOnlyFirstName} />
-            )}
-        </>
-    ) : (
-        <span>{name}</span>
+    return (
+        <TeamMemberLink {...person} photo={photo} className={className} showOnlyFirstName={showOnlyFirstName}>
+            {children}
+        </TeamMemberLink>
     )
 }

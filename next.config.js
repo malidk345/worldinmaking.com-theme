@@ -3,6 +3,7 @@ const path = require('path')
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     // output: 'export',
+    transpilePackages: ['ai', '@ai-sdk/openai', '@ai-sdk/google', '@ai-sdk/provider', '@ai-sdk/provider-utils'],
     eslint: {
         ignoreDuringBuilds: true,
     },

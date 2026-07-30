@@ -1,7 +1,7 @@
 import { TooltipContent, TooltipContentProps } from 'components/GlossaryElement'
 import Tooltip from 'components/Tooltip'
 import NextLink from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter } from 'next/router'
 import React, { useMemo } from 'react'
 import usePostHog from '../../hooks/usePostHog'
 import { IconArrowUpRight } from '@posthog/icons'

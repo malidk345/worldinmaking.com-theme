@@ -1,3 +1,4 @@
+require('dotenv').config({ path: '.env.local' })
 const { createClient } = require('@supabase/supabase-js')
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://iydypisgfaksqkjdraiu.supabase.co'
@@ -122,10 +123,11 @@ function cleanAIOutput(text) {
 }
 
 const RSS_FEEDS = [
-    'https://news.ycombinator.com/rss',
-    'https://lobste.rs/rss',
-    'https://dev.to/feed',
-    'https://techcrunch.com/feed/'
+    'https://aeon.co/feed.rss',
+    'https://plato.stanford.edu/rss/sep.xml',
+    'https://restofworld.org/feed/latest/',
+    'https://www.lesswrong.com/feed.xml',
+    'https://www.alignmentforum.org/feed.xml'
 ]
 
 function parseFeedXml(xml) {

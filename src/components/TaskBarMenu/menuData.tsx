@@ -16,7 +16,7 @@ import {
 import { useAppSettings } from '../../context/App'
 import { useHedgehogMode } from 'components/HedgehogMode'
 import { useSmallTeamsMenuItems } from './SmallTeamsMenuItems'
-import { useRouter } from 'next/navigation'
+import { useRouter } from 'next/router'
 
 export const SparksJoyItems = {
     games: [

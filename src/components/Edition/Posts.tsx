@@ -218,6 +218,14 @@ export const tagsHideFromIndex = ['Comparisons']
 export const getParams = (root, tag, sort, authorId) => {
     return {
         sort,
+        populate: {
+            authors: {
+                populate: ['avatar'],
+            },
+            featuredImage: true,
+            post_category: true,
+            post_tags: true,
+        },
         filters: {
             $and: [
                 ...(root
