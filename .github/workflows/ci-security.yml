@@ -34,7 +34,7 @@ jobs:
                     --error \
                     --metrics=off \
                     --verbose \
-                    src/ *.js *.ts *.tsx
+                    src/
 
     # scans GitHub Actions and other repo-wide config
     semgrep-general:
