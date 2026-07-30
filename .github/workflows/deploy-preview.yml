@@ -90,9 +90,9 @@ jobs:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
             # Bundle + eager-graph report. Runs off the build above, so it adds no build to
-            # the PR. The master baseline (for deltas) is produced by bundle-baseline.yml and
+            # the PR. The main baseline (for deltas) is produced by bundle-baseline.yml and
             # restored from cache here; absent a baseline the comment shows absolute sizes.
-            - name: Restore bundle baseline from master
+            - name: Restore bundle baseline from main
               if: success()
               uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
               with:
