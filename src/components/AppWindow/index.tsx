@@ -880,8 +880,8 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                     }`}
                     style={{
                         pointerEvents: 'auto',
-                        rotateX: isActiveWindowsPanelOpen ? 0 : tiltX,
-                        rotateY: isActiveWindowsPanelOpen ? 0 : tiltY,
+                        rotateX: compact || isActiveWindowsPanelOpen ? 0 : tiltX,
+                        rotateY: compact || isActiveWindowsPanelOpen ? 0 : tiltY,
                         transformPerspective: 1200,
                         zIndex: isActiveWindowsPanelOpen ? 10001 + activePanelIndex : item.zIndex,
                         ...(item.appSettings?.size?.fixed
@@ -894,10 +894,10 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                             : {}),
                     }}
                     initial={{
-                        scale: item.fromOrigin ? 0.4 : 0.94,
+                        scale: item.fromOrigin && !compact ? 0.4 : 0.96,
                         opacity: 0,
-                        x: item.fromOrigin ? item.fromOrigin.x : Math.round(position.x),
-                        y: item.fromOrigin ? item.fromOrigin.y : Math.round(position.y),
+                        x: item.fromOrigin && !compact ? item.fromOrigin.x : Math.round(position.x),
+                        y: item.fromOrigin && !compact ? item.fromOrigin.y : Math.round(position.y),
                         width: size.width,
                         height: size.height,
                     }}
@@ -910,18 +910,18 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                         height: size.height,
                     }}
                     exit={{
-                        scale: 0.95,
+                        scale: 0.98,
                         opacity: 0,
                         transition: {
-                            duration: 0.18,
+                            duration: compact ? 0.05 : 0.15,
                             ease: [0.32, 0, 0.67, 0],
                         },
                     }}
                     transition={
-                        siteSettings?.performanceBoost || dragging
+                        compact || siteSettings?.performanceBoost || dragging
                             ? { duration: 0 }
                             : {
-                                  duration: 0.2,
+                                  duration: 0.15,
                                   ease: [0.16, 1, 0.3, 1],
                               }
                     }

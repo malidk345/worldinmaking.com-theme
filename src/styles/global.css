@@ -845,9 +845,26 @@ hr {
     border-radius: 9999px;
 }
 
-[data-app='AppWindow'] *::-webkit-scrollbar-thumb:hover,
-[data-menu-container] *::-webkit-scrollbar-thumb:hover {
     background-color: rgb(var(--text-primary) / 0.4);
+}
+
+/* Mobile Performance & Touch Acceleration Optimizations */
+html, body {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+button, a, [role="button"], [data-app="AppWindow"] {
+    touch-action: manipulation;
+}
+
+@media (max-width: 768px) {
+    [data-app="AppWindow"] {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+        will-change: transform, opacity;
+    }
 }
 
 [data-app='AppWindow'] *::-webkit-scrollbar-thumb:active,
