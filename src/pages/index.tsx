@@ -1,5 +1,5 @@
-import DynamicSlugPage from './[...slug]'
+import DesktopPage from './desktop'
 
-export default function Home() {
-    return <DynamicSlugPage />
+export default function Home(props: any) {
+    return <DesktopPage {...props} />
 }

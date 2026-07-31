@@ -4,7 +4,6 @@ import AboutPostHog from './components/AboutPostHog'
 import CountriesWeHireIn from './components/AMCharts/CountriesWeHireIn'
 import { ArrayCTA } from './components/ArrayCTA'
 import AskAIInput from './components/AskAIInput'
-import AskMax from './components/AskMax'
 import { BasicHedgehogImage } from './components/BasicHedgehogImage'
 import { BorderWrapper } from './components/BorderWrapper'
 import { BrandLogos } from './components/BrandLogos'
@@ -142,7 +141,6 @@ export const shortcodes = {
     Steps,
     Step,
     AskAIInput,
-    AskMax,
     CountriesWeHireIn,
     FeatureOwnershipTable,
     TaskOwnershipTable,

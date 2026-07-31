@@ -285,7 +285,7 @@ function TaskBarMenu() {
                 <div
                     ref={handleTaskbarRef}
                     id="taskbar"
-                    data-scheme="primary"
+                    data-scheme="tertiary"
                     data-menu-container
                     style={{
                         transformOrigin: '50% 50%',

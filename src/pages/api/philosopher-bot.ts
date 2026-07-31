@@ -48,9 +48,13 @@ export default async function handler(req: Request) {
 
     let body: any = {}
     try {
-        body = await req.json()
+        if (typeof (req as any).json === 'function') {
+            body = await req.json()
+        } else if ((req as any).body) {
+            body = typeof (req as any).body === 'string' ? JSON.parse((req as any).body) : (req as any).body
+        }
     } catch {
-        body = {}
+        body = (req as any).body || {}
     }
 
     const {

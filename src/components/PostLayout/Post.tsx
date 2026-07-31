@@ -13,7 +13,6 @@ import InternalSidebarLink from 'components/Docs/InternalSidebarLink'
 import SidebarAction from './SidebarAction'
 import { Edit, ExpandDocument, Issue } from 'components/Icons'
 import { useLayoutData } from 'components/Layout/hooks'
-import AskMax from 'components/AskMax'
 import { useUser } from 'hooks/useUser'
 
 export default function Post({ children }: { children: React.ReactNode }) {
@@ -77,7 +76,6 @@ export default function Post({ children }: { children: React.ReactNode }) {
                 >
                     <div onTransitionEnd={handleArticleTransitionEnd} className={contentContainerClasses}>
                         <div>{children}</div>
-                        {askMax && <AskMax border />}
                         {questions}
                     </div>
                     {!hideSurvey && <Survey />}

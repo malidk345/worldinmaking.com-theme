@@ -78,45 +78,23 @@ const OfficeParty = () => (
 
 const KeyboardGarden = () => (
     <>
-        <div className="absolute inset-0 bg-gradient-to-b from-[#FDEECD] to-[#FFFEF4]" />
-
+        <div className={`absolute inset-0 bg-[#E1D7C2] dark:bg-[#333733] ${FADE_COLORS}`} />
         <div
-            className={`absolute inset-0 sm:hidden opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
+            className={`absolute inset-0 opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
             style={{
                 backgroundImage:
-                    "url('https://res.cloudinary.com/dmukukwp6/image/upload/9000_mobile_bg_light_95ed14e5a3.jpg')",
-                backgroundSize: 'cover',
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'right bottom',
+                    "url('https://res.cloudinary.com/dmukukwp6/image/upload/keyboard_garden_bg_light_03a349af5c.png')",
+                backgroundSize: '100px 100px',
+                backgroundRepeat: 'repeat',
             }}
         />
         <div
-            className={`absolute inset-0 sm:hidden opacity-0 dark:opacity-100 ${FADE_OPACITY}`}
+            className={`absolute inset-0 opacity-0 dark:opacity-100 ${FADE_OPACITY}`}
             style={{
                 backgroundImage:
-                    "url('https://res.cloudinary.com/dmukukwp6/image/upload/9000_mobile_bg_dark_8a84515f2d.jpg')",
-                backgroundSize: 'cover',
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'right bottom',
-            }}
-        />
-        <div
-            className={`absolute inset-0 hidden sm:block opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
-            style={{
-                backgroundImage:
-                    "url('https://res.cloudinary.com/dmukukwp6/image/upload/9000_bg_light_07316896be.jpg')",
-                backgroundSize: 'cover',
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'right bottom',
-            }}
-        />
-        <div
-            className={`absolute inset-0 hidden sm:block opacity-0 dark:opacity-100 ${FADE_OPACITY}`}
-            style={{
-                backgroundImage: "url('https://res.cloudinary.com/dmukukwp6/image/upload/9000_bg_dark_9a32796f77.jpg')",
-                backgroundSize: 'cover',
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'right bottom',
+                    "url('https://res.cloudinary.com/dmukukwp6/image/upload/keyboard_garden_bg_dark_9ab088797a.png')",
+                backgroundSize: '200px 200px',
+                backgroundRepeat: 'repeat',
             }}
         />
     </>

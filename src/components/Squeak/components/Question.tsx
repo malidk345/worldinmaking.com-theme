@@ -330,138 +330,7 @@ const Loading = () => {
     )
 }
 
-const AskMaxLoading = ({ isInForum }: { isInForum: boolean }) => {
-    const messages = [
-        'This usually takes less than 30 seconds.',
-        'Searching docs, tutorials, GitHub issues, blogs, community answers...',
-        "We'll only show an answer if we're confident it's right!",
-        'Thanks for your patience! Should be done shortly...',
-        'P.S. Have you checked out our merch store?',
-    ]
 
-    const [currentMessageIndex, setCurrentMessageIndex] = useState(0)
-    const [fadeState, setFadeState] = useState('in')
-
-    useEffect(() => {
-        const intervalId = setInterval(() => {
-            setFadeState('out')
-            setTimeout(() => {
-                setCurrentMessageIndex((prevIndex) => (prevIndex + 1) % messages.length)
-                setFadeState('in')
-            }, 500) // Wait for fade out before changing message
-        }, 5000)
-
-        return () => clearInterval(intervalId)
-    }, [])
-
-    return (
-        <MaxReply isInForum={isInForum}>
-            <div className="flex gap-1">
-                <div>
-                    <Loading />
-                </div>
-                <div className="flex-1 font-normal question-content community-post-markdown !p-0">
-                    <p>
-                        <strong>Hang tight, checking to see if we can find an answer for you...</strong>
-                    </p>
-                    <p
-                        className={`text-secondary !mb-0 !pb-1 transition-opacity duration-500 ${
-                            fadeState === 'out' ? 'opacity-0' : 'opacity-100'
-                        }`}
-                    >
-                        {messages[currentMessageIndex]}
-                    </p>
-                </div>
-            </div>
-        </MaxReply>
-    )
-}
-
-const AskMaxButton = ({ onClick, askedMax }: { askedMax: boolean; onClick: () => void }) => {
-    const [alreadyAsked, setAlreadyAsked] = useState(askedMax)
-
-    const handleClick = () => {
-        setAlreadyAsked(true)
-        onClick()
-    }
-
-    return (
-        <OSButton
-            disabled={alreadyAsked}
-            onClick={handleClick}
-            icon={<IconSparkles />}
-            size="md"
-            tooltip={
-                <>
-                    <IconShieldLock className="size-5 relative -top-px inline-block text-secondary" />{' '}
-                    {alreadyAsked ? 'Max has already been asked in this thread' : 'Ask Max'}
-                </>
-            }
-        />
-    )
-}
-
-const AskMax = ({
-    question,
-    refresh,
-    manual = false,
-    withContext = false,
-    isInForum = false,
-}: {
-    question: any
-    refresh: () => void
-    manual?: boolean
-    withContext?: boolean
-    isInForum?: boolean
-}) => {
-    const [loading, setLoading] = useState(true)
-    const [confident, setConfident] = useState(false)
-    const [thought, setThought] = useState('')
-    const [philosopherReply, setPhilosopherReply] = useState('')
-    const [philosopherName, setPhilosopherName] = useState('Nietzsche')
-    const { getJwt } = useUser()
-
-    useEffect(() => {
-        const askMax = async () => {
-            try {
-                const response = await fetch('/api/philosopher-bot', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        question: typeof question === 'string' ? question : question?.title || question?.subject || 'Philosophical Query',
-                        philosopher: 'Nietzsche',
-                        taskType: 'community_reply',
-                    }),
-                }).then((res) => res.json())
-                setConfident(response?.confident ?? true)
-                if (response?.thought) setThought(response.thought)
-                if (response?.reply) setPhilosopherReply(response.reply)
-                if (response?.philosopher) setPhilosopherName(response.philosopher)
-                setLoading(false)
-                refresh()
-            } catch (error) {
-                console.error(error)
-                setLoading(false)
-            }
-        }
-        if (typeof window !== 'undefined') {
-            window.history.replaceState({ ...window.history.state, askMax: false }, '')
-        }
-    }, [])
-
-    return loading ? (
-        <AskMaxLoading isInForum={isInForum} />
-    ) : confident ? (
-        <MaxReply isInForum={isInForum}>
-            <div className="text-secondary font-normal question-content community-post-markdown !p-0">
-                <PhilosopherThought thought={thought} philosopherName={philosopherName} />
-                {philosopherReply && <p className="!mb-0 text-sm leading-relaxed">{philosopherReply}</p>}
-            </div>
-        </MaxReply>
-    ) : null
-}
 
 export function Question(props: QuestionProps) {
     const { id, question, showSlug, buttonText, showActions = true, isInForum = false, onPinTopics, ...other } = props
@@ -617,12 +486,6 @@ export function Question(props: QuestionProps) {
                                         />
                                     )}
                                     <DeleteButton questionID={questionData.id} />
-                                    <AskMaxButton
-                                        onClick={() =>
-                                            setMaxQuestions([...maxQuestions, { manual: true, withContext: true }])
-                                        }
-                                        askedMax={questionData?.attributes.askedMax}
-                                    />
                                 </>
                             )}
                             {!isQuestionAuthor && <ReportSpamButton type="question" id={questionData.id} />}
@@ -678,18 +541,6 @@ export function Question(props: QuestionProps) {
                             )}
                         </div>
                         <Replies expanded={expanded} setExpanded={setExpanded} isInForum={isInForum} />
-                        {maxQuestions.map((question, index) => {
-                            return (
-                                <AskMax
-                                    key={`ask-max-${index}`}
-                                    question={questionData}
-                                    refresh={mutate}
-                                    manual={question.manual}
-                                    withContext={question.withContext}
-                                    isInForum={isInForum}
-                                />
-                            )
-                        })}
                     </div>
                     <div
                         {...(isInForum && { 'data-scheme': 'primary' })}
