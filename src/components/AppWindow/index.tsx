@@ -259,7 +259,7 @@ function SnapIndicator({ side }: { side: 'left' | 'right' }) {
     )
 }
 
-export default function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: boolean }) {
+function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: boolean }) {
     const { addToast, toasts } = useToast()
     const {
         minimizeWindow,
