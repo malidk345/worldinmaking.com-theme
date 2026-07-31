@@ -122,6 +122,7 @@ export default function Link({
     customMenuItems = [],
     ...other
 }: Props): JSX.Element {
+    const router = useRouter()
     const { appWindow } = useWindow()
     const { posthogInstance, compact } = useAppSettings()
     const posthog = usePostHog()
@@ -146,12 +147,6 @@ export default function Link({
         }
     }, [url, isPostHogAppUrl])
 
-    let router: any = null
-    try {
-        router = useRouter()
-    } catch {
-        router = null
-    }
     const appSettings = useAppSettings()
     const { addWindow } = useAppActions()
     const safePush = appSettings?.safePush

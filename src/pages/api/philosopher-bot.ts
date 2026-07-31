@@ -1,4 +1,5 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
+export const runtime = 'edge'
+
 import { createOpenAI } from '@ai-sdk/openai'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { streamText } from 'ai'
@@ -37,9 +38,19 @@ function parseThoughtAndReply(rawText: string): { thought: string; reply: string
     return { thought, reply }
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: Request) {
     if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' })
+        return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+            status: 405,
+            headers: { 'Content-Type': 'application/json' },
+        })
+    }
+
+    let body: any = {}
+    try {
+        body = await req.json()
+    } catch {
+        body = {}
     }
 
     const {
@@ -52,10 +63,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         philosopher?: string
         mood?: string
         taskType?: TaskType
-    } = req.body
+    } = body
 
     if (!question || typeof question !== 'string') {
-        return res.status(400).json({ error: 'Question string is required' })
+        return new Response(JSON.stringify({ error: 'Question string is required' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+        })
     }
 
     const persona: BotPersona = extractPersona('', philosopher)
@@ -72,7 +86,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 system: systemPrompt,
                 prompt: userPrompt,
             })
-            return result.pipeDataStreamToResponse(res)
+            return result.toDataStreamResponse()
         } catch (e) {
             console.error('[VercelAISDK] OpenAI streaming error:', e)
         }
@@ -87,7 +101,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 system: systemPrompt,
                 prompt: userPrompt,
             })
-            return result.pipeDataStreamToResponse(res)
+            return result.toDataStreamResponse()
         } catch (e) {
             console.error('[VercelAISDK] Gemini streaming error:', e)
         }
@@ -121,15 +135,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 const rawText = data?.choices?.[0]?.message?.content
                 if (rawText) {
                     const { thought, reply } = parseThoughtAndReply(rawText)
-                    return res.status(200).json({
-                        success: true,
-                        philosopher: persona.name,
-                        epistemicStance: persona.epistemicStance,
-                        thought,
-                        reply,
-                        provider: 'groq',
-                        confident: true,
-                    })
+                    return new Response(
+                        JSON.stringify({
+                            success: true,
+                            philosopher: persona.name,
+                            epistemicStance: persona.epistemicStance,
+                            thought,
+                            reply,
+                            provider: 'groq',
+                            confident: true,
+                        }),
+                        {
+                            status: 200,
+                            headers: { 'Content-Type': 'application/json' },
+                        }
+                    )
                 }
             }
         } catch (e) {
@@ -140,13 +160,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Fallback response with synthetic reasoning
     const defaultThought = `Analyzing "${question.slice(0, 40)}..." through the lens of ${persona.epistemicStance}. Identifying structural assumptions and formulating persona critique.`
     const defaultReply = `The question regarding "${question.slice(0, 50)}..." strikes at fundamental premises that demand rigorous philosophical analysis.`
-    return res.status(200).json({
-        success: true,
-        philosopher: persona.name,
-        epistemicStance: persona.epistemicStance,
-        thought: defaultThought,
-        reply: defaultReply,
-        provider: 'fallback',
-        confident: true,
-    })
+    return new Response(
+        JSON.stringify({
+            success: true,
+            philosopher: persona.name,
+            epistemicStance: persona.epistemicStance,
+            thought: defaultThought,
+            reply: defaultReply,
+            provider: 'fallback',
+            confident: true,
+        }),
+        {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+        }
+    )
 }
