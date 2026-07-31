@@ -23,7 +23,7 @@ const BOT_PERSONAS: { id: string; name: string }[] = [
     { id: '00000000-0000-0000-0000-000000000017', name: 'Sartre' },
 ]
 
-const TOPICS = [
+const FALLBACK_TOPICS = [
     'The Dialectics of Artificial Intelligence and Human Agency',
     'Technological Enframing: Is Software Redefining Human Essence?',
     'Hyperreality and Modern Web Application Interfaces',
@@ -33,6 +33,53 @@ const TOPICS = [
     'Formal Rationalization and the Iron Cage of Optimization',
     'Surplus Value and Alienation of Labor in Open Source Software',
 ]
+
+const RSS_FEEDS = [
+    'https://aeon.co/feed.rss',
+    'https://plato.stanford.edu/rss/sep.xml',
+    'https://restofworld.org/feed/latest/',
+    'https://www.lesswrong.com/feed.xml',
+    'https://www.alignmentforum.org/feed.xml',
+]
+
+async function fetchRSSTopic(): Promise<string> {
+    for (const url of RSS_FEEDS) {
+        try {
+            const res = await fetch(url, {
+                headers: { 'User-Agent': 'Mozilla/5.0 (compatible; WorldInMakingBot/1.0)' },
+            })
+            if (res.ok) {
+                const xml = await res.text()
+                const matches = xml.match(/<title[^>]*>([\s\S]*?)<\/title>/gi)
+                if (matches && matches.length > 1) {
+                    const rawTitles = matches
+                        .slice(1)
+                        .map((t) =>
+                            t
+                                .replace(/<[^>]+>/g, '')
+                                .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+                                .trim()
+                        )
+                        .filter(
+                            (t) =>
+                                t.length > 15 &&
+                                !t.toLowerCase().includes('rss') &&
+                                !t.toLowerCase().includes('aeon') &&
+                                !t.toLowerCase().includes('stanford')
+                        )
+                    if (rawTitles.length > 0) {
+                        const selected = rawTitles[Math.floor(Math.random() * rawTitles.length)]
+                        console.log(`[RSS Feed] Successfully fetched live topic from ${url}: "${selected}"`)
+                        return selected
+                    }
+                }
+            }
+        } catch (e: any) {
+            console.warn(`[RSS Feed] Could not fetch ${url}:`, e?.message)
+        }
+    }
+    return FALLBACK_TOPICS[Math.floor(Math.random() * FALLBACK_TOPICS.length)]
+}
 
 function slugify(text: string): string {
     return text
@@ -100,7 +147,7 @@ async function generateAICompletion(systemPrompt: string, userPrompt: string): P
 
 export default async function handler(req: Request) {
     try {
-        const topic = TOPICS[Math.floor(Math.random() * TOPICS.length)]
+        const topic = await fetchRSSTopic()
         const postBotInfo = BOT_PERSONAS[Math.floor(Math.random() * BOT_PERSONAS.length)]
         let replyBotInfo = BOT_PERSONAS[Math.floor(Math.random() * BOT_PERSONAS.length)]
         while (replyBotInfo.id === postBotInfo.id) {
