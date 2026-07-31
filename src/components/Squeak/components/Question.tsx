@@ -317,20 +317,77 @@ const MaxReply = ({ children, isInForum }: { children: React.ReactNode; isInForu
     )
 }
 
-const Loading = () => {
-    const lottieRef = useRef(null)
-    const [mounted, setMounted] = useState(false)
-    useEffect(() => {
-        setMounted(true)
-    }, [])
+const PhilosopherBotReply = ({
+    questionTitle,
+    questionBody,
+    isInForum,
+}: {
+    questionTitle: string
+    questionBody: string
+    isInForum: boolean
+}) => {
+    const [loading, setLoading] = useState(false)
+    const [thought, setThought] = useState('')
+    const [reply, setReply] = useState('')
+    const [philosopher, setPhilosopher] = useState('Nietzsche')
+    const [hasTriggered, setHasTriggered] = useState(false)
+
+    const handleAskPhilosopher = async (selectedName = 'Nietzsche') => {
+        setLoading(true)
+        setHasTriggered(true)
+        setPhilosopher(selectedName)
+        try {
+            const res = await fetch('/api/philosopher-bot', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    question: `${questionTitle}\n\n${questionBody}`,
+                    philosopher: selectedName,
+                    taskType: 'community_reply',
+                }),
+            })
+            const data = await res.json()
+            if (data.thought) setThought(data.thought)
+            if (data.reply) setReply(data.reply)
+            if (data.philosopher) setPhilosopher(data.philosopher)
+        } catch (err) {
+            console.error('Philosopher bot forum reply error:', err)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    if (!hasTriggered) {
+        return (
+            <div className="my-2 flex items-center gap-2">
+                <OSButton
+                    onClick={() => handleAskPhilosopher('Nietzsche')}
+                    icon={<IconSparkles className="text-accent" />}
+                    size="sm"
+                    tooltip="Ask Philosopher Bot for an AI insight"
+                >
+                    <span className="text-xs font-semibold">Ask Philosopher Bot ⚡</span>
+                </OSButton>
+            </div>
+        )
+    }
+
     return (
-        <div className="size-12">
-            {mounted && <DotLottiePlayer loop lottieRef={lottieRef} src="/lotties/loading.lottie" autoplay />}
-        </div>
+        <MaxReply isInForum={isInForum}>
+            <div className="text-primary font-normal question-content community-post-markdown !p-0">
+                <div className="flex items-center gap-2 mb-2">
+                    <span className="font-bold text-xs text-accent">@{philosopher} (AI Bot)</span>
+                </div>
+                <PhilosopherThought thought={thought} philosopherName={philosopher} isLiveThinking={loading} />
+                {loading ? (
+                    <p className="text-xs text-secondary italic animate-pulse">Formulating persona critique...</p>
+                ) : (
+                    reply && <p className="!mb-0 text-sm leading-relaxed whitespace-pre-wrap">{reply}</p>
+                )}
+            </div>
+        </MaxReply>
     )
 }
-
-
 
 export function Question(props: QuestionProps) {
     const { id, question, showSlug, buttonText, showActions = true, isInForum = false, onPinTopics, ...other } = props
@@ -541,6 +598,11 @@ export function Question(props: QuestionProps) {
                             )}
                         </div>
                         <Replies expanded={expanded} setExpanded={setExpanded} isInForum={isInForum} />
+                        <PhilosopherBotReply
+                            questionTitle={questionData.attributes.subject || ''}
+                            questionBody={questionData.attributes.body || ''}
+                            isInForum={isInForum}
+                        />
                     </div>
                     <div
                         {...(isInForum && { 'data-scheme': 'primary' })}
