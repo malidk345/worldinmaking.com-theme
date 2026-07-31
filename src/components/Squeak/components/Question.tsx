@@ -28,6 +28,7 @@ import { Listbox } from '@headlessui/react'
 import { fetchTopicGroups, topicGroupsSorted } from '../util/topicGroups'
 import { Check2, Close } from 'components/Icons'
 import Modal from 'components/Modal'
+import PhilosopherThought from 'components/PhilosopherThought'
 import Checkbox from 'components/Checkbox'
 import { CallToAction } from 'components/CallToAction'
 import { Logo } from '@posthog/brand/logo'
@@ -415,6 +416,9 @@ const AskMax = ({
 }) => {
     const [loading, setLoading] = useState(true)
     const [confident, setConfident] = useState(false)
+    const [thought, setThought] = useState('')
+    const [philosopherReply, setPhilosopherReply] = useState('')
+    const [philosopherName, setPhilosopherName] = useState('Nietzsche')
     const { getJwt } = useUser()
 
     useEffect(() => {
@@ -432,6 +436,9 @@ const AskMax = ({
                     }),
                 }).then((res) => res.json())
                 setConfident(response?.confident ?? true)
+                if (response?.thought) setThought(response.thought)
+                if (response?.reply) setPhilosopherReply(response.reply)
+                if (response?.philosopher) setPhilosopherName(response.philosopher)
                 setLoading(false)
                 refresh()
             } catch (error) {
@@ -446,12 +453,11 @@ const AskMax = ({
 
     return loading ? (
         <AskMaxLoading isInForum={isInForum} />
-    ) : !confident ? (
+    ) : confident ? (
         <MaxReply isInForum={isInForum}>
             <div className="text-secondary font-normal question-content community-post-markdown !p-0">
-                <p className="!mb-0">
-                    Dang, we couldn't find anything this time. A community member will hopefully respond soon!
-                </p>
+                <PhilosopherThought thought={thought} philosopherName={philosopherName} />
+                {philosopherReply && <p className="!mb-0 text-sm leading-relaxed">{philosopherReply}</p>}
             </div>
         </MaxReply>
     ) : null

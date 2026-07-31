@@ -8,7 +8,7 @@ name: Bundle baseline (master)
 on:
     push:
         branches:
-            - master
+            - main
         paths:
             - 'src/**'
             - 'gatsby-*'

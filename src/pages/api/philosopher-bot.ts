@@ -22,6 +22,21 @@ function cleanAIOutput(text: string): string {
     return cleaned.replace(/\n{3,}/g, '\n\n').trim()
 }
 
+function parseThoughtAndReply(rawText: string): { thought: string; reply: string } {
+    let thought = ''
+    let reply = rawText
+
+    const match = rawText.match(/<thought>([\s\S]*?)<\/thought>/i)
+    if (match) {
+        thought = cleanAIOutput(match[1].trim())
+        reply = cleanAIOutput(rawText.replace(/<thought>[\s\S]*?<\/thought>/i, '').trim())
+    } else {
+        reply = cleanAIOutput(rawText)
+    }
+
+    return { thought, reply }
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' })
@@ -44,9 +59,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const persona: BotPersona = extractPersona('', philosopher)
-    const systemPrompt = buildPersonaHeader(persona, mood)
+    const systemPrompt = `${buildPersonaHeader(persona, mood)}\n\nIMPORTANT FORMATTING INSTRUCTION:\nFirst, enclose your internal philosophical reasoning & thought process step-by-step inside <thought>...</thought> tags. Describe how your persona evaluates the premises and formulates the argument. Then, provide your final persona response outside the <thought> tags.`
 
-    const userPrompt = `TASK TYPE: ${taskType}\nQUESTION / TOPIC:\n${question}\n\nProvide your response adhering strictly to your epistemic stance and style rules.`
+    const userPrompt = `TASK TYPE: ${taskType}\nQUESTION / TOPIC:\n${question}\n\nProvide your response adhering strictly to your epistemic stance, thought process formatting, and style rules.`
 
     // Option 1: Vercel AI SDK with OpenAI (if key present)
     if (process.env.OPENAI_API_KEY) {
@@ -103,13 +118,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             })
             if (fetchRes.ok) {
                 const data = await fetchRes.json()
-                const text = data?.choices?.[0]?.message?.content
-                if (text) {
+                const rawText = data?.choices?.[0]?.message?.content
+                if (rawText) {
+                    const { thought, reply } = parseThoughtAndReply(rawText)
                     return res.status(200).json({
                         success: true,
                         philosopher: persona.name,
                         epistemicStance: persona.epistemicStance,
-                        reply: cleanAIOutput(text),
+                        thought,
+                        reply,
                         provider: 'groq',
                         confident: true,
                     })
@@ -120,13 +137,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
     }
 
-    // Fallback response if no API keys are configured
-    const fallbackReply = `The question regarding "${question.slice(0, 50)}..." strikes at fundamental premises that demand rigorous philosophical analysis.`
+    // Fallback response with synthetic reasoning
+    const defaultThought = `Analyzing "${question.slice(0, 40)}..." through the lens of ${persona.epistemicStance}. Identifying structural assumptions and formulating persona critique.`
+    const defaultReply = `The question regarding "${question.slice(0, 50)}..." strikes at fundamental premises that demand rigorous philosophical analysis.`
     return res.status(200).json({
         success: true,
         philosopher: persona.name,
         epistemicStance: persona.epistemicStance,
-        reply: fallbackReply,
+        thought: defaultThought,
+        reply: defaultReply,
         provider: 'fallback',
         confident: true,
     })
