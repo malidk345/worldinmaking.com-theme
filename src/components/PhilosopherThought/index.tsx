@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import { IconChevronDown, IconChevronRight } from '@posthog/icons'
 
 interface PhilosopherThoughtProps {
     thought: string
@@ -34,43 +33,63 @@ export default function PhilosopherThought({
               ]
 
     return (
-        <div className="my-3 rounded-lg border border-primary/20 bg-secondary/30 backdrop-blur-md overflow-hidden text-xs transition-all shadow-sm">
-            <button
-                type="button"
+        <div
+            className="posthog-glass"
+            style={{
+                borderRadius: 'var(--radius, 8px)',
+                padding: '0.625rem 0.875rem',
+                fontSize: '0.75rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.375rem',
+                border: '1px solid rgba(0,0,0,0.06)',
+                margin: '0.75rem 0',
+                background: 'var(--color-bg-secondary, rgba(240,240,240,0.5))',
+            }}
+        >
+            <div
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="w-full flex items-center justify-between px-3.5 py-2.5 bg-primary/40 hover:bg-primary/70 text-primary font-medium text-left select-none transition-colors"
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    color: 'var(--color-text-secondary, #666)',
+                    userSelect: 'none',
+                }}
             >
-                <div className="flex items-center gap-2">
-                    <span className="flex h-2.5 w-2.5 relative">
-                        {isLiveThinking ? (
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent/80 opacity-75"></span>
-                        ) : null}
-                        <span
-                            className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
-                                isLiveThinking ? 'bg-accent' : 'bg-primary/60'
-                            }`}
-                        ></span>
-                    </span>
-                    <span className="font-semibold tracking-wide text-xs">
-                        🧠 {philosopherName}'s AI Reasoning Steps ({steps.length})
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                    <span>🧠</span>
+                    <span>
+                        {philosopherName}'s AI Reasoning Steps ({steps.length})
                     </span>
                     {isLiveThinking && (
-                        <span className="text-[10px] text-accent animate-pulse font-normal italic">
+                        <span style={{ fontSize: '0.7rem', color: '#1d4ed8', fontStyle: 'italic' }}>
                             (Thinking...)
                         </span>
                     )}
                 </div>
-                <div className="text-secondary hover:text-primary transition-transform">
-                    {isExpanded ? <IconChevronDown className="w-4 h-4" /> : <IconChevronRight className="w-4 h-4" />}
-                </div>
-            </button>
+                <span>{isExpanded ? '▲' : '▼'}</span>
+            </div>
 
             {isExpanded && (
-                <div className="p-3 border-t border-primary/10 bg-primary/20 space-y-2 text-xs font-mono">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.25rem' }}>
                     {steps.map((step, idx) => (
-                        <div key={idx} className="flex items-start gap-2 text-secondary leading-snug">
-                            <span className="text-accent font-bold mt-0.5 select-none">✓</span>
-                            <span className="flex-1">{step}</span>
+                        <div
+                            key={idx}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                gap: '0.375rem',
+                                fontSize: '0.75rem',
+                                color: 'var(--text-3000, inherit)',
+                            }}
+                        >
+                            <span style={{ color: 'var(--color-accent, #1d4ed8)', fontWeight: 700, lineHeight: 1 }}>
+                                ✓
+                            </span>
+                            <span>{step}</span>
                         </div>
                     ))}
                 </div>
