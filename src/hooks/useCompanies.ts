@@ -126,7 +126,8 @@ export default function useCompanies({
     const companies = useMemo(() => {
         if (!data) return []
 
-        const allCompanies = data.reduce((acc, cur) => [...acc, ...(cur.data || [])], [])
+        // Use flatMap instead of reduce + spread for O(N) flattening vs O(N^2)
+        const allCompanies = data.flatMap((cur) => cur.data || [])
 
         if (!search) return allCompanies
 

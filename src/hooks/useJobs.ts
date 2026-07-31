@@ -51,7 +51,8 @@ export default function useJobs(): {
         }
     )
     const jobs = useMemo(() => {
-        return data?.reduce((acc, cur) => [...acc, ...(cur.data || [])], []) ?? []
+        // Use flatMap instead of reduce + spread for O(N) flattening vs O(N^2)
+        return data?.flatMap((cur) => cur.data || []) ?? []
     }, [size, data])
 
     return {

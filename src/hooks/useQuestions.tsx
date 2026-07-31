@@ -338,7 +338,8 @@ export const useQuestions = (options?: UseQuestionsOptions) => {
     }
 
     const questions: Omit<StrapiResult<QuestionData[]>, 'meta'> = React.useMemo(() => {
-        const strapiData = data?.reduce((acc, cur) => [...acc, ...(cur.data || [])], [] as StrapiRecord<QuestionData>[]) ?? []
+        // Use flatMap instead of reduce + spread for O(N) flattening vs O(N^2)
+        const strapiData = data?.flatMap((cur) => cur.data || []) ?? []
         const combined = [...strapiData, ...supabaseQuestions]
         const finalData = combined.length > 0 ? combined : (options?.slug ? [] : MOCK_COMMUNITY_POSTS)
         return {
