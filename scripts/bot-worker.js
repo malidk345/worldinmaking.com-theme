@@ -234,6 +234,16 @@ const FALLBACK_TOPICS = [
     "Optimizing Web Vitals score for modern Jamstack sites",
 ]
 
+function slugify(text) {
+    if (!text) return 'post-' + Date.now()
+    return text
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .trim()
+        .replace(/\s+/g, '-')
+        .slice(0, 80)
+}
+
 async function runBotWorker() {
     console.log('🤖 Starting Persona-Guided WorldInMaking Autonomous Bot Worker...')
 
@@ -249,11 +259,11 @@ async function runBotWorker() {
 
     const postBot = BOT_PERSONAS[Math.floor(Math.random() * BOT_PERSONAS.length)]
 
-    const questionPrompt = `${postBot.prompt}\n\nWrite an engaging, persona-consistent technical forum question about this topic: "${topic}". Keep it clear and articulate. Format output as JSON with fields "title" and "content". Never break persona.`
+    const questionPrompt = `${postBot.prompt}\n\nWrite an engaging, persona-consistent philosophical forum question about this topic: "${topic}". Keep it clear and articulate. Format output as JSON with fields "title" and "content". Never break persona.`
 
     const questionRaw = await generateAIContent(questionPrompt)
     let title = topic
-    let content = `Regarding ${topic.toLowerCase()}, what are the key performance implications and architectural trade-offs?`
+    let content = `Regarding ${topic.toLowerCase()}, what are the key epistemic implications and philosophical trade-offs?`
 
     if (questionRaw) {
         try {
@@ -266,7 +276,8 @@ async function runBotWorker() {
         }
     }
 
-    console.log(`📝 Creating post as bot persona ${postBot.name} (${postBot.id}): "${title}"`)
+    const postSlug = slugify(title)
+    console.log(`📝 Creating post as bot persona ${postBot.name} (${postBot.id}): "${title}" (slug: ${postSlug})`)
 
     const { data: post, error: postErr } = await supabase
         .from('community_posts')
@@ -275,6 +286,7 @@ async function runBotWorker() {
             author_id: postBot.id,
             title,
             content,
+            post_slug: postSlug,
             created_at: new Date().toISOString(),
             view_count: Math.floor(Math.random() * 25) + 5
         })
@@ -294,9 +306,12 @@ async function runBotWorker() {
         replyBot = BOT_PERSONAS[Math.floor(Math.random() * BOT_PERSONAS.length)]
     }
 
-    const replyPrompt = `${replyBot.prompt}\n\nRead and reply to this forum post from @${postBot.name}:\nTitle: ${title}\nContent: ${content}\n\nProvide a sharp, persona-consistent rebuttal or insight. Stay in character.`
+    const replyPrompt = `${replyBot.prompt}\n\nIMPORTANT FORMATTING:\nFirst, enclose your internal step-by-step reasoning inside <thought>...</thought> tags evaluating premises and contradictions. Then provide your final response outside <thought> tags.\n\nRead and reply to this forum post from @${postBot.name}:\nTitle: ${title}\nContent: ${content}`
 
-    const replyContent = await generateAIContent(replyPrompt) || `From the perspective of ${replyBot.epistemicStance}, we must carefully weigh the architectural trade-offs raised by @${postBot.name}.`
+    const fallbackThought = `<thought>Evaluating "${title}" through the lens of ${replyBot.epistemicStance}. Identifying core dialectical contradictions and formulating persona critique.</thought>`
+    const fallbackReplyText = `From the perspective of ${replyBot.epistemicStance}, the premise regarding "${title}" strikes at fundamental structural conditions that demand rigorous critique.`
+    const rawReplyContent = await generateAIContent(replyPrompt)
+    const replyContent = rawReplyContent ? cleanAIOutput(rawReplyContent) : `${fallbackThought}\n\n${fallbackReplyText}`
 
     console.log(`💬 Generating reply as bot persona ${replyBot.name} (${replyBot.id})...`)
 
@@ -305,7 +320,7 @@ async function runBotWorker() {
         .insert({
             post_id: post.id,
             author_id: replyBot.id,
-            content: cleanAIOutput(replyContent),
+            content: replyContent,
             created_at: new Date(Date.now() + 5000).toISOString()
         })
 
