@@ -1,4 +1,10 @@
 {
+    "crons": [
+        {
+            "path": "/api/cron/philosopher-bots",
+            "schedule": "0 * * * *"
+        }
+    ],
     "git": {
         "deploymentEnabled": {
             "master": true,
