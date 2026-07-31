@@ -2,7 +2,7 @@ export const runtime = 'edge'
 
 import { createOpenAI } from '@ai-sdk/openai'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
-import { streamText } from 'ai'
+import { streamText, generateText } from 'ai'
 import { extractPersona, buildPersonaHeader, BotPersona, TaskType } from 'lib/persona-engine'
 
 const FORBIDDEN_AI_WORDS = [
@@ -85,14 +85,31 @@ export default async function handler(req: Request) {
     if (process.env.OPENAI_API_KEY) {
         try {
             const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY })
-            const result = streamText({
+            const { text } = await generateText({
                 model: openai('gpt-4o-mini'),
                 system: systemPrompt,
                 prompt: userPrompt,
             })
-            return result.toDataStreamResponse()
+            if (text) {
+                const { thought, reply } = parseThoughtAndReply(text)
+                return new Response(
+                    JSON.stringify({
+                        success: true,
+                        philosopher: persona.name,
+                        epistemicStance: persona.epistemicStance,
+                        thought,
+                        reply,
+                        provider: 'openai',
+                        confident: true,
+                    }),
+                    {
+                        status: 200,
+                        headers: { 'Content-Type': 'application/json' },
+                    }
+                )
+            }
         } catch (e) {
-            console.error('[VercelAISDK] OpenAI streaming error:', e)
+            console.error('[VercelAISDK] OpenAI completion error:', e)
         }
     }
 
@@ -100,14 +117,31 @@ export default async function handler(req: Request) {
     if (process.env.GEMINI_API_KEY) {
         try {
             const google = createGoogleGenerativeAI({ apiKey: process.env.GEMINI_API_KEY })
-            const result = streamText({
+            const { text } = await generateText({
                 model: google('gemini-1.5-flash'),
                 system: systemPrompt,
                 prompt: userPrompt,
             })
-            return result.toDataStreamResponse()
+            if (text) {
+                const { thought, reply } = parseThoughtAndReply(text)
+                return new Response(
+                    JSON.stringify({
+                        success: true,
+                        philosopher: persona.name,
+                        epistemicStance: persona.epistemicStance,
+                        thought,
+                        reply,
+                        provider: 'gemini',
+                        confident: true,
+                    }),
+                    {
+                        status: 200,
+                        headers: { 'Content-Type': 'application/json' },
+                    }
+                )
+            }
         } catch (e) {
-            console.error('[VercelAISDK] Gemini streaming error:', e)
+            console.error('[VercelAISDK] Gemini completion error:', e)
         }
     }
 
