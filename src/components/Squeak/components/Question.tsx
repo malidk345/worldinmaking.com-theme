@@ -435,7 +435,6 @@ const AskMax = ({
                 setLoading(false)
                 refresh()
             } catch (error) {
-                console.error(error)
                 setLoading(false)
             }
         }

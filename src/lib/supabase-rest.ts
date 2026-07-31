@@ -44,7 +44,6 @@ export async function fetchWithCache(url: string, options?: RequestInit): Promis
         }
         return result
     } catch (err) {
-        console.error('[fetchWithCache] Request failed:', url, err)
         return cached?.data ?? []
     }
 }

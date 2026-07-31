@@ -9,7 +9,6 @@ const handler = async (req: GatsbyFunctionRequest, res: GatsbyFunctionResponse) 
         }).then((res) => res.json())
         return res.status(200).json(data)
     } catch (error) {
-        console.error(error)
         return res.status(500).json({ error: 'Failed to fetch customer data' })
     }
 }

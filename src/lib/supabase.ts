@@ -22,7 +22,6 @@ if (supabaseUrl && supabaseKey) {
         })
         isConfigured = true
     } catch (e) {
-        console.error('[Supabase] Init failed:', e)
         isConfigured = false
     }
 }

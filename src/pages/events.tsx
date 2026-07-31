@@ -134,7 +134,6 @@ export const useEvents = (): { events: Event[]; refreshEvents: () => void; delet
                 await fetchEvents(page + 1)
             }
         } catch (error: any) {
-            console.error('Error fetching events:', error)
             addToast({
                 title: 'Failed to load events',
                 description: error?.message || 'An unexpected error occurred while loading events.',

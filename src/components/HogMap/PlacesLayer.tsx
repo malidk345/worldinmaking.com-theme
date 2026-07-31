@@ -60,7 +60,6 @@ export const usePlacesMapData = (isClient: boolean, getJwt: () => Promise<string
                     setCoordsByPlaceId(coords)
                 }
             } catch (error) {
-                console.error('Failed to fetch places:', error)
             }
         }
 

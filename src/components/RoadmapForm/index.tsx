@@ -622,7 +622,6 @@ export default function RoadmapForm({
                 setLoading(false)
                 onSubmit?.(roadmap)
             } catch (err) {
-                console.error(err)
                 setLoading(false)
             }
         },

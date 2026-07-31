@@ -86,7 +86,6 @@ export const ChangelogEmojiReactions = ({ roadmapId }: { roadmapId: number | str
             const jwt = await getJwt()
 
             if (!jwt) {
-                console.error('No JWT token available')
                 return
             }
 
@@ -103,7 +102,6 @@ export const ChangelogEmojiReactions = ({ roadmapId }: { roadmapId: number | str
             const updatedReactions = await fetchRoadmapReactions(roadmapId)
             setReactions(updatedReactions)
         } catch (error) {
-            console.error('Failed to update emoji reaction:', error)
         }
     }
 

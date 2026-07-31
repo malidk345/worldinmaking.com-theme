@@ -41,7 +41,6 @@ function ImageResult({ image }: { image: GeneratedImage }) {
                 duration: 2000,
             })
         } catch (err) {
-            console.error('Failed to download image:', err)
             addToast({
                 description: 'Failed to download image',
                 error: true,

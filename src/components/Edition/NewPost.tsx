@@ -121,7 +121,6 @@ export default function NewPost({ id, onSubmit, ...other }: { id?: number; onSub
                 router.push(post?.attributes?.slug)
                 onSubmit?.()
             } catch (err) {
-                console.error(err)
             }
         },
     })

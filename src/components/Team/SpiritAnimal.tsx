@@ -136,7 +136,6 @@ const SpiritAnimalForm = ({
                         setTakenAnimals(takenAnimals)
                     })
             } catch (err) {
-                console.error(err)
             }
         }
 

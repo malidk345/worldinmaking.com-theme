@@ -16,7 +16,6 @@ if (supabaseUrl && supabaseServiceKey) {
             },
         })
     } catch (e) {
-        console.error('[Supabase Admin] Init failed:', e)
     }
 }
 

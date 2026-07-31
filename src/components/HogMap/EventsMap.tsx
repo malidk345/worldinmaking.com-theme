@@ -153,7 +153,6 @@ export default function EventsMap({
 
     const setupMap = useCallback(() => {
         if (!isClient) {
-            console.error('Not client')
             return
         }
         if (isLocationLoading) {
@@ -162,12 +161,10 @@ export default function EventsMap({
         }
         const mapboxgl = getMapbox()
         if (!mapboxgl) {
-            console.error('No mapboxgl')
             return
         }
         if (!token) {
             // No token available on client – do not init the map
-            console.error('No token')
             return
         }
         const clearMarkers = () => {
@@ -282,7 +279,6 @@ export default function EventsMap({
                         try {
                             marker.togglePopup()
                         } catch {
-                            console.error('Error toggling popup')
                         }
                         if (typeof onEventClick === 'function') {
                             try {
@@ -290,7 +286,6 @@ export default function EventsMap({
                                 skipNextSelectionTransitionRef.current = true
                                 onEventClick(ev.id as number)
                             } catch {
-                                console.error('Error calling onEventClick')
                             }
                         }
                     })
@@ -340,7 +335,6 @@ export default function EventsMap({
                         try {
                             marker.togglePopup()
                         } catch {
-                            console.error('Error toggling popup')
                         }
                         if (typeof onEventClick === 'function') {
                             try {
@@ -348,7 +342,6 @@ export default function EventsMap({
                                 skipNextSelectionTransitionRef.current = true
                                 onEventClick(ev.id as number)
                             } catch {
-                                console.error('Error calling onEventClick')
                             }
                         }
                     })
@@ -428,7 +421,6 @@ export default function EventsMap({
             try {
                 renderMarkersRef.current && renderMarkersRef.current()
             } catch {
-                console.error('Error rendering markers')
             }
         }
     }, [events, coordsByEventId])
@@ -447,7 +439,6 @@ export default function EventsMap({
                 try {
                     marker.togglePopup()
                 } catch {
-                    console.error('Error toggling popup')
                 }
             }
             return
@@ -459,11 +450,9 @@ export default function EventsMap({
                     try {
                         marker.togglePopup()
                     } catch {
-                        console.error('Error toggling popup')
                     }
                 }
             } catch {
-                console.error('Error opening popup')
             }
         }
         const goToTarget = () => {
@@ -474,7 +463,6 @@ export default function EventsMap({
                     duration: 2000,
                 })
             } catch {
-                console.error('Error easing to coordinates')
             }
             // Open popup after arriving at target
             try {

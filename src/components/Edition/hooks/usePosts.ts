@@ -18,7 +18,6 @@ export const usePosts = ({ params }: { params?: any } = {}) => {
                 }
             })
             .catch((err) => {
-                console.error('Error in usePosts fetching Supabase:', err)
                 if (mounted) setIsLoading(false)
             })
 

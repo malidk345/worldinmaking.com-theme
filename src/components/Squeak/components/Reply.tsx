@@ -129,7 +129,6 @@ const AIDisclaimer = ({ replyID, mutate, topic, confidence, resolvable }) => {
 
             mutate()
         } catch (error) {
-            console.error(error)
         }
     }
 

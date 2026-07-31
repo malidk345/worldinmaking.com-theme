@@ -235,7 +235,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
                 }),
             })
         } catch (error) {
-            console.error(error)
         }
 
         return user
@@ -284,7 +283,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
                 error: JSON.stringify(error),
             })
 
-            console.error(error)
 
             if (error instanceof Error) {
                 return { error: error.message }
@@ -343,7 +341,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
                 error: JSON.stringify(error),
             })
 
-            console.error(error)
 
             if (error instanceof Error) {
                 return { error: error.message }
@@ -371,7 +368,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
             // here rather than becoming an unhandled rejection in the caller.
             return await finalizeLogin(data.jwt)
         } catch (error) {
-            console.error(error)
             return { error: 'Your account was created, but loading it failed. Please refresh and sign in.' }
         }
     }
@@ -394,7 +390,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
             }
             return await finalizeLogin(data.jwt)
         } catch (error) {
-            console.error(error)
             return { error: 'Your account was linked, but loading it failed. Please refresh and sign in.' }
         }
     }
@@ -410,7 +405,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
             await fetchUser(token)
             return { ok: true }
         } catch (error) {
-            console.error(error)
             return { error: 'Could not connect PostHog. Please try again.' }
         }
     }
@@ -425,7 +419,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
             await fetchUser(token)
             return { ok: true }
         } catch (error) {
-            console.error(error)
             return { error: 'Could not disconnect PostHog. Please try again.' }
         }
     }
@@ -508,7 +501,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
                 error: JSON.stringify(error),
             })
 
-            console.error(error)
 
             if (error instanceof Error) {
                 return { error: error.message }
@@ -651,7 +643,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
                 })
             }
         } catch (error) {
-            console.error(error)
         }
 
         return meData
