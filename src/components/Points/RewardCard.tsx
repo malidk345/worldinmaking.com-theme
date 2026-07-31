@@ -118,7 +118,6 @@ export default function RewardCard({ reward, total }: { reward: Reward; total: n
                 window.open(checkoutUrl, '_blank')
             }
         } catch (err) {
-            console.error('Failed to create cart:', err)
             window.open('/merch', '_blank')
         } finally {
             setIsRedirecting(false)

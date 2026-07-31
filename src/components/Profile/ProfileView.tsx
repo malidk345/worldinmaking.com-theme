@@ -1153,7 +1153,6 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                             duration: 3000,
                         })
                     } else {
-                        console.error('Failed to block user:', response.status)
                         addToast({
                             description: 'Failed to block user',
                             error: true,
@@ -1161,7 +1160,6 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                         })
                     }
                 } catch (err) {
-                    console.error(err)
                     addToast({
                         description: 'Failed to block user',
                         error: true,
@@ -1193,7 +1191,6 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                         duration: 3000,
                     })
                 } else {
-                    console.error('Failed to unblock user:', response.status)
                     addToast({
                         description: 'Failed to unblock user',
                         error: true,
@@ -1201,7 +1198,6 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                     })
                 }
             } catch (err) {
-                console.error(err)
                 addToast({
                     description: 'Failed to unblock user',
                     error: true,
@@ -1394,7 +1390,6 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                 })
             }
         } catch (err) {
-            console.error(err)
             addToast({
                 description: 'Failed to send gift',
                 error: true,
@@ -1943,7 +1938,6 @@ const Achievement = ({ title, description, image, icon, id, mutate, profile, ...
                 })
                 await mutate()
             } catch (err) {
-                console.error(err)
             }
         }
     }

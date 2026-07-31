@@ -96,7 +96,6 @@ function SortableTrack({ track, index, onRemove, onChange, onTitleFetch }: Sorta
                                     onTitleFetch(videoData.title)
                                 }
                             } catch (error) {
-                                console.error('Error fetching YouTube title:', error)
                             } finally {
                                 // Clean up
                                 if (playerRef.current) {
@@ -118,7 +117,6 @@ function SortableTrack({ track, index, onRemove, onChange, onTitleFetch }: Sorta
                     },
                 })
             } catch (error) {
-                console.error('Error loading YouTube API:', error)
                 setIsFetchingTitle(false)
             } finally {
                 setFetchedTitle(true)
@@ -303,7 +301,6 @@ export default function MixtapeEditor({ id, onSubmit }: MixtapeEditorProps): JSX
                 }
                 router.push(`/fm?mixtape=${data.id}`, { state: { newWindow: true } })
             } catch (error) {
-                console.error('Error saving mixtape:', error)
                 addToast({
                     description: `Failed to ${isEditMode ? 'update' : 'publish'} mixtape`,
                 })
@@ -389,7 +386,6 @@ export default function MixtapeEditor({ id, onSubmit }: MixtapeEditorProps): JSX
                     labelColor: attributes.metadata?.labelColor || '#eeefea',
                 })
             } catch (error) {
-                console.error('Error loading mixtape:', error)
                 addToast({
                     description: 'Failed to load mixtape',
                 })

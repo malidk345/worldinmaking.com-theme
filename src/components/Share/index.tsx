@@ -209,7 +209,6 @@ const EmailGenerator = ({ url }: { url: string }) => {
             setCopied(true)
             setTimeout(() => setCopied(false), 2000)
         } catch (err) {
-            console.error('Failed to copy:', err)
         }
     }
 
@@ -506,7 +505,6 @@ const TweetGenerator = ({ url }: { url: string }) => {
             setCopied(true)
             setTimeout(() => setCopied(false), 2000)
         } catch (err) {
-            console.error('Failed to copy:', err)
         }
     }
 
@@ -709,7 +707,6 @@ URL: ${url}
             setCopied(true)
             setTimeout(() => setCopied(false), 2000)
         } catch (err) {
-            console.error('Failed to copy:', err)
         }
     }
 

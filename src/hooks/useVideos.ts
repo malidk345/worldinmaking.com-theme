@@ -19,7 +19,6 @@ export function useVideos(): Video[] {
                 setVideos(enrichedVideos)
             })
             .catch((error) => {
-                console.warn('Using base video data (enriched metadata not available):', error.message)
                 // Keep using base videos as fallback
             })
     }, [])

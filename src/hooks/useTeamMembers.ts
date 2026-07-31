@@ -117,7 +117,6 @@ export function useTeamMembers() {
                 setFutureJoiners(joiners)
                 setLoading(false)
             } catch (err) {
-                console.error('Failed to fetch team members', err)
                 setLoading(false)
             }
         }
@@ -161,7 +160,6 @@ export function useTeamMembers() {
             })
             return res.ok
         } catch (err) {
-            console.error('Failed to update profile', err)
             return false
         }
     }

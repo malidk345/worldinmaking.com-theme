@@ -412,7 +412,7 @@ const PhotoStrip = ({
             videoRefs.current.forEach((el) => {
                 if (el && videoRef.srcObject) {
                     el.srcObject = videoRef.srcObject
-                    el.play().catch(console.error)
+                    el.play().catch(() => {})
                 }
             })
         }
@@ -988,7 +988,6 @@ export default function Photobooth(): JSX.Element {
                     ...cardTypes.map(({ logo }) => preloadImage(logo)),
                 ])
             } catch (error) {
-                console.error('Error preloading images:', error)
             }
         }
 

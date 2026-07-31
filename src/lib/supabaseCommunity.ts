@@ -118,7 +118,6 @@ export async function postSupabaseCommunityQuestion(title: string, content: stri
         })
         return res.ok
     } catch (e) {
-        console.error('Error posting question to Supabase:', e)
         return false
     }
 }
@@ -141,7 +140,6 @@ export async function postSupabaseCommunityReply(postId: number | string, conten
         })
         return res.ok
     } catch (e) {
-        console.error('Error posting reply to Supabase:', e)
         return false
     }
 }

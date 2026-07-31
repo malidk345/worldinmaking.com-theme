@@ -47,7 +47,6 @@ export async function fetchSupabasePosts(): Promise<SupabasePost[]> {
         const data = await fetchWithCache(url)
         return Array.isArray(data) && data.length > 0 ? data : MOCK_SUPABASE_POSTS
     } catch (e) {
-        console.error('Error fetching Supabase posts:', e)
         return MOCK_SUPABASE_POSTS
     }
 }
@@ -61,7 +60,6 @@ export async function fetchSupabasePostBySlug(slug: string): Promise<SupabasePos
         const found = MOCK_SUPABASE_POSTS.find((p) => p.slug === cleanSlugStr)
         return found || MOCK_SUPABASE_POSTS[0]
     } catch (e) {
-        console.error('Error fetching Supabase post by slug:', e)
         const cleanSlugStr = slug.replace(/^\/posts\/?/, '').replace(/^\/blog\/?/, '')
         const found = MOCK_SUPABASE_POSTS.find((p) => p.slug === cleanSlugStr)
         return found || MOCK_SUPABASE_POSTS[0]

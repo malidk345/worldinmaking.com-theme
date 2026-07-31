@@ -105,7 +105,6 @@ export default function Image({
                 duration: 3000,
             })
         } catch (err) {
-            console.error('Failed to copy text: ', err)
             addToast({
                 description: 'Failed to copy URL',
                 error: true,
@@ -152,7 +151,6 @@ export default function Image({
                 await addTagToMedia(tagId, jwt)
                 addToast({ description: 'Tag added', duration: 3000 })
             } catch (error) {
-                console.error('Failed to add tag:', error)
                 addToast({ description: 'Failed to add tag', error: true, duration: 3000 })
             }
         }
@@ -162,7 +160,6 @@ export default function Image({
                 await removeTagFromMedia(tagId, jwt)
                 addToast({ description: 'Tag removed', duration: 3000 })
             } catch (error) {
-                console.error('Failed to remove tag:', error)
                 addToast({ description: 'Failed to remove tag', error: true, duration: 3000 })
             }
         }
@@ -187,7 +184,6 @@ export default function Image({
                 fetchTags()
             }
         } catch (error) {
-            console.error('Failed to create tag:', error)
             addToast({ description: 'Failed to create tag', error: true, duration: 3000 })
         }
     }
@@ -227,7 +223,6 @@ export default function Image({
 
             onMoved?.()
         } catch (error) {
-            console.error('Failed to move to folder:', error)
             addToast({ description: 'Failed to move to folder', error: true, duration: 3000 })
         } finally {
             setIsMoving(false)
@@ -255,7 +250,6 @@ export default function Image({
 
             onMoved?.()
         } catch (error) {
-            console.error('Failed to remove from folder:', error)
             addToast({ description: 'Failed to remove from folder', error: true, duration: 3000 })
         } finally {
             setIsMoving(false)

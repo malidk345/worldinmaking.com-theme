@@ -103,7 +103,6 @@ export default function TeamUpdate({
                     setUpdateCount(updateCount + 1)
                     onSubmit?.()
                 } catch (err) {
-                    console.error(err)
                 }
             },
         })

@@ -2366,7 +2366,6 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             try {
                 window.history.pushState({ windowKey: key }, '', path)
             } catch (e) {
-                console.error(e)
             }
         }
     }
@@ -2546,7 +2545,6 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             setSiteSettings(settings)
             localStorage.setItem('siteSettings', JSON.stringify(settings))
         } catch (error) {
-            console.error('Failed to update site settings:', error)
         }
     }
 
@@ -2567,7 +2565,6 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 setDesktopCopied(false)
             }, 2000)
         } catch (error) {
-            console.error(error)
             addToast({
                 error: true,
                 description: 'Failed to copy desktop link to clipboard',
