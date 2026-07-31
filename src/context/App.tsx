@@ -1908,11 +1908,19 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
 
                 return prev.map((el) => {
                     const isTarget = el.key === existing.key || el.path === existing.path || el === existing
+                    const newZIndex = isTarget ? maxZIndex + 1 : el.zIndex > existing.zIndex ? el.zIndex - 1 : el.zIndex
+                    const newMinimized = isTarget ? false : el.minimized
+                    const newLocation = isTarget ? location || el.location : el.location
+
+                    if (!isTarget && newZIndex === el.zIndex && newMinimized === el.minimized && newLocation === el.location) {
+                        return el
+                    }
+
                     return {
                         ...el,
-                        zIndex: isTarget ? maxZIndex + 1 : el.zIndex > existing.zIndex ? el.zIndex - 1 : el.zIndex,
-                        minimized: isTarget ? false : el.minimized,
-                        location: isTarget ? location || el.location : el.location,
+                        zIndex: newZIndex,
+                        minimized: newMinimized,
+                        location: newLocation,
                         ...(isTarget ? additional : {}),
                     }
                 })

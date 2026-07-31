@@ -1034,3 +1034,23 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
         </WindowProvider>
     )
 }
+
+const AppWindowMemoized = React.memo(AppWindow, (prevProps, nextProps) => {
+    const p = prevProps.item
+    const n = nextProps.item
+    return (
+        p === n ||
+        (p.key === n.key &&
+            p.zIndex === n.zIndex &&
+            p.minimized === n.minimized &&
+            p.expanded === n.expanded &&
+            p.windowed === n.windowed &&
+            p.snapped === n.snapped &&
+            p.position?.x === n.position?.x &&
+            p.position?.y === n.position?.y &&
+            p.size?.width === n.size?.width &&
+            p.size?.height === n.size?.height)
+    )
+})
+
+export default AppWindowMemoized
