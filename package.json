@@ -241,6 +241,10 @@
       "react-tsparticles",
       "sharp",
       "tsparticles-engine"
-    ]
+    ],
+    "overrides": {
+      "undici": "5.29.0",
+      "@vercel/build-utils": "13.36.3"
+    }
   }
 }
