@@ -1902,6 +1902,9 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 const existing = prev.find((w) => w.key === key || w.path === key || w === itemOrKey)
                 if (!existing) return prev
                 const maxZIndex = Math.max(...prev.map((w) => w.zIndex), 0)
+                if (existing.zIndex === maxZIndex && !existing.minimized && Object.keys(additional).length === 0) {
+                    return prev
+                }
 
                 return prev.map((el) => {
                     const isTarget = el.key === existing.key || el.path === existing.path || el === existing

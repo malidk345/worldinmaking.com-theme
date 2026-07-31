@@ -534,6 +534,7 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
     }
 
     const handleDrag = (_event: any, info: any) => {
+        if (!dragging) setDragging(true)
         if (item.expanded && windowRef.current) {
             const rect = windowRef.current.getBoundingClientRect()
             const containerRect = constraintsRef.current?.getBoundingClientRect()
@@ -550,16 +551,9 @@ export default function AppWindow({ item, chrome = true }: { item: AppWindowType
                 expanded: false,
                 snapped: false,
             })
-            if (!dragging) setDragging(true)
             return
         }
-        updateWindow(item, {
-            expanded: false,
-            snapped: false,
-        })
-        if (!dragging) setDragging(true)
-        if (item.fixedSize) return
-        if (!constraintsRef.current) return
+        if (item.fixedSize || !constraintsRef.current) return
 
         const bounds = constraintsRef.current.getBoundingClientRect()
         const newX = position.x + info.offset.x
