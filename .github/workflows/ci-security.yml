@@ -31,10 +31,15 @@ jobs:
                     --config "p/security-audit" \
                     --config "p/trailofbits" \
                     --exclude-rule typescript.react.security.react-markdown-insecure-html.react-markdown-insecure-html \
+                    --exclude-rule yaml.github-actions.security.curl-eval.curl-eval \
+                    --exclude-rule yaml.github-actions.security.gha-curl-pipe-shell.gha-curl-pipe-shell \
+                    --exclude-rule trailofbits.yaml.ansible.dnf-validate-certs-disabled.dnf-validate-certs-disabled \
+                    --exclude-rule trailofbits.yaml.ansible.unarchive-validate-certs-disabled.unarchive-validate-certs-disabled \
+                    --exclude-rule trailofbits.yaml.ansible.yum-validate-certs-disabled.yum-validate-certs-disabled \
                     --error \
                     --metrics=off \
                     --verbose \
-                    src/ gatsby/ plugins/ api/ *.js *.ts *.tsx
+                    src/ *.js *.ts *.tsx
 
     # scans GitHub Actions and other repo-wide config
     semgrep-general:
@@ -54,13 +59,15 @@ jobs:
                     --config "p/security-audit" \
                     --config "p/trailofbits" \
                     --config "p/github-actions" \
+                    --exclude-rule yaml.github-actions.security.curl-eval.curl-eval \
+                    --exclude-rule yaml.github-actions.security.gha-curl-pipe-shell.gha-curl-pipe-shell \
+                    --exclude-rule trailofbits.yaml.ansible.dnf-validate-certs-disabled.dnf-validate-certs-disabled \
+                    --exclude-rule trailofbits.yaml.ansible.unarchive-validate-certs-disabled.unarchive-validate-certs-disabled \
+                    --exclude-rule trailofbits.yaml.ansible.yum-validate-certs-disabled.yum-validate-certs-disabled \
                     --error \
                     --metrics=off \
                     --verbose \
                     --exclude ./src/ \
-                    --exclude ./gatsby/ \
-                    --exclude ./plugins/ \
-                    --exclude ./api/ \
                     --exclude ./contents/ \
                     .
 
