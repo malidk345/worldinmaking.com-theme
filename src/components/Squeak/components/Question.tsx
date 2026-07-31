@@ -330,7 +330,7 @@ const Loading = () => {
 }
 
 const AskMaxLoading = ({ isInForum }: { isInForum: boolean }) => {
-    const messages = [
+    const MESSAGES = [
         'This usually takes less than 30 seconds.',
         'Searching docs, tutorials, GitHub issues, blogs, community answers...',
         "We'll only show an answer if we're confident it's right!",
@@ -345,7 +345,7 @@ const AskMaxLoading = ({ isInForum }: { isInForum: boolean }) => {
         const intervalId = setInterval(() => {
             setFadeState('out')
             setTimeout(() => {
-                setCurrentMessageIndex((prevIndex) => (prevIndex + 1) % messages.length)
+                setCurrentMessageIndex((prevIndex) => (prevIndex + 1) % MESSAGES.length)
                 setFadeState('in')
             }, 500) // Wait for fade out before changing message
         }, 5000)

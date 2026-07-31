@@ -62,7 +62,7 @@ export default function CommandPalette() {
 
     const matchedPosts = filterPosts(query)
 
-    const baseActions = [
+    const BASE_ACTIONS = [
         {
             id: 'app-blog',
             label: 'open blog posts',
@@ -109,7 +109,7 @@ export default function CommandPalette() {
         },
     ]
 
-    const filteredActions = baseActions.filter(
+    const filteredActions = BASE_ACTIONS.filter(
         (a) => !query.trim() || a.label.toLowerCase().includes(query.toLowerCase())
     )
 

@@ -133,7 +133,7 @@ const AIDisclaimer = ({ replyID, mutate, topic, confidence, resolvable }) => {
         }
     }
 
-    const feedbackOptions = [
+    const FEEDBACK_OPTIONS = [
         {
             label: resolvable ? 'Yes, mark as solution' : 'Yes, this was helpful',
             helpful: true,
@@ -183,7 +183,7 @@ const AIDisclaimer = ({ replyID, mutate, topic, confidence, resolvable }) => {
             )}
             {helpful === null && (
                 <ul className="flex items-center space-x-2 list-none p-0 flex-wrap -ml-2">
-                    {feedbackOptions.map(({ label, helpful }) => {
+                    {FEEDBACK_OPTIONS.map(({ label, helpful }) => {
                         return (
                             <li className="ml-2 mt-2" key={label}>
                                 <button
