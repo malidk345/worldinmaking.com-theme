@@ -816,10 +816,10 @@ const WistiaCustomPlayer = React.forwardRef<any, WistiaCustomPlayerProps>(
                             {/* Playback speed */}
                             <OSButton
                                 onClick={() => {
-                                    const rates = ['0.5', '0.75', '1', '1.25', '1.5', '2']
-                                    const currentIndex = rates.indexOf(playbackRate.toString())
-                                    const nextIndex = (currentIndex + 1) % rates.length
-                                    handlePlaybackRateChange(rates[nextIndex])
+                                    const RATES = ['0.5', '0.75', '1', '1.25', '1.5', '2']
+                                    const currentIndex = RATES.indexOf(playbackRate.toString())
+                                    const nextIndex = (currentIndex + 1) % RATES.length
+                                    handlePlaybackRateChange(RATES[nextIndex])
                                 }}
                                 variant="default"
                                 size="lg"
