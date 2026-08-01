@@ -796,7 +796,6 @@ export default function MSPaint({
             link.href = dataUrl
             link.click()
         } catch (err) {
-            console.error('Failed to export image:', err)
         }
     }
 

@@ -145,7 +145,6 @@ export const AlgoliaSearchResults = ({
                     setLoading(false)
                 }
             } catch (err) {
-                console.error('[AlgoliaSearchResults]', err)
                 if (!cancelled) setLoading(false)
             }
         }

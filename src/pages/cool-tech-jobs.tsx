@@ -620,7 +620,6 @@ const IssueForm = () => {
                     posthog?.capture('job_board_issue_reported', values)
                     setSubmitted(true)
                 } catch (error) {
-                    console.error('Error submitting issue:', error)
                 } finally {
                     setSubmitting(false)
                 }
@@ -822,7 +821,6 @@ const ModeratorInitialView = ({
                 onAddNewCompany()
             }
         } catch (error) {
-            console.error('Error dismissing pending company:', error)
         } finally {
             setDismissingId(null)
         }
@@ -1014,7 +1012,6 @@ const CompanyForm = ({ onSuccess, companyId }: { onSuccess?: () => void; company
                 setSlugExists(exists)
                 validateField('slug')
             } catch (error) {
-                console.error('Error checking slug:', error)
             }
         }, 1000),
         []
@@ -1032,7 +1029,6 @@ const CompanyForm = ({ onSuccess, companyId }: { onSuccess?: () => void; company
                 setNameExists(exists)
                 validateField('name')
             } catch (error) {
-                console.error('Error checking name:', error)
             }
         }, 1000),
         []
@@ -1660,7 +1656,6 @@ export default function JobsPage() {
             const data = await response.json()
             setPendingCompaniesCount(data.data?.length || 0)
         } catch (error) {
-            console.error('Error fetching pending companies count:', error)
         }
     }, [isModerator, getJwt])
 

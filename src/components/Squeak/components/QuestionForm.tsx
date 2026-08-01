@@ -424,7 +424,6 @@ export const QuestionForm = ({
                         transformedBody = transformedBody.replaceAll(fakeImagePath, uploadedImage.url)
                     }
                 } catch (err) {
-                    console.error(err)
                     return { ...values, body: transformedBody }
                 }
             }

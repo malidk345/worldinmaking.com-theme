@@ -27,7 +27,6 @@ export default async function transformValues(
                     uploadedImages.push(uploadedImage)
                 }
             } catch (err) {
-                console.error(err)
                 return { ...values, body: transformedBody }
             }
         }

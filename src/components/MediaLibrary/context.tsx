@@ -65,7 +65,6 @@ export function MediaLibraryProvider({ children }: { children: React.ReactNode }
             const data = await response.json()
             setFolders(data.data || [])
         } catch (error) {
-            console.error('Failed to fetch folders:', error)
         } finally {
             setFoldersLoading(false)
         }
@@ -85,7 +84,6 @@ export function MediaLibraryProvider({ children }: { children: React.ReactNode }
             const data = await response.json()
             setTags(data.data || [])
         } catch (error) {
-            console.error('Failed to fetch tags:', error)
         } finally {
             setTagsLoading(false)
         }

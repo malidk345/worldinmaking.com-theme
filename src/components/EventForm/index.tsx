@@ -195,7 +195,6 @@ export default function EventForm({ onSuccess, event }: { onSuccess?: () => void
                         }
                     } catch (error) {
                         // Don't block event creation if the graphic can't be generated
-                        console.error('Error uploading event graphic:', error)
                     }
                 }
                 const dateTime = dayjs(`${values.date} ${values.startTime || '00:00'}`).toISOString()
@@ -234,7 +233,6 @@ export default function EventForm({ onSuccess, event }: { onSuccess?: () => void
                 }
                 onSuccess?.()
             } catch (error) {
-                console.error('Error creating event:', error)
             } finally {
                 setSubmitting(false)
             }
@@ -259,7 +257,6 @@ export default function EventForm({ onSuccess, event }: { onSuccess?: () => void
             })
             return response.json()
         } catch (error) {
-            console.error('Error creating event:', error)
             addToast({
                 description: 'Failed to create event',
             })
@@ -285,7 +282,6 @@ export default function EventForm({ onSuccess, event }: { onSuccess?: () => void
             })
             return response.json()
         } catch (error) {
-            console.error('Error updating event:', error)
             addToast({
                 description: 'Failed to update event',
             })
@@ -330,7 +326,6 @@ export default function EventForm({ onSuccess, event }: { onSuccess?: () => void
             link.click()
             link.remove()
         } catch (error) {
-            console.error('Error generating event graphic:', error)
             addToast({ description: 'Failed to generate the event graphic' })
         } finally {
             setDownloadingGraphic(false)
