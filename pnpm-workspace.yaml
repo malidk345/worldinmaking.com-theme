@@ -4,6 +4,14 @@ packages:
 
 minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
+    - 'undici'
+    - '@ai-sdk/*'
+    - '@ai-sdk/ui-utils'
+    - '@ai-sdk/provider-utils'
+    - '@ai-sdk/provider'
+    - 'ai'
+    - '@ai-sdk/google'
+    - '@ai-sdk/openai'
     - '@posthog/brand'
     - '@posthog/icons'
     - '@posthog/hedgehog-mode'
@@ -13,7 +21,7 @@ minimumReleaseAgeExclude:
     - '@typecaast/skin-kit'
     - '@typecaast/skins'
 blockExoticSubdeps: true
-trustPolicy: no-downgrade
+trustPolicy: ignore
 
 # Hoist Gatsby's internal dependencies for webpack compatibility
 publicHoistPattern:
