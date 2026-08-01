@@ -4,14 +4,14 @@
 
 /** App windows — frosted by default; solid when reduce transparency is on */
 export const WINDOW_BG =
-    'bg-primary/75 backdrop-blur-3xl transform-gpu reduce-transparency:!bg-primary reduce-transparency:backdrop-blur-none'
+    'bg-primary/40 backdrop-blur-[25px] backdrop-saturate-[190%] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)] transform-gpu reduce-transparency:!bg-primary reduce-transparency:backdrop-blur-none'
 
 /** Reader sidebar overlays */
 export const PANEL_BG =
-    'bg-primary/75 dark:bg-primary backdrop-blur-3xl transform-gpu reduce-transparency:!bg-primary reduce-transparency:backdrop-blur-none'
+    'bg-primary/40 dark:bg-primary backdrop-blur-[25px] backdrop-saturate-[190%] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)] transform-gpu reduce-transparency:!bg-primary reduce-transparency:backdrop-blur-none'
 
 /** Taskbar — always frosted; styled matching window chrome glassmorphism */
-export const TASKBAR_BG = 'bg-primary/75 backdrop-blur-3xl border-b border-primary/20 transform-gpu'
+export const TASKBAR_BG = 'bg-primary/40 backdrop-blur-[25px] backdrop-saturate-[190%] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)] border-b border-primary/20 transform-gpu'
 
 /** Promote compositor layers while a surface is moving */
 export const MOTION_LAYER = 'will-change-[transform,backdrop-filter] reduce-transparency:will-change-transform'
