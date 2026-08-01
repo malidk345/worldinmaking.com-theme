@@ -2,8 +2,16 @@ packages:
     - .
     - plugins/*
 
-minimumReleaseAge: 0
+minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
+    - 'undici'
+    - '@ai-sdk/*'
+    - '@ai-sdk/ui-utils'
+    - '@ai-sdk/provider-utils'
+    - '@ai-sdk/provider'
+    - 'ai'
+    - '@ai-sdk/google'
+    - '@ai-sdk/openai'
     - '@posthog/brand'
     - '@posthog/icons'
     - '@posthog/hedgehog-mode'
