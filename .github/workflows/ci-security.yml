@@ -34,7 +34,7 @@ jobs:
                     --error \
                     --metrics=off \
                     --verbose \
-                    src/ *.js *.ts *.tsx
+                    src/ kea.js next.config.js tailwind.config.js postcss.config.js
 
     # scans GitHub Actions and other repo-wide config
     semgrep-general:
