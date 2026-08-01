@@ -1,6 +1,7 @@
-## 2024-11-20 - Memoizing the Customers Array in useCustomers
-**Learning:** In the `useCustomers` hook, computing the large `customers` map on every render using an inner `.find()` array lookup created an $O(N \times M)$ rendering bottleneck, which cascaded re-renders down to dependent components like `Customer`. Pre-computing an $O(1)$ lookup Map and wrapping the operation in `useMemo` significantly reduces CPU pressure during React re-renders.
-**Action:** When working with large sets of static or semi-static data (like `CUSTOMER_DATA`) joined against dynamic contexts (like `useProducts`), always precompute secondary maps for $O(1)$ lookups and wrap the final merged structure in `useMemo` to prevent deep performance regressions.
 ## 2024-11-20 - Replace O(N²) array spread reduce with O(N) flatMap
 **Learning:** Using `reduce` combined with array spread syntax (`[...acc, ...cur]`) for array flattening creates an O(N²) performance bottleneck, blocking the main thread during React renders. Using the single-pass `flatMap()` method resolves this to O(N).
 **Action:** Always use `flatMap()` or `flat()` instead of `reduce` with array spread for flattening arrays, especially for large or paginated data sets like those from SWR Infinite hooks.
+
+## 2026-08-01 - Avoid CI Configuration Bloat in Targeted PRs
+**Learning:** Adding out-of-scope configuration changes (like `.markdownlint-cli2.jsonc`, `.codespellignore`, and Semgrep security fixes) to a targeted feature or performance PR will violate repository security boundaries and trigger rejection (even if those changes solve pre-existing CI failures).
+**Action:** Strictly limit modifications to the source files relevant to the specific problem domain. Revert any accidental CI workflow or configuration edits before submission.
