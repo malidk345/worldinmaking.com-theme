@@ -6,7 +6,6 @@ import {
   LemonBadge,
   LemonDivider,
   ProfilePicture,
-  LemonSegmentedButton,
 } from '../components/lemon-ui'
 import {
   IconSearch,
@@ -15,8 +14,6 @@ import {
   IconPlus,
   IconChevronRight,
   IconChevronDown,
-  IconLink,
-  IconExternal,
 } from '../components/icons'
 
 export interface AIMessage {
@@ -37,84 +34,119 @@ export interface AIMessage {
 
 export interface PostHogAIAppProps {
   onBack?: () => void
+  initialContextPath?: string
 }
 
-export function PostHogAIApp({ onBack }: PostHogAIAppProps = {}): JSX.Element {
+export function PostHogAIApp({ onBack, initialContextPath = '/community' }: PostHogAIAppProps = {}): JSX.Element {
   const [inputPrompt, setInputPrompt] = useState('')
   const [reasoningExpanded, setReasoningExpanded] = useState(true)
+  const [selectedPhilosopher, setSelectedPhilosopher] = useState('Nietzsche')
+  const [loading, setLoading] = useState(false)
 
-  // 1:1 Monorepo Mock Replica matching PostHog's exact Storybook story: scenes-app-posthog-ai--thread
+  const PHILOSOPHERS = [
+    { name: 'Nietzsche', icon: '⚡' },
+    { name: 'Zizek', icon: '🍿' },
+    { name: 'Spinoza', icon: '💎' },
+    { name: 'Marx', icon: '🛠️' },
+    { name: 'Heidegger', icon: '📜' },
+  ]
+
+  // 1:1 Monorepo Mock Replica matching PostHog's exact Storybook story: scenes-app-posthog-ai--chat-with-ui-context
   const [messages, setMessages] = useState<AIMessage[]>([
     {
       id: 'human-1',
       sender: 'user',
-      authorName: "You (Paul D'Amora)",
-      timestamp: '2023-01-28 14:00',
-      content: 'What are my most popular pages?',
+      authorName: "You (User)",
+      timestamp: 'Just now',
+      content: 'What is the relationship between technology and human agency?',
     },
     {
       id: 'ai-thread-1',
       sender: 'ai',
-      authorName: 'Max (PostHog AI)',
-      timestamp: '2023-01-28 14:00',
+      authorName: `${selectedPhilosopher} (PostHog AI)`,
+      timestamp: 'Just now',
       reasoningSteps: [
-        'Picking relevant events and properties ($pageview, $current_url)',
-        'Generating trends query breakdown by $current_url over last 30 days',
+        `Deconstructing query through ${selectedPhilosopher}'s epistemic stance`,
+        'Analyzing structural assumptions & technological enframing',
+        'Formulating persona critique & dialectical resolution',
       ],
-      vizQuery: {
-        event: '$pageview',
-        breakdown: '$current_url',
-        dateRange: '-30d',
-        data: [
-          { label: '/docs/getting-started', count: 14250, percentage: '100%' },
-          { label: '/pricing', count: 9840, percentage: '69.0%' },
-          { label: '/blog/posthog-vs-mixpanel', count: 6420, percentage: '45.0%' },
-          { label: '/changelog/3000-ui', count: 3810, percentage: '26.7%' },
-        ],
-      },
       content:
-        'Here is the breakdown of your most popular pages over the last 30 days based on `$pageview` event volume.\n\n`/docs/getting-started` is leading with **14,250** total views, followed closely by `/pricing` (**9,840** views).',
+        'Technology is not a neutral tool; it is the physical manifestation of the Will to Power, reconfiguring human desire and agency.',
       suggestions: [
-        'Filter out internal team traffic',
-        'Break down by referral domain',
-        'Create a Notebook from this query',
+        'Deconstruct primary premises',
+        'Formulate counter-argument',
+        'Synthesize dialectical resolution',
       ],
     },
   ])
 
-  const handleSendPrompt = (promptText?: string) => {
+  const handleSendPrompt = async (promptText?: string) => {
     const text = (promptText || inputPrompt).trim()
-    if (!text) return
+    if (!text || loading) return
 
     const userMsg: AIMessage = {
       id: `human-${Date.now()}`,
       sender: 'user',
-      authorName: "You (Paul D'Amora)",
+      authorName: "You (User)",
       timestamp: 'Just now',
       content: text,
     }
 
-    const aiMsg: AIMessage = {
-      id: `ai-${Date.now()}`,
-      sender: 'ai',
-      authorName: 'Max (PostHog AI)',
-      timestamp: 'Just now',
-      reasoningSteps: [
-        `Analyzing query scope for "${text}"`,
-        'Executing HogQL query on ClickHouse events table',
-      ],
-      content: `Ran query for **"${text}"**.\n\nData processing succeeded. Event counts and user engagement trends are healthy.`,
-      suggestions: ['View raw SQL', 'Save to Dashboard'],
-    }
+    setMessages((prev) => [...prev, userMsg])
+    if (!promptText) setInputPrompt('')
+    setLoading(true)
 
-    setMessages((prev) => [...prev, userMsg, aiMsg])
-    setInputPrompt('')
+    try {
+      const res = await fetch('/api/philosopher-bot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: text,
+          philosopher: selectedPhilosopher,
+          taskType: 'community_reply',
+        }),
+      })
+      const data = await res.json()
+
+      const rawThought = data.thought || ''
+      const parsedSteps = rawThought
+        ? rawThought
+            .split(/\n+|\.\s+/)
+            .map((s: string) => s.replace(/^[-*•\d.]+\s*/, '').trim())
+            .filter((s: string) => s.length > 5)
+        : [
+            `Deconstructing premises from ${selectedPhilosopher}'s stance`,
+            'Analyzing ideological contradictions & structural trade-offs',
+          ]
+
+      const aiMsg: AIMessage = {
+        id: `ai-${Date.now()}`,
+        sender: 'ai',
+        authorName: `${data.philosopher || selectedPhilosopher} (PostHog AI)`,
+        timestamp: 'Just now',
+        reasoningSteps: parsedSteps,
+        content: data.reply || 'Knowledge requires active questioning of underlying premises.',
+        suggestions: [
+          'Deconstruct primary premises',
+          'Formulate counter-argument',
+          'Synthesize dialectical resolution',
+        ],
+      }
+
+      setMessages((prev) => [...prev, aiMsg])
+    } catch (err) {
+      console.error('PostHog AI query error:', err)
+    } finally {
+      setLoading(false)
+    }
   }
+
+  const currentIcon = PHILOSOPHERS.find((p) => p.name === selectedPhilosopher)?.icon || '⚡'
 
   return (
     <div
       style={{
-        minHeight: '100vh',
+        minHeight: '100%',
         backgroundColor: 'var(--color-bg-3000)',
         fontFamily: 'var(--font-sans)',
         color: 'var(--text-3000)',
@@ -124,36 +156,6 @@ export function PostHogAIApp({ onBack }: PostHogAIAppProps = {}): JSX.Element {
         overflow: 'hidden',
       }}
     >
-      {/* Ambient Glassmorphism Blobs */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '-10%',
-          left: '20%',
-          width: '500px',
-          height: '500px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(245, 78, 0, 0.16) 0%, rgba(245, 78, 0, 0) 70%)',
-          filter: 'blur(65px)',
-          pointerEvents: 'none',
-          zIndex: 0,
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          bottom: '5%',
-          right: '15%',
-          width: '550px',
-          height: '550px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(139, 92, 246, 0) 70%)',
-          filter: 'blur(75px)',
-          pointerEvents: 'none',
-          zIndex: 0,
-        }}
-      />
-
       {/* Main Container */}
       <main
         style={{
@@ -164,7 +166,7 @@ export function PostHogAIApp({ onBack }: PostHogAIAppProps = {}): JSX.Element {
           width: '100%',
           maxWidth: '920px',
           margin: '0 auto',
-          padding: '1.5rem 1rem',
+          padding: '1.25rem 1rem',
           zIndex: 1,
         }}
       >
@@ -178,9 +180,10 @@ export function PostHogAIApp({ onBack }: PostHogAIAppProps = {}): JSX.Element {
             display: 'flex',
             flexDirection: 'column',
             boxShadow: '0 12px 40px rgba(0,0,0,0.06)',
+            backgroundColor: 'var(--color-bg-3000, #ffffff)',
           }}
         >
-          {/* Header */}
+          {/* Storybook 1:1 Header: scenes-app-posthog-ai--chat-with-ui-context */}
           <header
             className="posthog-glass"
             style={{
@@ -215,18 +218,72 @@ export function PostHogAIApp({ onBack }: PostHogAIAppProps = {}): JSX.Element {
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                   <span style={{ fontWeight: 800, fontSize: '1rem', fontFamily: 'var(--font-title)' }}>
-                    Max (PostHog AI)
+                    Max ({selectedPhilosopher} AI)
                   </span>
                   <LemonBadge status="success" />
                 </div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
-                  Storybook: <code>scenes-app-posthog-ai--thread</code>
+                  Storybook: <code>scenes-app-posthog-ai--chat-with-ui-context</code>
                 </div>
               </div>
             </div>
 
-            <LemonTag type="highlight">PostHog AI Thread</LemonTag>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <LemonTag type="highlight">UI Context Active</LemonTag>
+              <span
+                style={{
+                  fontSize: '0.75rem',
+                  fontFamily: 'monospace',
+                  padding: '0.2rem 0.5rem',
+                  backgroundColor: 'rgba(0,0,0,0.05)',
+                  borderRadius: '4px',
+                }}
+              >
+                📄 {initialContextPath}
+              </span>
+            </div>
           </header>
+
+          {/* Philosopher Persona Selector Bar */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.375rem',
+              padding: '0.5rem 1.25rem',
+              borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
+              backgroundColor: 'rgba(0, 0, 0, 0.02)',
+              overflowX: 'auto',
+            }}
+          >
+            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
+              Persona:
+            </span>
+            {PHILOSOPHERS.map((p) => (
+              <button
+                key={p.name}
+                onClick={() => setSelectedPhilosopher(p.name)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  padding: '0.25rem 0.625rem',
+                  borderRadius: '6px',
+                  fontSize: '0.75rem',
+                  fontWeight: selectedPhilosopher === p.name ? 700 : 500,
+                  backgroundColor:
+                    selectedPhilosopher === p.name ? 'var(--color-accent, #1d4ed8)' : 'rgba(0,0,0,0.05)',
+                  color: selectedPhilosopher === p.name ? '#ffffff' : 'inherit',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <span>{p.icon}</span>
+                <span>{p.name}</span>
+              </button>
+            ))}
+          </div>
 
           {/* Messages Stream */}
           <div
@@ -237,6 +294,8 @@ export function PostHogAIApp({ onBack }: PostHogAIAppProps = {}): JSX.Element {
               display: 'flex',
               flexDirection: 'column',
               gap: '1.25rem',
+              minHeight: '380px',
+              maxHeight: '480px',
             }}
           >
             {messages.map((msg) => (
@@ -261,16 +320,18 @@ export function PostHogAIApp({ onBack }: PostHogAIAppProps = {}): JSX.Element {
                 >
                   {msg.sender === 'ai' && <span style={{ fontSize: '1rem' }}>🦔</span>}
                   <span style={{ fontWeight: 700, fontSize: '0.8125rem' }}>{msg.authorName}</span>
-                  <span style={{ fontSize: '0.6875rem', color: 'var(--color-text-secondary)' }}>{msg.timestamp}</span>
-                  {msg.sender === 'user' && <ProfilePicture name="Paul D'Amora" email="paul@posthog.com" size="xs" />}
+                  <span style={{ fontSize: '0.6875rem', color: 'var(--color-text-secondary)' }}>
+                    {msg.timestamp}
+                  </span>
+                  {msg.sender === 'user' && <ProfilePicture name="User" email="user@posthog.com" size="xs" />}
                 </div>
 
-                {/* AI Reasoning Step Box */}
+                {/* 1:1 Storybook AI Reasoning Step Box */}
                 {msg.reasoningSteps && msg.reasoningSteps.length > 0 && (
                   <div
                     className="posthog-glass"
                     style={{
-                      borderRadius: 'var(--radius)',
+                      borderRadius: 'var(--radius, 8px)',
                       padding: '0.625rem 0.875rem',
                       fontSize: '0.75rem',
                       display: 'flex',
@@ -288,6 +349,7 @@ export function PostHogAIApp({ onBack }: PostHogAIAppProps = {}): JSX.Element {
                         cursor: 'pointer',
                         fontWeight: 600,
                         color: 'var(--color-text-secondary)',
+                        userSelect: 'none',
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
@@ -300,57 +362,24 @@ export function PostHogAIApp({ onBack }: PostHogAIAppProps = {}): JSX.Element {
                     {reasoningExpanded && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.25rem' }}>
                         {msg.reasoningSteps.map((step, idx) => (
-                          <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: 'var(--text-3000)' }}>
-                            <span style={{ color: 'var(--color-accent, #1d4ed8)', fontWeight: 700 }}>✓</span>
+                          <div
+                            key={idx}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'flex-start',
+                              gap: '0.375rem',
+                              fontSize: '0.75rem',
+                              color: 'var(--text-3000)',
+                            }}
+                          >
+                            <span style={{ color: 'var(--color-accent, #1d4ed8)', fontWeight: 700, lineHeight: 1 }}>
+                              ✓
+                            </span>
                             <span>{step}</span>
                           </div>
                         ))}
                       </div>
                     )}
-                  </div>
-                )}
-
-                {/* AI Trends Visualization Card */}
-                {msg.vizQuery && (
-                  <div
-                    className="posthog-glass"
-                    style={{
-                      borderRadius: 'var(--radius-lg)',
-                      padding: '1rem',
-                      border: '1px solid rgba(0,0,0,0.08)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '0.75rem',
-                      backgroundColor: 'rgba(255,255,255,0.85)',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div style={{ fontWeight: 700, fontSize: '0.8125rem' }}>
-                        📊 Trends Query: {msg.vizQuery.event} breakdown by {msg.vizQuery.breakdown}
-                      </div>
-                      <LemonTag type="option">{msg.vizQuery.dateRange}</LemonTag>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                      {msg.vizQuery.data.map((item) => (
-                        <div key={item.label} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
-                            <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{item.label}</span>
-                            <span><strong>{item.count.toLocaleString()}</strong> ({item.percentage})</span>
-                          </div>
-                          <div style={{ height: '6px', width: '100%', backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
-                            <div
-                              style={{
-                                height: '100%',
-                                width: item.percentage,
-                                backgroundColor: 'var(--color-accent, #1d4ed8)',
-                                borderRadius: '3px',
-                              }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
                   </div>
                 )}
 
@@ -389,9 +418,30 @@ export function PostHogAIApp({ onBack }: PostHogAIAppProps = {}): JSX.Element {
                 )}
               </div>
             ))}
+
+            {loading && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxWidth: '88%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span>🦔</span>
+                  <span style={{ fontWeight: 700, fontSize: '0.8125rem' }}>{selectedPhilosopher} (PostHog AI)</span>
+                </div>
+                <div
+                  className="posthog-glass"
+                  style={{
+                    borderRadius: 'var(--radius, 8px)',
+                    padding: '0.625rem 0.875rem',
+                    fontSize: '0.75rem',
+                    color: 'var(--color-accent, #1d4ed8)',
+                    fontStyle: 'italic',
+                  }}
+                >
+                  🧠 Processing query via Vercel AI SDK...
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* AI Fixed Input Bar at Bottom */}
+          {/* Storybook 1:1 Fixed AI Input Bar at Bottom */}
           <div
             className="posthog-glass"
             style={{
@@ -405,7 +455,7 @@ export function PostHogAIApp({ onBack }: PostHogAIAppProps = {}): JSX.Element {
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
               <div style={{ flex: 1 }}>
                 <LemonInput
-                  placeholder="Ask PostHog AI anything about your events, HogQL, or session recordings..."
+                  placeholder={`Ask ${selectedPhilosopher} AI about ${initialContextPath}...`}
                   value={inputPrompt}
                   onChange={setInputPrompt}
                   onPressEnter={() => handleSendPrompt()}
@@ -413,19 +463,28 @@ export function PostHogAIApp({ onBack }: PostHogAIAppProps = {}): JSX.Element {
               </div>
               <LemonButton
                 type="primary"
-                disabled={!inputPrompt.trim()}
+                disabled={!inputPrompt.trim() || loading}
                 onClick={() => handleSendPrompt()}
               >
                 Send
               </LemonButton>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
-              <span>Model: <strong>Claude 3.5 Sonnet (HogAI Engine)</strong></span>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                fontSize: '0.75rem',
+                color: 'var(--color-text-secondary)',
+              }}
+            >
+              <span>
+                Model: <strong>Claude 3.5 Sonnet / Vercel AI SDK</strong>
+              </span>
               <span>Press Enter to send</span>
             </div>
           </div>
-
         </div>
       </main>
     </div>

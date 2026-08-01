@@ -377,19 +377,13 @@ const MenuBar: React.FC<MenuBarProps> = ({ menus, className, triggerAsChild, cus
                 return (
                     <RadixMenubar.Menu key={menuIndex} value={String(menuIndex)} data-scheme="primary">
                         <RadixMenubar.Trigger
-                            asChild={Boolean(triggerAsChild && React.isValidElement(menu.trigger) && menu.hideChevron)}
+                            asChild={triggerAsChild}
                             className={`${triggerAsChild ? '' : TriggerClasses} ${
                                 menu.bold ? 'font-bold' : 'font-medium'
                             } ${customTriggerClasses}`}
                         >
-                            {triggerAsChild && React.isValidElement(menu.trigger) && menu.hideChevron ? (
-                                menu.trigger
-                            ) : (
-                                <span className="inline-flex items-center gap-0.5">
-                                    {menu.trigger}
-                                    {!menu.hideChevron && <IconChevronDown className="size-5 opacity-60 -mr-2 hidden" />}
-                                </span>
-                            )}
+                            {menu.trigger}
+                            {!menu.hideChevron && <IconChevronDown className="size-5 opacity-60 -mr-2 hidden" />}
                         </RadixMenubar.Trigger>
                         <RadixMenubar.Portal container={portalContainer || undefined}>
                             <RadixMenubar.Content

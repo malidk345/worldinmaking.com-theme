@@ -1,10 +1,12 @@
-import { useRouter } from 'next/navigation'
 import React, { useState, useCallback, useEffect, useMemo } from 'react'
 import * as ScrollArea from '@radix-ui/react-scroll-area'
 import * as RadioGroup from '@radix-ui/react-radio-group'
 import * as Icons from '@posthog/icons'
 import { IMenu } from 'components/PostLayout/types'
-import Link from 'next/link'
+import Link from 'components/Link'
+const navigate = (url: string) => {
+    if (typeof window !== 'undefined') window.location.href = url
+}
 import { useWindow } from '../../context/Window'
 
 // --- Data Structure ---
@@ -126,7 +128,7 @@ export const FileMenu: React.FC<{ initialPath?: IMenu[]; menu: IMenu[] }> = ({ i
     const handleSelect = useCallback(
         (columnIndex: number, item: IMenu) => {
             if (item.url && !item.children) {
-                return router.push(item.url)
+                return navigate(item.url)
             }
             const newPath = path.slice(0, columnIndex + 1) // Trim path up to the current column index
             newPath.push(item) // Add the newly selected item

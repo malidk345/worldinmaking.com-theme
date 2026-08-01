@@ -1,6 +1,6 @@
 import React from 'react'
 
-export default function QuestionSkeleton({ isInForum = false }: { isInForum?: boolean }) {
+export function QuestionSkeleton({ isInForum = false }: { isInForum?: boolean }) {
     return (
         <div className={`animate-pulse flex space-x-4 ${isInForum ? 'p-5' : ''}`}>
             <div className="w-[40px] h-[40px] bg-black dark:bg-white opacity-20 rounded-full flex-shrink-0" />
@@ -15,3 +15,5 @@ export default function QuestionSkeleton({ isInForum = false }: { isInForum?: bo
         </div>
     )
 }
+
+export default QuestionSkeleton

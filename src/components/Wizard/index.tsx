@@ -8,8 +8,7 @@ interface WizardProps {
     rightNavigation?: React.ReactNode
 }
 
-export default function Wizard({
-    children,
+export function Wizard({
     leftNavigation,
     rightNavigation,
     navigationPosition = 'bottom',
@@ -32,3 +31,5 @@ export default function Wizard({
         </div>
     )
 }
+
+export default Wizard

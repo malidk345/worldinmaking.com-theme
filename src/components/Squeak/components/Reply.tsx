@@ -7,7 +7,7 @@ import Avatar from './Avatar'
 import getAvatarURL from '../util/getAvatar'
 import { CurrentQuestionContext } from './Question'
 import Link from 'components/Link'
-import { Logo } from '@posthog/brand/logo'
+import { Logo } from './Logo'
 import { CallToAction } from 'components/CallToAction'
 import {
     IconArchive,

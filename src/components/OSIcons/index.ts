@@ -1,6 +1,6 @@
 export * from './Icons'
 export * from './AppIcon'
-export { default as GlassIcon } from './GlassIcon'
+export { GlassIcon, default as GlassIconDefault } from './GlassIcon'
 export type { GlassIconProps } from './GlassIcon'
 export { default as PricingIcon } from './PricingIcon'
 export { default as DemoIcon } from './DemoIcon'

@@ -46,11 +46,7 @@ export const ToggleGroup = ({
                 data-scheme="primary"
                 defaultValue={defaultValue}
                 aria-label={title}
-                onValueChange={(val) => {
-                    if (val && val !== value) {
-                        onValueChange(val)
-                    }
-                }}
+                onValueChange={onValueChange}
                 value={value}
             >
                 {options.map((option) => (
@@ -67,3 +63,5 @@ export const ToggleGroup = ({
         </>
     )
 }
+
+export default ToggleGroup

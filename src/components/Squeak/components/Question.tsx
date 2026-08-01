@@ -31,7 +31,7 @@ import Modal from 'components/Modal'
 import PhilosopherThought from 'components/PhilosopherThought'
 import Checkbox from 'components/Checkbox'
 import { CallToAction } from 'components/CallToAction'
-import { Logo } from '@posthog/brand/logo'
+import { Logo } from './Logo'
 import Avatar from './Avatar'
 import dynamic from 'next/dynamic'
 const DotLottiePlayer = dynamic(() => import('@dotlottie/react-player').then(m => ({ default: m.DotLottiePlayer })), { ssr: false, loading: () => null }) as any

@@ -18,7 +18,7 @@ type Props = {
     onBlur?: () => void
 }
 
-export default function Select({
+export function Select({
     value,
     onChange,
     placeholder = '',
@@ -129,3 +129,5 @@ export default function Select({
         </div>
     )
 }
+
+export default Select

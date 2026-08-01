@@ -1,27 +1,109 @@
-import { useRouter } from 'next/router'
 import React, { useState, useEffect, useRef } from 'react'
 import Link from 'components/Link'
 import { useAppActions, useAppSettings, useAppUIState } from '../../context/App'
-import { GlassIcon } from 'components/OSIcons'
-import { AppItem } from 'components/OSIcons/AppIcon'
+import { GlassIcon, PricingIcon, DemoIcon } from 'components/OSIcons'
+import { AppIcon, AppItem } from 'components/OSIcons/AppIcon'
+import {
+    HOME_SILHOUETTE,
+    SELF_DRIVING_SILHOUETTE,
+    DOWNLOAD_SILHOUETTE,
+    DOCS_SILHOUETTE,
+    TALK_TO_A_HUMAN_SILHOUETTE,
+    WHY_POSTHOG_SILHOUETTE,
+    CHANGELOG_SILHOUETTE,
+    HANDBOOK_SILHOUETTE,
+    STORE_SILHOUETTE,
+    WORK_HERE_SILHOUETTE,
+    TRASH_SILHOUETTE,
+    CONTEXT_WAREHOUSE_SILHOUETTE,
+} from 'components/OSIcons/glyphs'
 import ContextMenu from 'components/RadixUI/ContextMenu'
 import DesktopIcon from './DesktopIcon'
 import { Screensaver } from '../Screensaver'
 import { useInactivityDetection } from '../../hooks/useInactivityDetection'
 import NotificationsPanel from 'components/NotificationsPanel'
-import Wallpapers from './Wallpapers'
+import Wallpapers, { getWallpaperGlow } from './Wallpapers'
 import HedgeHogModeEmbed from 'components/HedgehogMode'
 import ReactConfetti from 'react-confetti'
 import { useToast } from '../../context/Toast'
 
-export const useProductLinks = () => []
-export const apps: AppItem[] = []
+export const useProductLinks = () => {
+    return React.useMemo(
+        () => [
+            {
+                label: 'home.mdx',
+                Icon: <AppIcon name="doc" />,
+                url: '/',
+                source: 'desktop',
+            },
+            {
+                label: 'Editor',
+                Icon: <AppIcon name="typewriter" />,
+                url: '/editor',
+                source: 'desktop',
+            },
+            {
+                label: 'Write Post',
+                Icon: <AppIcon name="notebook" />,
+                url: '/community/new',
+                source: 'desktop',
+            },
+            {
+                label: 'Community',
+                Icon: <AppIcon name="forums" />,
+                url: '/community',
+                source: 'desktop',
+            },
+            {
+                label: 'Notebooks',
+                Icon: <AppIcon name="notebook" />,
+                url: '/notebooks',
+                source: 'desktop',
+            },
+            {
+                label: 'customers.mdx',
+                Icon: <AppIcon name="spreadsheet" />,
+                url: '/customers',
+                source: 'desktop',
+            },
+        ],
+        []
+    )
+}
+
+export const apps: AppItem[] = [
+    {
+        label: 'Company handbook',
+        Icon: <AppIcon name="handbook" />,
+        url: '/handbook',
+        source: 'desktop',
+    },
+    {
+        label: 'Contact',
+        Icon: <AppIcon name="envelope" />,
+        url: '/contact',
+        source: 'desktop',
+    },
+    {
+        label: 'Display Options',
+        Icon: <AppIcon name="page" />,
+        url: '/display-options',
+        source: 'desktop',
+    },
+    {
+        label: 'Trash',
+        Icon: <AppIcon name="trash" />,
+        url: '/trash',
+        source: 'desktop',
+    },
+]
 
 const APP_CONTAINER_TOP_PADDING = 8
 const TASKBAR_HEIGHT = 42
 const DESKTOP_TOP_OFFSET = APP_CONTAINER_TOP_PADDING + TASKBAR_HEIGHT
 
 function Desktop() {
+    const productLinks = useProductLinks()
     const { setScreensaverPreviewActive, setConfetti, updateSiteSettings } = useAppActions()
     const { siteSettings, compact } = useAppSettings()
     const { screensaverPreviewActive, confetti } = useAppUIState()
@@ -55,6 +137,29 @@ function Desktop() {
         }, 2000)
     }
 
+    const glow = getWallpaperGlow(siteSettings.wallpaper)
+    const applyGlow = (items: AppItem[]) =>
+        items.map((app) =>
+            React.isValidElement(app.Icon) && app.Icon.type === GlassIcon
+                ? {
+                      ...app,
+                      Icon: React.cloneElement(app.Icon as React.ReactElement, {
+                          glowColor: glow.light,
+                          glowColorDark: glow.dark,
+                      }),
+                  }
+                : app
+        )
+    const leftApps = applyGlow(productLinks)
+    const rightApps = applyGlow(apps)
+
+    const mobileIconListClassName = 'list-none m-0 p-0 flex flex-row flex-wrap pointer-events-auto w-full sm:hidden'
+    const desktopIconListClassName = 'list-none m-0 p-0 flex flex-col content-start pointer-events-auto'
+    const desktopIconListStyle = {
+        height: `calc(100dvh - ${DESKTOP_TOP_OFFSET + 32}px)`,
+        maxHeight: `calc(100dvh - ${DESKTOP_TOP_OFFSET + 32}px)`,
+    } as const
+
     const handleScreensaverDismiss = () => {
         addToast({
             title: 'Screensaver dismissed',
@@ -68,7 +173,8 @@ function Desktop() {
                     description: (
                         <>
                             Change this setting in{' '}
-                            <Link href="/display-options"
+                            <Link
+                                href="/display-options"
                                 className="text-red dark:text-yellow font-semibold"
                                 state={{ newWindow: true }}
                             >
@@ -128,6 +234,29 @@ function Desktop() {
                     onMouseLeave={handleMouseLeave}
                 >
                     <Wallpapers wallpaper={siteSettings.wallpaper} reduceMotion={siteSettings.performanceBoost} />
+
+                    <nav className="px-1" style={{ paddingTop: DESKTOP_TOP_OFFSET + 16 }}>
+                        <ul className={mobileIconListClassName}>
+                            {[...leftApps, ...rightApps].map((app) => (
+                                <DesktopIcon key={app.label} app={app} />
+                            ))}
+                        </ul>
+                        <div className="hidden sm:flex sm:justify-between items-start">
+                            <ul className={`${desktopIconListClassName} flex-wrap`} style={desktopIconListStyle}>
+                                {leftApps.map((app) => (
+                                    <DesktopIcon key={app.label} app={app} />
+                                ))}
+                            </ul>
+                            <ul
+                                className={`${desktopIconListClassName} flex-wrap-reverse`}
+                                style={desktopIconListStyle}
+                            >
+                                {rightApps.map((app) => (
+                                    <DesktopIcon key={app.label} app={app} />
+                                ))}
+                            </ul>
+                        </div>
+                    </nav>
                 </div>
                 {!compact && (
                     <Screensaver

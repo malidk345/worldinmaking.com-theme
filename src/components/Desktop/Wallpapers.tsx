@@ -27,7 +27,7 @@ const Hogzilla = () => (
 
 const StartupMonopoly = () => (
     <>
-        <div className={`absolute inset-0 bg-[#E7E0DA] dark:bg-[#686E88] ${FADE_COLORS}`} />
+        <div className={`absolute inset-0 bg-accent ${FADE_COLORS}`} />
         <CloudinaryImage
             loading="lazy"
             src="https://res.cloudinary.com/dmukukwp6/image/upload/9000_monopoly_light_6614a8a5d5.jpg"
@@ -78,7 +78,7 @@ const OfficeParty = () => (
 
 const KeyboardGarden = () => (
     <>
-        <div className={`absolute inset-0 bg-[#E1D7C2] dark:bg-[#333733] ${FADE_COLORS}`} />
+        <div className={`absolute inset-0 bg-accent ${FADE_COLORS}`} />
         <div
             className={`absolute inset-0 opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
             style={{
@@ -157,18 +157,17 @@ export const getWallpaperGlow = (wallpaper: string): WallpaperGlow =>
     WALLPAPER_GLOW[wallpaper] ?? DEFAULT_WALLPAPER_GLOW
 
 export default function Wallpapers({ wallpaper: propWallpaper }: { wallpaper?: string }): JSX.Element {
-    const { siteSettings } = useLayoutData()
-    const activeWallpaper = propWallpaper || siteSettings?.wallpaper || 'keyboard-garden'
+    const activeWallpaper = propWallpaper || 'keyboard-garden'
 
     return (
-        <div className="fixed inset-0 -z-10 select-none overflow-hidden pointer-events-none">
+        <div className="fixed inset-0 -z-10 select-none overflow-hidden pointer-events-none bg-[#fdfdf8] dark:bg-[#1b1c1e] transition-colors duration-700">
             {SCENES.map(({ key, Scene }) => {
                 const isVisible = activeWallpaper === key
                 return (
                     <div
                         key={key}
                         className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-                            isVisible ? 'opacity-100 z-10' : 'opacity-0 z-0'
+                            isVisible ? 'opacity-100 z-0' : 'opacity-0 -z-10 pointer-events-none'
                         }`}
                     >
                         <Scene />

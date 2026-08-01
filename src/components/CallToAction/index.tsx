@@ -299,3 +299,5 @@ export const CallToAction = ({
         </Link>
     )
 }
+
+export default CallToAction

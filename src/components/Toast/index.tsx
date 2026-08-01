@@ -3,8 +3,9 @@ import React from 'react'
 import { Toast as RadixToast } from 'radix-ui'
 import ToastItem from 'components/RadixUI/Toast'
 
-export default function Toasts(): JSX.Element {
+export default function Toasts(): JSX.Element | null {
     const { toasts, removeToast } = useToast()
+    if (!RadixToast || !RadixToast.Provider) return null
 
     return (
         <RadixToast.Provider swipeDirection="right">

@@ -4,7 +4,6 @@ import { IconCheck, IconChevronDown } from '@posthog/icons'
 import * as NotProductIcons from '../NotProductIcons'
 import * as NewIcons from '@posthog/icons'
 import * as OSIcons from '../OSIcons/Icons'
-
 type SelectItem = {
     value: string
     label: string
@@ -33,7 +32,7 @@ type SelectProps = {
     className?: string
 }
 
-const Icon = React.memo(({
+const Icon = ({
     icon,
     className = '',
     color,
@@ -44,38 +43,36 @@ const Icon = React.memo(({
 }) => {
     if (!icon) return null
 
+    // If icon is already a React element, render it directly
     if (React.isValidElement(icon)) {
         return icon
     }
 
+    // If icon is a string, look it up in the icon libraries
     if (typeof icon === 'string') {
         const IconComponent = (NewIcons as any)[icon] || (NotProductIcons as any)[icon] || (OSIcons as any)[icon]
         return IconComponent ? <IconComponent className={`${color ? `text-${color}` : ''} ${className}`} /> : null
     }
 
     return null
-})
+}
 
-Icon.displayName = 'SelectIcon'
-
-const SelectItem = React.memo(
-    React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<typeof RadixSelect.Item>>(
-        ({ children, className = '', ...props }, forwardedRef) => {
-            return (
-                <RadixSelect.Item
-                    data-scheme="primary"
-                    className={`hover:bg-accent relative flex h-[25px] select-none items-center rounded pl-8 pr-4 text-sm leading-none text-primary bg-primary data-[disabled]:pointer-events-none data-[disabled]:text-muted data-[disabled]:cursor-not-allowed data-[highlighted]:text-primary data-[highlighted]:outline-none data-[state=checked]:font-medium ${className}`}
-                    {...props}
-                    ref={forwardedRef}
-                >
-                    <RadixSelect.ItemText>{children}</RadixSelect.ItemText>
-                    <RadixSelect.ItemIndicator className="absolute left-1 inline-flex w-[25px] items-center justify-center">
-                        <IconCheck className="size-4 text-primary" />
-                    </RadixSelect.ItemIndicator>
-                </RadixSelect.Item>
-            )
-        }
-    )
+const SelectItem = React.forwardRef(
+    ({ children, className, ...props }: React.ComponentPropsWithoutRef<typeof RadixSelect.Item>, forwardedRef) => {
+        return (
+            <RadixSelect.Item
+                data-scheme="primary"
+                className={`hover:bg-accent relative flex h-[25px] select-none items-center rounded pl-8 pr-4 text-sm leading-none text-primary bg-primary data-[disabled]:pointer-events-none data-[disabled]:text-muted data-[disabled]:cursor-not-allowed data-[highlighted]:text-primary data-[highlighted]:outline-none data-[state=checked]:font-medium ${className}`}
+                {...props}
+                ref={forwardedRef as React.Ref<HTMLDivElement>}
+            >
+                <RadixSelect.ItemText>{children}</RadixSelect.ItemText>
+                <RadixSelect.ItemIndicator className="absolute left-1 inline-flex w-[25px] items-center justify-center">
+                    <IconCheck className="size-4 text-primary" />
+                </RadixSelect.ItemIndicator>
+            </RadixSelect.Item>
+        )
+    }
 )
 
 SelectItem.displayName = 'SelectItem'
@@ -93,17 +90,20 @@ export const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
             name,
             ariaLabel,
             groups,
-            className = '',
+            className,
             dataScheme,
         },
         ref
     ) => {
+        // Use client-only rendering to prevent hydration mismatches
         const [isClient, setIsClient] = React.useState(false)
+        const appContainer: HTMLElement | null = null
 
         React.useEffect(() => {
             setIsClient(true)
         }, [])
 
+        // Find the selected item to get its icon
         const selectedItem = React.useMemo(() => {
             const currentValue = value ?? defaultValue
             if (currentValue === undefined) return null
@@ -115,12 +115,12 @@ export const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
             return null
         }, [value, defaultValue, groups])
 
+        // During SSR, render a simple button placeholder that matches the Select trigger
         if (!isClient) {
             return (
                 <div className="flex items-center" data-scheme={dataScheme}>
                     <button
                         ref={ref}
-                        type="button"
                         className={`flex justify-between items-center gap-1 rounded px-2 py-1 text-sm leading-none text-primary bg-primary outline-none border border-primary disabled:border-primary data-[placeholder]:text-muted disabled:cursor-not-allowed ${className}`}
                         disabled={disabled}
                         aria-label={ariaLabel}
@@ -154,7 +154,7 @@ export const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
                                 <span className="flex space-x-1 items-center">
                                     <Icon icon={selectedItem.icon} color={selectedItem.color} className="size-4" />
                                     {prefix && <span className="text-muted">{prefix}:</span>}
-                                    <span className={`${(selectedItem.label || '').length > 20 ? 'text-xs' : ''}`}>
+                                    <span className={`${selectedItem.label?.length > 20 ? 'text-xs' : ''}`}>
                                         {selectedItem.label}
                                     </span>
                                 </span>
@@ -166,6 +166,8 @@ export const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
                     </RadixSelect.Trigger>
                     <RadixSelect.Portal>
                         <RadixSelect.Content
+                            position={appContainer ? 'popper' : undefined}
+                            collisionBoundary={appContainer}
                             className="overflow-hidden rounded bg-white dark:bg-accent-dark shadow-xl z-[50]"
                             data-scheme={dataScheme}
                         >
@@ -214,3 +216,5 @@ export const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
 )
 
 Select.displayName = 'Select'
+
+export default Select

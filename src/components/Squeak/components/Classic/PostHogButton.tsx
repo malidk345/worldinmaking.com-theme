@@ -1,6 +1,6 @@
 import React from 'react'
 import { CallToAction } from 'components/CallToAction'
-import { Logo } from '@posthog/brand/logo'
+import { Logo } from '../Logo'
 import { SQUEAK_HOST } from 'lib/strapi'
 
 interface PostHogButtonProps {

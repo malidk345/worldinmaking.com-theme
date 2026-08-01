@@ -24,7 +24,6 @@ import {
 } from '@posthog/icons'
 import { Menu, MenuItem, useApp } from '../../context/App'
 import { Provider as WindowProvider, AppWindow as AppWindowType, useWindow } from '../../context/Window'
-import { ContextMenu, Dialog } from 'radix-ui'
 import Tooltip from 'components/RadixUI/Tooltip'
 import OSButton from 'components/OSButton'
 import { Button } from 'components/Squeak/components/SubscribeButton'
@@ -89,13 +88,16 @@ const PageModal = ({ children }: { children: React.ReactNode }) => {
 }
 
 import WimAuthPortal from 'components/Auth/WimAuthPortal'
+import Editor from 'components/Editor'
+import PostEditorWindow from 'components/Community/PostEditorWindow'
 import PostListing from '../../templates/PostListing'
-import { fetchSupabasePostBySlug, SupabasePost } from '../../lib/supabaseBlog'
+import { fetchSupabasePostBySlug } from '../../lib/supabaseCommunity'
+
 
 function BlogRouteView(props: any) {
     const rawPath = props.path || ''
     const slugStr = rawPath.replace(/^\/(blog|posts)\/?/, '')
-    const [spPost, setSpPost] = useState<SupabasePost | null>(null)
+    const [spPostData, setSpPostData] = useState<any>(null)
     const [loading, setLoading] = useState(!props.data?.postData && !props.data?.post)
 
     useEffect(() => {
@@ -104,7 +106,7 @@ function BlogRouteView(props: any) {
             setLoading(true)
             fetchSupabasePostBySlug(slugStr).then((res) => {
                 if (mounted) {
-                    setSpPost(res)
+                    setSpPostData(res)
                     setLoading(false)
                 }
             })
@@ -126,24 +128,23 @@ function BlogRouteView(props: any) {
         )
     }
 
-    const title = spPost?.title || slugStr.replace(/-/g, ' ')
-    const content = spPost?.content || `# ${title}\n\nNo content found for this post.`
-    const date = spPost?.created_at ? spPost.created_at.split('T')[0] : '2026-01-01'
-    const author = spPost?.author || 'WorldInMaking'
+    if (spPostData?.postData) {
+        return <BlogPost {...props} data={spPostData} />
+    }
 
+    const title = slugStr.replace(/-/g, ' ')
+    const content = `# ${title}\n\nNo content found for this post.`
     const postData = {
         body: content,
-        excerpt: spPost?.excerpt || title,
+        excerpt: title,
         frontmatter: {
             title,
-            date,
-            featuredImage: spPost?.image_url ? { publicURL: spPost.image_url } : null,
-            featuredVideo: null,
+            date: '2026-01-01',
             contributors: [
                 {
-                    name: author,
+                    name: 'WorldInMaking',
                     role: 'Author',
-                    image: spPost?.author_avatar || 'https://res.cloudinary.com/dmukukwp6/image/upload/v1675204207/james_hawkins_posthog_031f7cf651.png',
+                    image: 'https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/pages-content/images/hog-9.png',
                 },
             ],
         },
@@ -152,20 +153,7 @@ function BlogRouteView(props: any) {
         },
     }
 
-    const pageData = {
-        ...props,
-        data: {
-            postData,
-            post: postData,
-        },
-        pageContext: {
-            tableOfContents: [],
-            askMax: true,
-            localizedRoot: '/blog',
-        },
-    }
-
-    return <BlogPost {...(pageData as any)} />
+    return <BlogPost {...props} data={{ postData }} />
 }
 
 import TapePlayer from 'components/TapePlayer'
@@ -184,6 +172,12 @@ const Router = (props: any) => {
                 <WimAuthPortal onSuccess={() => closeWindow(appWindow)} />
             </div>
         )
+    }
+    if (/^\/community\/new|^\/editor\/post/.test(path)) {
+        return <PostEditorWindow />
+    }
+    if (/^\/editor/.test(path)) {
+        return <Editor {...props} />
     }
     if (/^\/questions/.test(path)) {
         return <Inbox {...props} />
@@ -943,7 +937,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         <div
                             data-scheme="tertiary"
                             onDoubleClick={handleDoubleClick}
-                            className={`inline-flex gap-1 items-center py-0.5 pl-1.5 pr-0.5 skin-classic:bg-primary opacity-80 md:opacity-60 md:hover:opacity-100 transition-opacity duration-100 ${
+                            className={`inline-flex gap-1 items-center py-0.5 pl-1.5 pr-0.5 skin-classic:bg-primary opacity-40 hover:opacity-75 transition-opacity duration-100 ${
                                 hasToolbar ? 'flex-1 justify-end' : 'absolute z-20 right-1 top-1'
                             }`}
                         >

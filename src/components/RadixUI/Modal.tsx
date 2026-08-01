@@ -32,11 +32,17 @@ const Modal = ({
     const { appWindow, activeInternalMenu } = useWindow()
     // Prefer an explicit title prop; fall back to the active window/menu name.
     const title = titleProp || appWindow?.meta?.title || activeInternalMenu?.name
+
+    if (!RadixDialog || !RadixDialog.Root) {
+        if (!open) return trigger ? <div className={className}>{trigger}</div> : <></>
+        return <div className={`fixed inset-0 z-50 bg-black/50 flex items-center justify-center ${className}`}>{children}</div>
+    }
+
     return (
         <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
             {trigger && (
-                <RadixDialog.Trigger asChild={React.isValidElement(trigger)} className={className}>
-                    {React.isValidElement(trigger) ? trigger : <button type="button">{trigger}</button>}
+                <RadixDialog.Trigger asChild className={className}>
+                    {trigger}
                 </RadixDialog.Trigger>
             )}
             <RadixDialog.Portal>
@@ -65,4 +71,5 @@ const Modal = ({
     )
 }
 
+export { Modal }
 export default Modal

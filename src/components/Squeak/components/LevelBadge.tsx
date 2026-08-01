@@ -17,7 +17,7 @@ function buildShimmerGradient(colors: string[]): string {
     return `linear-gradient(120deg, transparent 15%, ${stops.join(', ')}, transparent 85%)`
 }
 
-export default function LevelBadge({ points, pointsOnly, tooltip = true }: LevelBadgeProps) {
+export function LevelBadge({ points, pointsOnly, tooltip = true }: LevelBadgeProps) {
     if (points == null) return null
 
     const level = pointsOnly ? null : getLevel(points)
@@ -99,3 +99,5 @@ export default function LevelBadge({ points, pointsOnly, tooltip = true }: Level
         </Tooltip>
     )
 }
+
+export default LevelBadge

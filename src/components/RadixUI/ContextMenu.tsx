@@ -18,6 +18,10 @@ export interface ContextMenuProps {
 }
 
 const ContextMenu = ({ children, menuItems, className }: ContextMenuProps) => {
+    if (!RadixContextMenu || !RadixContextMenu.Root) {
+        return <div className={className}>{children}</div>
+    }
+
     // Style classes matching MenuBar patterns
     const TriggerClasses = className || ''
     const ContentClasses =
@@ -75,4 +79,5 @@ const ContextMenu = ({ children, menuItems, className }: ContextMenuProps) => {
     )
 }
 
+export { ContextMenu }
 export default ContextMenu

@@ -25,7 +25,7 @@ export const Button = ({
     />
 )
 
-export default function SubscribeButton({
+export function SubscribeButton({
     contentType,
     id,
     className = '',
@@ -100,3 +100,5 @@ export default function SubscribeButton({
         </>
     ) : null
 }
+
+export default SubscribeButton

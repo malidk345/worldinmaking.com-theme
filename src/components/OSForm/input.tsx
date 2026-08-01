@@ -145,4 +145,5 @@ const Input = ({
     )
 }
 
+export { Input, Input as OSInput }
 export default Input

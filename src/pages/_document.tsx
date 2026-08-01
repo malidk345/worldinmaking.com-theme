@@ -27,6 +27,9 @@ const themeScript = `(function () {
 
     window.__theme = theme
     if (document.documentElement) applyAttributes(document.documentElement)
+    document.addEventListener('DOMContentLoaded', function () {
+        if (document.body) applyAttributes(document.body)
+    })
 
     window.__setPreferredTheme = function (newThemeChoice) {
         const nextTheme = newThemeChoice === 'system' ? (darkQuery.matches ? 'dark' : 'light') : newThemeChoice

@@ -25,6 +25,7 @@ import { themeOptions } from '../hooks/useTheme'
 import ContactSales from 'components/ContactSales'
 import qs from 'qs'
 import usePostHog from '../hooks/usePostHog'
+import { MaxChatApp } from 'components/MaxAI/MaxChatApp'
 
 declare global {
     interface Window {
@@ -1647,6 +1648,15 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
 
     useEffect(() => {
         setHasMounted(true)
+        // Automatic hourly background generation ticker for Vercel AI SDK Philosopher Bots
+        const triggerCron = () => {
+            fetch('/api/cron/philosopher-bots')
+                .then((r) => r.json())
+                .then((data) => console.log('[Philosopher Bot Cron] Generated:', data))
+                .catch((err) => console.warn('[Philosopher Bot Cron] Failed:', err))
+        }
+        const interval = setInterval(triggerCron, 3600000)
+        return () => clearInterval(interval)
     }, [])
 
     const routerRef = useRef<any>(null)
@@ -2469,6 +2479,10 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
     const openNewChat = (params: ChatParams) => {
         setChatParams(params)
         setChatOpen(true)
+        addWindow({
+            path: '/ask-max',
+            title: 'Max - PostHog',
+        })
     }
 
     function getSnapDimensions(side: 'left' | 'right') {

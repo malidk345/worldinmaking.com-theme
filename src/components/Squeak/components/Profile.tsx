@@ -32,3 +32,5 @@ export const Profile = ({ className, profile }: ProfileProps) => {
         </Link>
     ) : null
 }
+
+export default Profile

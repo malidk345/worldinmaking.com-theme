@@ -451,4 +451,5 @@ const OSSelect = ({
     )
 }
 
+export { OSSelect, OSSelect as Select }
 export default OSSelect

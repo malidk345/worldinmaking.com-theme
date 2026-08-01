@@ -8,7 +8,12 @@ import BlogPostTemplate from '../templates/BlogPost'
 import Inbox from '../components/Inbox'
 import IdeasHub from '../components/Ideas'
 import ProfileWrapper from '../components/Profile'
-import { NotebooksListSkeleton } from '../components/Notebooks/NotebooksList'
+const NotebooksListSkeleton = ({ path, ...props }: { path?: string; [key: string]: any }) => (
+    <div className="p-8 text-center text-secondary">
+        <h2 className="text-xl font-bold mb-2">Notebooks</h2>
+        <p className="text-sm opacity-70">Loading notebooks...</p>
+    </div>
+)
 import HandbookTemplate from '../templates/Handbook'
 import Legal from '../components/Legal'
 import DisplayOptions from '../components/DisplayOptions'

@@ -113,6 +113,19 @@ export const Accordion = ({
         return undefined
     }, [defaultValue, type, defaultOpenAll, items])
 
+    if (!RadixAccordion || !RadixAccordion.Root) {
+        return (
+            <div className={className}>
+                {items?.map(({ value, trigger, content }, index) => (
+                    <div key={value || `item-${index}`} className="py-2 border-b border-primary">
+                        <div className="font-medium py-1">{trigger}</div>
+                        <div>{content}</div>
+                    </div>
+                ))}
+            </div>
+        )
+    }
+
     return (
         <RadixAccordion.Root
             className={className}
@@ -134,3 +147,4 @@ export const Accordion = ({
 }
 
 export { AccordionItem, AccordionTrigger, AccordionContent }
+export default Accordion

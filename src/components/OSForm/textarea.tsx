@@ -103,4 +103,5 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
 
 Textarea.displayName = 'OSTextarea'
 
+export { Textarea as OSTextarea, Textarea as Textarea }
 export default Textarea

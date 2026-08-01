@@ -39,7 +39,7 @@ export async function fetchSupabaseCommunityPosts(slug?: string, postId?: number
         const words = slug.replace(/[^a-zA-Z0-9\s-]/g, '').split(/[-_\s]+/).filter((w) => w.length > 2).slice(0, 3).join('%')
         url += `&or=(post_slug.eq.${encodeURIComponent(slug)},title.ilike.*${encodeURIComponent(words)}*,title.ilike.comment_${encodeURIComponent(slug)}_*)`
     } else {
-        url += `&post_slug=is.null&title=not.ilike.comment_*`
+        url += `&title=not.ilike.comment_*`
     }
     return fetchWithCache(url)
 }
@@ -61,6 +61,11 @@ export function formatSupabaseCommunityToStrapi(post: SupabaseCommunityPost) {
 
     return {
         id: post.id,
+        title: displayTitle,
+        subject: displayTitle,
+        body: post.content,
+        content: post.content,
+        created_at: post.created_at,
         attributes: {
             id: post.id,
             permalink: String(post.id),
@@ -89,6 +94,7 @@ export function formatSupabaseCommunityToStrapi(post: SupabaseCommunityPost) {
                 },
             },
             body: post.content,
+            content: post.content,
             replies: {
                 data: [],
             },
@@ -148,4 +154,54 @@ export async function postSupabaseCommunityReply(postId: number | string, conten
 
 export async function postSupabaseCommunityPost(data: { title: string; content: string; author?: string }) {
     return postSupabaseCommunityQuestion(data.title, data.content)
+}
+
+export async function fetchSupabasePostBySlug(slug: string) {
+    try {
+        const posts = await fetchSupabaseCommunityPosts(slug)
+        if (posts && posts.length > 0) {
+            const post = posts[0]
+            const replies = await fetchSupabaseCommunityReplies(post.id)
+            const strapiObj = formatSupabaseCommunityToStrapi(post)
+            if (replies && replies.length > 0) {
+                strapiObj.attributes.replies.data = replies.map((r: any) => {
+                    const profileObj = Array.isArray(r.profiles) ? (r.profiles as any)[0] : r.profiles
+                    const username = profileObj?.username || 'Philosopher / Community Member'
+                    const avatarUrl =
+                        profileObj?.avatar_url ||
+                        'https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/pages-content/images/hog-9.png'
+                    return {
+                        id: r.id,
+                        attributes: {
+                            id: r.id,
+                            body: r.content,
+                            createdAt: r.created_at,
+                            publishedAt: r.created_at,
+                            profile: {
+                                data: {
+                                    id: profileObj?.id || '1',
+                                    attributes: {
+                                        firstName: username,
+                                        lastName: '',
+                                        gravatarURL: avatarUrl,
+                                        avatar: { data: { attributes: { url: avatarUrl } } },
+                                    },
+                                },
+                            },
+                        },
+                    }
+                }) as any
+                strapiObj.attributes.numReplies = replies.length
+            }
+            return {
+                postData: {
+                    post: strapiObj,
+                },
+            }
+        }
+        return null
+    } catch (e) {
+        console.error('Error fetching Supabase post by slug:', e)
+        return null
+    }
 }

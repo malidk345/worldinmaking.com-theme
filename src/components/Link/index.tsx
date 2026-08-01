@@ -129,6 +129,13 @@ export default function Link({
     const locationHref = appWindow?.element?.props?.location?.href
     const initialUrl = to || href
     const url = resolveRelativeLink(initialUrl, locationHref)
+    const safeUrl = useMemo(() => {
+        if (!url) return '/'
+        if (url.includes('[')) {
+            return url.replace(/\[([^\]]+)\]/g, '$1')
+        }
+        return url
+    }, [url])
     const linkState = state?.newWindow && state?.preventScroll === undefined ? { ...state, preventScroll: true } : state
     const internal = !disablePrefetch && url && /^\/(?!\/)/.test(url)
     const isPostHogAppUrl = url && /(eu|us|app)\.posthog\.com/.test(url)
@@ -226,14 +233,14 @@ export default function Link({
                         />
                     )}
                 >
-                    <NextLink {...other} {...extraProps} href={url || '/'} className={className} onClick={handleClick}>
+                    <NextLink {...other} {...extraProps} href={safeUrl} className={className} onClick={handleClick}>
                         {children || null}
                     </NextLink>
                 </Tooltip>
             )
         }
         return (
-            <NextLink {...other} {...extraProps} href={url || '/'} className={className} onClick={handleClick}>
+            <NextLink {...other} {...extraProps} href={safeUrl} className={className} onClick={handleClick}>
                 {children}
             </NextLink>
         )

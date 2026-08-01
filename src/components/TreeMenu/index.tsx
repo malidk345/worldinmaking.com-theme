@@ -684,3 +684,5 @@ function TreeMenuItem({
         </Collapsible.Root>
     )
 }
+
+export default TreeMenu

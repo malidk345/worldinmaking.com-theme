@@ -34,14 +34,12 @@ const ScrollArea = ({
     // honouring any `viewportRef` the caller passed.
     const setViewportRef = React.useCallback(
         (node: HTMLDivElement | null) => {
-            if (node !== fadeRef.current) {
-                fadeRef.current = node
-                if (typeof viewportRef === 'function') {
-                    viewportRef(node)
-                } else if (viewportRef) {
-                    const mutableViewportRef = viewportRef as React.MutableRefObject<HTMLDivElement | null>
-                    mutableViewportRef.current = node
-                }
+            fadeRef.current = node
+            if (typeof viewportRef === 'function') {
+                viewportRef(node)
+            } else if (viewportRef) {
+                const mutableViewportRef = viewportRef as React.MutableRefObject<HTMLDivElement | null>
+                mutableViewportRef.current = node
             }
         },
         [viewportRef]
@@ -81,4 +79,5 @@ const ScrollArea = ({
     )
 }
 
+export { ScrollArea }
 export default ScrollArea

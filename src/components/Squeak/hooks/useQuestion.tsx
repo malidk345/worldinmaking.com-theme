@@ -131,11 +131,7 @@ export const useQuestion = (id: number | string, options?: UseQuestionOptions) =
 
         fetchSupabaseCommunityPosts(cleanId, cleanId).then((posts) => {
             let found = posts && posts.length > 0
-                ? posts.find(
-                      (p) =>
-                          String(p.id) === cleanId ||
-                          String(p.title).toLowerCase().includes(cleanId.toLowerCase().replace(/-/g, ' '))
-                  )
+                ? (posts.find((p) => String(p.id) === cleanId) || posts[0])
                 : null
 
             const targetPost = found || (options?.data ? {
@@ -216,8 +212,7 @@ export const useQuestion = (id: number | string, options?: UseQuestionOptions) =
     }
 
     const questionData: StrapiRecord<QuestionData> | undefined =
-        question ||
-        (supabaseQuestion
+        supabaseQuestion
             ? {
                   ...options?.data,
                   ...supabaseQuestion,
@@ -231,7 +226,7 @@ export const useQuestion = (id: number | string, options?: UseQuestionOptions) =
                               : options?.data?.attributes?.replies || { data: [] },
                   },
               }
-            : options?.data)
+            : question || options?.data
     const questionID = typeof id !== 'string' ? id : question?.id
 
     const reply = async (body: string) => {

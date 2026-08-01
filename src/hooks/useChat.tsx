@@ -1,8 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react'
-import { IconX, IconMinus, IconSparkles, IconSend } from '@posthog/icons'
+import React, { createContext, useContext, useEffect } from 'react'
 import { useApp } from 'context/App'
-import PhilosopherThought from 'components/PhilosopherThought'
-import OSButton from 'components/OSButton'
 
 interface ChatContextType {
     hasUnread: boolean
@@ -48,45 +45,20 @@ export function ChatProvider({ children }: { children?: React.ReactNode; [key: s
     return <ChatContext.Provider value={defaultChatContext}>{children ?? null}</ChatContext.Provider>
 }
 
-interface MessageItem {
-    id: string
-    sender: 'user' | 'philosopher'
-    philosopherName?: string
-    thought?: string
-    text: string
-}
-
-const PHILOSOPHERS = [
-    { name: 'Nietzsche', icon: '⚡', stance: 'Will to Power' },
-    { name: 'Zizek', icon: '🍿', stance: 'Ideology Critique' },
-    { name: 'Spinoza', icon: '💎', stance: 'Rationalist Monism' },
-    { name: 'Marx', icon: '🛠️', stance: 'Materialism' },
-    { name: 'Heidegger', icon: '📜', stance: 'Enframing & Being' },
-]
-
-import { PostHogAIApp } from 'components/posthog-ui-gallery/src/scenes/PostHogAIApp'
-
+// When chatOpen is true, open the chat window as a managed window in PostHog's OS window system
 export function ChatOverlay(): JSX.Element | null {
-    const { chatOpen, setChatOpen } = useApp()
+    const { chatOpen, addWindow } = useApp()
 
-    if (!chatOpen) return null
+    useEffect(() => {
+        if (chatOpen) {
+            addWindow({
+                path: '/ask-max',
+                title: 'Max AI Assistant - PostHog',
+            })
+        }
+    }, [chatOpen])
 
-    return (
-        <div className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
-            <div className="w-full max-w-[960px] max-h-[90vh] bg-primary rounded-xl overflow-hidden shadow-2xl flex flex-col relative">
-                <button
-                    onClick={() => setChatOpen(false)}
-                    className="absolute top-3 right-3 z-50 p-2 rounded-full bg-secondary/80 hover:bg-secondary text-primary transition-all shadow"
-                    aria-label="Close Ask AI"
-                >
-                    <IconX className="size-5" />
-                </button>
-                <div className="flex-1 overflow-y-auto">
-                    <PostHogAIApp onBack={() => setChatOpen(false)} />
-                </div>
-            </div>
-        </div>
-    )
+    return null
 }
 
 export function useChat(): ChatContextType {

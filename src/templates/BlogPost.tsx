@@ -279,14 +279,15 @@ const Filters = ({ tag, setTag, sort, setSort, activeMenu }) => {
     ) : null
 }
 export default function BlogPost({ data = {}, pageContext = {}, mobile = false }: any) {
-    const postData = data?.postData || (pageContext as any)?.post || (pageContext as any)?.postData || {}
-    const body = postData?.body || postData?.content || ''
-    const excerpt = postData?.excerpt || ''
+    const rawPostData = data?.postData?.post || data?.postData || (pageContext as any)?.post || (pageContext as any)?.postData || {}
+    const postData = rawPostData?.attributes ? { ...rawPostData.attributes, ...rawPostData } : rawPostData
+    const body = postData?.attributes?.body || postData?.attributes?.content || postData?.body || postData?.content || ''
+    const excerpt = postData?.excerpt || postData?.attributes?.excerpt || ''
     const fields = postData?.fields || {}
     const frontmatter = postData?.frontmatter || postData?.attributes || postData || {}
     const {
-        date,
-        title = postData?.title || 'Blog Post',
+        date = postData?.createdAt || postData?.publishedAt,
+        title = postData?.title || postData?.subject || 'Blog Post',
         featuredImage,
         featuredImageCaption,
         featuredVideo,

@@ -484,3 +484,5 @@ export const AppLink = ({
         </figure>
     )
 }
+
+export default AppIcon

@@ -11,6 +11,9 @@ import PostListing from '../../templates/PostListing'
 import DisplayOptions from 'components/DisplayOptions'
 import Legal from 'components/Legal'
 import { AppWindow } from '../../context/Window'
+import Editor from 'components/Editor'
+import PostEditorWindow from 'components/Community/PostEditorWindow'
+
 
 export interface WindowRouterProps {
     item: AppWindow & { children?: React.ReactNode }
@@ -45,6 +48,12 @@ function WindowRouterInner({ item }: WindowRouterProps) {
     }
 
     // 4. Route-based resolution
+    if (path === '/editor/post' || path === '/community/new' || path.startsWith('/community/new')) {
+        return <PostEditorWindow />
+    }
+    if (path === '/editor' || path.startsWith('/editor')) {
+        return <Editor {...props} />
+    }
     if (path === '/manifesto' || path === '/about-wim' || path === '/world-in-making') {
         return null
     }

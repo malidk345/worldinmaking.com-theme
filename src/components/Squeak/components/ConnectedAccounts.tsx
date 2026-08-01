@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { CallToAction } from 'components/CallToAction'
-import { Logo } from '@posthog/brand/logo'
+import { Logo } from './Logo'
 import { useUser } from 'hooks/useUser'
 import { useToast } from '../../../context/Toast'
 import { SQUEAK_HOST } from 'lib/strapi'

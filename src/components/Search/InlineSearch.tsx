@@ -192,3 +192,5 @@ export const AlgoliaSearchResults = ({
         </div>
     )
 }
+
+export default InlineSearch
