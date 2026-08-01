@@ -189,7 +189,6 @@ export default function CommunityDirectory(): JSX.Element {
             const allProfiles = await fetchAllCommunityProfiles(filters, getJwt)
             downloadProfilesCSV(allProfiles)
         } catch (err) {
-            console.error(err)
         } finally {
             setExporting(false)
         }

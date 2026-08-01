@@ -129,7 +129,6 @@ export const useSubscribedQuestions = () => {
                 }).then((res) => res.json())
                 setQuestions(data?.profile?.questionSubscriptions || [])
             } catch (error) {
-                console.error(error)
             } finally {
                 setIsLoading(false)
             }

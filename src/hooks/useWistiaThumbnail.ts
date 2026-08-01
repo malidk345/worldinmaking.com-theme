@@ -28,7 +28,6 @@ export const useWistiaThumbnail = (mediaId: string) => {
                 setThumbnailUrl(data.thumbnail_url || null)
             } catch (err) {
                 setError(err as Error)
-                console.error('Error fetching Wistia thumbnail:', err)
             } finally {
                 setIsLoading(false)
             }

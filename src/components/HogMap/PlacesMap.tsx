@@ -157,7 +157,6 @@ export default function PlacesMap({
 
     const setupMap = useCallback(() => {
         if (!isClient) {
-            console.error('Not client')
             return
         }
         if (isLocationLoading) {
@@ -166,11 +165,9 @@ export default function PlacesMap({
         }
         const mapboxgl = getMapbox()
         if (!mapboxgl) {
-            console.error('No mapboxgl')
             return
         }
         if (!token) {
-            console.error('No token')
             return
         }
         const clearMarkers = () => {
@@ -248,14 +245,12 @@ export default function PlacesMap({
                     try {
                         marker.togglePopup()
                     } catch {
-                        console.error('Error toggling popup')
                     }
                     if (typeof onPlaceClick === 'function') {
                         try {
                             skipNextSelectionTransitionRef.current = true
                             onPlaceClick(place.id)
                         } catch {
-                            console.error('Error calling onPlaceClick')
                         }
                     }
                 })
@@ -335,7 +330,6 @@ export default function PlacesMap({
             try {
                 renderMarkersRef.current && renderMarkersRef.current()
             } catch {
-                console.error('Error rendering markers')
             }
         }
     }, [places, coordsByPlaceId])
@@ -353,7 +347,6 @@ export default function PlacesMap({
                 try {
                     marker.togglePopup()
                 } catch {
-                    console.error('Error toggling popup')
                 }
             }
             return
@@ -365,11 +358,9 @@ export default function PlacesMap({
                     try {
                         marker.togglePopup()
                     } catch {
-                        console.error('Error toggling popup')
                     }
                 }
             } catch {
-                console.error('Error opening popup')
             }
         }
         const goToTarget = () => {
@@ -380,7 +371,6 @@ export default function PlacesMap({
                     duration: 2000,
                 })
             } catch {
-                console.error('Error easing to coordinates')
             }
             try {
                 if (typeof mapRef.current.once === 'function') {

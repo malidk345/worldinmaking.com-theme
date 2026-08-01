@@ -181,7 +181,6 @@ export default function PlanContent({
                 setSignupCountLoading(false)
             })
             .catch((err) => {
-                console.error(err)
                 setSignupCountLoading(false)
             })
     }, [])

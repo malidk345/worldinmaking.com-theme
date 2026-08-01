@@ -96,7 +96,6 @@ export default function TapePlayer({ id }: TapePlayerProps): JSX.Element {
             setCreators(data.attributes.creator?.data)
             setMixtapeTitle(data.attributes.title)
         } catch (error) {
-            console.error(error)
             addToast({
                 error: true,
                 description: 'Unable to load mixtape. Please try again.',

@@ -14,7 +14,6 @@ export function useExplorerLayout(defaultLayout: 'grid' | 'list' = 'grid') {
       }
     } catch (error) {
       // localStorage might not be available (SSR, private browsing, etc.)
-      console.warn('Failed to load layout preference from localStorage:', error)
     }
   }, [])
 
@@ -26,7 +25,6 @@ export function useExplorerLayout(defaultLayout: 'grid' | 'list' = 'grid') {
       localStorage.setItem(LAYOUT_STORAGE_KEY, value)
     } catch (error) {
       // localStorage might not be available
-      console.warn('Failed to save layout preference to localStorage:', error)
     }
   }
 

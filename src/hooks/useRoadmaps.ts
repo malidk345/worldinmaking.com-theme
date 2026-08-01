@@ -58,7 +58,6 @@ export const useRoadmaps = ({ params = {}, limit }: { params?: any; limit?: numb
 
                 return response.json()
             } catch (error) {
-                console.error('Error fetching roadmaps:', error)
                 throw error
             }
         }
@@ -102,7 +101,6 @@ export const fetchRoadmapReactions = async (roadmapId: number | string): Promise
 
         return await response.json()
     } catch (error) {
-        console.error('Error fetching roadmap emoji reactions:', error)
         return []
     }
 }
@@ -139,13 +137,11 @@ export const addRoadmapEmojiReaction = async ({
 
         if (!response.ok) {
             const errorData = await response.text()
-            console.error('Error response:', errorData)
             throw new Error(`Failed to ${remove ? 'remove' : 'add'} emoji reaction: ${response.status} ${errorData}`)
         }
 
         return await response.json()
     } catch (error) {
-        console.error('Error updating emoji reaction:', error)
         throw error
     }
 }

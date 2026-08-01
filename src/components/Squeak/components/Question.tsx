@@ -351,7 +351,6 @@ const PhilosopherBotReply = ({
             if (data.reply) setReply(data.reply)
             if (data.philosopher) setPhilosopher(data.philosopher)
         } catch (err) {
-            console.error('Philosopher bot forum reply error:', err)
         } finally {
             setLoading(false)
         }

@@ -163,7 +163,6 @@ function SearchBarImpl(
     }, [])
 
     const handleSelect = async (item: SearchResult) => {
-        console.log(item)
         try {
             setQuery(item.name)
             setIsOpen(false)
@@ -174,7 +173,6 @@ function SearchBarImpl(
             url.searchParams.set('access_token', token)
             const resp = await fetch(url.toString())
             const json = await resp.json()
-            console.log(json)
             const feat =
                 (Array.isArray(json?.features) && json.features[0]) || json?.feature || json?.results?.[0] || null
             const coords = feat?.coordinates || feat?.geometry?.coordinates || null
@@ -333,7 +331,6 @@ export function createSearchMarker({
             zoom: Math.max(10, map.getZoom ? map.getZoom() : 10),
         })
     } catch {
-        console.error('Error easing to center')
     }
     const mapboxgl = getMapbox && getMapbox()
     if (!mapboxgl) return null
@@ -342,7 +339,6 @@ export function createSearchMarker({
         try {
             prevMarker.remove()
         } catch {
-            console.error('Error removing previous search marker')
         }
     }
     // Create marker element using Tailwind classes
@@ -410,20 +406,17 @@ export function createSearchMarker({
     try {
         marker.togglePopup()
     } catch {
-        console.error('Error opening popup')
     }
     // Wire close button
     closeBtn.onclick = () => {
         try {
             marker.remove()
         } catch {
-            console.error('Error removing search marker')
         }
         if (searchRef?.current?.clear) {
             try {
                 searchRef.current.clear()
             } catch {
-                console.error('Error clearing search bar')
             }
         }
     }
@@ -468,7 +461,6 @@ export function createSearchMarker({
                         newPlaceId = data?.id ?? null
                     }
                 } catch (e) {
-                    console.error('Error adding place', e)
                     // Restore button state on error
                     root.render(
                         <OSButton
@@ -491,7 +483,6 @@ export function createSearchMarker({
                 try {
                     window.dispatchEvent(new CustomEvent('hogmap:places-updated', { detail: { placeId: newPlaceId } }))
                 } catch {
-                    console.error('Error dispatching places updated event')
                 }
                 // Close popup after adding
                 try {
@@ -500,30 +491,25 @@ export function createSearchMarker({
                         p.remove()
                     }
                 } catch {
-                    console.error('Error removing popup')
                 }
                 // Remove the temporary marker since place will render via places layer
                 try {
                     marker.remove()
                 } catch {
-                    console.error('Error removing marker')
                 }
                 // Ensure the corresponding place layer is enabled upstream
                 try {
                     window.dispatchEvent(new CustomEvent('hogmap:enable-layer', { detail: { layer: type } }))
                 } catch {
-                    console.error('Error dispatching enable layer event')
                 }
                 // Clear search input
                 if (searchRef?.current?.clear) {
                     try {
                         searchRef.current.clear()
                     } catch {
-                        console.error('Error clearing search bar')
                     }
                 }
             } catch (e) {
-                console.error('Error adding place', e)
             }
         }
     }, 0)
@@ -532,7 +518,6 @@ export function createSearchMarker({
         try {
             searchRef.current.clear()
         } catch {
-            console.error('Error clearing search bar')
         }
     }
     return marker

@@ -37,7 +37,6 @@ export const useInactivityDetection = ({
                 return hasActiveVideo || hasYouTubeIframe
             })
         } catch (error) {
-            console.error(error)
             return false
         }
     }, [windowsInViewRef])

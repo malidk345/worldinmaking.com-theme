@@ -35,7 +35,6 @@ export default function PlaceDetail({ place, onClose }: PlaceDetailProps) {
                 const placeReviews = allReviews.filter((r) => r.place?.id === place.id) as PlaceReview[]
                 setReviews(placeReviews)
             } catch (error) {
-                console.error('Failed to fetch reviews:', error)
             } finally {
                 setLoading(false)
             }
@@ -70,7 +69,6 @@ export default function PlaceDetail({ place, onClose }: PlaceDetailProps) {
             setWouldGoBack(true)
             setShowReviewForm(false)
         } catch (error) {
-            console.error('Failed to submit review:', error)
         } finally {
             setSubmitting(false)
         }
@@ -90,7 +88,6 @@ export default function PlaceDetail({ place, onClose }: PlaceDetailProps) {
             const placeReviews = allReviews.filter((r) => r.place?.id === place.id) as PlaceReview[]
             setReviews(placeReviews)
         } catch (error) {
-            console.error('Failed to delete review:', error)
         }
     }
 
@@ -109,7 +106,6 @@ export default function PlaceDetail({ place, onClose }: PlaceDetailProps) {
             // Close the detail view
             onClose()
         } catch (error) {
-            console.error('Failed to delete place:', error)
         }
     }
 

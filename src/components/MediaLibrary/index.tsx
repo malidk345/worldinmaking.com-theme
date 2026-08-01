@@ -32,7 +32,6 @@ export default function MediaLibrary() {
         const jwt = await getJwt()
         if (isModerator && profileID && jwt) {
             setActiveTab('uploads')
-            console.log('currentFolder', currentFolder)
             await Promise.all(
                 acceptedFiles.map(async (file: File) => {
                     setLoading((loadingNumber) => loadingNumber + 1)
@@ -44,7 +43,7 @@ export default function MediaLibrary() {
                     })
                     setLoading((loadingNumber) => loadingNumber - 1)
                 })
-            ).catch((err) => console.error(err))
+            ).catch((err) => {})
             await fetchUser()
         }
     }
@@ -92,7 +91,6 @@ export default function MediaLibrary() {
                     })
                 }
             } catch (err) {
-                console.error('Error pasting image:', err)
                 addToast({
                     description: 'Failed to paste image from clipboard',
                     error: true,

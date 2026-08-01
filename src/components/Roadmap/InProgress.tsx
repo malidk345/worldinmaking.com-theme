@@ -137,8 +137,6 @@ export function InProgress(
     )
 
     if (error) {
-        console.error(error)
-
         posthog?.capture('squeak error', {
             source: 'InProgress',
             error: JSON.stringify(error),
@@ -205,8 +203,6 @@ export function InProgress(
                 throw new Error('Failed to subscribe to roadmap')
             }
         } catch (error) {
-            console.error(error)
-
             posthog?.capture('squeak error', {
                 source: 'InProgress.subscribe',
                 roadmapId: squeakId,
@@ -270,8 +266,6 @@ export function InProgress(
                 throw new Error('Failed to unsubscribe from roadmap')
             }
         } catch (error) {
-            console.error(error)
-
             posthog?.capture('squeak error', {
                 source: 'InProgress.subscribe',
                 roadmapId: squeakId,
