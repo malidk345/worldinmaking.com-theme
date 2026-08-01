@@ -34,7 +34,7 @@ jobs:
                     --error \
                     --metrics=off \
                     --verbose \
-                    src/ gatsby/  api/ *.js *.ts *.tsx
+                    src/ api/ *.js *.ts
 
     # scans GitHub Actions and other repo-wide config
     semgrep-general:
@@ -58,7 +58,7 @@ jobs:
                     --metrics=off \
                     --verbose \
                     --exclude ./src/ \
-                    --exclude ./gatsby/ \
+                      \
                       \
                     --exclude ./api/ \
                     --exclude ./contents/ \
