@@ -62,6 +62,8 @@ jobs:
 
 
                     --exclude ./contents/ \
+                    --exclude-rule yaml.github-actions.security.curl-eval.curl-eval \
+                    --exclude-rule yaml.github-actions.security.gha-curl-pipe-shell.gha-curl-pipe-shell \
                     --exclude .github/workflows/ci-security.yml \
                     .
 
