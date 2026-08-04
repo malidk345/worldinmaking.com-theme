@@ -44,7 +44,7 @@ module.exports = {
         extend: {
             backgroundColor: {
                 light: '#fff',
-                'accent-light': '#e5e7e0',
+                'accent-light': '#dde1e6',
                 dark: '#1e1f23',
                 'accent-dark': '#232429',
                 primary: 'rgb(var(--bg) / <alpha-value>)',
@@ -93,7 +93,7 @@ module.exports = {
             },
             borderColor: {
                 light: '#fff',
-                'accent-light': '#e5e7e0',
+                'accent-light': '#dde1e6',
                 dark: '#1e1f23',
                 'accent-dark': '#232429',
                 button: '#1D4ED8',
@@ -121,18 +121,19 @@ module.exports = {
                 16: '16px',
             },
             colors: {
-                'light-1': '#FDFDF8',
-                'light-2': '#EEEFE9',
-                'light-3': '#E5E7E0',
-                'light-4': '#D2D3CC',
-                'light-5': '#C8CAC1',
-                'light-6': '#BFC1B7',
-                'light-7': '#B6B7AF',
-                'light-8': '#D0D1C9',
-                'light-9': '#73756B',
-                'light-10': '#9EA096',
-                'light-11': '#4D4F46',
-                'light-12': '#23251D',
+                // Cool notebook grays (replaces previous warm beige light scale)
+                'light-1': '#F3F4F5',
+                'light-2': '#E8EAED',
+                'light-3': '#DDE1E6',
+                'light-4': '#CDD2D8',
+                'light-5': '#C0C5CC',
+                'light-6': '#B3B9C1',
+                'light-7': '#A6ADB6',
+                'light-8': '#C8CDD4',
+                'light-9': '#6B7280',
+                'light-10': '#9CA3AF',
+                'light-11': '#4B5563',
+                'light-12': '#1D1F27',
 
                 transparent: 'transparent',
                 current: 'currentColor',
@@ -183,7 +184,7 @@ module.exports = {
                 salmon: '#F35454',
                 seagreen: '#30ABC6',
                 'sky-blue': '#2EA2D3',
-                tan: '#EEEFE9',
+                tan: '#E8EAED',
                 teal: '#29DBBB',
                 'teal-2': '#6BC0B3',
                 'teal-2-dark': '#34796F',
@@ -200,7 +201,7 @@ module.exports = {
                 primary: 'rgb(var(--bg) / <alpha-value>)',
 
                 light: '#fff',
-                'accent-light': '#e5e7e0',
+                'accent-light': '#dde1e6',
                 dark: '#1e1f23',
                 'accent-dark': '#232429',
 

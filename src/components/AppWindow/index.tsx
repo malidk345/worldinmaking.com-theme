@@ -994,7 +994,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         ref={contentRef}
                         onPointerDown={(e) => e.stopPropagation()}
                         onTouchStart={(e) => e.stopPropagation()}
-                        className={`size-full flex-grow overflow-y-auto overscroll-y-contain touch-pan-y scroll-smooth [webkit-overflow-scrolling:touch] bg-[#fdfdf8] dark:bg-[#1b1c1e] text-primary ${
+                        className={`size-full flex-grow overflow-y-auto overscroll-y-contain touch-pan-y scroll-smooth [webkit-overflow-scrolling:touch] bg-primary text-primary ${
                             chrome
                                 ? `rounded-lg ${hasToolbar ? 'rounded-t-none' : ''} ${
                                       item.expanded

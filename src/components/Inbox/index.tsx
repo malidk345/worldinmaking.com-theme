@@ -711,7 +711,7 @@ export default function Inbox(props) {
             {ready ? (
                 <div
                     suppressHydrationWarning
-                    className="@container w-full h-full flex flex-col bg-[#fdfdf8] dark:bg-[#1b1c1e] text-primary"
+                    className="@container w-full h-full flex flex-col bg-primary text-primary"
                 >
                     <div data-scheme="secondary" className={`flex @2xl:flex-row flex-col flex-grow min-h-0`}>
                         <aside

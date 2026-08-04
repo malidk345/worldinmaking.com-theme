@@ -159,7 +159,7 @@ export default function Wallpapers({ wallpaper: propWallpaper }: { wallpaper?: s
     const activeWallpaper = propWallpaper || 'keyboard-garden'
 
     return (
-        <div className="fixed inset-0 -z-10 select-none overflow-hidden pointer-events-none bg-[#fdfdf8] dark:bg-[#1b1c1e] transition-colors duration-700">
+        <div className="fixed inset-0 -z-10 select-none overflow-hidden pointer-events-none bg-primary dark:bg-[#1b1c1e] transition-colors duration-700">
             {SCENES.map(({ key, Scene }) => {
                 const isVisible = activeWallpaper === key
                 return (

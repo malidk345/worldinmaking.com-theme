@@ -8,8 +8,8 @@ export const SliderNavButton = ({ onClick, disabled, previous }) => {
                 className={`${
                     previous ? 'rotate-180' : ''
                 } relative hover:scale-[1.05] top-[-.5px] active:scale-[1] active:top-[.5px]`}
-                bgColor={disabled ? '#E5E7E0' : 'black'}
-                arrowColor={disabled ? '#BFBFBC' : '#EEEFE9'}
+                bgColor={disabled ? '#DDE1E6' : 'black'}
+                arrowColor={disabled ? '#BFBFBC' : '#E8EAED'}
             />
         </button>
     )
