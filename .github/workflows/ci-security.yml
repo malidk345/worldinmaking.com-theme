@@ -58,8 +58,6 @@ jobs:
                     --metrics=off \
                     --verbose \
                     --exclude ./src/ \
-
-
                     --exclude ./api/ \
                     --exclude ./contents/ \
                     --exclude .github/workflows/ci-security.yml \
