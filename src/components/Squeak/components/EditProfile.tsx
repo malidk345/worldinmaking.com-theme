@@ -212,7 +212,7 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onSubmit }) => {
 
     if (!user) return null
 
-    // TODO: Need to grab these from `attributes`
+    const id = user?.profile?.id
     const {
         firstName,
         lastName,
@@ -221,13 +221,12 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onSubmit }) => {
         linkedin,
         twitter,
         biography,
-        id,
         location,
         country,
         pronouns,
         amaEnabled,
         height,
-    } = user?.profile || {}
+    } = user?.profile?.attributes || {}
 
     const avatar = getAvatarURL(user?.profile)
 
