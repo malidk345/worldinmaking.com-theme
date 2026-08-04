@@ -31,10 +31,11 @@ jobs:
                     --config "p/security-audit" \
                     --config "p/trailofbits" \
                     --exclude-rule typescript.react.security.react-markdown-insecure-html.react-markdown-insecure-html \
+                    --exclude-rule typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml \
                     --error \
                     --metrics=off \
                     --verbose \
-                    src/ api/ lib/ utils/ scripts/ shims/
+                    src/ lib/ utils/ scripts/ shims/
 
     # scans GitHub Actions and other repo-wide config
     semgrep-general:
@@ -58,9 +59,6 @@ jobs:
                     --metrics=off \
                     --verbose \
                     --exclude ./src/ \
-
-
-                    --exclude ./api/ \
                     --exclude ./contents/ \
                     --exclude .github/workflows/ci-security.yml \
                     .

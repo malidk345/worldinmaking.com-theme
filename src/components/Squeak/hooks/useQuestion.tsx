@@ -122,10 +122,16 @@ const query = (id: string | number, isModerator: boolean) =>
 export const useQuestion = (id: number | string, options?: UseQuestionOptions) => {
     const { getJwt, fetchUser, user, isModerator, isValidating } = useUser()
     const posthog = usePostHog()
-    const [supabaseQuestion, setSupabaseQuestion] = useState<any>(null)
+    const [supabaseQuestion, setSupabaseQuestion] = useState<any>(options?.data || null)
 
     useEffect(() => {
         if (!id) return
+
+        if (options?.data) {
+            setSupabaseQuestion(options.data)
+            return
+        }
+
         setSupabaseQuestion(null)
         const cleanId = String(id).replace(/^\/questions\/?/, '')
 
