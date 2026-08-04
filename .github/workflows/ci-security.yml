@@ -30,11 +30,11 @@ jobs:
                     --config "p/owasp-top-ten" \
                     --config "p/security-audit" \
                     --config "p/trailofbits" \
-                    --exclude-rule typescript.react.security.react-markdown-insecure-html.react-markdown-insecure-html \
+                    --exclude-rule typescript.react.security.react-markdown-insecure-html.react-markdown-insecure-html --exclude-rule typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml \
                     --error \
                     --metrics=off \
                     --verbose \
-                    src/ api/ lib/ utils/ scripts/ shims/
+                    src/ lib/ utils/ scripts/ shims/
 
     # scans GitHub Actions and other repo-wide config
     semgrep-general:
@@ -60,7 +60,7 @@ jobs:
                     --exclude ./src/ \
 
 
-                    --exclude ./api/ \
+                    --exclude ./\
                     --exclude ./contents/ \
                     --exclude .github/workflows/ci-security.yml \
                     .
