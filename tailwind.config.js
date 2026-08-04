@@ -44,7 +44,7 @@ module.exports = {
         extend: {
             backgroundColor: {
                 light: '#fff',
-                'accent-light': '#dde1e6',
+                'accent-light': '#e5e7df',
                 dark: '#1e1f23',
                 'accent-dark': '#232429',
                 primary: 'rgb(var(--bg) / <alpha-value>)',
@@ -93,7 +93,7 @@ module.exports = {
             },
             borderColor: {
                 light: '#fff',
-                'accent-light': '#dde1e6',
+                'accent-light': '#e5e7df',
                 dark: '#1e1f23',
                 'accent-dark': '#232429',
                 button: '#1D4ED8',
@@ -121,19 +121,21 @@ module.exports = {
                 16: '16px',
             },
             colors: {
-                // Cool notebook grays (replaces previous warm beige light scale)
-                'light-1': '#F3F4F5',
-                'light-2': '#E8EAED',
-                'light-3': '#DDE1E6',
-                'light-4': '#CDD2D8',
-                'light-5': '#C0C5CC',
-                'light-6': '#B3B9C1',
-                'light-7': '#A6ADB6',
-                'light-8': '#C8CDD4',
-                'light-9': '#6B7280',
-                'light-10': '#9CA3AF',
-                'light-11': '#4B5563',
-                'light-12': '#1D1F27',
+                // Exact notebook PostHog-3000 yellow-greys (from notebook-app base.scss)
+                // bg-3000-light #f3f4ef, posthog-3000-25..500, border-3000
+                'light-1': '#F3F4EF', // --color-bg-3000-light
+                'light-2': '#EFF0EA', // --color-posthog-3000-100
+                'light-3': '#E5E7DF', // --color-posthog-3000-150
+                'light-4': '#DBDED4', // --color-posthog-3000-200
+                'light-5': '#CFD0C8', // --color-posthog-3000-250
+                'light-6': '#C5C7BD', // --color-posthog-3000-300
+                'light-7': '#B9BBAF', // --color-posthog-3000-350
+                'light-8': '#DADBD2', // --border-3000-light
+                'light-9': '#939583', // --color-posthog-3000-500
+                'light-10': '#ABAD9F', // --color-posthog-3000-400
+                'light-11': '#5F5F5F', // --muted
+                'light-12': '#1D1F27', // --color-bg-3000-dark / text scene
+
 
                 transparent: 'transparent',
                 current: 'currentColor',
@@ -184,7 +186,7 @@ module.exports = {
                 salmon: '#F35454',
                 seagreen: '#30ABC6',
                 'sky-blue': '#2EA2D3',
-                tan: '#E8EAED',
+                tan: '#EFF0EA',
                 teal: '#29DBBB',
                 'teal-2': '#6BC0B3',
                 'teal-2-dark': '#34796F',
@@ -201,7 +203,7 @@ module.exports = {
                 primary: 'rgb(var(--bg) / <alpha-value>)',
 
                 light: '#fff',
-                'accent-light': '#dde1e6',
+                'accent-light': '#e5e7df',
                 dark: '#1e1f23',
                 'accent-dark': '#232429',
 

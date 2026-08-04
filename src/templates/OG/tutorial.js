@@ -11,7 +11,7 @@ module.exports = tutorials = ({ image }) => `<html>
     inset: 0;
     width: 100%;
     height: 100%;
-    background: #DDE1E6;" src="data:image/jpeg;charset=utf-8;base64,${image}" />
+    background: #E5E7DF;" src="data:image/jpeg;charset=utf-8;base64,${image}" />
   </section>
 </body>
 </html>

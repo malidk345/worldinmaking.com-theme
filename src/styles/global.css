@@ -166,18 +166,18 @@
 
 @layer utilities {
     .light [data-scheme='primary'] {
-        /* Cool notebook gray scale (was warm beige cream) */
-        --bg: 243 244 245;
-        --accent: 221 225 230;
-        --border: 179 185 193;
-        --input-bg: 232 234 237;
-        --input-bg-hover: 232 234 237;
-        --input-border: 205 210 216;
-        --input-border-hover: 205 210 216;
-        --text-primary: 29 31 39;
-        --text-secondary: 107 114 128;
-        --text-muted: 156 163 175;
-        --tw-shadow-color: 75 85 99;
+        /* Exact notebook PostHog-3000 tokens (--color-bg-3000-light #f3f4ef) */
+        --bg: 243 244 239;
+        --accent: 229 231 223;
+        --border: 193 194 185;
+        --input-bg: 239 240 234;
+        --input-bg-hover: 239 240 234;
+        --input-border: 218 219 210;
+        --input-border-hover: 218 219 210;
+        --text-primary: 17 17 17;
+        --text-secondary: 95 95 95;
+        --text-muted: 116 126 161;
+        --tw-shadow-color: 95 95 95;
         --primary: var(--text-primary);
         --secondary: var(--text-secondary);
         --muted: var(--text-muted);
@@ -187,14 +187,14 @@
         .hover-invert:hover,
         .hover-invert[data-state='open'],
         .hover-invert[data-state='highlighted'] {
-            --bg: 75 85 99;
-            --accent: 156 163 175;
-            --border: 179 185 193;
-            --input-bg: 232 234 237;
-            --input-bg-hover: 232 234 237;
-            --text-primary: 243 244 245;
-            --text-secondary: 221 225 230;
-            --text-muted: 221 225 230;
+            --bg: 95 95 95;
+            --accent: 147 149 131;
+            --border: 193 194 185;
+            --input-bg: 239 240 234;
+            --input-bg-hover: 239 240 234;
+            --text-primary: 243 244 239;
+            --text-secondary: 229 231 223;
+            --text-muted: 229 231 223;
             --primary: var(--text-primary);
             --secondary: var(--text-secondary);
             --muted: var(--text-muted);
@@ -259,18 +259,19 @@
     }
 
     .light[data-skin='classic'] [data-scheme='primary'] {
-        --accent: 243 244 245;
+        --accent: 243 244 239;
     }
 
     .light [data-scheme='secondary'] {
-        --bg: 232 234 237;
-        --accent: 205 210 216;
-        --border: 166 173 182;
-        --input-bg: 243 244 245;
-        --input-border: 179 185 193;
-        --text-primary: 29 31 39;
-        --text-secondary: 29 31 39;
-        --text-muted: 156 163 175;
+        /* posthog-3000-100 / surface-secondary */
+        --bg: 239 240 234;
+        --accent: 218 219 210;
+        --border: 193 194 185;
+        --input-bg: 243 244 239;
+        --input-border: 193 194 185;
+        --text-primary: 17 17 17;
+        --text-secondary: 17 17 17;
+        --text-muted: 116 126 161;
         --tw-shadow-color: 29 31 39;
         --primary: var(--text-primary);
         --secondary: var(--text-secondary);
@@ -282,13 +283,13 @@
         .hover-invert[data-state='open'],
         .hover-invert[data-state='highlighted'] {
             --bg: 29 31 39;
-            --accent: 75 85 99;
-            --border: 166 173 182;
-            --input-bg: 243 244 245;
-            --input-border: 179 185 193;
-            --text-primary: 232 234 237;
-            --text-secondary: 205 210 216;
-            --text-muted: 205 210 216;
+            --accent: 95 95 95;
+            --border: 193 194 185;
+            --input-bg: 243 244 239;
+            --input-border: 193 194 185;
+            --text-primary: 239 240 234;
+            --text-secondary: 218 219 210;
+            --text-muted: 218 219 210;
             --primary: var(--text-primary);
             --secondary: var(--text-secondary);
             --muted: var(--text-muted);
@@ -302,14 +303,15 @@
     }
 
     .light [data-scheme='tertiary'] {
-        --bg: 221 225 230;
-        --accent: 192 197 204;
-        --border: 156 163 175;
-        --input-bg: 232 234 237;
-        --input-border: 179 185 193;
-        --text-primary: 29 31 39;
-        --text-secondary: 75 85 99;
-        --text-muted: 107 114 128;
+        /* posthog-3000-150 / surface-tertiary */
+        --bg: 229 231 223;
+        --accent: 207 208 200;
+        --border: 171 173 159;
+        --input-bg: 239 240 234;
+        --input-border: 193 194 185;
+        --text-primary: 17 17 17;
+        --text-secondary: 95 95 95;
+        --text-muted: 116 126 161;
         --tw-shadow-color: 29 31 39;
         --primary: var(--text-primary);
         --secondary: var(--text-secondary);
@@ -321,13 +323,13 @@
         .hover-invert[data-state='open'],
         .hover-invert[data-state='highlighted'] {
             --bg: 29 31 39;
-            --accent: 75 85 99;
-            --border: 156 163 175;
-            --input-bg: 232 234 237;
-            --input-border: 179 185 193;
-            --text-primary: 221 225 230;
-            --text-secondary: 192 197 204;
-            --text-muted: 192 197 204;
+            --accent: 95 95 95;
+            --border: 171 173 159;
+            --input-bg: 239 240 234;
+            --input-border: 193 194 185;
+            --text-primary: 229 231 223;
+            --text-secondary: 207 208 200;
+            --text-muted: 207 208 200;
             --primary: var(--text-primary);
             --secondary: var(--text-secondary);
             --muted: var(--text-muted);
@@ -338,7 +340,7 @@
 
     /* only overrides from modern */
     .light[data-skin='classic'] [data-scheme='tertiary'] {
-        --bg: 243 244 245;
+        --bg: 243 244 239;
     }
 
     .dark [data-scheme='primary'] {
@@ -362,14 +364,14 @@
         .hover-invert:hover,
         .hover-invert[data-state='open'],
         .hover-invert[data-state='highlighted'] {
-            --bg: 243 244 245;
-            --accent: 205 210 216;
-            --border: 75 85 99;
+            --bg: 243 244 239;
+            --accent: 218 219 210;
+            --border: 95 95 95;
             --input-bg: 27 28 30;
             --input-bg-hover: 27 28 30;
-            --text-primary: 29 31 39;
-            --text-secondary: 107 114 128;
-            --text-muted: 107 114 128;
+            --text-primary: 17 17 17;
+            --text-secondary: 95 95 95;
+            --text-muted: 95 95 95;
             --primary: var(--text-primary);
             --secondary: var(--text-secondary);
             --muted: var(--text-muted);
@@ -397,14 +399,14 @@
         .hover-invert:hover,
         .hover-invert[data-state='open'],
         .hover-invert[data-state='highlighted'] {
-            --bg: 232 234 237;
-            --accent: 205 210 216;
-            --border: 58 59 63;
+            --bg: 239 240 234;
+            --accent: 218 219 210;
+            --border: 58 59 55;
             --input-bg: 17 17 17;
-            --input-border: 44 45 48;
-            --text-primary: 27 28 30;
-            --text-secondary: 75 85 99;
-            --text-muted: 107 114 128;
+            --input-border: 44 45 42;
+            --text-primary: 27 28 26;
+            --text-secondary: 95 95 95;
+            --text-muted: 95 95 95;
             --primary: var(--text-primary);
             --secondary: var(--text-secondary);
             --muted: var(--text-muted);
@@ -432,14 +434,14 @@
         .hover-invert:hover,
         .hover-invert[data-state='open'],
         .hover-invert[data-state='highlighted'] {
-            --bg: 221 225 230;
-            --accent: 179 185 193;
-            --border: 75 85 99;
-            --input-bg: 27 28 30;
-            --input-border: 58 59 63;
-            --text-primary: 34 35 39;
-            --text-secondary: 107 114 128;
-            --text-muted: 107 114 128;
+            --bg: 229 231 223;
+            --accent: 193 194 185;
+            --border: 95 95 95;
+            --input-bg: 27 28 26;
+            --input-border: 58 59 55;
+            --text-primary: 34 35 32;
+            --text-secondary: 95 95 95;
+            --text-muted: 116 126 161;
             --primary: var(--text-primary);
             --secondary: var(--text-secondary);
             --muted: var(--text-muted);
@@ -540,7 +542,7 @@ body {
     word-wrap: break-word;
 }
 body.light {
-    background-color: #e8eaed;
+    background-color: #eff0ea;
 }
 body.dark {
     background-color: #1d1f27;
@@ -3069,8 +3071,8 @@ div[data-radix-popper-content-wrapper] {
 }
 
 .ph-mapbox-popup .mapboxgl-popup-content {
-    /* match bg-primary (data-scheme='primary') — cool notebook gray */
-    background: rgb(243 244 245);
+    /* match bg-primary = notebook --color-bg-3000-light #f3f4ef */
+    background: rgb(243 244 239);
     color: inherit;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
@@ -3080,16 +3082,16 @@ div[data-radix-popper-content-wrapper] {
 }
 /* Mapbox tip triangle uses border-* colors, not background */
 .ph-mapbox-popup.mapboxgl-popup-anchor-top .mapboxgl-popup-tip {
-    border-bottom-color: rgb(243 244 245) !important;
+    border-bottom-color: rgb(243 244 239) !important;
 }
 .ph-mapbox-popup.mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip {
-    border-top-color: rgb(243 244 245) !important;
+    border-top-color: rgb(243 244 239) !important;
 }
 .ph-mapbox-popup.mapboxgl-popup-anchor-left .mapboxgl-popup-tip {
-    border-right-color: rgb(243 244 245) !important;
+    border-right-color: rgb(243 244 239) !important;
 }
 .ph-mapbox-popup.mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
-    border-left-color: rgb(243 244 245) !important;
+    border-left-color: rgb(243 244 239) !important;
 }
 .dark .ph-mapbox-popup.mapboxgl-popup-anchor-top .mapboxgl-popup-tip {
     border-bottom-color: rgb(30 31 35) !important;
