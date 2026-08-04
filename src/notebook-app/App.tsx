@@ -1,12 +1,11 @@
 import React, { useState, useEffect, Component, useCallback } from 'react'
 import { MarkdownNotebook } from './lib/components/MarkdownNotebook/MarkdownNotebook'
-import { LemonButton, LemonInput, LemonTag, LemonBanner } from '@posthog/lemon-ui'
-import { IconNotebook, IconPlus, IconLogomark, IconOpenSidebar, IconSparkles } from '@posthog/icons'
+import { LemonButton, LemonInput, LemonTag, LemonBanner } from '~nb-lib/lemon-ui/index'
 import { ArrowLeft } from 'lucide-react'
-import { NOTEBOOK_MARKDOWN_REGISTRY } from './scenes/notebooks/markdownNotebookRegistry'
 import { buildExtraInsertCommands } from './scenes/notebooks/extraInsertCommands.tsx'
 import {
     StoredNotebook,
+    DEFAULT_NOTEBOOKS,
     getNotebooks,
     getNotebook,
     saveNotebook,
@@ -20,7 +19,7 @@ import { NotebookCanvasScene } from './scenes/notebooks/NotebookCanvasScene'
 import { NotebookMenu } from './scenes/notebooks/NotebookMenu'
 import { NotebookShareModal } from './scenes/notebooks/NotebookShareModal'
 import { NotebookHistory } from './scenes/notebooks/NotebookHistory'
-import { NotebookSyncInfo, NotebookExpandButton, NotebookMetaBar } from './scenes/notebooks/NotebookMeta'
+import { NotebookSyncInfo, NotebookExpandButton } from './scenes/notebooks/NotebookMeta'
 import { NotebookAIWriterModal } from './scenes/notebooks/NotebookAIWriterModal'
 import { CommandPaletteModal } from './scenes/notebooks/CommandPaletteModal'
 import { CollaboratorsBanner } from './scenes/notebooks/CollaboratorsBanner'
@@ -31,7 +30,7 @@ import { NOTEBOOK_APP_CSS } from './styles/bundleCss'
 
 // ---- Error Boundary ----
 class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean; error: Error | null }> {
-  state = { hasError: false, error: null }
+  state: { hasError: boolean; error: Error | null } = { hasError: false, error: null }
   static getDerivedStateFromError(error: Error) {
     return { hasError: true, error }
   }
@@ -112,7 +111,7 @@ export function App() {
   const [markdown, setMarkdown] = useState('')
   const [title, setTitle] = useState('')
   const [markdownVersion, setMarkdownVersion] = useState(0)
-  const [aiPromptRequest, setAiPromptRequest] = useState<number | undefined>(undefined)
+  const [aiPromptRequest] = useState<number | undefined>(undefined)
   const [syncStatus, setSyncStatus] = useState<'saved' | 'edited' | 'local'>('local')
   const [isExpanded, setIsExpanded] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
@@ -189,10 +188,12 @@ export function App() {
     }
   }
 
-  const handleInsertAIResponse = useCallback((aiContent: string) => {
+  const handleInsertAIResponse = useCallback((aiContent?: string) => {
+    const text = (aiContent || '').trim()
+    if (!text) return
     setMarkdown((prev) => {
       const current = prev || ''
-      return current.trim() + '\n\n' + aiContent.trim() + '\n'
+      return current.trim() + '\n\n' + text + '\n'
     })
     setMarkdownVersion((v) => v + 1)
   }, [])
@@ -211,10 +212,6 @@ export function App() {
     (api?: any) => buildExtraInsertCommands({ ...api, openAIPrompt: () => setShowAIModal(true) }),
     []
   )
-
-  const lastModifiedText = currentNotebook
-    ? timeAgo(currentNotebook.updatedAt)
-    : undefined
 
   return (
     <div className="App notebook-app-scope min-h-screen bg-[var(--bg-3000,#f3f4f5)] text-[var(--text-3000,#1d1f27)]">
@@ -271,7 +268,7 @@ export function App() {
                     />
                     {currentNotebook.isTemplate && <LemonTag type="highlight">TEMPLATE</LemonTag>}
                     <CollaboratorsBanner editedByText={currentNotebook.created_by?.first_name || 'Mustafa'} />
-                    <span className="text-muted opacity-30 hidden sm:inline">•</span>
+                    <span className="text-muted opacity-30 hidden sm:inline">â€¢</span>
                     <div className="hidden sm:block">
                       <NotebookSyncInfo syncStatus={syncStatus} />
                     </div>
@@ -295,7 +292,6 @@ export function App() {
                       notebookTitle={currentNotebook.title}
                       onOpenAI={() => setShowAIModal(true)}
                       onCreateNew={handleCreateNew}
-                      onOpenPublishModal={() => setShowPublishModal(true)}
                     />
                   </div>
                 </div>
@@ -322,7 +318,8 @@ export function App() {
                 {showHistory && (
                   <NotebookHistory
                     notebookId={currentNotebook.id}
-                    onRestoreVersion={handleRestoreVersion}
+                    isOpen={showHistory}
+                    onRestore={handleRestoreVersion}
                     onClose={() => setShowHistory(false)}
                   />
                 )}
@@ -373,14 +370,6 @@ export function App() {
       </main>
     </div>
   )
-}
-
-function timeAgo(dateStr: string): string {
-  const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
-  if (seconds < 60) return 'just now'
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
-  return `${Math.floor(seconds / 86400)}d ago`
 }
 
 export default App

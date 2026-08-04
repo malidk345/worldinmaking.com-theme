@@ -1,6 +1,5 @@
 import React from 'react'
 import CloudinaryImage from 'components/CloudinaryImage'
-import { useLayoutData } from 'components/Layout/hooks'
 
 const FADE_OPACITY = 'transition-opacity duration-700 ease-in-out'
 const FADE_COLORS = 'transition-colors duration-700 ease-in-out'

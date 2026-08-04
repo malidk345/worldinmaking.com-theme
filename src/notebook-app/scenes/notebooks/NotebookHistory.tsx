@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { LemonButton, LemonTag } from '@posthog/lemon-ui'
+import { LemonButton, LemonTag } from '~nb-lib/lemon-ui/index'
 import { IconX } from '@posthog/icons'
 import { getNotebookHistory, NotebookVersion } from './notebookStorage'
 
@@ -57,7 +57,7 @@ export function NotebookHistory({ notebookId, isOpen, onClose, onRestore }: Note
                 }}
             >
                 <h3 style={{ margin: 0 }}>Version History</h3>
-                <LemonButton icon={<IconX />} size="small" onClick={onClose} status="stealth" />
+                <LemonButton icon={<IconX />} size="small" onClick={onClose} type="stealth" />
             </div>
 
             <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>

@@ -1,5 +1,5 @@
-import React, { useRef } from 'react'
-import { LemonInput, LemonTextArea } from '@posthog/lemon-ui'
+import React from 'react'
+import { LemonInput, LemonTextArea } from '~nb-lib/lemon-ui/index'
 import {
     COMMON_INSERT_COMMAND_CATEGORY,
     createMarkdownNotebookRegistry,

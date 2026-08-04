@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { LemonDropdown, LemonButton, LemonSelect, ProfilePicture } from '@posthog/lemon-ui'
+import { LemonDropdown, LemonButton, LemonSelect, ProfilePicture } from '~nb-lib/lemon-ui/index'
 import {
     IconSparkles,
     IconChevronDown,
@@ -141,7 +141,7 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
             visible={isOpen}
             onVisibilityChange={(v) => setIsOpen(v)}
             onClickOutside={() => setIsOpen(false)}
-            dropdownPlacement="bottom-end"
+            placement="bottom-end"
             overlay={
                 <div
                     className="w-[1100px] max-w-[96vw] p-3 bg-[#15161b] rounded-xl shadow-2xl text-slate-200 flex flex-col gap-3"
@@ -186,7 +186,7 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                                         ) : (
                                             <span className="font-semibold text-slate-300">You</span>
                                         )}
-                                        <span>• {msg.timestamp}</span>
+                                        <span>â€¢ {msg.timestamp}</span>
                                     </div>
 
                                     {/* Speech Bubble */}
@@ -237,7 +237,7 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                         </div>
                     )}
 
-                    {/* Input Container — NO inner border-t line */}
+                    {/* Input Container â€” NO inner border-t line */}
                     <div className="relative flex flex-col border border-[#3b3c4a] bg-[#15161b] rounded-xl p-3 focus-within:border-blue-500 shadow-sm transition-colors">
                         <textarea
                             ref={textareaRef}
@@ -259,7 +259,7 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                             className="w-full bg-transparent text-sm text-white placeholder:text-slate-500 focus:outline-none resize-none leading-relaxed min-h-[110px] p-0 border-none shadow-none"
                         />
 
-                        {/* Controls Row — WITHOUT border-t line */}
+                        {/* Controls Row â€” WITHOUT border-t line */}
                         <div className="flex items-center justify-between pt-2 mt-1">
                             <LemonSelect
                                 value={selectedBot}

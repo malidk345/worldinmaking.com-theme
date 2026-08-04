@@ -6,15 +6,13 @@ import {
     LemonTag,
     LemonSelect,
     ProfilePicture,
-} from '@posthog/lemon-ui'
+} from '~nb-lib/lemon-ui/index'
 import { LemonTable } from '../../lib/lemon-ui/LemonTable/LemonTable'
-import type { LemonTableColumns } from '../../lib/lemon-ui/LemonTable/LemonTable'
+import type { LemonTableColumns } from '../../lib/lemon-ui/LemonTable/types'
 import {
     IconEllipsis,
-    IconPlus,
     IconTrash,
     IconCopy,
-    IconNotebook,
 } from '@posthog/icons'
 import {
     StoredNotebook,
@@ -23,7 +21,6 @@ import {
     duplicateNotebook,
     exportNotebookAsJSON,
     exportNotebookAsMarkdown,
-    importNotebookFromJSON,
 } from './notebookStorage'
 import { NotebookSelectButton } from './NotebookSelectButton/NotebookSelectButton'
 
@@ -35,7 +32,7 @@ interface NotebooksListSceneProps {
 }
 
 function timeAgo(dateStr: string): string {
-    if (!dateStr) return '—'
+    if (!dateStr) return 'â€”'
     const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
     if (seconds < 60) return 'just now'
     if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
@@ -56,8 +53,6 @@ const CONTAINING_OPTIONS = [
 export function NotebooksListScene({
     onSelectNotebook,
     onCreateNew,
-    onOpenCanvas,
-    onSelectTemplate,
 }: NotebooksListSceneProps): JSX.Element {
     const [searchQuery, setSearchQuery] = useState('')
     const [containsFilter, setContainsFilter] = useState('all')
@@ -104,25 +99,6 @@ export function NotebooksListScene({
         a.download = `${notebook.title.replace(/\s+/g, '_')}.md`
         a.click()
         URL.revokeObjectURL(url)
-    }
-
-    const handleLoadFromJSON = () => {
-        const input = document.createElement('input')
-        input.type = 'file'
-        input.accept = '.json'
-        input.onchange = async () => {
-            const file = input.files?.[0]
-            if (!file) return
-            const text = await file.text()
-            try {
-                const nb = importNotebookFromJSON(text)
-                reloadNotebooks()
-                onSelectNotebook(nb.id)
-            } catch (e) {
-                alert('Invalid notebook JSON file')
-            }
-        }
-        input.click()
     }
 
     // Filter notebooks list

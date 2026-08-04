@@ -1,4 +1,4 @@
-import { LemonButton, LemonMenu } from '@posthog/lemon-ui'
+import { LemonButton, LemonMenu } from '~nb-lib/lemon-ui/index'
 import { IconEllipsis, IconCopy, IconClock, IconShare, IconTrash } from '@posthog/icons'
 import { exportNotebookAsMarkdown } from './notebookStorage'
 
@@ -101,13 +101,14 @@ export function NotebookMenu({
                     onClick: onOpenPublishModal,
                 },
                 {
-                    separator: true,
-                },
-                {
-                    label: 'Delete',
-                    icon: <IconTrash />,
-                    status: 'danger',
-                    onClick: onDelete,
+                    items: [
+                        {
+                            label: 'Delete',
+                            icon: <IconTrash />,
+                            status: 'danger',
+                            onClick: onDelete,
+                        },
+                    ],
                 },
             ]}
         >

@@ -10,39 +10,26 @@ import {
     useVelocity,
 } from 'framer-motion'
 import {
-    IconChevronDown,
-    IconDocument,
     IconMinus,
     IconX,
     IconCollapse45Chevrons,
     IconSquare,
-    IconArrowLeft,
-    IconArrowRight,
-    IconTerminal,
-    IconSearch,
-    IconDrag,
 } from '@posthog/icons'
-import { Menu, MenuItem, useApp } from '../../context/App'
+import { MenuItem, useApp } from '../../context/App'
 import { Provider as WindowProvider, AppWindow as AppWindowType, useWindow } from '../../context/Window'
 import Tooltip from 'components/RadixUI/Tooltip'
 import OSButton from 'components/OSButton'
-import { Button } from 'components/Squeak/components/SubscribeButton'
-import MenuBar, { MenuItemType } from 'components/RadixUI/MenuBar'
-import { Popover } from '../RadixUI/Popover'
-import { FileMenu } from '../RadixUI/FileMenu'
+import type { MenuItemType } from 'components/RadixUI/MenuBar'
 import { IMenu } from 'components/PostLayout/types'
-import Link from 'next/link'
 import { useRouter } from 'next/router'
 import Inbox from 'components/Inbox'
 import Handbook from '../../templates/Handbook'
 import BlogPost from '../../templates/BlogPost'
 import Legal from 'components/Legal'
-import { getProseClasses } from '../../constants'
 import KeyboardShortcut from 'components/KeyboardShortcut'
 import { useToast } from '../../context/Toast'
 import usePostHog from '../../hooks/usePostHog'
 import Modal from 'components/RadixUI/Modal'
-import { ToggleGroup } from 'components/RadixUI/ToggleGroup'
 import FloatingModal from 'components/FloatingModal'
 import { MOTION_LAYER, WINDOW_BG } from '../../constants/frostedSurfaces'
 

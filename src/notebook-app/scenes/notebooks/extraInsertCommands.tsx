@@ -8,7 +8,8 @@ import {
     IconToggle,
     IconSparkles,
 } from '@posthog/icons'
-import { InsertCommand, COMMON_INSERT_COMMAND_CATEGORY } from '../../lib/components/MarkdownNotebook/InsertMenu'
+import { COMMON_INSERT_COMMAND_CATEGORY } from '../../lib/components/MarkdownNotebook/InsertMenu'
+import { InsertCommand } from '../../lib/components/MarkdownNotebook/editorTypes'
 import { NotebookComponentProps } from '../../lib/components/MarkdownNotebook/types'
 import { uuid } from '../../lib/utils/dom'
 

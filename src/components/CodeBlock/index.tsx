@@ -1,4 +1,5 @@
 import React from 'react'
+import dynamic from 'next/dynamic'
 import { AnimatePresence, motion } from 'framer-motion'
 import Highlight, { defaultProps, Language } from 'prism-react-renderer'
 import { generateRandomHtmlId, getCookie } from '../../lib/utils'
@@ -9,7 +10,6 @@ import { darkTheme, lightTheme } from './theme'
 import languageMap from './languages'
 import { useValues } from 'kea'
 import { layoutLogic } from 'logic/layoutLogic'
-import Mermaid from 'components/Mermaid'
 import Tooltip from 'components/Tooltip'
 import usePostHog from 'hooks/usePostHog'
 import { useAppSettings, useAppActions } from '../../context/App'
@@ -84,6 +84,8 @@ type MdxCodeBlockChildren = {
         }
     } & MetaStringProps
 }
+
+const Mermaid = dynamic(() => import('components/Mermaid'), { ssr: false })
 
 export const MdxCodeBlock = ({ children, ...props }: MdxCodeBlock): JSX.Element | null => {
     if (children?.props?.className?.includes('language-mermaid')) {

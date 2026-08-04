@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React from 'react'
 import Link from 'components/Link'
 import { useAppActions, useAppSettings, useAppUIState } from '../../context/App'
-import { GlassIcon, PricingIcon, DemoIcon } from 'components/OSIcons'
+import { GlassIcon } from 'components/OSIcons'
 import { AppIcon, AppItem } from 'components/OSIcons/AppIcon'
 import {
     HOME_SILHOUETTE,
@@ -111,31 +111,7 @@ function Desktop() {
     const { isInactive, dismiss } = useInactivityDetection({
         enabled: !siteSettings.screensaverDisabled,
     })
-    const [navVisible, setNavVisible] = useState(false)
-    const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const { addToast } = useToast()
-
-    useEffect(() => {
-        return () => {
-            if (hoverTimeoutRef.current) {
-                clearTimeout(hoverTimeoutRef.current)
-            }
-        }
-    }, [])
-
-    const handleMouseEnter = () => {
-        if (hoverTimeoutRef.current) {
-            clearTimeout(hoverTimeoutRef.current)
-            hoverTimeoutRef.current = null
-        }
-        setNavVisible(true)
-    }
-
-    const handleMouseLeave = () => {
-        hoverTimeoutRef.current = setTimeout(() => {
-            setNavVisible(false)
-        }, 2000)
-    }
 
     const glow = getWallpaperGlow(siteSettings.wallpaper)
     const applyGlow = (items: AppItem[]) =>
@@ -230,8 +206,6 @@ function Desktop() {
                     data-scheme="primary"
                     data-app="Desktop"
                     className="fixed inset-0 pointer-events-none"
-                    onMouseEnter={handleMouseEnter}
-                    onMouseLeave={handleMouseLeave}
                 >
                     <Wallpapers wallpaper={siteSettings.wallpaper} reduceMotion={siteSettings.performanceBoost} />
 

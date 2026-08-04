@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { LemonButton, LemonInput, LemonTag, LemonBanner } from '@posthog/lemon-ui'
+import { LemonButton, LemonInput, LemonTag, LemonBanner } from '~nb-lib/lemon-ui/index'
 import { NotebookComponentRenderProps } from '../../lib/components/MarkdownNotebook/types'
 import { NotebookNodeType } from './types'
 import { NODE_ICONS } from './nodeIcons'
@@ -138,7 +138,7 @@ export function DataNodeShell({ node, mode, updateProps }: NotebookComponentRend
                 </div>
             )}
 
-            <LemonBanner type="info" size="small">
+            <LemonBanner type="info">
                 Connect PostHog backend to view live dataset for <strong>{tagName}</strong>.
             </LemonBanner>
         </div>

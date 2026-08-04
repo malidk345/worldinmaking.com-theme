@@ -13,8 +13,12 @@
       ],
       "@posthog/lemon-ui": [
         "./components/LemonUI/index.ts"
+      ],
+      "~nb-lib/*": [
+        "./notebook-app/lib/*"
       ]
     },
+    "allowImportingTsExtensions": true,
     // https://www.sitepoint.com/react-with-typescript-best-practices/
     "allowJs": true, // Allow JavaScript files to be compiled
     "skipLibCheck": true, // Skip type checking of all declaration files
@@ -53,6 +57,16 @@
   "exclude": [
     "node_modules/**/*",
     "staticfiles/**/*",
-    "frontend/dist/**/*"
+    "frontend/dist/**/*",
+    "**/*.stories.tsx",
+    "**/*.stories.ts",
+    "**/*.stories.js",
+    "**/*.test.tsx",
+    "**/*.test.ts",
+    "**/*.test.js",
+    "**/*.spec.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.js",
+    "src/notebook-app/**"
   ]
 }

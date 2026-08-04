@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react'
-import mermaid from 'mermaid'
 import { TransformWrapper, TransformComponent, useControls } from 'react-zoom-pan-pinch'
 import { IconMinus, IconPlus, IconRefresh } from '@posthog/icons'
 
@@ -33,16 +32,22 @@ export default function Mermaid({ children }: { children: string }): JSX.Element
     const [loading, setLoading] = useState(true)
     const mermaidRef = useRef<HTMLDivElement>(null)
     useEffect(() => {
-        mermaid.initialize({ startOnLoad: false })
-        if (mermaidRef.current && !mermaidRef.current.hasAttribute('data-rendered')) {
-            mermaid.run({
-                nodes: [mermaidRef.current],
-                postRenderCallback: () => {
-                    setLoading(false)
-                    mermaidRef.current?.setAttribute('data-rendered', 'true')
-                },
-            })
-        }
+        let cancelled = false
+        import('mermaid').then((mod) => {
+            if (cancelled) return
+            const mermaid = mod.default
+            mermaid.initialize({ startOnLoad: false })
+            if (mermaidRef.current && !mermaidRef.current.hasAttribute('data-rendered')) {
+                mermaid.run({
+                    nodes: [mermaidRef.current],
+                    postRenderCallback: () => {
+                        setLoading(false)
+                        mermaidRef.current?.setAttribute('data-rendered', 'true')
+                    },
+                })
+            }
+        })
+        return () => { cancelled = true }
     }, [])
     return (
         <div className="relative group">

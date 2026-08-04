@@ -12,7 +12,7 @@ import { IconAdvanced } from '@posthog/icons'
 import { Link as ScrollLink } from 'react-scroll'
 import { StaticImage } from 'gatsby-plugin-image'
 import { CallToAction } from 'components/CallToAction'
-import groupBy from 'lodash.groupby'
+import groupBy from 'lodash/groupBy'
 import { EXCLUDED_ADDON_TYPES } from '../../../constants/addons'
 
 import { Accordion } from 'components/RadixUI/Accordion'

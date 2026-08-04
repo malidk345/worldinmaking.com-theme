@@ -1,5 +1,5 @@
 import React from 'react'
-import { LemonButton, LemonTag } from '@posthog/lemon-ui'
+import { LemonButton, LemonTag } from '~nb-lib/lemon-ui/index'
 import { IconExpand } from '@posthog/icons'
 
 export interface NotebookSyncInfoProps {

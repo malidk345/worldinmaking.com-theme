@@ -1,4 +1,4 @@
-import throttle from 'lodash.throttle'
+import throttle from 'lodash/throttle'
 import { useCallback, useState } from 'react'
 
 type AsyncCallbackType<U, T extends (...args: any[]) => Promise<U>> = (...args: Parameters<T>) => void

@@ -1,17 +1,22 @@
 import React from 'react'
+import dynamic from 'next/dynamic'
 import { useAppActions, useAppSettings, useAppWindows } from '../../context/App'
 import Desktop from 'components/Desktop'
 import TaskBarMenu from 'components/TaskBarMenu'
 import AppWindow from 'components/AppWindow'
 import CookieBannerToast from 'components/CookieBanner/ToastVersion'
-import { SearchOverlay } from 'components/SearchUI'
 import { ChatOverlay } from 'hooks/useChat'
 import AppContainer from 'components/AppContainer'
 import { TooltipProvider } from 'components/RadixUI/Tooltip'
 
-import ActiveWindowsPanel from 'components/ActiveWindowsPanel'
-
 import { AnimatePresence } from 'framer-motion'
+
+const SearchOverlay = dynamic(() => import('components/SearchUI').then((module) => module.SearchOverlay), {
+    ssr: false,
+})
+const ActiveWindowsPanel = dynamic(() => import('components/ActiveWindowsPanel'), { ssr: false })
+const CommandPalette = dynamic(() => import('components/CommandPalette'), { ssr: false })
+const AuthModal = dynamic(() => import('components/Auth/AuthModal'), { ssr: false })
 
 // Isolates the `windows` subscription so that opening/closing a window only
 // re-renders this list, not the whole Wrapper (and therefore not the desktop,
@@ -39,9 +44,7 @@ const WindowList = React.memo(function WindowList() {
     )
 })
 
-import CommandPalette from 'components/CommandPalette'
 import FooterBar from 'components/OSChrome/FooterBar'
-import AuthModal from 'components/Auth/AuthModal'
 import { useApp } from '../../context/App'
 
 export default function Wrapper() {

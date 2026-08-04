@@ -1,5 +1,5 @@
 import { useMemo, useState, useRef } from 'react'
-import { LemonButton, LemonMenu } from '@posthog/lemon-ui'
+import { LemonButton, LemonMenu } from '~nb-lib/lemon-ui/index'
 import { IconEllipsis } from '@posthog/icons'
 import { uuid } from '../../lib/utils/dom'
 import { MarkdownNotebook } from '../../lib/components/MarkdownNotebook/MarkdownNotebook'
@@ -63,7 +63,7 @@ export function NotebookCanvasScene({ onSaveAsNotebook }: NotebookCanvasScenePro
             <header className="flex items-center justify-between mb-4 pb-3 border-b border-border">
                 <div className="flex items-center gap-3">
                     <h2 className="text-xl font-bold m-0">Canvas</h2>
-                    <span className="text-xs text-muted">Temporary — not saved until you choose "Save as Notebook"</span>
+                    <span className="text-xs text-muted">Temporary â€” not saved until you choose "Save as Notebook"</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <LemonMenu
@@ -91,10 +91,8 @@ export function NotebookCanvasScene({ onSaveAsNotebook }: NotebookCanvasScenePro
                 <MarkdownNotebook
                     value={content}
                     onChange={(newContent: string) => setContent(newContent)}
-                    isEditable={true}
                     registry={NOTEBOOK_MARKDOWN_REGISTRY}
-                    extraInsertCommands={buildExtraInsertCommands}
-                    placeholder="Start exploring on this canvas..."
+                    extraInsertCommands={(api) => buildExtraInsertCommands(api)}
                 />
             </div>
         </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { LemonDropdown, LemonButton, LemonTag, LemonInput, LemonSelect } from '@posthog/lemon-ui'
+import { LemonDropdown, LemonButton, LemonTag, LemonInput, LemonSelect } from '~nb-lib/lemon-ui/index'
 import { IconOpenSidebar, IconShare, IconCheck, IconPlus, IconSparkles, IconImage } from '@posthog/icons'
 
 interface SidebarContextPanelMenuProps {

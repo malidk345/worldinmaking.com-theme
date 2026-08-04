@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 const graphql = (s) => s; const useStaticQuery = () => ({});
 
 import { AnimatePresence, motion } from 'framer-motion'
-import groupBy from 'lodash.groupby'
+import groupBy from 'lodash/groupBy'
 import { IconCheck, IconX } from '@posthog/icons'
 import useProduct from 'hooks/useProduct'
 import OSButton from 'components/OSButton'

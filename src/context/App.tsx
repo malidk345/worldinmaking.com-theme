@@ -9,11 +9,9 @@ import React, {
     useCallback,
     useRef,
 } from 'react'
+import dynamic from 'next/dynamic'
 import { AppWindow } from './Window'
 import { isSafeInternalPath } from 'lib/utils'
-import SignIn from 'components/Squeak/components/Classic/SignIn'
-import Register from 'components/Squeak/components/Classic/Register'
-import ForgotPassword from 'components/Squeak/components/Classic/ForgotPassword'
 import { User } from 'hooks/useUser'
 import Start from 'components/Start'
 import useDataPipelinesNav from '../navs/useDataPipelinesNav'
@@ -22,10 +20,10 @@ import initialMenu from '../navs'
 import { useToast } from './Toast'
 import { IconDay, IconLaptop, IconNight } from '@posthog/icons'
 import { themeOptions } from '../hooks/useTheme'
-import ContactSales from 'components/ContactSales'
 import qs from 'qs'
 import usePostHog from '../hooks/usePostHog'
-import { MaxChatApp } from 'components/MaxAI/MaxChatApp'
+
+const ContactSales = dynamic(() => import('components/ContactSales'), { ssr: false })
 
 declare global {
     interface Window {

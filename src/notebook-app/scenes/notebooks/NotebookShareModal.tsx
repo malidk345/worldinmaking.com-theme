@@ -1,4 +1,4 @@
-import { LemonModal, LemonButton, LemonDivider, LemonBanner } from '@posthog/lemon-ui'
+import { LemonModal, LemonButton, LemonDivider, LemonBanner } from '~nb-lib/lemon-ui/index'
 import { IconCopy } from '@posthog/icons'
 import { getNotebook, exportNotebookAsJSON, exportNotebookAsMarkdown } from './notebookStorage'
 

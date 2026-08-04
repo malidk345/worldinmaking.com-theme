@@ -1,5 +1,5 @@
-import React, { useMemo, useState, useEffect } from 'react'
-import { motion, Variants } from 'framer-motion'
+import React, { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
 import OSButton from 'components/OSButton'
 import {
     IconHome,
@@ -8,11 +8,8 @@ import {
     IconChevronLeft,
     IconChevronRight,
     IconSearch,
-    IconBook,
     IconTableOfContents,
     IconPlay,
-    IconBookmark,
-    IconBookmarkSolid,
     IconBottomPanel,
     IconChevronDown,
     IconReceipt,
@@ -21,11 +18,7 @@ import { IconPDF } from 'components/OSIcons'
 import { useWindow } from '../../context/Window'
 import SearchBar from 'components/Editor/SearchBar'
 import Tooltip from 'components/RadixUI/Tooltip'
-import Toast from 'components/RadixUI/Toast'
-import { useUser } from 'hooks/useUser'
 import { useApp } from '../../context/App'
-import { useToast } from '../../context/Toast'
-import Link from 'components/Link'
 import { useCartStore } from '../../templates/merch/store'
 import { exportToPdf as exportPresentationToPdf } from '../../lib/exportToPdf'
 import Loading from 'components/Loading'
@@ -110,7 +103,7 @@ export default function HeaderBar({
     onOrderHistoryClose,
     className = '',
 }: HeaderBarProps) {
-    const { compact, focusedWindow, posthogInstance } = useApp()
+    const { compact, focusedWindow } = useApp()
     const { goBack, goForward, canGoBack, canGoForward, appWindow, menu } = useWindow()
     const [searchOpen, setSearchOpen] = useState(false)
     const [animateCartCount, setAnimateCartCount] = useState(false)

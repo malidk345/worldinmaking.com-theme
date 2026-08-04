@@ -1,15 +1,5 @@
-import React, { useMemo, useState, useEffect } from 'react'
-import { useWindow } from '../../context/Window'
-import SearchBar from 'components/Editor/SearchBar'
-import Tooltip from 'components/RadixUI/Tooltip'
-import Toast from 'components/RadixUI/Toast'
-import { useUser } from 'hooks/useUser'
-import { useApp } from '../../context/App'
-import { useToast } from '../../context/Toast'
-import Link from 'components/Link'
-import { useCartStore } from '../../templates/merch/store'
+import React from 'react'
 import { Select } from 'components/RadixUI/Select'
-import { useRouter } from 'next/router'
 
 interface AddressBarProps {
   selectOptions: any[]
