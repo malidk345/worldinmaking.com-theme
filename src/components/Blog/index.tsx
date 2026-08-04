@@ -166,7 +166,8 @@ const Blog = ({
                     title={`${capitalize(allPostsFilter)} articles`}
                     posts={allPostsFilter === 'popular' ? allPostsPopular : allPostsRecent}
                     action={
-                        <Link href="/blog/all"
+                        <Link
+                            href="/blog/all"
                             className="-mr-2 px-2 py-1.5 rounded-sm hover:bg-primary hover:bg-accent relative active:top-[1px] active:scale-[.99]"
                         >
                             View all
@@ -199,4 +200,3 @@ const Blog = ({
 }
 
 export default Blog
-

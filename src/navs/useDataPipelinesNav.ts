@@ -8,8 +8,7 @@ const PIPELINES = [
 ]
 
 export default function useDataPipelinesNav({ type }: { type?: string }): { url?: string; name: string }[] {
-    return PIPELINES
-        .filter((node) => (type ? node.type === type : true) && node.status !== 'coming_soon')
+    return PIPELINES.filter((node) => (type ? node.type === type : true) && node.status !== 'coming_soon')
         .sort((a, b) => a.name.localeCompare(b.name))
         .map((node) => ({
             url: `/docs/cdp/${type ? type + 's' : 'pipelines'}/${node.slug}`,

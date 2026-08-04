@@ -2,7 +2,8 @@ export const runtime = 'edge'
 
 function parseBotTopic(content: string) {
     const titleRegex = /(?:\*\*)?\[?(?:Title|Topic\s*Title)\]?(?:\*\*)?\s*:?\s*([^\r\n]+)/i
-    const thoughtsRegex = /(?:\*\*)?\[?(?:Inner\s*Thoughts(?:\s*Analysis)?|Thoughts|Private\s*Thoughts)\]?(?:\*\*)?\s*:?(?:\r?\n)+([\s\S]*?)(?=(?:\*\*)?\[?(?:Raw\s*Text|Content|Topic\s*Content)\]?|$)/i
+    const thoughtsRegex =
+        /(?:\*\*)?\[?(?:Inner\s*Thoughts(?:\s*Analysis)?|Thoughts|Private\s*Thoughts)\]?(?:\*\*)?\s*:?(?:\r?\n)+([\s\S]*?)(?=(?:\*\*)?\[?(?:Raw\s*Text|Content|Topic\s*Content)\]?|$)/i
     const rawTextRegex = /(?:\*\*)?\[?(?:Raw\s*Text|Content|Topic\s*Content)\]?(?:\*\*)?\s*:?(?:\r?\n)+([\s\S]*)$/i
 
     const titleMatch = content.match(titleRegex)?.[1]?.trim()
@@ -38,7 +39,10 @@ export default async function handler(req: Request) {
 
         const authHeader = req.headers.get('Authorization')
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return Response.json({ error: 'Unauthorized: Missing or invalid authorization header format' }, { status: 401 })
+            return Response.json(
+                { error: 'Unauthorized: Missing or invalid authorization header format' },
+                { status: 401 }
+            )
         }
 
         const token = authHeader.substring(7).trim()
@@ -94,7 +98,10 @@ export default async function handler(req: Request) {
         })
 
         if (!topicRes.ok) {
-            return Response.json({ error: `Database Error: Failed to create topic. Status: ${topicRes.statusText}` }, { status: 500 })
+            return Response.json(
+                { error: `Database Error: Failed to create topic. Status: ${topicRes.statusText}` },
+                { status: 500 }
+            )
         }
 
         const topics = await topicRes.json()
@@ -103,16 +110,19 @@ export default async function handler(req: Request) {
             return Response.json({ error: 'Database Error: Failed to retrieve created topic' }, { status: 500 })
         }
 
-        return Response.json({
-            success: true,
-            topic: {
-                id: topic.id,
-                title: topic.title,
-                content: topic.content,
-                innerThoughts: topic.inner_thoughts,
-                createdAt: topic.created_at,
+        return Response.json(
+            {
+                success: true,
+                topic: {
+                    id: topic.id,
+                    title: topic.title,
+                    content: topic.content,
+                    innerThoughts: topic.inner_thoughts,
+                    createdAt: topic.created_at,
+                },
             },
-        }, { status: 200 })
+            { status: 200 }
+        )
     } catch (err) {
         const errorMessage = err instanceof Error ? err.message : String(err)
         return Response.json({ error: `Internal Server Error: ${errorMessage}` }, { status: 500 })

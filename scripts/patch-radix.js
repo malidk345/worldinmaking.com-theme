@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require('fs')
+const path = require('path')
 
 const patchedMjs = `import * as React from "react";
 
@@ -52,7 +52,7 @@ export {
   composeRefs,
   useComposedRefs
 };
-`;
+`
 
 const patchedJs = `"use strict";
 var __create = Object.create;
@@ -131,45 +131,45 @@ function useComposedRefs(...refs) {
     }
   }, []);
 }
-`;
+`
 
 function patchAllInDir(baseDir) {
-  if (!fs.existsSync(baseDir)) return;
-  let count = 0;
-  function walk(dir) {
-    let entries;
-    try {
-      entries = fs.readdirSync(dir);
-    } catch (e) {
-      return;
-    }
-    entries.forEach(file => {
-      const full = path.join(dir, file);
-      try {
-        const stat = fs.statSync(full);
-        if (stat.isDirectory()) {
-          if (file === 'react-compose-refs') {
-            const distDir = path.join(full, 'dist');
-            if (fs.existsSync(distDir)) {
-              fs.writeFileSync(path.join(distDir, 'index.mjs'), patchedMjs);
-              fs.writeFileSync(path.join(distDir, 'index.js'), patchedJs);
-              count++;
-              console.log('Patched react-compose-refs at:', distDir);
-            }
-          } else if (file !== '.next' && file !== '.git') {
-            walk(full);
-          }
+    if (!fs.existsSync(baseDir)) return
+    let count = 0
+    function walk(dir) {
+        let entries
+        try {
+            entries = fs.readdirSync(dir)
+        } catch (e) {
+            return
         }
-      } catch (e) {}
-    });
-  }
-  walk(baseDir);
-  console.log(`Total react-compose-refs packages patched in ${baseDir}: ${count}`);
+        entries.forEach((file) => {
+            const full = path.join(dir, file)
+            try {
+                const stat = fs.statSync(full)
+                if (stat.isDirectory()) {
+                    if (file === 'react-compose-refs') {
+                        const distDir = path.join(full, 'dist')
+                        if (fs.existsSync(distDir)) {
+                            fs.writeFileSync(path.join(distDir, 'index.mjs'), patchedMjs)
+                            fs.writeFileSync(path.join(distDir, 'index.js'), patchedJs)
+                            count++
+                            console.log('Patched react-compose-refs at:', distDir)
+                        }
+                    } else if (file !== '.next' && file !== '.git') {
+                        walk(full)
+                    }
+                }
+            } catch (e) {}
+        })
+    }
+    walk(baseDir)
+    console.log(`Total react-compose-refs packages patched in ${baseDir}: ${count}`)
 }
 
 const rootDirs = [
-  path.join(__dirname, '../node_modules'),
-  path.join(__dirname, '../../worldinmaking.com-theme/node_modules')
-];
+    path.join(__dirname, '../node_modules'),
+    path.join(__dirname, '../../worldinmaking.com-theme/node_modules'),
+]
 
-rootDirs.forEach(dir => patchAllInDir(dir));
+rootDirs.forEach((dir) => patchAllInDir(dir))

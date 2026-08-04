@@ -33,7 +33,7 @@ function BlogPostContainer({ slugStr, fullPath }: { slugStr: string; fullPath: s
         }
     }, [slugStr])
 
-    let localPost: any = null;
+    let localPost: any = null
 
     const title = spPost?.title || localPost?.frontmatter?.title || slugStr.replace(/-/g, ' ')
     const content = spPost?.content || localPost?.content || `# ${title}\n\nLoading content...`
@@ -52,7 +52,9 @@ function BlogPostContainer({ slugStr, fullPath }: { slugStr: string; fullPath: s
                 {
                     name: author,
                     role: 'Author',
-                    image: spPost?.author_avatar || 'https://res.cloudinary.com/dmukukwp6/image/upload/v1675204207/james_hawkins_posthog_031f7cf651.png',
+                    image:
+                        spPost?.author_avatar ||
+                        'https://res.cloudinary.com/dmukukwp6/image/upload/v1675204207/james_hawkins_posthog_031f7cf651.png',
                 },
             ],
         },
@@ -75,7 +77,6 @@ function BlogPostContainer({ slugStr, fullPath }: { slugStr: string; fullPath: s
 
     return <BlogPostTemplate {...(pageData as any)} />
 }
-
 
 export default function DynamicSlugPage() {
     const router = useRouter()
@@ -107,7 +108,15 @@ export default function DynamicSlugPage() {
     } else if (rootSegment === 'notebooks') {
         element = <NotebooksListSkeleton key={fullPath} path={fullPath} />
     } else if (rootSegment === 'questions' || rootSegment === 'forum' || rootSegment === 'community') {
-        element = <Inbox key={fullPath} path={fullPath} permalink={slugStr !== 'questions' && slugStr !== 'forum' && slugStr !== 'community' ? slugStr : undefined} />
+        element = (
+            <Inbox
+                key={fullPath}
+                path={fullPath}
+                permalink={
+                    slugStr !== 'questions' && slugStr !== 'forum' && slugStr !== 'community' ? slugStr : undefined
+                }
+            />
+        )
     } else if (['terms', 'privacy', 'dpa', 'baa', 'subprocessors'].includes(rootSegment)) {
         element = <Legal key={fullPath} defaultTab={'/' + rootSegment} />
     } else if (rootSegment === 'display-options') {
@@ -152,4 +161,3 @@ export default function DynamicSlugPage() {
 
     return element
 }
-

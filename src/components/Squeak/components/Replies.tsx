@@ -77,9 +77,7 @@ const Collapsed = ({ setExpanded, replies, resolvedBy, isInForum }: CollapsedPro
     const replyCount = replies.data.length
     const maxAvatars = Math.min(replyCount - 1, 3)
     const {
-        question: {
-            profile,
-        },
+        question: { profile },
     } = useContext(CurrentQuestionContext)
     const questionProfileID = profile?.data?.id
 
@@ -176,10 +174,7 @@ const getComunityClasses = (reply, isResolution) => {
 
 const Expanded = ({ replies, isInForum }: ExpandedProps) => {
     const {
-        question: {
-            profile,
-            resolvedBy,
-        },
+        question: { profile, resolvedBy },
     } = useContext(CurrentQuestionContext)
     const questionProfileID = profile?.data?.id
     return (

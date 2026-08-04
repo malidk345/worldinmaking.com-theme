@@ -19,7 +19,9 @@ const getOgImage = (event: EventType | null) => {
     }
 
     const photoUrl = event.photos[0].url
-    const fullUrl = photoUrl.startsWith('http') ? photoUrl : `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST || ''}${photoUrl}`
+    const fullUrl = photoUrl.startsWith('http')
+        ? photoUrl
+        : `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST || ''}${photoUrl}`
 
     // Resize the square image to fit by height and pad the width with a light PostHog background
     return fullUrl.replace('/upload/', '/upload/c_lpad,w_1200,h_630,b_rgb:EEEFE9/')

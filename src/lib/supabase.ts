@@ -32,23 +32,43 @@ const mockClient = {
         select: () => ({
             data: [],
             error: null,
-            order: function () { return this },
-            eq: function () { return this },
-            limit: function () { return this },
-            single: function () { return { data: null, error: null } },
-            maybeSingle: function () { return { data: null, error: null } },
+            order: function () {
+                return this
+            },
+            eq: function () {
+                return this
+            },
+            limit: function () {
+                return this
+            },
+            single: function () {
+                return { data: null, error: null }
+            },
+            maybeSingle: function () {
+                return { data: null, error: null }
+            },
         }),
         insert: () => ({ data: null, error: null }),
         update: () => ({ data: null, error: null }),
         delete: () => ({ data: null, error: null }),
         upsert: () => ({ data: null, error: null }),
-        eq: function () { return this },
-        single: function () { return { data: null, error: null } },
-        order: function () { return this },
+        eq: function () {
+            return this
+        },
+        single: function () {
+            return { data: null, error: null }
+        },
+        order: function () {
+            return this
+        },
     }),
     channel: () => ({
-        on: function () { return this },
-        subscribe: function () { return this },
+        on: function () {
+            return this
+        },
+        subscribe: function () {
+            return this
+        },
     }),
     removeChannel: () => {},
     auth: {

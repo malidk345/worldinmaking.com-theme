@@ -27,7 +27,10 @@ export default async function handler(req: Request) {
         )
 
         if (!topicsRes.ok) {
-            return Response.json({ error: `Database Error: Failed to fetch topics. Status: ${topicsRes.statusText}` }, { status: 500 })
+            return Response.json(
+                { error: `Database Error: Failed to fetch topics. Status: ${topicsRes.statusText}` },
+                { status: 500 }
+            )
         }
 
         const topics = await topicsRes.json()

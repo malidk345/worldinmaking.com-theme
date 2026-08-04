@@ -177,7 +177,10 @@ const Row = ({
                                         </div>
                                     </div>
 
-                                    <div className="md:hidden text-primary dark:text-primary-dark text-sm font-medium opacity-60 line-clamp-2" suppressHydrationWarning>
+                                    <div
+                                        className="md:hidden text-primary dark:text-primary-dark text-sm font-medium opacity-60 line-clamp-2"
+                                        suppressHydrationWarning
+                                    >
                                         {dayjs(sortBy === 'activity' ? activeAt : createdAt).fromNow()}
                                     </div>
                                 </div>
@@ -197,7 +200,10 @@ const Row = ({
                         {numReplies}
                     </div>
                     <div className="hidden md:block md:col-span-3 text-sm font-normal text-secondary">
-                        <div className="text-primary dark:text-primary-dark font-medium opacity-60 line-clamp-2" suppressHydrationWarning>
+                        <div
+                            className="text-primary dark:text-primary-dark font-medium opacity-60 line-clamp-2"
+                            suppressHydrationWarning
+                        >
                             {dayjs(sortBy === 'activity' ? activeAt : createdAt).fromNow()} by{' '}
                             {profile.data?.attributes?.firstName} {profile.data?.attributes?.lastName} {}
                         </div>

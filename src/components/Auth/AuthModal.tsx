@@ -11,15 +11,8 @@ type AuthModalProps = {
     onSuccess?: () => void
 }
 
-export default function AuthModal({
-    isOpen,
-    onClose,
-    initialView = 'sign-in',
-    onSuccess,
-}: AuthModalProps) {
-    const [mode, setMode] = useState<'signin' | 'signup'>(
-        initialView === 'sign-up' ? 'signup' : 'signin'
-    )
+export default function AuthModal({ isOpen, onClose, initialView = 'sign-in', onSuccess }: AuthModalProps) {
+    const [mode, setMode] = useState<'signin' | 'signup'>(initialView === 'sign-up' ? 'signup' : 'signin')
     const [email, setEmail] = useState('')
     const [loading, setLoading] = useState(false)
     const [errorMsg, setErrorMsg] = useState<string | null>(null)

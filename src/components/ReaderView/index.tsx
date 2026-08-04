@@ -1,4 +1,4 @@
-import Image from "next/image"
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -78,7 +78,6 @@ import { DocsPageSurvey } from 'components/DocsPageSurvey'
 import CopyMarkdownActionsDropdown, { useMarkdownUrlExists } from 'components/MarkdownActionsDropdown'
 import { getVideoClasses } from 'constants'
 import AboutPostHog from 'components/AboutPostHog'
-
 
 const getProseClasses = (size?: any) => 'prose dark:prose-invert max-w-none'
 
@@ -344,7 +343,9 @@ const EditHistoryPopover = ({ commits }: { commits: any[] }) => {
                                 <p className="text-sm m-0">{commit.author.login}</p>
                             </Link>
                             <div className="flex items-center gap-2">
-                                <p className="text-xs opacity-60 m-0" suppressHydrationWarning>{dayjs(commit.date).fromNow()}</p>
+                                <p className="text-xs opacity-60 m-0" suppressHydrationWarning>
+                                    {dayjs(commit.date).fromNow()}
+                                </p>
                                 <Link href={commit.url} externalNoIcon>
                                     <IconPullRequest className="size-4" />
                                 </Link>
@@ -815,7 +816,8 @@ const SidebarSearchResults = ({
                     <ul className="list-none m-0 p-0">
                         {algoliaHits.map((hit: any) => (
                             <li key={hit.objectID}>
-                                <Link href={hit.fields?.slug || `/${hit.slug}`}
+                                <Link
+                                    href={hit.fields?.slug || `/${hit.slug}`}
                                     state={{ newWindow: true }}
                                     onClick={() => onResultClick?.()}
                                     className="block px-2 py-1.5 rounded hover:bg-accent transition-colors group"
@@ -1576,7 +1578,9 @@ function ReaderViewContent({
                         >
                             <article
                                 className={`reader-view-content-container @container/reader-content-container ${
-                                    typeof getProseClasses === 'function' ? getProseClasses(proseSize) : 'prose dark:prose-invert'
+                                    typeof getProseClasses === 'function'
+                                        ? getProseClasses(proseSize)
+                                        : 'prose dark:prose-invert'
                                 } max-w-none relative flex-1 min-w-0`}
                             >
                                 {header && (
@@ -1608,7 +1612,12 @@ function ReaderViewContent({
                                         <div className="not-prose mb-6 relative">
                                             <div className="text-center relative min-h-[300px]">
                                                 <Image
-                                                    src={body.featuredImage?.publicURL || body.featuredImage?.url || body.featuredImage || ''}
+                                                    src={
+                                                        body.featuredImage?.publicURL ||
+                                                        body.featuredImage?.url ||
+                                                        body.featuredImage ||
+                                                        ''
+                                                    }
                                                     alt={title}
                                                     className="rounded"
                                                     fill

@@ -74,7 +74,8 @@ export function Nav(props: NavProps): React.ReactElement {
                                                     <Listbox.Option
                                                         key={i}
                                                         className={({ active }) =>
-                                                            `relative select-none py-2 px-4 text-sm cursor-pointer hover:bg-accent ${active ? 'font-bold' : 'opacity-75'
+                                                            `relative select-none py-2 px-4 text-sm cursor-pointer hover:bg-accent ${
+                                                                active ? 'font-bold' : 'opacity-75'
                                                             }`
                                                         }
                                                         value={collection}
@@ -86,8 +87,9 @@ export function Nav(props: NavProps): React.ReactElement {
                                                         }) => (
                                                             <>
                                                                 <span
-                                                                    className={`block truncate ${currentCollection ? 'font-bold' : 'font-normal'
-                                                                        }`}
+                                                                    className={`block truncate ${
+                                                                        currentCollection ? 'font-bold' : 'font-normal'
+                                                                    }`}
                                                                 >
                                                                     {collection.title}
                                                                 </span>

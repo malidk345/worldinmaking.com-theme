@@ -78,7 +78,8 @@ export default function Questions({ location }: IProps) {
         <CommunityLayout menu={topicsNav} title="PostHog AI">
             <section className="max-w-screen-4xl space-y-8 pb-12 -mx-3 lg:-mx-4 xl:-mx-10">
                 <div className="w-full flex items-center">
-                    <Link href={backTo?.url || '/questions'}
+                    <Link
+                        href={backTo?.url || '/questions'}
                         className="inline-flex space-x-1 items-center relative px-2 pt-1.5 pb-1 mb-1 rounded border border-b-3 border-transparent hover:border hover:translate-y-[-1px] active:translate-y-[1px] active:transition-all"
                     >
                         <RightArrow className="-scale-x-100 w-6" />

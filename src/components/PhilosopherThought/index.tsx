@@ -65,9 +65,7 @@ export default function PhilosopherThought({
                         {philosopherName}'s AI Reasoning Steps ({steps.length})
                     </span>
                     {isLiveThinking && (
-                        <span style={{ fontSize: '0.7rem', color: '#1d4ed8', fontStyle: 'italic' }}>
-                            (Thinking...)
-                        </span>
+                        <span style={{ fontSize: '0.7rem', color: '#1d4ed8', fontStyle: 'italic' }}>(Thinking...)</span>
                     )}
                 </div>
                 <span>{isExpanded ? '▲' : '▼'}</span>

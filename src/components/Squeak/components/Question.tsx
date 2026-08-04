@@ -34,7 +34,10 @@ import { CallToAction } from 'components/CallToAction'
 import { Logo } from './Logo'
 import Avatar from './Avatar'
 import dynamic from 'next/dynamic'
-const DotLottiePlayer = dynamic(() => import('@dotlottie/react-player').then(m => ({ default: m.DotLottiePlayer })), { ssr: false, loading: () => null }) as any
+const DotLottiePlayer = dynamic(() => import('@dotlottie/react-player').then((m) => ({ default: m.DotLottiePlayer })), {
+    ssr: false,
+    loading: () => null,
+}) as any
 import EditWrapper from './EditWrapper'
 import ReportSpamButton from './ReportSpamButton'
 import OSButton from 'components/OSButton'
@@ -568,7 +571,8 @@ export function Question(props: QuestionProps) {
                         >
                             {questionData.attributes.subject && (
                                 <h3 className="text-base font-semibold !m-0 pb-1 leading-5">
-                                    <Link href={`/questions/${questionData.attributes.permalink}`}
+                                    <Link
+                                        href={`/questions/${questionData.attributes.permalink}`}
                                         className="!no-underline hover:!underline font-semibold"
                                     >
                                         {questionData.attributes.subject}
@@ -588,7 +592,8 @@ export function Question(props: QuestionProps) {
                             {!isEditingQuestion && showSlug && slugs?.length > 0 && slugs[0]?.slug !== '/questions' && (
                                 <p className="text-xs text-secondary pb-4 mb-0 mt-2">
                                     <span>Originally posted on</span>{' '}
-                                    <Link href={slugs[0]?.slug}
+                                    <Link
+                                        href={slugs[0]?.slug}
                                         className="text-secondary hover:underline hover:text-primary"
                                         state={{ newWindow: true }}
                                     >
@@ -630,7 +635,11 @@ export function Question(props: QuestionProps) {
                                 </h4>
                                 <div className="grid grid-cols-2">
                                     <div>
-                                        <Link href={`/profile/${questionData?.attributes?.profile?.data?.attributes?.username || questionData?.attributes?.profile?.data?.id}`}
+                                        <Link
+                                            href={`/profile/${
+                                                questionData?.attributes?.profile?.data?.attributes?.username ||
+                                                questionData?.attributes?.profile?.data?.id
+                                            }`}
                                             className="text-yellow font-bold"
                                         >
                                             {questionData?.attributes?.profile?.data?.attributes?.firstName
@@ -657,7 +666,8 @@ export function Question(props: QuestionProps) {
                                             >
                                                 View in PostHog
                                             </Link>
-                                            <Link href={`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/admin/content-manager/collection-types/api::question.question/${questionData.id}`}
+                                            <Link
+                                                href={`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/admin/content-manager/collection-types/api::question.question/${questionData.id}`}
                                                 externalNoIcon
                                                 className="font-bold"
                                             >
@@ -688,7 +698,8 @@ export function Question(props: QuestionProps) {
                                                     key={topic.id}
                                                     className="bg-white dark:bg-white/10 py-0.5 px-2 rounded-sm whitespace-nowrap mr-2 my-2 inline-flex items-center space-x-1.5"
                                                 >
-                                                    <Link href={`/questions/topic/${topic.attributes.slug}`}
+                                                    <Link
+                                                        href={`/questions/topic/${topic.attributes.slug}`}
                                                         className="text-yellow text-sm"
                                                     >
                                                         {topic.attributes.label}

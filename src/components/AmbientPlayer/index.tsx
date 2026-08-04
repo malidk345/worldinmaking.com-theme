@@ -118,10 +118,22 @@ export default function AmbientPlayer() {
 
     const eqAnimation = (
         <div className="flex items-end gap-[1px] h-3 mr-1 opacity-80">
-            <span className="w-[2px] bg-primary rounded-t-sm animate-[eq_0.8s_ease-in-out_infinite_alternate]" style={{ height: '30%' }} />
-            <span className="w-[2px] bg-primary rounded-t-sm animate-[eq_0.5s_ease-in-out_infinite_alternate]" style={{ height: '60%' }} />
-            <span className="w-[2px] bg-primary rounded-t-sm animate-[eq_1.2s_ease-in-out_infinite_alternate]" style={{ height: '40%' }} />
-            <span className="w-[2px] bg-primary rounded-t-sm animate-[eq_0.9s_ease-in-out_infinite_alternate]" style={{ height: '80%' }} />
+            <span
+                className="w-[2px] bg-primary rounded-t-sm animate-[eq_0.8s_ease-in-out_infinite_alternate]"
+                style={{ height: '30%' }}
+            />
+            <span
+                className="w-[2px] bg-primary rounded-t-sm animate-[eq_0.5s_ease-in-out_infinite_alternate]"
+                style={{ height: '60%' }}
+            />
+            <span
+                className="w-[2px] bg-primary rounded-t-sm animate-[eq_1.2s_ease-in-out_infinite_alternate]"
+                style={{ height: '40%' }}
+            />
+            <span
+                className="w-[2px] bg-primary rounded-t-sm animate-[eq_0.9s_ease-in-out_infinite_alternate]"
+                style={{ height: '80%' }}
+            />
         </div>
     )
 
@@ -139,8 +151,12 @@ export default function AmbientPlayer() {
         <>
             <style jsx global>{`
                 @keyframes eq {
-                    0% { height: 20%; }
-                    100% { height: 100%; }
+                    0% {
+                        height: 20%;
+                    }
+                    100% {
+                        height: 100%;
+                    }
                 }
             `}</style>
 
@@ -162,7 +178,9 @@ export default function AmbientPlayer() {
                                     <IconHeadphones className="size-5 text-primary animate-pulse" />
                                 </>
                             ) : (
-                                <IconHeadphones className={`size-5 ${hasError ? 'text-red opacity-60' : 'text-primary'}`} />
+                                <IconHeadphones
+                                    className={`size-5 ${hasError ? 'text-red opacity-60' : 'text-primary'}`}
+                                />
                             )}
                         </div>
                     </OSButton>
@@ -170,7 +188,11 @@ export default function AmbientPlayer() {
             >
                 <div className="flex flex-col items-center gap-1 p-2 max-w-56 text-center">
                     <p className="text-sm font-bold mb-0">
-                        {isPlaying ? '♪ Playing Focus Audio' : isLoading ? 'Connecting to Stream...' : 'Ambient Focus Audio'}
+                        {isPlaying
+                            ? '♪ Playing Focus Audio'
+                            : isLoading
+                            ? 'Connecting to Stream...'
+                            : 'Ambient Focus Audio'}
                     </p>
                     <p className="text-xs font-semibold text-primary mb-0 leading-tight">
                         {currentStation.name} ({currentStation.desc})

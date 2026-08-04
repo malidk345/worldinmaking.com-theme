@@ -33,13 +33,7 @@ export function LemonSegmentedButton<T extends React.Key>({
     className,
 }: LemonSegmentedButtonProps<T>): JSX.Element {
     return (
-        <div
-            className={clsx(
-                'LemonSegmentedButton',
-                fullWidth && 'LemonSegmentedButton--full-width',
-                className
-            )}
-        >
+        <div className={clsx('LemonSegmentedButton', fullWidth && 'LemonSegmentedButton--full-width', className)}>
             <ul>
                 {options.map((option) => {
                     const optionDisabledReason = option.disabledReason ?? disabledReason

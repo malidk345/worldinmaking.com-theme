@@ -162,15 +162,12 @@ export default function ProductAnalyticsLanding(): JSX.Element {
                                 autocapture, custom events, and dashboards tailored to your product. One command does it
                                 all:
                             </p>
-
                             null
-
                             <p>
                                 Autocapture is on by default. Pageviews, clicks, form submissions, and session data are
                                 tracked automatically the moment a user lands on your page. No manual event tagging
                                 required.
                             </p>
-
                             <p>
                                 Call <code>posthog.capture()</code> for custom events, or define events retroactively
                                 using{' '}
@@ -182,32 +179,26 @@ export default function ProductAnalyticsLanding(): JSX.Element {
                                 </Link>{' '}
                                 — no re-deploy needed.
                             </p>
-
                             <SingleCodeBlock language="javascript" showAskAI={false}>
                                 {`posthog.capture('signup_completed', { plan: 'pro' })`}
                             </SingleCodeBlock>
-
                             <h3>Or install the SDK directly</h3>
-
                             <List
                                 className="grid gap-4 grid-cols-2 @md:grid-cols-2 not-prose"
                                 items={sortedPlatforms.top}
                             />
-
                             {showMore && sortedPlatforms.rest.length > 0 && (
                                 <List
                                     className="grid gap-4 grid-cols-2 @md:grid-cols-2 not-prose mt-4"
                                     items={sortedPlatforms.rest}
                                 />
                             )}
-
                             <button
                                 onClick={() => setShowMore(!showMore)}
                                 className="mt-3 text-red dark:text-yellow font-semibold text-sm cursor-pointer hover:underline"
                             >
                                 {showMore ? 'Show less' : 'See more platforms'}
                             </button>
-
                             <div className="mt-4">
                                 <CallToAction type="primary" size="md" to="https://app.posthog.com/signup">
                                     Get started free
@@ -228,13 +219,9 @@ export default function ProductAnalyticsLanding(): JSX.Element {
                                 </Link>{' '}
                                 and ask questions about your product without opening a single dashboard.
                             </p>
-
                             <h3>Install in 30 seconds</h3>
-
                             <PlatformInstall variant="inline" command="mcp add" slim />
-
                             <h3>Try prompts like</h3>
-
                             <ul>
                                 <li>
                                     <em>"Why did sign-ups drop 12% last Tuesday?"</em>
@@ -261,11 +248,8 @@ export default function ProductAnalyticsLanding(): JSX.Element {
                                     </em>
                                 </li>
                             </ul>
-
                             null
-
                             <h3>Or use PostHog AI inside the app</h3>
-
                             <p>
                                 Can't find the right insight? Just ask.{' '}
                                 <Link to="/docs/posthog-ai" state={{ newWindow: true }}>
@@ -274,9 +258,7 @@ export default function ProductAnalyticsLanding(): JSX.Element {
                                 knows your data and can build dashboards, create retention curves, write SQL, and
                                 surface patterns you'd otherwise miss.
                             </p>
-
                             null
-
                             <div className="flex flex-wrap gap-2 mt-4">
                                 <CallToAction
                                     type="primary"
@@ -334,7 +316,6 @@ export default function ProductAnalyticsLanding(): JSX.Element {
                                 charts, correlation analysis, stickiness, and HogQL. Pick the right lens for any
                                 question.
                             </p>
-
                             <h3>Funnels</h3>
                             <p>
                                 See exactly where users drop off. Correlation analysis automatically surfaces what makes
@@ -342,21 +323,18 @@ export default function ProductAnalyticsLanding(): JSX.Element {
                                 session recordings for those exact users.
                             </p>
                             null
-
                             <h3>Trends</h3>
                             <p>
                                 Standard line and bar charts, plus formula mode for ratios like DAU/MAU. Break down by
                                 any property. Built-in sampling for billions of events, so you always get fast answers.
                             </p>
                             null
-
                             <h3>Retention</h3>
                             <p>
                                 Define what "return" means for your product and compare cohorts. Click any data point to
                                 see the actual users behind it — way more flexible than standard retention charts.
                             </p>
                             null
-
                             <h3>User paths</h3>
                             <p>
                                 See the actual routes users take through your product. Start anywhere, end anywhere. Use
@@ -364,7 +342,6 @@ export default function ProductAnalyticsLanding(): JSX.Element {
                                 never think to look for.
                             </p>
                             null
-
                             <h3>SQL</h3>
                             <p>
                                 Write HogQL queries directly against your event data. No separate data warehouse needed
@@ -372,7 +349,6 @@ export default function ProductAnalyticsLanding(): JSX.Element {
                                 need full power.
                             </p>
                             null
-
                             <div className="mt-4">
                                 <CallToAction
                                     type="primary"
@@ -394,7 +370,6 @@ export default function ProductAnalyticsLanding(): JSX.Element {
                                 PostHog is designed to be queried, not just watched. Here's how engineering teams
                                 actually use it:
                             </p>
-
                             <h3>
                                 <IconRewindPlay className="text-yellow w-7 -mt-1 inline-block" /> Funnels → Session
                                 Replay
@@ -404,9 +379,7 @@ export default function ProductAnalyticsLanding(): JSX.Element {
                                 exact users. See what they saw, what they clicked, and what confused them. No CSV
                                 export, no matching IDs.
                             </p>
-
                             null
-
                             <h3>
                                 <IconToggle className="text-seagreen w-7 -mt-1 inline-block" /> Feature flag + event
                                 targeting
@@ -419,9 +392,7 @@ export default function ProductAnalyticsLanding(): JSX.Element {
                                 and use product events as release conditions. Target your 10% power users, measure
                                 activation, and revert without a full deploy.
                             </p>
-
                             null
-
                             <h3>
                                 <IconDatabase className="text-purple w-7 -mt-1 inline-block" /> B2B group analytics
                             </h3>
@@ -429,9 +400,7 @@ export default function ProductAnalyticsLanding(): JSX.Element {
                                 Track metrics at the company or team level, not just individual users. Measure
                                 activation, retention, and churn by account — essential for B2B SaaS.
                             </p>
-
                             null
-
                             <div className="mt-4">
                                 <CallToAction type="primary" size="md" to="https://app.posthog.com/signup">
                                     Get started free

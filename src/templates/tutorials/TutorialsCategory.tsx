@@ -52,4 +52,3 @@ const TutorialsCategory = ({
 }
 
 export default TutorialsCategory
-

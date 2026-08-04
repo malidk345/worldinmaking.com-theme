@@ -1,14 +1,12 @@
 import React from 'react'
 import * as RadixRadioGroup from '@radix-ui/react-radio-group'
 
-const radioGroupItemClasses =
-    'group flex items-center gap-2 cursor-pointer'
+const radioGroupItemClasses = 'group flex items-center gap-2 cursor-pointer'
 
 const radioGroupIndicatorOuterClasses =
     'inline-block w-5 h-5 rounded-full border border-primary group-hover:border-orange flex items-center justify-center bg-primary'
 
-const radioGroupIndicatorInnerClasses =
-    'w-3 h-3 rounded-full block bg-orange border-orange'
+const radioGroupIndicatorInnerClasses = 'w-3 h-3 rounded-full block bg-orange border-orange'
 
 export interface RadioOption {
     label: string

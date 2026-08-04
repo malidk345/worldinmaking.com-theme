@@ -93,7 +93,6 @@ import PostEditorWindow from 'components/Community/PostEditorWindow'
 import PostListing from '../../templates/PostListing'
 import { fetchSupabasePostBySlug } from '../../lib/supabaseCommunity'
 
-
 function BlogRouteView(props: any) {
     const rawPath = props.path || ''
     const slugStr = rawPath.replace(/^\/(blog|posts)\/?/, '')
@@ -477,14 +476,20 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
     const toggleExpanded = () => {
         if (item.fixedSize) return
         const bounds = constraintsRef.current?.getBoundingClientRect()
-        const fullW = bounds ? bounds.width : (typeof window !== 'undefined' ? window.innerWidth - 16 : 1200)
-        const fullH = bounds ? bounds.height : (typeof window !== 'undefined' ? window.innerHeight - taskbarHeight : 800)
+        const fullW = bounds ? bounds.width : typeof window !== 'undefined' ? window.innerWidth - 16 : 1200
+        const fullH = bounds ? bounds.height : typeof window !== 'undefined' ? window.innerHeight - taskbarHeight : 800
 
         const isMax = item.expanded || (item.size.width >= fullW - 10 && item.size.height >= fullH - 10)
 
         if (isMax) {
-            const prevSize = item.previousSize || { width: Math.min(900, fullW * 0.8), height: Math.min(650, fullH * 0.8) }
-            const prevPos = item.previousPosition || { x: Math.max(0, (fullW - prevSize.width) / 2), y: Math.max(0, (fullH - prevSize.height) / 2) }
+            const prevSize = item.previousSize || {
+                width: Math.min(900, fullW * 0.8),
+                height: Math.min(650, fullH * 0.8),
+            }
+            const prevPos = item.previousPosition || {
+                x: Math.max(0, (fullW - prevSize.width) / 2),
+                y: Math.max(0, (fullH - prevSize.height) / 2),
+            }
             updateWindow(item, {
                 size: prevSize,
                 position: prevPos,
@@ -892,8 +897,14 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                     animate={{
                         scale: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.scale : 1,
                         opacity: 1,
-                        x: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.x : Math.round(position.x),
-                        y: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.y : Math.round(position.y),
+                        x:
+                            isActiveWindowsPanelOpen && missionControlLayout
+                                ? missionControlLayout.x
+                                : Math.round(position.x),
+                        y:
+                            isActiveWindowsPanelOpen && missionControlLayout
+                                ? missionControlLayout.y
+                                : Math.round(position.y),
                         width: size.width,
                         height: size.height,
                     }}

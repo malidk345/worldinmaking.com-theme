@@ -35,7 +35,11 @@ const Modal = ({
 
     if (!RadixDialog || !RadixDialog.Root) {
         if (!open) return trigger ? <div className={className}>{trigger}</div> : <></>
-        return <div className={`fixed inset-0 z-50 bg-black/50 flex items-center justify-center ${className}`}>{children}</div>
+        return (
+            <div className={`fixed inset-0 z-50 bg-black/50 flex items-center justify-center ${className}`}>
+                {children}
+            </div>
+        )
     }
 
     return (

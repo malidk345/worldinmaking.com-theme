@@ -1670,23 +1670,20 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         }
     }, [])
 
-    const safePush = useCallback(
-        (url: string, opts?: any) => {
-            try {
-                const r = routerRef.current
-                if (r && typeof r.push === 'function') {
-                    r.push(url, undefined, opts)
-                } else if (typeof window !== 'undefined') {
-                    window.location.href = url
-                }
-            } catch (e) {
-                if (typeof window !== 'undefined') {
-                    window.location.href = url
-                }
+    const safePush = useCallback((url: string, opts?: any) => {
+        try {
+            const r = routerRef.current
+            if (r && typeof r.push === 'function') {
+                r.push(url, undefined, opts)
+            } else if (typeof window !== 'undefined') {
+                window.location.href = url
             }
-        },
-        []
-    )
+        } catch (e) {
+            if (typeof window !== 'undefined') {
+                window.location.href = url
+            }
+        }
+    }, [])
 
     const [compact, setCompact] = useState(false)
     const constraintsRef = useRef<HTMLDivElement>(null)
@@ -1724,9 +1721,17 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         let queryString = ''
         try {
             if (location?.search) {
-                queryString = typeof location.search === 'string' ? (typeof location?.search === 'string' ? location.search.substring(1) : '') : ''
+                queryString =
+                    typeof location.search === 'string'
+                        ? typeof location?.search === 'string'
+                            ? location.search.substring(1)
+                            : ''
+                        : ''
             } else if (location?.href) {
-                const urlObj = new URL(location.href, typeof window !== 'undefined' ? window.location.origin : 'https://posthog.com')
+                const urlObj = new URL(
+                    location.href,
+                    typeof window !== 'undefined' ? window.location.origin : 'https://posthog.com'
+                )
                 queryString = urlObj?.search.substring(1)
             }
         } catch {
@@ -1761,7 +1766,9 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
     // Hydrate client-only state before first paint to avoid layout flash
     useIsomorphicLayoutEffect(() => {
         const compactValue = window !== window.parent
-        const isMobileValue = window.innerWidth < 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+        const isMobileValue =
+            window.innerWidth < 768 ||
+            /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
         setCompact(compactValue)
         setIsMobile(isMobileValue)
         setSiteSettings(getInitialSiteSettings())
@@ -1823,7 +1830,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         if (savedWindows.length === 0) return undefined
 
         // Preserve existing query parameters from the current URL
-        const currentParams = qs.parse((typeof location?.search === 'string' ? location.search.substring(1) : ''))
+        const currentParams = qs.parse(typeof location?.search === 'string' ? location.search.substring(1) : '')
         const allParams = {
             ...currentParams,
             windows: savedWindows,
@@ -1922,7 +1929,12 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                     const newMinimized = isTarget ? false : el.minimized
                     const newLocation = isTarget ? location || el.location : el.location
 
-                    if (!isTarget && newZIndex === el.zIndex && newMinimized === el.minimized && newLocation === el.location) {
+                    if (
+                        !isTarget &&
+                        newZIndex === el.zIndex &&
+                        newMinimized === el.minimized &&
+                        newLocation === el.location
+                    ) {
                         return el
                     }
 
@@ -1977,12 +1989,16 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
 
     const setWindowTitle = useCallback((itemOrKey: string | AppWindow, title: string) => {
         const key = typeof itemOrKey === 'string' ? itemOrKey : itemOrKey?.key || itemOrKey?.path
-        setWindows((windows) => windows.map((w) => (w.key === key || w.path === key || w === itemOrKey ? { ...w, meta: { title } } : w)))
+        setWindows((windows) =>
+            windows.map((w) => (w.key === key || w.path === key || w === itemOrKey ? { ...w, meta: { title } } : w))
+        )
     }, [])
 
     const minimizeWindow = useCallback((itemOrKey: string | AppWindow) => {
         const key = typeof itemOrKey === 'string' ? itemOrKey : itemOrKey?.key || itemOrKey?.path
-        setWindows((windows) => windows.map((w) => (w.key === key || w.path === key || w === itemOrKey ? { ...w, minimized: true } : w)))
+        setWindows((windows) =>
+            windows.map((w) => (w.key === key || w.path === key || w === itemOrKey ? { ...w, minimized: true } : w))
+        )
     }, [])
 
     function getWindowBasedSizeConstraints() {
@@ -2098,7 +2114,17 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         if (isSSR) {
             return [createNewWindow(element, [], location, isSSR, taskbarHeight)]
         }
-        let urlObj: URL | null = null; try { if (location?.href) { urlObj = new URL(location.href, typeof window !== 'undefined' ? window.location.origin : 'https://posthog.com') } } catch { urlObj = null }
+        let urlObj: URL | null = null
+        try {
+            if (location?.href) {
+                urlObj = new URL(
+                    location.href,
+                    typeof window !== 'undefined' ? window.location.origin : 'https://posthog.com'
+                )
+            }
+        } catch {
+            urlObj = null
+        }
         const contact = urlObj?.searchParams.get('contact')
         if (contact) {
             const initialWindowSize = { width: window.innerWidth * 0.58, height: window.innerHeight * 0.8 }
@@ -2144,22 +2170,15 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 taskbarHeight,
                 { zIndex: 1 }
             )
-            const authWindow = createNewWindow(
-                element,
-                [],
-                location,
-                isSSR,
-                taskbarHeight,
-                {
-                    size: formWindowSize,
-                    position: {
-                        x: isSSR ? 100 : (window.innerWidth - formWindowSize.width) / 2,
-                        y: isSSR ? 50 : Math.max(20, (window.innerHeight - formWindowSize.height - taskbarHeight) / 2),
-                    },
-                    zIndex: 2,
-                    windowed: true,
-                }
-            )
+            const authWindow = createNewWindow(element, [], location, isSSR, taskbarHeight, {
+                size: formWindowSize,
+                position: {
+                    x: isSSR ? 100 : (window.innerWidth - formWindowSize.width) / 2,
+                    y: isSSR ? 50 : Math.max(20, (window.innerHeight - formWindowSize.height - taskbarHeight) / 2),
+                },
+                zIndex: 2,
+                windowed: true,
+            })
             return [bgWindow, authWindow]
         }
         return [createNewWindow(element, [], location, isSSR, taskbarHeight)]
@@ -2219,8 +2238,12 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 !settings?.modal)
         const shouldExpand = isMobileClient
         const bounds = constraintsRef.current?.getBoundingClientRect()
-        const fullW = bounds ? bounds.width : (typeof window !== 'undefined' ? window.innerWidth - 16 : 1200)
-        const fullH = bounds ? bounds.height : (typeof window !== 'undefined' ? window.innerHeight - taskbarHeight - 16 : 800)
+        const fullW = bounds ? bounds.width : typeof window !== 'undefined' ? window.innerWidth - 16 : 1200
+        const fullH = bounds
+            ? bounds.height
+            : typeof window !== 'undefined'
+            ? window.innerHeight - taskbarHeight - 16
+            : 800
 
         const finalSize = shouldExpand ? { width: fullW, height: fullH } : size
         const finalPos = shouldExpand ? { x: 0, y: 0 } : position
@@ -2281,11 +2304,14 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
     }
 
     const updatePages = (element: WindowElement) => {
-        const targetPath = element?.props?.location?.pathname || location?.pathname || (typeof window !== 'undefined' ? window.location.pathname : '/')
+        const targetPath =
+            element?.props?.location?.pathname ||
+            location?.pathname ||
+            (typeof window !== 'undefined' ? window.location.pathname : '/')
         const targetLocation = element?.props?.location || location
         const existingWindow = windows.find((w) => w.path === targetPath)
         const newWindow = createNewWindow(element, windows, location, isSSR, taskbarHeight)
-        
+
         const isMobileClient =
             typeof window !== 'undefined' &&
             (window.innerWidth < 768 ||
@@ -2322,7 +2348,10 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
 
         const isForumPath = (p: string) =>
             typeof p === 'string' &&
-            (/^\/questions/.test(p) || (p.startsWith('/community') && !p.startsWith('/community/profiles') && !p.startsWith('/community/achievements')))
+            (/^\/questions/.test(p) ||
+                (p.startsWith('/community') &&
+                    !p.startsWith('/community/profiles') &&
+                    !p.startsWith('/community/achievements')))
         const key = item.key || item.path
         const path = item.path || '/'
 
@@ -2357,11 +2386,15 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 (window.innerWidth < 768 ||
                     /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))
             const bounds = constraintsRef.current?.getBoundingClientRect()
-            const fullW = bounds ? bounds.width : (typeof window !== 'undefined' ? window.innerWidth - 16 : 1200)
-            const fullH = bounds ? bounds.height : (typeof window !== 'undefined' ? window.innerHeight - taskbarHeight - 16 : 800)
+            const fullW = bounds ? bounds.width : typeof window !== 'undefined' ? window.innerWidth - 16 : 1200
+            const fullH = bounds
+                ? bounds.height
+                : typeof window !== 'undefined'
+                ? window.innerHeight - taskbarHeight - 16
+                : 800
 
-            const size = isMobileClient ? { width: fullW, height: fullH } : (item.size || { width: 900, height: 650 })
-            const position = isMobileClient ? { x: 0, y: 0 } : (item.position || getPositionDefaults(key, size, prev))
+            const size = isMobileClient ? { width: fullW, height: fullH } : item.size || { width: 900, height: 650 }
+            const position = isMobileClient ? { x: 0, y: 0 } : item.position || getPositionDefaults(key, size, prev)
             const maxZ = Math.max(...prev.map((w) => w.zIndex), 0)
 
             const newWin: AppWindow = {
@@ -2613,7 +2646,17 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
     useEffect(() => {
         if (!location?.href) return
         try {
-            let urlObj: URL | null = null; try { if (location?.href) { urlObj = new URL(location.href, typeof window !== 'undefined' ? window.location.origin : 'https://posthog.com') } } catch { urlObj = null }
+            let urlObj: URL | null = null
+            try {
+                if (location?.href) {
+                    urlObj = new URL(
+                        location.href,
+                        typeof window !== 'undefined' ? window.location.origin : 'https://posthog.com'
+                    )
+                }
+            } catch {
+                urlObj = null
+            }
             const queryString = urlObj?.search?.substring(1)
             const parsed = qs.parse(queryString)
             if (parsed?.windows || location?.state?.skipPageUpdate) {
@@ -2972,7 +3015,17 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
     useEffect(() => {
         if (isSSR) return
 
-        let urlObj: URL | null = null; try { if (location?.href) { urlObj = new URL(location.href, typeof window !== 'undefined' ? window.location.origin : 'https://posthog.com') } } catch { urlObj = null }
+        let urlObj: URL | null = null
+        try {
+            if (location?.href) {
+                urlObj = new URL(
+                    location.href,
+                    typeof window !== 'undefined' ? window.location.origin : 'https://posthog.com'
+                )
+            }
+        } catch {
+            urlObj = null
+        }
         const queryString = urlObj?.search.substring(1)
         const parsed = qs.parse(queryString)
         const paramsWindows = parsed?.windows
@@ -3001,7 +3054,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             if (!nextWindow) return
 
             // Preserve query parameters from current URL when navigating to next window
-            const currentParams = qs.parse((typeof location?.search === 'string' ? location.search.substring(1) : ''))
+            const currentParams = qs.parse(typeof location?.search === 'string' ? location.search.substring(1) : '')
             delete currentParams.windows
             const currentQueryString =
                 Object.keys(currentParams).length > 0 ? `?${qs.stringify(currentParams, { encode: false })}` : ''

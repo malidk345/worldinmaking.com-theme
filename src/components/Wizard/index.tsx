@@ -8,11 +8,7 @@ interface WizardProps {
     rightNavigation?: React.ReactNode
 }
 
-export function Wizard({
-    leftNavigation,
-    rightNavigation,
-    navigationPosition = 'bottom',
-}: WizardProps) {
+export function Wizard({ leftNavigation, rightNavigation, navigationPosition = 'bottom' }: WizardProps) {
     return (
         <div data-scheme="primary" className="w-full h-full bg-primary flex flex-col text-primary">
             {navigationPosition === 'top' && (

@@ -11,37 +11,37 @@
  *   3. If all retries fail, publish with a `quality_flag` so editors can review.
  */
 
-import type { BotPersona, TaskType } from './persona-engine';
+import type { BotPersona, TaskType } from './persona-engine'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface QualityReport {
     /** True if the text passed all quality checks (or was auto-corrected). */
-    passed: boolean;
+    passed: boolean
     /** 0–100 composite score. */
-    score: number;
+    score: number
     /** Human-readable list of detected issues. */
-    issues: string[];
+    issues: string[]
     /** The corrected body if auto-correction changed the text. */
-    correctedBody: string;
+    correctedBody: string
     /** True if correction was applied (body differs from input). */
-    wasCorrected: boolean;
+    wasCorrected: boolean
     /** True if all retries were exhausted and the text is still below threshold. */
-    flaggedForReview: boolean;
+    flaggedForReview: boolean
 }
 
 export interface QualityGateOptions {
     /** Maximum allowed words in the output body. */
-    wordBudget?: number;
+    wordBudget?: number
     /** Minimum quality score to pass without retry (0–100). Default 60. */
-    passThreshold?: number;
+    passThreshold?: number
     /** Maximum correction retry attempts. Default 2. */
-    maxRetries?: number;
+    maxRetries?: number
     /**
      * A function that calls the AI with a correction prompt and returns
      * the corrected text. Injected by callers to avoid circular deps.
      */
-    correctionFn?: (correctionPrompt: string) => Promise<string>;
+    correctionFn?: (correctionPrompt: string) => Promise<string>
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -72,14 +72,14 @@ const FILLER_PATTERNS: RegExp[] = [
     /\bfeel free to\b/i,
     /\bdon'?t hesitate to\b/i,
     /\bdelve into\b/i,
-    /\bunpack\b/i,          // Common AI buzzword
-    /\bnavigate\b/i,        // Overused in AI outputs
-    /\blandscape\b/i,       // "the philosophical landscape"
-    /\btapestry\b/i,        // "a tapestry of ideas"
+    /\bunpack\b/i, // Common AI buzzword
+    /\bnavigate\b/i, // Overused in AI outputs
+    /\blandscape\b/i, // "the philosophical landscape"
+    /\btapestry\b/i, // "a tapestry of ideas"
     /\bpivotal\b/i,
     /\bgroundbreaking\b/i,
     /\bseamlessly\b/i,
-];
+]
 
 /** Turkish AI filler phrases (community bots sometimes slip into Turkish). */
 const TURKISH_FILLER_PATTERNS: RegExp[] = [
@@ -91,53 +91,53 @@ const TURKISH_FILLER_PATTERNS: RegExp[] = [
     /\bharika bir noktaya değindin\b/i,
     /\bkesinlikle katılıyorum\b/i,
     /\byapay zeka olarak\b/i,
-];
+]
 
 // ─── Individual Checks ────────────────────────────────────────────────────────
 
 function countWords(text: string): number {
-    return text.trim().split(/\s+/).filter(Boolean).length;
+    return text.trim().split(/\s+/).filter(Boolean).length
 }
 
 function checkWordBudget(body: string, budget: number): string | null {
-    const count = countWords(body);
+    const count = countWords(body)
     if (count > budget) {
-        return `Word budget exceeded: ${count}/${budget} words.`;
+        return `Word budget exceeded: ${count}/${budget} words.`
     }
-    return null;
+    return null
 }
 
 function checkFillerLanguage(body: string): string[] {
-    const issues: string[] = [];
+    const issues: string[] = []
     for (const pattern of [...FILLER_PATTERNS, ...TURKISH_FILLER_PATTERNS]) {
         if (pattern.test(body)) {
-            issues.push(`Filler language detected: "${pattern.source}"`);
+            issues.push(`Filler language detected: "${pattern.source}"`)
         }
     }
-    return issues;
+    return issues
 }
 
 function checkHeadingSpam(body: string): string | null {
-    const words = countWords(body);
-    const headings = (body.match(/^#{1,6}\s+/gm) || []).length;
+    const words = countWords(body)
+    const headings = (body.match(/^#{1,6}\s+/gm) || []).length
     // More than 1 heading per 80 words is heading spam
-    const threshold = Math.max(2, Math.floor(words / 80));
+    const threshold = Math.max(2, Math.floor(words / 80))
     if (headings > threshold) {
-        return `Heading spam: ${headings} headings in ${words} words (max ${threshold}).`;
+        return `Heading spam: ${headings} headings in ${words} words (max ${threshold}).`
     }
-    return null;
+    return null
 }
 
 function checkEmojiPresence(body: string): string | null {
-    const emojiRegex = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{27BF}]|[\u{2300}-\u{23FF}]/u;
+    const emojiRegex = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{27BF}]|[\u{2300}-\u{23FF}]/u
     if (emojiRegex.test(body)) {
-        return 'Emoji detected — must be removed.';
+        return 'Emoji detected — must be removed.'
     }
-    return null;
+    return null
 }
 
 function checkMinimumLength(body: string, task: TaskType): string | null {
-    const wordCount = countWords(body);
+    const wordCount = countWords(body)
     const minimums: Partial<Record<TaskType, number>> = {
         community_reply: 30,
         paper_section: 150,
@@ -147,34 +147,34 @@ function checkMinimumLength(body: string, task: TaskType): string | null {
         synthesis: 200,
         thread_init: 50,
         fact_critique: 60,
-    };
-    const minimum = minimums[task] ?? 30;
-    if (wordCount < minimum) {
-        return `Response too short: ${wordCount} words (minimum ${minimum} for task "${task}").`;
     }
-    return null;
+    const minimum = minimums[task] ?? 30
+    if (wordCount < minimum) {
+        return `Response too short: ${wordCount} words (minimum ${minimum} for task "${task}").`
+    }
+    return null
 }
 
 function checkPersonaForbiddenWords(body: string, persona: BotPersona): string[] {
-    const issues: string[] = [];
+    const issues: string[] = []
     // Only check persona-specific forbidden patterns (not universal ones — already in FILLER_PATTERNS)
     const personaSpecific = persona.forbiddenPatterns.filter(
-        p => !FILLER_PATTERNS.some(fp => fp.source.includes(p.toLowerCase().slice(0, 8)))
-    );
+        (p) => !FILLER_PATTERNS.some((fp) => fp.source.includes(p.toLowerCase().slice(0, 8)))
+    )
     for (const forbidden of personaSpecific.slice(0, 20)) {
-        const regex = new RegExp(`\\b${forbidden.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+        const regex = new RegExp(`\\b${forbidden.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i')
         if (regex.test(body)) {
-            issues.push(`Persona-breaking word: "${forbidden}"`);
+            issues.push(`Persona-breaking word: "${forbidden}"`)
         }
     }
-    return issues;
+    return issues
 }
 
 function checkOutputNotEmpty(body: string): string | null {
     if (!body || body.trim().length < 10) {
-        return 'Output body is empty or too short to be valid.';
+        return 'Output body is empty or too short to be valid.'
     }
-    return null;
+    return null
 }
 
 // ─── Score Calculation ────────────────────────────────────────────────────────
@@ -184,19 +184,19 @@ function checkOutputNotEmpty(body: string): string | null {
  * Penalties are weighted by severity.
  */
 function calculateScore(issues: string[]): number {
-    let score = 100;
+    let score = 100
 
     for (const issue of issues) {
-        if (issue.includes('empty')) score -= 50;
-        else if (issue.includes('Word budget exceeded')) score -= 20;
-        else if (issue.includes('too short')) score -= 25;
-        else if (issue.includes('Emoji')) score -= 15;
-        else if (issue.includes('Heading spam')) score -= 10;
-        else if (issue.includes('Filler language')) score -= 5;
-        else if (issue.includes('Persona-breaking')) score -= 5;
+        if (issue.includes('empty')) score -= 50
+        else if (issue.includes('Word budget exceeded')) score -= 20
+        else if (issue.includes('too short')) score -= 25
+        else if (issue.includes('Emoji')) score -= 15
+        else if (issue.includes('Heading spam')) score -= 10
+        else if (issue.includes('Filler language')) score -= 5
+        else if (issue.includes('Persona-breaking')) score -= 5
     }
 
-    return Math.max(0, score);
+    return Math.max(0, score)
 }
 
 // ─── Auto-Correction (rule-based) ────────────────────────────────────────────
@@ -206,31 +206,37 @@ function calculateScore(issues: string[]): number {
  * Returns the corrected text and a list of corrections applied.
  */
 function applyRuleBasedCorrections(body: string): { text: string; corrections: string[] } {
-    let text = body;
-    const corrections: string[] = [];
+    let text = body
+    const corrections: string[] = []
 
     // Remove emojis
-    const emojiRegex = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{27BF}]|[\u{2300}-\u{23FF}]/gu;
+    const emojiRegex = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{27BF}]|[\u{2300}-\u{23FF}]/gu
     if (emojiRegex.test(text)) {
-        text = text.replace(emojiRegex, '').replace(/\s{2,}/g, ' ').trim();
-        corrections.push('Removed emojis');
+        text = text
+            .replace(emojiRegex, '')
+            .replace(/\s{2,}/g, ' ')
+            .trim()
+        corrections.push('Removed emojis')
     }
 
     // Strip universal filler phrases
     for (const pattern of [...FILLER_PATTERNS, ...TURKISH_FILLER_PATTERNS]) {
         if (pattern.test(text)) {
-            text = text.replace(pattern, '').replace(/\s{2,}/g, ' ').trim();
-            corrections.push(`Stripped filler: ${pattern.source}`);
+            text = text
+                .replace(pattern, '')
+                .replace(/\s{2,}/g, ' ')
+                .trim()
+            corrections.push(`Stripped filler: ${pattern.source}`)
         }
     }
 
     // Collapse 3+ consecutive newlines to 2
-    text = text.replace(/\n{3,}/g, '\n\n');
+    text = text.replace(/\n{3,}/g, '\n\n')
 
     // Trim leading/trailing whitespace
-    text = text.trim();
+    text = text.trim()
 
-    return { text, corrections };
+    return { text, corrections }
 }
 
 // ─── Main Gate ────────────────────────────────────────────────────────────────
@@ -249,48 +255,43 @@ export async function runQualityGate(
     task: TaskType,
     options: QualityGateOptions = {}
 ): Promise<QualityReport> {
-    const {
-        wordBudget = getDefaultWordBudget(task),
-        passThreshold = 60,
-        maxRetries = 2,
-        correctionFn,
-    } = options;
+    const { wordBudget = getDefaultWordBudget(task), passThreshold = 60, maxRetries = 2, correctionFn } = options
 
-    let currentBody = body;
-    let retryCount = 0;
+    let currentBody = body
+    let retryCount = 0
 
     while (retryCount <= maxRetries) {
         // Step 1: Apply cheap rule-based corrections first
-        const { text: ruleFixed, corrections } = applyRuleBasedCorrections(currentBody);
+        const { text: ruleFixed, corrections } = applyRuleBasedCorrections(currentBody)
         if (corrections.length > 0) {
-            currentBody = ruleFixed;
+            currentBody = ruleFixed
         }
 
         // Step 2: Run all checks
-        const issues: string[] = [];
+        const issues: string[] = []
 
-        const emptyCheck = checkOutputNotEmpty(currentBody);
-        if (emptyCheck) issues.push(emptyCheck);
+        const emptyCheck = checkOutputNotEmpty(currentBody)
+        if (emptyCheck) issues.push(emptyCheck)
 
-        const budgetCheck = checkWordBudget(currentBody, wordBudget);
-        if (budgetCheck) issues.push(budgetCheck);
+        const budgetCheck = checkWordBudget(currentBody, wordBudget)
+        if (budgetCheck) issues.push(budgetCheck)
 
-        const minLengthCheck = checkMinimumLength(currentBody, task);
-        if (minLengthCheck) issues.push(minLengthCheck);
+        const minLengthCheck = checkMinimumLength(currentBody, task)
+        if (minLengthCheck) issues.push(minLengthCheck)
 
-        const emojiCheck = checkEmojiPresence(currentBody);
-        if (emojiCheck) issues.push(emojiCheck);
+        const emojiCheck = checkEmojiPresence(currentBody)
+        if (emojiCheck) issues.push(emojiCheck)
 
-        const headingCheck = checkHeadingSpam(currentBody);
-        if (headingCheck) issues.push(headingCheck);
+        const headingCheck = checkHeadingSpam(currentBody)
+        if (headingCheck) issues.push(headingCheck)
 
-        const fillerIssues = checkFillerLanguage(currentBody);
-        issues.push(...fillerIssues);
+        const fillerIssues = checkFillerLanguage(currentBody)
+        issues.push(...fillerIssues)
 
-        const personaIssues = checkPersonaForbiddenWords(currentBody, persona);
-        issues.push(...personaIssues);
+        const personaIssues = checkPersonaForbiddenWords(currentBody, persona)
+        issues.push(...personaIssues)
 
-        const score = calculateScore(issues);
+        const score = calculateScore(issues)
 
         // Step 3: Pass?
         if (score >= passThreshold) {
@@ -301,45 +302,53 @@ export async function runQualityGate(
                 correctedBody: currentBody,
                 wasCorrected: currentBody !== body,
                 flaggedForReview: false,
-            };
+            }
         }
 
         // Step 4: Retry via LLM correction if function is provided and retries remain
         if (retryCount < maxRetries && correctionFn && score < passThreshold) {
-            const prompt = buildCorrectionPrompt(currentBody, persona, task, issues);
+            const prompt = buildCorrectionPrompt(currentBody, persona, task, issues)
             try {
-                const corrected = await correctionFn(prompt);
-                currentBody = corrected.trim();
-                console.log(`[QualityGate] Retry ${retryCount + 1}/${maxRetries} for @${persona.name}. Score was ${score}.`);
+                const corrected = await correctionFn(prompt)
+                currentBody = corrected.trim()
+                console.log(
+                    `[QualityGate] Retry ${retryCount + 1}/${maxRetries} for @${persona.name}. Score was ${score}.`
+                )
             } catch (e) {
-                console.warn(`[QualityGate] Correction LLM call failed on retry ${retryCount + 1}:`, e);
-                break;
+                console.warn(`[QualityGate] Correction LLM call failed on retry ${retryCount + 1}:`, e)
+                break
             }
         } else {
-            break;
+            break
         }
 
-        retryCount++;
+        retryCount++
     }
 
     // All retries exhausted — calculate final score and flag for review
-    const finalIssues: string[] = [];
-    const emptyCheck = checkOutputNotEmpty(currentBody);
-    if (emptyCheck) finalIssues.push(emptyCheck);
-    const budgetCheck = checkWordBudget(currentBody, wordBudget);
-    if (budgetCheck) finalIssues.push(budgetCheck);
-    const minLengthCheck = checkMinimumLength(currentBody, task);
-    if (minLengthCheck) finalIssues.push(minLengthCheck);
-    const emojiCheck = checkEmojiPresence(currentBody);
-    if (emojiCheck) finalIssues.push(emojiCheck);
-    const headingCheck = checkHeadingSpam(currentBody);
-    if (headingCheck) finalIssues.push(headingCheck);
-    finalIssues.push(...checkFillerLanguage(currentBody));
-    finalIssues.push(...checkPersonaForbiddenWords(currentBody, persona));
+    const finalIssues: string[] = []
+    const emptyCheck = checkOutputNotEmpty(currentBody)
+    if (emptyCheck) finalIssues.push(emptyCheck)
+    const budgetCheck = checkWordBudget(currentBody, wordBudget)
+    if (budgetCheck) finalIssues.push(budgetCheck)
+    const minLengthCheck = checkMinimumLength(currentBody, task)
+    if (minLengthCheck) finalIssues.push(minLengthCheck)
+    const emojiCheck = checkEmojiPresence(currentBody)
+    if (emojiCheck) finalIssues.push(emojiCheck)
+    const headingCheck = checkHeadingSpam(currentBody)
+    if (headingCheck) finalIssues.push(headingCheck)
+    finalIssues.push(...checkFillerLanguage(currentBody))
+    finalIssues.push(...checkPersonaForbiddenWords(currentBody, persona))
 
-    const finalScore = calculateScore(finalIssues);
+    const finalScore = calculateScore(finalIssues)
 
-    console.warn(`[QualityGate] @${persona.name} / task "${task}" flagged for review. Final score: ${finalScore}/100. Issues: ${finalIssues.slice(0, 3).join(' | ')}`);
+    console.warn(
+        `[QualityGate] @${
+            persona.name
+        } / task "${task}" flagged for review. Final score: ${finalScore}/100. Issues: ${finalIssues
+            .slice(0, 3)
+            .join(' | ')}`
+    )
 
     return {
         passed: false,
@@ -348,7 +357,7 @@ export async function runQualityGate(
         correctedBody: currentBody,
         wasCorrected: currentBody !== body,
         flaggedForReview: true,
-    };
+    }
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -367,22 +376,20 @@ export function getDefaultWordBudget(task: TaskType): number {
         third_voice: 350,
         synthesis: 600,
         fact_critique: 200,
-    };
-    return budgets[task] ?? 200;
+    }
+    return budgets[task] ?? 200
 }
 
 /**
  * Builds a targeted correction prompt for the LLM.
  * Tells the model exactly what is wrong and what to fix.
  */
-function buildCorrectionPrompt(
-    originalBody: string,
-    persona: BotPersona,
-    task: TaskType,
-    issues: string[]
-): string {
-    const budget = getDefaultWordBudget(task);
-    const issueList = issues.slice(0, 5).map(i => `- ${i}`).join('\n');
+function buildCorrectionPrompt(originalBody: string, persona: BotPersona, task: TaskType, issues: string[]): string {
+    const budget = getDefaultWordBudget(task)
+    const issueList = issues
+        .slice(0, 5)
+        .map((i) => `- ${i}`)
+        .join('\n')
 
     return `You are @${persona.name}. The following text has quality issues that must be fixed.
 
@@ -400,7 +407,7 @@ CORRECTION RULES:
 - Write as @${persona.name}: ${persona.epistemicStance}
 - Do NOT add an introduction or explanation — output only the corrected text
 
-CORRECTED TEXT:`;
+CORRECTED TEXT:`
 }
 
 /**
@@ -414,11 +421,13 @@ export async function validateAndReturn(
     task: TaskType,
     options: QualityGateOptions = {}
 ): Promise<string> {
-    const report = await runQualityGate(body, persona, task, options);
+    const report = await runQualityGate(body, persona, task, options)
 
     if (report.flaggedForReview) {
-        console.warn(`[QualityGate] Publishing flagged content for @${persona.name} (score: ${report.score}). Review recommended.`);
+        console.warn(
+            `[QualityGate] Publishing flagged content for @${persona.name} (score: ${report.score}). Review recommended.`
+        )
     }
 
-    return report.correctedBody;
+    return report.correctedBody
 }

@@ -2,7 +2,8 @@ import React, { forwardRef, useRef, useState } from 'react'
 import clsx from 'clsx'
 import { IconSearch, IconX } from '@posthog/icons'
 
-export interface LemonInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'size' | 'prefix' | 'type'> {
+export interface LemonInputProps
+    extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'size' | 'prefix' | 'type'> {
     type?: 'text' | 'email' | 'search' | 'url' | 'password' | 'number' | 'time'
     value?: string | number
     defaultValue?: string
@@ -92,9 +93,7 @@ export const LemonInput = forwardRef<HTMLDivElement, LemonInputProps>(function L
                     <IconX style={{ width: 14, height: 14 }} />
                 </span>
             )}
-            {suffix && !allowClear && (
-                <span className="LemonInput__suffix">{suffix}</span>
-            )}
+            {suffix && !allowClear && <span className="LemonInput__suffix">{suffix}</span>}
         </div>
     )
 })

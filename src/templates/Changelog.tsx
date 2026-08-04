@@ -270,7 +270,8 @@ const Roadmap = ({
                         {roadmap.media?.gatsbyImageData && (
                             <div className="mt-4 px-4 not-prose">
                                 <ZoomImage>
-                                    <CloudinaryImage image={roadmap.media.gatsbyImageData}
+                                    <CloudinaryImage
+                                        image={roadmap.media.gatsbyImageData}
                                         alt={roadmap.title}
                                         className="rounded"
                                     />
@@ -289,7 +290,8 @@ const Roadmap = ({
                                         .join(' ')
                                     const team = profile.attributes?.teams?.data?.[0]
                                     return (
-                                        <Link href={`/community/profiles/${profile.id}`}
+                                        <Link
+                                            href={`/community/profiles/${profile.id}`}
                                             state={{ newWindow: true }}
                                             key={profile.id}
                                             className="group flex gap-2 items-center justify-between !no-underline"
@@ -819,7 +821,7 @@ export default function Changelog({
     }
 
     const filteredData = useMemo(() => {
-        let filtered = (data?.allRoadmap?.nodes || [])
+        let filtered = data?.allRoadmap?.nodes || []
 
         if (teamFilter !== 'all') {
             filtered = filtered.filter((roadmap: RoadmapNode) =>
@@ -834,7 +836,7 @@ export default function Changelog({
         }
 
         return filtered
-    }, [teamFilter, categoryFilter, (data?.allRoadmap?.nodes || [])])
+    }, [teamFilter, categoryFilter, data?.allRoadmap?.nodes || []])
 
     const roadmapsGrouped = useMemo(() => {
         const grouped: {

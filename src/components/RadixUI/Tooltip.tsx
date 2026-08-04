@@ -59,8 +59,13 @@ const Tooltip = ({
 }
 
 export const TooltipProvider = ({ children, delayDuration = 300, ...props }: any) => {
-    const ProviderComponent = (RadixTooltip && RadixTooltip.Provider) ? RadixTooltip.Provider : (({ children }: any) => <>{children}</>)
-    return <ProviderComponent delayDuration={delayDuration} {...props}>{children}</ProviderComponent>
+    const ProviderComponent =
+        RadixTooltip && RadixTooltip.Provider ? RadixTooltip.Provider : ({ children }: any) => <>{children}</>
+    return (
+        <ProviderComponent delayDuration={delayDuration} {...props}>
+            {children}
+        </ProviderComponent>
+    )
 }
 export { Tooltip }
 export default Tooltip

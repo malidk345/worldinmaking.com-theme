@@ -2,7 +2,8 @@ import React from 'react'
 import { section, SectionHeader } from './Sections'
 import { IconStarFilled, IconStar } from '@posthog/icons'
 import Link from 'components/Link'
-const graphql = (s) => s; const useStaticQuery = () => ({});
+const graphql = (s) => s
+const useStaticQuery = () => ({})
 
 import { DebugContainerQuery } from 'components/DebugContainerQuery'
 

@@ -1,7 +1,10 @@
 import React from 'react'
 import Link from 'components/Link'
 import dynamic from 'next/dynamic'
-const DotLottiePlayer = dynamic(() => import('@dotlottie/react-player').then(m => ({ default: m.DotLottiePlayer })), { ssr: false, loading: () => null }) as any
+const DotLottiePlayer = dynamic(() => import('@dotlottie/react-player').then((m) => ({ default: m.DotLottiePlayer })), {
+    ssr: false,
+    loading: () => null,
+}) as any
 import { IconBold, IconMusicEighthNote } from 'components/OSIcons'
 import NoHatingAllowed from 'components/NoHatingAllowed'
 import { HomepageCards } from 'components/NoHatingAllowed/data'

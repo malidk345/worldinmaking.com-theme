@@ -103,7 +103,9 @@ const KeyboardGarden = () => (
 const CustomProWallpaper = () => (
     <>
         {/* Light Mode Wallpaper */}
-        <div className={`absolute inset-0 bg-gradient-to-br from-[#F8FAFC] via-[#F1F5F9] to-[#E2E8F0] opacity-100 dark:opacity-0 ${FADE_OPACITY}`}>
+        <div
+            className={`absolute inset-0 bg-gradient-to-br from-[#F8FAFC] via-[#F1F5F9] to-[#E2E8F0] opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
+        >
             <div
                 className="absolute inset-0 opacity-50 pointer-events-none"
                 style={{

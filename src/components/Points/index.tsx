@@ -44,7 +44,8 @@ export default function Points() {
                     </div>
                 )}
                 <div className="text-right !mt-1">
-                    <Link href="/community/achievements"
+                    <Link
+                        href="/community/achievements"
                         className="text-sm font-semibold text-red dark:text-yellow leading-none"
                         state={{ newWindow: true }}
                     >

@@ -59,7 +59,8 @@ export const SmallTeams = () => {
                                 >
                                     <div className="size-8">
                                         {gatsbyImageMiniCrest ? (
-                                            <CloudinaryImage image={gatsbyImageMiniCrest}
+                                            <CloudinaryImage
+                                                image={gatsbyImageMiniCrest}
                                                 alt={`${name} Team`}
                                                 className="size-8"
                                             />

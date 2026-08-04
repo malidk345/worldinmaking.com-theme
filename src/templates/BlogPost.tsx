@@ -279,9 +279,11 @@ const Filters = ({ tag, setTag, sort, setSort, activeMenu }) => {
     ) : null
 }
 export default function BlogPost({ data = {}, pageContext = {}, mobile = false }: any) {
-    const rawPostData = data?.postData?.post || data?.postData || (pageContext as any)?.post || (pageContext as any)?.postData || {}
+    const rawPostData =
+        data?.postData?.post || data?.postData || (pageContext as any)?.post || (pageContext as any)?.postData || {}
     const postData = rawPostData?.attributes ? { ...rawPostData.attributes, ...rawPostData } : rawPostData
-    const body = postData?.attributes?.body || postData?.attributes?.content || postData?.body || postData?.content || ''
+    const body =
+        postData?.attributes?.body || postData?.attributes?.content || postData?.body || postData?.content || ''
     const excerpt = postData?.excerpt || postData?.attributes?.excerpt || ''
     const fields = postData?.fields || {}
     const frontmatter = postData?.frontmatter || postData?.attributes || postData || {}

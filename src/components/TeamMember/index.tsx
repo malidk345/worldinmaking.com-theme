@@ -33,7 +33,8 @@ export const TeamMemberLink = ({
     children?: JSX.Element
 }): JSX.Element => {
     const displayName = showOnlyFirstName ? firstName : [firstName, lastName].filter(Boolean).join(' ')
-    const avatarUrl = (avatar as any)?.formats?.thumbnail?.url || (avatar as any)?.url || (typeof avatar === 'string' ? avatar : null)
+    const avatarUrl =
+        (avatar as any)?.formats?.thumbnail?.url || (avatar as any)?.url || (typeof avatar === 'string' ? avatar : null)
 
     // The invisible block is necessary to make sure we have the proper width
     // with the `relative inline-block` parent when we include a photo

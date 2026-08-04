@@ -11,11 +11,7 @@ export interface LemonDividerProps {
 
 export function LemonDivider({ thick, vertical, dashed, className, label }: LemonDividerProps): JSX.Element {
     if (label) {
-        return (
-            <div className={clsx('LemonDivider', 'LemonDivider--label', className)}>
-                {label}
-            </div>
-        )
+        return <div className={clsx('LemonDivider', 'LemonDivider--label', className)}>{label}</div>
     }
     return (
         <hr

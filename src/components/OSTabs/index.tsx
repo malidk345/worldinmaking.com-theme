@@ -197,22 +197,24 @@ export default function OSTabs({
                 className={`flex ${orientation === 'vertical' ? 'flex-row' : 'flex-col'} flex-grow min-h-0`}
             >
                 <div
-                    className={`flex flex-col border-b border-border dark:border-border-dark ${
-                        padding ? 'px-4' : ''
-                    } ${tabContainerClassName || ''}`}
+                    className={`flex flex-col border-b border-border dark:border-border-dark ${padding ? 'px-4' : ''} ${
+                        tabContainerClassName || ''
+                    }`}
                 >
                     {orderedTabs.map((row, rowIndex) => (
                         <div key={rowIndex} className="flex items-center justify-between">
                             <Tabs.List
-                                className={`flex ${
-                                    orientation === 'vertical' ? 'flex-col' : 'flex-row'
-                                } ${centerTabs ? 'justify-center' : ''} ${tabsClassName}`}
+                                className={`flex ${orientation === 'vertical' ? 'flex-col' : 'flex-row'} ${
+                                    centerTabs ? 'justify-center' : ''
+                                } ${tabsClassName}`}
                             >
                                 {row.map((tab) => (
                                     <Tabs.Trigger
                                         key={tab.value}
                                         value={tab.value}
-                                        className={`px-4 py-2 font-medium text-sm border-b-2 border-transparent data-[state=active]:border-red dark:data-[state=active]:border-red data-[state=active]:font-bold ${tabTriggerClassName || ''}`}
+                                        className={`px-4 py-2 font-medium text-sm border-b-2 border-transparent data-[state=active]:border-red dark:data-[state=active]:border-red data-[state=active]:font-bold ${
+                                            tabTriggerClassName || ''
+                                        }`}
                                     >
                                         {tab.label}
                                     </Tabs.Trigger>

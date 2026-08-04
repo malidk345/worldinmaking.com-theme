@@ -133,17 +133,11 @@ export default function PostHogMCPLanding(): JSX.Element {
                                 PostHog MCP for you. The Wizard analyzes your codebase and automagically sets up the
                                 right tools, custom events, and dashboards for your product. All it takes is one line:
                             </p>
-
-                            null
-
-                            null
-
+                            null null
                             <p className="!mb-2">
                                 <strong>Already using PostHog and just want to add the MCP?</strong>
                             </p>
-
                             <PlatformInstall variant="inline" command="mcp add" slim />
-
                             <div className="mt-4">
                                 <CallToAction
                                     type="primary"
@@ -164,7 +158,6 @@ export default function PostHogMCPLanding(): JSX.Element {
                                 Once you connect to the PostHog MCP server, see how Hogpilled your agent has become. For
                                 example:
                             </p>
-
                             <ul>
                                 <li>
                                     <em>"Why did sign-ups drop 12% last Tuesday?"</em>
@@ -187,24 +180,18 @@ export default function PostHogMCPLanding(): JSX.Element {
                                     </em>
                                 </li>
                             </ul>
-
                             <p>
                                 The agent pulls from your real events, builds the insight, and explains what it found.
                                 You stay in your IDE or CLI. No context switching, no dashboard archaeology.
                             </p>
-
                             null
-
                             <ul>
                                 <li>Works with Claude, Cursor, Windsurf, and any MCP-compatible client</li>
                                 <li>HogQL (our SQL) and the UI insight builder are there when you need them</li>
                                 <li>Full audit log of every query run on your data, by humans or agents</li>
                             </ul>
-
                             <p>If you use any of the following PostHog products, you're going to love our MCP.</p>
-
                             null
-
                             <div className="mt-4">
                                 <CallToAction
                                     type="primary"
@@ -226,9 +213,7 @@ export default function PostHogMCPLanding(): JSX.Element {
                                 The PostHog MCP server gives your AI coding agent direct access to PostHog analytics.
                                 Query trends, funnels, retention, and custom HogQL – all from your code editor.
                             </p>
-
                             <p>With the PostHog MCP, you can:</p>
-
                             <ul>
                                 <li>
                                     <strong>Check feature performance before making code changes</strong> – "How many
@@ -247,9 +232,7 @@ export default function PostHogMCPLanding(): JSX.Element {
                                     users broken down by plan. Then, create a report."
                                 </li>
                             </ul>
-
                             null
-
                             <div className="mt-4">
                                 <CallToAction
                                     type="primary"
@@ -316,11 +299,8 @@ export default function PostHogMCPLanding(): JSX.Element {
                                 You've found the problem. Now ship the fix behind a flag, measured, and A/B tested. Just
                                 ask your agent to do it.
                             </p>
-
                             null
-
                             <p>With the PostHog MCP, you can:</p>
-
                             <ul>
                                 <li>
                                     <strong>Create flags while building features</strong> – "Create a flag called
@@ -335,7 +315,6 @@ export default function PostHogMCPLanding(): JSX.Element {
                                     statistically significant yet?"
                                 </li>
                             </ul>
-
                             <div className="mt-4">
                                 <CallToAction
                                     type="primary"

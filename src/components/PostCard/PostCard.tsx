@@ -60,7 +60,8 @@ const FeaturedPost = ({ post, authorDetails }: { post: PostTypeWithImage; author
     )
     return (
         <div className="w-full my-8">
-            <Link href={post.fields.slug}
+            <Link
+                href={post.fields.slug}
                 className="text-gray-100 hover:text-gray-100 dark:text-gray-100 dark:hover:text-gray-100"
             >
                 <div
@@ -176,7 +177,8 @@ const PostCard = ({
                             <div className="w-full rounded mb-3 overflow-hidden flex items-center justify-center">
                                 <Link href={post.fields.slug} className="featured-post-img overflow-hidden">
                                     {gatsbyImageData ? (
-                                        <CloudinaryImage className="w-full rounded-md"
+                                        <CloudinaryImage
+                                            className="w-full rounded-md"
                                             image={gatsbyImageData}
                                             alt={post.excerpt}
                                         />

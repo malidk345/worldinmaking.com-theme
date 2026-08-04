@@ -268,14 +268,17 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onSubmit }) => {
                 },
             }
 
-            const { data } = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles/${id}?populate=avatar`, {
-                method: 'PUT',
-                body: JSON.stringify(body),
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${JWT}`,
-                },
-            }).then((res) => res.json())
+            const { data } = await fetch(
+                `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles/${id}?populate=avatar`,
+                {
+                    method: 'PUT',
+                    body: JSON.stringify(body),
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${JWT}`,
+                    },
+                }
+            ).then((res) => res.json())
 
             if (data) {
                 await fetchUser(JWT)

@@ -30,14 +30,24 @@ export interface SupabaseCommunityReply {
     }
 }
 
-export async function fetchSupabaseCommunityPosts(slug?: string, postId?: number | string): Promise<SupabaseCommunityPost[]> {
+export async function fetchSupabaseCommunityPosts(
+    slug?: string,
+    postId?: number | string
+): Promise<SupabaseCommunityPost[]> {
     let url = `${SUPABASE_URL}/rest/v1/community_posts?select=id,title,content,created_at,view_count,author_id,profiles(id,username,avatar_url)&order=created_at.desc`
     if (postId || (slug && !isNaN(Number(slug)))) {
         const idToUse = postId || slug
         url += `&id=eq.${idToUse}`
     } else if (slug) {
-        const words = slug.replace(/[^a-zA-Z0-9\s-]/g, '').split(/[-_\s]+/).filter((w) => w.length > 2).slice(0, 3).join('%')
-        url += `&or=(post_slug.eq.${encodeURIComponent(slug)},title.ilike.*${encodeURIComponent(words)}*,title.ilike.comment_${encodeURIComponent(slug)}_*)`
+        const words = slug
+            .replace(/[^a-zA-Z0-9\s-]/g, '')
+            .split(/[-_\s]+/)
+            .filter((w) => w.length > 2)
+            .slice(0, 3)
+            .join('%')
+        url += `&or=(post_slug.eq.${encodeURIComponent(slug)},title.ilike.*${encodeURIComponent(
+            words
+        )}*,title.ilike.comment_${encodeURIComponent(slug)}_*)`
     } else {
         url += `&title=not.ilike.comment_*`
     }
@@ -57,7 +67,7 @@ export function formatSupabaseCommunityToStrapi(post: SupabaseCommunityPost) {
         'https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/pages-content/images/hog-9.png'
 
     const isComment = post.title?.startsWith('comment_')
-    const displayTitle = isComment ? '' : (post.title || 'Community Discussion')
+    const displayTitle = isComment ? '' : post.title || 'Community Discussion'
 
     return {
         id: post.id,

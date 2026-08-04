@@ -60,10 +60,7 @@ export function getBlogPost(slug: string): { frontmatter: Record<string, any>; c
     }
 
     try {
-        const possibleFiles = [
-            path.join(BLOG_DIR, `${slug}.mdx`),
-            path.join(BLOG_DIR, `${slug}.md`),
-        ]
+        const possibleFiles = [path.join(BLOG_DIR, `${slug}.mdx`), path.join(BLOG_DIR, `${slug}.md`)]
         for (const filePath of possibleFiles) {
             if (fs.existsSync(filePath)) {
                 const raw = fs.readFileSync(filePath, 'utf8')

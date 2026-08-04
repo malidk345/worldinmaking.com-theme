@@ -45,10 +45,10 @@ export function LemonCollapse<K extends React.Key>({
 }: LemonCollapseProps<K>): JSX.Element {
     const isMultiple = props.multiple === true
     const [localActiveKey, setLocalActiveKey] = useState<K | null>(
-        !isMultiple ? ((props as LemonCollapsePropsSingle<K>).defaultActiveKey ?? null) : null
+        !isMultiple ? (props as LemonCollapsePropsSingle<K>).defaultActiveKey ?? null : null
     )
     const [localActiveKeys, setLocalActiveKeys] = useState<Set<K>>(
-        new Set(isMultiple ? ((props as LemonCollapsePropsMultiple<K>).defaultActiveKeys ?? []) : [])
+        new Set(isMultiple ? (props as LemonCollapsePropsMultiple<K>).defaultActiveKeys ?? [] : [])
     )
 
     let isPanelExpanded: (key: K) => boolean

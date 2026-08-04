@@ -133,7 +133,7 @@ export default function SdkReference({ pageContext, data }: { pageContext: PageC
     const sdkLanguage = getLanguageFromSdkId(fullReference.info.id)
     const validTypes = pageContext.types
 
-    const sdkVersions = (data?.allSdkReferences?.nodes || [])
+    const sdkVersions = data?.allSdkReferences?.nodes || []
 
     // Get versions for current referenceId
     const currentReferenceId = fullReference.info.id
@@ -380,4 +380,3 @@ export default function SdkReference({ pageContext, data }: { pageContext: PageC
         </ReaderView>
     )
 }
-

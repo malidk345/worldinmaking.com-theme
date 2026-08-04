@@ -6,7 +6,9 @@ import { IContributor } from './types'
 import { Image, Transformation } from 'cloudinary-react'
 
 const isCloudinaryImage = (url: string): boolean => {
-    const cloudinaryUrlPattern = new RegExp(`https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/`)
+    const cloudinaryUrlPattern = new RegExp(
+        `https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/`
+    )
     return cloudinaryUrlPattern.test(url)
 }
 
@@ -37,7 +39,8 @@ export const ContributorImageSmall = ({ image, name, className = '', imgClassNam
                     <img className={`rounded-full ${imgClassName}`} src={image} />
                 )
             ) : gatsbyImage ? (
-                <CloudinaryImage imgClassName={`rounded-full ${imgClassName}`}
+                <CloudinaryImage
+                    imgClassName={`rounded-full ${imgClassName}`}
                     image={gatsbyImage}
                     alt={name}
                     className=""
@@ -80,7 +83,8 @@ export const ContributorImage = ({ image, name, compact, rounded }) => {
                     src={image}
                 />
             ) : gatsbyImage ? (
-                <CloudinaryImage image={gatsbyImage}
+                <CloudinaryImage
+                    image={gatsbyImage}
                     alt={name}
                     className={compact ? 'absolute w-full h-full object-cover' : 'w-24 h-24'}
                 />

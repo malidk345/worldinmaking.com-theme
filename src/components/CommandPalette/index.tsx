@@ -1,14 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-    IconSearch,
-    IconX,
-    IconDocument,
-    IconMinus,
-    IconSparkles,
-    IconArrowRight,
-    IconApps,
-} from '@posthog/icons'
+import { IconSearch, IconX, IconDocument, IconMinus, IconSparkles, IconArrowRight, IconApps } from '@posthog/icons'
 import { useApp, useAppActions, useAppWindows } from '../../context/App'
 import { fetchSupabasePosts, SupabasePost } from '../../lib/supabaseBlog'
 
@@ -53,9 +45,7 @@ export default function CommandPalette() {
         const lower = q.toLowerCase()
         return posts
             .filter(
-                (p) =>
-                    p.title.toLowerCase().includes(lower) ||
-                    (p.category && p.category.toLowerCase().includes(lower))
+                (p) => p.title.toLowerCase().includes(lower) || (p.category && p.category.toLowerCase().includes(lower))
             )
             .slice(0, 5)
     }
@@ -200,9 +190,7 @@ export default function CommandPalette() {
                                             }}
                                             onMouseEnter={() => setSelectedIndex(idx)}
                                             className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-colors lowercase ${
-                                                isSelected
-                                                    ? 'bg-blue text-white'
-                                                    : 'hover:bg-primary/5 text-primary'
+                                                isSelected ? 'bg-blue text-white' : 'hover:bg-primary/5 text-primary'
                                             }`}
                                         >
                                             <div className="flex items-center gap-2.5 truncate">

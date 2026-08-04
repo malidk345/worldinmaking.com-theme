@@ -3,8 +3,17 @@ import clsx from 'clsx'
 import { IconX } from '@posthog/icons'
 
 export type LemonTagType =
-    | 'primary' | 'option' | 'highlight' | 'warning' | 'danger'
-    | 'success' | 'default' | 'muted' | 'completion' | 'caution' | 'none'
+    | 'primary'
+    | 'option'
+    | 'highlight'
+    | 'warning'
+    | 'danger'
+    | 'success'
+    | 'default'
+    | 'muted'
+    | 'completion'
+    | 'caution'
+    | 'none'
 
 export interface LemonTagProps {
     type?: LemonTagType
@@ -20,18 +29,7 @@ export interface LemonTagProps {
 }
 
 export const LemonTag = forwardRef<HTMLDivElement, LemonTagProps>(function LemonTag(
-    {
-        type = 'default',
-        children,
-        size,
-        icon,
-        closable,
-        onClose,
-        onClick,
-        className,
-        title,
-        ...rest
-    },
+    { type = 'default', children, size, icon, closable, onClose, onClick, className, title, ...rest },
     ref
 ) {
     return (
@@ -54,7 +52,10 @@ export const LemonTag = forwardRef<HTMLDivElement, LemonTagProps>(function Lemon
             {closable && (
                 <span
                     style={{ display: 'flex', alignItems: 'center', marginLeft: 2, cursor: 'pointer' }}
-                    onClick={(e) => { e.stopPropagation(); onClose?.() }}
+                    onClick={(e) => {
+                        e.stopPropagation()
+                        onClose?.()
+                    }}
                 >
                     <IconX style={{ width: 10, height: 10 }} />
                 </span>

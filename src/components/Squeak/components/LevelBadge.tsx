@@ -90,7 +90,8 @@ export function LevelBadge({ points, pointsOnly, tooltip = true }: LevelBadgePro
             open={tooltip ? undefined : false}
             className="flex"
         >
-            <Link href="/community/reputation"
+            <Link
+                href="/community/reputation"
                 className="text-xs font-semibold text-red dark:text-yellow"
                 state={{ newWindow: true }}
             >

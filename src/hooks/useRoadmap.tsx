@@ -39,6 +39,5 @@ type RoadmapData = {
 export const useRoadmap = (): Team[] => {
     const data = useStaticQuery<RoadmapData>(query)
 
-    return (data?.allSqueakTeam?.nodes || [])
+    return data?.allSqueakTeam?.nodes || []
 }
-

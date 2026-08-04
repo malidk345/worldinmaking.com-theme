@@ -7,8 +7,7 @@ import productAnalyticsContent from './ProductAnalytics'
 import sessionReplayContent from './SessionReplay'
 import featureFlagsContent from './FeatureFlags'
 import abTestingContent from './ABTesting'
-import Link from "components/Link"
-
+import Link from 'components/Link'
 
 const content = {
     'product os': productOSContent,

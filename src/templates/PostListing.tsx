@@ -281,7 +281,10 @@ export default function Posts({ pageContext = {} }: { pageContext?: any }) {
                                     {
                                         content: (
                                             <div className="flex justify-between items-start w-full">
-                                                <Link className="font-semibold flex-1 text-[14.5px] leading-relaxed" to={post.attributes?.slug || '#'}>
+                                                <Link
+                                                    className="font-semibold flex-1 text-[14.5px] leading-relaxed"
+                                                    to={post.attributes?.slug || '#'}
+                                                >
                                                     {post.attributes?.title}
                                                 </Link>
                                                 {featuredImageURL ? (
@@ -297,12 +300,10 @@ export default function Posts({ pageContext = {} }: { pageContext?: any }) {
                                         content: (
                                             <ul className="list-none m-0 p-0 flex flex-wrap gap-1">
                                                 {(post.attributes?.authors?.data || []).map((author: any) => {
-                                                    const name = [
-                                                        author.attributes?.firstName,
-                                                        author.attributes?.lastName,
-                                                    ]
-                                                        .filter(Boolean)
-                                                        .join(' ') || 'Author'
+                                                    const name =
+                                                        [author.attributes?.firstName, author.attributes?.lastName]
+                                                            .filter(Boolean)
+                                                            .join(' ') || 'Author'
                                                     return (
                                                         <li key={author.id || name}>
                                                             <TeamMember name={name} photo />

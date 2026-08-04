@@ -177,30 +177,24 @@ export default function AIObservabilityLanding(): JSX.Element {
                                 Drop-in SDK wrappers sit in front of your existing LLM calls. Your code barely changes.
                                 Inputs, outputs, tokens, cost, latency, model, and provider are captured automatically.
                             </p>
-
                             null
-
                             <h3>Or pick your model directly</h3>
-
                             <List
                                 className="grid gap-4 grid-cols-2 @md:grid-cols-2 not-prose"
                                 items={sortedPlatforms.top}
                             />
-
                             {showMore && sortedPlatforms.rest.length > 0 && (
                                 <List
                                     className="grid gap-4 grid-cols-2 @md:grid-cols-2 not-prose mt-4"
                                     items={sortedPlatforms.rest}
                                 />
                             )}
-
                             <button
                                 onClick={() => setShowMore(!showMore)}
                                 className="mt-3 text-red dark:text-yellow font-semibold text-sm cursor-pointer hover:underline"
                             >
                                 {showMore ? 'Show less' : 'See all integrations'}
                             </button>
-
                             <div className="mt-4">
                                 <CallToAction
                                     type="primary"
@@ -267,7 +261,6 @@ export default function AIObservabilityLanding(): JSX.Element {
                                 Each LLM call becomes a <strong>generation</strong> — a full record of what went in and
                                 what came out, with token counts, automatic cost calculation, and latency attached.
                             </p>
-
                             <ul>
                                 <li>Full conversation context — the complete message array, roles and all</li>
                                 <li>
@@ -276,9 +269,7 @@ export default function AIObservabilityLanding(): JSX.Element {
                                 <li>Response latency, model name, provider, and any tools called</li>
                                 <li>Enrichable with user IDs, groups, and custom properties</li>
                             </ul>
-
                             null
-
                             <div className="mt-4">
                                 <CallToAction
                                     type="primary"
@@ -300,9 +291,7 @@ export default function AIObservabilityLanding(): JSX.Element {
                                 First generation in, dashboard on. Costs by model, active users, latency trends, error
                                 rates — all pre-built. Fully customizable when you need more.
                             </p>
-
                             null
-
                             <div className="mt-4">
                                 <CallToAction type="primary" size="md" to="https://app.posthog.com/ai-observability">
                                     Open the dashboard
@@ -320,9 +309,7 @@ export default function AIObservabilityLanding(): JSX.Element {
                                 <strong>spans</strong>, and link traces into <strong>sessions</strong>. The full
                                 hierarchy for agentic workflows, RAG pipelines, and multi-turn conversations.
                             </p>
-
                             null
-
                             <div className="mt-4">
                                 <CallToAction
                                     type="primary"

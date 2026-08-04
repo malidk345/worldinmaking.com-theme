@@ -1,8 +1,8 @@
-"use client"
+'use client'
 
 import React, { useState } from 'react'
 import ScrollArea from 'components/RadixUI/ScrollArea'
-import { IconDocument, IconFolder, IconFolderOpen } from '@posthog/icons';
+import { IconDocument, IconFolder, IconFolderOpen } from '@posthog/icons'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const MOCK_DOSSIERS = [
@@ -15,7 +15,7 @@ const MOCK_DOSSIERS = [
             { id: 'f1', title: 'The Algorithm as an Architect', date: '2025-01-12' },
             { id: 'f2', title: 'Feedback Loops in Social Media', date: '2024-11-05' },
             { id: 'f3', title: 'Norbert Wiener Revisited', date: '2024-10-22' },
-        ]
+        ],
     },
     {
         id: 'd2',
@@ -25,7 +25,7 @@ const MOCK_DOSSIERS = [
         files: [
             { id: 'f4', title: 'Why Everything Looks the Same', date: '2025-03-01' },
             { id: 'f5', title: 'Brutalism is Back', date: '2025-02-14' },
-        ]
+        ],
     },
     {
         id: 'd3',
@@ -35,8 +35,8 @@ const MOCK_DOSSIERS = [
         files: [
             { id: 'f6', title: 'Pair Programming with Ghosts', date: '2025-05-10' },
             { id: 'f7', title: 'The End of the Junior Developer?', date: '2025-04-20' },
-        ]
-    }
+        ],
+    },
 ]
 
 export default function CuratedDossiers() {
@@ -53,14 +53,14 @@ export default function CuratedDossiers() {
                 </div>
                 <ScrollArea className="flex-1 p-3 custom-scrollbar">
                     <div className="space-y-1.5">
-                        {MOCK_DOSSIERS.map(dossier => (
+                        {MOCK_DOSSIERS.map((dossier) => (
                             <button
                                 key={dossier.id}
                                 onClick={() => setActiveDossier(dossier.id)}
                                 className={`w-full text-left px-3 py-2.5 rounded-[14px] flex items-center gap-2 text-xs font-semibold transition-all ${
                                     activeDossier === dossier.id
-                                    ? 'bg-black/10 dark:bg-white/10 text-primary border border-black/10 dark:border-white/10'
-                                    : 'hover:bg-black/5 dark:hover:bg-white/5 text-secondary hover:text-primary'
+                                        ? 'bg-black/10 dark:bg-white/10 text-primary border border-black/10 dark:border-white/10'
+                                        : 'hover:bg-black/5 dark:hover:bg-white/5 text-secondary hover:text-primary'
                                 }`}
                             >
                                 {activeDossier === dossier.id ? (
@@ -94,16 +94,16 @@ export default function CuratedDossiers() {
                             <div className="mb-6 pb-4 border-b border-black/5 dark:border-white/5">
                                 <h2 className="text-xl md:text-2xl font-bold tracking-tight text-primary mb-2 flex items-center gap-3">
                                     <IconFolderOpen className="size-6 text-primary" />
-                                    {MOCK_DOSSIERS.find(d => d.id === activeDossier)?.title}
+                                    {MOCK_DOSSIERS.find((d) => d.id === activeDossier)?.title}
                                 </h2>
                                 <p className="text-xs md:text-sm text-secondary/80 leading-relaxed">
-                                    {MOCK_DOSSIERS.find(d => d.id === activeDossier)?.description}
+                                    {MOCK_DOSSIERS.find((d) => d.id === activeDossier)?.description}
                                 </p>
                             </div>
 
                             {/* Dossier Files */}
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {MOCK_DOSSIERS.find(d => d.id === activeDossier)?.files.map(file => (
+                                {MOCK_DOSSIERS.find((d) => d.id === activeDossier)?.files.map((file) => (
                                     <div
                                         key={file.id}
                                         className="group bg-white/60 dark:bg-[#121214]/60 backdrop-blur-xl border border-black/5 dark:border-white/5 rounded-[24px] shadow-sm p-5 hover:border-black/15 dark:hover:border-white/15 transition-all cursor-pointer"
@@ -132,7 +132,9 @@ export default function CuratedDossiers() {
                     <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
                         <IconFolder className="size-12 mb-3 text-secondary/30" />
                         <h3 className="text-sm font-bold text-primary mb-1">No Dossier Selected</h3>
-                        <p className="text-xs text-secondary/70 max-w-sm leading-relaxed">Select a dossier from the sidebar to view your curated collections.</p>
+                        <p className="text-xs text-secondary/70 max-w-sm leading-relaxed">
+                            Select a dossier from the sidebar to view your curated collections.
+                        </p>
                     </div>
                 )}
             </div>

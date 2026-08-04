@@ -12,7 +12,9 @@ export default function IdeasHub() {
             <div className="max-w-6xl mx-auto space-y-6">
                 <div className="border-b border-primary/20 pb-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-3xl font-extrabold tracking-tight mb-1">WorldInMaking Blueprints & Ideas</h1>
+                        <h1 className="text-3xl font-extrabold tracking-tight mb-1">
+                            WorldInMaking Blueprints & Ideas
+                        </h1>
                         <p className="text-sm opacity-70">
                             Curated dossiers, ephemeral transmissions, research marginalia, and atmospheric signals.
                         </p>

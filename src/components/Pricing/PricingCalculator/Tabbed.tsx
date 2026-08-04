@@ -3,8 +3,9 @@ import Tooltip from 'components/Tooltip'
 import { IconCopy, IconInfo, IconLightBulb } from '@posthog/icons'
 import Toggle from 'components/Toggle'
 import { calculatePrice, formatUSD } from '../PricingSlider/pricingSliderLogic'
-import Link from "components/Link"
-const graphql = (s) => s; const useStaticQuery = () => ({});
+import Link from 'components/Link'
+const graphql = (s) => s
+const useStaticQuery = () => ({})
 
 import { allProductsData } from '../Pricing'
 import useProducts from 'hooks/useProducts'

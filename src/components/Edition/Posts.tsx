@@ -43,7 +43,8 @@ const Questions = ({ questions }: { questions: Omit<StrapiResult<QuestionData[]>
                 } = question
                 return (
                     <li className="text-yellow mt-4 first:mt-0" key={id}>
-                        <Link href={`/questions/${permalink}`}
+                        <Link
+                            href={`/questions/${permalink}`}
                             className="dark:text-yellow dark:hover:text-yellow text-red hover:text-red"
                         >
                             <span className="flex justify-between items-center">
@@ -358,7 +359,9 @@ export default function Posts({
     const [sort, setSort] = useState(getSortOption(root).label)
     const [tag, setTag] = useState(initialTag)
     const [prev, setPrev] = useState<string | null>(null)
-    const [activeMenu, setActiveMenu] = useState(menu.find(({ url }) => url?.split('/')[1] === safePathname.split('/')[1]))
+    const [activeMenu, setActiveMenu] = useState(
+        menu.find(({ url }) => url?.split('/')[1] === safePathname.split('/')[1])
+    )
     const [layoutMenu, setLayoutMenu] = useState(
         menusByRoot[root] || {
             parent: communityMenu,

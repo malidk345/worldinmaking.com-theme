@@ -139,4 +139,3 @@ export default function Pipeline({ data, pageContext: { next, previous } }) {
         </Layout>
     )
 }
-

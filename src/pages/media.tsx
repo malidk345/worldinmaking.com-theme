@@ -26,20 +26,19 @@ export default function Media({ data }: MediaProps) {
                     description: 'Media resources and press information',
                 }}
             >
-                    <MDXProvider
-                        components={{ a: (props) => <Link {...props} state={{ newWindow: true }} />, ...shortcodes }}
-                    >
-                        {data?.mdx?.body ? (
-                            <>{data.mdx.body}</>
-                        ) : (
-                            <div className="prose dark:prose-invert">
-                                <h1>Media & Press</h1>
-                                <p>Brand assets, press info, and media kits for PostHog.</p>
-                            </div>
-                        )}
-                    </MDXProvider>
+                <MDXProvider
+                    components={{ a: (props) => <Link {...props} state={{ newWindow: true }} />, ...shortcodes }}
+                >
+                    {data?.mdx?.body ? (
+                        <>{data.mdx.body}</>
+                    ) : (
+                        <div className="prose dark:prose-invert">
+                            <h1>Media & Press</h1>
+                            <p>Brand assets, press info, and media kits for PostHog.</p>
+                        </div>
+                    )}
+                </MDXProvider>
             </Editor>
         </>
     )
 }
-

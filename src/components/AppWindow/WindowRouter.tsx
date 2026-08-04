@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import React from 'react'
 import IdeasHub from 'components/Ideas'
@@ -13,7 +13,6 @@ import Legal from 'components/Legal'
 import { AppWindow } from '../../context/Window'
 import Editor from 'components/Editor'
 import PostEditorWindow from 'components/Community/PostEditorWindow'
-
 
 export interface WindowRouterProps {
     item: AppWindow & { children?: React.ReactNode }

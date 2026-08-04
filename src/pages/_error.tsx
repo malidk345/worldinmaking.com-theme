@@ -16,10 +16,7 @@ function Error({ statusCode }: ErrorProps) {
                     ? 'The requested page could not be found.'
                     : 'An unexpected error occurred on the server.'}
             </p>
-            <a
-                href="/"
-                className="px-4 py-2 bg-red text-white rounded font-semibold hover:bg-red/90 transition-colors"
-            >
+            <a href="/" className="px-4 py-2 bg-red text-white rounded font-semibold hover:bg-red/90 transition-colors">
                 Back to Home
             </a>
         </div>

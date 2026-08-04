@@ -69,10 +69,7 @@ export const SEO = ({
     const seo = {
         title: title || defaultTitle,
         description: description || defaultDescription,
-        image:
-            imageType === 'absolute' || image?.startsWith('http')
-                ? image
-                : `${siteUrl}${image || defaultImage}`,
+        image: imageType === 'absolute' || image?.startsWith('http') ? image : `${siteUrl}${image || defaultImage}`,
         url: `${siteUrl}${pathname}`,
     }
 

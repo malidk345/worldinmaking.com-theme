@@ -19,11 +19,13 @@ const MOCK_SUPABASE_POSTS: SupabasePost[] = [
         id: '1',
         title: 'Welcome to WorldInMaking Blog',
         slug: 'welcome-to-worldinmaking',
-        content: '# Welcome to WorldInMaking\n\nThis is our official blog where we share updates, product engineering guides, and tutorials.',
+        content:
+            '# Welcome to WorldInMaking\n\nThis is our official blog where we share updates, product engineering guides, and tutorials.',
         excerpt: 'Welcome to our official engineering & product blog.',
         category: 'News',
         created_at: '2026-07-26T12:00:00.000Z',
-        image_url: 'https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/components/Blog/images/default.jpg',
+        image_url:
+            'https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/components/Blog/images/default.jpg',
         author: 'Mustafa Dursunkaya',
         tags: ['News', 'Product'],
     },
@@ -31,7 +33,8 @@ const MOCK_SUPABASE_POSTS: SupabasePost[] = [
         id: '2',
         title: 'How to build web applications with Next.js & Cloudflare Pages',
         slug: 'nextjs-cloudflare-pages-guide',
-        content: '# Building with Next.js and Cloudflare Pages\n\nLearn how to optimize static prerendering, edge functions, and hydration in Next.js.',
+        content:
+            '# Building with Next.js and Cloudflare Pages\n\nLearn how to optimize static prerendering, edge functions, and hydration in Next.js.',
         excerpt: 'A comprehensive guide to deploying Next.js apps on Cloudflare Pages.',
         category: 'Tutorials',
         created_at: '2026-07-25T14:00:00.000Z',
@@ -69,8 +72,13 @@ export async function fetchSupabasePostBySlug(slug: string): Promise<SupabasePos
 }
 
 export function formatSupabasePostToStrapi(post: SupabasePost) {
-    const avatarUrl = post.author_avatar || 'https://res.cloudinary.com/dmukukwp6/image/upload/v1675204207/james_hawkins_posthog_031f7cf651.png'
-    const imageUrl = post.image_url && post.image_url.trim() !== '' ? post.image_url : 'https://res.cloudinary.com/dmukukwp6/image/upload/v1675204207/james_hawkins_posthog_031f7cf651.png'
+    const avatarUrl =
+        post.author_avatar ||
+        'https://res.cloudinary.com/dmukukwp6/image/upload/v1675204207/james_hawkins_posthog_031f7cf651.png'
+    const imageUrl =
+        post.image_url && post.image_url.trim() !== ''
+            ? post.image_url
+            : 'https://res.cloudinary.com/dmukukwp6/image/upload/v1675204207/james_hawkins_posthog_031f7cf651.png'
     const rawSlug = post.slug || 'default'
     const cleanSlug = rawSlug.startsWith('/') ? rawSlug : `/posts/${rawSlug}`
 
@@ -113,9 +121,11 @@ export function formatSupabasePostToStrapi(post: SupabasePost) {
                 },
             },
             post_tags: {
-                data: (Array.isArray(post.tags) && post.tags.length > 0 ? post.tags : [post.category || 'Article']).map((tag) => ({
-                    attributes: { label: String(tag) },
-                })),
+                data: (Array.isArray(post.tags) && post.tags.length > 0 ? post.tags : [post.category || 'Article']).map(
+                    (tag) => ({
+                        attributes: { label: String(tag) },
+                    })
+                ),
             },
         },
     }

@@ -58,14 +58,7 @@ export function LemonBanner({
     const showCloseButton = dismissKey || onClose
 
     return (
-        <div
-            className={clsx(
-                'LemonBanner',
-                `LemonBanner--${type}`,
-                square && 'LemonBanner--square',
-                className
-            )}
-        >
+        <div className={clsx('LemonBanner', `LemonBanner--${type}`, square && 'LemonBanner--square', className)}>
             <div className="LemonBanner__main">
                 {!hideIcon &&
                     (icon ? (
@@ -80,7 +73,13 @@ export function LemonBanner({
                 <div className="LemonBanner__content">{children}</div>
                 {action && <LemonButton type="secondary" size="small" {...action} />}
                 {showCloseButton && (
-                    <LemonButton size="xsmall" type="tertiary" icon={<IconX />} onClick={handleClose} aria-label="close" />
+                    <LemonButton
+                        size="xsmall"
+                        type="tertiary"
+                        icon={<IconX />}
+                        onClick={handleClose}
+                        aria-label="close"
+                    />
                 )}
             </div>
         </div>

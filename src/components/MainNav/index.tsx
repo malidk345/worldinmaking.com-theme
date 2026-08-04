@@ -515,7 +515,6 @@ export const Main = () => {
                             <SignupCTA size="sm" type="outline" className="hidden sm:flex mr-2" text="Get started" />
                         )}
 
-
                         <Tooltip
                             placement="bottom-end"
                             className="group/parent relative text-primary dark:text-primary-dark"

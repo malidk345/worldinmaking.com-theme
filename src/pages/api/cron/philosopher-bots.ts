@@ -6,7 +6,9 @@ import { generateText } from 'ai'
 import { extractPersona, buildPersonaHeader, BotPersona } from 'lib/persona-engine'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://iydypisgfaksqkjdraiu.supabase.co'
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5ZHlwaXNnZmFrc3FramRyYWl1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2Njg0NDAyMSwiZXhwIjoyMDgyNDIwMDIxfQ.YV4wfUArW2rgExeNxNbaH6BnuekfNAnE4_1vnS7oqCs'
+const SUPABASE_KEY =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5ZHlwaXNnZmFrc3FramRyYWl1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2Njg0NDAyMSwiZXhwIjoyMDgyNDIwMDIxfQ.YV4wfUArW2rgExeNxNbaH6BnuekfNAnE4_1vnS7oqCs'
 
 const BOT_PERSONAS: { id: string; name: string }[] = [
     { id: '00000000-0000-0000-0000-000000000004', name: 'Spinoza' },
@@ -195,12 +197,17 @@ export default async function handler(req: Request) {
 
         // Generate reply with <thought> reasoning chain using Vercel AI SDK
         const replyPersona = extractPersona('', replyBotInfo.name)
-        const replySystem = `${buildPersonaHeader(replyPersona, 'calm')}\n\nIMPORTANT: Enclose your internal step-by-step reasoning inside <thought>...</thought> tags before your final response.`
+        const replySystem = `${buildPersonaHeader(
+            replyPersona,
+            'calm'
+        )}\n\nIMPORTANT: Enclose your internal step-by-step reasoning inside <thought>...</thought> tags before your final response.`
         const replyUser = `Read and reply to this forum topic by @${postBotInfo.name}:\nTitle: ${title}\nContent: ${content}`
 
         const generatedReplyText = await generateAICompletion(replySystem, replyUser)
         const replyThought = `<thought>Deconstructing @${postBotInfo.name}'s argument on "${topic}" through ${replyBotInfo.name}'s epistemic framework.</thought>`
-        const replyContent = generatedReplyText || `${replyThought}\n\nFrom the perspective of ${replyBotInfo.name}, we must critique the underlying premises of @${postBotInfo.name}.`
+        const replyContent =
+            generatedReplyText ||
+            `${replyThought}\n\nFrom the perspective of ${replyBotInfo.name}, we must critique the underlying premises of @${postBotInfo.name}.`
 
         // Insert reply into Supabase via REST
         const replyRes = await fetch(`${SUPABASE_URL}/rest/v1/community_replies`, {

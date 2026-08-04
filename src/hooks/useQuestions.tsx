@@ -4,7 +4,11 @@ import qs from 'qs'
 import { QuestionData, StrapiResult, StrapiRecord } from 'lib/strapi'
 import usePostHog from './usePostHog'
 import { useUser } from './useUser'
-import { fetchSupabaseCommunityPosts, fetchSupabaseCommunityReplies, formatSupabaseCommunityToStrapi } from 'lib/supabaseCommunity'
+import {
+    fetchSupabaseCommunityPosts,
+    fetchSupabaseCommunityReplies,
+    formatSupabaseCommunityToStrapi,
+} from 'lib/supabaseCommunity'
 
 type UseQuestionsOptions = {
     slug?: string
@@ -197,7 +201,8 @@ const MOCK_COMMUNITY_POSTS: any[] = [
                     attributes: {
                         firstName: 'James',
                         lastName: 'Hawkins',
-                        gravatarURL: 'https://res.cloudinary.com/dmukukwp6/image/upload/v1675204207/james_hawkins_posthog_031f7cf651.png',
+                        gravatarURL:
+                            'https://res.cloudinary.com/dmukukwp6/image/upload/v1675204207/james_hawkins_posthog_031f7cf651.png',
                     },
                 },
             },
@@ -223,7 +228,8 @@ const MOCK_COMMUNITY_POSTS: any[] = [
                     attributes: {
                         firstName: 'Tim',
                         lastName: 'Glaser',
-                        gravatarURL: 'https://res.cloudinary.com/dmukukwp6/image/upload/v1675204207/james_hawkins_posthog_031f7cf651.png',
+                        gravatarURL:
+                            'https://res.cloudinary.com/dmukukwp6/image/upload/v1675204207/james_hawkins_posthog_031f7cf651.png',
                     },
                 },
             },
@@ -249,7 +255,8 @@ const MOCK_COMMUNITY_POSTS: any[] = [
                     attributes: {
                         firstName: 'Mali',
                         lastName: 'DK',
-                        gravatarURL: 'https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/pages-content/images/hog-9.png',
+                        gravatarURL:
+                            'https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/pages-content/images/hog-9.png',
                     },
                 },
             },
@@ -311,9 +318,7 @@ export const useQuestions = (options?: UseQuestionsOptions) => {
         }
     }, [options?.slug])
 
-    const { data, size, setSize, isLoading, error, mutate } = useSWRInfinite<
-        StrapiResult<QuestionData[]>
-    >(
+    const { data, size, setSize, isLoading, error, mutate } = useSWRInfinite<StrapiResult<QuestionData[]>>(
         (offset) => {
             if (!process.env.NEXT_PUBLIC_SQUEAK_API_HOST) return null
             return `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/questions?${query(offset, options, isModerator)}`
@@ -338,9 +343,9 @@ export const useQuestions = (options?: UseQuestionsOptions) => {
     }
 
     const questions: Omit<StrapiResult<QuestionData[]>, 'meta'> = React.useMemo(() => {
-        const strapiData = data?.flatMap(cur => cur.data || []) ?? []
+        const strapiData = data?.flatMap((cur) => cur.data || []) ?? []
         const combined = [...strapiData, ...supabaseQuestions]
-        const finalData = combined.length > 0 ? combined : (options?.slug ? [] : MOCK_COMMUNITY_POSTS)
+        const finalData = combined.length > 0 ? combined : options?.slug ? [] : MOCK_COMMUNITY_POSTS
         return {
             data: finalData as any,
         }

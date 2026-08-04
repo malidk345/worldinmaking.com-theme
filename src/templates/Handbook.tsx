@@ -115,18 +115,17 @@ const Contributors = (props) => {
 export const HandbookSidebar = ({ contributors, title, location, availability, related }) => {
     return (
         <>
-            {pathname.startsWith('/docs/cdp/destinations') &&
-                pathname !== '/docs/cdp/destinations' && (
-                    <div className="p-4 mb-8 rounded-md border bg-accent dark:bg-accent-dark border-border dark:border-dark">
-                        <h5 className="m-0 text-lg font-bold leading-tight">Did somebody say destinations?</h5>
-                        <p className="text-sm m-0 mb-3 mt-1.5">
-                            We're building more destinations and prioritzing them based on your feedback.
-                        </p>
-                        <CallToAction size="sm" to="/cdp#library">
-                            Browse the library
-                        </CallToAction>
-                    </div>
-                )}
+            {pathname.startsWith('/docs/cdp/destinations') && pathname !== '/docs/cdp/destinations' && (
+                <div className="p-4 mb-8 rounded-md border bg-accent dark:bg-accent-dark border-border dark:border-dark">
+                    <h5 className="m-0 text-lg font-bold leading-tight">Did somebody say destinations?</h5>
+                    <p className="text-sm m-0 mb-3 mt-1.5">
+                        We're building more destinations and prioritzing them based on your feedback.
+                    </p>
+                    <CallToAction size="sm" to="/cdp#library">
+                        Browse the library
+                    </CallToAction>
+                </div>
+            )}
             {contributors && (
                 <SidebarSection title="Contributors">
                     <Contributors contributors={contributors} />
@@ -459,4 +458,3 @@ export default function Handbook({ data: { post, postHogSource }, pageContext: {
         </>
     )
 }
-

@@ -48,12 +48,7 @@ export function LemonTabs<T extends string | number>({
 
     return (
         <div
-            className={clsx(
-                'LemonTabs',
-                `LemonTabs--${size}`,
-                sceneInset && 'LemonTabs--sceneInset',
-                className
-            )}
+            className={clsx('LemonTabs', `LemonTabs--${size}`, sceneInset && 'LemonTabs--sceneInset', className)}
             data-attr={dataAttr}
         >
             <ul className={clsx('LemonTabs__bar', barClassName)} role="tablist">
@@ -61,12 +56,15 @@ export function LemonTabs<T extends string | number>({
                     {realTabs.map((tab) => {
                         const disabled = !!tab.disabledReason
                         const isSelected = tab.key === activeKey
-                        const titleText = tab.disabledReason || (typeof tab.tooltip === 'string' ? tab.tooltip : undefined)
+                        const titleText =
+                            tab.disabledReason || (typeof tab.tooltip === 'string' ? tab.tooltip : undefined)
 
                         const content = (
                             <div className="LemonTabs__tab-label" data-attr={tab['data-attr']}>
                                 {tab.label}
-                                {tab.completed && <IconCheckCircle className="LemonTabs__icon LemonTabs__icon--success" />}
+                                {tab.completed && (
+                                    <IconCheckCircle className="LemonTabs__icon LemonTabs__icon--success" />
+                                )}
                                 {tab.tooltip && <IconInfo className="LemonTabs__icon" />}
                             </div>
                         )

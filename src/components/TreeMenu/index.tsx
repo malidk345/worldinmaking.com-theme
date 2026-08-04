@@ -352,7 +352,12 @@ const getActiveItem = (items: MenuItem[], currentUrl?: string): MenuItem | undef
     if (!currentUrl || typeof currentUrl !== 'string') return undefined
     const url = currentUrl.replace(/\/$/, '')
     for (const item of items) {
-        if (item.url && typeof item.url === 'string' && item.url.replace(/\/$/, '') === url && !getActiveItem(item.children || [], url)) {
+        if (
+            item.url &&
+            typeof item.url === 'string' &&
+            item.url.replace(/\/$/, '') === url &&
+            !getActiveItem(item.children || [], url)
+        ) {
             return item
         }
         if (item.children?.length) {

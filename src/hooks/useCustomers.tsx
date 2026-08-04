@@ -1170,9 +1170,8 @@ export const useCustomers = () => {
                 toolsUsedHandles: customer.toolsUsed || [],
                 // Convert handles to human-readable product names for display
                 toolsUsed:
-                    customer.toolsUsed
-                        ?.map((tool) => getProductTitleByHandle(tool))
-                        .filter(Boolean) as string[] || [],
+                    (customer.toolsUsed?.map((tool) => getProductTitleByHandle(tool)).filter(Boolean) as string[]) ||
+                    [],
                 // Dynamically check if customer has a case study
                 hasCaseStudy: customersWithCaseStudies.has(key),
             }
@@ -1186,21 +1185,33 @@ export const useCustomers = () => {
         }, {} as Record<string, Customer>)
     }, [products])
 
-    const getCustomer = useCallback((slug: string): Customer | undefined => {
-        return customers[slug]
-    }, [customers])
+    const getCustomer = useCallback(
+        (slug: string): Customer | undefined => {
+            return customers[slug]
+        },
+        [customers]
+    )
 
-    const getCustomers = useCallback((slugs: string[]): Customer[] => {
-        return slugs.map((slug) => customers[slug]).filter(Boolean) as Customer[]
-    }, [customers])
+    const getCustomers = useCallback(
+        (slugs: string[]): Customer[] => {
+            return slugs.map((slug) => customers[slug]).filter(Boolean) as Customer[]
+        },
+        [customers]
+    )
 
-    const hasCaseStudy = useCallback((slug: string): boolean => {
-        return customers[slug]?.hasCaseStudy ?? false
-    }, [customers])
+    const hasCaseStudy = useCallback(
+        (slug: string): boolean => {
+            return customers[slug]?.hasCaseStudy ?? false
+        },
+        [customers]
+    )
 
-    const isFeatured = useCallback((slug: string): boolean => {
-        return !!customers[slug]?.featured
-    }, [customers])
+    const isFeatured = useCallback(
+        (slug: string): boolean => {
+            return !!customers[slug]?.featured
+        },
+        [customers]
+    )
 
     return {
         customers,

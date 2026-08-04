@@ -269,31 +269,32 @@ export default function Link({
         </a>
     )
 
-    const content = !contextMenu || !url ? (
-        <>
-            {onClick && !url ? (
-                <button onClick={handleClick} className={className} disabled={disabled}>
-                    {children}
-                </button>
-            ) : internal ? (
-                renderInternalLink()
-            ) : (
-                renderExternalLink()
-            )}
-        </>
-    ) : (
-        <MenuWrapper menuItems={menuItems} className={wrapperClassName}>
-            {onClick && !url ? (
-                <button onClick={handleClick} className={className} disabled={disabled}>
-                    {children}
-                </button>
-            ) : internal ? (
-                renderInternalLink()
-            ) : (
-                renderExternalLink()
-            )}
-        </MenuWrapper>
-    )
+    const content =
+        !contextMenu || !url ? (
+            <>
+                {onClick && !url ? (
+                    <button onClick={handleClick} className={className} disabled={disabled}>
+                        {children}
+                    </button>
+                ) : internal ? (
+                    renderInternalLink()
+                ) : (
+                    renderExternalLink()
+                )}
+            </>
+        ) : (
+            <MenuWrapper menuItems={menuItems} className={wrapperClassName}>
+                {onClick && !url ? (
+                    <button onClick={handleClick} className={className} disabled={disabled}>
+                        {children}
+                    </button>
+                ) : internal ? (
+                    renderInternalLink()
+                ) : (
+                    renderExternalLink()
+                )}
+            </MenuWrapper>
+        )
 
     return content
 }

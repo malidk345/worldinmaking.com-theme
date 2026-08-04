@@ -91,7 +91,8 @@ export const TeamMember = (props: any) => {
 
     return (
         <div ref={ref}>
-            <Link href={`/community/profiles/${squeakId}`}
+            <Link
+                href={`/community/profiles/${squeakId}`}
                 wrapperClassName={`group container-size not-prose aspect-[3/4] border border-primary bg-${color} block rounded max-w-96 relative z-0`}
                 state={{ newWindow: true }}
             >
@@ -137,7 +138,8 @@ export const TeamMember = (props: any) => {
                                         ) : (
                                             <>
                                                 Leads the{' '}
-                                                <Link href={`/teams/${teamData[0].attributes.slug}`}
+                                                <Link
+                                                    href={`/teams/${teamData[0].attributes.slug}`}
                                                     state={{ newWindow: true }}
                                                     className="font-semibold underline"
                                                 >
@@ -443,4 +445,3 @@ export default function People() {
         </div>
     )
 }
-

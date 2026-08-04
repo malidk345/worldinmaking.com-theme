@@ -86,4 +86,3 @@ export const CategoryData = ({ type = 'categories' }: { type: 'categories' | 'ta
         </ul>
     )
 }
-

@@ -22,7 +22,7 @@ const nextConfig = {
     webpack: (config) => {
         config.resolve.alias = {
             ...config.resolve.alias,
-            'debug': path.resolve(__dirname, 'shims/debug.js'),
+            debug: path.resolve(__dirname, 'shims/debug.js'),
             'supports-color': path.resolve(__dirname, 'shims/supports-color.js'),
             '@radix-ui/react-compose-refs$': path.resolve(__dirname, 'src/lib/stable-compose-refs.ts'),
             '@radix-ui/react-compose-refs': path.resolve(__dirname, 'src/lib/stable-compose-refs.ts'),
