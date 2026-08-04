@@ -12,9 +12,7 @@ export function useProfileData(identifier?: string | number) {
     const { user, getJwt } = useUser()
 
     const isCurrentUser = Boolean(
-        rawId &&
-            (String(user?.profile?.id) === rawId ||
-                user?.username?.toLowerCase() === rawId.toLowerCase())
+        rawId && (String(user?.profile?.id) === rawId || user?.username?.toLowerCase() === rawId.toLowerCase())
     )
     const isModerator = user?.role?.type === 'moderator'
 
@@ -71,8 +69,15 @@ export function useProfileData(identifier?: string | number) {
         }
     )
 
-    const { data: swrData, error, isLoading, mutate } = useSWR<StrapiRecord<ProfileData>>(
-        rawId && isNumericId ? `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles/${numericId}?${profileQuery}` : null,
+    const {
+        data: swrData,
+        error,
+        isLoading,
+        mutate,
+    } = useSWR<StrapiRecord<ProfileData>>(
+        rawId && isNumericId
+            ? `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles/${numericId}?${profileQuery}`
+            : null,
         async (url) => {
             try {
                 const jwt = user && (await getJwt())
@@ -141,16 +146,21 @@ export function useProfileData(identifier?: string | number) {
                                 linkedin: dbProfile.linkedin || '',
                                 pronouns: dbProfile.pronouns || '',
                                 reputation: 500,
-                                avatar: dbProfile.avatar_url ? { data: { attributes: { url: dbProfile.avatar_url } } } : null,
+                                avatar: dbProfile.avatar_url
+                                    ? { data: { attributes: { url: dbProfile.avatar_url } } }
+                                    : null,
                                 companyRole: dbProfile.role || 'Resident Philosopher',
                                 achievements: [],
-                                teams: { data: [] }
-                            }
+                                teams: { data: [] },
+                            },
                         } as any)
-                    } else if (user?.profile && (String(user.profile.id) === rawId || user.username?.toLowerCase() === lowerRawId)) {
+                    } else if (
+                        user?.profile &&
+                        (String(user.profile.id) === rawId || user.username?.toLowerCase() === lowerRawId)
+                    ) {
                         setFallbackProfile({
                             id: user.profile.id,
-                            attributes: user.profile
+                            attributes: user.profile,
                         } as any)
                     } else {
                         const cleanName = lowerRawId
@@ -166,11 +176,19 @@ export function useProfileData(identifier?: string | number) {
                                 lastName: '',
                                 biography: 'PostHog Resident Thinker & Community Member',
                                 reputation: 250,
-                                avatar: { data: { attributes: { url: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(lowerRawId)}` } } },
+                                avatar: {
+                                    data: {
+                                        attributes: {
+                                            url: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(
+                                                lowerRawId
+                                            )}`,
+                                        },
+                                    },
+                                },
                                 companyRole: 'Resident Philosopher',
                                 achievements: [],
-                                teams: { data: [] }
-                            }
+                                teams: { data: [] },
+                            },
                         } as any)
                     }
                 } catch {
@@ -182,8 +200,8 @@ export function useProfileData(identifier?: string | number) {
                             lastName: '',
                             reputation: 100,
                             achievements: [],
-                            teams: { data: [] }
-                        }
+                            teams: { data: [] },
+                        },
                     } as any)
                 }
             }
@@ -193,7 +211,7 @@ export function useProfileData(identifier?: string | number) {
     }, [swrData, rawId, user])
 
     const profileData = swrData || fallbackProfile
-    const finalLoading = !rawId ? true : (isNumericId ? isLoading : (!profileData))
+    const finalLoading = !rawId ? true : isNumericId ? isLoading : !profileData
 
     return {
         profileData,
@@ -201,6 +219,6 @@ export function useProfileData(identifier?: string | number) {
         isLoading: finalLoading,
         isCurrentUser,
         isModerator,
-        mutate
+        mutate,
     }
 }

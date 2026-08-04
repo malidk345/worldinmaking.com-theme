@@ -8,7 +8,9 @@ const Skeleton = () => {
     const { fullWidthContent } = useLayoutData()
     return (
         <div className={`article-content flex-1 transition-all md:pt-8 w-full overflow-auto`}>
-            <div className={`mx-auto transition-all ${fullWidthContent ? 'max-w-full' : 'max-w-3xl'} md:px-8 2xl:px-12`}>
+            <div
+                className={`mx-auto transition-all ${fullWidthContent ? 'max-w-full' : 'max-w-3xl'} md:px-8 2xl:px-12`}
+            >
                 <div>
                     <div className="bg-accent h-[37px] w-2/3 rounded-md" />
                     <div className="bg-accent h-[27px] w-1/3 rounded-md mt-2" />
@@ -27,7 +29,14 @@ export default function PostPage({ params }: { params?: { slug?: string } }) {
         const query = qs.stringify(
             {
                 filters: { slug: { $eq: slug } },
-                populate: ['featuredImage.image', 'post_category.post_tags', 'post_tags', 'authors.avatar', 'likes', 'CTA'],
+                populate: [
+                    'featuredImage.image',
+                    'post_category.post_tags',
+                    'post_tags',
+                    'authors.avatar',
+                    'likes',
+                    'CTA',
+                ],
             },
             { encodeValuesOnly: true }
         )

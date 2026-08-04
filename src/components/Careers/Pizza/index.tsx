@@ -318,14 +318,16 @@ export const Pizza = () => {
                                 <li key={team.name} className="">
                                     <div className="flex gap-2">
                                         {teamMiniCrest && (
-                                            <CloudinaryImage image={teamMiniCrest}
+                                            <CloudinaryImage
+                                                image={teamMiniCrest}
                                                 alt={`${team.name} mini crest`}
                                                 className="mr-2 size-10"
                                                 objectFit="contain"
                                             />
                                         )}
                                         <div className="flex-1">
-                                            <Link href={`/teams/${team.slug}`}
+                                            <Link
+                                                href={`/teams/${team.slug}`}
                                                 className="text-[15px] font-semibold text-primary hover:underline"
                                             >
                                                 {team.name}
@@ -376,14 +378,16 @@ export const Pizza = () => {
                                 <li key={team.name} className="">
                                     <div className="flex gap-2">
                                         {teamMiniCrest && (
-                                            <CloudinaryImage image={teamMiniCrest}
+                                            <CloudinaryImage
+                                                image={teamMiniCrest}
                                                 alt={`${team.name} mini crest`}
                                                 className="mr-2 size-10"
                                                 objectFit="contain"
                                             />
                                         )}
                                         <div className="flex-1">
-                                            <Link href={`/teams/${team.slug}`}
+                                            <Link
+                                                href={`/teams/${team.slug}`}
                                                 className="text-[15px] font-semibold text-primary hover:underline"
                                             >
                                                 {team.name}
@@ -432,14 +436,16 @@ export const Pizza = () => {
                                 <li key={team.name} className="">
                                     <div className="flex gap-2">
                                         {teamMiniCrest && (
-                                            <CloudinaryImage image={teamMiniCrest}
+                                            <CloudinaryImage
+                                                image={teamMiniCrest}
                                                 alt={`${team.name} mini crest`}
                                                 className="mr-2 size-10"
                                                 objectFit="contain"
                                             />
                                         )}
                                         <div className="flex-1">
-                                            <Link href={`/teams/${team.slug}`}
+                                            <Link
+                                                href={`/teams/${team.slug}`}
                                                 className="text-[15px] font-semibold text-primary hover:underline"
                                             >
                                                 {team.name}

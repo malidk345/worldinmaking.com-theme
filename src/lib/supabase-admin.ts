@@ -25,11 +25,21 @@ const mockAdminClient = {
         select: () => ({
             data: [],
             error: null,
-            order: function () { return this },
-            eq: function () { return this },
-            limit: function () { return this },
-            single: function () { return { data: null, error: null } },
-            maybeSingle: function () { return { data: null, error: null } },
+            order: function () {
+                return this
+            },
+            eq: function () {
+                return this
+            },
+            limit: function () {
+                return this
+            },
+            single: function () {
+                return { data: null, error: null }
+            },
+            maybeSingle: function () {
+                return { data: null, error: null }
+            },
         }),
         insert: () => ({ data: null, error: null }),
         update: () => ({ data: null, error: null }),

@@ -131,7 +131,10 @@ export const TopicsTable = ({ topics, topicGroup, className = '' }) => {
                                             {Icon && <Icon className="w-5 opacity-60 text-black dark:text-white" />}
                                             <span className="text-red dark:text-yellow line-clamp-1">{label}</span>
                                         </div>
-                                        <div className="col-span-4 md:col-span-2 text-sm font-normal text-secondary" suppressHydrationWarning>
+                                        <div
+                                            className="col-span-4 md:col-span-2 text-sm font-normal text-secondary"
+                                            suppressHydrationWarning
+                                        >
                                             {latestQuestion?.attributes?.activeAt &&
                                                 dayjs(latestQuestion.attributes.activeAt).fromNow()}
                                         </div>

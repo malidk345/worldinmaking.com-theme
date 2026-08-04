@@ -30,7 +30,10 @@ function Post({ id, title, date, publishedAt, authors, slug }) {
                 >
                     <div className={`items-baseline`}>
                         <span className="mr-1 flex-1 line-clamp-1">{title}</span>
-                        <span className={`font-medium leading-none text-[.933rem] text-secondary`} suppressHydrationWarning>
+                        <span
+                            className={`font-medium leading-none text-[.933rem] text-secondary`}
+                            suppressHydrationWarning
+                        >
                             {day.isToday() ? 'Today' : day.fromNow()}
                         </span>
                         {authors?.data?.length > 0 && (

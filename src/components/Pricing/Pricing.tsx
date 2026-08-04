@@ -13,7 +13,8 @@ import { IconCheck, IconHandMoney, IconInfo, IconRocket } from '@posthog/icons'
 import * as Icons from '@posthog/icons'
 import Tooltip from 'components/Tooltip'
 import useProducts from 'hooks/useProducts'
-const graphql = (s) => s; const useStaticQuery = () => ({});
+const graphql = (s) => s
+const useStaticQuery = () => ({})
 
 import { BillingProductV2Type, BillingV2FeatureType, BillingV2PlanType } from 'types'
 import Tabs from 'components/Tabs'

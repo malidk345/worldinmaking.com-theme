@@ -67,7 +67,11 @@ export function Activity({
                 <div className="flex items-center gap-1 flex-1 min-w-0">
                     <div className="flex flex-col flex-1 min-w-0">
                         <div className="flex items-center gap-1 min-w-0 font-medium text-slate-700 dark:text-slate-300">
-                            {status === 'in_progress' ? <ShimmeringContent>{title}</ShimmeringContent> : <span>{title}</span>}
+                            {status === 'in_progress' ? (
+                                <ShimmeringContent>{title}</ShimmeringContent>
+                            ) : (
+                                <span>{title}</span>
+                            )}
                         </div>
                         {subtitle && <div className="text-slate-400 truncate min-w-0">{subtitle}</div>}
                     </div>

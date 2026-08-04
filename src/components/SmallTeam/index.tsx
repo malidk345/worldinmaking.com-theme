@@ -11,7 +11,13 @@ export interface SmallTeamProps {
     className?: string
 }
 
-export default function SmallTeam({ slug, children, inline = false, noMiniCrest = false, className = '' }: SmallTeamProps): JSX.Element | null {
+export default function SmallTeam({
+    slug,
+    children,
+    inline = false,
+    noMiniCrest = false,
+    className = '',
+}: SmallTeamProps): JSX.Element | null {
     const data = {}
 
     const nodes = data?.allSqueakTeam?.nodes || []
@@ -29,11 +35,20 @@ export default function SmallTeam({ slug, children, inline = false, noMiniCrest 
     // with the `relative inline-block` parent when we include a mini crest
     const triggerContent = (
         <span className="relative inline-block">
-            <Link href={`/teams/${team.slug}`} className={`group text-primary ${className}`} state={{ newWindow: true }}>
+            <Link
+                href={`/teams/${team.slug}`}
+                className={`group text-primary ${className}`}
+                state={{ newWindow: true }}
+            >
                 {!noMiniCrest && miniCrestImage && (
-                    <span className={`invisible max-h-4 inline-flex items-center gap-1.5 ${!inline && 'p-0.5 pr-1.5 border border-primary rounded-full'}`}>
+                    <span
+                        className={`invisible max-h-4 inline-flex items-center gap-1.5 ${
+                            !inline && 'p-0.5 pr-1.5 border border-primary rounded-full'
+                        }`}
+                    >
                         <span className="h-6 shrink-0 rounded-full overflow-hidden">
-                            <CloudinaryImage image={miniCrestImage}
+                            <CloudinaryImage
+                                image={miniCrestImage}
                                 alt={`${team.name} mini crest`}
                                 className="size-5 shrink-0"
                             />
@@ -44,21 +59,29 @@ export default function SmallTeam({ slug, children, inline = false, noMiniCrest 
                     </span>
                 )}
                 <span
-                    className={`inline-flex items-center ${!noMiniCrest && miniCrestImage
-                        ? [
-                            'absolute top-0 left-0 whitespace-nowrap gap-1.5',
-                            !inline ? 'p-0.5 pr-1.5 border border-primary rounded-full' : '',
-                        ].filter(Boolean).join(' ')
-                        : ''
-                        }`}
+                    className={`inline-flex items-center ${
+                        !noMiniCrest && miniCrestImage
+                            ? [
+                                  'absolute top-0 left-0 whitespace-nowrap gap-1.5',
+                                  !inline ? 'p-0.5 pr-1.5 border border-primary rounded-full' : '',
+                              ]
+                                  .filter(Boolean)
+                                  .join(' ')
+                            : ''
+                    }`}
                 >
                     {!noMiniCrest && miniCrestImage && (
-                        <CloudinaryImage image={miniCrestImage}
+                        <CloudinaryImage
+                            image={miniCrestImage}
                             alt={`${team.name} mini crest`}
                             className="size-5 shrink-0"
                         />
                     )}
-                    <span className={`!text-sm ${inline ? 'underline' : 'group-hover:underline'} font-semibold inline-block truncate`}>
+                    <span
+                        className={`!text-sm ${
+                            inline ? 'underline' : 'group-hover:underline'
+                        } font-semibold inline-block truncate`}
+                    >
                         {children ? children : <>{team.name} Team</>}
                     </span>
                 </span>

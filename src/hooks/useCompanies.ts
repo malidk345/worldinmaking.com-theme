@@ -114,7 +114,8 @@ export default function useCompanies({
     const { getJwt } = useUser()
     const [search, setSearch] = useState('')
     const { data, size, setSize, isLoading, error, mutate, isValidating } = useSWRInfinite(
-        (offset) => `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/companies?${query(offset, companyFilters, jobFilters)}`,
+        (offset) =>
+            `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/companies?${query(offset, companyFilters, jobFilters)}`,
         async (url: string) => {
             return fetch(url).then((r) => r.json())
         },
@@ -126,7 +127,9 @@ export default function useCompanies({
     const companies = useMemo(() => {
         if (!data) return []
 
-        const allCompanies = data.reduce((acc, cur) => [...acc, ...(cur.data || [])], [])
+        // ⚡ Bolt Performance Optimization
+        // Using `flatMap` provides O(N) allocation instead of O(N^2) caused by `reduce` with array spread `[...acc, ...cur]`
+        const allCompanies = data.flatMap((cur) => cur.data || [])
 
         if (!search) return allCompanies
 

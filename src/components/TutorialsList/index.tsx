@@ -27,4 +27,3 @@ export default function TutorialsList({ topic, slugs }: { topic?: string; slugs?
         </ul>
     )
 }
-

@@ -394,10 +394,7 @@ export default function Reply({ reply, badgeText, isInForum = false }: ReplyProp
                         </p>
                     </Tooltip>
                 ) : (
-                    <Link
-                        className="flex items-center !text-black dark:!text-white"
-                        to={`/profile/${replyHandle}`}
-                    >
+                    <Link className="flex items-center !text-black dark:!text-white" to={`/profile/${replyHandle}`}>
                         <div className="mr-2 relative ml-[-2px]">
                             <Avatar
                                 className={`${isInForum ? 'size-[40px]' : 'size-[25px]'} rounded-full ${

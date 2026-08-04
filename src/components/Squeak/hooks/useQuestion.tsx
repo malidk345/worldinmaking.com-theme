@@ -130,17 +130,19 @@ export const useQuestion = (id: number | string, options?: UseQuestionOptions) =
         const cleanId = String(id).replace(/^\/questions\/?/, '')
 
         fetchSupabaseCommunityPosts(cleanId, cleanId).then((posts) => {
-            let found = posts && posts.length > 0
-                ? (posts.find((p) => String(p.id) === cleanId) || posts[0])
-                : null
+            let found = posts && posts.length > 0 ? posts.find((p) => String(p.id) === cleanId) || posts[0] : null
 
-            const targetPost = found || (options?.data ? {
-                id: options.data.id,
-                title: options.data.attributes?.title || options.data.attributes?.subject,
-                content: options.data.attributes?.body,
-                created_at: options.data.attributes?.createdAt,
-                profiles: null
-            } : null)
+            const targetPost =
+                found ||
+                (options?.data
+                    ? {
+                          id: options.data.id,
+                          title: options.data.attributes?.title || options.data.attributes?.subject,
+                          content: options.data.attributes?.body,
+                          created_at: options.data.attributes?.createdAt,
+                          profiles: null,
+                      }
+                    : null)
 
             if (targetPost) {
                 const formatted = formatSupabaseCommunityToStrapi(targetPost as any)
@@ -211,22 +213,21 @@ export const useQuestion = (id: number | string, options?: UseQuestionOptions) =
         })
     }
 
-    const questionData: StrapiRecord<QuestionData> | undefined =
-        supabaseQuestion
-            ? {
-                  ...options?.data,
-                  ...supabaseQuestion,
-                  attributes: {
-                      ...options?.data?.attributes,
-                      ...supabaseQuestion?.attributes,
-                      body: supabaseQuestion?.attributes?.body || options?.data?.attributes?.body,
-                      replies:
-                          supabaseQuestion?.attributes?.replies?.data?.length > 0
-                              ? supabaseQuestion.attributes.replies
-                              : options?.data?.attributes?.replies || { data: [] },
-                  },
-              }
-            : question || options?.data
+    const questionData: StrapiRecord<QuestionData> | undefined = supabaseQuestion
+        ? {
+              ...options?.data,
+              ...supabaseQuestion,
+              attributes: {
+                  ...options?.data?.attributes,
+                  ...supabaseQuestion?.attributes,
+                  body: supabaseQuestion?.attributes?.body || options?.data?.attributes?.body,
+                  replies:
+                      supabaseQuestion?.attributes?.replies?.data?.length > 0
+                          ? supabaseQuestion.attributes.replies
+                          : options?.data?.attributes?.replies || { data: [] },
+              },
+          }
+        : question || options?.data
     const questionID = typeof id !== 'string' ? id : question?.id
 
     const reply = async (body: string) => {

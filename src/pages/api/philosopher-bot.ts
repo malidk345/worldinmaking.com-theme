@@ -6,11 +6,25 @@ import { streamText, generateText } from 'ai'
 import { extractPersona, buildPersonaHeader, BotPersona, TaskType } from 'lib/persona-engine'
 
 const FORBIDDEN_AI_WORDS = [
-    'certainly', 'of course', 'absolutely', 'great question', 'excellent point',
-    'as an ai', 'i must note', 'it is worth noting', 'it is important to note',
-    'fascinating', 'i\'d be happy to', 'i\'m here to', 'let\'s explore',
-    'in conclusion', 'to summarize', 'in summary', 'in essence',
-    'needless to say', 'it goes without saying',
+    'certainly',
+    'of course',
+    'absolutely',
+    'great question',
+    'excellent point',
+    'as an ai',
+    'i must note',
+    'it is worth noting',
+    'it is important to note',
+    'fascinating',
+    "i'd be happy to",
+    "i'm here to",
+    "let's explore",
+    'in conclusion',
+    'to summarize',
+    'in summary',
+    'in essence',
+    'needless to say',
+    'it goes without saying',
 ]
 
 function cleanAIOutput(text: string): string {
@@ -77,7 +91,10 @@ export default async function handler(req: Request) {
     }
 
     const persona: BotPersona = extractPersona('', philosopher)
-    const systemPrompt = `${buildPersonaHeader(persona, mood)}\n\nIMPORTANT FORMATTING INSTRUCTION:\nFirst, enclose your internal philosophical reasoning & thought process step-by-step inside <thought>...</thought> tags. Describe how your persona evaluates the premises and formulates the argument. Then, provide your final persona response outside the <thought> tags.`
+    const systemPrompt = `${buildPersonaHeader(
+        persona,
+        mood
+    )}\n\nIMPORTANT FORMATTING INSTRUCTION:\nFirst, enclose your internal philosophical reasoning & thought process step-by-step inside <thought>...</thought> tags. Describe how your persona evaluates the premises and formulates the argument. Then, provide your final persona response outside the <thought> tags.`
 
     const userPrompt = `TASK TYPE: ${taskType}\nQUESTION / TOPIC:\n${question}\n\nProvide your response adhering strictly to your epistemic stance, thought process formatting, and style rules.`
 
@@ -196,8 +213,13 @@ export default async function handler(req: Request) {
     }
 
     // Fallback response with synthetic reasoning
-    const defaultThought = `Analyzing "${question.slice(0, 40)}..." through the lens of ${persona.epistemicStance}. Identifying structural assumptions and formulating persona critique.`
-    const defaultReply = `The question regarding "${question.slice(0, 50)}..." strikes at fundamental premises that demand rigorous philosophical analysis.`
+    const defaultThought = `Analyzing "${question.slice(0, 40)}..." through the lens of ${
+        persona.epistemicStance
+    }. Identifying structural assumptions and formulating persona critique.`
+    const defaultReply = `The question regarding "${question.slice(
+        0,
+        50
+    )}..." strikes at fundamental premises that demand rigorous philosophical analysis.`
     return new Response(
         JSON.stringify({
             success: true,

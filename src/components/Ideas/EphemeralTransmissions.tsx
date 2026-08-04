@@ -1,7 +1,7 @@
-"use client"
+'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import { IconClock, IconSend, IconTerminal } from '@posthog/icons';
+import { IconClock, IconSend, IconTerminal } from '@posthog/icons'
 import ScrollArea from 'components/RadixUI/ScrollArea'
 import OSButton from 'components/OSButton'
 
@@ -17,14 +17,14 @@ const INITIAL_TRANSMISSIONS: Transmission[] = [
         id: 't1',
         text: 'Thinking about how API design is basically modern philosophy. You are defining the ontology of a system.',
         timestamp: Date.now() - 3600000 * 2, // 2 hours ago
-        expiresAt: Date.now() + 3600000 * 22 // Expires in 22 hours
+        expiresAt: Date.now() + 3600000 * 22, // Expires in 22 hours
     },
     {
         id: 't2',
         text: 'Just finished reading the new paper on Agentic AI. We need to rethink the "SuperWorker" model.',
         timestamp: Date.now() - 3600000 * 5,
-        expiresAt: Date.now() + 3600000 * 19
-    }
+        expiresAt: Date.now() + 3600000 * 19,
+    },
 ]
 
 export default function EphemeralTransmissions() {
@@ -36,7 +36,7 @@ export default function EphemeralTransmissions() {
     useEffect(() => {
         const interval = setInterval(() => {
             const now = Date.now()
-            setTransmissions(prev => prev.filter(t => t.expiresAt > now))
+            setTransmissions((prev) => prev.filter((t) => t.expiresAt > now))
         }, 60000) // check every minute
         return () => clearInterval(interval)
     }, [])
@@ -48,10 +48,10 @@ export default function EphemeralTransmissions() {
             id: `t_${Date.now()}`,
             text: input.trim(),
             timestamp: Date.now(),
-            expiresAt: Date.now() + 24 * 60 * 60 * 1000 // 24 hours
+            expiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
         }
 
-        setTransmissions(prev => [newT, ...prev])
+        setTransmissions((prev) => [newT, ...prev])
         setInput('')
     }
 
@@ -92,7 +92,7 @@ export default function EphemeralTransmissions() {
                             No active signals. The ether is quiet.
                         </div>
                     ) : (
-                        transmissions.map(t => (
+                        transmissions.map((t) => (
                             <div
                                 key={t.id}
                                 className="bg-white/60 dark:bg-[#121214]/60 backdrop-blur-xl border border-black/5 dark:border-white/5 rounded-[24px] shadow-sm p-5 transition-all"
@@ -103,9 +103,7 @@ export default function EphemeralTransmissions() {
                                         {formatTimeLeft(t.expiresAt)}
                                     </span>
                                 </div>
-                                <p className="text-xs md:text-sm text-primary leading-relaxed break-words">
-                                    {t.text}
-                                </p>
+                                <p className="text-xs md:text-sm text-primary leading-relaxed break-words">{t.text}</p>
                             </div>
                         ))
                     )}

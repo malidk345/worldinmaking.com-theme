@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-const navigate = (url) => { if (typeof window !== "undefined") window.location.href = url };
+const navigate = (url) => {
+    if (typeof window !== 'undefined') window.location.href = url
+}
 
 import SEO from 'components/seo'
 import useProduct from '../../hooks/useProduct'

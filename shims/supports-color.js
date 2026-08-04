@@ -1,4 +1,4 @@
 module.exports = {
     stdout: false,
-    stderr: false
-};
+    stderr: false,
+}

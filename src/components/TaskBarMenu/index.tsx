@@ -31,18 +31,8 @@ import AmbientPlayer from 'components/AmbientPlayer'
 import { MOTION_LAYER, TASKBAR_BG } from '../../constants/frostedSurfaces'
 
 function TaskBarMenu() {
-    const {
-        openSearch,
-        openSignIn,
-        setIsNotificationsPanelOpen,
-        addWindow,
-        taskbarRef,
-    } = useAppActions()
-    const {
-        windows,
-        isActiveWindowsPanelOpen,
-        setIsActiveWindowsPanelOpen,
-    } = useApp()
+    const { openSearch, openSignIn, setIsNotificationsPanelOpen, addWindow, taskbarRef } = useAppActions()
+    const { windows, isActiveWindowsPanelOpen, setIsActiveWindowsPanelOpen } = useApp()
     const totalWindows = windows.length
     const [isAnimating, setIsAnimating] = useState(false)
 
@@ -167,7 +157,9 @@ function TaskBarMenu() {
                                         type: 'item' as const,
                                         label: 'Bookmarks',
                                         link: '/bookmarks',
-                                        icon: <IconBookmark className="opacity-50 group-hover/item:opacity-75 size-4" />,
+                                        icon: (
+                                            <IconBookmark className="opacity-50 group-hover/item:opacity-75 size-4" />
+                                        ),
                                     },
                                 ]
                               : []),
@@ -344,7 +336,10 @@ function TaskBarMenu() {
                                     >
                                         <IconApps className="size-5" />
                                         {totalWindows > 0 && (
-                                            <span suppressHydrationWarning className="bg-primary/10 text-primary px-1.5 py-0.2 rounded text-[11px] font-bold min-w-[1.25rem] text-center border border-primary/20">
+                                            <span
+                                                suppressHydrationWarning
+                                                className="bg-primary/10 text-primary px-1.5 py-0.2 rounded text-[11px] font-bold min-w-[1.25rem] text-center border border-primary/20"
+                                            >
                                                 {totalWindows}
                                             </span>
                                         )}
@@ -352,7 +347,9 @@ function TaskBarMenu() {
                                 }
                             >
                                 <div className="flex flex-col items-center gap-1 text-center p-0.5">
-                                    <p suppressHydrationWarning className="text-sm font-semibold mb-0">Active Windows ({totalWindows})</p>
+                                    <p suppressHydrationWarning className="text-sm font-semibold mb-0">
+                                        Active Windows ({totalWindows})
+                                    </p>
                                     <span suppressHydrationWarning className="text-xs text-secondary leading-tight">
                                         {totalWindows === 0 ? 'No open windows' : 'Toggle Mission Control grid'}
                                     </span>

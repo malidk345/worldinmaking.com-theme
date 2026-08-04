@@ -1107,7 +1107,7 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
     }
     const isReady = router?.isReady ?? true
     const params = router?.query
-    const rawId = profileIdOrUsername || (params?.id || params?.username || params?.['*']) as string
+    const rawId = profileIdOrUsername || ((params?.id || params?.username || params?.['*']) as string)
     const id = /^\d+$/.test(String(rawId)) ? parseInt(String(rawId)) : rawId || ''
 
     const posthog = usePostHog()
@@ -1564,7 +1564,8 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                                             content: (
                                                 <div className="grid grid-cols-2 gap-3 @lg:grid-cols-3 @3xl:grid-cols-4">
                                                     <div className="col-span-full border-b border-primary pb-2 mb-10">
-                                                        <Link href={`/teams/${team.attributes.slug}`}
+                                                        <Link
+                                                            href={`/teams/${team.attributes.slug}`}
                                                             state={{ newWindow: true }}
                                                             className="group font-bold flex items-center gap-1 hover:underline"
                                                         >
@@ -1933,14 +1934,17 @@ const Achievement = ({ title, description, image, icon, id, mutate, profile, ...
                         ],
                     },
                 }
-                await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles/${user.profile.id}?populate=avatar`, {
-                    method: 'PUT',
-                    body: JSON.stringify(body),
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${jwt}`,
-                    },
-                })
+                await fetch(
+                    `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles/${user.profile.id}?populate=avatar`,
+                    {
+                        method: 'PUT',
+                        body: JSON.stringify(body),
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${jwt}`,
+                        },
+                    }
+                )
                 await mutate()
             } catch (err) {
                 console.error(err)

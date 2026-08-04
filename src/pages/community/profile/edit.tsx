@@ -389,7 +389,8 @@ const formSections = [
                                 size="md"
                                 className="max-w-[72px]"
                             />
-                            <Link href="https://countrycode.org/"
+                            <Link
+                                href="https://countrycode.org/"
                                 externalNoIcon
                                 className="font-bold text-sm sm:mt-0 mt-1"
                             >

@@ -393,7 +393,8 @@ export const ProfessionalServices = () => {
 
                 <p className="!m-0 text-sm text-secondary">
                     Need something smaller?{' '}
-                    <Link href="/merch?product=30-min-onboarding-consultation"
+                    <Link
+                        href="/merch?product=30-min-onboarding-consultation"
                         className="font-semibold"
                         state={{ newWindow: true }}
                     >

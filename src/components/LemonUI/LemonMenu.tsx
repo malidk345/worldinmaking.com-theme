@@ -7,17 +7,11 @@ import { LemonDivider } from './LemonDivider'
 import { LemonDropdown, LemonDropdownProps } from './LemonDropdown'
 import { LemonTag } from './LemonTag'
 
-export interface LemonMenuItemBase extends Pick<
-    LemonButtonProps,
-    | 'icon'
-    | 'sideIcon'
-    | 'sideAction'
-    | 'disabledReason'
-    | 'active'
-    | 'status'
-    | 'data-attr'
-    | 'size'
-> {
+export interface LemonMenuItemBase
+    extends Pick<
+        LemonButtonProps,
+        'icon' | 'sideIcon' | 'sideAction' | 'disabledReason' | 'active' | 'status' | 'data-attr' | 'size'
+    > {
     label: string | JSX.Element
     key?: React.Key
     className?: string
@@ -116,7 +110,10 @@ function LemonMenuSectionList({
                             {typeof section.title === 'string' ? <h5>{section.title}</h5> : section.title}
                         </div>
                     )}
-                    <LemonMenuItemList items={section.items.filter(Boolean) as LemonMenuItem[]} buttonSize={buttonSize} />
+                    <LemonMenuItemList
+                        items={section.items.filter(Boolean) as LemonMenuItem[]}
+                        buttonSize={buttonSize}
+                    />
                     {section.footer && <div className="LemonMenu__section-footer">{section.footer}</div>}
                     {i < sections.length - 1 && <LemonDivider />}
                 </div>
@@ -141,7 +138,13 @@ function LemonMenuItemList({
     )
 }
 
-function LemonMenuItemButton({ item, size }: { item: LemonMenuItem; size: 'xsmall' | 'small' | 'medium' }): JSX.Element {
+function LemonMenuItemButton({
+    item,
+    size,
+}: {
+    item: LemonMenuItem
+    size: 'xsmall' | 'small' | 'medium'
+}): JSX.Element {
     const { label, items, tag, custom, ...buttonProps } = item
 
     if (typeof label === 'function') {
@@ -160,10 +163,7 @@ function LemonMenuItemButton({ item, size }: { item: LemonMenuItem; size: 'xsmal
         >
             <span>{label}</span>
             {tag && (
-                <LemonTag
-                    type={tag === 'alpha' ? 'completion' : tag === 'beta' ? 'warning' : 'success'}
-                    size="small"
-                >
+                <LemonTag type={tag === 'alpha' ? 'completion' : tag === 'beta' ? 'warning' : 'success'} size="small">
                     {tag.toUpperCase()}
                 </LemonTag>
             )}

@@ -112,14 +112,20 @@ function MaxChatContent({ onClose, initialQuestion, context, onSubmit }: MaxAICh
                             Max AI
                             <span className="MaxChat__header-online" title="Online" />
                         </div>
-                        <div className="MaxChat__header-meta">Powered by {currentPersona.label} · {currentPersona.description}</div>
+                        <div className="MaxChat__header-meta">
+                            Powered by {currentPersona.label} · {currentPersona.description}
+                        </div>
                     </div>
                 </div>
 
                 <div className="MaxChat__header-actions">
                     <div className="MaxChat__header-context">
-                        <LemonTag type="primary" size="small">UI Context Active</LemonTag>
-                        <LemonTag type="muted" size="small">📄 {contextPath}</LemonTag>
+                        <LemonTag type="primary" size="small">
+                            UI Context Active
+                        </LemonTag>
+                        <LemonTag type="muted" size="small">
+                            📄 {contextPath}
+                        </LemonTag>
                     </div>
                     <LemonButton
                         type="tertiary"
@@ -140,7 +146,9 @@ function MaxChatContent({ onClose, initialQuestion, context, onSubmit }: MaxAICh
                         key={p.key}
                         type="button"
                         onClick={() => setSelectedPersona(p.key)}
-                        className={`MaxChat__persona-btn${selectedPersona === p.key ? ' MaxChat__persona-btn--active' : ''}`}
+                        className={`MaxChat__persona-btn${
+                            selectedPersona === p.key ? ' MaxChat__persona-btn--active' : ''
+                        }`}
                     >
                         <span>{p.icon}</span>
                         <span>{p.label}</span>
@@ -159,7 +167,12 @@ function MaxChatContent({ onClose, initialQuestion, context, onSubmit }: MaxAICh
                         </div>
                         <div className="MaxChat__empty-starters">
                             {CONVERSATION_STARTERS.map((s) => (
-                                <button key={s} type="button" className="MaxChat__starter-chip" onClick={() => handleSubmit(s)}>
+                                <button
+                                    key={s}
+                                    type="button"
+                                    className="MaxChat__starter-chip"
+                                    onClick={() => handleSubmit(s)}
+                                >
                                     {s}
                                 </button>
                             ))}
@@ -189,7 +202,10 @@ function MaxChatContent({ onClose, initialQuestion, context, onSubmit }: MaxAICh
                         })}
 
                         {loading && (
-                            <StreamingSkeleton philosopher={currentPersona.label} philosopherIcon={currentPersona.icon} />
+                            <StreamingSkeleton
+                                philosopher={currentPersona.label}
+                                philosopherIcon={currentPersona.icon}
+                            />
                         )}
                     </>
                 )}

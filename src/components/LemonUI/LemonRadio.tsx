@@ -28,13 +28,7 @@ export function LemonRadio<T extends React.Key>({
     orientation = 'vertical',
 }: LemonRadioProps<T>): JSX.Element {
     return (
-        <div
-            className={clsx(
-                'LemonRadio',
-                `LemonRadio--${orientation}`,
-                className
-            )}
-        >
+        <div className={clsx('LemonRadio', `LemonRadio--${orientation}`, className)}>
             {options.map(({ value, label, disabledReason, description, ...optionProps }) => {
                 return (
                     <label

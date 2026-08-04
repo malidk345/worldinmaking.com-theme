@@ -51,7 +51,7 @@ export default function useJobs(): {
         }
     )
     const jobs = useMemo(() => {
-        return data?.flatMap(cur => cur.data || []) ?? []
+        return data?.flatMap((cur) => cur.data || []) ?? []
     }, [size, data])
 
     return {

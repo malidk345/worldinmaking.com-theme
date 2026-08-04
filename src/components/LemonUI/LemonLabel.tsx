@@ -2,10 +2,11 @@ import React from 'react'
 import clsx from 'clsx'
 import { IconInfo } from '@posthog/icons'
 
-export interface LemonLabelProps extends Pick<
-    React.LabelHTMLAttributes<HTMLLabelElement>,
-    'id' | 'htmlFor' | 'form' | 'children' | 'className' | 'onClick'
-> {
+export interface LemonLabelProps
+    extends Pick<
+        React.LabelHTMLAttributes<HTMLLabelElement>,
+        'id' | 'htmlFor' | 'form' | 'children' | 'className' | 'onClick'
+    > {
     info?: React.ReactNode
     infoLink?: string
     showOptional?: boolean

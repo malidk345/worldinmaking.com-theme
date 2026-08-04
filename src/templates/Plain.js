@@ -58,4 +58,3 @@ export default function Plain({ data }) {
         </ReaderView>
     )
 }
-

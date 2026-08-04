@@ -311,9 +311,7 @@ export default function Job({
     const showObjectives = missionAndObjectives !== 'false'
     // Group jobs by role grouping
     const jobGroups = useMemo(() => {
-        const groups: { [key: string]: any[] } = {}
-
-        (allJobPostings?.nodes || []).forEach((job: any) => {
+        const groups: { [key: string]: any[] } = {}(allJobPostings?.nodes || []).forEach((job: any) => {
             const roleGroupingField = job.parent?.customFields?.find(
                 (field: { title: string }) => field.title === 'Role grouping'
             )
@@ -364,7 +362,7 @@ export default function Job({
             name: groupName,
             jobs: groups[groupName],
         }))
-    }, [(allJobPostings?.nodes || [])])
+    }, [allJobPostings?.nodes || []])
 
     // Get all jobs in a flat array
     const allJobs = useMemo(() => {
@@ -614,7 +612,8 @@ export default function Job({
                                                             experience.
                                                         </p>
                                                         <p>
-                                                            <Link href="/handbook/people/compensation"
+                                                            <Link
+                                                                href="/handbook/people/compensation"
                                                                 state={{ newWindow: true }}
                                                             >
                                                                 Learn more about compensation
@@ -686,7 +685,8 @@ export default function Job({
                                                                     return (
                                                                         <li key={title} className="flex flex-col ">
                                                                             <div className="flex space-x-2">
-                                                                                <Link href={url}
+                                                                                <Link
+                                                                                    href={url}
                                                                                     className="block w-[60px] md:w-auto"
                                                                                 >
                                                                                     <span className="font-semibold text-sm text-black/50 hover:text-black/75 dark:text-white/50 dark:hover:text-white/75 font-code">
@@ -806,4 +806,3 @@ export default function Job({
         </>
     )
 }
-

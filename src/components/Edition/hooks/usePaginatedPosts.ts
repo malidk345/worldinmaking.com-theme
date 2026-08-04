@@ -34,7 +34,8 @@ const FALLBACK_POSTS = [
         attributes: {
             title: 'WorldInMaking 2.0: Otonom Yapay Zeka Çağı ve Geleceğin Mimarisi',
             slug: 'worldinmaking-2-0-ai-architecture',
-            excerpt: 'Otonom ajanlar, Supabase entegrasyonu ve yeni nesil web işletim sistemi hakkında kapsamlı rehber.',
+            excerpt:
+                'Otonom ajanlar, Supabase entegrasyonu ve yeni nesil web işletim sistemi hakkında kapsamlı rehber.',
             date: '2026-07-24',
             featuredImage: {
                 url: 'https://res.cloudinary.com/dmukukwp6/image/upload/v1675204207/james_hawkins_posthog_031f7cf651.png',
@@ -95,7 +96,10 @@ export const usePaginatedPosts = ({ params, pageSize = POSTS_PER_PAGE, onPageCha
     const apiHost = process.env.NEXT_PUBLIC_SQUEAK_API_HOST || ''
     const { data, isLoading, error, mutate, isValidating } = useSWR(
         apiHost ? `${apiHost}/api/posts?${query(params, currentPage, pageSize)}` : null,
-        (url: string) => fetch(url).then((r) => r.json()).catch(() => ({ data: [] }))
+        (url: string) =>
+            fetch(url)
+                .then((r) => r.json())
+                .catch(() => ({ data: [] }))
     )
 
     const rawStrapiPosts = data?.data ?? []

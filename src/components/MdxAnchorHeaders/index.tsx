@@ -2,7 +2,6 @@ import React from 'react'
 import { Heading } from 'types'
 import { AnchorIcon } from './AnchorIcon'
 
-
 const getNodeText = (children: string | React.ReactNode): string => {
     let text = ''
     if (typeof children === 'string') {

@@ -362,11 +362,14 @@ export default function MixtapeEditor({ id, onSubmit }: MixtapeEditorProps): JSX
         const loadMixtape = async () => {
             try {
                 const jwt = await getJwt()
-                const response = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/mixtapes/${id}?populate=*`, {
-                    headers: {
-                        Authorization: `Bearer ${jwt}`,
-                    },
-                })
+                const response = await fetch(
+                    `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/mixtapes/${id}?populate=*`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${jwt}`,
+                        },
+                    }
+                )
 
                 if (!response.ok) {
                     throw new Error('Failed to load mixtape')

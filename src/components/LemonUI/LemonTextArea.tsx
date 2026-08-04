@@ -3,10 +3,8 @@
 import React, { forwardRef, ReactElement, useRef } from 'react'
 import clsx from 'clsx'
 
-interface LemonTextAreaPropsBase extends Pick<
-    React.TextareaHTMLAttributes<HTMLTextAreaElement>,
-    'onFocus' | 'onBlur' | 'maxLength' | 'onKeyDown'
-> {
+interface LemonTextAreaPropsBase
+    extends Pick<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'onFocus' | 'onBlur' | 'maxLength' | 'onKeyDown'> {
     id?: string
     value?: string
     placeholder?: string
@@ -102,7 +100,12 @@ export const LemonTextArea = forwardRef<HTMLTextAreaElement, LemonTextAreaProps>
                     <div className="LemonTextArea__footer-right">
                         {rightFooter}
                         {textProps.maxLength ? (
-                            <div className={clsx('LemonTextArea__counter', textLength >= textProps.maxLength && 'LemonTextArea__counter--error')}>
+                            <div
+                                className={clsx(
+                                    'LemonTextArea__counter',
+                                    textLength >= textProps.maxLength && 'LemonTextArea__counter--error'
+                                )}
+                            >
                                 {textLength} / {textProps.maxLength}
                             </div>
                         ) : null}

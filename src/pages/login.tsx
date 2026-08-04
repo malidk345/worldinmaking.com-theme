@@ -16,9 +16,7 @@ export default function LoginPage() {
     return (
         <Layout>
             <div className="min-h-[80vh] flex items-center justify-center p-4">
-                <div className="text-center text-muted font-medium text-sm">
-                    Opening sign in window...
-                </div>
+                <div className="text-center text-muted font-medium text-sm">Opening sign in window...</div>
             </div>
         </Layout>
     )

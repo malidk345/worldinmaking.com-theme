@@ -259,7 +259,8 @@ function QuestionFormMain({
                                             Community questions are independent of PostHog support
                                         </a>
                                     ) : (
-                                        <Link href="/handbook/support/customer-support#community"
+                                        <Link
+                                            href="/handbook/support/customer-support#community"
                                             state={{ newWindow: true }}
                                             className="font-semibold underline"
                                         >
@@ -268,7 +269,8 @@ function QuestionFormMain({
                                     )}
                                     . If you have access to support through your PostHog plan, especially if you need to
                                     share personal info, you can file a support ticket{' '}
-                                    <Link href="https://app.posthog.com#panel=support"
+                                    <Link
+                                        href="https://app.posthog.com#panel=support"
                                         externalNoIcon
                                         className="font-semibold underline"
                                     >

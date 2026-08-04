@@ -115,4 +115,3 @@ export default function Tutorial({ data, pageContext: { tableOfContents, menu },
         </article>
     )
 }
-

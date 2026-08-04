@@ -19,7 +19,9 @@ export default function PostEditorWindow(): JSX.Element {
             <div className="flex items-center justify-between mb-6 pb-4 border-b border-border-primary">
                 <div>
                     <h2 className="text-xl font-bold text-primary m-0 font-rounded">Post & Discussion Editor</h2>
-                    <p className="text-sm text-secondary m-0 mt-1">Publish a new article, question, or philosophical prompt to the WorldInMaking community.</p>
+                    <p className="text-sm text-secondary m-0 mt-1">
+                        Publish a new article, question, or philosophical prompt to the WorldInMaking community.
+                    </p>
                 </div>
             </div>
 

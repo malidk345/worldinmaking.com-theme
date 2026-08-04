@@ -154,7 +154,8 @@ export const Feature = ({ id, title, teams, description, likeCount, onLike, onUp
                     <div>
                         <h3 className="text-lg m-0 leading-tight">{title}</h3>
                         {teamName && (
-                            <Link href={`/teams/${slugifyTeamName(teamName)}`}
+                            <Link
+                                href={`/teams/${slugifyTeamName(teamName)}`}
                                 className="text-sm opacity-70 text-inherit hover:opacity-100 hover:text-red dark:hover:text-yellow mt-0.5"
                             >
                                 {teamName} Team
@@ -364,7 +365,7 @@ export default function Roadmap({ searchQuery = '' }: RoadmapProps) {
                 highlightedFields,
             }
         })
-    }, [roadmapsWithHighlights, (staticRoadmaps?.nodes || [])])
+    }, [roadmapsWithHighlights, staticRoadmaps?.nodes || []])
 
     const roadmapsGroupedByTeam = groupBy(
         roadmaps,
@@ -520,7 +521,8 @@ export default function Roadmap({ searchQuery = '' }: RoadmapProps) {
                     : []),
                 {
                     content: teamName ? (
-                        <Link href={`/teams/${slugifyTeamName(teamName)}`}
+                        <Link
+                            href={`/teams/${slugifyTeamName(teamName)}`}
                             className="text-sm"
                             state={{ newWindow: true }}
                         >

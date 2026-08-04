@@ -131,12 +131,7 @@ const SidebarContent = ({
         <div className="flex flex-col h-full">
             <div className="border-b border-primary">
                 <div className="px-2 mt-2 pb-2">
-                    <OSButton
-                        variant="primary"
-                        size="md"
-                        width="full"
-                        onClick={() => setAskOpen(true)}
-                    >
+                    <OSButton variant="primary" size="md" width="full" onClick={() => setAskOpen(true)}>
                         Ask a question
                     </OSButton>
                 </div>
@@ -159,7 +154,9 @@ const SidebarContent = ({
             {askOpen && (
                 <div
                     className="fixed inset-0 z-[9999] flex items-center justify-center"
-                    onClick={(e) => { if (e.target === e.currentTarget) setAskOpen(false) }}
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) setAskOpen(false)
+                    }}
                 >
                     <div className="absolute inset-0 bg-black/50" />
                     <div
@@ -566,7 +563,10 @@ export default function Inbox(props) {
         filters,
     })
     const { appWindow } = useWindow()
-    const bottomHeightDefault = useMemo(() => Math.max(380, ((appWindow?.size?.height || 600) * 3) / 5), [appWindow?.size?.height])
+    const bottomHeightDefault = useMemo(
+        () => Math.max(380, ((appWindow?.size?.height || 600) * 3) / 5),
+        [appWindow?.size?.height]
+    )
     const [bottomHeight, setBottomHeight] = useState(bottomHeightDefault)
     const [sideWidth, setSideWidth] = useState(SIDE_WIDTH_DEFAULT)
     const [notificationsEnabled, setNotificationsEnabled] = useState(false)

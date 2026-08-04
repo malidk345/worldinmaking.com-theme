@@ -1,14 +1,6 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-    IconChevronRight,
-    IconChevronLeft,
-    IconApps,
-    IconSearch,
-    IconMinus,
-    IconX,
-    IconSparkles,
-} from '@posthog/icons'
+import { IconChevronRight, IconChevronLeft, IconApps, IconSearch, IconMinus, IconX, IconSparkles } from '@posthog/icons'
 import { useApp, useAppActions, useAppWindows } from '../../context/App'
 import Tooltip from 'components/RadixUI/Tooltip'
 import OSButton from 'components/OSButton'
@@ -53,67 +45,77 @@ export default function FooterBar() {
 
                     <div className="w-px h-4 bg-primary/10 mx-0.5" />
 
-                    <Tooltip trigger={
-                        <OSButton onClick={() => openSearch()} size="sm" className="!p-1">
-                            <IconSearch className="size-4 text-primary" />
-                        </OSButton>
-                    }>
+                    <Tooltip
+                        trigger={
+                            <OSButton onClick={() => openSearch()} size="sm" className="!p-1">
+                                <IconSearch className="size-4 text-primary" />
+                            </OSButton>
+                        }
+                    >
                         <span className="text-xs">Search (/)</span>
                     </Tooltip>
 
-                    <Tooltip trigger={
-                        <OSButton
-                            onClick={() =>
-                                updateSiteSettings({
-                                    ...siteSettings,
-                                    colorMode: siteSettings.colorMode === 'dark' ? 'light' : 'dark',
-                                })
-                            }
-                            size="sm"
-                            className="!p-1"
-                        >
-                            <IconSparkles className="size-4 text-primary" />
-                        </OSButton>
-                    }>
+                    <Tooltip
+                        trigger={
+                            <OSButton
+                                onClick={() =>
+                                    updateSiteSettings({
+                                        ...siteSettings,
+                                        colorMode: siteSettings.colorMode === 'dark' ? 'light' : 'dark',
+                                    })
+                                }
+                                size="sm"
+                                className="!p-1"
+                            >
+                                <IconSparkles className="size-4 text-primary" />
+                            </OSButton>
+                        }
+                    >
                         <span className="text-xs">Toggle Theme</span>
                     </Tooltip>
 
-                    <Tooltip trigger={
-                        <OSButton
-                            onClick={() => setIsActiveWindowsPanelOpen(!isActiveWindowsPanelOpen)}
-                            size="sm"
-                            className="!p-1"
-                        >
-                            <IconApps className="size-4 text-primary" />
-                        </OSButton>
-                    }>
+                    <Tooltip
+                        trigger={
+                            <OSButton
+                                onClick={() => setIsActiveWindowsPanelOpen(!isActiveWindowsPanelOpen)}
+                                size="sm"
+                                className="!p-1"
+                            >
+                                <IconApps className="size-4 text-primary" />
+                            </OSButton>
+                        }
+                    >
                         <span className="text-xs">Mission Control</span>
                     </Tooltip>
 
                     {windows.length > 0 && (
                         <>
                             <div className="w-px h-4 bg-primary/10 mx-0.5" />
-                            <Tooltip trigger={
-                                <OSButton
-                                    onClick={() => windows.forEach((w) => updateWindow(w, { minimized: true }))}
-                                    size="sm"
-                                    className="!p-1"
-                                >
-                                    <IconMinus className="size-4 text-primary" />
-                                </OSButton>
-                            }>
+                            <Tooltip
+                                trigger={
+                                    <OSButton
+                                        onClick={() => windows.forEach((w) => updateWindow(w, { minimized: true }))}
+                                        size="sm"
+                                        className="!p-1"
+                                    >
+                                        <IconMinus className="size-4 text-primary" />
+                                    </OSButton>
+                                }
+                            >
                                 <span className="text-xs">Minimize All</span>
                             </Tooltip>
 
-                            <Tooltip trigger={
-                                <OSButton
-                                    onClick={() => windows.forEach((w) => closeWindow(w))}
-                                    size="sm"
-                                    className="!p-1 text-red hover:bg-red/10"
-                                >
-                                    <IconX className="size-4" />
-                                </OSButton>
-                            }>
+                            <Tooltip
+                                trigger={
+                                    <OSButton
+                                        onClick={() => windows.forEach((w) => closeWindow(w))}
+                                        size="sm"
+                                        className="!p-1 text-red hover:bg-red/10"
+                                    >
+                                        <IconX className="size-4" />
+                                    </OSButton>
+                                }
+                            >
                                 <span className="text-xs">Close All Windows</span>
                             </Tooltip>
                         </>

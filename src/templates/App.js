@@ -92,7 +92,10 @@ export default function App({ data }) {
                     {
                         name: 'Apps',
                     },
-                    ...(apps?.nodes || []).map(({ frontmatter: { title }, fields: { slug } }) => ({ name: title, url: slug })),
+                    ...(apps?.nodes || []).map(({ frontmatter: { title }, fields: { slug } }) => ({
+                        name: title,
+                        url: slug,
+                    })),
                 ]}
                 breadcrumb={[{ name: 'Apps', url: '/apps' }, { name: title }]}
             >
@@ -114,4 +117,3 @@ export default function App({ data }) {
         </Layout>
     )
 }
-

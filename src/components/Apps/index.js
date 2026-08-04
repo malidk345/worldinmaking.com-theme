@@ -86,8 +86,8 @@ function AppsPage({ location }) {
                     <span className="text-blue">PostHog Apps</span>
                 </h2>
                 <p className="my-6 mx-auto text-center text-lg md:text-lg font-semibold mt-2 lg:mt-4 text-secondary max-w-2xl">
-                    Apps are built on the <Link href="/docs/api">PostHog API</Link>. They appear right inside PostHog, and
-                    if using PostHog.js, apps can also inject code directly into your website or product.
+                    Apps are built on the <Link href="/docs/api">PostHog API</Link>. They appear right inside PostHog,
+                    and if using PostHog.js, apps can also inject code directly into your website or product.
                 </p>
             </header>
             <div className="hidden flex justify-start px-4 md:justify-center items-center mb-6 space-x-2 overflow-auto whitespace-nowrap">

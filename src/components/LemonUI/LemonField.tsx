@@ -19,11 +19,7 @@ export interface LemonPureFieldProps {
 }
 
 export const LemonFieldError = ({ error }: { error: string }): JSX.Element => {
-    return (
-        <div className="LemonField__error">
-            {error}
-        </div>
-    )
+    return <div className="LemonField__error">{error}</div>
 }
 
 export const LemonPureField = ({
@@ -64,7 +60,7 @@ export const LemonPureField = ({
             ) : null}
             {children}
             {help ? <div className="LemonField__help">{help}</div> : null}
-            {typeof error === 'string' ? (renderError ? renderError(error) : <LemonFieldError error={error} />) : null}
+            {typeof error === 'string' ? renderError ? renderError(error) : <LemonFieldError error={error} /> : null}
         </div>
     )
 }

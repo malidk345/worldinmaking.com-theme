@@ -100,9 +100,7 @@ export default function ErrorTrackingLanding(): JSX.Element {
                                 tracking, exception autocapture, and dashboards tailored to your product. One command
                                 does it all:
                             </p>
-
                             null
-
                             <div className="mt-4">
                                 <CallToAction type="primary" size="md" to="https://app.posthog.com/signup">
                                     Get started free
@@ -159,9 +157,7 @@ export default function ErrorTrackingLanding(): JSX.Element {
                                 PostHog maps exceptions back to your original source code with line numbers and file
                                 names. Just upload your source maps.
                             </p>
-
                             null
-
                             <div className="mt-4">
                                 <CallToAction
                                     type="primary"
@@ -183,16 +179,13 @@ export default function ErrorTrackingLanding(): JSX.Element {
                                 Exceptions get grouped into issues automatically. Assign them, resolve them, or set up
                                 alerts so Slack yells at you instead of your users.
                             </p>
-
                             null
-
                             <ul>
                                 <li>Manage, resolve, and auto-assign issues to team members</li>
                                 <li>Customize issue grouping with rules</li>
                                 <li>Set up real-time alerts based on event triggers, filters, and trends</li>
                                 <li>Integrate with Slack, Discord, Teams, or an HTTP webhook</li>
                             </ul>
-
                             <div className="mt-4">
                                 <CallToAction
                                     type="primary"
@@ -218,9 +211,7 @@ export default function ErrorTrackingLanding(): JSX.Element {
                                 that include full stack traces and curated instructions so your AI actually knows what
                                 it's looking at.
                             </p>
-
                             null
-
                             <div className="mt-4">
                                 <CallToAction
                                     type="primary"
@@ -242,9 +233,7 @@ export default function ErrorTrackingLanding(): JSX.Element {
                                 <IconRewindPlay className="text-yellow w-7 -mt-1 inline-block" /> Session replay
                             </h3>
                             <p>See exactly what users did before and after the error.</p>
-
                             null
-
                             <h3>
                                 <IconGraph className="text-blue w-7 -mt-1 inline-block" /> Product analytics
                             </h3>
@@ -252,16 +241,12 @@ export default function ErrorTrackingLanding(): JSX.Element {
                                 Use <code>$exception</code> events to create trends, funnels, or retention insights.
                                 Spot patterns, prioritize what's actually hurting users.
                             </p>
-
                             null
-
                             <h3>
                                 <IconToggle className="text-seagreen w-7 -mt-1 inline-block" /> Feature flags
                             </h3>
                             <p>Roll out fixes to affected users first, or revert changes without a full deploy.</p>
-
                             null
-
                             <div className="mt-4">
                                 <CallToAction type="primary" size="md" to="https://app.posthog.com/signup">
                                     Install error tracking

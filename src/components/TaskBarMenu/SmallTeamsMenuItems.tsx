@@ -1,4 +1,4 @@
-import { IconShieldPeople } from "@posthog/icons"
+import { IconShieldPeople } from '@posthog/icons'
 import CloudinaryImage from 'components/CloudinaryImage'
 import React from 'react'
 

@@ -103,7 +103,10 @@ export function LemonTable<T>({
                                 </tr>
                             ) : dataSource.length === 0 ? (
                                 <tr>
-                                    <td colSpan={columns.length} className="LemonTable__empty-state text-center py-8 opacity-75">
+                                    <td
+                                        colSpan={columns.length}
+                                        className="LemonTable__empty-state text-center py-8 opacity-75"
+                                    >
                                         {emptyState}
                                     </td>
                                 </tr>
@@ -114,7 +117,9 @@ export function LemonTable<T>({
                                             const val = col.dataIndex ? (record as any)[col.dataIndex] : undefined
                                             return (
                                                 <td key={cIdx} className={col.align ? `text-${col.align}` : undefined}>
-                                                    {col.render ? col.render(val, record, rIdx) : ((val as React.ReactNode) ?? '')}
+                                                    {col.render
+                                                        ? col.render(val, record, rIdx)
+                                                        : (val as React.ReactNode) ?? ''}
                                                 </td>
                                             )
                                         })}

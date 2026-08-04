@@ -113,7 +113,8 @@ const AchievementGroupRow = ({ achievementGroup, profile }) => {
 const Points = () => {
     const { user } = useUser()
     const profile = user?.profile
-    const achievements: any[] = []; const achievementGroups: any[] = [];
+    const achievements: any[] = []
+    const achievementGroups: any[] = []
 
     const allAchievements = [...achievements, ...achievementGroups].sort((a, b) => {
         const aPoints = a.achievements ? a.achievements.data[0]?.attributes?.points : a.points

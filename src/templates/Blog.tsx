@@ -49,4 +49,3 @@ const BlogCategory = ({
 }
 
 export default BlogCategory
-

@@ -65,7 +65,9 @@ export const fetchTopicGroups = async () => {
                 encodeValuesOnly: true,
             }
         )
-        const topicGroups = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/topic-groups?${topicGroupsQuery}`)
+        const topicGroups = await fetch(
+            `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/topic-groups?${topicGroupsQuery}`
+        )
 
         if (!topicGroups.ok) {
             return DEFAULT_TOPIC_GROUPS

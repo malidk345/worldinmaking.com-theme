@@ -30,11 +30,7 @@ export const LemonProgress = forwardRef<HTMLDivElement, LemonProgressProps>(func
     return (
         <div
             ref={ref}
-            className={clsx(
-                'LemonProgress',
-                `LemonProgress--${size}`,
-                className
-            )}
+            className={clsx('LemonProgress', `LemonProgress--${size}`, className)}
             style={{ backgroundColor: bgColor, ...style }}
             {...rest}
         >

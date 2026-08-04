@@ -122,7 +122,8 @@ function TemplateCard({ template }: { template: UnifiedTemplate }) {
     const primaryTag = template.tags[0] || 'Other'
 
     return (
-        <Link href={template.url}
+        <Link
+            href={template.url}
             state={{ newWindow: true }}
             className="group flex flex-col rounded-lg border border-primary bg-primary p-4 hover:border-yellow transition-colors no-underline"
         >

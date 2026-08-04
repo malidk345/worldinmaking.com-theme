@@ -47,7 +47,18 @@ export const LemonBadge = forwardRef<HTMLSpanElement, LemonBadgeProps>(function 
 })
 
 export const LemonBadgeNumber = forwardRef<HTMLSpanElement, LemonBadgeNumberProps>(function LemonBadgeNumber(
-    { count, maxDigits = 1, showZero = false, forcePlus = false, size = 'medium', position = 'none', status = 'primary', className, style, title },
+    {
+        count,
+        maxDigits = 1,
+        showZero = false,
+        forcePlus = false,
+        size = 'medium',
+        position = 'none',
+        status = 'primary',
+        className,
+        style,
+        title,
+    },
     ref
 ) {
     if (!showZero && count === 0) return null

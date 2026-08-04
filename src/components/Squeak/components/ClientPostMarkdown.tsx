@@ -49,9 +49,7 @@ export const ClientPostMarkdown = ({
                     </h2>
                 ),
                 h3: ({ children }) => (
-                    <h3 className="text-[13.5px] font-bold text-primary mt-2.5 mb-1 leading-snug">
-                        {children}
-                    </h3>
+                    <h3 className="text-[13.5px] font-bold text-primary mt-2.5 mb-1 leading-snug">{children}</h3>
                 ),
                 p: ({ children }) => (
                     <p className="text-[13.5px] font-normal leading-[1.55] tracking-tight text-primary m-0 pb-2.5 last:pb-0">
@@ -71,7 +69,10 @@ export const ClientPostMarkdown = ({
                             language={'js' as Language}
                         >
                             {({ className, style, tokens, getLineProps, getTokenProps }) => (
-                                <pre className={`${className} overflow-x-auto m-0 p-3.5 my-3 rounded-[10px] bg-black/6 dark:bg-white/5 border border-black/8 dark:border-white/8 font-mono text-[12px] leading-[1.6]`} style={style}>
+                                <pre
+                                    className={`${className} overflow-x-auto m-0 p-3.5 my-3 rounded-[10px] bg-black/6 dark:bg-white/5 border border-black/8 dark:border-white/8 font-mono text-[12px] leading-[1.6]`}
+                                    style={style}
+                                >
                                     {tokens.map((line, i) => (
                                         <div key={i} {...getLineProps({ line, key: i })}>
                                             {line.map((token, key) => (
@@ -102,21 +103,13 @@ export const ClientPostMarkdown = ({
                         {children}
                     </a>
                 ),
-                strong: ({ children }) => (
-                    <strong className="font-bold text-primary">{children}</strong>
-                ),
-                em: ({ children }) => (
-                    <em className="italic opacity-85">{children}</em>
-                ),
+                strong: ({ children }) => <strong className="font-bold text-primary">{children}</strong>,
+                em: ({ children }) => <em className="italic opacity-85">{children}</em>,
                 ul: ({ children }) => (
-                    <ul className="my-1.5 pl-5 list-disc space-y-0.5 text-[13.5px] leading-[1.5]">
-                        {children}
-                    </ul>
+                    <ul className="my-1.5 pl-5 list-disc space-y-0.5 text-[13.5px] leading-[1.5]">{children}</ul>
                 ),
                 ol: ({ children }) => (
-                    <ol className="my-1.5 pl-5 list-decimal space-y-0.5 text-[13.5px] leading-[1.5]">
-                        {children}
-                    </ol>
+                    <ol className="my-1.5 pl-5 list-decimal space-y-0.5 text-[13.5px] leading-[1.5]">{children}</ol>
                 ),
                 li: ({ children }) => (
                     <li className="text-primary leading-[1.55] pl-0.5 marker:text-primary/40 font-normal">

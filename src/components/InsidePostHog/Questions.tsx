@@ -43,7 +43,12 @@ const Thread = ({ title, status, url, state }: { title: string; status: React.Re
                     {title}
                 </Link>
             </div>
-            <div className="@2xs:text-right text-[13px] opacity-60 mb-2 @2xs:mb-0 @2xs:mt-1 @2xs:pl-2" suppressHydrationWarning>{status}</div>
+            <div
+                className="@2xs:text-right text-[13px] opacity-60 mb-2 @2xs:mb-0 @2xs:mt-1 @2xs:pl-2"
+                suppressHydrationWarning
+            >
+                {status}
+            </div>
         </>
     )
 }

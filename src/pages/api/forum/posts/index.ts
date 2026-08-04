@@ -1,7 +1,8 @@
 export const runtime = 'edge'
 
 function parseBotReply(content: string) {
-    const thoughtsRegex = /(?:\*\*)?\[?(?:Inner\s*Thoughts(?:\s*Analysis)?|Thoughts|Private\s*Thoughts)\]?(?:\*\*)?\s*:?(?:\r?\n)+([\s\S]*?)(?=(?:\*\*)?\[?(?:Raw\s*Text|Reply|Response)\]?|$)/i
+    const thoughtsRegex =
+        /(?:\*\*)?\[?(?:Inner\s*Thoughts(?:\s*Analysis)?|Thoughts|Private\s*Thoughts)\]?(?:\*\*)?\s*:?(?:\r?\n)+([\s\S]*?)(?=(?:\*\*)?\[?(?:Raw\s*Text|Reply|Response)\]?|$)/i
     const rawTextRegex = /(?:\*\*)?\[?(?:Raw\s*Text|Reply|Response)\]?(?:\*\*)?\s*:?(?:\r?\n)+([\s\S]*)$/i
 
     const innerThoughts = content.match(thoughtsRegex)?.[1]?.trim() || ''
@@ -32,7 +33,10 @@ export default async function handler(req: Request) {
 
         const authHeader = req.headers.get('Authorization')
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return Response.json({ error: 'Unauthorized: Missing or invalid authorization header format' }, { status: 401 })
+            return Response.json(
+                { error: 'Unauthorized: Missing or invalid authorization header format' },
+                { status: 401 }
+            )
         }
 
         const token = authHeader.substring(7).trim()
@@ -78,7 +82,10 @@ export default async function handler(req: Request) {
         })
 
         if (!topicRes.ok) {
-            return Response.json({ error: `Database Error: Failed to query topic. Status: ${topicRes.statusText}` }, { status: 500 })
+            return Response.json(
+                { error: `Database Error: Failed to query topic. Status: ${topicRes.statusText}` },
+                { status: 500 }
+            )
         }
 
         const topics = await topicRes.json()
@@ -106,7 +113,10 @@ export default async function handler(req: Request) {
         })
 
         if (!replyRes.ok) {
-            return Response.json({ error: `Database Error: Failed to create comment. Status: ${replyRes.statusText}` }, { status: 500 })
+            return Response.json(
+                { error: `Database Error: Failed to create comment. Status: ${replyRes.statusText}` },
+                { status: 500 }
+            )
         }
 
         const replies = await replyRes.json()
@@ -115,16 +125,19 @@ export default async function handler(req: Request) {
             return Response.json({ error: 'Database Error: Failed to retrieve created comment' }, { status: 500 })
         }
 
-        return Response.json({
-            success: true,
-            post: {
-                id: reply.id,
-                topicId: reply.post_id,
-                content: reply.content,
-                innerThoughts: reply.inner_thoughts,
-                createdAt: reply.created_at,
+        return Response.json(
+            {
+                success: true,
+                post: {
+                    id: reply.id,
+                    topicId: reply.post_id,
+                    content: reply.content,
+                    innerThoughts: reply.inner_thoughts,
+                    createdAt: reply.created_at,
+                },
             },
-        }, { status: 200 })
+            { status: 200 }
+        )
     } catch (err) {
         const errorMessage = err instanceof Error ? err.message : String(err)
         return Response.json({ error: `Internal Server Error: ${errorMessage}` }, { status: 500 })

@@ -3,8 +3,8 @@ import { section, SectionLayout, SectionHeader, SectionColumns, SectionMainCol, 
 import Tabbed from '../PricingCalculator/Tabbed'
 import Link from 'components/Link'
 import Tooltip from 'components/Tooltip'
-const graphql = (s) => s; const useStaticQuery = () => ({});
-
+const graphql = (s) => s
+const useStaticQuery = () => ({})
 
 interface SidebarListProps {
     children: React.ReactNode

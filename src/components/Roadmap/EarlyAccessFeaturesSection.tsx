@@ -360,7 +360,8 @@ const PitchIdeaPanel = (): JSX.Element => {
 }
 
 const ChangelogCard = (): JSX.Element => (
-    <Link href="/changelog"
+    <Link
+        href="/changelog"
         // The Editor's prose styles hit this anchor (underline, semibold, link color) — reset
         // them so the text matches the PitchIdeaCard button above.
         className="flex w-full items-center justify-between gap-3 rounded-md border border-dashed border-primary bg-transparent p-3 text-left !font-normal !text-primary !no-underline hover:border-secondary hover:bg-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red dark:focus-visible:ring-yellow"
@@ -413,7 +414,8 @@ const FeatureCard = ({
                 </span>
             </span>
             {crest && (
-                <CloudinaryImage image={crest}
+                <CloudinaryImage
+                    image={crest}
                     alt={`${team?.name ?? teamSlug} team mini crest`}
                     className="size-9 shrink-0"
                 />
@@ -555,7 +557,8 @@ const TeamRoster = ({ people }: { people: TeamPerson[] }): JSX.Element | null =>
                             delay={0}
                             trigger={
                                 person.id ? (
-                                    <Link href={`/community/profiles/${person.id}`}
+                                    <Link
+                                        href={`/community/profiles/${person.id}`}
                                         state={{ newWindow: true }}
                                         className="block rounded-full"
                                     >
@@ -580,9 +583,7 @@ const TeamRoster = ({ people }: { people: TeamPerson[] }): JSX.Element | null =>
 
 const DrawerAction = ({ feature }: { feature: EarlyAccessFeature }): JSX.Element => {
     if (feature.stage === 'beta') {
-        return (
-            null
-        )
+        return null
     }
 
     const surveyId = feature.payload?.survey_id as string | undefined
@@ -676,8 +677,7 @@ export default function EarlyAccessFeaturesSection(): JSX.Element | null {
 
     const { teamInfoBySlug, peopleByTeamSlug } = useMemo(() => {
         const teams: Record<string, TeamInfo> = {}
-        const people: Record<string, TeamPerson[]> = {}
-        (allSqueakTeam?.nodes || []).forEach((node) => {
+        const people: Record<string, TeamPerson[]> = {}(allSqueakTeam?.nodes || []).forEach((node) => {
             teams[node.slug] = { name: node.name, miniCrest: node.miniCrest }
             people[node.slug] = (node.profiles?.data || []).map((profile) => ({
                 id: profile.id ? String(profile.id) : undefined,

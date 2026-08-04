@@ -30,7 +30,13 @@ function ReasoningDisplay({ steps, defaultOpen = true }: ReasoningDisplayProps):
             {open && (
                 <div className="MaxMessage__reasoning-steps">
                     {steps.map((step, i) => (
-                        <div key={i} className={clsx('MaxMessage__reasoning-step', step.status === 'error' && 'MaxMessage__reasoning-step--error')}>
+                        <div
+                            key={i}
+                            className={clsx(
+                                'MaxMessage__reasoning-step',
+                                step.status === 'error' && 'MaxMessage__reasoning-step--error'
+                            )}
+                        >
                             <span className="MaxMessage__reasoning-step-icon">
                                 {step.status === 'error' ? '✗' : step.status === 'pending' ? '◌' : '✓'}
                             </span>
@@ -107,9 +113,7 @@ export function AssistantMessageView({
                     <span className="MaxMessage__timestamp">{message.timestamp}</span>
                 </div>
 
-                {message.reasoning && message.reasoning.length > 0 && (
-                    <ReasoningDisplay steps={message.reasoning} />
-                )}
+                {message.reasoning && message.reasoning.length > 0 && <ReasoningDisplay steps={message.reasoning} />}
 
                 <div className="MaxMessage__bubble MaxMessage__bubble--ai">
                     {message.status === 'streaming' ? (
@@ -158,7 +162,10 @@ interface StreamingSkeletonProps {
     philosopherIcon?: string
 }
 
-export function StreamingSkeleton({ philosopher = 'Max', philosopherIcon = '🦔' }: StreamingSkeletonProps): JSX.Element {
+export function StreamingSkeleton({
+    philosopher = 'Max',
+    philosopherIcon = '🦔',
+}: StreamingSkeletonProps): JSX.Element {
     return (
         <div className="MaxMessage MaxMessage--ai MaxMessage--streaming">
             <div className="MaxMessage__avatar MaxMessage__avatar--ai">{philosopherIcon}</div>
@@ -170,7 +177,9 @@ export function StreamingSkeleton({ philosopher = 'Max', philosopherIcon = '🦔
                 <div className="MaxMessage__reasoning">
                     <div className="MaxMessage__reasoning-toggle" style={{ cursor: 'default' }}>
                         <span className="MaxMessage__reasoning-icon">🧠</span>
-                        <span className="MaxMessage__reasoning-label MaxMessage__reasoning-label--pulse">Thinking…</span>
+                        <span className="MaxMessage__reasoning-label MaxMessage__reasoning-label--pulse">
+                            Thinking…
+                        </span>
                     </div>
                 </div>
                 <div className="MaxMessage__bubble MaxMessage__bubble--ai MaxMessage__bubble--skeleton">

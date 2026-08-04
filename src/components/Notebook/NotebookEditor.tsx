@@ -36,14 +36,16 @@ export function NotebookEditor(): JSX.Element {
         {
             id: '2',
             type: 'text',
-            content: 'This notebook synthesizes telemetry data from $pageview events and user retention cohorts to guide the upcoming roadmap.',
+            content:
+                'This notebook synthesizes telemetry data from $pageview events and user retention cohorts to guide the upcoming roadmap.',
         },
         {
             id: '3',
             type: 'ai_prompt',
             content: 'Max AI Prompt: What are the top drop-off points in our checkout funnel?',
             data: {
-                aiResponse: 'Drop-off analysis reveals 34.2% exit at the billing address step due to form validation timeouts.',
+                aiResponse:
+                    'Drop-off analysis reveals 34.2% exit at the billing address step due to form validation timeouts.',
             },
         },
         {
@@ -58,7 +60,8 @@ export function NotebookEditor(): JSX.Element {
         {
             id: '5',
             type: 'code',
-            content: "select event, count() from events where timestamp > now() - interval 7 day group by event order by count() desc limit 5",
+            content:
+                'select event, count() from events where timestamp > now() - interval 7 day group by event order by count() desc limit 5',
         },
         {
             id: '6',
@@ -110,18 +113,19 @@ export function NotebookEditor(): JSX.Element {
                             className="font-bold text-lg text-slate-900 cursor-pointer hover:bg-slate-100 px-2 py-0.5 rounded flex items-center gap-2 group"
                         >
                             <span>{title}</span>
-                            <IconPencil className="text-slate-400 opacity-0 group-hover:opacity-100" style={{ width: 14, height: 14 }} />
+                            <IconPencil
+                                className="text-slate-400 opacity-0 group-hover:opacity-100"
+                                style={{ width: 14, height: 14 }}
+                            />
                         </div>
                     )}
-                    <LemonTag type="muted" size="small">Draft</LemonTag>
+                    <LemonTag type="muted" size="small">
+                        Draft
+                    </LemonTag>
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <LemonButton
-                        type="secondary"
-                        size="small"
-                        icon={<IconShare style={{ width: 14, height: 14 }} />}
-                    >
+                    <LemonButton type="secondary" size="small" icon={<IconShare style={{ width: 14, height: 14 }} />}>
                         Share
                     </LemonButton>
                     <LemonButton
@@ -139,7 +143,10 @@ export function NotebookEditor(): JSX.Element {
             <div className="flex-1 overflow-y-auto px-6 py-8 flex justify-center">
                 <div className="w-full max-w-4xl bg-white border border-slate-200 rounded-xl p-8 shadow-sm flex flex-col gap-6">
                     {nodes.map((node) => (
-                        <div key={node.id} className="group relative flex flex-col gap-2 p-2 hover:bg-slate-50/60 rounded-lg transition-colors">
+                        <div
+                            key={node.id}
+                            className="group relative flex flex-col gap-2 p-2 hover:bg-slate-50/60 rounded-lg transition-colors"
+                        >
                             {/* Delete button on hover */}
                             <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 z-10">
                                 <button
@@ -160,9 +167,7 @@ export function NotebookEditor(): JSX.Element {
 
                             {/* Text Node */}
                             {node.type === 'text' && (
-                                <p className="text-slate-700 text-base leading-relaxed">
-                                    {node.content}
-                                </p>
+                                <p className="text-slate-700 text-base leading-relaxed">{node.content}</p>
                             )}
 
                             {/* AI Prompt Block */}
@@ -189,7 +194,9 @@ export function NotebookEditor(): JSX.Element {
                                             <IconGraph className="text-blue-600" style={{ width: 16, height: 16 }} />
                                             {node.content}
                                         </div>
-                                        <LemonTag type="primary" size="small">Insight</LemonTag>
+                                        <LemonTag type="primary" size="small">
+                                            Insight
+                                        </LemonTag>
                                     </div>
                                     <div className="flex items-baseline gap-3 my-2">
                                         <span className="text-xl font-extrabold">{node.data?.total}</span>
@@ -217,7 +224,11 @@ export function NotebookEditor(): JSX.Element {
                                         defaultChecked={node.data?.done}
                                         className="w-4 h-4 rounded text-blue-600 cursor-pointer"
                                     />
-                                    <span className={`text-sm ${node.data?.done ? 'line-through text-slate-400' : 'text-slate-800'}`}>
+                                    <span
+                                        className={`text-sm ${
+                                            node.data?.done ? 'line-through text-slate-400' : 'text-slate-800'
+                                        }`}
+                                    >
                                         {node.content}
                                     </span>
                                 </div>
@@ -228,12 +239,24 @@ export function NotebookEditor(): JSX.Element {
                     {/* Add Block Toolbar at bottom */}
                     <div className="flex items-center gap-2 pt-6 border-t border-slate-100">
                         <span className="text-xs text-slate-400 font-medium">Add Block:</span>
-                        <LemonButton type="secondary" size="xsmall" onClick={() => addNode('heading')}>+ Heading</LemonButton>
-                        <LemonButton type="secondary" size="xsmall" onClick={() => addNode('text')}>+ Text</LemonButton>
-                        <LemonButton type="secondary" size="xsmall" onClick={() => addNode('ai_prompt')}>+ AI Analysis</LemonButton>
-                        <LemonButton type="secondary" size="xsmall" onClick={() => addNode('chart')}>+ Chart</LemonButton>
-                        <LemonButton type="secondary" size="xsmall" onClick={() => addNode('code')}>+ Code</LemonButton>
-                        <LemonButton type="secondary" size="xsmall" onClick={() => addNode('todo')}>+ Checklist</LemonButton>
+                        <LemonButton type="secondary" size="xsmall" onClick={() => addNode('heading')}>
+                            + Heading
+                        </LemonButton>
+                        <LemonButton type="secondary" size="xsmall" onClick={() => addNode('text')}>
+                            + Text
+                        </LemonButton>
+                        <LemonButton type="secondary" size="xsmall" onClick={() => addNode('ai_prompt')}>
+                            + AI Analysis
+                        </LemonButton>
+                        <LemonButton type="secondary" size="xsmall" onClick={() => addNode('chart')}>
+                            + Chart
+                        </LemonButton>
+                        <LemonButton type="secondary" size="xsmall" onClick={() => addNode('code')}>
+                            + Code
+                        </LemonButton>
+                        <LemonButton type="secondary" size="xsmall" onClick={() => addNode('todo')}>
+                            + Checklist
+                        </LemonButton>
                     </div>
                 </div>
             </div>

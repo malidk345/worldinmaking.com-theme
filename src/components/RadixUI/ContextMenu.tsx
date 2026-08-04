@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { ContextMenu as RadixContextMenu } from 'radix-ui'
-import KeyboardShortcut from "components/KeyboardShortcut"
+import KeyboardShortcut from 'components/KeyboardShortcut'
 
 export interface ContextMenuItemProps {
     type: 'item' | 'separator'
@@ -63,9 +63,7 @@ const ContextMenu = ({ children, menuItems, className }: ContextMenuProps) => {
                                     }}
                                     className="w-full flex justify-between items-center gap-1"
                                 >
-                                    <span>
-                                        {item.children || item.label}
-                                    </span>
+                                    <span>{item.children || item.label}</span>
                                     <span>
                                         {item.shortcut && <KeyboardShortcut text={item.shortcut.join(' ')} size="sm" />}
                                     </span>

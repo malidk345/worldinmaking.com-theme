@@ -1,4 +1,5 @@
-const graphql = (s) => s; const useStaticQuery = () => ({});
+const graphql = (s) => s
+const useStaticQuery = () => ({})
 
 import { allProductsData } from '../Pricing'
 

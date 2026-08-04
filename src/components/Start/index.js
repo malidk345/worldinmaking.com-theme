@@ -90,7 +90,8 @@ export default function Start({ subdomain = 'app', initialTab = 'ai' }) {
                 extraTabRowContent={
                     <div data-scheme="primary" className="hidden @xl:inline-block text-primary ml-auto text-sm">
                         Need help?{' '}
-                        <Link href="/talk-to-a-human"
+                        <Link
+                            href="/talk-to-a-human"
                             state={{ newWindow: true }}
                             className="group font-semibold underline inline-flex items-center"
                         >

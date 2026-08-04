@@ -1,4 +1,4 @@
-"use client"
+'use client'
 import { MenuType, MenuItemType } from 'components/RadixUI/MenuBar'
 import React from 'react'
 import { companyMenu } from '../../navs'
@@ -302,7 +302,12 @@ export function useMenuData(): MenuType[] {
                         continue
                     }
                     if (item.type === 'submenu' && item.mobileDestination) {
-                        filteredItems.push({ ...item, type: 'item' as const, link: item.mobileDestination, items: undefined })
+                        filteredItems.push({
+                            ...item,
+                            type: 'item' as const,
+                            link: item.mobileDestination,
+                            items: undefined,
+                        })
                     } else if (item.type === 'submenu' && item.link) {
                         filteredItems.push({ ...item, type: 'item' as const, items: undefined })
                     } else {

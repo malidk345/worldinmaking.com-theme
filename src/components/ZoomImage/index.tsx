@@ -1,7 +1,6 @@
 import React from 'react'
 import Zoom from 'react-medium-image-zoom'
 
-
 export const ZoomImage = ({ children, noZoom, ...other }: { children: any }) => {
     return noZoom ? (
         <img {...other} />

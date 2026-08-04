@@ -69,12 +69,19 @@ export default function SidePanel({
                                             {headerAside && <div>{headerAside}</div>}
                                             {showCloseButton && (
                                                 <span className="contents">
-                                                    <Tooltip trigger={<OSButton icon={<IconChevronRight />} onClick={onClose} size="md" />}>
+                                                    <Tooltip
+                                                        trigger={
+                                                            <OSButton
+                                                                icon={<IconChevronRight />}
+                                                                onClick={onClose}
+                                                                size="md"
+                                                            />
+                                                        }
+                                                    >
                                                         Hide sidebar
                                                     </Tooltip>
                                                 </span>
                                             )}
-
                                         </div>
                                     </div>
                                 )}

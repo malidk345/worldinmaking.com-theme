@@ -217,7 +217,10 @@ const JobsByDepartment = ({
                                 </span>
                             </Link>
                             {showPosted && (
-                                <p className="m-0 pt-1 opacity-60 text-sm flex-[0_0_6rem] text-right" suppressHydrationWarning>
+                                <p
+                                    className="m-0 pt-1 opacity-60 text-sm flex-[0_0_6rem] text-right"
+                                    suppressHydrationWarning
+                                >
                                     {dayjs(postedDate).fromNow()}
                                 </p>
                             )}
@@ -367,7 +370,9 @@ const CompanyRows = ({
                         cells: [
                             {
                                 content: showPosted ? (
-                                    <span className="text-sm" suppressHydrationWarning>{dayjs(postedDate).fromNow()}</span>
+                                    <span className="text-sm" suppressHydrationWarning>
+                                        {dayjs(postedDate).fromNow()}
+                                    </span>
                                 ) : (
                                     <em className="text-sm opacity-60">Unknown</em>
                                 ),
@@ -512,7 +517,8 @@ const CompanyRows = ({
                                         {logo && (
                                             <>
                                                 {company.attributes.url ? (
-                                                    <Link href={`${company.attributes.url}?utm_source=posthog`}
+                                                    <Link
+                                                        href={`${company.attributes.url}?utm_source=posthog`}
                                                         externalNoIcon
                                                     >
                                                         {logo}
@@ -1272,11 +1278,14 @@ const CompanyForm = ({ onSuccess, companyId }: { onSuccess?: () => void; company
     const getCompany = useCallback(async () => {
         if (!companyId) return
         const jwt = await getJwt()
-        const response = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/companies/${companyId}?populate=*`, {
-            headers: {
-                Authorization: `Bearer ${jwt}`,
-            },
-        })
+        const response = await fetch(
+            `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/companies/${companyId}?populate=*`,
+            {
+                headers: {
+                    Authorization: `Bearer ${jwt}`,
+                },
+            }
+        )
         const data = await response.json()
         setCompany(data.data)
     }, [companyId, user])
@@ -1570,7 +1579,8 @@ const CompanyForm = ({ onSuccess, companyId }: { onSuccess?: () => void; company
             <div>
                 <p className="text-sm opacity-70 m-0">
                     Approvals are at our discretion and can take up to 48 hours to process.{' '}
-                    <Link href="http://app.posthog.com/home#supportModal"
+                    <Link
+                        href="http://app.posthog.com/home#supportModal"
                         className="text-red dark:text-yellow font-semibold"
                     >
                         Got a question?

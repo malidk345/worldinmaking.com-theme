@@ -48,10 +48,7 @@ export function SpinnerOverlay({
     visible?: boolean
 }): JSX.Element {
     return (
-        <div
-            className={clsx('SpinnerOverlay', sceneLevel && 'SpinnerOverlay--scene-level')}
-            aria-hidden={!visible}
-        >
+        <div className={clsx('SpinnerOverlay', sceneLevel && 'SpinnerOverlay--scene-level')} aria-hidden={!visible}>
             <Spinner className={clsx('text-5xl', className)} {...spinnerProps} />
         </div>
     )

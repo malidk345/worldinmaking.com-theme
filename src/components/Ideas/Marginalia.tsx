@@ -1,8 +1,8 @@
-"use client"
+'use client'
 
 import React, { useState } from 'react'
 import ScrollArea from 'components/RadixUI/ScrollArea'
-import { IconBookmark, IconDocument, IconExternal } from '@posthog/icons';
+import { IconBookmark, IconDocument, IconExternal } from '@posthog/icons'
 
 const MOCK_NOTES = [
     {
@@ -11,7 +11,7 @@ const MOCK_NOTES = [
         articleUrl: '/posts/future-agentic-ai',
         note: 'This connects deeply with the "SuperWorker" concept from our 2026 strategy. If AI takes over the scaffolding, human value moves entirely to curation and taste.',
         date: '2025-05-10',
-        tags: ['ai', 'strategy']
+        tags: ['ai', 'strategy'],
     },
     {
         id: '2',
@@ -19,7 +19,7 @@ const MOCK_NOTES = [
         articleUrl: '/posts/minimalist-architecture',
         note: 'Notice how the author emphasizes negative space. We should apply this to the WindowContext constraints—maybe add a "zen mode" that hides the taskbar.',
         date: '2025-05-14',
-        tags: ['design', 'ui']
+        tags: ['design', 'ui'],
     },
     {
         id: '3',
@@ -27,15 +27,17 @@ const MOCK_NOTES = [
         articleUrl: '/posts/tokenizing-invisible-labor',
         note: 'Fascinating read. It solves the open-source maintenance problem, but I wonder about the bureaucratic overhead of tracking every micro-interaction.',
         date: '2025-05-16',
-        tags: ['web3', 'economics']
-    }
+        tags: ['web3', 'economics'],
+    },
 ]
 
 export default function Marginalia() {
     const [filter, setFilter] = useState<string>('')
 
     const filteredNotes = filter
-        ? MOCK_NOTES.filter(n => n.tags.includes(filter) || n.articleTitle.toLowerCase().includes(filter.toLowerCase()))
+        ? MOCK_NOTES.filter(
+              (n) => n.tags.includes(filter) || n.articleTitle.toLowerCase().includes(filter.toLowerCase())
+          )
         : MOCK_NOTES
 
     return (
@@ -87,7 +89,7 @@ export default function Marginalia() {
                                 </p>
 
                                 <div className="mt-3 flex gap-2">
-                                    {note.tags.map(tag => (
+                                    {note.tags.map((tag) => (
                                         <button
                                             key={tag}
                                             onClick={() => setFilter(tag)}
