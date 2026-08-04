@@ -1,7 +1,9 @@
 /**
- * Generates master bundle.scss for notebook-app:
- * - All component & skin classes (.Popover, .LemonButton, .LemonModal, .LemonMenu, etc.) match directly
- * - Global element resets (svg, button, input) are scoped to .notebook-app-scope so posthog.com remains 100% unaffected
+ * Generates master bundle.scss for notebook-app strictly wrapped inside .notebook-app-scope.
+ * Because document.body receives class 'notebook-app-scope' while Notebook is mounted:
+ * 1. Notebook App (.notebook-app-scope .App) matches 100% perfectly.
+ * 2. FloatingPortal popovers (.notebook-app-scope .Popover, .notebook-app-scope .LemonPopover) match 100% perfectly.
+ * 3. posthog.com main site elements outside document.body matching remain 100% untouched when unmounted!
  */
 const fs = require('fs')
 const path = require('path')
@@ -66,20 +68,12 @@ const imports = sortedFiles.map(f => {
     return `@import '${rel}';`
 })
 
-// Scope bare element resets to .notebook-app-scope so posthog.com icons stay intact
-const elementResets = `
-.notebook-app-scope {
-  svg:not([class*='size-']) {
-    max-width: 100%;
-  }
-}
-`
-
 const bundleContent = `// Auto-generated master bundle for notebook-app\n` +
-`@tailwind base;\n@tailwind components;\n@tailwind utilities;\n\n` +
-imports.join('\n') + '\n\n' +
-elementResets
+`.notebook-app-scope {\n` +
+`  @tailwind base;\n  @tailwind components;\n  @tailwind utilities;\n\n` +
+`  ` + imports.join('\n  ') + `\n` +
+`}\n`
 
 const bundlePath = path.join(stylesDir, 'bundle.scss')
 fs.writeFileSync(bundlePath, bundleContent)
-console.log('Successfully generated master bundle.scss without nesting broken Popover classes.')
+console.log('Successfully generated master bundle.scss wrapped inside .notebook-app-scope.')

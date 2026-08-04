@@ -1180,13 +1180,13 @@
         }
     }
 
-    body {
+    .notebook-app-scope {
         font-size: 14px;
         font-weight: 400;
         line-height: 1.5715;
         color: var(--text-3000);
         color-scheme: light dark;
-        touch-action: manipulation; // Disable double-tap-to-zoom on mobile, making taps slightly snappier
+        touch-action: manipulation;
         background: var(--color-bg-primary);
 
         &[theme='light'] {

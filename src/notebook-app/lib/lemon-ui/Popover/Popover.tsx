@@ -381,6 +381,7 @@ export const Popover = React.forwardRef<HTMLDivElement, PopoverProps>(function P
                             <div
                                 className={clsx(
                                     'Popover',
+                                    'notebook-app-scope',
                                     padded && 'Popover--padded',
                                     maxContentWidth && 'Popover--max-content-width',
                                     !isAttached && 'Popover--top-centered',
