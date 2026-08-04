@@ -65,7 +65,7 @@ export function useUserLocation(): { location: UserLocation; isLoading: boolean 
                 return DEFAULT_LOCATION
             })
             .catch((error) => {
-                console.log('Could not determine user location, using default:', error)
+                console.error('Could not determine user location, using default:', error)
                 cachedLocation = DEFAULT_LOCATION
                 return DEFAULT_LOCATION
             })
