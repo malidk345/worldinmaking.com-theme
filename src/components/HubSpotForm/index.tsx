@@ -440,7 +440,7 @@ export default function HubSpotForm({
             },
             body: JSON.stringify(submission),
         }).catch((err) => {
-            console.log(err)
+            console.error(err)
             return err
         })
         if (res.status === 200) {
