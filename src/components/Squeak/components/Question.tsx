@@ -413,7 +413,6 @@ export function Question(props: QuestionProps) {
         }
     }, [notifications])
 
-    // TODO: Default to question data if passed in
     const {
         question: questionData,
         isLoading,
