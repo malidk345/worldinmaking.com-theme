@@ -112,7 +112,7 @@ const Contributors = (props) => {
     )
 }
 
-export HandbookSidebar = ({ contributors, title, location, availability, related }) => {
+export const HandbookSidebar = ({ contributors, title, location, availability, related }) => {
     return (
         <>
             {pathname.startsWith('/docs/cdp/destinations') &&
@@ -205,7 +205,7 @@ type TemplateParametersProps =
       }[]
     | null
 
-export AppParametersFactory: (params: AppParametersProps) => React.FC = ({ config }) => {
+export const AppParametersFactory: (params: AppParametersProps) => React.FC = ({ config }) => {
     const AppParameters = () => {
         if (!config) {
             return null
@@ -263,7 +263,7 @@ export AppParametersFactory: (params: AppParametersProps) => React.FC = ({ confi
     return AppParameters
 }
 
-export TemplateParametersFactory: (params: TemplateParametersProps) => React.FC<{ templateId?: string }> = (
+export const TemplateParametersFactory: (params: TemplateParametersProps) => React.FC<{ templateId?: string }> = (
     templateConfigs
 ) => {
     const TemplateParameters = ({ templateId }: { templateId?: string }) => {
@@ -302,7 +302,7 @@ type SourceParametersProps = {
         | null
 }
 
-export SourceParametersFactory: (params: SourceParametersProps) => React.FC = ({ sourceFields }) => {
+export const SourceParametersFactory: (params: SourceParametersProps) => React.FC = ({ sourceFields }) => {
     const SourceParameters = () => <SourceConfiguration sourceFields={sourceFields} />
     return SourceParameters
 }
@@ -320,7 +320,7 @@ type SourceTablesProps = {
         | null
 }
 
-export SourceTablesFactory: (params: SourceTablesProps) => React.FC = ({ tables }) => {
+export const SourceTablesFactory: (params: SourceTablesProps) => React.FC = ({ tables }) => {
     const SourceTablesComponent = () => <SourceTables tables={tables} />
     return SourceTablesComponent
 }
