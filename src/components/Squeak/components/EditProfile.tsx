@@ -6,7 +6,6 @@ import * as Yup from 'yup'
 import TextareaAutosize from 'react-textarea-autosize'
 import { useUser } from 'hooks/useUser'
 import getAvatarURL from '../util/getAvatar'
-import usePostHog from 'hooks/usePostHog'
 import { Avatar as DefaultAvatar } from 'components/Community/Sidebar'
 import Toggle from 'components/Toggle'
 import { IconInfo } from '@posthog/icons'
@@ -207,8 +206,7 @@ function Avatar({ values, setFieldValue }) {
 }
 
 export const EditProfile: React.FC<EditProfileProps> = ({ onSubmit }) => {
-    const { user, fetchUser, isLoading, getJwt } = useUser()
-    const posthog = usePostHog()
+    const { user, isLoading, updateProfile } = useUser()
 
     if (!user) return null
 
@@ -231,70 +229,12 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onSubmit }) => {
 
     const avatar = getAvatarURL(user?.profile)
 
-    // TODO: Move this logic into the useUser hook
-    const handleSubmit = async ({ avatar, ...values }, { setSubmitting }) => {
+    const handleSubmit = async ({ avatar, ...values }: { avatar?: any; [key: string]: any }, { setSubmitting }: { setSubmitting: (isSubmitting: boolean) => void }) => {
         setSubmitting(true)
 
         try {
-            posthog?.capture('squeak profile update start', {
-                profileId: id,
-                ...values,
-            })
-
-            const JWT = await getJwt()
-            let image = avatar
-
-            if (avatar && typeof avatar === 'object') {
-                const formData = new FormData()
-                formData.append('files', avatar)
-
-                const uploadedImage = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/upload`, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        Authorization: `Bearer ${JWT}`,
-                    },
-                }).then((res) => res.json())
-
-                if (uploadedImage?.length > 0) {
-                    image = uploadedImage[0]
-                }
-            }
-
-            const body = {
-                data: {
-                    ...values,
-                    ...((image && typeof image !== 'string') || image === null ? { avatar: image?.id ?? null } : {}),
-                },
-            }
-
-            const { data } = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles/${id}?populate=avatar`, {
-                method: 'PUT',
-                body: JSON.stringify(body),
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${JWT}`,
-                },
-            }).then((res) => res.json())
-
-            if (data) {
-                await fetchUser(JWT)
-                onSubmit?.()
-            }
-
-            posthog?.capture('squeak profile update', {
-                profileId: id,
-                ...values,
-            })
-        } catch (error) {
-            posthog?.capture('squeak error', {
-                source: 'EditProfile.handleSubmit',
-                error: JSON.stringify(error),
-                profileId: id,
-                ...values,
-            })
-
-            throw error
+            await updateProfile({ id, avatar, ...values })
+            onSubmit?.()
         } finally {
             setSubmitting(false)
         }

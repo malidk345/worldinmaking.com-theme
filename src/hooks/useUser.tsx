@@ -127,6 +127,7 @@ type UserContextValue = {
     addBookmark: (args: { url: string; title: string; description: string }) => Promise<void>
     removeBookmark: (args: { url: string; title: string; description: string }) => Promise<void>
     reportSpam: (type: 'reply' | 'question', id: number) => Promise<void>
+    updateProfile: (args: { id: number; avatar?: any; [key: string]: any }) => Promise<void>
 }
 
 export const UserContext = createContext<UserContextValue>({
@@ -159,6 +160,7 @@ export const UserContext = createContext<UserContextValue>({
     addBookmark: async () => undefined,
     removeBookmark: async () => undefined,
     reportSpam: async () => undefined,
+    updateProfile: async () => undefined,
 })
 
 type UserProviderProps = {
@@ -920,6 +922,69 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         })
     }
 
+    const updateProfile = async ({ id, avatar, ...values }: { id: number; avatar?: any; [key: string]: any }) => {
+        try {
+            posthog?.capture('squeak profile update start', {
+                profileId: id,
+                ...values,
+            })
+
+            const JWT = await getJwt()
+            let image = avatar
+
+            if (avatar && typeof avatar === 'object') {
+                const formData = new FormData()
+                formData.append('files', avatar)
+
+                const uploadedImage = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/upload`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        Authorization: `Bearer ${JWT}`,
+                    },
+                }).then((res) => res.json())
+
+                if (uploadedImage?.length > 0) {
+                    image = uploadedImage[0]
+                }
+            }
+
+            const body = {
+                data: {
+                    ...values,
+                    ...((image && typeof image !== 'string') || image === null ? { avatar: image?.id ?? null } : {}),
+                },
+            }
+
+            const { data } = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles/${id}?populate=avatar`, {
+                method: 'PUT',
+                body: JSON.stringify(body),
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${JWT}`,
+                },
+            }).then((res) => res.json())
+
+            if (data) {
+                await fetchUser(JWT)
+            }
+
+            posthog?.capture('squeak profile update', {
+                profileId: id,
+                ...values,
+            })
+        } catch (error) {
+            posthog?.capture('squeak error', {
+                source: 'useUser.updateProfile',
+                error: JSON.stringify(error),
+                profileId: id,
+                ...values,
+            })
+
+            throw error
+        }
+    }
+
     const contextValue = {
         user,
         setUser,
@@ -946,6 +1011,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         addBookmark,
         removeBookmark,
         reportSpam,
+        updateProfile,
     }
 
     return <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>
