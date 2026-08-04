@@ -96,11 +96,6 @@ function EnableCohortRecordings() {
   defaults: '<ph_posthog_js_defaults>',
   disable_session_recording: true,
 });
-window.posthog.onFeatureFlags(function () {
-  if (window.posthog.isFeatureEnabled('your-feature-flag')) {
-    window.posthog.startSessionRecording();
-  }
-});
 `}
                     language="js"
                 />
