@@ -13,6 +13,7 @@ import CreatifyLogo from '../images/customers/creatify-light.png'
 import CreatifyLogoDark from '../images/customers/creatify-dark.png'
 import ConvexLogo from '../components/CustomerLogos/ConvexLogo'
 import ElevenLabsLogo from '../components/CustomerLogos/ElevenLabsLogo'
+import ElevenXLogo from '../components/CustomerLogos/ElevenXLogo'
 import ExaLogo from 'components/CustomerLogos/ExaLogo'
 import GanksterLogo from '../components/CustomerLogos/GanksterLogo'
 import GrantableLogo from '../components/CustomerLogos/GrantableLogo'
@@ -146,9 +147,7 @@ const CUSTOMER_DATA: Record<string, BaseCustomer> = {
         users: ['Marketing', 'Leadership', 'Founders', 'Engineering'],
         notes: 'AI SDR',
         featured: false,
-        // logo: 11xLogo, // TODO: Create SVG component
-        legacyLogo: 'https://res.cloudinary.com/dmukukwp6/image/upload/11x_logo_light_8c7d326edb.png',
-        legacyLogoDark: 'https://res.cloudinary.com/dmukukwp6/image/upload/11x_logo_dark_0934407584.png',
+        logo: ElevenXLogo,
     },
     adauris: {
         name: 'Adauris',
