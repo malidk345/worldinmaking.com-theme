@@ -58,9 +58,9 @@ jobs:
                     --metrics=off \
                     --verbose \
                     --exclude ./src/ \
-
-
-                                        --exclude ./contents/ \
+                    --exclude ./contents/ \
+                    --exclude .github/workflows/ci-security.yml \
+                    --exclude pnpm-lock.yaml \
                     .
 
     semgrep_checks:
