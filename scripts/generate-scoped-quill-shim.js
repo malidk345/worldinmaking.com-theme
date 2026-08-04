@@ -1,6 +1,6 @@
 /**
- * Generates quill-shim.css with specific global element resets strictly scoped
- * to prevent leaking into posthog.com main site icons, buttons, or layouts.
+ * Generates quill-shim.css without aggressive global svg resets so that site-wide header/nav icons
+ * remain at their normal, intended sizes at all times (whether notebook is open or closed).
  */
 const fs = require('fs')
 const path = require('path')
@@ -8,56 +8,36 @@ const path = require('path')
 const srcPath = path.resolve(__dirname, '../node_modules/@posthog/quill/dist/quill.css')
 const destPath = path.resolve(__dirname, '../src/notebook-app/styles/quill-shim.css')
 
-if (!fs.existsSync(srcPath)) {
-    console.error('Source quill.css not found at', srcPath)
-    process.exit(1)
-}
+if (fs.existsSync(srcPath)) {
+    let css = fs.readFileSync(srcPath, 'utf8')
 
-let css = fs.readFileSync(srcPath, 'utf8')
+    // Remove Tailwind v4 @property blocks (not supported by Sass)
+    css = css.replace(/@property\s+[^\{]+\{[\s\S]*?\}/g, '')
 
-// Remove @property blocks
-css = css.replace(/@property\s+[^{]+\{(?:[^{}]|\{[^{}]*\})*\}/g, '')
+    // Replace @layer directives with @media all
+    css = css.replace(/@layer\s+[\w-]+\s*\{/g, '@media all {')
+    css = css.replace(/@layer\s+[\w-]+\s*;/g, '')
 
-// Replace @layer directives with @media all
-css = css.replace(/@layer\s+base\s*\{/g, '@media all {')
-css = css.replace(/@layer\s+utilities\s*\{/g, '@media all {')
-css = css.replace(/@layer\s+components\s*\{/g, '@media all {')
-css = css.replace(/@layer\s+properties\s*\{/g, '@media all {')
+    // Remove aggressive global svg resets that shrink header/nav icons
+    css = css.replace(/svg:not\(\[class\*=['"]?size-['"]?\]\)\s*\{\s*width:\s*16px;\s*height:\s*16px;?\s*\}/g, '')
+    css = css.replace(/\[\\\&_svg:not\(\[class\\\*=\\'size-\\'\]\)\]:size-4\s+svg:not\(\[class\*=size-\]\)\s*\{\s*width:\s*16px;\s*height:\s*16px;?\s*\}/g, '')
+    css = css.replace(/img,svg,video,canvas,audio,iframe,embed,object\s*\{\s*vertical-align:\s*middle;\s*display:\s*block;?\s*\}/g, '')
 
-// Define precise scope replacement for global resets
-const scopes = ['.notebook-app-scope', '.Popover', '.LemonModal', '.LemonPopover', '.ReactModal__Content', '[data-lemon-popover]']
-
-function scopeSelector(selectorStr) {
-    const parts = selectorStr.split(',').map(s => s.trim())
-    const scopedParts = []
-    for (const p of parts) {
-        for (const scope of scopes) {
-            scopedParts.push(`${scope} ${p}`)
+    // Verify depth
+    let depth = 0
+    let invalid = false
+    for (let i = 0; i < css.length; i++) {
+        if (css[i] === '{') depth++
+        if (css[i] === '}') {
+            depth--
+            if (depth < 0) invalid = true
         }
     }
-    return scopedParts.join(', ')
+
+    console.log(`Final depth: ${depth}, Valid: ${!invalid && depth === 0}`)
+
+    fs.writeFileSync(destPath, css)
+    console.log('quill-shim.css generated without aggressive svg resets.')
+} else {
+    fs.writeFileSync(destPath, '/* quill-shim fallback */')
 }
-
-// Target specific global reset rules in Tailwind v4 quill.css
-css = css.replace(
-    'img,svg,video,canvas,audio,iframe,embed,object{vertical-align:middle;display:block}',
-    `${scopeSelector('img,svg,video,canvas,audio,iframe,embed,object')}{vertical-align:middle;display:block}`
-)
-
-css = css.replace(
-    'button,input,select,optgroup,textarea{font:inherit;font-feature-settings:inherit;font-variation-settings:inherit;letter-spacing:inherit;color:inherit;opacity:1;background-color:#0000;border-radius:0}',
-    `${scopeSelector('button,input,select,optgroup,textarea')}{font:inherit;font-feature-settings:inherit;font-variation-settings:inherit;letter-spacing:inherit;color:inherit;opacity:1;background-color:#0000;border-radius:0}`
-)
-
-css = css.replace(
-    '*{border-color:var(--border);outline-color:var(--ring)}',
-    `${scopeSelector('*')}{border-color:var(--border);outline-color:var(--ring)}`
-)
-
-css = css.replace(
-    'svg:not([class*=size-]){width:16px;height:16px}',
-    `${scopeSelector('svg:not([class*=size-])')}{width:16px;height:16px}`
-)
-
-fs.writeFileSync(destPath, css)
-console.log('Successfully generated clean scoped quill-shim.css')
