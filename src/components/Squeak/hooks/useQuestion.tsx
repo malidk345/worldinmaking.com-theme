@@ -15,7 +15,7 @@ type UseQuestionOptions = {
     data?: StrapiRecord<QuestionData>
 }
 
-const query = (id: string | number, isModerator: boolean) =>
+const query = (id: string | number | undefined, isModerator: boolean) =>
     qs.stringify(
         {
             publicationState: isModerator ? 'preview' : 'live',
@@ -119,7 +119,7 @@ const query = (id: string | number, isModerator: boolean) =>
         }
     )
 
-export const useQuestion = (id: number | string, options?: UseQuestionOptions) => {
+export const useQuestion = (id: number | string | undefined, options?: UseQuestionOptions) => {
     const { getJwt, fetchUser, user, isModerator, isValidating } = useUser()
     const posthog = usePostHog()
     const [supabaseQuestion, setSupabaseQuestion] = useState<any>(null)
@@ -177,7 +177,7 @@ export const useQuestion = (id: number | string, options?: UseQuestionOptions) =
     }, [id, options?.data])
 
     const key =
-        isValidating || options?.data
+        isValidating || options?.data || !id
             ? null
             : `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/questions?${query(id, isModerator)}`
 
@@ -227,7 +227,7 @@ export const useQuestion = (id: number | string, options?: UseQuestionOptions) =
                   },
               }
             : question || options?.data
-    const questionID = typeof id !== 'string' ? id : question?.id
+    const questionID = id !== undefined && typeof id !== 'string' ? id : question?.id
 
     const reply = async (body: string) => {
         try {
