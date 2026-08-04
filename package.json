@@ -18,6 +18,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:notebook-styles": "node scripts/generate-scoped-quill-shim.js && node scripts/generate-style-bundle.js && node scripts/compile-notebook-css.js",
+    "predev": "npm run build:notebook-styles",
+    "prebuild": "npm run build:notebook-styles",
     "pages:build": "npx @cloudflare/next-on-pages@1",
     "start": "next start",
     "bot:worker": "node scripts/bot-worker.js",
