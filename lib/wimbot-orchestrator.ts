@@ -303,7 +303,7 @@ export async function addBotContribution(
     }
     const newEntry: PaperBotContribution = {
         ...contribution,
-        id: 'contrib-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+        id: 'contrib-' + Date.now() + '-' + crypto.getRandomValues(new Uint32Array(1))[0] / 4294967295.toString(36).substring(2, 6),
         post_id: postId,
         created_at: new Date().toISOString(),
     }

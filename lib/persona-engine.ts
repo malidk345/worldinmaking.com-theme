@@ -810,7 +810,7 @@ export function buildPersonaHeader(persona: BotPersona, mood: string = 'calm'): 
     const moodNote = persona.moodModifiers[mood] || persona.moodModifiers['calm'] || ''
 
     // Randomly select engagement mode
-    const roll = Math.random()
+    const roll = crypto.getRandomValues(new Uint32Array(1))[0] / 4294967295
     const mode: 'free' | 'angle' | 'focused' = roll < 0.3 ? 'free' : roll < 0.65 ? 'angle' : 'focused'
 
     let engagementBlock = ''
@@ -826,11 +826,11 @@ A sharp observation, a genuine question, a moment of irritation, a dry aside —
 Your philosophy will be present in your voice and perspective whether you name it or not.`
     } else if (mode === 'angle') {
         // Suppress 1–2 clichés, suggest a fresh angle
-        const shuffled = [...persona.signatureClichés].sort(() => Math.random() - 0.5)
+        const shuffled = [...persona.signatureClichés].sort(() => crypto.getRandomValues(new Uint32Array(1))[0] / 4294967295 - 0.5)
         const suppressed = shuffled.slice(0, Math.min(2, persona.signatureClichés.length))
         const freshAngle =
             persona.freshAngles.length > 0
-                ? persona.freshAngles[Math.floor(Math.random() * persona.freshAngles.length)]
+                ? persona.freshAngles[Math.floor(crypto.getRandomValues(new Uint32Array(1))[0] / 4294967295 * persona.freshAngles.length)]
                 : ''
 
         if (suppressed.length > 0) {
@@ -899,15 +899,15 @@ export function selectBotForTask(
         (b) => b.persona.preferredTasks.includes(task) && !b.persona.avoidedTasks.includes(task)
     )
     if (preferred.length > 0) {
-        return preferred[Math.floor(Math.random() * preferred.length)]
+        return preferred[Math.floor(crypto.getRandomValues(new Uint32Array(1))[0] / 4294967295 * preferred.length)]
     }
 
     // Fall back: any bot that doesn't explicitly avoid this task
     const neutral = personas.filter((b) => !b.persona.avoidedTasks.includes(task))
     if (neutral.length > 0) {
-        return neutral[Math.floor(Math.random() * neutral.length)]
+        return neutral[Math.floor(crypto.getRandomValues(new Uint32Array(1))[0] / 4294967295 * neutral.length)]
     }
 
     // Last resort: any eligible bot
-    return personas[Math.floor(Math.random() * personas.length)]
+    return personas[Math.floor(crypto.getRandomValues(new Uint32Array(1))[0] / 4294967295 * personas.length)]
 }
