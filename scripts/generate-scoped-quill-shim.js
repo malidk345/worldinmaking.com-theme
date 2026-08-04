@@ -1,6 +1,6 @@
 /**
- * Generates quill-shim.css without aggressive global svg resets so that site-wide header/nav icons
- * remain at their normal, intended sizes at all times (whether notebook is open or closed).
+ * Generates quill-shim.css wrapped strictly inside .notebook-app-scope and Portals.
+ * Replaces :root with & so no variables or resets ever bleed to html, body, or posthog.com main header.
  */
 const fs = require('fs')
 const path = require('path')
@@ -11,33 +11,35 @@ const destPath = path.resolve(__dirname, '../src/notebook-app/styles/quill-shim.
 if (fs.existsSync(srcPath)) {
     let css = fs.readFileSync(srcPath, 'utf8')
 
-    // Remove Tailwind v4 @property blocks (not supported by Sass)
+    // Remove Tailwind v4 @property blocks
     css = css.replace(/@property\s+[^\{]+\{[\s\S]*?\}/g, '')
 
     // Replace @layer directives with @media all
     css = css.replace(/@layer\s+[\w-]+\s*\{/g, '@media all {')
     css = css.replace(/@layer\s+[\w-]+\s*;/g, '')
 
-    // Remove aggressive global svg resets that shrink header/nav icons
-    css = css.replace(/svg:not\(\[class\*=['"]?size-['"]?\]\)\s*\{\s*width:\s*16px;\s*height:\s*16px;?\s*\}/g, '')
-    css = css.replace(/\[\\\&_svg:not\(\[class\\\*=\\'size-\\'\]\)\]:size-4\s+svg:not\(\[class\*=size-\]\)\s*\{\s*width:\s*16px;\s*height:\s*16px;?\s*\}/g, '')
-    css = css.replace(/img,svg,video,canvas,audio,iframe,embed,object\s*\{\s*vertical-align:\s*middle;\s*display:\s*block;?\s*\}/g, '')
+    // Replace :root and :host with & so CSS vars attach to container scope, not global html
+    css = css.replace(/:root|:host/g, '&')
+
+    // Wrap the entire CSS in container scopes
+    const scopes = '.notebook-app-scope, .Popover, .LemonModal, .LemonPopover, .ReactModal__Content, [data-lemon-popover]'
+    const wrappedCss = `${scopes} {\n${css}\n}\n`
 
     // Verify depth
     let depth = 0
     let invalid = false
-    for (let i = 0; i < css.length; i++) {
-        if (css[i] === '{') depth++
-        if (css[i] === '}') {
+    for (let i = 0; i < wrappedCss.length; i++) {
+        if (wrappedCss[i] === '{') depth++
+        if (wrappedCss[i] === '}') {
             depth--
             if (depth < 0) invalid = true
         }
     }
 
-    console.log(`Final depth: ${depth}, Valid: ${!invalid && depth === 0}`)
+    console.log(`Wrapped depth: ${depth}, Valid: ${!invalid && depth === 0}`)
 
-    fs.writeFileSync(destPath, css)
-    console.log('quill-shim.css generated without aggressive svg resets.')
+    fs.writeFileSync(destPath, wrappedCss)
+    console.log('Successfully generated strictly scoped quill-shim.css')
 } else {
     fs.writeFileSync(destPath, '/* quill-shim fallback */')
 }
