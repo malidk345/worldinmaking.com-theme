@@ -16,7 +16,7 @@ module.exports = customer = ({ logo, featuredImage, title, font }) => `
         font-family: "MatterVF", "sans-serif";
         overflow: hidden;
         color: black;
-        background-color: #eff0ea;
+        background-color: #e8eaed;
       }
     </style>
   </head>

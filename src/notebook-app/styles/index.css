@@ -21,28 +21,27 @@
   --color-accent-active: hsl(19 100% 63%);
   --color-accent-inverted: hsl(43 94% 57%);
 
-  /* Surface & Background Tokens — match base.scss PostHog-3000 light */
-  --bg-3000: #f3f4ef;
-  --color-bg-3000: #f3f4ef;
-  --color-bg-primary: #f3f4f0; /* posthog-3000-50 */
+  /* Surface & Background Tokens */
+  --bg-3000: #f3f4f5;
+  --color-bg-primary: #f3f4f5;
   --color-bg-surface-primary: #ffffff;
-  --color-bg-surface-secondary: #eff0ea; /* posthog-3000-100 */
-  --color-bg-surface-tertiary: #e5e7df; /* posthog-3000-150 */
+  --color-bg-surface-secondary: #f8fafc;
+  --color-bg-surface-tertiary: #f1f5f9;
   --color-bg-surface-popover: #ffffff;
-  --glass-bg: #e4e5deb3;
+  --glass-bg: #ffffff;
   --card-bg: #ffffff;
-  --sidebar-bg: #f9faf7;
+  --sidebar-bg: #fafafa;
   --code-bg: #1e293b;
   --code-text: #f8fafc;
 
   /* Text & Border Tokens */
-  --text-3000: #111111;
-  --color-text-3000: #111111;
-  --text-muted: #5f5f5f;
-  --color-text-muted: #5f5f5f;
-  --color-text-secondary: rgba(17, 17, 17, 0.7);
-  --border-3000: #dadbd2;
-  --color-border-primary: #dbded4;
+  --text-3000: #1d1f27;
+  --color-text-3000: #1d1f27;
+  --text-muted: #64748b;
+  --color-text-muted: #64748b;
+  --color-text-secondary: #475569;
+  --border-3000: #e2e8f0;
+  --color-border-primary: rgba(0, 0, 0, 0.12);
 
   /* Functional Status Colors */
   --success: #12b76a;

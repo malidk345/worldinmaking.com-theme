@@ -39,27 +39,27 @@ export default function CommunityIncubatorForm(): JSX.Element {
                             name="name"
                             type="text"
                             placeholder="Your name"
-                            className="w-full border border-light rounded px-4 py-2 bg-[#E5E7DF] text-lg text-black"
+                            className="w-full border border-light rounded px-4 py-2 bg-[#DDE1E6] text-lg text-black"
                             required
                         />
                         <input
                             name="email"
                             type="email"
                             placeholder="Your email"
-                            className="w-full border border-light rounded px-4 py-2 bg-[#E5E7DF] text-lg text-black"
+                            className="w-full border border-light rounded px-4 py-2 bg-[#DDE1E6] text-lg text-black"
                             required
                         />
                         <input
                             name="city"
                             type="text"
                             placeholder="What city would you like to start a builder community in?"
-                            className="w-full border border-light rounded px-4 py-2 bg-[#E5E7DF] text-lg text-black"
+                            className="w-full border border-light rounded px-4 py-2 bg-[#DDE1E6] text-lg text-black"
                             required
                         />
                         <textarea
                             name="motivation"
                             placeholder="Why do you want to start this?"
-                            className="w-full border border-light rounded px-4 py-2 bg-[#E5E7DF] text-lg text-black"
+                            className="w-full border border-light rounded px-4 py-2 bg-[#DDE1E6] text-lg text-black"
                             rows={4}
                             required
                         />

@@ -25,7 +25,7 @@ module.exports = careers = ({ jobs, font }) => {
             font-family: "MatterVF", "sans-serif";
             overflow: hidden;
             color: black;
-            background-color: #eff0ea;
+            background-color: #e8eaed;
             height: 630px;
             width: 1200px;
           }
@@ -36,7 +36,7 @@ module.exports = careers = ({ jobs, font }) => {
 
           header:before,
           header:after {
-            background: #E5E7DF;
+            background: #DDE1E6;
             border-bottom: solid 1px #D0D1C9;
             content: '';
             height: 66px;
@@ -204,7 +204,7 @@ module.exports = careers = ({ jobs, font }) => {
             bottom: 0;
             height: 250px;
             width: 100%;
-            background: linear-gradient(180deg, #eff0ea00 0%, #eff0ea 130%);
+            background: linear-gradient(180deg, #e8eaed00 0%, #e8eaed 130%);
         "
         ></div>`
                       : ''

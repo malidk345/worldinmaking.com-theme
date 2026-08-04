@@ -23,7 +23,7 @@ module.exports = job = ({ role, timezone, font }) => {
                 font-family: 'MatterVF', 'sans-serif';
                 overflow: hidden;
                 color: black;
-                background-color: #eff0ea;
+                background-color: #e8eaed;
             }
             .careers {
                 list-style: none;

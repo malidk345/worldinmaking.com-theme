@@ -245,7 +245,7 @@ export default function MixtapeEditor({ id, onSubmit }: MixtapeEditorProps): JSX
             genres: [],
             tracks: [],
             labelBackground: cassetteLabelBackgrounds[0],
-            cassetteColor: '#dbded4',
+            cassetteColor: '#cdd2d8',
             labelColor: '#eeefea',
         },
         onSubmit: async (values) => {
@@ -385,8 +385,8 @@ export default function MixtapeEditor({ id, onSubmit }: MixtapeEditorProps): JSX
                         youtubeUrl: track.youtubeUrl || '',
                     })),
                     labelBackground: attributes.metadata?.labelBackground || cassetteLabelBackgrounds[0],
-                    cassetteColor: attributes.metadata?.cassetteColor || '#dbded4',
-                    labelColor: attributes.metadata?.labelColor || '#eff0ea',
+                    cassetteColor: attributes.metadata?.cassetteColor || '#cdd2d8',
+                    labelColor: attributes.metadata?.labelColor || '#e8eaed',
                 })
             } catch (error) {
                 console.error('Error loading mixtape:', error)
