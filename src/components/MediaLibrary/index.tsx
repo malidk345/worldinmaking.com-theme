@@ -32,7 +32,6 @@ export default function MediaLibrary() {
         const jwt = await getJwt()
         if (isModerator && profileID && jwt) {
             setActiveTab('uploads')
-            console.log('currentFolder', currentFolder)
             await Promise.all(
                 acceptedFiles.map(async (file: File) => {
                     setLoading((loadingNumber) => loadingNumber + 1)

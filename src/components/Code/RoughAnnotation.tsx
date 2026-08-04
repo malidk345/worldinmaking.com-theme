@@ -168,11 +168,9 @@ export function RoughAnnotation({
             clearTimeout(timeout)
             timeout = setTimeout(() => {
                 if (isAnimatingRef.current) {
-                    console.log('[RoughAnnotation] ResizeObserver skipped — animation in progress')
                     return
                 }
                 if (annotationRef.current?.isShowing()) {
-                    console.log('[RoughAnnotation] ResizeObserver repositioning')
                     annotationRef.current.show()
                 }
             }, 150)
@@ -199,7 +197,6 @@ export function RoughAnnotation({
         let lastRect = `${r0.top},${r0.left},${r0.width},${r0.height}`
         const recheck = () => {
             if (isAnimatingRef.current) {
-                console.log('[RoughAnnotation] MutationObserver skipped — animation in progress')
                 return
             }
             const rect = el.getBoundingClientRect()
@@ -207,7 +204,6 @@ export function RoughAnnotation({
             if (key !== lastRect) {
                 lastRect = key
                 if (annotationRef.current?.isShowing()) {
-                    console.log('[RoughAnnotation] MutationObserver repositioning')
                     annotationRef.current.show()
                 }
             }

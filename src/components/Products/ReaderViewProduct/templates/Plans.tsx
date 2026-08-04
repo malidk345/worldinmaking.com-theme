@@ -290,15 +290,6 @@ const Plans = ({ id, productData }: SectionComponentProps) => {
     const productSplit = splitByCategory(visibleProductRows)
     const planSplit = splitByCategory(visiblePlanRows)
 
-    console.log('[Plans debug]', {
-        productRowCount: productRows.length,
-        visibleProductRowCount: visibleProductRows.length,
-        showDifferencesOnly,
-        categorySample: visibleProductRows.slice(0, 5).map((r) => ({ key: r.key, category: r.category })),
-        ungroupedCount: productSplit.ungrouped.length,
-        categories: productSplit.categories,
-        groupedCounts: Object.fromEntries(productSplit.categories.map((c) => [c, productSplit.grouped[c].length])),
-    })
 
     const lowestPaidTier = [...paidTiers].reverse().find((t: any) => parseFloat(t.unit_amount_usd) > 0)
     const lowestPrice =
