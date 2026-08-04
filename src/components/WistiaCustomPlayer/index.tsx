@@ -85,11 +85,13 @@ const WistiaCustomPlayer = React.forwardRef<any, WistiaCustomPlayerProps>(
             // Allow mobile sizes (down to ~200px width) for legitimate video players
             const rect = containerRef.current.getBoundingClientRect()
             if (rect.width < 200 || rect.height < 100) {
+                console.log('Skipping video initialization - detected thumbnail size', rect.width, rect.height)
                 return
             }
 
             // Skip if player already exists
             if (playerRef.current) {
+                console.log('Player already initialized, skipping')
                 return
             }
 
@@ -137,6 +139,7 @@ const WistiaCustomPlayer = React.forwardRef<any, WistiaCustomPlayerProps>(
                         if (ref && typeof ref !== 'function') {
                             const playerAPI = {
                                 pause: () => {
+                                    console.log('Pause called on player')
                                     if (playerRef.current && playerRef.current.pause) {
                                         playerRef.current.pause()
                                     } else if (video && video.pause) {
@@ -192,6 +195,7 @@ const WistiaCustomPlayer = React.forwardRef<any, WistiaCustomPlayerProps>(
                             const captionsPlugin = video.plugin?.captions
 
                             if (!captionsPlugin) {
+                                console.log('Captions plugin not available yet')
                                 return false
                             }
 
@@ -203,13 +207,16 @@ const WistiaCustomPlayer = React.forwardRef<any, WistiaCustomPlayerProps>(
                                 try {
                                     // Method 1: Get from plugin's captions array
                                     const availableCaptions = captionsPlugin.getAvailableCaptions?.()
+                                    console.log('Available captions:', availableCaptions)
 
                                     if (availableCaptions && availableCaptions.length > 0) {
                                         const firstLang = availableCaptions[0]
+                                        console.log('Using caption language:', firstLang)
 
                                         // Try to get the caption data
                                         const captionData = captionsPlugin.captionData?.(firstLang.language || 0)
                                         if (captionData && captionData.length > 0) {
+                                            console.log('Loaded', captionData.length, 'caption entries')
                                             setCaptions(captionData)
                                             return true
                                         }
@@ -217,15 +224,30 @@ const WistiaCustomPlayer = React.forwardRef<any, WistiaCustomPlayerProps>(
 
                                     // Method 2: Direct access to captions array
                                     if (captionsPlugin.captions && Array.isArray(captionsPlugin.captions)) {
+                                        console.log(
+                                            'Found captions array:',
+                                            captionsPlugin.captions.length,
+                                            'languages'
+                                        )
 
                                         if (captionsPlugin.captions.length > 0) {
                                             const firstCaptions = captionsPlugin.captions[0]
                                             if (firstCaptions.hash && firstCaptions.hash.length > 0) {
+                                                console.log(
+                                                    'Loaded',
+                                                    firstCaptions.hash.length,
+                                                    'caption entries from hash'
+                                                )
                                                 setCaptions(firstCaptions.hash)
                                                 return true
                                             }
                                             // Try lines property
                                             if (firstCaptions.lines && firstCaptions.lines.length > 0) {
+                                                console.log(
+                                                    'Loaded',
+                                                    firstCaptions.lines.length,
+                                                    'caption entries from lines'
+                                                )
                                                 setCaptions(firstCaptions.lines)
                                                 return true
                                             }
@@ -235,10 +257,12 @@ const WistiaCustomPlayer = React.forwardRef<any, WistiaCustomPlayerProps>(
                                     // Method 3: Access internal data
                                     const internalCaptions = video._impl?.data?.media?.captions
                                     if (internalCaptions && internalCaptions.length > 0) {
+                                        console.log('Found internal captions:', internalCaptions)
                                         const firstInternal = internalCaptions[0]
 
                                         // Check if it has a text field (full transcript)
                                         if (firstInternal.text && typeof firstInternal.text === 'string') {
+                                            console.log('Found text-only captions, need to fetch VTT')
                                             // This means we need to fetch the VTT file
                                             // The text field is just a full transcript
                                             // We should let the fetch method handle this
@@ -246,13 +270,16 @@ const WistiaCustomPlayer = React.forwardRef<any, WistiaCustomPlayerProps>(
                                         }
 
                                         if (firstInternal.hash && Array.isArray(firstInternal.hash)) {
+                                            console.log('Found caption hash with', firstInternal.hash.length, 'entries')
                                             setCaptions(firstInternal.hash)
                                             return true
                                         }
                                     }
 
+                                    console.log('Captions not ready yet, will retry...')
                                     return false
                                 } catch (e) {
+                                    console.log('Error accessing captions:', e)
                                     return false
                                 }
                             }
@@ -277,10 +304,12 @@ const WistiaCustomPlayer = React.forwardRef<any, WistiaCustomPlayerProps>(
 
                         // Also listen for caption-related events
                         video.bind('captionsloaded', () => {
+                            console.log('Captions loaded event fired')
                             setupCaptions()
                         })
 
                         video.bind('captionchange', (captionData: any) => {
+                            console.log('Caption change event:', captionData)
                             if (captionData && captionData.caption) {
                                 setCaptionText(captionData.caption)
                             }
@@ -291,6 +320,7 @@ const WistiaCustomPlayer = React.forwardRef<any, WistiaCustomPlayerProps>(
                             try {
                                 // Get video data to find caption URLs
                                 const videoData = video.data || video._impl?.data
+                                console.log('Video data for captions:', videoData)
 
                                 // Build the VTT URL from media ID if we have captions
                                 if (videoData?.media?.captions && videoData.media.captions.length > 0) {
@@ -311,18 +341,22 @@ const WistiaCustomPlayer = React.forwardRef<any, WistiaCustomPlayerProps>(
                                     }
 
                                     if (vttUrl) {
+                                        console.log('Fetching captions from URL:', vttUrl)
                                         const response = await fetch(vttUrl)
 
                                         if (response.ok) {
                                             const vttText = await response.text()
+                                            console.log('Fetched VTT captions:', vttText.substring(0, 200))
 
                                             // Parse VTT format
                                             const parsedCaptions = parseVTT(vttText)
                                             if (parsedCaptions.length > 0) {
+                                                console.log('Parsed', parsedCaptions.length, 'caption entries from VTT')
                                                 setCaptions(parsedCaptions)
                                                 return
                                             }
                                         } else {
+                                            console.log('Failed to fetch VTT, status:', response.status)
                                         }
                                     }
                                 }
@@ -336,13 +370,20 @@ const WistiaCustomPlayer = React.forwardRef<any, WistiaCustomPlayerProps>(
                                     if (Array.isArray(source) && source.length > 0) {
                                         const captionUrl = source[0].url || source[0].vtt_url
                                         if (captionUrl) {
+                                            console.log('Fetching captions from alternate URL:', captionUrl)
                                             const response = await fetch(captionUrl)
                                             if (response.ok) {
                                                 const vttText = await response.text()
+                                                console.log('Fetched VTT captions:', vttText.substring(0, 200))
 
                                                 // Parse VTT format
                                                 const parsedCaptions = parseVTT(vttText)
                                                 if (parsedCaptions.length > 0) {
+                                                    console.log(
+                                                        'Parsed',
+                                                        parsedCaptions.length,
+                                                        'caption entries from VTT'
+                                                    )
                                                     setCaptions(parsedCaptions)
                                                     return
                                                 }
@@ -351,6 +392,7 @@ const WistiaCustomPlayer = React.forwardRef<any, WistiaCustomPlayerProps>(
                                     }
                                 }
                             } catch (error) {
+                                console.log('Error fetching captions from API:', error)
                             }
                         }
 
@@ -470,6 +512,7 @@ const WistiaCustomPlayer = React.forwardRef<any, WistiaCustomPlayerProps>(
                 cleanup = () => {
                     // Don't cleanup the player - let it persist
                     // This prevents re-initialization on tab focus changes
+                    console.log('Cleanup called but player will persist')
                 }
             }
 
@@ -500,6 +543,11 @@ const WistiaCustomPlayer = React.forwardRef<any, WistiaCustomPlayerProps>(
 
                     // Debug first few captions
                     if (captions.indexOf(caption) < 3) {
+                        console.log(
+                            `Caption ${captions.indexOf(
+                                caption
+                            )}: start=${start}, end=${end}, currentTime=${currentTime}, inRange=${inRange}`
+                        )
                     }
 
                     return inRange
@@ -507,6 +555,7 @@ const WistiaCustomPlayer = React.forwardRef<any, WistiaCustomPlayerProps>(
 
                 if (currentCaption) {
                     const text = currentCaption.text || currentCaption.caption || ''
+                    console.log('Setting caption text:', text)
                     setCaptionText(text)
                 } else {
                     setCaptionText('')
@@ -514,6 +563,7 @@ const WistiaCustomPlayer = React.forwardRef<any, WistiaCustomPlayerProps>(
             } else if (!showCaptions) {
                 setCaptionText('')
             } else if (captions.length === 0 && showCaptions) {
+                console.log('No captions loaded yet, showCaptions is', showCaptions)
             }
         }, [currentTime, captions, showCaptions])
 

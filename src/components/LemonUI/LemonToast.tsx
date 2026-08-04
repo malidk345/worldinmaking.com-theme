@@ -41,12 +41,15 @@ export function ToastContent({ type, message, button }: ToastContentProps): JSX.
 
 export const lemonToast = {
     info(message: string | JSX.Element, options: any = {}) {
+        console.log('[lemonToast.info]', message, options)
         return 'toast-info'
     },
     loading(message: string | JSX.Element, options: any = {}) {
+        console.log('[lemonToast.loading]', message, options)
         return 'toast-loading'
     },
     success(message: string | JSX.Element, options: any = {}) {
+        console.log('[lemonToast.success]', message, options)
         return 'toast-success'
     },
     warning(message: string | JSX.Element, options: any = {}) {
@@ -58,5 +61,6 @@ export const lemonToast = {
         return 'toast-error'
     },
     dismiss(id?: number | string) {
+        console.log('[lemonToast.dismiss]', id)
     },
 }

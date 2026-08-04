@@ -163,6 +163,7 @@ function SearchBarImpl(
     }, [])
 
     const handleSelect = async (item: SearchResult) => {
+        console.log(item)
         try {
             setQuery(item.name)
             setIsOpen(false)
@@ -173,6 +174,7 @@ function SearchBarImpl(
             url.searchParams.set('access_token', token)
             const resp = await fetch(url.toString())
             const json = await resp.json()
+            console.log(json)
             const feat =
                 (Array.isArray(json?.features) && json.features[0]) || json?.feature || json?.results?.[0] || null
             const coords = feat?.coordinates || feat?.geometry?.coordinates || null

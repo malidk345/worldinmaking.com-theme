@@ -177,9 +177,15 @@ export default function CountriesWeHireIn({
 
         // Log zoom level and rotation when they change
         chart.events.on('wheelended', function () {
+            console.log('Zoom level:', chart.get('zoomLevel'))
+            console.log('Rotation X:', chart.get('rotationX'))
+            console.log('Rotation Y:', chart.get('rotationY'))
         })
 
         chart.events.on('panended', function () {
+            console.log('Zoom level:', chart.get('zoomLevel'))
+            console.log('Rotation X:', chart.get('rotationX'))
+            console.log('Rotation Y:', chart.get('rotationY'))
         })
 
         // Add background series with rounded edges

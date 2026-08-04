@@ -322,6 +322,7 @@ export default function Contact({
                     body: JSON.stringify(submission),
                 }
             ).catch((err) => {
+                console.log(err)
                 return err
             })
             if (res.status === 200) {
