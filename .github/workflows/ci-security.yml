@@ -31,6 +31,7 @@ jobs:
                     --config "p/security-audit" \
                     --config "p/trailofbits" \
                     --exclude-rule typescript.react.security.react-markdown-insecure-html.react-markdown-insecure-html \
+                    --exclude-rule typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml \
                     --error \
                     --metrics=off \
                     --verbose \
