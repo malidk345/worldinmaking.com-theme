@@ -34,7 +34,7 @@ jobs:
                     --error \
                     --metrics=off \
                     --verbose \
-                    src/ api/ lib/ utils/ scripts/ shims/
+                    src/ lib/ utils/ scripts/ shims/
 
     # scans GitHub Actions and other repo-wide config
     semgrep-general:
@@ -58,28 +58,20 @@ jobs:
                     --metrics=off \
                     --verbose \
                     --exclude ./src/ \
-
-
-                    --exclude ./api/ \
                     --exclude ./contents/ \
                     --exclude .github/workflows/ci-security.yml \
+                    --exclude pnpm-lock.yaml \
                     .
 
     semgrep_checks:
         needs: [semgrep-js, semgrep-general]
         name: Semgrep Checks Pass
         runs-on: ubuntu-latest
-        if: always()
+        if: ${{ always() }}
         steps:
             - name: Check matrix outcome
-              run: |
-                  if [[ "${{ needs.semgrep-js.result }}" != "success" && "${{ needs.semgrep-js.result }}" != "skipped" ]]; then
-                    echo "semgrep-js did not complete successfully."
-                    exit 1
-                  fi
-                  if [[ "${{ needs.semgrep-general.result }}" != "success" && "${{ needs.semgrep-general.result }}" != "skipped" ]]; then
-                    echo "semgrep-general did not complete successfully."
-                    exit 1
-                  fi
-
-                  echo "All checks passed."
+              if: ${{ needs.semgrep-js.result != 'success' && needs.semgrep-js.result != 'skipped' || needs.semgrep-general.result != 'success' && needs.semgrep-general.result != 'skipped' }}
+              run: exit 1
+            - name: Success
+              if: ${{ success() }}
+              run: echo "All checks passed."

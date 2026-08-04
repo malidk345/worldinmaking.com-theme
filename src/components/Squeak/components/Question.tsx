@@ -46,8 +46,7 @@ import { useToast } from '../../../context/Toast'
 import { useWindow } from '../../../context/Window'
 
 type QuestionProps = {
-    // TODO: Deal with id possibly being undefined at first
-    id: number | string
+    id?: number | string
     question?: StrapiRecord<QuestionData>
     expanded?: boolean
     showSlug?: boolean
