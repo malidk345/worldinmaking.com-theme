@@ -4,9 +4,6 @@ const path = require('path')
 const nextConfig = {
     // output: 'export',
     transpilePackages: ['ai', '@ai-sdk/openai', '@ai-sdk/google', '@ai-sdk/provider', '@ai-sdk/provider-utils'],
-    eslint: {
-        ignoreDuringBuilds: true,
-    },
     typescript: {
         ignoreBuildErrors: true,
     },
@@ -15,9 +12,6 @@ const nextConfig = {
     },
     trailingSlash: false,
     reactStrictMode: false,
-    experimental: {
-        serverComponentsExternalPackages: ['kea'],
-    },
 
     webpack: (config) => {
         config.resolve.alias = {
