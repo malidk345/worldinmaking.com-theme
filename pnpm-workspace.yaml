@@ -2,7 +2,8 @@ packages:
     - .
     - plugins/*
 
-minimumReleaseAge: 10080
+minimumReleaseAge: 0
+trustPolicy: ignore
 minimumReleaseAgeExclude:
     - '@posthog/brand'
     - '@posthog/icons'
@@ -12,8 +13,9 @@ minimumReleaseAgeExclude:
     - '@typecaast/schema'
     - '@typecaast/skin-kit'
     - '@typecaast/skins'
+    - '@base-ui/react'
+
 blockExoticSubdeps: true
-trustPolicy: no-downgrade
 
 # Hoist Gatsby's internal dependencies for webpack compatibility
 publicHoistPattern:
