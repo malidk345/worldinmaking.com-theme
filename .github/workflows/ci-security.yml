@@ -34,7 +34,7 @@ jobs:
                     --error \
                     --metrics=off \
                     --verbose \
-                    src/ api/ lib/ utils/ scripts/ shims/
+                    src/ lib/ utils/ scripts/ shims/
 
     # scans GitHub Actions and other repo-wide config
     semgrep-general:
@@ -57,12 +57,8 @@ jobs:
                     --error \
                     --metrics=off \
                     --verbose \
-                    --exclude ./src/ \
-
-
-                    --exclude ./api/ \
+                    --exclude ./.github/workflows/ci-security.yml \
                     --exclude ./contents/ \
-                    --exclude .github/workflows/ci-security.yml \
                     .
 
     semgrep_checks:
