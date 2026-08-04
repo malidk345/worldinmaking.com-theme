@@ -18,7 +18,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "pages:build": "npx @cloudflare/next-on-pages@1",
+    "pages:build": "npm config set legacy-peer-deps true && npx @cloudflare/next-on-pages@1",
     "start": "next start",
     "bot:worker": "node scripts/bot-worker.js",
     "format": "prettier --write \"**/*.{html,js,ts,tsx,json,yml,css,scss}\"",

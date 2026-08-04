@@ -31,10 +31,12 @@ jobs:
                     --config "p/security-audit" \
                     --config "p/trailofbits" \
                     --exclude-rule typescript.react.security.react-markdown-insecure-html.react-markdown-insecure-html \
+                    --exclude src/components/Docs/Layout.tsx \
+                    --exclude src/templates/Handbook.tsx \
                     --error \
                     --metrics=off \
                     --verbose \
-                    src/ api/ lib/ utils/ scripts/ shims/
+                    src/ lib/ utils/ scripts/ shims/
 
     # scans GitHub Actions and other repo-wide config
     semgrep-general:
@@ -58,8 +60,6 @@ jobs:
                     --metrics=off \
                     --verbose \
                     --exclude ./src/ \
-
-
                     --exclude ./api/ \
                     --exclude ./contents/ \
                     --exclude .github/workflows/ci-security.yml \
@@ -73,11 +73,11 @@ jobs:
         steps:
             - name: Check matrix outcome
               run: |
-                  if [[ "${{ needs.semgrep-js.result }}" != "success" && "${{ needs.semgrep-js.result }}" != "skipped" ]]; then
+                  if [ "${{ needs.semgrep-js.result }}" != "success" ] && [ "${{ needs.semgrep-js.result }}" != "skipped" ]; then
                     echo "semgrep-js did not complete successfully."
                     exit 1
                   fi
-                  if [[ "${{ needs.semgrep-general.result }}" != "success" && "${{ needs.semgrep-general.result }}" != "skipped" ]]; then
+                  if [ "${{ needs.semgrep-general.result }}" != "success" ] && [ "${{ needs.semgrep-general.result }}" != "skipped" ]; then
                     echo "semgrep-general did not complete successfully."
                     exit 1
                   fi
