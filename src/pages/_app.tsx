@@ -12,6 +12,7 @@ import 'react-medium-image-zoom/dist/styles.css'
 import 'rc-slider/assets/index.css'
 import '../components/Pricing/PricingSlider/slider.css'
 import '../components/LemonUI/lemon-ui.css'
+import '../components/MarkdownNotebook/MarkdownNotebook.scss'
 import '../components/MaxAI/MaxChat.css'
 import { Provider } from 'context/App'
 import { Provider as ToastProvider } from 'context/Toast'
@@ -40,6 +41,12 @@ export default function App({ Component, pageProps }: AppProps) {
             })
         }
     }, [router?.asPath])
+
+    // Pages that set `Component.noLayout = true` render without the standard wrapper
+    // so full-screen embeds (e.g. /notebooks) can fill the entire viewport.
+    if ((Component as any).noLayout) {
+        return <Component {...pageProps} />
+    }
 
     return (
         <div

@@ -1,0 +1,73 @@
+// Auto-generated master bundle for notebook-app
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import 'quill-shim.css';
+@import 'vars.scss';
+@import 'mixins.scss';
+@import 'fonts.scss';
+@import 'base.scss';
+@import 'global.scss';
+@import 'lemon-skin.scss';
+@import 'utilities-legacy.scss';
+@import 'index.css';
+@import 'notebook.css';
+@import 'quill-bridge.scss';
+@import '../lib/components/KeyboardShortcut/KeyboardShortcut.scss';
+@import '../lib/components/MarkdownNotebook/MarkdownNotebook.scss';
+@import '../lib/components/ScrollableShadows/ScrollableShadows.scss';
+@import '../lib/icons/icons.scss';
+@import '../lib/lemon-ui/icons/icons.scss';
+@import '../lib/lemon-ui/LemonActionableTooltip/LemonActionableTooltip.scss';
+@import '../lib/lemon-ui/LemonBadge/LemonBadge.scss';
+@import '../lib/lemon-ui/LemonBanner/LemonBanner.scss';
+@import '../lib/lemon-ui/LemonButton/LemonButton.scss';
+@import '../lib/lemon-ui/LemonCalendar/LemonCalendar.scss';
+@import '../lib/lemon-ui/LemonCard/LemonCard.scss';
+@import '../lib/lemon-ui/LemonCheckbox/LemonCheckbox.scss';
+@import '../lib/lemon-ui/LemonCollapse/LemonCollapse.scss';
+@import '../lib/lemon-ui/LemonColor/LemonColorButton.scss';
+@import '../lib/lemon-ui/LemonColor/LemonColorGlyph.scss';
+@import '../lib/lemon-ui/LemonDisabledArea/LemonDisabledArea.scss';
+@import '../lib/lemon-ui/LemonDivider/LemonDivider.scss';
+@import '../lib/lemon-ui/LemonDrawer/LemonDrawer.scss';
+@import '../lib/lemon-ui/LemonFileInput/LemonFileInput.scss';
+@import '../lib/lemon-ui/LemonInput/LemonInput.scss';
+@import '../lib/lemon-ui/LemonInputSelect/LemonInputSelect.scss';
+@import '../lib/lemon-ui/LemonLabel/LemonLabel.scss';
+@import '../lib/lemon-ui/LemonMarkdown/LemonMarkdown.scss';
+@import '../lib/lemon-ui/LemonModal/LemonModal.scss';
+@import '../lib/lemon-ui/LemonProgressCircle/LemonProgressCircle.scss';
+@import '../lib/lemon-ui/LemonRichContent/LemonRichContentEditor.scss';
+@import '../lib/lemon-ui/LemonRow/LemonRow.scss';
+@import '../lib/lemon-ui/LemonSegmentedButton/LemonSegmentedButton.scss';
+@import '../lib/lemon-ui/LemonSegmentedButton/LemonSegmentedDropdown.scss';
+@import '../lib/lemon-ui/LemonSkeleton/LemonSkeleton.scss';
+@import '../lib/lemon-ui/LemonSwitch/LemonSwitch.scss';
+@import '../lib/lemon-ui/LemonTable/LemonTable.scss';
+@import '../lib/lemon-ui/LemonTable/LemonTableLoader.scss';
+@import '../lib/lemon-ui/LemonTabs/LemonTabs.scss';
+@import '../lib/lemon-ui/LemonTag/LemonTag.scss';
+@import '../lib/lemon-ui/LemonTextArea/LemonTextArea.scss';
+@import '../lib/lemon-ui/LemonWidget/LemonWidget.scss';
+@import '../lib/lemon-ui/Lettermark/Lettermark.scss';
+@import '../lib/lemon-ui/Link/Link.scss';
+@import '../lib/lemon-ui/LoadingBar/LoadingBar.scss';
+@import '../lib/lemon-ui/PaginationControl/PaginationControl.scss';
+@import '../lib/lemon-ui/Popover/Popover.scss';
+@import '../lib/lemon-ui/ProfilePicture/ProfilePicture.scss';
+@import '../lib/lemon-ui/Spinner/Spinner.scss';
+@import '../lib/lemon-ui/Splotch/Splotch.scss';
+@import '../lib/lemon-ui/Tooltip/Tooltip.scss';
+@import '../lib/ui/Button/ButtonPrimitives.scss';
+@import '../lib/ui/TabsPrimitive/TabsPrimitive.scss';
+@import '../lib/ui/TextInputPrimitive/TextInputPrimitive.css';
+@import '../lib/ui/WrappingLoadingSkeleton/WrappingLoadingSkeleton.scss';
+
+
+.notebook-app-scope {
+  svg:not([class*='size-']) {
+    max-width: 100%;
+  }
+}

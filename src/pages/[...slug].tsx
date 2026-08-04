@@ -8,11 +8,18 @@ import BlogPostTemplate from '../templates/BlogPost'
 import Inbox from '../components/Inbox'
 import IdeasHub from '../components/Ideas'
 import ProfileWrapper from '../components/Profile'
-const NotebooksListSkeleton = ({ path, ...props }: { path?: string; [key: string]: any }) => (
-    <div className="p-8 text-center text-secondary">
-        <h2 className="text-xl font-bold mb-2">Notebooks</h2>
-        <p className="text-sm opacity-70">Loading notebooks...</p>
-    </div>
+// Dynamically import the full notebook app with SSR disabled
+// (the app uses browser APIs like window.location.hash)
+const NotebooksListSkeleton = dynamic(
+    () => import('../notebook-app/App').then((mod) => mod.App),
+    {
+        ssr: false,
+        loading: () => (
+            <div className="flex items-center justify-center w-full h-full bg-[#15161b]">
+                <div className="text-slate-400 text-sm animate-pulse">Loading notebooks...</div>
+            </div>
+        ),
+    }
 )
 import HandbookTemplate from '../templates/Handbook'
 import Legal from '../components/Legal'

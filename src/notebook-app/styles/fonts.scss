@@ -1,0 +1,73 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* RoundHog; bold (800); latin */
+@font-face {
+    font-family: RoundHog;
+    font-style: normal;
+    font-weight: 800;
+    src: url('../../../node_modules/@posthog/brand/dist/fonts/RoundHog-Bold.woff2') format('woff2');
+    font-display: swap;
+}
+
+/* RoundHog; semibold (700); latin */
+@font-face {
+    font-family: RoundHog;
+    font-style: normal;
+    font-weight: 700;
+    src: url('../../../node_modules/@posthog/brand/dist/fonts/RoundHog-SemiBold.woff2') format('woff2');
+    font-display: swap;
+}
+
+/* RoundHog; medium (500); latin */
+@font-face {
+    font-family: RoundHog;
+    font-style: normal;
+    font-weight: 500;
+    src: url('../../../node_modules/@posthog/brand/dist/fonts/RoundHog-Medium.woff2') format('woff2');
+    font-display: swap;
+}
+
+/* RoundHog; regular (400); latin */
+@font-face {
+    font-family: RoundHog;
+    font-style: normal;
+    font-weight: 400;
+    src: url('../../../node_modules/@posthog/brand/dist/fonts/RoundHog.woff2') format('woff2');
+    font-display: swap;
+}
+
+/* RoundHog; regular italic (400); latin */
+@font-face {
+    font-family: RoundHog;
+    font-style: italic;
+    font-weight: 400;
+    src: url('../../../node_modules/@posthog/brand/dist/fonts/RoundHog-Italic.woff2') format('woff2');
+    font-display: swap;
+}
+
+/* RoundHog; medium italic (500); latin */
+@font-face {
+    font-family: RoundHog;
+    font-style: italic;
+    font-weight: 500;
+    src: url('../../../node_modules/@posthog/brand/dist/fonts/RoundHog-Medium-Italic.woff2') format('woff2');
+    font-display: swap;
+}
+
+/* RoundHog; semibold italic (700); latin */
+@font-face {
+    font-family: RoundHog;
+    font-style: italic;
+    font-weight: 700;
+    src: url('../../../node_modules/@posthog/brand/dist/fonts/RoundHog-SemiBold-Italic.woff2') format('woff2');
+    font-display: swap;
+}
+
+/* RoundHog; bold italic (800); latin */
+@font-face {
+    font-family: RoundHog;
+    font-style: italic;
+    font-weight: 800;
+    src: url('../../../node_modules/@posthog/brand/dist/fonts/RoundHog-Bold-Italic.woff2') format('woff2');
+    font-display: swap;
+}

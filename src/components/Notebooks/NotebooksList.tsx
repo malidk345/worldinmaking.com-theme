@@ -1,6 +1,32 @@
-import React, { useState } from 'react';
-import { NotebooksListApp } from '../posthog-ui-gallery/src/scenes/NotebooksListApp';
-import { TextOnlyNotebookApp } from '../posthog-ui-gallery/src/scenes/TextOnlyNotebookApp';
+import React from 'react';
+
+export interface NotebooksListProps {
+  onSelectNotebook?: (id: string, title: string) => void;
+}
+
+/**
+ * NotebooksListSkeleton — rendered by WindowRouter when the user navigates to /notebooks.
+ * We embed the standalone Vite notebook app via iframe so the full experience
+ * (routing, storage, AskAI, MarkdownNotebook engine) works inside the posthog.com window system
+ * without any SSR / module-resolution conflicts.
+ */
+export function NotebooksListSkeleton(_props: NotebooksListProps = {}): JSX.Element {
+  return (
+    <iframe
+      src="/notebooks-app/index.html"
+      title="PostHog Notebooks"
+      style={{
+        display: 'block',
+        width: '100%',
+        height: '100%',
+        border: 'none',
+        flex: 1,
+        minHeight: 0,
+      }}
+      allow="clipboard-read; clipboard-write"
+    />
+  );
+}
 
 export const fromNodeTypeToLabel: Record<string, string> = {
   feature_flag: 'Feature flags',
@@ -22,33 +48,5 @@ export const fromNodeTypeToLabel: Record<string, string> = {
   customer_journey: 'Customer journey',
   support_tickets: 'Support tickets',
 };
-
-export interface NotebooksListProps {
-  onSelectNotebook?: (id: string, title: string) => void;
-}
-
-export function NotebooksListSkeleton({ onSelectNotebook }: NotebooksListProps = {}): JSX.Element {
-  const [selectedNotebook, setSelectedNotebook] = useState<{ id: string; title: string } | null>(null);
-
-  if (selectedNotebook) {
-    return (
-      <TextOnlyNotebookApp
-        initialTitle={selectedNotebook.title}
-        onBack={() => setSelectedNotebook(null)}
-      />
-    );
-  }
-
-  return (
-    <NotebooksListApp
-      onSelectNotebook={(id, title) => {
-        if (onSelectNotebook) {
-          onSelectNotebook(id, title);
-        }
-        setSelectedNotebook({ id, title });
-      }}
-    />
-  );
-}
 
 export default NotebooksListSkeleton;
