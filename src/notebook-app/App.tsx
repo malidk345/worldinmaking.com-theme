@@ -93,6 +93,11 @@ export function App() {
   const [route, navigate] = useHashRouter()
 
   useEffect(() => {
+    // Scope CSS vars + nested lemon-ui rules for in-app content AND FloatingPortal
+    // menus (which mount under document.body). Without the body class, portaled
+    // dropdowns miss scoped tokens; without dual selectors they stay opacity:0.
+    document.body.classList.add('notebook-app-scope')
+
     let style = document.getElementById('notebook-app-styles') as HTMLStyleElement | null
     if (!style) {
       style = document.createElement('style')
@@ -101,6 +106,7 @@ export function App() {
       document.head.appendChild(style)
     }
     return () => {
+      document.body.classList.remove('notebook-app-scope')
       const el = document.getElementById('notebook-app-styles')
       if (el) el.remove()
     }

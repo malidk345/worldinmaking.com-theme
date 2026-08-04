@@ -17,12 +17,35 @@ try {
     // Fix invalid nested :root and :host selectors so CSS variables bind directly to .notebook-app-scope
     cssContent = cssContent.replace(/\.notebook-app-scope\s+(?::root|:host)/g, '.notebook-app-scope')
 
-    // Allow portal selectors (like .Popover, .LemonModal, .LemonPopover, .LemonMenu) to match when
-    // 'notebook-app-scope' is placed directly on the portal element itself
-    cssContent = cssContent.replace(
-        /\.notebook-app-scope\s+(\.(?:Popover|LemonModal|LemonPopover|LemonMenu|ReactModal|Tooltip)[^\s,\{\:]*)/g,
-        '.notebook-app-scope $1, $1.notebook-app-scope'
+    // Allow portal selectors (Popover/Modal/Tooltip/…) to match when `notebook-app-scope`
+    // is on the portal root itself (FloatingPortal mounts under body).
+    //
+    // Example:
+    //   .notebook-app-scope .Popover.Popover--enter-active > .Popover__box
+    // becomes
+    //   .notebook-app-scope .Popover.Popover--enter-active > .Popover__box,
+    //   .Popover.Popover--enter-active.notebook-app-scope > .Popover__box
+    //
+    // Only the first compound (classes + attrs) gets `.notebook-app-scope` dual-form;
+    // the rest of the combinator chain is preserved intact.
+    // Match whole BEM roots only — do NOT partially match `.Popover__arrow` as `.Popover`.
+    const PORTAL_ROOT =
+        String.raw`\.(?:Popover|LemonModal|LemonPopover|LemonMenu|ReactModal|Tooltip)(?:--[\w-]+)?(?![A-Za-z0-9_])`
+    const COMPOUND = String.raw`${PORTAL_ROOT}(?:\.[^\s,>+~{\[:]+)*(?:\[[^\]]*\])*`
+    const CHAIN_TAIL = String.raw`(?:\s*[>+~\s]\s*[^\s,{]+)*`
+    const portalRewrite = new RegExp(
+        String.raw`\.notebook-app-scope\s+(${COMPOUND}${CHAIN_TAIL})`,
+        'g'
     )
+    cssContent = cssContent.replace(portalRewrite, (match, rest) => {
+        const m = rest.match(/^(\.[^\s,>+~{]+)([\s\S]*)$/)
+        if (!m) return match
+        const first = m[1]
+        const tail = m[2] || ''
+        // Avoid double-rewriting already dual selectors
+        if (first.includes('notebook-app-scope')) return match
+        return `.notebook-app-scope ${first}${tail}, ${first}.notebook-app-scope${tail}`
+    })
 
     const tsContent = `// Auto-generated notebook CSS string\nexport const NOTEBOOK_APP_CSS = ${JSON.stringify(cssContent)};\n`
     fs.writeFileSync(bundleTsPath, tsContent)
