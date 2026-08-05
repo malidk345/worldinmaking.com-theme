@@ -14,13 +14,22 @@ export interface AskAIDropdownProps {
     onInsertPromptBlock: (initialPrompt?: string) => void
 }
 
+export interface ThinkingStageView {
+    id: string
+    label: string
+    text: string
+}
+
 export interface ChatMessage {
     id: string
     sender: 'user' | 'ai'
     text: string
     timestamp: string
     philosopherId?: string
+    /** Flattened thinking summary */
     thought?: string
+    /** Structured stages: perceive → frame → tension → move */
+    thinkingStages?: ThinkingStageView[]
 }
 
 const SUGGESTIONS = [
@@ -111,14 +120,16 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
 
             const question = history ? `Previous conversation:\n${history}\n\nUser: ${text}` : text
 
-            const res = await fetch('/api/philosopher-bot', {
+            const res = await fetch('/api/bots/act', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                    action: 'chat',
+                    bot: activeBot.id,
                     question,
-                    philosopher: activeBot.id,
                     mood: 'calm',
                     taskType: 'paper_section',
+                    thinkingDepth: 'standard',
                 }),
             })
 
@@ -138,6 +149,16 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                 })
             }
 
+            const stages: ThinkingStageView[] = Array.isArray(data?.thinking?.stages)
+                ? data.thinking.stages
+                      .filter((s: any) => s && typeof s.text === 'string' && s.text.trim())
+                      .map((s: any) => ({
+                          id: String(s.id || 'raw'),
+                          label: String(s.label || s.id || 'Thought'),
+                          text: String(s.text).trim(),
+                      }))
+                : []
+
             setMessages((prev) => [
                 ...prev,
                 {
@@ -145,6 +166,7 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                     sender: 'ai',
                     text: reply,
                     thought: typeof data?.thought === 'string' ? data.thought : undefined,
+                    thinkingStages: stages.length > 0 ? stages : undefined,
                     philosopherId: activeBot.id,
                     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 },
@@ -262,6 +284,38 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                                                 msg.sender === 'user' ? 'items-end' : 'items-start'
                                             }`}
                                         >
+                                            {msg.sender === 'ai' &&
+                                                (msg.thinkingStages?.length || msg.thought) && (
+                                                    <details className="w-full group rounded-lg border border-[var(--border-3000,#e2e8f0)] bg-[var(--color-bg-fill-tertiary)]/40 px-2.5 py-1.5">
+                                                        <summary className="cursor-pointer text-[10px] font-semibold uppercase tracking-wide text-muted select-none list-none flex items-center gap-1.5">
+                                                            <span className="opacity-70">Thinking process</span>
+                                                            <span className="font-normal normal-case opacity-60">
+                                                                {msg.thinkingStages?.length
+                                                                    ? `${msg.thinkingStages.length} stages`
+                                                                    : 'inner monologue'}
+                                                            </span>
+                                                        </summary>
+                                                        <div className="mt-2 space-y-2 pb-1">
+                                                            {msg.thinkingStages && msg.thinkingStages.length > 0
+                                                                ? msg.thinkingStages.map((stage) => (
+                                                                      <div key={`${msg.id}-${stage.id}`}>
+                                                                          <div className="text-[10px] font-bold text-secondary uppercase tracking-wide mb-0.5">
+                                                                              {stage.label}
+                                                                          </div>
+                                                                          <p className="text-[11px] text-muted whitespace-pre-wrap mb-0 leading-snug">
+                                                                              {stage.text}
+                                                                          </p>
+                                                                      </div>
+                                                                  ))
+                                                                : msg.thought && (
+                                                                      <p className="text-[11px] text-muted whitespace-pre-wrap mb-0 leading-snug">
+                                                                          {msg.thought}
+                                                                      </p>
+                                                                  )}
+                                                        </div>
+                                                    </details>
+                                                )}
+
                                             <div
                                                 className={`p-3 rounded-xl border border-[var(--border-3000,#e2e8f0)] text-primary whitespace-pre-wrap w-full ${
                                                     msg.sender === 'user'
@@ -301,7 +355,7 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                                     <ProfilePicture user={philosopherAsUser(activeBot)} size="xs" />
                                     <span>
                                         <span className="font-semibold text-primary">{activeBot.name}</span>
-                                        {' is thinking...'}
+                                        {' — perceive → frame → tension → move…'}
                                     </span>
                                 </div>
                             )}
