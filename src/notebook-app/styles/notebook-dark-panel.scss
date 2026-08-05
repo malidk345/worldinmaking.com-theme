@@ -1,12 +1,6 @@
 /**
- * Ask AI + Publish popover panels.
- * Light by default; add class `dark` when host theme is dark.
- *
- * IMPORTANT: Host site Tailwind uses `border-primary` → rgb(var(--border)).
- * Notebook base sets --border as a full color `rgb(0 0 0 / 15%)`, which makes
- * rgb(var(--border)) invalid → browsers paint pure black. Inside these panels
- * we only use --border-3000 / --color-border-primary (real colors), never site
- * `border-primary` without fixing --border to RGB channels.
+ * Ask AI + Publish dropdown panels — single chrome layer on Popover__box.
+ * Content inside is NOT a second card (no nested border/shadow/bg).
  */
 
 @mixin panel-light {
@@ -29,19 +23,19 @@
     --border-bold-3000: #c1c2b9;
     --border-3000-light: #dadbd2;
 
-    /* Lemon button chrome — never leave unset (unset → black/currentColor) */
+    /* Navy brand accents (not PostHog orange) */
     --secondary-3000-button-border: #ccc;
     --secondary-3000-button-border-hover: #aaa;
     --secondary-3000-frame-bg: #e1dddd;
-    --primary-3000-button-border: #b17816;
-    --primary-3000-button-border-hover: #8e5b03;
-    --primary-3000-frame-bg: #eb9d2a;
+    --primary-3000-button-border: #1e3a8a;
+    --primary-3000-button-border-hover: #172554;
+    --primary-3000-frame-bg: #1e40af;
     --primary-3000-button-bg: #ffffff;
+    --primary-3000: #1d4ed8;
     --button-border-color: #ccc;
     --lemon-button-border-color-hover: #aaa;
     --lemon-button-frame-bg-color: #e1dddd;
 
-    /* Host Tailwind border-primary expects RGB channels only */
     --border: 218 219 210;
     --input-border: 218 219 210;
     --bg: 255 255 255;
@@ -60,7 +54,6 @@
     --shadow-elevation-3000: 0 8px 28px rgba(0, 0, 0, 0.1);
 
     color: #1d1f27;
-    background-color: #ffffff;
 }
 
 @mixin panel-dark {
@@ -78,25 +71,22 @@
     --color-bg-fill-button-tertiary-active: rgba(255, 255, 255, 0.1);
 
     --color-border-primary: #2c2d38;
-    --color-border-secondary: #3b3c4a;
+    --color-border-secondary: #3a3b48;
     --border-3000: #2c2d38;
-    --border-bold-3000: #3b3c4a;
+    --border-bold-3000: #3a3b48;
 
-    --secondary-3000-button-border: #4a4c52;
-    --secondary-3000-button-border-hover: #5e6064;
-    --secondary-3000-frame-bg: #323232;
-    --primary-3000-button-border: #b17816;
-    --primary-3000-button-border-hover: #8e5b03;
-    --primary-3000-frame-bg: #926826;
-    --primary-3000-button-bg: #1a1b23;
-    --button-border-color: #4a4c52;
-    --lemon-button-border-color-hover: #5e6064;
-    --lemon-button-frame-bg-color: #323232;
+    --secondary-3000-button-border: #3a3b48;
+    --secondary-3000-button-border-hover: #4a4b58;
+    --secondary-3000-frame-bg: #232530;
+    --primary-3000-button-border: #1e40af;
+    --primary-3000-button-border-hover: #3b82f6;
+    --primary-3000-frame-bg: #1e3a8a;
+    --primary-3000-button-bg: #1c1d22;
+    --primary-3000: #3b82f6;
 
     --border: 44 45 56;
     --input-border: 44 45 56;
     --bg: 21 22 27;
-    --accent: 26 27 35;
     --text-primary: 241 245 249;
     --text-secondary: 148 163 184;
     --text-muted: 100 116 139;
@@ -111,14 +101,50 @@
     --shadow-elevation-3000: 0 8px 28px rgba(0, 0, 0, 0.45);
 
     color: #e2e8f0;
-    background-color: #15161b;
 }
 
-.notebook-popover-panel {
+/* Applied on Popover root via LemonDropdown className — ONE surface only */
+.Popover.notebook-popover-panel {
     @include panel-light;
-    border: 1px solid var(--border-3000) !important;
-    box-shadow: var(--shadow-elevation-3000);
-    border-radius: 0.75rem;
+
+    > .Popover__box {
+        background: var(--color-bg-surface-popover) !important;
+        border: 1px solid var(--border-3000) !important;
+        border-radius: 0.75rem !important;
+        box-shadow: var(--shadow-elevation-3000) !important;
+        /* Mobile-first: never wider than viewport; cap height so content scrolls inside */
+        max-width: min(100vw - 1rem, 40rem) !important;
+        width: min(100vw - 1rem, 40rem);
+        max-height: min(75dvh, 40rem);
+        overflow: hidden;
+    }
+
+    > .Popover__box > .Popover__content {
+        max-height: min(75dvh, 40rem);
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Desktop / wide: Ask AI can be a bit wider */
+    &.notebook-popover-panel--wide > .Popover__box {
+        max-width: min(100vw - 1rem, 42rem) !important;
+        width: min(100vw - 1rem, 42rem);
+    }
+
+    @media (min-width: 768px) {
+        &.notebook-popover-panel--wide > .Popover__box {
+            max-width: min(96vw, 36rem) !important;
+            width: min(96vw, 36rem);
+        }
+    }
+
+    @media (min-width: 1024px) {
+        &.notebook-popover-panel--wide > .Popover__box {
+            max-width: min(96vw, 42rem) !important;
+            width: min(96vw, 42rem);
+        }
+    }
 
     .LemonInput,
     .LemonSelect,
@@ -148,7 +174,6 @@
         color: var(--text-3000);
     }
 
-    /* Force soft button frames inside panel (override invalid host tokens) */
     .LemonButton--primary,
     .LemonButton--secondary {
         --button-border-color: var(--secondary-3000-button-border);
@@ -163,33 +188,54 @@
         --lemon-button-bg-color: var(--primary-3000-button-bg);
     }
 
-    &.Popover,
-    &.Popover .Popover__box {
-        background: transparent;
-        border-color: transparent;
-    }
-
-    &.Popover .Popover__box {
-        background: var(--color-bg-surface-popover);
-        border: 1px solid var(--border-3000) !important;
-        box-shadow: var(--shadow-elevation-3000);
-        opacity: 1;
-        transform: none;
-    }
-
     &.dark {
         @include panel-dark;
     }
 }
 
-/* Outer LemonDropdown Popover box that wraps the panel (sibling structure) */
-.notebook-app-scope.Popover > .Popover__box:has(.notebook-popover-panel),
-.notebook-app-scope.Popover > .Popover__box:has(.notebook-dark-panel) {
-    border: 1px solid var(--border-3000, #dadbd2) !important;
+/* Content stack inside the single Popover box — no second card */
+.notebook-popover-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
     background: transparent !important;
+    border: none !important;
     box-shadow: none !important;
+    border-radius: 0 !important;
+}
+
+.notebook-popover-body--compact {
+    padding: 1rem;
+    gap: 1rem;
+}
+
+/* Backward-compat alias if something still uses the old class on an inner node */
+.notebook-popover-panel:not(.Popover) {
+    @include panel-light;
+    /* strip outer chrome when nested — parent Popover already has it */
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+
+    &.dark {
+        @include panel-dark;
+        background: transparent !important;
+    }
 }
 
 .notebook-dark-panel {
-    @extend .notebook-popover-panel;
+    /* legacy name used elsewhere */
+}
+
+/* Host shell sometimes styles notebook-app-scope Popover boxes — don't double frame */
+.notebook-app-scope.Popover.notebook-popover-panel > .Popover__box {
+    /* already styled above when both classes on same node */
 }

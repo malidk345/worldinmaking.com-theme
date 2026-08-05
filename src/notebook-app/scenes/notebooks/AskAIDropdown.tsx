@@ -230,14 +230,14 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
         <LemonDropdown
             visible={isOpen}
             onClickOutside={() => setIsOpen(false)}
+            closeOnClickInside={false}
+            padded={false}
             dropdownPlacement="bottom-end"
+            className={`notebook-popover-panel notebook-popover-panel--wide notebook-app-scope ${
+                isDark ? 'dark' : ''
+            }`}
             overlay={
-                <div
-                    className={`notebook-popover-panel notebook-app-scope w-[1100px] max-w-[96vw] p-3 rounded-xl shadow-2xl flex flex-col gap-3 ${
-                        isDark ? 'dark' : ''
-                    }`}
-                    onClick={(e) => e.stopPropagation()}
-                >
+                <div className="notebook-popover-body" onClick={(e) => e.stopPropagation()}>
                     {/* Header */}
                     <div className="flex items-center justify-between pb-2 border-b border-[var(--border-3000,#e2e8f0)] gap-3">
                         <div className="flex items-center gap-2.5 min-w-0">
@@ -292,7 +292,7 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
 
                     {/* Conversation thread */}
                     {hasThread && (
-                        <div className="max-h-[350px] overflow-y-auto space-y-3 pr-1 pb-1 text-xs leading-relaxed">
+                        <div className="max-h-[min(40dvh,280px)] sm:max-h-[min(50dvh,360px)] overflow-y-auto overscroll-contain space-y-3 pr-1 pb-1 text-xs leading-relaxed">
                             {messages.map((msg) => {
                                 const bot =
                                     msg.sender === 'ai' && msg.philosopherId
@@ -382,7 +382,7 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                     )}
 
                     {/* Input */}
-                    <div className="relative flex flex-col border border-[var(--border-3000,#e2e8f0)] bg-[var(--color-bg-fill-input)] rounded-xl p-3 focus-within:border-[var(--primary-3000,#1d4ed8)] shadow-sm transition-colors">
+                    <div className="relative flex flex-col border border-[var(--border-3000,#e2e8f0)] bg-[var(--color-bg-fill-input)] rounded-lg p-2.5 sm:p-3 focus-within:border-[var(--primary-3000,#1d4ed8)] transition-colors">
                         <textarea
                             ref={textareaRef}
                             value={prompt}
@@ -399,11 +399,11 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                                     ? `Ask ${activeBot.name} anything...`
                                     : `Reply to ${activeBot.name} (Cmd + Enter)...`
                             }
-                            rows={4}
-                            className="w-full bg-transparent text-sm text-primary placeholder:text-muted focus:outline-none resize-none leading-relaxed min-h-[110px] p-0 border-none shadow-none"
+                            rows={3}
+                            className="w-full bg-transparent text-sm text-primary placeholder:text-muted focus:outline-none resize-none leading-relaxed min-h-[72px] sm:min-h-[96px] p-0 border-none shadow-none"
                         />
 
-                        <div className="flex items-center justify-between pt-2 mt-1 gap-2">
+                        <div className="flex items-center justify-between pt-2 mt-1 gap-2 min-w-0">
                             <LemonSelect
                                 value={selectedBotId}
                                 onChange={(val) => {
@@ -415,10 +415,10 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                                 type="tertiary"
                                 dropdownPlacement="top-start"
                                 dropdownMatchSelectWidth={false}
-                                className="border border-[var(--border-3000,#e2e8f0)] !py-0.5 !px-2 max-w-[min(320px,50vw)]"
+                                className="border border-[var(--border-3000,#e2e8f0)] !py-0.5 !px-2 max-w-[min(200px,45vw)] sm:max-w-[min(280px,50vw)] min-w-0"
                             />
 
-                            <div className="flex items-center gap-2.5 shrink-0">
+                            <div className="flex items-center gap-2 shrink-0">
                                 <span className="text-muted text-[10px] hidden sm:inline font-mono">Cmd + Enter</span>
                                 <LemonButton
                                     type="primary"

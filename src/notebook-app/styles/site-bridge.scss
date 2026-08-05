@@ -44,8 +44,8 @@
     --input-border: 44 45 56;
 }
 
-/* Popover chrome around Ask AI / Publish */
-.notebook-app-scope.Popover > .Popover__box {
+/* Non-panel notebook popovers keep a simple border; panel chrome is in notebook-dark-panel.scss */
+.notebook-app-scope.Popover:not(.notebook-popover-panel) > .Popover__box {
     border-color: var(--secondary-3000-button-border, #ccc) !important;
 }
 
