@@ -79,6 +79,12 @@ import {
   ChevronLeft,
   ArrowUpDown,
   Brain,
+  Wand2,
+  Globe,
+  Lightbulb,
+  Target,
+  Scale,
+  Zap,
 } from 'lucide-react'
 
 export const IconCode = (props: any) => <Code className="w-4 h-4 inline-block" strokeWidth={1.5} {...props} />
@@ -152,6 +158,13 @@ export const IconImage = (props: any) => <Image className="w-4 h-4 inline-block"
 export const IconAI = (props: any) => <Bot className="w-4 h-4 inline-block" {...props} />
 /** PostHog AI thinking / ReasoningAnswer — notebook webpack maps @posthog/icons → this shim */
 export const IconBrain = (props: any) => <Brain className="w-4 h-4 inline-block" strokeWidth={1.5} {...props} />
+/** PostHog AI tool-style icons used in multi-step thought trail */
+export const IconMagicWand = (props: any) => <Wand2 className="w-4 h-4 inline-block" strokeWidth={1.5} {...props} />
+export const IconGlobe = (props: any) => <Globe className="w-4 h-4 inline-block" strokeWidth={1.5} {...props} />
+export const IconLightBulb = (props: any) => <Lightbulb className="w-4 h-4 inline-block" strokeWidth={1.5} {...props} />
+export const IconTarget = (props: any) => <Target className="w-4 h-4 inline-block" strokeWidth={1.5} {...props} />
+export const IconBalance = (props: any) => <Scale className="w-4 h-4 inline-block" strokeWidth={1.5} {...props} />
+export const IconBolt = (props: any) => <Zap className="w-4 h-4 inline-block" strokeWidth={1.5} {...props} />
 export const IconChat = (props: any) => <MessageSquare className="w-4 h-4 inline-block" {...props} />
 export const IconGroups = (props: any) => <Users className="w-4 h-4 inline-block" {...props} />
 export const IconMapPin = (props: any) => <MapPin className="w-4 h-4 inline-block" {...props} />
