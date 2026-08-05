@@ -17,7 +17,6 @@ import {
     IconArchive,
     IconPencil,
     IconPin,
-    IconSparkles,
     IconTrash,
     IconUndo,
     IconExpand,
@@ -28,11 +27,8 @@ import { Listbox } from '@headlessui/react'
 import { fetchTopicGroups, topicGroupsSorted } from '../util/topicGroups'
 import { Check2, Close } from 'components/Icons'
 import Modal from 'components/Modal'
-import PhilosopherThought from 'components/PhilosopherThought'
 import Checkbox from 'components/Checkbox'
 import { CallToAction } from 'components/CallToAction'
-import { Logo } from './Logo'
-import Avatar from './Avatar'
 import dynamic from 'next/dynamic'
 const DotLottiePlayer = dynamic(() => import('@dotlottie/react-player').then(m => ({ default: m.DotLottiePlayer })), { ssr: false, loading: () => null }) as any
 import EditWrapper from './EditWrapper'
@@ -271,201 +267,6 @@ const DeleteButton = ({ questionID }: { questionID: number }) => {
     )
 }
 
-const MaxReply = ({ children, isInForum }: { children: React.ReactNode; isInForum: boolean }) => {
-    return (
-        <ul className="list-none">
-            <li
-                className={`pb-2 !mb-0 ${
-                    isInForum
-                        ? 'px-5'
-                        : 'pr-[5px] pl-[30px] border-l border-solid border-primary squeak-left-border relative before:border-l-0'
-                }`}
-            >
-                <Tooltip
-                    delay={0}
-                    trigger={
-                        <div className="relative inline-block">
-                            <div className="flex items-center !text-black dark:!text-white">
-                                <div className="mr-2 relative">
-                                    <Avatar
-                                        className={` ${isInForum ? 'size-[40px]' : 'w-[25px] h-[25px]'} rounded-full`}
-                                        image="https://res.cloudinary.com/dmukukwp6/image/upload/v1688579513/thumbnail_max_c5dd553db8.png"
-                                    />
-                                    <span className="absolute -right-1.5 -bottom-2 h-[20px] w-[20px] flex items-center justify-center rounded-full bg-white  text-primary dark:text-primary-dark">
-                                        <Logo layout="logomark" className="w-[16px]" />
-                                    </span>
-                                </div>
-                                <strong>PostHog AI</strong>
-                            </div>
-                        </div>
-                    }
-                >
-                    <div className="text-sm max-w-64">
-                        PostHog AI is our resident AI assistant. Double-check responses for accuracy.
-                    </div>
-                </Tooltip>
-                <div
-                    className={` mt-1 py-2 px-4 bg-accent rounded-md border border-primary ${
-                        isInForum ? 'ml-[calc(44px_+_.5rem)]' : 'ml-[calc(44px_+_.5rem)]'
-                    }`}
-                >
-                    {children}
-                </div>
-            </li>
-        </ul>
-    )
-}
-
-const PHILOSOPHER_PICKS = [
-    'nietzsche',
-    'marx',
-    'hegel',
-    'sartre',
-    'zizek',
-    'deleuze',
-    'arendt',
-    'spinoza',
-] as const
-
-const PhilosopherBotReply = ({
-    questionTitle,
-    questionBody,
-    isInForum,
-    topicId,
-}: {
-    questionTitle: string
-    questionBody: string
-    isInForum: boolean
-    /** Supabase community_posts id when available — enables real forum_reply persist */
-    topicId?: string | number
-}) => {
-    const [loading, setLoading] = useState(false)
-    const [thought, setThought] = useState('')
-    const [reply, setReply] = useState('')
-    const [philosopher, setPhilosopher] = useState('nietzsche')
-    const [provider, setProvider] = useState('')
-    const [persisted, setPersisted] = useState(false)
-    const [hasTriggered, setHasTriggered] = useState(false)
-    const [error, setError] = useState('')
-
-    const handleAskPhilosopher = async (selectedName = 'nietzsche') => {
-        setLoading(true)
-        setHasTriggered(true)
-        setPhilosopher(selectedName)
-        setError('')
-        setPersisted(false)
-        try {
-            const hasTopic = topicId != null && String(topicId).length > 0
-            const res = await fetch('/api/bots/act', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(
-                    hasTopic
-                        ? {
-                              action: 'forum_reply',
-                              bot: selectedName,
-                              question: `Engage this community thread. Title: ${questionTitle}\n\nBody: ${questionBody}`,
-                              thinkingDepth: 'standard',
-                              // Preview in UI first — set dryRun false only when we want DB write
-                              dryRun: true,
-                              payload: { topicId: String(topicId) },
-                          }
-                        : {
-                              action: 'chat',
-                              bot: selectedName,
-                              question: `${questionTitle}\n\n${questionBody}`,
-                              taskType: 'community_reply',
-                              thinkingDepth: 'standard',
-                          }
-                ),
-            })
-            const data = await res.json()
-            if (data.thought) setThought(data.thought)
-            if (data.reply) setReply(data.reply)
-            if (data.philosopher) setPhilosopher(String(data.philosopher))
-            if (data.provider) setProvider(String(data.provider))
-            if (data.persisted) setPersisted(true)
-            if (data.success === false && data.error) setError(String(data.error))
-            if (!data.reply && !data.thought && data.error) {
-                setReply(String(data.error))
-            }
-        } catch (err) {
-            console.error('Philosopher bot forum reply error:', err)
-            setError('Philosopher network unreachable')
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    if (!hasTriggered) {
-        return (
-            <div className={`my-2 flex flex-wrap items-center gap-2 ${isInForum ? 'px-5' : 'pl-8'}`}>
-                <OSButton
-                    onClick={() => handleAskPhilosopher('nietzsche')}
-                    icon={<IconSparkles className="text-[var(--color-accent,#1d4ed8)]" />}
-                    size="sm"
-                    tooltip="Ask a resident philosopher (thinking process + persona reply)"
-                >
-                    <span className="text-xs font-semibold">Ask Philosopher</span>
-                </OSButton>
-                <div className="flex flex-wrap gap-1">
-                    {PHILOSOPHER_PICKS.slice(0, 5).map((name) => (
-                        <button
-                            key={name}
-                            type="button"
-                            className="text-[10px] px-2 py-0.5 rounded-full border border-primary bg-accent/40 hover:bg-accent capitalize text-secondary hover:text-primary"
-                            onClick={() => void handleAskPhilosopher(name)}
-                        >
-                            {name}
-                        </button>
-                    ))}
-                </div>
-            </div>
-        )
-    }
-
-    return (
-        <MaxReply isInForum={isInForum}>
-            <div className="text-primary font-normal question-content community-post-markdown !p-0">
-                <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <span className="font-bold text-xs text-[var(--color-accent,#1d4ed8)]">
-                        @{philosopher} (AI Bot)
-                    </span>
-                    {provider && (
-                        <span className="text-[10px] text-secondary font-mono opacity-70">{provider}</span>
-                    )}
-                    {persisted && (
-                        <span className="text-[10px] text-green font-semibold">posted</span>
-                    )}
-                </div>
-                <PhilosopherThought thought={thought} philosopherName={philosopher} isLiveThinking={loading} />
-                {loading ? (
-                    <p className="text-xs text-secondary italic animate-pulse">
-                        perceive → frame → tension → move…
-                    </p>
-                ) : (
-                    reply && <p className="!mb-0 text-sm leading-relaxed whitespace-pre-wrap">{reply}</p>
-                )}
-                {error && !reply && <p className="text-xs text-red mb-0">{error}</p>}
-                {!loading && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                        {PHILOSOPHER_PICKS.map((name) => (
-                            <button
-                                key={name}
-                                type="button"
-                                className="text-[10px] px-2 py-0.5 rounded-full border border-primary hover:bg-accent capitalize"
-                                onClick={() => void handleAskPhilosopher(name)}
-                            >
-                                {name}
-                            </button>
-                        ))}
-                    </div>
-                )}
-            </div>
-        </MaxReply>
-    )
-}
-
 export function Question(props: QuestionProps) {
     const { id, question, showSlug, buttonText, showActions = true, isInForum = false, onPinTopics, ...other } = props
     const [expanded, setExpanded] = useState(props.expanded || false)
@@ -675,17 +476,6 @@ export function Question(props: QuestionProps) {
                             )}
                         </div>
                         <Replies expanded={expanded} setExpanded={setExpanded} isInForum={isInForum} />
-                        <PhilosopherBotReply
-                            questionTitle={questionData.attributes.subject || ''}
-                            questionBody={questionData.attributes.body || ''}
-                            isInForum={isInForum}
-                            topicId={
-                                // Prefer Supabase community id when present on the question payload
-                                (questionData as any)?.attributes?.communityPostId ||
-                                (questionData as any)?.attributes?.supabaseId ||
-                                undefined
-                            }
-                        />
                     </div>
                     <div
                         {...(isInForum && { 'data-scheme': 'primary' })}
