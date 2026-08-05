@@ -1,6 +1,10 @@
 /**
- * Ask AI + Publish dropdown panels — single chrome layer on Popover__box.
- * Content inside is NOT a second card (no nested border/shadow/bg).
+ * Ask AI + Publish dropdown panels.
+ *
+ * IMPORTANT: This file is imported INSIDE `.notebook-app-scope { ... }` in bundle.scss.
+ * Portaled popovers are `<div class="Popover notebook-popover-panel notebook-app-scope">`
+ * — classes on the SAME node, not a descendant. Use `&.Popover...` so compiled CSS is
+ * `.notebook-app-scope.Popover.notebook-popover-panel` (matches portal DOM).
  */
 
 @mixin panel-light {
@@ -23,7 +27,6 @@
     --border-bold-3000: #c1c2b9;
     --border-3000-light: #dadbd2;
 
-    /* Navy brand accents (not PostHog orange) */
     --secondary-3000-button-border: #ccc;
     --secondary-3000-button-border-hover: #aaa;
     --secondary-3000-frame-bg: #e1dddd;
@@ -51,7 +54,7 @@
     --color-text-secondary-3000: rgba(29, 31, 39, 0.7);
     --color-text-tertiary: rgba(29, 31, 39, 0.55);
     --muted-3000: rgba(29, 31, 39, 0.55);
-    --shadow-elevation-3000: 0 8px 28px rgba(0, 0, 0, 0.1);
+    --shadow-elevation-3000: 0 12px 40px rgba(0, 0, 0, 0.14);
 
     color: #1d1f27;
 }
@@ -98,109 +101,12 @@
     --color-text-secondary-3000: rgba(241, 245, 249, 0.72);
     --color-text-tertiary: rgba(241, 245, 249, 0.55);
     --muted-3000: rgba(241, 245, 249, 0.55);
-    --shadow-elevation-3000: 0 8px 28px rgba(0, 0, 0, 0.45);
+    --shadow-elevation-3000: 0 12px 40px rgba(0, 0, 0, 0.5);
 
     color: #e2e8f0;
 }
 
-/* Applied on Popover root via LemonDropdown className — ONE surface only */
-.Popover.notebook-popover-panel {
-    @include panel-light;
-    z-index: 10050; // above notebook chrome / window chrome when portaled
-
-    > .Popover__box {
-        background: var(--color-bg-surface-popover) !important;
-        border: 1px solid var(--border-3000) !important;
-        border-radius: 0.75rem !important;
-        box-shadow: var(--shadow-elevation-3000) !important;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        box-sizing: border-box;
-        /* Mobile-first defaults; refined below */
-        width: min(calc(100vw - 1rem), 24rem) !important;
-        max-width: min(calc(100vw - 1rem), 24rem) !important;
-        max-height: min(calc(100dvh - 1.5rem - env(safe-area-inset-bottom, 0px)), 36rem) !important;
-    }
-
-    > .Popover__box > .Popover__content {
-        flex: 1 1 auto;
-        min-height: 0;
-        max-height: inherit;
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-    }
-
-    /* ScrollableShadows wrapper — fill box and scroll */
-    > .Popover__box > .Popover__content.ScrollableShadows,
-    > .Popover__box > .Popover__content .ScrollableShadows__inner {
-        min-height: 0;
-        max-height: 100%;
-    }
-
-    > .Popover__box > .Popover__content .ScrollableShadows__inner {
-        overflow-y: auto;
-        overscroll-behavior: contain;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    /* ── Mobile: sheet-like, centered in safe viewport ── */
-    @media (max-width: 639px) {
-        /* Override floating-ui absolute coords — pin near bottom, full usable width */
-        position: fixed !important;
-        left: 0.5rem !important;
-        right: 0.5rem !important;
-        top: auto !important;
-        bottom: max(0.5rem, env(safe-area-inset-bottom, 0px)) !important;
-        width: auto !important;
-        max-width: none !important;
-        transform: none !important;
-        margin: 0 !important;
-
-        > .Popover__box {
-            width: 100% !important;
-            max-width: none !important;
-            max-height: min(78dvh, calc(100dvh - 1.5rem - env(safe-area-inset-bottom, 0px))) !important;
-            margin: 0 !important;
-            border-radius: 1rem !important;
-        }
-
-        &[data-placement^='bottom'] > .Popover__box,
-        &[data-placement^='top'] > .Popover__box {
-            margin: 0 !important;
-            transform: none !important;
-        }
-    }
-
-    /* ── Tablet ── */
-    @media (min-width: 640px) {
-        > .Popover__box {
-            width: min(calc(100vw - 2rem), 28rem) !important;
-            max-width: min(calc(100vw - 2rem), 28rem) !important;
-            max-height: min(70dvh, 36rem) !important;
-        }
-    }
-
-    /* ── Desktop: Ask AI wider ── */
-    @media (min-width: 768px) {
-        &.notebook-popover-panel--wide > .Popover__box {
-            width: min(calc(100vw - 2rem), 36rem) !important;
-            max-width: min(calc(100vw - 2rem), 36rem) !important;
-            max-height: min(72dvh, 40rem) !important;
-        }
-    }
-
-    @media (min-width: 1024px) {
-        &.notebook-popover-panel--wide > .Popover__box {
-            width: min(calc(100vw - 2rem), 40rem) !important;
-            max-width: min(calc(100vw - 2rem), 40rem) !important;
-        }
-    }
-
+@mixin panel-controls {
     .LemonInput,
     .LemonSelect,
     .LemonButton {
@@ -242,18 +148,112 @@
         --lemon-button-frame-bg-color: var(--primary-3000-frame-bg);
         --lemon-button-bg-color: var(--primary-3000-button-bg);
     }
+}
+
+/* Same-element match for portaled: class="Popover notebook-popover-panel notebook-app-scope" */
+&.Popover.notebook-popover-panel {
+    @include panel-light;
+    @include panel-controls;
+    z-index: 10050;
+
+    > .Popover__box {
+        background: var(--color-bg-surface-popover) !important;
+        border: 1px solid var(--border-3000) !important;
+        border-radius: 0.75rem !important;
+        box-shadow: var(--shadow-elevation-3000) !important;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+        width: min(calc(100vw - 1rem), 24rem) !important;
+        max-width: min(calc(100vw - 1rem), 24rem) !important;
+        max-height: min(calc(100dvh - 1.5rem - env(safe-area-inset-bottom, 0px)), 36rem) !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
+
+    > .Popover__box > .Popover__content {
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: inherit;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    > .Popover__box > .Popover__content .ScrollableShadows__inner {
+        min-height: 0;
+        max-height: 100%;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+    }
 
     &.dark {
         @include panel-dark;
     }
+
+    /* Mobile: bottom sheet */
+    @media (max-width: 639px) {
+        position: fixed !important;
+        left: 0.5rem !important;
+        right: 0.5rem !important;
+        top: auto !important;
+        bottom: max(0.5rem, env(safe-area-inset-bottom, 0px)) !important;
+        width: auto !important;
+        max-width: none !important;
+        transform: none !important;
+        margin: 0 !important;
+
+        > .Popover__box {
+            width: 100% !important;
+            max-width: none !important;
+            max-height: min(78dvh, calc(100dvh - 1.5rem - env(safe-area-inset-bottom, 0px))) !important;
+            margin: 0 !important;
+            border-radius: 1rem !important;
+            transform: none !important;
+        }
+
+        &[data-placement^='bottom'] > .Popover__box,
+        &[data-placement^='top'] > .Popover__box {
+            margin: 0 !important;
+            transform: none !important;
+        }
+    }
+
+    @media (min-width: 640px) {
+        > .Popover__box {
+            width: min(calc(100vw - 2rem), 28rem) !important;
+            max-width: min(calc(100vw - 2rem), 28rem) !important;
+            max-height: min(70dvh, 36rem) !important;
+        }
+    }
+
+    @media (min-width: 768px) {
+        &.notebook-popover-panel--wide > .Popover__box {
+            width: min(calc(100vw - 2rem), 36rem) !important;
+            max-width: min(calc(100vw - 2rem), 36rem) !important;
+            max-height: min(72dvh, 40rem) !important;
+        }
+    }
+
+    @media (min-width: 1024px) {
+        &.notebook-popover-panel--wide > .Popover__box {
+            width: min(calc(100vw - 2rem), 40rem) !important;
+            max-width: min(calc(100vw - 2rem), 40rem) !important;
+        }
+    }
 }
 
-/* Content stack inside the single Popover box — no second card */
+/* Content body — no second card chrome */
 .notebook-popover-body {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    padding: 0.75rem;
+    padding: 0.875rem;
     width: 100%;
     min-width: 0;
     min-height: 0;
@@ -280,7 +280,6 @@
     }
 }
 
-/* Scroll region for long chat threads — keeps header/input sticky via flex siblings */
 .notebook-popover-scroll {
     flex: 1 1 auto;
     min-height: 0;
@@ -298,10 +297,10 @@
     }
 }
 
-/* Backward-compat alias if something still uses the old class on an inner node */
+/* If content still carries the old class, don't draw a second card */
 .notebook-popover-panel:not(.Popover) {
     @include panel-light;
-    /* strip outer chrome when nested — parent Popover already has it */
+    @include panel-controls;
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
@@ -314,13 +313,4 @@
         @include panel-dark;
         background: transparent !important;
     }
-}
-
-.notebook-dark-panel {
-    /* legacy name used elsewhere */
-}
-
-/* Host shell sometimes styles notebook-app-scope Popover boxes — don't double frame */
-.notebook-app-scope.Popover.notebook-popover-panel > .Popover__box {
-    /* already styled above when both classes on same node */
 }
