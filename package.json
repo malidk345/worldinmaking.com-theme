@@ -116,7 +116,6 @@
     "@wistia/wistia-player-react": "^0.1.17",
     "ahooks": "^3.7.8",
     "ai": "^7.0.42",
-    "algoliasearch": "^4.14.2",
     "axios": "^1.12.2",
     "canvas-confetti": "^1.9.4",
     "chart.js": "^4.3.3",

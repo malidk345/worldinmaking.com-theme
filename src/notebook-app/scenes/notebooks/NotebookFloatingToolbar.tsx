@@ -1,12 +1,14 @@
 import React from 'react'
-import { LemonButton } from '~nb-lib/lemon-ui/index'
+import { LemonButton, LemonTag } from '~nb-lib/lemon-ui/index'
 import {
     IconPlus,
     IconSparkles,
     IconDatabase,
     IconRewindPlay,
     IconToggle,
+    IconCode,
     IconList,
+    IconPencil,
     IconFlask,
 } from '@posthog/icons'
 

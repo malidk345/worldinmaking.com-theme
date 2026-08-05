@@ -91,8 +91,10 @@ export function NotebookCanvasScene({ onSaveAsNotebook }: NotebookCanvasScenePro
                 <MarkdownNotebook
                     value={content}
                     onChange={(newContent: string) => setContent(newContent)}
+                    isEditable={true}
                     registry={NOTEBOOK_MARKDOWN_REGISTRY}
-                    extraInsertCommands={(api) => buildExtraInsertCommands(api)}
+                    extraInsertCommands={buildExtraInsertCommands}
+                    placeholder="Start exploring on this canvas..."
                 />
             </div>
         </div>

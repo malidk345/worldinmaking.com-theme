@@ -16,6 +16,7 @@ import SearchInput from './SearchInput'
 import { spotlightOptionId } from './SpotlightRow'
 import SuggestionList from './SuggestionList'
 import type { AlgoliaRecord, NavItem, SpotlightSearchResult, SuggestionItem } from './types'
+import { sanitizeNavigationUrl } from 'lib/utils'
 
 // Actions only make sense for short trigger-word queries ("dark mode",
 // "wallpaper") — long or question-shaped queries never surface them
@@ -82,7 +83,7 @@ function SpotlightSearchContent({
                 excerpt: hit.excerpt || '',
                 title: hit.title,
                 type: hit.type,
-                url: hit.fields?.slug || `/${hit.slug}`,
+                url: sanitizeNavigationUrl(hit.fields?.slug || `/${hit.slug}`),
             })),
         [hits]
     )
@@ -378,7 +379,7 @@ function SpotlightSearchContent({
                                     className="@container flex h-fit w-full max-w-[680px] flex-col overflow-hidden rounded-2xl border border-primary bg-primary shadow-2xl"
                                     onMouseDown={(e) => e.stopPropagation()}
                                 >
-                                    <RadixDialog.Title className="sr-only">Search PostHog.com</RadixDialog.Title>
+                                    <RadixDialog.Title className="sr-only">Search worldinmaking.com</RadixDialog.Title>
                                     <SearchInput
                                         inputRef={inputRef}
                                         loading={loading && !filterMenuOpen}

@@ -11,8 +11,10 @@ import { LemonTable } from '../../lib/lemon-ui/LemonTable/LemonTable'
 import type { LemonTableColumns } from '../../lib/lemon-ui/LemonTable/types'
 import {
     IconEllipsis,
+    IconPlus,
     IconTrash,
     IconCopy,
+    IconNotebook,
 } from '@posthog/icons'
 import {
     StoredNotebook,
@@ -21,6 +23,7 @@ import {
     duplicateNotebook,
     exportNotebookAsJSON,
     exportNotebookAsMarkdown,
+    importNotebookFromJSON,
 } from './notebookStorage'
 import { NotebookSelectButton } from './NotebookSelectButton/NotebookSelectButton'
 
@@ -53,6 +56,8 @@ const CONTAINING_OPTIONS = [
 export function NotebooksListScene({
     onSelectNotebook,
     onCreateNew,
+    onOpenCanvas,
+    onSelectTemplate,
 }: NotebooksListSceneProps): JSX.Element {
     const [searchQuery, setSearchQuery] = useState('')
     const [containsFilter, setContainsFilter] = useState('all')
@@ -99,6 +104,25 @@ export function NotebooksListScene({
         a.download = `${notebook.title.replace(/\s+/g, '_')}.md`
         a.click()
         URL.revokeObjectURL(url)
+    }
+
+    const handleLoadFromJSON = () => {
+        const input = document.createElement('input')
+        input.type = 'file'
+        input.accept = '.json'
+        input.onchange = async () => {
+            const file = input.files?.[0]
+            if (!file) return
+            const text = await file.text()
+            try {
+                const nb = importNotebookFromJSON(text)
+                reloadNotebooks()
+                onSelectNotebook(nb.id)
+            } catch (e) {
+                alert('Invalid notebook JSON file')
+            }
+        }
+        input.click()
     }
 
     // Filter notebooks list
@@ -258,8 +282,8 @@ export function NotebooksListScene({
                     />
                 </div>
 
-                <div className="flex items-center gap-4 sm:gap-6 flex-wrap text-xs text-secondary justify-between sm:justify-end">
-                    <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
+                    <div className="flex items-center gap-2 text-xs text-secondary">
                         <span className="font-medium">Containing:</span>
                         <LemonSelect
                             size="small"
@@ -268,8 +292,7 @@ export function NotebooksListScene({
                             options={CONTAINING_OPTIONS}
                         />
                     </div>
-
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 text-xs text-secondary">
                         <span className="font-medium">Created by:</span>
                         <LemonSelect
                             size="small"
@@ -282,6 +305,17 @@ export function NotebooksListScene({
                             ]}
                         />
                     </div>
+                    <LemonButton size="small" type="secondary" onClick={handleLoadFromJSON}>
+                        Import JSON
+                    </LemonButton>
+                    {onOpenCanvas && (
+                        <LemonButton size="small" type="secondary" onClick={onOpenCanvas}>
+                            Canvas
+                        </LemonButton>
+                    )}
+                    <LemonButton size="small" type="primary" icon={<IconPlus />} onClick={onCreateNew}>
+                        New notebook
+                    </LemonButton>
                 </div>
             </div>
 

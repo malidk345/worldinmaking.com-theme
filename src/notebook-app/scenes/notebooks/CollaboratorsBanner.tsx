@@ -63,7 +63,7 @@ export function CollaboratorsBanner({ editedByText = 'Mustafa' }: CollaboratorsB
             <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
                 {RECENT_ACTIVITIES.map((act) => (
                     <div key={act.id} className="flex gap-2.5 items-start p-1.5 rounded hover:bg-surface-secondary transition-colors">
-                        <ProfilePicture name={act.avatarName} size="sm" />
+                        <ProfilePicture name={act.avatarName} size="small" />
                         <div className="flex-1 min-w-0 space-y-0.5">
                             <div className="flex justify-between items-center">
                                 <span className="font-semibold text-primary truncate">{act.user}</span>
@@ -77,7 +77,7 @@ export function CollaboratorsBanner({ editedByText = 'Mustafa' }: CollaboratorsB
 
             <div className="border-t border-border pt-2 flex items-center justify-between text-[11px] text-muted">
                 <span>Real-time co-editing active</span>
-                <span className="text-green-600 font-medium">â— Live</span>
+                <span className="text-green-600 font-medium">● Live</span>
             </div>
         </div>
     )

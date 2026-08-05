@@ -20,102 +20,71 @@ export interface NotebookVersion {
     timestamp: string
 }
 
-const STORAGE_KEY = 'ph_standalone_notebooks'
-const HISTORY_KEY_PREFIX = 'ph_notebook_history_'
+// Bump key when default seed content changes so old fake templates are not kept forever.
+const STORAGE_KEY = 'wim_notebooks_v2'
+const HISTORY_KEY_PREFIX = 'wim_notebook_history_'
+const LEGACY_STORAGE_KEYS = ['ph_standalone_notebooks', 'wim_notebooks_v1']
+
+const WELCOME_CONTENT = `# Welcome to WIM
+
+WorldInMaking notebooks are living documents for ideas, research, and debate.
+
+**What you can do here**
+- Write notes in markdown — structure thoughts as you explore a topic
+- Talk with resident philosopher bots (Ask AI) and insert their replies into the page
+- Keep drafts private, then shape them into posts when they are ready
+- Use \`/\` in the editor to insert blocks as you work
+
+This is your scratchpad on WIM: a place to think in public form, without needing a finished article yet.
+
+Start a new notebook anytime, or keep writing below.
+`
 
 export const DEFAULT_NOTEBOOKS: StoredNotebook[] = [
     {
         id: 'welcome-notebook',
         short_id: 'welcome',
-        title: 'Welcome to PostHog Notebooks! 🎉',
-        content: `# Welcome to Notebooks\n\nPostHog Notebooks combine markdown with your actual analytics data. You can add queries, recordings, feature flags, and more right into your documents.\n\nTry typing \`/\` to see the available elements you can insert, or drag and drop elements from the sidebar.\n\n<ph-query />`,
+        title: 'Welcome to WIM',
+        content: WELCOME_CONTENT,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         pinned: true,
         version: 1,
+        created_by: { first_name: 'WIM', email: 'hello@worldinmaking.com' },
     },
-    {
-        id: 'template-introducing',
-        short_id: 'tmpl-intro',
-        title: 'Introducing Notebooks! 🥳',
-        content: '# Introducing Notebooks! 🥳\n\nShare context with your team.\n\n<ph-query />',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        isTemplate: true,
-        version: 1,
-    },
-    {
-        id: 'template-release-plan',
-        short_id: 'tmpl-release',
-        title: 'Feature Release Plan 🚀',
-        content: '# Feature Release Plan 🚀\n\n## Overview\n\n## Feature Flags\n<ph-feature-flag />\n\n## Experiments\n<ph-experiment />\n\n## Rollout Metrics\n<ph-query />',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        isTemplate: true,
-        version: 1,
-    },
-    {
-        id: 'template-rca',
-        short_id: 'tmpl-rca',
-        title: 'Root Cause Analysis (RCA) 🔍',
-        content: '# Root Cause Analysis (RCA) 🔍\n\n## Incident Summary\n\n## Timeline\n\n## Impact\n<ph-query />\n\n## Example Session\n<ph-recording />',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        isTemplate: true,
-        version: 1,
-    },
-    {
-        id: 'template-sql-report',
-        short_id: 'tmpl-sql',
-        title: 'HogQL & SQL Analytics Report 📊',
-        content: '# HogQL & SQL Analytics Report 📊\n\nWrite advanced queries to investigate metrics.\n\n<ph-query />',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        isTemplate: true,
-        version: 1,
-    },
-    {
-        id: 'template-session-replay',
-        short_id: 'tmpl-session',
-        title: 'Session Replay Investigation 🎬',
-        content: '# Session Replay Investigation 🎬\n\nReviewing strange user behavior.\n\n## Anomalous Sessions\n<ph-recording />\n<ph-recording />',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        isTemplate: true,
-        version: 1,
-    },
-    {
-        id: 'template-ab-test',
-        short_id: 'tmpl-ab',
-        title: 'A/B Test Analysis 🧪',
-        content: '# A/B Test Analysis 🧪\n\n## Hypothesis\n\n## Experiment Setup\n<ph-experiment />\n\n## Results\n<ph-query />',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        isTemplate: true,
-        version: 1,
-    },
-    {
-        id: 'template-retention',
-        short_id: 'tmpl-retention',
-        title: 'User Retention Deep Dive 📈',
-        content: '# User Retention Deep Dive 📈\n\n## Target Cohort\n<ph-cohort />\n\n## Retention Matrix\n<ph-query />',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        isTemplate: true,
-        version: 1,
-    }
 ]
+
+function seedDefaults(): StoredNotebook[] {
+    const seed = DEFAULT_NOTEBOOKS.map((n) => ({
+        ...n,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+    }))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(seed))
+    // Drop old fake demo storage so list stays clean
+    for (const key of LEGACY_STORAGE_KEYS) {
+        try {
+            localStorage.removeItem(key)
+        } catch {
+            /* ignore */
+        }
+    }
+    return seed
+}
 
 export function getNotebooks(): StoredNotebook[] {
     const data = localStorage.getItem(STORAGE_KEY)
     if (!data) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_NOTEBOOKS))
-        return DEFAULT_NOTEBOOKS
+        return seedDefaults()
     }
     try {
-        return JSON.parse(data)
+        const parsed = JSON.parse(data) as StoredNotebook[]
+        if (!Array.isArray(parsed) || parsed.length === 0) {
+            return seedDefaults()
+        }
+        return parsed
     } catch {
-        return DEFAULT_NOTEBOOKS
+        return seedDefaults()
     }
 }
 

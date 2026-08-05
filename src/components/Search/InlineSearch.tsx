@@ -180,7 +180,7 @@ export const AlgoliaSearchResults = ({
                             >
                                 <span className="block text-[13px] font-medium text-primary truncate">{hit.title}</span>
                                 <span className="block text-[11px] text-muted truncate">
-                                    posthog.com{hit.fields?.slug || `/${hit.slug}`}
+                                    worldinmaking.com{hit.fields?.slug || `/${hit.slug}`}
                                 </span>
                             </Link>
                         </li>

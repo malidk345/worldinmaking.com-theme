@@ -12,6 +12,7 @@ import OSButton from 'components/OSButton'
 import Input from 'components/OSForm/input'
 import SpotlightSearch from 'components/SpotlightSearch'
 import { algoliaIndexName, algoliaSearchClient } from 'lib/algoliaSearch'
+import { sanitizeNavigationUrl } from 'lib/utils'
 
 const Filters = ({ isRefinedClassName = 'bg-primary' }: { isRefinedClassName?: string }) => {
     const { refine, items } = useRefinementList({ attribute: 'type', sortBy: ['name:asc'] })
@@ -73,7 +74,7 @@ const Search = ({
         setSearchOpen(false)
         onChange?.()
         setTimeout(() => {
-            router.push(`${hit.fields?.slug || `/${hit.slug}`}`, { state: { newWindow: true } })
+            router.push(sanitizeNavigationUrl(hit.fields?.slug || `/${hit.slug}`), { state: { newWindow: true } })
         }, 0)
     }
 
@@ -120,7 +121,7 @@ const Search = ({
                             className="w-full text-primary border border-primary bg-transparent focus:ring-0"
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            placeholder={`Search ${initialFilter ? 'the ' + initialFilter : 'PostHog.com'}...`}
+                             placeholder={`Search ${initialFilter ? 'the ' + initialFilter : 'worldinmaking.com'}...`}
                             autoFocus={autoFocus}
                             value={query}
                             containerClassName="m-0"

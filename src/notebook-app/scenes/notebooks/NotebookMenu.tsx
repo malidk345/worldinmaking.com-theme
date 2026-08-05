@@ -101,14 +101,13 @@ export function NotebookMenu({
                     onClick: onOpenPublishModal,
                 },
                 {
-                    items: [
-                        {
-                            label: 'Delete',
-                            icon: <IconTrash />,
-                            status: 'danger',
-                            onClick: onDelete,
-                        },
-                    ],
+                    separator: true,
+                },
+                {
+                    label: 'Delete',
+                    icon: <IconTrash />,
+                    status: 'danger',
+                    onClick: onDelete,
                 },
             ]}
         >

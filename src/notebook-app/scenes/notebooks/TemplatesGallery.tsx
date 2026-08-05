@@ -45,10 +45,19 @@ export function TemplatesGallery({ onSelectTemplate }: TemplatesGalleryProps): J
             <div>
                 <h2 className="text-xl font-bold m-0">Notebook Templates</h2>
                 <p className="text-sm text-muted mt-1">
-                    Get started quickly with a pre-built template. Each template includes PostHog-specific blocks
-                    for insights, replays, feature flags, and more.
+                    Starter structures for research and writing. Create a blank notebook anytime from the list.
                 </p>
             </div>
+
+            {templates.length === 0 ? (
+                <div className="border border-border rounded-lg p-8 text-center space-y-2 bg-bg-light">
+                    <p className="text-sm text-primary font-medium m-0">No templates yet</p>
+                    <p className="text-xs text-muted m-0 max-w-md mx-auto">
+                        Start from <strong>Welcome to WIM</strong> in your notebooks list, or create a new notebook and
+                        write freely. Templates may appear here later.
+                    </p>
+                </div>
+            ) : null}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {templates.map((template) => (

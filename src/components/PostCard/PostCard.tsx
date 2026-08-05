@@ -4,6 +4,7 @@ import CloudinaryImage from 'components/CloudinaryImage'
 import React from 'react'
 import { AuthorsData } from 'types'
 import { CallToAction } from '../CallToAction'
+import { sanitizeNavigationUrl } from 'lib/utils'
 
 export interface PostType {
     id: string
@@ -132,6 +133,10 @@ const LandingPageSnippet = ({ post, authorDetails }: { post: PostTypeWithImage; 
 
 const addDefaultImage = (post: PostType, defaultImage: string): PostTypeWithImage => ({
     ...(post || {}),
+    fields: {
+        ...post.fields,
+        slug: sanitizeNavigationUrl(post.fields?.slug),
+    },
     frontmatter: {
         ...(post.frontmatter || {}),
         featuredImage: {

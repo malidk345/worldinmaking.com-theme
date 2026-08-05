@@ -57,7 +57,7 @@ export function NotebookHistory({ notebookId, isOpen, onClose, onRestore }: Note
                 }}
             >
                 <h3 style={{ margin: 0 }}>Version History</h3>
-                <LemonButton icon={<IconX />} size="small" onClick={onClose} type="stealth" />
+                <LemonButton icon={<IconX />} size="small" onClick={onClose} status="stealth" />
             </div>
 
             <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>

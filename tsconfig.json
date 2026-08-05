@@ -12,10 +12,13 @@
         "../shims/reach-router.ts"
       ],
       "@posthog/lemon-ui": [
-        "./components/LemonUI/index.ts"
+        "./notebook-app/lib/lemon-ui/index.ts"
       ],
       "~nb-lib/*": [
         "./notebook-app/lib/*"
+      ],
+      "components/PostHogUI": [
+        "./components/PostHogUI/index.ts"
       ]
     },
     "allowImportingTsExtensions": true,

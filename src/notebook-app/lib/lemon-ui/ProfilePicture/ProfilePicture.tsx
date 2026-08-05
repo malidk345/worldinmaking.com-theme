@@ -80,7 +80,7 @@ export function ProfilePicture({
 
     const pictureElement = (
         <span
-            className={`ProfilePicture ${size} ${className}`}
+            className={`ProfilePicture ${size} inline-flex items-center justify-center overflow-hidden rounded-full shrink-0 ${sizeStyles.dim} ${sizeStyles.font} ${className}`}
             style={{
                 backgroundColor: avatarUrl ? 'transparent' : colorScheme.bg,
                 color: colorScheme.text,
@@ -92,6 +92,19 @@ export function ProfilePicture({
                     src={avatarUrl}
                     alt={displayName}
                     className="w-full h-full rounded-full object-cover"
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                        // Hide broken portrait; parent keeps lettermark via empty src swap
+                        const img = e.currentTarget
+                        img.style.display = 'none'
+                        const parent = img.parentElement
+                        if (parent && !parent.dataset.fallback) {
+                            parent.dataset.fallback = '1'
+                            parent.style.backgroundColor = colorScheme.bg
+                            parent.appendChild(document.createTextNode(initial))
+                        }
+                    }}
                 />
             ) : (
                 initial

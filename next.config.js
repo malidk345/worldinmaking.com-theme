@@ -34,6 +34,8 @@ const nextConfig = {
 
             // ── nb-lib: the notebook-app's own lib folder ─────────────────────────
             '~nb-lib': path.resolve(__dirname, 'src/notebook-app/lib'),
+            // Full Lemon UI (notebook) available site-wide — use inside <LemonScope>
+            '@posthog/lemon-ui': path.resolve(__dirname, 'src/notebook-app/lib/lemon-ui/index.ts'),
             // cva is safe to alias globally (not used by posthog.com itself)
             cva: 'class-variance-authority',
             '@posthog/quill/styles.css': path.resolve(__dirname, 'src/notebook-app/styles/quill-shim.css'),

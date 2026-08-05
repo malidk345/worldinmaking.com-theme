@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { LemonDropdown, LemonButton, LemonTag, LemonInput, LemonSelect } from '~nb-lib/lemon-ui/index'
 import { IconOpenSidebar, IconShare, IconCheck, IconPlus, IconSparkles, IconImage } from '@posthog/icons'
+import { useSiteThemeSync } from '../../lib/useSiteThemeSync'
 
 interface SidebarContextPanelMenuProps {
     notebookTitle?: string
@@ -13,6 +14,8 @@ export function SidebarContextPanelMenu({
     onOpenAI,
     onCreateNew,
 }: SidebarContextPanelMenuProps) {
+    const hostTheme = useSiteThemeSync()
+    const isDark = hostTheme === 'dark'
     const [isOpen, setIsOpen] = useState(false)
     const [title, setTitle] = useState(notebookTitle)
     const [subtitle, setSubtitle] = useState('Production release specifications & telemetry RCA log')
@@ -33,19 +36,19 @@ export function SidebarContextPanelMenu({
     const hasCoverUrl = Boolean(coverUrl && coverUrl.trim().length > 0)
 
     const overlay = (
-        <div className="w-[min(380px,92vw)] text-xs text-primary">
-            <div className="flex items-center justify-between gap-2 px-3 pt-3 pb-2">
-                <div className="flex items-center gap-2 min-w-0">
-                    <IconOpenSidebar className="w-4 h-4 text-muted shrink-0" />
-                    <div className="min-w-0">
-                        <div className="font-semibold text-sm leading-none">Publish settings</div>
-                        <p className="text-[11px] text-muted mt-1 mb-0 truncate">Cover, title & visibility</p>
-                    </div>
+        <div
+            className={`notebook-popover-panel notebook-app-scope w-[440px] p-5 space-y-5 rounded-xl shadow-2xl text-xs ${
+                isDark ? 'dark' : ''
+            }`}
+        >
+            <div className="flex items-center justify-between pb-1">
+                <div className="flex items-center gap-2 font-semibold text-primary text-sm">
+                    <IconOpenSidebar className="w-4 h-4 text-muted" />
+                    <span>Publish & Cover Settings</span>
                 </div>
                 <button
-                    type="button"
                     onClick={() => setIsPublished(!isPublished)}
-                    className="cursor-pointer transition-transform active:scale-95 shrink-0"
+                    className="cursor-pointer transition-transform active:scale-95"
                 >
                     <LemonTag type={isPublished ? 'success' : 'highlight'}>
                         {isPublished ? 'Published' : 'Draft'}
@@ -53,122 +56,123 @@ export function SidebarContextPanelMenu({
                 </button>
             </div>
 
-            <div className="px-3 pb-3 space-y-3">
-                <div className="space-y-1">
-                    <label className="font-medium text-secondary">Cover image URL</label>
-                    <LemonInput
-                        value={coverUrl}
-                        onChange={setCoverUrl}
-                        placeholder="https://images.unsplash.com/..."
-                        size="small"
-                        fullWidth
-                    />
-                </div>
+            <div className="space-y-1.5">
+                <label className="font-semibold text-primary">Cover Image URL</label>
+                <LemonInput
+                    value={coverUrl}
+                    onChange={(val) => setCoverUrl(val)}
+                    placeholder="Paste image URL (e.g. https://images.unsplash.com/...)"
+                    size="small"
+                />
+            </div>
 
-                {hasCoverUrl && (
-                    <div className="relative h-28 w-full rounded-lg overflow-hidden bg-surface-secondary group">
+            {hasCoverUrl && (
+                <div className="space-y-2 transition-all duration-300 animate-fadeIn">
+                    <label className="font-semibold text-primary flex items-center gap-1.5 text-xs">
+                        <IconImage className="w-3.5 h-3.5 text-orange-400" />
+                        Cover Banner Preview
+                    </label>
+
+                    <div className="relative h-32 w-full rounded-lg overflow-hidden bg-accent shadow-md group">
                         <img
                             src={coverUrl}
                             alt="Notebook cover preview"
                             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent flex items-end p-2.5">
-                            <span className="text-white font-semibold text-xs drop-shadow truncate flex items-center gap-1">
-                                <IconImage className="w-3 h-3" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-3">
+                            <span className="text-white font-semibold text-sm drop-shadow truncate">
                                 {title || 'Untitled Notebook'}
                             </span>
                         </div>
                     </div>
-                )}
+                </div>
+            )}
 
-                <div className="space-y-1">
-                    <label className="font-medium text-secondary">Public title</label>
-                    <LemonInput
-                        value={title}
-                        onChange={setTitle}
-                        placeholder="Public notebook title..."
+            <div className="space-y-1.5">
+                <label className="font-semibold text-primary">Public Title</label>
+                <LemonInput
+                    value={title}
+                    onChange={setTitle}
+                    placeholder="Public notebook title..."
+                    size="small"
+                />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                    <label className="font-semibold text-primary">Category</label>
+                    <LemonSelect
                         size="small"
-                        fullWidth
+                        value={category}
+                        onChange={(val) => setCategory(val || 'engineering')}
+                        options={[
+                            { value: 'engineering', label: 'Engineering & RCA' },
+                            { value: 'product', label: 'Product Spec' },
+                            { value: 'analytics', label: 'HogQL Telemetry' },
+                            { value: 'research', label: 'User Research' },
+                        ]}
                     />
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                        <label className="font-medium text-secondary">Category</label>
-                        <LemonSelect
-                            size="small"
-                            fullWidth
-                            value={category}
-                            onChange={(val) => setCategory(val || 'engineering')}
-                            options={[
-                                { value: 'engineering', label: 'Engineering' },
-                                { value: 'product', label: 'Product' },
-                                { value: 'analytics', label: 'Analytics' },
-                                { value: 'research', label: 'Research' },
-                            ]}
-                        />
-                    </div>
-                    <div className="space-y-1">
-                        <label className="font-medium text-secondary">Status</label>
-                        <LemonSelect
-                            size="small"
-                            fullWidth
-                            value={isPublished ? 'published' : 'draft'}
-                            onChange={(val) => setIsPublished(val === 'published')}
-                            options={[
-                                { value: 'draft', label: 'Draft' },
-                                { value: 'published', label: 'Published' },
-                            ]}
-                        />
-                    </div>
-                </div>
-
-                <div className="space-y-1">
-                    <label className="font-medium text-secondary">Subtitle</label>
-                    <LemonInput
-                        value={subtitle}
-                        onChange={setSubtitle}
-                        placeholder="Brief summary for readers..."
+                <div className="space-y-1.5">
+                    <label className="font-semibold text-primary">Publishing Status</label>
+                    <LemonSelect
                         size="small"
-                        fullWidth
+                        value={isPublished ? 'published' : 'draft'}
+                        onChange={(val) => setIsPublished(val === 'published')}
+                        options={[
+                            { value: 'draft', label: 'Draft Mode' },
+                            { value: 'published', label: 'Published' },
+                        ]}
                     />
                 </div>
             </div>
 
-            <div className="px-3 py-2.5 border-t border-border flex items-center justify-between gap-2">
-                <div className="flex gap-0.5">
+            <div className="space-y-1.5">
+                <label className="font-semibold text-primary">Subtitle / Summary</label>
+                <LemonInput
+                    value={subtitle}
+                    onChange={setSubtitle}
+                    placeholder="Brief summary for team readers..."
+                    size="small"
+                />
+            </div>
+
+            <div className="pt-2 flex items-center justify-between">
+                <div className="flex gap-1.5">
                     <LemonButton
-                        type="tertiary"
-                        size="xsmall"
-                        icon={<IconSparkles className="text-orange" />}
+                        type="stealth"
+                        size="small"
+                        icon={<IconSparkles className="text-orange-400" />}
                         onClick={() => {
                             setIsOpen(false)
-                            onOpenAI?.()
+                            if (onOpenAI) onOpenAI()
                         }}
-                        tooltip="Ask AI"
+                        tooltip="Ask PostHog AI Assistant"
                     />
                     <LemonButton
-                        type="tertiary"
-                        size="xsmall"
+                        type="stealth"
+                        size="small"
                         icon={<IconPlus />}
                         onClick={() => {
                             setIsOpen(false)
-                            onCreateNew?.()
+                            if (onCreateNew) onCreateNew()
                         }}
-                        tooltip="New notebook"
+                        tooltip="Create new notebook"
                     />
                 </div>
-                <div className="flex gap-1.5">
+
+                <div className="flex gap-2">
                     <LemonButton type="secondary" size="small" onClick={() => setIsOpen(false)}>
                         Cancel
                     </LemonButton>
                     <LemonButton
                         type="primary"
                         size="small"
-                        icon={savedSuccess ? <IconCheck /> : <IconShare />}
+                        icon={savedSuccess ? <IconCheck className="text-green-400" /> : <IconShare />}
                         onClick={handleSave}
                     >
-                        {savedSuccess ? 'Saved' : 'Publish'}
+                        {savedSuccess ? 'Published!' : 'Save & Publish'}
                     </LemonButton>
                 </div>
             </div>
@@ -179,14 +183,13 @@ export function SidebarContextPanelMenu({
         <LemonDropdown
             overlay={overlay}
             visible={isOpen}
-            onVisibilityChange={(v) => setIsOpen(v)}
             onClickOutside={() => setIsOpen(false)}
-            closeOnClickInside={false}
         >
             <LemonButton
                 type="secondary"
                 size="small"
                 icon={<IconOpenSidebar />}
+                onClick={() => setIsOpen(!isOpen)}
                 tooltip="Open publish & cover meta dropdown"
             >
                 <span className="hidden lg:inline font-medium">Open in context panel</span>

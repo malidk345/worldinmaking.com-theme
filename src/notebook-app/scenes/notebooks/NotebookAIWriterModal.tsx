@@ -1,17 +1,19 @@
 import { useState, useRef, useEffect } from 'react'
 import { LemonModal, LemonButton, LemonTag, LemonSelect } from '~nb-lib/lemon-ui/index'
 import {
+    IconSparkles,
     IconTerminal,
+    IconRocket,
     IconFlask,
     IconPlay,
     IconArrowRight,
+    IconRobot,
     IconLogomark,
     IconBook,
     IconCode,
     IconFlag,
     IconSearch,
 } from '@posthog/icons'
-import { IconRobot } from '../../lib/icons/iconsShim'
 
 export interface NotebookAIWriterModalProps {
     isOpen: boolean

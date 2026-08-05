@@ -94,6 +94,11 @@ export const isURL = (s: string): boolean => {
     }
 }
 
+// Never hand an unresolved Next.js route pattern to Link/router. These values
+// can arrive from indexed content and cause Next to throw before navigation.
+export const sanitizeNavigationUrl = (url?: string, fallback = '/'): string =>
+    url && !/\[[^\]]+\]/.test(url) ? url : fallback
+
 // Guard for `navigate()` targets that arrive from cross-window postMessage. Only
 // same-origin absolute paths like "/docs/foo" are allowed. This blocks "javascript:"
 // and "data:" URLs (which Gatsby's navigate() would run via window.location, giving

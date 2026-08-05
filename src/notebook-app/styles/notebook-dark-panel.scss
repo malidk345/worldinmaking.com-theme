@@ -1,11 +1,69 @@
 /**
- * Dark chrome for Ask AI + Publish dropdown overlays.
- * Rebinds Lemon UI CSS variables so inputs/selects/buttons match the
- * dark panels (source app used the same dark hex surfaces; lemon tokens
- * otherwise stay on light 3000 surfaces and look broken when embedded).
+ * Ask AI + Publish popover panels.
+ * Light by default; add class `dark` when host theme is dark.
+ *
+ * IMPORTANT: Host site Tailwind uses `border-primary` → rgb(var(--border)).
+ * Notebook base sets --border as a full color `rgb(0 0 0 / 15%)`, which makes
+ * rgb(var(--border)) invalid → browsers paint pure black. Inside these panels
+ * we only use --border-3000 / --color-border-primary (real colors), never site
+ * `border-primary` without fixing --border to RGB channels.
  */
-.notebook-dark-panel {
-    /* Surfaces */
+
+@mixin panel-light {
+    --color-bg-surface-primary: #ffffff;
+    --color-bg-surface-secondary: #f8fafc;
+    --color-bg-surface-tertiary: #f1f5f9;
+    --color-bg-surface-popover: #ffffff;
+    --color-bg-fill-primary: #ffffff;
+    --color-bg-fill-secondary: #f8fafc;
+    --color-bg-fill-tertiary: #f1f5f9;
+    --color-bg-fill-input: #ffffff;
+    --color-bg-fill-button-secondary: #f3f4ef;
+    --color-bg-fill-button-secondary-hover: #eeefe9;
+    --color-bg-fill-button-tertiary-hover: rgba(0, 0, 0, 0.04);
+    --color-bg-fill-button-tertiary-active: rgba(0, 0, 0, 0.08);
+
+    --color-border-primary: #dadbd2;
+    --color-border-secondary: #c1c2b9;
+    --border-3000: #dadbd2;
+    --border-bold-3000: #c1c2b9;
+    --border-3000-light: #dadbd2;
+
+    /* Lemon button chrome — never leave unset (unset → black/currentColor) */
+    --secondary-3000-button-border: #ccc;
+    --secondary-3000-button-border-hover: #aaa;
+    --secondary-3000-frame-bg: #e1dddd;
+    --primary-3000-button-border: #b17816;
+    --primary-3000-button-border-hover: #8e5b03;
+    --primary-3000-frame-bg: #eb9d2a;
+    --primary-3000-button-bg: #ffffff;
+    --button-border-color: #ccc;
+    --lemon-button-border-color-hover: #aaa;
+    --lemon-button-frame-bg-color: #e1dddd;
+
+    /* Host Tailwind border-primary expects RGB channels only */
+    --border: 218 219 210;
+    --input-border: 218 219 210;
+    --bg: 255 255 255;
+    --accent: 248 250 252;
+    --text-primary: 29 31 39;
+    --text-secondary: 71 85 105;
+    --text-muted: 100 116 139;
+    --input-bg: 255 255 255;
+
+    --text-3000: #1d1f27;
+    --color-text-primary: #1d1f27;
+    --color-text-secondary: rgba(29, 31, 39, 0.7);
+    --color-text-secondary-3000: rgba(29, 31, 39, 0.7);
+    --color-text-tertiary: rgba(29, 31, 39, 0.55);
+    --muted-3000: rgba(29, 31, 39, 0.55);
+    --shadow-elevation-3000: 0 8px 28px rgba(0, 0, 0, 0.1);
+
+    color: #1d1f27;
+    background-color: #ffffff;
+}
+
+@mixin panel-dark {
     --color-bg-surface-primary: #15161b;
     --color-bg-surface-secondary: #1a1b23;
     --color-bg-surface-tertiary: #1d1e24;
@@ -19,39 +77,48 @@
     --color-bg-fill-button-tertiary-hover: rgba(255, 255, 255, 0.06);
     --color-bg-fill-button-tertiary-active: rgba(255, 255, 255, 0.1);
 
-    /* Borders */
     --color-border-primary: #2c2d38;
     --color-border-secondary: #3b3c4a;
     --border-3000: #2c2d38;
     --border-bold-3000: #3b3c4a;
-    --secondary-3000-button-border: #3b3c4a;
-    --secondary-3000-button-border-hover: #4a4b5a;
 
-    /* Text */
+    --secondary-3000-button-border: #4a4c52;
+    --secondary-3000-button-border-hover: #5e6064;
+    --secondary-3000-frame-bg: #323232;
+    --primary-3000-button-border: #b17816;
+    --primary-3000-button-border-hover: #8e5b03;
+    --primary-3000-frame-bg: #926826;
+    --primary-3000-button-bg: #1a1b23;
+    --button-border-color: #4a4c52;
+    --lemon-button-border-color-hover: #5e6064;
+    --lemon-button-frame-bg-color: #323232;
+
+    --border: 44 45 56;
+    --input-border: 44 45 56;
+    --bg: 21 22 27;
+    --accent: 26 27 35;
+    --text-primary: 241 245 249;
+    --text-secondary: 148 163 184;
+    --text-muted: 100 116 139;
+    --input-bg: 17 18 22;
+
     --text-3000: #f1f5f9;
     --color-text-primary: #f1f5f9;
     --color-text-secondary: rgba(241, 245, 249, 0.72);
     --color-text-secondary-3000: rgba(241, 245, 249, 0.72);
     --color-text-tertiary: rgba(241, 245, 249, 0.55);
     --muted-3000: rgba(241, 245, 249, 0.55);
-
-    /* Popover chrome */
-    --color-bg-surface-popover: #1a1b23;
     --shadow-elevation-3000: 0 8px 28px rgba(0, 0, 0, 0.45);
 
     color: #e2e8f0;
-    background-color: #111216;
-    border-color: #2c2d38;
+    background-color: #15161b;
+}
 
-    /* Host-site Tailwind `text-primary` uses --text-primary (RGB channels) */
-    --text-primary: 241 245 249;
-    --text-secondary: 148 163 184;
-    --text-muted: 100 116 139;
-    --bg: 17 18 22;
-    --accent: 35 37 48;
-    --border: 44 45 56;
-    --input-bg: 17 18 22;
-    --input-border: 44 45 56;
+.notebook-popover-panel {
+    @include panel-light;
+    border: 1px solid var(--border-3000) !important;
+    box-shadow: var(--shadow-elevation-3000);
+    border-radius: 0.75rem;
 
     .LemonInput,
     .LemonSelect,
@@ -61,7 +128,7 @@
 
     .LemonInput {
         background-color: var(--color-bg-fill-input);
-        border-color: var(--color-border-primary);
+        border-color: var(--border-3000) !important;
         color: var(--text-3000);
 
         input,
@@ -70,18 +137,32 @@
             background: transparent;
 
             &::placeholder {
-                color: rgba(241, 245, 249, 0.4);
+                color: color-mix(in srgb, var(--text-3000) 40%, transparent);
             }
         }
     }
 
     .LemonSelect {
-        background-color: #111216;
-        border-color: #2c2d38;
-        color: #f1f5f9;
+        background-color: var(--color-bg-fill-input);
+        border-color: var(--border-3000) !important;
+        color: var(--text-3000);
     }
 
-    /* Nested select menus (portaled) that receive this class via menu.className */
+    /* Force soft button frames inside panel (override invalid host tokens) */
+    .LemonButton--primary,
+    .LemonButton--secondary {
+        --button-border-color: var(--secondary-3000-button-border);
+        --lemon-button-border-color-hover: var(--secondary-3000-button-border-hover);
+        --lemon-button-frame-bg-color: var(--secondary-3000-frame-bg);
+    }
+
+    .LemonButton--primary {
+        --button-border-color: var(--primary-3000-button-border);
+        --lemon-button-border-color-hover: var(--primary-3000-button-border-hover);
+        --lemon-button-frame-bg-color: var(--primary-3000-frame-bg);
+        --lemon-button-bg-color: var(--primary-3000-button-bg);
+    }
+
     &.Popover,
     &.Popover .Popover__box {
         background: transparent;
@@ -89,15 +170,26 @@
     }
 
     &.Popover .Popover__box {
-        background: #1a1b23;
-        border: 1px solid #2c2d38;
-        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+        background: var(--color-bg-surface-popover);
+        border: 1px solid var(--border-3000) !important;
+        box-shadow: var(--shadow-elevation-3000);
         opacity: 1;
         transform: none;
     }
 
-    .LemonMenuItemButton,
-    .LemonButton {
-        color: #f1f5f9;
+    &.dark {
+        @include panel-dark;
     }
+}
+
+/* Outer LemonDropdown Popover box that wraps the panel (sibling structure) */
+.notebook-app-scope.Popover > .Popover__box:has(.notebook-popover-panel),
+.notebook-app-scope.Popover > .Popover__box:has(.notebook-dark-panel) {
+    border: 1px solid var(--border-3000, #dadbd2) !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.notebook-dark-panel {
+    @extend .notebook-popover-panel;
 }

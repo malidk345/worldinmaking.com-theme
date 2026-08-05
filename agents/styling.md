@@ -8,6 +8,30 @@ Reference this guide when working on CSS and Tailwind styles.
 - Use only colors defined in `tailwind.config.js`
 - Two modes (light/dark), three schemes (primary/secondary/tertiary)
 
+## Lemon UI (product controls site-wide)
+
+Full architecture: [docs/architecture/lemon-ui-site-integration.md](../docs/architecture/lemon-ui-site-integration.md).
+
+```tsx
+import { LemonScope } from 'components/LemonScope'
+import { LemonButton, LemonInput } from '@posthog/lemon-ui'
+
+export function MyFeature() {
+  return (
+    <LemonScope>
+      <LemonButton type="primary">Save</LemonButton>
+      <LemonInput />
+    </LemonScope>
+  )
+}
+```
+
+- Always wrap with **`LemonScope`** outside `/notebooks` (CSS inject + scope class on the island only).
+- **Never** put `notebook-app-scope` on `body` — leaks nested Tailwind into the OS shell.
+- Shell / windows / marketing: site tokens (`bg-primary`, `OSButton`, frosted surfaces).
+- Do not load `components/LemonUI/lemon-ui.css` globally (fights `LemonButton__chrome`).
+- Rebuild notebook CSS: `pnpm run build:notebook-styles`.
+
 ## Color tokens
 
 Use these project-specific classes:

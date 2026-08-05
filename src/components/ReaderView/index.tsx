@@ -824,7 +824,7 @@ const SidebarSearchResults = ({
                                         {hit.title}
                                     </span>
                                     <span className="block text-[11px] text-muted truncate">
-                                        posthog.com{hit.fields?.slug || `/${hit.slug}`}
+                                        worldinmaking.com{hit.fields?.slug || `/${hit.slug}`}
                                     </span>
                                 </Link>
                             </li>

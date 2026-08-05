@@ -11,7 +11,10 @@ import '../components/Corpus/styles.css'
 import 'react-medium-image-zoom/dist/styles.css'
 import 'rc-slider/assets/index.css'
 import '../components/Pricing/PricingSlider/slider.css'
-import '../components/LemonUI/lemon-ui.css'
+// Do NOT import components/LemonUI/lemon-ui.css globally.
+// That thin stylesheet restyles .LemonButton with padding/border and fights the full
+// PostHog LemonButton chrome (.LemonButton + .LemonButton__chrome frame). Full styles
+// load via ensureLemonStyles() / <LemonScope> / notebook App (NOTEBOOK_APP_CSS).
 import '../components/MarkdownNotebook/MarkdownNotebook.scss'
 import { Provider } from 'context/App'
 import { Provider as ToastProvider } from 'context/Toast'

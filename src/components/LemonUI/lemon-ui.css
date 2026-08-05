@@ -1,3 +1,7 @@
+/* LEGACY thin LemonUI styles — NOT loaded globally (see _app.tsx).
+   Full Lemon UI styles come from notebook-app NOTEBOOK_APP_CSS via LemonScope.
+   Keep this file only for reference / emergency opt-in under .lemon-ui-lite. */
+
 /* PostHog LemonUI — CSS Variables & Component Styles
    Mirrors the PostHog design system for use in posthog.com */
 

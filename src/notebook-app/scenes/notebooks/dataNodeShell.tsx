@@ -138,7 +138,7 @@ export function DataNodeShell({ node, mode, updateProps }: NotebookComponentRend
                 </div>
             )}
 
-            <LemonBanner type="info">
+            <LemonBanner type="info" size="small">
                 Connect PostHog backend to view live dataset for <strong>{tagName}</strong>.
             </LemonBanner>
         </div>

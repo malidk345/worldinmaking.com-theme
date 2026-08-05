@@ -15,8 +15,11 @@ const NotebooksListSkeleton = dynamic(
     {
         ssr: false,
         loading: () => (
-            <div className="flex items-center justify-center w-full h-full bg-[#15161b]">
-                <div className="text-slate-400 text-sm animate-pulse">Loading notebooks...</div>
+            <div
+                className="flex items-center justify-center w-full h-full"
+                style={{ background: 'var(--bg-3000, #f3f4f5)', color: 'var(--text-3000, #1d1f27)' }}
+            >
+                <div className="text-sm animate-pulse opacity-60">Loading notebooks...</div>
             </div>
         ),
     }

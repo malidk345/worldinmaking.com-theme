@@ -25,7 +25,13 @@ function getFiles(dir) {
 }
 
 const allFiles = getFiles(nbDir)
-const files = allFiles.filter(f => !f.endsWith('bundle.scss') && !f.endsWith('quill-shim.css'))
+const files = allFiles.filter(
+    (f) =>
+        !f.endsWith('bundle.scss') &&
+        !f.endsWith('bundle.css') &&
+        !f.endsWith('bundleCss.ts') &&
+        !f.endsWith('quill-shim.css')
+)
 
 const priorityOrder = [
     'styles/vars.scss',
@@ -35,10 +41,14 @@ const priorityOrder = [
     'styles/global.scss',
     'styles/lemon-skin.scss',
     'styles/utilities-legacy.scss',
+    // index.tokens.scss = posthog-notebook-app index.css (must be .scss so Sass inlines tokens)
+    'styles/index.tokens.scss',
     'styles/index.css',
     'styles/notebook-dark-panel.scss',
     'styles/notebook.css',
-    'styles/quill-bridge.scss'
+    'styles/quill-bridge.scss',
+    // Host OS window bridge — after Lemon tokens, shell-only (does not restyle Lemon components)
+    'styles/site-bridge.scss',
 ]
 
 const prioritySet = new Set(priorityOrder)

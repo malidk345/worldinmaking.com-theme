@@ -8,6 +8,7 @@ import { IconArrowUpRight } from '@posthog/icons'
 import ContextMenu, { ContextMenuItemProps } from 'components/RadixUI/ContextMenu'
 import { useAppSettings, useAppContext, useAppActions } from '../../context/App'
 import { useWindow } from '../../context/Window'
+import { sanitizeNavigationUrl } from 'lib/utils'
 
 // Helper function to create standard context menu items
 const createStandardMenuItems = (url: string, state?: any, isExternal = false): ContextMenuItemProps[] => {
@@ -130,14 +131,10 @@ export default function Link({
     const initialUrl = to || href
     const url = resolveRelativeLink(initialUrl, locationHref)
     const safeUrl = useMemo(() => {
-        if (!url) return '/'
-        if (url.includes('[')) {
-            return url.replace(/\[([^\]]+)\]/g, '$1')
-        }
-        return url
+        return sanitizeNavigationUrl(url)
     }, [url])
     const linkState = state?.newWindow && state?.preventScroll === undefined ? { ...state, preventScroll: true } : state
-    const internal = !disablePrefetch && url && /^\/(?!\/)/.test(url)
+    const internal = !disablePrefetch && safeUrl && /^\/(?!\/)/.test(safeUrl)
     const isPostHogAppUrl = url && /(eu|us|app)\.posthog\.com/.test(url)
     const preview =
         other.preview ||
@@ -167,7 +164,7 @@ export default function Link({
         }
         onClick && onClick(e)
 
-        if (internal && url && !e.defaultPrevented) {
+        if (internal && safeUrl && !e.defaultPrevented) {
             e.preventDefault()
 
             const target = e.currentTarget as HTMLElement
@@ -176,9 +173,9 @@ export default function Link({
 
             // DIRECT WORLDINMAKING ADDWINDOW CALL (0ms latency window pop & URL pushState)
             addWindow({
-                key: linkState?.newWindow ? `${url}-${Date.now()}` : url,
-                path: url,
-                title: url.split('/').pop() || 'window',
+                key: linkState?.newWindow ? `${safeUrl}-${Date.now()}` : safeUrl,
+                path: safeUrl,
+                title: safeUrl.split('/').pop() || 'window',
                 fromOrigin,
                 ...linkState,
             })

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { LemonModal, LemonInput, LemonButton } from '~nb-lib/lemon-ui/index'
-import { IconSparkles, IconPlus, IconNotebook } from '@posthog/icons'
+import { IconSearch, IconSparkles, IconPlus, IconNotebook } from '@posthog/icons'
 import { getNotebooks, StoredNotebook } from './notebookStorage'
 
 interface CommandPaletteModalProps {
@@ -46,6 +46,7 @@ export function CommandPaletteModal({
                     value={query}
                     onChange={setQuery}
                     autoFocus
+                    icon={<IconSearch />}
                     className="w-full text-base"
                 />
 

@@ -26,7 +26,8 @@ import { CollaboratorsBanner } from './scenes/notebooks/CollaboratorsBanner'
 import { SidebarContextPanelMenu } from './scenes/notebooks/SidebarContextPanelMenu'
 import { NotebookPublishModal } from './scenes/notebooks/NotebookPublishModal'
 import { AskAIDropdown } from './scenes/notebooks/AskAIDropdown'
-import { NOTEBOOK_APP_CSS } from './styles/bundleCss'
+import { useSiteThemeSync } from './lib/useSiteThemeSync'
+import { ensureLemonStyles, releaseLemonStyles } from '../lib/lemon/ensureLemonStyles'
 
 // ---- Error Boundary ----
 class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean; error: Error | null }> {
@@ -91,33 +92,31 @@ function useHashRouter(): [Route, (route: Route) => void] {
 // ---- App ----
 export function App() {
   const [route, navigate] = useHashRouter()
+  // Host Display options light/dark → notebook shell (Lemon components untouched)
+  const hostTheme = useSiteThemeSync()
 
+  // Shared site-wide Lemon CSS inject (same as <LemonScope> on other pages)
   useEffect(() => {
-    // Scope CSS vars + nested lemon-ui rules for in-app content AND FloatingPortal
-    // menus (which mount under document.body). Without the body class, portaled
-    // dropdowns miss scoped tokens; without dual selectors they stay opacity:0.
-    document.body.classList.add('notebook-app-scope')
-
-    let style = document.getElementById('notebook-app-styles') as HTMLStyleElement | null
-    if (!style) {
-      style = document.createElement('style')
-      style.id = 'notebook-app-styles'
-      style.innerHTML = NOTEBOOK_APP_CSS
-      document.head.appendChild(style)
-    }
+    ensureLemonStyles()
     return () => {
-      document.body.classList.remove('notebook-app-scope')
-      const el = document.getElementById('notebook-app-styles')
-      if (el) el.remove()
+      releaseLemonStyles()
     }
   }, [])
+
+  // Mirror host Display options theme for shell + themeLogic (does not remount Lemon CSS)
+  useEffect(() => {
+    document.documentElement.dataset.notebookHostTheme = hostTheme
+    return () => {
+      delete document.documentElement.dataset.notebookHostTheme
+    }
+  }, [hostTheme])
 
   // Editor state
   const [currentNotebook, setCurrentNotebook] = useState<StoredNotebook | null>(null)
   const [markdown, setMarkdown] = useState('')
   const [title, setTitle] = useState('')
   const [markdownVersion, setMarkdownVersion] = useState(0)
-  const [aiPromptRequest] = useState<number | undefined>(undefined)
+  const [aiPromptRequest, setAiPromptRequest] = useState<number | undefined>(undefined)
   const [syncStatus, setSyncStatus] = useState<'saved' | 'edited' | 'local'>('local')
   const [isExpanded, setIsExpanded] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
@@ -215,13 +214,29 @@ export function App() {
   }
 
   const extraCommands = useCallback(
-    (api?: any) => buildExtraInsertCommands({ ...api, openAIPrompt: () => setShowAIModal(true) }),
+    (api?: any) =>
+      buildExtraInsertCommands({
+        ...api,
+        openAIPrompt: () => {
+          setShowAIModal(true)
+          setAiPromptRequest((n) => (n ?? 0) + 1)
+        },
+      }),
     []
   )
 
+  // Shell matches standalone posthog-notebook-app.
+  // `notebook-app-scope` on THIS root only (never body) so site OS chrome is not affected.
+  // Host light/dark → .dark so index tokens (--bg-3000 etc.) resolve.
   return (
-    <div className="App notebook-app-scope min-h-screen bg-[var(--bg-3000,#f3f4f5)] text-[var(--text-3000,#1d1f27)]">
-      {/* ===== Main Content Area matching PostHog's SceneContent ===== */}
+    <div
+      className={`App notebook-app-scope bg-[var(--bg-3000,#f3f4f5)] text-[var(--text-3000,#1d1f27)] ${
+        hostTheme === 'dark' ? 'dark' : ''
+      }`}
+      data-lemon-scope
+      data-host-theme={hostTheme}
+    >
+      {/* ===== Main Content Area matching PostHog Notebook SceneContent ===== */}
       <main className="p-3 sm:p-6 lg:p-8 max-w-[1400px] mx-auto space-y-4 sm:space-y-6">
         <ErrorBoundary>
           {/* ---------- Notebooks List (Default Entry Scene) ---------- */}

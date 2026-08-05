@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
-import { LemonButton, LemonDropdown, LemonInput, LemonDivider, ProfilePicture } from '~nb-lib/lemon-ui/index'
+import { LemonButton, LemonDropdown, LemonInput, LemonDivider, LemonTag, ProfilePicture } from '~nb-lib/lemon-ui/index'
 import { IconNotebook, IconPlus } from '@posthog/icons'
-import { getNotebooks } from '../notebookStorage'
+import { StoredNotebook, getNotebooks, createNotebook } from '../notebookStorage'
 
 export interface NotebookSelectButtonProps {
     onSelectNotebook: (id: string) => void
@@ -100,7 +100,7 @@ export function NotebookSelectButton({
                                     {nb.title || 'Untitled'}
                                 </span>
                                 <span className="text-[10px] text-muted truncate">
-                                    {nb.isTemplate ? 'PostHog' : 'Mustafa'} Â· {new Date(nb.updatedAt).toLocaleDateString()}
+                                    {nb.isTemplate ? 'PostHog' : 'Mustafa'} · {new Date(nb.updatedAt).toLocaleDateString()}
                                 </span>
                             </div>
                         </LemonButton>
