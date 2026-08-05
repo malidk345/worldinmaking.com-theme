@@ -226,21 +226,35 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
         }
     }
 
+    const [isNarrow, setIsNarrow] = useState(false)
+    useEffect(() => {
+        const sync = () => setIsNarrow(window.innerWidth < 640)
+        sync()
+        window.addEventListener('resize', sync)
+        return () => window.removeEventListener('resize', sync)
+    }, [])
+
     return (
         <LemonDropdown
             visible={isOpen}
             onClickOutside={() => setIsOpen(false)}
             closeOnClickInside={false}
             padded={false}
-            dropdownPlacement="bottom-end"
+            // Mobile sheet CSS pins to bottom; desktop anchors under the toolbar control
+            dropdownPlacement={isNarrow ? 'top' : 'bottom-end'}
+            fallbackPlacements={
+                isNarrow
+                    ? ['top', 'bottom', 'top-start', 'top-end', 'bottom-start', 'bottom-end']
+                    : ['bottom-end', 'bottom-start', 'top-end', 'top-start', 'bottom', 'top']
+            }
             className={`notebook-popover-panel notebook-popover-panel--wide notebook-app-scope ${
                 isDark ? 'dark' : ''
             }`}
             overlay={
                 <div className="notebook-popover-body" onClick={(e) => e.stopPropagation()}>
                     {/* Header */}
-                    <div className="flex items-center justify-between pb-2 border-b border-[var(--border-3000,#e2e8f0)] gap-3">
-                        <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="flex items-center justify-between pb-2 border-b border-[var(--border-3000,#e2e8f0)] gap-2 shrink-0">
+                        <div className="flex items-center gap-2 min-w-0">
                             <ProfilePicture user={philosopherAsUser(activeBot)} size="md" />
                             <div className="min-w-0">
                                 <div className="flex items-center gap-1.5 min-w-0">
@@ -263,17 +277,17 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                                 onClick={() => setMessages([])}
                                 tooltip="Clear conversation"
                             >
-                                Clear Thread
+                                <span className="hidden xs:inline sm:inline">Clear</span>
                             </LemonButton>
                         )}
                     </div>
 
                     {/* Empty state: suggestions */}
                     {!hasThread && (
-                        <div className="space-y-3 py-1">
-                            <p className="text-xs text-muted mb-0">
-                                Speak with one of the 16 resident philosophers. Their voice, stance, and style come from
-                                the WorldInMaking persona engine.
+                        <div className="space-y-2.5 py-0.5 shrink-0">
+                            <p className="text-xs text-muted mb-0 leading-snug">
+                                Chat with a resident philosopher. Stance and style come from the WorldInMaking persona
+                                engine.
                             </p>
                             <div className="flex flex-wrap gap-1.5">
                                 {SUGGESTIONS.map((suggestion) => (
@@ -292,7 +306,7 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
 
                     {/* Conversation thread */}
                     {hasThread && (
-                        <div className="max-h-[min(40dvh,280px)] sm:max-h-[min(50dvh,360px)] overflow-y-auto overscroll-contain space-y-3 pr-1 pb-1 text-xs leading-relaxed">
+                        <div className="notebook-popover-scroll space-y-3 pr-0.5 pb-1 text-xs leading-relaxed">
                             {messages.map((msg) => {
                                 const bot =
                                     msg.sender === 'ai' && msg.philosopherId

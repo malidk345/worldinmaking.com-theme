@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { LemonDropdown, LemonButton, LemonTag, LemonInput, LemonSelect } from '~nb-lib/lemon-ui/index'
 import { IconOpenSidebar, IconShare, IconCheck, IconPlus, IconSparkles, IconImage } from '@posthog/icons'
 import { useSiteThemeSync } from '../../lib/useSiteThemeSync'
@@ -34,6 +34,13 @@ export function SidebarContextPanelMenu({
     }
 
     const hasCoverUrl = Boolean(coverUrl && coverUrl.trim().length > 0)
+    const [isNarrow, setIsNarrow] = useState(false)
+    useEffect(() => {
+        const sync = () => setIsNarrow(window.innerWidth < 640)
+        sync()
+        window.addEventListener('resize', sync)
+        return () => window.removeEventListener('resize', sync)
+    }, [])
 
     return (
         <LemonDropdown
@@ -41,11 +48,16 @@ export function SidebarContextPanelMenu({
             onClickOutside={() => setIsOpen(false)}
             closeOnClickInside={false}
             padded={false}
-            dropdownPlacement="bottom-end"
+            dropdownPlacement={isNarrow ? 'top' : 'bottom-end'}
+            fallbackPlacements={
+                isNarrow
+                    ? ['top', 'bottom', 'top-start', 'top-end']
+                    : ['bottom-end', 'bottom-start', 'top-end', 'top-start']
+            }
             className={`notebook-popover-panel notebook-app-scope ${isDark ? 'dark' : ''}`}
             overlay={
                 <div className="notebook-popover-body notebook-popover-body--compact" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center justify-between gap-2 pb-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 pb-1 min-w-0 shrink-0">
                         <div className="flex items-center gap-2 font-semibold text-primary text-sm min-w-0">
                             <IconOpenSidebar className="w-4 h-4 text-muted shrink-0" />
                             <span className="truncate">Publish & Cover</span>
