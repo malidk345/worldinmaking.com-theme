@@ -1,104 +1,117 @@
 /**
- * PostHog AI–style thinking UI (from products/posthog_ai ReasoningAnswer + ActivityPrimitives).
+ * PostHog AI–style thinking UI
+ * (mirrors products/posthog_ai ReasoningAnswer + ActivityPrimitives)
  *
  * - In progress: brain icon + shimmering "Thinking…"
- * - Complete: collapses to "Thought"; expand shows substeps with left rail
+ * - Complete: collapsible "Thought" with left-rail substeps
  */
-import { useLayoutEffect, useState, type ReactNode } from 'react'
-import clsx from 'clsx'
+import React, { useEffect, useState } from 'react'
+import { clsx } from 'clsx'
 import { IconBrain, IconChevronDown } from '@posthog/icons'
 
-export type ReasoningStatus = 'in_progress' | 'completed'
-
-function ShimmeringContent({ children }: { children: ReactNode }): JSX.Element {
-    const isText = typeof children === 'string'
-    if (isText) {
-        return (
-            <span
-                className="bg-clip-text text-transparent"
-                style={{
-                    backgroundImage:
-                        'linear-gradient(in oklch 90deg, var(--text-3000, currentColor), var(--muted-3000, #8b8b8b), var(--trace-3000, #c0c0c0), var(--muted-3000, #8b8b8b), var(--text-3000, currentColor))',
-                    backgroundSize: '200% 100%',
-                    animation: 'shimmer 3s linear infinite',
-                }}
-            >
-                {children}
-            </span>
-        )
-    }
+function ShimmerText({ children }: { children: string }): JSX.Element {
     return (
-        <span className="inline-flex min-w-0 max-w-full" style={{ animation: 'shimmer-opacity 3s linear infinite' }}>
+        <span
+            className="bg-clip-text text-transparent"
+            style={{
+                backgroundImage:
+                    'linear-gradient(90deg, var(--text-3000, #111) 0%, var(--muted-3000, #888) 40%, var(--text-3000, #111) 80%)',
+                backgroundSize: '200% 100%',
+                animation: 'shimmer 3s linear infinite',
+            }}
+        >
             {children}
         </span>
     )
 }
 
-export interface ReasoningAnswerProps {
-    /** Full thought body (shown when expanded / as substeps) */
-    content?: string
-    /** Structured stages — preferred when present */
-    stages?: Array<{ id: string; label: string; text: string }>
-    completed: boolean
+function ShimmerIcon({ children }: { children: React.ReactNode }): JSX.Element {
+    return (
+        <span className="inline-flex" style={{ animation: 'shimmer-opacity 3s linear infinite' }}>
+            {children}
+        </span>
+    )
+}
+
+export interface ReasoningStage {
     id: string
-    /** Live label while in progress (defaults to "Thinking…") */
+    label: string
+    text: string
+}
+
+export interface ReasoningAnswerProps {
+    id: string
+    completed: boolean
+    content?: string
+    stages?: ReasoningStage[]
     progressLabel?: string
-    /** Completed collapsed title (defaults to "Thought") */
     completedLabel?: string
     className?: string
 }
 
 export function ReasoningAnswer({
+    id,
+    completed,
     content = '',
     stages,
-    completed,
-    id,
     progressLabel = 'Thinking…',
     completedLabel = 'Thought',
     className,
 }: ReasoningAnswerProps): JSX.Element | null {
-    const substeps =
+    const substeps: Array<{ label?: string; text: string }> =
         stages && stages.length > 0
-            ? stages.map((s) => (s.label && s.id !== 'raw' ? `**${s.label}.** ${s.text}` : s.text))
+            ? stages
+                  .filter((s) => s && typeof s.text === 'string' && s.text.trim())
+                  .map((s) => ({
+                      label: s.id !== 'raw' && s.label ? s.label : undefined,
+                      text: s.text.trim(),
+                  }))
             : content.trim()
-              ? [content.trim()]
+              ? [{ text: content.trim() }]
               : []
 
-    // Nothing to show when complete with empty body
+    // Complete with nothing to show → hide
     if (completed && substeps.length === 0) {
         return null
     }
 
     const hasDetails = substeps.length > 0
-    const shouldExpand = hasDetails && !completed
-    const [expanded, setExpanded] = useState(shouldExpand)
+    // Expand while streaming; collapse when done (PostHog Max behavior)
+    const [expanded, setExpanded] = useState(!completed && hasDetails)
 
-    useLayoutEffect(() => {
-        setExpanded(shouldExpand)
-    }, [shouldExpand, id])
+    useEffect(() => {
+        setExpanded(!completed && hasDetails)
+    }, [completed, hasDetails, id])
 
     const title = completed ? completedLabel : progressLabel
-    const status: ReasoningStatus = completed ? 'completed' : 'in_progress'
 
     return (
-        <div className={clsx('flex flex-col rounded w-full min-w-0 gap-1 text-xs', className)} data-attr="reasoning-answer">
+        <div
+            className={clsx('flex flex-col rounded w-full min-w-0 gap-1 text-xs', className)}
+            data-attr="reasoning-answer"
+        >
             <div
                 className={clsx(
-                    'group/activity-header transition-colors duration-500 flex select-none min-w-0',
-                    status === 'in_progress' && 'text-muted',
-                    status === 'completed' && 'text-default',
-                    hasDetails ? 'cursor-pointer' : 'cursor-default',
-                    hasDetails && 'rounded px-1 -mx-1 hover:bg-[var(--color-bg-fill-button-tertiary-hover,rgba(0,0,0,0.04))]',
-                    hasDetails &&
-                        expanded &&
-                        'bg-[var(--color-bg-fill-button-tertiary-active,rgba(0,0,0,0.06))]'
+                    'group/thought-header flex select-none min-w-0 items-center transition-colors duration-300 rounded px-1 -mx-1',
+                    !completed && 'text-muted',
+                    completed && 'text-primary',
+                    hasDetails && 'cursor-pointer hover:bg-black/5 dark:hover:bg-white/5',
+                    hasDetails && expanded && 'bg-black/5 dark:bg-white/5'
                 )}
-                onClick={hasDetails ? () => setExpanded((v) => !v) : undefined}
+                onClick={
+                    hasDetails
+                        ? (e) => {
+                              e.stopPropagation()
+                              setExpanded((v) => !v)
+                          }
+                        : undefined
+                }
                 onKeyDown={
                     hasDetails
                         ? (e) => {
                               if (e.key === 'Enter' || e.key === ' ') {
                                   e.preventDefault()
+                                  e.stopPropagation()
                                   setExpanded((v) => !v)
                               }
                           }
@@ -109,68 +122,57 @@ export function ReasoningAnswer({
                 aria-expanded={hasDetails ? expanded : undefined}
                 aria-label={hasDetails ? (expanded ? 'Collapse thought' : 'Expand thought') : undefined}
             >
-                <div className="relative flex items-center justify-center size-5 shrink-0 overflow-hidden">
+                {/* Icon → chevron swap on hover (PostHog Activity header) */}
+                <div className="relative flex items-center justify-center w-5 h-5 shrink-0 overflow-hidden">
                     <span
                         className={clsx(
-                            'inline-flex transition-[color,transform,opacity] duration-200 ease-out',
-                            status === 'in_progress' && 'text-muted',
+                            'inline-flex items-center justify-center transition-all duration-200',
                             hasDetails &&
-                                'group-hover/activity-header:-translate-x-1 group-hover/activity-header:scale-90 group-hover/activity-header:opacity-0 group-focus-within/activity-header:-translate-x-1 group-focus-within/activity-header:scale-90 group-focus-within/activity-header:opacity-0'
+                                'group-hover/thought-header:opacity-0 group-hover/thought-header:scale-90 group-hover/thought-header:-translate-x-0.5'
                         )}
                     >
-                        {status === 'in_progress' ? (
-                            <ShimmeringContent>
-                                <IconBrain className="size-4" />
-                            </ShimmeringContent>
+                        {!completed ? (
+                            <ShimmerIcon>
+                                <IconBrain className="w-4 h-4" />
+                            </ShimmerIcon>
                         ) : (
-                            <IconBrain className="size-4" />
+                            <IconBrain className="w-4 h-4 opacity-70" />
                         )}
                     </span>
                     {hasDetails && (
-                        <span className="absolute inline-flex translate-x-1 scale-90 text-tertiary opacity-0 transition-[color,transform,opacity] duration-200 ease-out group-hover/activity-header:translate-x-0 group-hover/activity-header:scale-100 group-hover/activity-header:text-primary group-hover/activity-header:opacity-100 group-focus-within/activity-header:translate-x-0 group-focus-within/activity-header:scale-100 group-focus-within/activity-header:text-primary group-focus-within/activity-header:opacity-100">
-                            <IconChevronDown className="size-5" />
+                        <span
+                            className={clsx(
+                                'absolute inline-flex items-center justify-center opacity-0 scale-90 translate-x-0.5 transition-all duration-200',
+                                'group-hover/thought-header:opacity-100 group-hover/thought-header:scale-100 group-hover/thought-header:translate-x-0'
+                            )}
+                        >
+                            <IconChevronDown className="w-4 h-4" />
                         </span>
                     )}
                 </div>
 
-                <div className="flex items-center gap-1 flex-1 min-w-0 min-h-5 pl-1">
-                    {status === 'in_progress' ? (
-                        <ShimmeringContent>{title}</ShimmeringContent>
-                    ) : (
-                        <span className="inline-flex font-medium">{title}</span>
-                    )}
+                <div className="flex items-center min-w-0 min-h-[20px] pl-1 font-medium">
+                    {!completed ? <ShimmerText>{title}</ShimmerText> : <span>{title}</span>}
                 </div>
             </div>
 
             {expanded && hasDetails && (
-                <div
-                    className={clsx(
-                        'space-y-1.5 border-l-2 border-[var(--border-3000,#e2e8f0)] pl-3.5 ml-[calc(0.775rem)]'
-                    )}
-                >
-                    {substeps.map((step, i) => {
-                        const isLast = i === substeps.length - 1
-                        // Simple **Label.** prefix rendering without full markdown
-                        const boldMatch = step.match(/^\*\*(.+?)\.\*\*\s*([\s\S]*)$/)
-                        return (
-                            <div
-                                key={`${id}-step-${i}`}
-                                className={clsx(
-                                    'leading-relaxed whitespace-pre-wrap',
-                                    completed || !isLast ? 'text-muted' : 'text-secondary'
-                                )}
-                            >
-                                {boldMatch ? (
-                                    <>
-                                        <span className="font-semibold text-secondary">{boldMatch[1]}.</span>{' '}
-                                        <span>{boldMatch[2]}</span>
-                                    </>
-                                ) : (
-                                    step
-                                )}
-                            </div>
-                        )
-                    })}
+                <div className="space-y-1.5 border-l-2 border-[var(--border-3000,#e2e8f0)] pl-3 ml-[10px]">
+                    {substeps.map((step, i) => (
+                        <div
+                            key={`${id}-step-${i}`}
+                            className="leading-relaxed whitespace-pre-wrap text-muted"
+                        >
+                            {step.label ? (
+                                <>
+                                    <span className="font-semibold text-secondary">{step.label}.</span>{' '}
+                                    <span>{step.text}</span>
+                                </>
+                            ) : (
+                                step.text
+                            )}
+                        </div>
+                    ))}
                 </div>
             )}
         </div>

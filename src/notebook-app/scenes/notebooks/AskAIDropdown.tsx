@@ -121,7 +121,8 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
 
             const question = history ? `Previous conversation:\n${history}\n\nUser: ${text}` : text
 
-            const res = await fetch('/api/bots/act', {
+            // Prefer unified act API; fall back to philosopher-bot if act is unavailable
+            let res = await fetch('/api/bots/act', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -134,13 +135,34 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                 }),
             })
 
-            const data = await res.json()
+            if (res.status === 404 || res.status === 405) {
+                res = await fetch('/api/philosopher-bot', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        philosopher: activeBot.id,
+                        question,
+                        mood: 'calm',
+                        taskType: 'paper_section',
+                        thinkingDepth: 'standard',
+                    }),
+                })
+            }
+
+            let data: any = null
+            try {
+                data = await res.json()
+            } catch {
+                data = null
+            }
+
             const reply =
                 (typeof data?.reply === 'string' && data.reply.trim()) ||
                 (typeof data?.error === 'string' && data.error) ||
-                `${activeBot.name} could not form a reply. Try again.`
+                (res.ok
+                    ? `${activeBot.name} could not form a reply. Try again.`
+                    : `Request failed (${res.status}). Try again.`)
 
-            // Production often returns 503 when keys are missing — still show message in thread
             if (data?.success === false || res.status >= 400) {
                 console.warn('[AskAI] provider failure', {
                     status: res.status,
@@ -160,13 +182,20 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                       }))
                 : []
 
+            const thoughtText =
+                typeof data?.thought === 'string' && data.thought.trim()
+                    ? data.thought.trim()
+                    : stages.length > 0
+                      ? stages.map((s) => s.text).join('\n\n')
+                      : undefined
+
             setMessages((prev) => [
                 ...prev,
                 {
                     id: `${Date.now()}-a`,
                     sender: 'ai',
                     text: reply,
-                    thought: typeof data?.thought === 'string' ? data.thought : undefined,
+                    thought: thoughtText,
                     thinkingStages: stages.length > 0 ? stages : undefined,
                     philosopherId: activeBot.id,
                     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
