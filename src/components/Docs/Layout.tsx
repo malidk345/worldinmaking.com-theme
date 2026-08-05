@@ -1,9 +1,11 @@
+import DOMPurify from 'isomorphic-dompurify';
 import React from 'react'
 import { MDXProvider } from '@mdx-js/react'
 const MDXRenderer = ({ children }: any) => {
     if (!children) return null
     if (typeof children === 'string') {
-        return <div dangerouslySetInnerHTML={{ __html: children }} />
+        return <div // nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(children) }} />
     }
     return <>{children}</>
 }

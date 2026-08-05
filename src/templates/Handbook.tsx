@@ -1,3 +1,4 @@
+import DOMPurify from 'isomorphic-dompurify';
 import React from 'react'
 import ReaderView from 'components/ReaderView'
 import { usePathname } from 'next/navigation'
@@ -27,7 +28,8 @@ import NewsletterForm from 'components/NewsletterForm'
 const MDXRenderer = ({ children }: any) => {
     if (!children) return null
     if (typeof children === 'string') {
-        return <div dangerouslySetInnerHTML={{ __html: children }} />
+        return <div // nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(children) }} />
     }
     return <>{children}</>
 }
