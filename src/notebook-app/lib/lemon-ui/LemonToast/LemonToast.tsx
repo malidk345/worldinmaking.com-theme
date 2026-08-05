@@ -4,7 +4,6 @@ import { toast, type ToastOptions } from 'react-toastify'
 import { IconCheckCircle, IconInfo, IconWarning, IconX } from '@posthog/icons'
 
 import { getIncidentStatus, STATUS_PAGE_BASE } from 'lib/components/HelpMenu/incidentStatus'
-import { isChristmas } from 'lib/holidays'
 import { hashCodeForString } from 'lib/utils/strings'
 
 import { IconErrorOutline, IconGift } from '../icons'
@@ -160,7 +159,7 @@ export const lemonToast = {
                 return
             }
             toast.success(<ToastContent type="success" message={message} button={button} id={id} />, {
-                icon: isChristmas() ? <IconGift className="text-green-600" /> : <IconCheckCircle />,
+                icon: <IconCheckCircle />,
                 ...options,
             })
         })
@@ -238,7 +237,7 @@ export const lemonToast = {
                     render: ({ data }) => {
                         return <ToastContent type="success" message={data || messages.success} button={button} />
                     },
-                    icon: isChristmas() ? <IconGift className="text-green-600" /> : <IconCheckCircle />,
+                    icon: <IconCheckCircle />,
                 },
                 error: {
                     render: ({ data }) => {
