@@ -12,14 +12,26 @@ export interface ThemeOption {
     }
 }
 
+// Solid SVG thumbs for the default canvas wallpaper (no remote image needed)
+const SOLID_THUMB_LIGHT =
+    'data:image/svg+xml,' +
+    encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500"><rect width="100%" height="100%" fill="#A8B8A8"/></svg>'
+    )
+const SOLID_THUMB_DARK =
+    'data:image/svg+xml,' +
+    encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500"><rect width="100%" height="100%" fill="#0F1612"/></svg>'
+    )
+
 export const themeOptions: ThemeOption[] = [
     {
-        label: 'Keyboard garden',
+        label: 'Garden green',
         value: 'keyboard-garden',
         background: {
             thumb: {
-                light: 'https://res.cloudinary.com/dmukukwp6/image/upload/w_800,h_500,c_fill,g_south_east/l_9000_hedge_light_42c729131e/c_scale,w_480/fl_layer_apply,g_south_east/9000_bg_light_07316896be.jpg',
-                dark: 'https://res.cloudinary.com/dmukukwp6/image/upload/w_800,h_500,c_fill,g_south_east/l_9000_hedge_dark_b36706e924/c_scale,w_480/fl_layer_apply,g_south_east/9000_bg_dark_9a32796f77.jpg',
+                light: SOLID_THUMB_LIGHT,
+                dark: SOLID_THUMB_DARK,
             },
             classes: '',
         },

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { RoughAnnotation } from '../Code/RoughAnnotation'
 import OSButton from '../OSButton'
 
-const HIGHLIGHT_COLOR = 'rgba(247, 165, 1, 0.35)' // PostHog yellow (#F7A501) at 35% alpha
+const HIGHLIGHT_COLOR = 'rgba(29, 78, 216, 0.35)' // Navy brand accent (#1D4ED8) at 35% alpha
 const STRONG_REGEX = /<strong>([\s\S]*?)<\/strong>/g
 /** Wait until the card CSS transition (420ms) fully settles before drawing highlights.
  *  Starting before that stores mid-rotation rects; rough-notation's internal 400ms

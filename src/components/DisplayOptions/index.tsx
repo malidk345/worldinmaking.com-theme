@@ -1,183 +1,285 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
+import { ToggleGroup, ToggleOption } from 'components/RadixUI/ToggleGroup'
+import { Popover } from 'components/RadixUI/Popover'
+import ScrollArea from 'components/RadixUI/ScrollArea'
+import { IconDay, IconInfo, IconLaptop, IconNight } from '@posthog/icons'
+import { SEO } from 'components/seo'
 import { useApp } from '../../context/App'
-import { IconDay, IconNight, IconLaptop } from '@posthog/icons'
+import type { SiteSettings } from '../../context/App'
+import Tooltip from 'components/RadixUI/Tooltip'
+import { Screensaver } from '../Screensaver'
+import useTheme from '../../hooks/useTheme'
+import KeyboardShortcut from 'components/KeyboardShortcut'
+
+const XL_CURSOR_SVG = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 74 28"><g clip-path="url(#a)"><path fill="#000" stroke="#fff" stroke-width="5" d="m44.77 50.196.024.01.025.008c.48.177 1.014.286 1.58.286.665 0 1.28-.147 1.837-.392l.012-.006.013-.006 8.8-3.997.002-.001a4.5 4.5 0 0 0 2.225-5.968v-.001l-10.73-23.395 16.828-1.446.008-.001a4.504 4.504 0 0 0 2.678-7.78L20.073-37.289a4.51 4.51 0 0 0-4.858-.843l-.011.005A4.499 4.499 0 0 0 12.5-34v66a4.503 4.503 0 0 0 2.715 4.133l.01.003a4.505 4.505 0 0 0 4.86-.859L32.01 24.072l10.259 23.717.005.012.005.011a4.527 4.527 0 0 0 2.492 2.384Z"/></g><defs><clipPath id="a"><path fill="#fff" d="M0 0h74v28H0z"/></clipPath></defs></svg>`
+
+const colorModeOptions: ToggleOption[] = [
+    {
+        label: 'System',
+        value: 'system',
+        icon: <IconLaptop className="size-5" />,
+    },
+    {
+        label: 'Light',
+        value: 'light',
+        icon: <IconDay className="size-5" />,
+        default: true,
+    },
+    {
+        label: 'Dark',
+        value: 'dark',
+        icon: <IconNight className="size-5" />,
+    },
+]
+
+const cursorOptions: ToggleOption[] = [
+    {
+        label: 'Default',
+        value: 'default',
+    },
+    {
+        label: 'XL',
+        value: 'xl',
+        icon: <div dangerouslySetInnerHTML={{ __html: XL_CURSOR_SVG }} className="h-5 w-full relative -top-1" />,
+    },
+    {
+        label: "James' face",
+        value: 'james',
+        icon: (
+            <img
+                src="https://res.cloudinary.com/dmukukwp6/image/upload/james_cursor_default_d6f7983b0a.png"
+                alt="James' Face"
+                className="h-6 -my-1"
+            />
+        ),
+    },
+]
+
+interface WallpaperSelectProps {
+    value: string
+    onValueChange: (value: string) => void
+    title: string
+}
+
+const WallpaperSelect = ({ value, onValueChange, title }: WallpaperSelectProps) => {
+    const [isDark, setIsDark] = useState(false)
+    const [isOpen, setIsOpen] = useState(false)
+    const { themeOptions } = useTheme()
+
+    useEffect(() => {
+        const checkTheme = () => {
+            const bodyClass = document.body.className
+            setIsDark(bodyClass.includes('dark'))
+        }
+
+        checkTheme()
+
+        const observer = new MutationObserver(checkTheme)
+        observer.observe(document.body, { attributes: true, attributeFilter: ['class'] })
+
+        return () => observer.disconnect()
+    }, [])
+
+    const currentOption = themeOptions.find((option) => option.value === value)
+    const currentThumb = currentOption
+        ? isDark
+            ? currentOption.background?.thumb?.dark
+            : currentOption.background?.thumb?.light
+        : null
+
+    const handleSelect = (selectedValue: string) => {
+        onValueChange(selectedValue)
+    }
+
+    const trigger = (
+        <button
+            type="button"
+            className="w-full bg-white dark:bg-dark border border-primary rounded px-2 py-2 text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary flex gap-2 items-center justify-between hover:bg-accent"
+        >
+            <div className="flex flex-col items-center gap-2">
+                <span className="text-primary">{currentOption?.label || 'Select wallpaper'}</span>
+                {currentThumb && (
+                    <img
+                        src={currentThumb}
+                        alt={currentOption?.label || ''}
+                        className="object-contain border border-primary rounded"
+                    />
+                )}
+            </div>
+            <svg className="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+        </button>
+    )
+
+    return (
+        <>
+            <div>
+                <label className="pt-1.5 text-sm">{title}</label>
+                <p className="text-xs text-secondary text-balance leading-normal mt-2">
+                    Cycle between wallpapers with{' '}
+                    <span className="inline-block">
+                        <KeyboardShortcut text="\" size="xs" />
+                    </span>
+                </p>
+            </div>
+            <Popover
+                trigger={trigger}
+                dataScheme="secondary"
+                contentClassName="@container bg-primary w-screen md:w-[800px] max-w-full max-h-full"
+                sideOffset={8}
+                open={isOpen}
+                onOpenChange={setIsOpen}
+            >
+                <ScrollArea className="min-h-0 !overflow-y-auto overscroll-contain max-h-[calc(var(--radix-popover-content-available-height)-0.75rem)]">
+                    <div className="@container">
+                        <div className="grid md:@xl:grid-cols-2 md:@2xl:grid-cols-3 md:@xl:gap-2 p-2">
+                            {themeOptions.map((option) => {
+                                const optionThumb = isDark
+                                    ? option.background?.thumb?.dark
+                                    : option.background?.thumb?.light
+                                const isSelected = option.value === value
+                                return (
+                                    <button
+                                        key={option.value}
+                                        type="button"
+                                        data-scheme="primary"
+                                        onClick={() => handleSelect(option.value)}
+                                        className={`w-full p-2 text-left bg-primary hover:bg-accent border border-input hover:border-primary flex flex-col items-center gap-3 rounded ${
+                                            isSelected ? 'bg-accent' : ''
+                                        }`}
+                                    >
+                                        <img
+                                            src={optionThumb}
+                                            alt={option.label}
+                                            className="w-full h-auto object-cover rounded"
+                                        />
+                                        <span className={`text-primary ${isSelected ? 'font-bold' : 'font-medium'}`}>
+                                            {option.label}
+                                        </span>
+                                    </button>
+                                )
+                            })}
+                        </div>
+                    </div>
+                </ScrollArea>
+            </Popover>
+        </>
+    )
+}
 
 export default function DisplayOptions(): JSX.Element {
     const { siteSettings, updateSiteSettings } = useApp()
+    const [previewScreensaver, setPreviewScreensaver] = useState(false)
 
-    const handleThemeChange = (colorMode: 'light' | 'dark' | 'system') => {
-        let theme: 'light' | 'dark' = 'light'
-        if (colorMode === 'system') {
-            theme = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-        } else {
-            theme = colorMode
-        }
+    const handleColorModeChange = (value: string) => {
         if (typeof window !== 'undefined' && window.__setPreferredTheme) {
-            window.__setPreferredTheme(colorMode)
+            const newTheme = window.__setPreferredTheme(value)
+            updateSiteSettings({
+                ...siteSettings,
+                theme: newTheme as SiteSettings['theme'],
+                colorMode: value as SiteSettings['colorMode'],
+            })
         }
+    }
+
+    const handleCursorChange = (value: string) => {
+        updateSiteSettings({ ...siteSettings, cursor: value as SiteSettings['cursor'] })
+    }
+
+    const handleWallpaperChange = (value: string) => {
         updateSiteSettings({
             ...siteSettings,
-            colorMode,
-            theme,
+            wallpaper: value as SiteSettings['wallpaper'],
         })
     }
 
     return (
-        <div data-scheme="primary" className="p-6 bg-accent text-primary h-full max-w-xl mx-auto space-y-6 overflow-y-auto">
-            <div>
-                <h2 className="text-xl font-bold mb-1">Display options</h2>
-                <p className="text-sm text-secondary">Customize your visual interface experience.</p>
-            </div>
-
-            {/* Theme */}
-            <div className="bg-primary/5 p-4 rounded-lg border border-border space-y-3">
-                <label className="block text-sm font-semibold">Theme</label>
-                <div className="grid grid-cols-3 gap-3">
-                    <button
-                        onClick={() => handleThemeChange('light')}
-                        className={`flex flex-col items-center justify-center p-3 rounded-md border text-sm font-medium transition-all ${
-                            siteSettings?.colorMode === 'light'
-                                ? 'bg-primary text-primary-inverted border-primary shadow-sm'
-                                : 'bg-transparent border-border hover:bg-primary/10'
-                        }`}
-                    >
-                        <IconDay className="size-5 mb-1" />
-                        Light
-                    </button>
-                    <button
-                        onClick={() => handleThemeChange('dark')}
-                        className={`flex flex-col items-center justify-center p-3 rounded-md border text-sm font-medium transition-all ${
-                            siteSettings?.colorMode === 'dark'
-                                ? 'bg-primary text-primary-inverted border-primary shadow-sm'
-                                : 'bg-transparent border-border hover:bg-primary/10'
-                        }`}
-                    >
-                        <IconNight className="size-5 mb-1" />
-                        Dark
-                    </button>
-                    <button
-                        onClick={() => handleThemeChange('system')}
-                        className={`flex flex-col items-center justify-center p-3 rounded-md border text-sm font-medium transition-all ${
-                            siteSettings?.colorMode === 'system'
-                                ? 'bg-primary text-primary-inverted border-primary shadow-sm'
-                                : 'bg-transparent border-border hover:bg-primary/10'
-                        }`}
-                    >
-                        <IconLaptop className="size-5 mb-1" />
-                        System
-                    </button>
+        <>
+            <SEO title="Display options" description="Personalize your PostHog.com experience" />
+            <div data-scheme="secondary" className="w-full h-full bg-primary text-primary p-4 border-t border-primary">
+                <div className="bg-primary grid grid-cols-2 gap-2">
+                    <ToggleGroup
+                        title="Color mode"
+                        options={colorModeOptions}
+                        onValueChange={handleColorModeChange}
+                        value={siteSettings.colorMode}
+                    />
                 </div>
-            </div>
-
-            {/* Desktop Wallpaper */}
-            <div className="bg-primary/5 p-4 rounded-lg border border-border space-y-3">
-                <label className="block text-sm font-semibold">Desktop Wallpaper</label>
-                <div className="grid grid-cols-2 gap-2">
-                    {[
-                        { id: 'keyboard-garden', label: 'Keyboard Garden' },
-                        { id: 'custom-pro', label: 'Custom Pro Grid' },
-                        { id: 'hogzilla', label: 'Hogzilla' },
-                        { id: 'startup-monopoly', label: 'Startup Monopoly' },
-                        { id: 'office-party', label: 'Office Party' },
-                    ].map((wp) => (
+                <div className="bg-primary grid grid-cols-2 gap-2 mt-2">
+                    <ToggleGroup
+                        title="Cursor"
+                        options={cursorOptions}
+                        onValueChange={handleCursorChange}
+                        value={siteSettings.cursor}
+                    />
+                </div>
+                <div className="bg-primary grid grid-cols-2 gap-2 my-2">
+                    <WallpaperSelect
+                        title="Desktop background"
+                        onValueChange={handleWallpaperChange}
+                        value={siteSettings.wallpaper}
+                    />
+                </div>
+                <div className="bg-primary grid grid-cols-2 gap-2">
+                    <div className="flex items-center gap-1 mb-1">
+                        <span className="text-sm">Screensaver</span>
                         <button
-                            key={wp.id}
-                            onClick={() => updateSiteSettings({ ...siteSettings, wallpaper: wp.id as any })}
-                            className={`p-2 rounded-md border text-left text-sm transition-all ${
-                                siteSettings?.wallpaper === wp.id
-                                    ? 'bg-primary text-primary-inverted font-semibold border-primary'
-                                    : 'bg-transparent border-border hover:bg-primary/10'
-                            }`}
+                            onClick={(e) => {
+                                e.preventDefault()
+                                setPreviewScreensaver(true)
+                                setTimeout(() => setPreviewScreensaver(false), 100000)
+                            }}
+                            className="text-sm text-primary underline font-medium"
                         >
-                            {wp.label}
+                            preview
                         </button>
-                    ))}
+                    </div>
+                    <div>
+                        <ToggleGroup
+                            title=""
+                            options={[
+                                { label: 'Disabled', value: 'true' },
+                                { label: 'Enabled', value: 'false' },
+                            ]}
+                            onValueChange={(value) => {
+                                updateSiteSettings({ ...siteSettings, screensaverDisabled: value === 'true' })
+                            }}
+                            value={siteSettings.screensaverDisabled ? 'true' : 'false'}
+                        />
+                    </div>
+                </div>
+                <div className="bg-primary grid grid-cols-2 gap-2">
+                    <div className="flex items-center gap-1 mb-1">
+                        <span className="text-sm">Reduce transparency</span>
+                        <Tooltip trigger={<IconInfo className="size-4 inline-block relative -top-px" />} delay={0}>
+                            <p className="max-w-sm my-0 leading-snug">
+                                Solid, opaque backgrounds for windows and sidebars instead of blurred transparency.
+                            </p>
+                        </Tooltip>
+                    </div>
+                    <div>
+                        <ToggleGroup
+                            title=""
+                            options={[
+                                { label: 'Disabled', value: 'false' },
+                                { label: 'Enabled', value: 'true' },
+                            ]}
+                            onValueChange={(value) => {
+                                updateSiteSettings({ ...siteSettings, reduceTransparency: value === 'true' })
+                            }}
+                            value={siteSettings.reduceTransparency ? 'true' : 'false'}
+                        />
+                    </div>
                 </div>
             </div>
-
-            {/* Cursor Style */}
-            <div className="bg-primary/5 p-4 rounded-lg border border-border space-y-3">
-                <label className="block text-sm font-semibold">Cursor Style</label>
-                <div className="grid grid-cols-3 gap-2">
-                    {[
-                        { id: 'default', label: 'Default' },
-                        { id: 'xl', label: 'Extra Large' },
-                        { id: 'james', label: 'James Hawkins' },
-                    ].map((c) => (
-                        <button
-                            key={c.id}
-                            onClick={() => updateSiteSettings({ ...siteSettings, cursor: c.id as any })}
-                            className={`p-2 rounded-md border text-center text-sm transition-all ${
-                                siteSettings?.cursor === c.id
-                                    ? 'bg-primary text-primary-inverted font-semibold border-primary'
-                                    : 'bg-transparent border-border hover:bg-primary/10'
-                            }`}
-                        >
-                            {c.label}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            {/* Settings Toggles */}
-            <div className="bg-primary/5 p-4 rounded-lg border border-border space-y-4">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <span className="block text-sm font-semibold">Screensaver</span>
-                        <span className="text-xs text-secondary">Trigger after 5m inactivity</span>
-                    </div>
-                    <button
-                        onClick={() =>
-                            updateSiteSettings({ ...siteSettings, screensaverDisabled: !siteSettings.screensaverDisabled })
-                        }
-                        className={`px-3 py-1 rounded text-xs font-semibold ${
-                            !siteSettings?.screensaverDisabled
-                                ? 'bg-green-600 text-white'
-                                : 'bg-secondary/20 text-primary'
-                        }`}
-                    >
-                        {!siteSettings?.screensaverDisabled ? 'Enabled' : 'Disabled'}
-                    </button>
-                </div>
-
-                <div className="flex items-center justify-between">
-                    <div>
-                        <span className="block text-sm font-semibold">Performance Boost</span>
-                        <span className="text-xs text-secondary">Reduce visual effects for faster rendering</span>
-                    </div>
-                    <button
-                        onClick={() =>
-                            updateSiteSettings({ ...siteSettings, performanceBoost: !siteSettings.performanceBoost })
-                        }
-                        className={`px-3 py-1 rounded text-xs font-semibold ${
-                            siteSettings?.performanceBoost
-                                ? 'bg-green-600 text-white'
-                                : 'bg-secondary/20 text-primary'
-                        }`}
-                    >
-                        {siteSettings?.performanceBoost ? 'On' : 'Off'}
-                    </button>
-                </div>
-
-                <div className="flex items-center justify-between">
-                    <div>
-                        <span className="block text-sm font-semibold">Reduce Transparency</span>
-                        <span className="text-xs text-secondary">Disable translucent backgrounds</span>
-                    </div>
-                    <button
-                        onClick={() =>
-                            updateSiteSettings({ ...siteSettings, reduceTransparency: !siteSettings.reduceTransparency })
-                        }
-                        className={`px-3 py-1 rounded text-xs font-semibold ${
-                            siteSettings?.reduceTransparency
-                                ? 'bg-green-600 text-white'
-                                : 'bg-secondary/20 text-primary'
-                        }`}
-                    >
-                        {siteSettings?.reduceTransparency ? 'On' : 'Off'}
-                    </button>
-                </div>
-            </div>
-        </div>
+            {previewScreensaver &&
+                typeof document !== 'undefined' &&
+                createPortal(
+                    <Screensaver isActive={true} onDismiss={() => setPreviewScreensaver(false)} />,
+                    document.body
+                )}
+        </>
     )
 }

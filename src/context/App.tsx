@@ -1604,7 +1604,7 @@ export interface SiteSettings {
     theme: 'light' | 'dark'
     skinMode: 'modern' | 'classic'
     cursor: 'default' | 'xl' | 'james'
-    wallpaper: 'keyboard-garden' | 'hogzilla' | 'startup-monopoly' | 'office-party' | 'custom-pro'
+    wallpaper: 'keyboard-garden' | 'hogzilla' | 'startup-monopoly' | 'office-party'
     screensaverDisabled?: boolean
     reduceTransparency?: boolean
     clickBehavior?: 'single' | 'double'
@@ -1629,7 +1629,7 @@ const getInitialSiteSettings = (): SiteSettings => {
         ...(typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('siteSettings') || '{}') : {}),
     }
 
-    const retiredWallpapers = ['action-figure', '2001-bliss', 'parade', 'coding-at-night']
+    const retiredWallpapers = ['action-figure', '2001-bliss', 'parade', 'coding-at-night', 'custom-pro']
     if (retiredWallpapers.includes(siteSettings.wallpaper)) {
         siteSettings.wallpaper = 'keyboard-garden'
     }
@@ -2860,16 +2860,23 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
     ])
 
     useEffect(() => {
-        if (siteSettings.skinMode) {
-            document.body.setAttribute('data-skin', siteSettings.skinMode)
+        const applyChromeAttrs = (el: HTMLElement | null) => {
+            if (!el) return
+            if (siteSettings.skinMode) {
+                el.setAttribute('data-skin', siteSettings.skinMode)
+            }
+            if (siteSettings.wallpaper) {
+                el.setAttribute('data-wallpaper', siteSettings.wallpaper)
+            }
+            el.setAttribute('data-reduce-transparency', siteSettings.reduceTransparency ? 'true' : 'false')
         }
+
+        applyChromeAttrs(document.body)
+        applyChromeAttrs(document.documentElement)
+
         if (siteSettings.cursor) {
             updateCursor(siteSettings.cursor)
         }
-        if (siteSettings.wallpaper) {
-            document.body.setAttribute('data-wallpaper', siteSettings.wallpaper)
-        }
-        document.body.setAttribute('data-reduce-transparency', siteSettings.reduceTransparency ? 'true' : 'false')
     }, [siteSettings])
 
     useEffect(() => {

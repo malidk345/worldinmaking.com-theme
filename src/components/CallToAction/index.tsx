@@ -73,10 +73,10 @@ const sizes = {
 
 const primary = cntl`
     bg-orange
-    text-black
-    hover:text-black
-    dark:text-black
-    dark:hover:text-black
+    text-white
+    hover:text-white
+    dark:text-white
+    dark:hover:text-white
     border-button
     dark:border-button-dark
     dark:bg-orange

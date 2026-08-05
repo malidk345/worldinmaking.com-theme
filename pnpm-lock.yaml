@@ -128,9 +128,6 @@ importers:
       '@tanstack/react-virtual':
         specifier: ^3.13.12
         version: 3.14.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@typecaast/react':
-        specifier: ^0.5.4
-        version: 0.5.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@types/node':
         specifier: ^20.14.2
         version: 20.19.43
@@ -3267,6 +3264,7 @@ packages:
     resolution: {integrity: sha512-SrVkFnChRUV1nVCzTv8fjP73rGK1qHStJLc+JC5teDu7OSmKnKzMz3sRS6V4j/tLxj1CN8vA2ZnwLlgHY7UFfQ==}
     peerDependencies:
       react: '>=18'
+
 
   '@typecaast/schema@0.4.1':
     resolution: {integrity: sha512-tT+wZlqc2FXjKg/CCmdF+P/x1s/n8IsCMS7PLYLah2PQVD2V9HgqCkNKx6V1hC4zRIQy8+T3T15M57iBvEZK9A==}

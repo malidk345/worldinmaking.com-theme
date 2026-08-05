@@ -24,7 +24,7 @@ export const props = (fn: any) => fn
 export const reducers = (fn: any) => fn
 export const listeners = (fn: any) => fn
 export const connect = (fn: any) => fn
-export const isChristmas = false
+export const isChristmas = (): boolean => false
 export const PathType: any = {}
 
 export const router = {

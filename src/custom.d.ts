@@ -11,7 +11,7 @@ declare module '*.png' {
 
 declare global {
     interface Window {
-        __setPreferredTheme: (theme: string) => void
+        __setPreferredTheme: (theme: string) => string
         __theme: string
         __onThemeChange: (theme: string) => void
         posthog: PostHog | undefined

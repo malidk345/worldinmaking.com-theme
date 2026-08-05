@@ -848,10 +848,18 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                     data-windowed={item.windowed || undefined}
                     data-snapped={item.snapped || undefined}
                     data-scheme="tertiary"
-                    className={`group @container absolute pointer-events-auto !select-auto flex flex-col border-primary ${WINDOW_BG} ${
+                    className={`group @container absolute overflow-hidden pointer-events-auto !select-auto flex flex-col border-primary ${
                         isCompositorActive ? MOTION_LAYER : ''
                     } rounded-lg ${item.appSettings?.size?.fixed ? 'border' : item.expanded ? 'border-t' : ''} ${
                         item.expanded ? 'shadow-none' : 'shadow-md'
+                    } ${
+                        item.expanded
+                            ? 'rounded-tr-none rounded-tl-none'
+                            : item.snapped === 'left'
+                            ? 'rounded-tl-none rounded-tr-none rounded-br-none border-r'
+                            : item.snapped === 'right'
+                            ? 'rounded-tl-none rounded-tr-none rounded-bl-none'
+                            : ''
                     }`}
                     style={{
                         pointerEvents: 'auto',
@@ -910,7 +918,12 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                     onAnimationStart={onAnimationStart}
                     onAnimationComplete={onAnimationComplete}
                 >
-                    <div className={`${hasToolbar ? 'bg-primary flex items-center py-0.5 px-1' : ''}`}>
+                    {/* Frosted shell as its own layer so framer-motion transforms don't kill backdrop-filter */}
+                    <div
+                        aria-hidden
+                        className={`pointer-events-none absolute inset-0 rounded-[inherit] ${WINDOW_BG}`}
+                    />
+                    <div className={`relative ${hasToolbar ? 'bg-primary flex items-center py-0.5 px-1' : ''}`}>
                         {hasToolbar && (
                             <>
                                 {!hideTitle && (
@@ -994,9 +1007,9 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         ref={contentRef}
                         onPointerDown={(e) => e.stopPropagation()}
                         onTouchStart={(e) => e.stopPropagation()}
-                        className={`size-full flex-grow overflow-y-auto overscroll-y-contain touch-pan-y scroll-smooth [webkit-overflow-scrolling:touch] bg-primary text-primary ${
+                        className={`size-full flex-grow relative z-[1] ${
                             chrome
-                                ? `rounded-lg ${hasToolbar ? 'rounded-t-none' : ''} ${
+                                ? `overflow-hidden rounded-lg ${hasToolbar ? 'rounded-t-none' : ''} ${
                                       item.expanded
                                           ? 'rounded-tr-none rounded-tl-none'
                                           : item.snapped === 'left'

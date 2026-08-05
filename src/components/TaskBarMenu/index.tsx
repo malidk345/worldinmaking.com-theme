@@ -285,7 +285,7 @@ function TaskBarMenu() {
                 <div
                     ref={handleTaskbarRef}
                     id="taskbar"
-                    data-scheme="tertiary"
+                    data-scheme="primary"
                     data-menu-container
                     style={{
                         transformOrigin: '50% 50%',
@@ -295,7 +295,7 @@ function TaskBarMenu() {
                     }}
                     className={`${TASKBAR_BG} ${
                         isAnimating ? MOTION_LAYER : ''
-                    } skin-classic:bg-accent wallpaper-keyboard-garden:dark:bg-black/15 border-secondary rounded pl-0.5 pr-2 shadow-2xl`}
+                    } skin-classic:bg-accent border-secondary rounded pl-0.5 pr-2 shadow-2xl`}
                 >
                     <div
                         aria-hidden="true"

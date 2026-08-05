@@ -166,18 +166,17 @@
 
 @layer utilities {
     .light [data-scheme='primary'] {
-        /* Warm gray (notebook #f3f4ef) — not PostHog cream/beige olive */
-        --bg: 243 244 239;
-        --accent: 223 224 219;
-        --border: 193 194 189;
-        --input-bg: 233 234 229;
-        --input-bg-hover: 233 234 229;
-        --input-border: 208 209 204;
-        --input-border-hover: 208 209 204;
+        --bg: 253 253 248;
+        --accent: 229 231 224;
+        --border: 191 193 183;
+        --input-bg: 238 239 233;
+        --input-bg-hover: 238 239 233;
+        --input-border: 210 211 204;
+        --input-border-hover: 210 211 204;
         --text-primary: 17 17 17;
-        --text-secondary: 85 86 80;
-        --text-muted: 122 123 118;
-        --tw-shadow-color: 85 86 80;
+        --text-secondary: 101 103 94;
+        --text-muted: 158 160 150;
+        --tw-shadow-color: 77 79 70;
         --primary: var(--text-primary);
         --secondary: var(--text-secondary);
         --muted: var(--text-muted);
@@ -187,14 +186,14 @@
         .hover-invert:hover,
         .hover-invert[data-state='open'],
         .hover-invert[data-state='highlighted'] {
-            --bg: 85 86 80;
-            --accent: 122 123 118;
-            --border: 193 194 189;
-            --input-bg: 233 234 229;
-            --input-bg-hover: 233 234 229;
-            --text-primary: 243 244 239;
-            --text-secondary: 223 224 219;
-            --text-muted: 223 224 219;
+            --bg: 77 79 70;
+            --accent: 158 160 150;
+            --border: 191 193 183;
+            --input-bg: 238 239 233;
+            --input-bg-hover: 238 239 233;
+            --text-primary: 253 253 248;
+            --text-secondary: 229 231 224;
+            --text-muted: 229 231 224;
             --primary: var(--text-primary);
             --secondary: var(--text-secondary);
             --muted: var(--text-muted);
@@ -259,19 +258,19 @@
     }
 
     .light[data-skin='classic'] [data-scheme='primary'] {
-        --accent: 243 244 239;
+        --accent: 253 253 248;
     }
 
     .light [data-scheme='secondary'] {
-        --bg: 233 234 229;
-        --accent: 208 209 204;
-        --border: 183 184 179;
-        --input-bg: 243 244 239;
-        --input-border: 193 194 189;
-        --text-primary: 17 17 17;
-        --text-secondary: 17 17 17;
-        --text-muted: 122 123 118;
-        --tw-shadow-color: 29 31 39;
+        --bg: 238 239 233;
+        --accent: 210 211 204;
+        --border: 182 183 175;
+        --input-bg: 253 253 248;
+        --input-border: 191 193 183;
+        --text-primary: 35 37 29;
+        --text-secondary: 35 37 29;
+        --text-muted: 158 160 150;
+        --tw-shadow-color: 35 37 29;
         --primary: var(--text-primary);
         --secondary: var(--text-secondary);
         --muted: var(--text-muted);
@@ -281,14 +280,14 @@
         .hover-invert:hover,
         .hover-invert[data-state='open'],
         .hover-invert[data-state='highlighted'] {
-            --bg: 29 31 39;
-            --accent: 85 86 80;
-            --border: 183 184 179;
-            --input-bg: 243 244 239;
-            --input-border: 193 194 189;
-            --text-primary: 233 234 229;
-            --text-secondary: 208 209 204;
-            --text-muted: 208 209 204;
+            --bg: 35 37 29;
+            --accent: 77 79 70;
+            --border: 182 183 175;
+            --input-bg: 253 253 248;
+            --input-border: 191 193 183;
+            --text-primary: 238 239 233;
+            --text-secondary: 210 211 204;
+            --text-muted: 210 211 204;
             --primary: var(--text-primary);
             --secondary: var(--text-secondary);
             --muted: var(--text-muted);
@@ -302,15 +301,15 @@
     }
 
     .light [data-scheme='tertiary'] {
-        --bg: 223 224 219;
-        --accent: 203 204 199;
-        --border: 168 169 164;
-        --input-bg: 233 234 229;
-        --input-border: 193 194 189;
-        --text-primary: 17 17 17;
-        --text-secondary: 85 86 80;
-        --text-muted: 122 123 118;
-        --tw-shadow-color: 29 31 39;
+        --bg: 229 231 224;
+        --accent: 200 202 193;
+        --border: 158 160 150;
+        --input-bg: 238 239 233;
+        --input-border: 191 193 183;
+        --text-primary: 35 37 29;
+        --text-secondary: 77 79 70;
+        --text-muted: 115 117 107;
+        --tw-shadow-color: 35 37 29;
         --primary: var(--text-primary);
         --secondary: var(--text-secondary);
         --muted: var(--text-muted);
@@ -320,14 +319,14 @@
         .hover-invert:hover,
         .hover-invert[data-state='open'],
         .hover-invert[data-state='highlighted'] {
-            --bg: 29 31 39;
-            --accent: 85 86 80;
-            --border: 168 169 164;
-            --input-bg: 233 234 229;
-            --input-border: 193 194 189;
-            --text-primary: 223 224 219;
-            --text-secondary: 203 204 199;
-            --text-muted: 203 204 199;
+            --bg: 35 37 29;
+            --accent: 77 79 70;
+            --border: 158 160 150;
+            --input-bg: 238 239 233;
+            --input-border: 191 193 183;
+            --text-primary: 229 231 224;
+            --text-secondary: 200 202 193;
+            --text-muted: 200 202 193;
             --primary: var(--text-primary);
             --secondary: var(--text-secondary);
             --muted: var(--text-muted);
@@ -338,7 +337,7 @@
 
     /* only overrides from modern */
     .light[data-skin='classic'] [data-scheme='tertiary'] {
-        --bg: 243 244 239;
+        --bg: 253 253 248;
     }
 
     .dark [data-scheme='primary'] {
@@ -362,14 +361,14 @@
         .hover-invert:hover,
         .hover-invert[data-state='open'],
         .hover-invert[data-state='highlighted'] {
-            --bg: 243 244 239;
-            --accent: 208 209 204;
-            --border: 85 86 80;
+            --bg: 253 253 248;
+            --accent: 210 211 204;
+            --border: 77 79 70;
             --input-bg: 27 28 26;
             --input-bg-hover: 27 28 26;
             --text-primary: 17 17 17;
-            --text-secondary: 85 86 80;
-            --text-muted: 85 86 80;
+            --text-secondary: 101 103 94;
+            --text-muted: 101 103 94;
             --primary: var(--text-primary);
             --secondary: var(--text-secondary);
             --muted: var(--text-muted);
@@ -397,14 +396,14 @@
         .hover-invert:hover,
         .hover-invert[data-state='open'],
         .hover-invert[data-state='highlighted'] {
-            --bg: 233 234 229;
-            --accent: 208 209 204;
+            --bg: 238 239 233;
+            --accent: 210 211 204;
             --border: 58 59 55;
             --input-bg: 17 17 17;
             --input-border: 44 45 42;
             --text-primary: 27 28 26;
-            --text-secondary: 85 86 80;
-            --text-muted: 85 86 80;
+            --text-secondary: 77 79 70;
+            --text-muted: 101 103 94;
             --primary: var(--text-primary);
             --secondary: var(--text-secondary);
             --muted: var(--text-muted);
@@ -432,14 +431,14 @@
         .hover-invert:hover,
         .hover-invert[data-state='open'],
         .hover-invert[data-state='highlighted'] {
-            --bg: 223 224 219;
-            --accent: 193 194 189;
-            --border: 85 86 80;
+            --bg: 229 231 224;
+            --accent: 191 193 183;
+            --border: 77 79 70;
             --input-bg: 27 28 26;
             --input-border: 58 59 55;
             --text-primary: 34 35 32;
-            --text-secondary: 85 86 80;
-            --text-muted: 122 123 118;
+            --text-secondary: 101 103 94;
+            --text-muted: 115 117 107;
             --primary: var(--text-primary);
             --secondary: var(--text-secondary);
             --muted: var(--text-muted);
@@ -540,7 +539,7 @@ body {
     word-wrap: break-word;
 }
 body.light {
-    background-color: #e9eae5;
+    background-color: #eeefe9;
 }
 body.dark {
     background-color: #1d1f27;
@@ -586,7 +585,7 @@ hr {
     .dark {
         --squeak-primary-color: 255, 255, 255;
         --squeak-default-avatar-fill: 0, 0, 0;
-        --swiper-pagination-color: #f7a501;
+        --swiper-pagination-color: #1d4ed8;
         --swiper-pagination-bullet-inactive-color: #fff;
     }
 }
@@ -1765,7 +1764,7 @@ body.dark {
 }
 
 .lemon-tag.warning {
-    background-color: #f7a501;
+    background-color: #3b82f6;
 }
 
 .lemon-tag.danger {
@@ -3069,8 +3068,8 @@ div[data-radix-popper-content-wrapper] {
 }
 
 .ph-mapbox-popup .mapboxgl-popup-content {
-    /* match bg-primary warm gray #f3f4ef */
-    background: rgb(243 244 239);
+    /* match bg-primary (data-scheme='primary') */
+    background: rgb(253 253 248);
     color: inherit;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
@@ -3080,16 +3079,16 @@ div[data-radix-popper-content-wrapper] {
 }
 /* Mapbox tip triangle uses border-* colors, not background */
 .ph-mapbox-popup.mapboxgl-popup-anchor-top .mapboxgl-popup-tip {
-    border-bottom-color: rgb(243 244 239) !important;
+    border-bottom-color: rgb(253 253 248) !important;
 }
 .ph-mapbox-popup.mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip {
-    border-top-color: rgb(243 244 239) !important;
+    border-top-color: rgb(253 253 248) !important;
 }
 .ph-mapbox-popup.mapboxgl-popup-anchor-left .mapboxgl-popup-tip {
-    border-right-color: rgb(243 244 239) !important;
+    border-right-color: rgb(253 253 248) !important;
 }
 .ph-mapbox-popup.mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
-    border-left-color: rgb(243 244 239) !important;
+    border-left-color: rgb(253 253 248) !important;
 }
 .dark .ph-mapbox-popup.mapboxgl-popup-anchor-top .mapboxgl-popup-tip {
     border-bottom-color: rgb(30 31 35) !important;

@@ -12,8 +12,10 @@ const themeScript = `(function () {
         siteSettings = JSON.parse(localStorage.getItem('siteSettings') || '{}')
     } catch (err) {}
 
-    var theme = preferredTheme === 'system' ? (darkQuery.matches ? 'dark' : 'light') : preferredTheme
-    var skin = siteSettings.skin || 'modern'
+    var colorMode = siteSettings.colorMode || preferredTheme || 'light'
+    var theme = colorMode === 'system' ? (darkQuery.matches ? 'dark' : 'light') : (preferredTheme === 'system' ? (darkQuery.matches ? 'dark' : 'light') : preferredTheme)
+    if (colorMode === 'light' || colorMode === 'dark') theme = colorMode
+    var skin = siteSettings.skinMode || siteSettings.skin || 'modern'
     var wallpaper = siteSettings.wallpaper || 'keyboard-garden'
     var reduceTransparency = siteSettings.reduceTransparency ? 'true' : 'false'
 

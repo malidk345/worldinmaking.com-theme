@@ -164,7 +164,7 @@ export default function OSButton({
         } active:border-primary focus:border-primary`,
         primary: {
             parent: 'bg-button-shadow dark:bg-button-shadow-dark text-primary border-button text-center group disabled:opacity-50 disabled:cursor-not-allowed inline-block',
-            child: 'flex items-center justify-center bg-orange text-black hover:text-black dark:text-black dark:hover:text-black no-underline border-button dark:border-button-dark dark:bg-orange font-bold active:transition-all active:duration-100 select-none',
+            child: 'flex items-center justify-center bg-orange text-white hover:text-white dark:text-white dark:hover:text-white no-underline border-button dark:border-button-dark dark:bg-orange font-bold active:transition-all active:duration-100 select-none',
         },
         secondary: {
             parent: 'bg-orange dark:bg-button-secondary-shadow-dark dark:border-button-secondary-dark text-primary border-button text-center group disabled:opacity-50 disabled:cursor-not-allowed inline-block',

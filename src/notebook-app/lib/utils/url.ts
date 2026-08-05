@@ -1,4 +1,4 @@
-import { dayjs } from 'lib/dayjs'
+import { dayjs } from '~nb-lib/lemon-ui'
 import { stringifyWithBigInts } from 'lib/utils/json'
 
 export function toParams(obj: Record<string, any>, explodeArrays: boolean = false): string {

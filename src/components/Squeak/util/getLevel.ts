@@ -37,7 +37,7 @@ export const LEVELS = [
         color: '#F54E00',
         borderOpacity: 'A0',
         bgOpacity: '28',
-        shimmer: { colors: ['#F54E00', '#B62AD9', '#EB9D2A'], opacity: 0.45 },
+        shimmer: { colors: ['#1D4ED8', '#B62AD9', '#3B82F6'], opacity: 0.45 },
     },
     {
         threshold: 750,
@@ -45,7 +45,7 @@ export const LEVELS = [
         color: '#F54E00',
         borderOpacity: 'C0',
         bgOpacity: '30',
-        shimmer: { colors: ['#F54E00', '#EB9D2A', '#B62AD9', '#2F80FA'], opacity: 0.55 },
+        shimmer: { colors: ['#1E3A8A', '#1D4ED8', '#B62AD9', '#2F80FA'], opacity: 0.55 },
     },
 ]
 

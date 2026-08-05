@@ -44,7 +44,7 @@ module.exports = {
         extend: {
             backgroundColor: {
                 light: '#fff',
-                'accent-light': '#dfe0db',
+                'accent-light': '#e5e7e0',
                 dark: '#1e1f23',
                 'accent-dark': '#232429',
                 primary: 'rgb(var(--bg) / <alpha-value>)',
@@ -85,7 +85,8 @@ module.exports = {
                     'url(\'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" viewBox="0 0 24 24"><path fill="%232F80FA" fill-rule="evenodd" d="M7.995 5.75a.75.75 0 0 1 .75-.75h8.505c.966 0 1.75.784 1.75 1.75v9.496a.75.75 0 0 1-1.5 0V7.56L7.03 18.03a.75.75 0 0 1-1.06-1.061L16.44 6.5H8.744a.75.75 0 0 1-.75-.75Z" clip-rule="evenodd"/></svg>\')',
                 'red-carpet': "url('https://res.cloudinary.com/dmukukwp6/image/upload/carpet_8817dd42aa.png')",
                 'text-gradient-light': 'linear-gradient(90deg,#30ABC6,#F35454,#2F80FA)',
-                'text-gradient-dark': 'linear-gradient(90deg,#F54E00,#F7A501,#29DBBB,#EB9D2A,#F54E00)',
+                // PostHog-3000 orange accents → navy equivalents
+                'text-gradient-dark': 'linear-gradient(90deg,#1E3A8A,#1D4ED8,#29DBBB,#3B82F6,#1E3A8A)',
             },
             backgroundPosition: {
                 0: '0',
@@ -93,7 +94,7 @@ module.exports = {
             },
             borderColor: {
                 light: '#fff',
-                'accent-light': '#dfe0db',
+                'accent-light': '#e5e7e0',
                 dark: '#1e1f23',
                 'accent-dark': '#232429',
                 button: '#1D4ED8',
@@ -121,24 +122,23 @@ module.exports = {
                 16: '16px',
             },
             colors: {
-                // True warm grays from notebook page tone (#f3f4ef) — NOT PostHog beige/olive 3000
-                // Keep R≈G with B slightly lower (warmth) without green-olive cast.
-                'light-1': '#F3F4EF', // notebook warm gray base
-                'light-2': '#E9EAE5',
-                'light-3': '#DFE0DB',
-                'light-4': '#D5D6D1',
-                'light-5': '#CBCCC7',
-                'light-6': '#C1C2BD',
-                'light-7': '#B7B8B3',
-                'light-8': '#D0D1CC',
-                'light-9': '#7A7B76',
-                'light-10': '#A8A9A4',
-                'light-11': '#555650',
-                'light-12': '#1D1F27',
+                'light-1': '#FDFDF8',
+                'light-2': '#EEEFE9',
+                'light-3': '#E5E7E0',
+                'light-4': '#D2D3CC',
+                'light-5': '#C8CAC1',
+                'light-6': '#BFC1B7',
+                'light-7': '#B6B7AF',
+                'light-8': '#D0D1C9',
+                'light-9': '#73756B',
+                'light-10': '#9EA096',
+                'light-11': '#4D4F46',
+                'light-12': '#23251D',
 
                 transparent: 'transparent',
                 current: 'currentColor',
 
+                // Brand highlight was orange-tinted; now navy
                 highlight: 'rgba(29,78,216,.2)',
                 footer: '#08042f',
 
@@ -148,6 +148,7 @@ module.exports = {
                 'blue-2-dark': '#1E2F46',
                 brown: '#3B2B26',
                 'brown-dark': '#C4A484',
+                // 3000 orange family → navy family (token names kept for class compatibility)
                 'burnt-orange': '#2563EB',
                 'burnt-orange-dark': '#1E3A8A',
                 orange: '#1D4ED8',
@@ -167,8 +168,8 @@ module.exports = {
                 'light-blue-dark': '#1E2F46',
                 'light-purple': '#E2D6FF',
                 'light-purple-dark': '#78689D',
-                'light-yellow': '#FFCE5C',
-                'light-yellow-dark': '#C7982B',
+                'light-yellow': '#93C5FD',
+                'light-yellow-dark': '#1D4ED8',
                 'lime-green': '#96E5B6',
                 navy: '#1D4ED8',
                 'navy-dark': '#1E40AF',
@@ -185,13 +186,14 @@ module.exports = {
                 salmon: '#F35454',
                 seagreen: '#30ABC6',
                 'sky-blue': '#2EA2D3',
-                tan: '#E9EAE5',
+                tan: '#EEEFE9',
                 teal: '#29DBBB',
                 'teal-2': '#6BC0B3',
                 'teal-2-dark': '#34796F',
                 white: '#fff',
                 'white-dark': '#111', // crest dark border hack
-                yellow: '#F7A501',
+                // Brand yellow accent → navy blue (dark:text-yellow etc.)
+                yellow: '#3B82F6',
 
                 'button-shadow': '#1E40AF',
                 'button-border': '#1D4ED8',
@@ -202,7 +204,7 @@ module.exports = {
                 primary: 'rgb(var(--bg) / <alpha-value>)',
 
                 light: '#fff',
-                'accent-light': '#dfe0db',
+                'accent-light': '#e5e7e0',
                 dark: '#1e1f23',
                 'accent-dark': '#232429',
 
@@ -528,10 +530,10 @@ module.exports = {
             addVariant('wallpaper-office-party', 'body[data-wallpaper="office-party"] &')
             addVariant('wallpaper-startup-monopoly', 'body[data-wallpaper="startup-monopoly"] &')
             // Site toggle (data attr, set early in theme-init) + OS prefers-reduced-transparency
+            // html/body both get the attr in Next (_document theme script); keep both selectors.
             addVariant('reduce-transparency', [
                 'body[data-reduce-transparency="true"] &',
                 'html[data-reduce-transparency="true"] &',
-                '[data-reduce-transparency="true"] &',
                 '@media (prefers-reduced-transparency: reduce)',
             ])
         },

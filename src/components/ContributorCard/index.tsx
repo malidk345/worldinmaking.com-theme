@@ -83,7 +83,7 @@ export const ContributorCard = ({
                     <div className="relative w-full rounded-full overflow-hidden bg-white dark:bg-accent h-1.5">
                         <div
                             style={{ width: `${contributorLevel >= 50 ? 50 : (100 * contributorLevel) / 50}%` }}
-                            className="absolute left-0 inset-y-0 h-full bg-gradient-to-r from-[#F1A82C] to-orange"
+                            className="absolute left-0 inset-y-0 h-full bg-gradient-to-r from-[#3B82F6] to-orange"
                         />
                     </div>
                 </div>

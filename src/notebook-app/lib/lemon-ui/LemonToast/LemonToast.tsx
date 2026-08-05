@@ -4,7 +4,7 @@ import { toast, type ToastOptions } from 'react-toastify'
 import { IconCheckCircle, IconInfo, IconWarning, IconX } from '@posthog/icons'
 
 import { getIncidentStatus, STATUS_PAGE_BASE } from 'lib/components/HelpMenu/incidentStatus'
-import { isChristmas } from 'lib/holidays'
+import { isChristmas } from '~nb-lib/lemon-ui'
 import { hashCodeForString } from 'lib/utils/strings'
 
 import { IconErrorOutline, IconGift } from '../icons'

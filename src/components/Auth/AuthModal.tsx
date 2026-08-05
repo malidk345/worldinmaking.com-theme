@@ -167,7 +167,7 @@ export default function AuthModal({
                                     disabled={loading}
                                     className="w-full bg-button-shadow dark:bg-button-shadow-dark rounded-[6px] border-[1.5px] border-button block group text-center disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                                 >
-                                    <span className="flex items-center justify-center bg-orange text-black font-bold text-sm px-4 py-2 rounded-[6px] border-[1.5px] border-button dark:border-button-dark dark:bg-orange translate-y-[-2px] hover:translate-y-[-4px] active:translate-y-[-1px] transition-all lowercase select-none">
+                                    <span className="flex items-center justify-center bg-orange text-white font-bold text-sm px-4 py-2 rounded-[6px] border-[1.5px] border-button dark:border-button-dark dark:bg-orange translate-y-[-2px] hover:translate-y-[-4px] active:translate-y-[-1px] transition-all lowercase select-none">
                                         {loading ? (
                                             <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
                                         ) : mode === 'signin' ? (
