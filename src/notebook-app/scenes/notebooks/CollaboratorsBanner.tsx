@@ -51,7 +51,7 @@ export function CollaboratorsBanner({ editedByText = 'Mustafa' }: CollaboratorsB
     const [isOpen, setIsOpen] = useState(false)
 
     const overlay = (
-        <div className="w-80 p-3 space-y-3 bg-surface-primary border border-border rounded-lg shadow-xl text-xs">
+        <div className="w-80 p-3 space-y-3 text-xs">
             <div className="flex items-center justify-between border-b border-border pb-2">
                 <div className="flex items-center gap-1.5 font-semibold text-primary">
                     <IconClock className="w-4 h-4 text-muted" />

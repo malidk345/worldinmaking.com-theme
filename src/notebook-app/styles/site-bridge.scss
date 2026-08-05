@@ -80,6 +80,29 @@
     --link: #1d4ed8;
     --link-3000: #1d4ed8;
     --primary-highlight: rgb(29 78 216 / 12%);
+
+    /*
+     * Surfaces — WorldInMaking light palette (warm cream), not PostHog pure white/black.
+     * Matches site .light [data-scheme='primary']: --bg 253 253 248, --accent 229 231 224
+     */
+    --color-bg-surface-primary: #fdfdf8;
+    --color-bg-surface-secondary: #eeefe9;
+    --color-bg-surface-tertiary: #e5e7e0;
+    --color-bg-surface-popover: #fdfdf8;
+    --color-bg-fill-primary: #fdfdf8;
+    --color-bg-fill-secondary: #eeefe9;
+    --color-bg-fill-tertiary: #e5e7e0;
+    --color-bg-fill-input: #eeefe9;
+    --color-bg-fill-button-secondary: #eeefe9;
+    --color-bg-fill-button-secondary-hover: #e5e7e0;
+    --secondary-3000-button-border: #bfc1b7;
+    --secondary-3000-button-border-hover: #a8aa9f;
+    --secondary-3000-frame-bg: #e5e7e0;
+    --border-3000: #bfc1b7;
+    --border-bold-3000: #a8aa9f;
+    --color-border-primary: #bfc1b7;
+    --color-border-secondary: #a8aa9f;
+    --shadow-elevation-3000: 0 10px 38px rgba(77, 79, 70, 0.18);
 }
 
 .notebook-app-scope.dark,
@@ -96,4 +119,34 @@
     --link: #60a5fa;
     --link-3000: #60a5fa;
     --primary-highlight: rgb(59 130 246 / 14%);
+
+    /*
+     * Surfaces — site dark scheme (#1e1f23 family), not pure black / #15161b.
+     * Matches .dark [data-scheme='primary'|'secondary']
+     */
+    --color-bg-surface-primary: #1e1f23;
+    --color-bg-surface-secondary: #25262b;
+    --color-bg-surface-tertiary: #2d2e37;
+    --color-bg-surface-popover: #25262b;
+    --color-bg-fill-primary: #1e1f23;
+    --color-bg-fill-secondary: #25262b;
+    --color-bg-fill-tertiary: #2d2e37;
+    --color-bg-fill-input: #25262b;
+    --color-bg-fill-button-secondary: #2d2e37;
+    --color-bg-fill-button-secondary-hover: #32333d;
+    --secondary-3000-button-border: #3e424f;
+    --secondary-3000-button-border-hover: #4a4e5c;
+    --secondary-3000-frame-bg: #2d2e37;
+    --border-3000: #3e424f;
+    --border-bold-3000: #4a4e5c;
+    --color-border-primary: #3e424f;
+    --color-border-secondary: #4a4e5c;
+    --shadow-elevation-3000: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+/* Portaled dropdowns: force shell to brand surfaces (no pure-black Popover boxes) */
+.notebook-app-scope.Popover > .Popover__box {
+    background: var(--color-bg-surface-popover) !important;
+    border-color: var(--secondary-3000-button-border) !important;
+    color: var(--color-text-primary, inherit);
 }

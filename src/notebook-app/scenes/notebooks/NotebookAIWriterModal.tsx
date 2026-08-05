@@ -184,7 +184,7 @@ export function NotebookAIWriterModal({
                 <div className="relative w-full flex flex-col">
                     <label
                         htmlFor="posthog-ai-question-input"
-                        className="input-like flex flex-col cursor-text border border-[#3b3c4a] focus-within:border-blue-500 bg-[#15161b] rounded-xl p-3 shadow-xl transition-all"
+                        className="input-like flex flex-col cursor-text border border-border focus-within:border-primary bg-[var(--color-bg-fill-input,var(--color-bg-surface-secondary,#eeefe9))] rounded-xl p-3 shadow-xl transition-all"
                     >
                         <div className="relative w-full">
                             <textarea
@@ -215,7 +215,7 @@ export function NotebookAIWriterModal({
                                 type="tertiary"
                                 dropdownPlacement="top-start"
                                 dropdownMatchSelectWidth={false}
-                                className="border border-[#2c2d38] bg-[#111216] !py-0.5"
+                                className="border border-border bg-[var(--color-bg-fill-input,var(--color-bg-surface-secondary,#eeefe9))] !py-0.5"
                             />
 
                             {/* Minimal Controls */}
