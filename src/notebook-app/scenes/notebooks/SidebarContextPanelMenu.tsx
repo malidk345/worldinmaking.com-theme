@@ -33,14 +33,11 @@ export function SidebarContextPanelMenu({
     const hasCoverUrl = Boolean(coverUrl && coverUrl.trim().length > 0)
 
     const overlay = (
-        <div
-            className="notebook-dark-panel w-[440px] p-5 space-y-5 rounded-xl shadow-2xl text-xs"
-            style={{ backgroundColor: '#111216', color: '#e2e8f0' }}
-        >
-            {/* Top Bar Header - No Border */}
+        <div className="w-[440px] p-5 space-y-5 rounded-xl shadow-2xl text-xs bg-surface-primary border border-border text-primary">
+            {/* Top Bar Header */}
             <div className="flex items-center justify-between pb-1">
-                <div className="flex items-center gap-2 font-semibold text-white text-sm">
-                    <IconOpenSidebar className="w-4 h-4 text-slate-400" />
+                <div className="flex items-center gap-2 font-semibold text-sm">
+                    <IconOpenSidebar className="w-4 h-4 text-muted" />
                     <span>Publish & Cover Settings</span>
                 </div>
                 <button
@@ -55,30 +52,31 @@ export function SidebarContextPanelMenu({
 
             {/* Single Cover Image URL Field */}
             <div className="space-y-1.5">
-                <label className="font-semibold text-white">Cover Image URL</label>
+                <label className="font-semibold">Cover Image URL</label>
                 <LemonInput
                     value={coverUrl}
                     onChange={(val) => setCoverUrl(val)}
                     placeholder="Paste image URL (e.g. https://images.unsplash.com/...)"
                     size="small"
+                    fullWidth
                 />
             </div>
 
-            {/* Live Cover Banner Display - Shown ONLY when URL is entered - No Border */}
+            {/* Live Cover Banner Preview */}
             {hasCoverUrl && (
                 <div className="space-y-2 transition-all duration-300 animate-fadeIn">
-                    <label className="font-semibold text-white flex items-center gap-1.5 text-xs">
-                        <IconImage className="w-3.5 h-3.5 text-[#1d4ed8]" />
+                    <label className="font-semibold flex items-center gap-1.5 text-xs">
+                        <IconImage className="w-3.5 h-3.5 text-blue" />
                         Cover Banner Preview
                     </label>
 
-                    <div className="relative h-32 w-full rounded-lg overflow-hidden bg-[#1d1e24] shadow-md group">
+                    <div className="relative h-32 w-full rounded-lg overflow-hidden bg-surface-secondary border border-border shadow-md group">
                         <img
                             src={coverUrl}
                             alt="Notebook cover preview"
                             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-3">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end p-3">
                             <span className="text-white font-semibold text-sm drop-shadow truncate">
                                 {title || 'Untitled Notebook'}
                             </span>
@@ -89,21 +87,23 @@ export function SidebarContextPanelMenu({
 
             {/* Public Title Input */}
             <div className="space-y-1.5">
-                <label className="font-semibold text-white">Public Title</label>
+                <label className="font-semibold">Public Title</label>
                 <LemonInput
                     value={title}
                     onChange={setTitle}
                     placeholder="Public notebook title..."
                     size="small"
+                    fullWidth
                 />
             </div>
 
             {/* Category & Status Row */}
             <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                    <label className="font-semibold text-white">Category</label>
+                    <label className="font-semibold">Category</label>
                     <LemonSelect
                         size="small"
+                        fullWidth
                         value={category}
                         onChange={(val) => setCategory(val || 'engineering')}
                         options={[
@@ -112,43 +112,43 @@ export function SidebarContextPanelMenu({
                             { value: 'analytics', label: 'HogQL Telemetry' },
                             { value: 'research', label: 'User Research' },
                         ]}
-                        menu={{ className: 'notebook-dark-panel notebook-app-scope' }}
                     />
                 </div>
 
                 <div className="space-y-1.5">
-                    <label className="font-semibold text-white">Publishing Status</label>
+                    <label className="font-semibold">Publishing Status</label>
                     <LemonSelect
                         size="small"
+                        fullWidth
                         value={isPublished ? 'published' : 'draft'}
                         onChange={(val) => setIsPublished(val === 'published')}
                         options={[
                             { value: 'draft', label: 'Draft Mode' },
                             { value: 'published', label: 'Published' },
                         ]}
-                        menu={{ className: 'notebook-dark-panel notebook-app-scope' }}
                     />
                 </div>
             </div>
 
             {/* Subtitle / Summary Input */}
             <div className="space-y-1.5">
-                <label className="font-semibold text-white">Subtitle / Summary</label>
+                <label className="font-semibold">Subtitle / Summary</label>
                 <LemonInput
                     value={subtitle}
                     onChange={setSubtitle}
                     placeholder="Brief summary for team readers..."
                     size="small"
+                    fullWidth
                 />
             </div>
 
-            {/* Actions Footer - No Border */}
+            {/* Actions Footer */}
             <div className="pt-2 flex items-center justify-between">
                 <div className="flex gap-1.5">
                     <LemonButton
                         type="stealth"
                         size="small"
-                        icon={<IconSparkles className="text-orange-400" />}
+                        icon={<IconSparkles className="text-orange" />}
                         onClick={() => {
                             setIsOpen(false)
                             if (onOpenAI) onOpenAI()
@@ -178,7 +178,7 @@ export function SidebarContextPanelMenu({
                     <LemonButton
                         type="primary"
                         size="small"
-                        icon={savedSuccess ? <IconCheck className="text-green-400" /> : <IconShare />}
+                        icon={savedSuccess ? <IconCheck /> : <IconShare />}
                         onClick={handleSave}
                     >
                         {savedSuccess ? 'Published!' : 'Save & Publish'}
@@ -194,7 +194,6 @@ export function SidebarContextPanelMenu({
             visible={isOpen}
             onVisibilityChange={(v) => setIsOpen(v)}
             onClickOutside={() => setIsOpen(false)}
-            className="notebook-dark-panel"
             closeOnClickInside={false}
         >
             <LemonButton

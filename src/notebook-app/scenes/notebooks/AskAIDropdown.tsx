@@ -142,19 +142,17 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
             onVisibilityChange={(v) => setIsOpen(v)}
             onClickOutside={() => setIsOpen(false)}
             placement="bottom-end"
-            className="notebook-dark-panel"
             closeOnClickInside={false}
             overlay={
                 <div
-                    className="notebook-dark-panel w-[1100px] max-w-[96vw] p-3 rounded-xl shadow-2xl flex flex-col gap-3"
-                    style={{ backgroundColor: '#15161b', color: '#e2e8f0' }}
+                    className="w-[1100px] max-w-[96vw] p-3 rounded-xl shadow-2xl flex flex-col gap-3 bg-surface-primary border border-border text-primary"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
-                    <div className="flex items-center justify-between pb-2 border-b border-[#2c2d38]">
+                    <div className="flex items-center justify-between pb-2 border-b border-border">
                         <div className="flex items-center gap-2">
                             <ProfilePicture user={{ first_name: activeBot.name }} size="md" />
-                            <span className="font-bold text-white text-sm">{activeBot.name}</span>
+                            <span className="font-bold text-sm">{activeBot.name}</span>
                         </div>
 
                         {messages.length > 0 && (
@@ -178,16 +176,16 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                                     key={msg.id}
                                     className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
                                 >
-                                    <div className="flex items-center gap-1.5 mb-1 text-[10px] text-slate-400 font-mono">
+                                    <div className="flex items-center gap-1.5 mb-1 text-[10px] text-muted font-mono">
                                         {msg.sender === 'ai' ? (
                                             <>
                                                 <ProfilePicture user={{ first_name: activeBot.name }} size="xs" />
-                                                <span className="font-semibold text-white">
+                                                <span className="font-semibold text-primary">
                                                     {activeBot.name}
                                                 </span>
                                             </>
                                         ) : (
-                                            <span className="font-semibold text-slate-300">You</span>
+                                            <span className="font-semibold text-secondary">You</span>
                                         )}
                                         <span>• {msg.timestamp}</span>
                                     </div>
@@ -195,10 +193,10 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                                     {/* Speech Bubble */}
                                     <div className={`flex flex-col gap-1.5 max-w-[92%] ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
                                         <div
-                                            className={`p-3 rounded-xl border text-slate-100 whitespace-pre-wrap w-full ${
+                                            className={`p-3 rounded-xl border whitespace-pre-wrap w-full ${
                                                 msg.sender === 'user'
-                                                    ? 'bg-[#232530] border-[#3b3c4a]'
-                                                    : 'bg-[#1a1b23] border-[#2c2d38] shadow-inner'
+                                                    ? 'bg-surface-secondary border-border text-primary'
+                                                    : 'bg-[var(--bg-3000,#f3f4f5)] border-border text-primary shadow-inner'
                                             }`}
                                         >
                                             {msg.text}
@@ -228,10 +226,10 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                             ))}
 
                             {isGenerating && (
-                                <div className="flex items-center gap-2 text-slate-400 text-xs py-2 italic">
+                                <div className="flex items-center gap-2 text-muted text-xs py-2 italic">
                                     <ProfilePicture user={{ first_name: activeBot.name }} size="xs" />
                                     <span>
-                                        <span className="font-semibold text-white">{activeBot.name}</span>
+                                        <span className="font-semibold text-primary">{activeBot.name}</span>
                                         {' is thinking...'}
                                     </span>
                                 </div>
@@ -240,8 +238,8 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                         </div>
                     )}
 
-                    {/* Input Container — NO inner border-t line */}
-                    <div className="relative flex flex-col border border-[#3b3c4a] bg-[#15161b] rounded-xl p-3 focus-within:border-blue-500 shadow-sm transition-colors">
+                    {/* Input Container */}
+                    <div className="relative flex flex-col border border-border bg-surface-secondary rounded-xl p-3 focus-within:border-blue-500 shadow-sm transition-colors">
                         <textarea
                             ref={textareaRef}
                             value={prompt}
@@ -259,10 +257,9 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                                     : `Reply to ${activeBot.name} (Cmd + Enter)...`
                             }
                             rows={4}
-                            className="w-full bg-transparent text-sm text-white placeholder:text-slate-500 focus:outline-none resize-none leading-relaxed min-h-[110px] p-0 border-none shadow-none"
+                            className="w-full bg-transparent text-sm text-primary placeholder:text-muted focus:outline-none resize-none leading-relaxed min-h-[110px] p-0 border-none shadow-none"
                         />
 
-                        {/* Controls Row — WITHOUT border-t line */}
                         <div className="flex items-center justify-between pt-2 mt-1">
                             <LemonSelect
                                 value={selectedBot}
@@ -272,15 +269,13 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                                 }}
                                 options={BOT_SELECT_OPTIONS}
                                 size="small"
-                                type="tertiary"
+                                type="secondary"
                                 dropdownPlacement="top-start"
                                 dropdownMatchSelectWidth={false}
-                                className="border border-[#2c2d38] bg-[#111216] !py-0.5 !px-2"
-                                menu={{ className: 'notebook-dark-panel notebook-app-scope' }}
                             />
 
                             <div className="flex items-center gap-2.5">
-                                <span className="text-slate-500 text-[10px] hidden sm:inline font-mono">
+                                <span className="text-muted text-[10px] hidden sm:inline font-mono">
                                     Cmd + Enter
                                 </span>
                                 <LemonButton
