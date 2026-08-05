@@ -17,50 +17,77 @@ const PALETTE_STYLE_ID = 'notebook-app-palette-bridge'
 export const LEMON_SCOPE_CLASS = 'notebook-app-scope'
 
 /**
- * WorldInMaking surface palette overrides for notebook islands.
- * Source SCSS (site-bridge / notebook-dark-panel) needs a full bundle rebuild;
- * this small inject always wins without regenerating the ~400KB NOTEBOOK_APP_CSS.
+ * Notebook surface bridge → host site colors from tailwind.config.js:
+ *   light: #fff | accent-light: #e5e7e0 | dark: #1e1f23 | accent-dark: #232429
+ * Prefer live scheme vars (rgb(var(--bg))) so skin/theme switches match the rest of the OS.
+ * No invented cream/beige hexes.
  */
 const NOTEBOOK_PALETTE_CSS = `
 .notebook-app-scope {
-  --color-bg-surface-primary: #fdfdf8;
-  --color-bg-surface-secondary: #eeefe9;
-  --color-bg-surface-tertiary: #e5e7e0;
-  --color-bg-surface-popover: #fdfdf8;
-  --color-bg-fill-primary: #fdfdf8;
-  --color-bg-fill-secondary: #eeefe9;
-  --color-bg-fill-tertiary: #e5e7e0;
-  --color-bg-fill-input: #eeefe9;
-  --color-bg-fill-button-secondary: #eeefe9;
-  --color-bg-fill-button-secondary-hover: #e5e7e0;
-  --secondary-3000-button-border: #bfc1b7;
-  --secondary-3000-button-border-hover: #a8aa9f;
-  --secondary-3000-frame-bg: #e5e7e0;
-  --border-3000: #bfc1b7;
-  --border-bold-3000: #a8aa9f;
-  --color-border-primary: #bfc1b7;
-  --color-border-secondary: #a8aa9f;
-  --shadow-elevation-3000: 0 10px 38px rgba(77, 79, 70, 0.18);
+  --color-bg-surface-primary: rgb(var(--bg, 255 255 255));
+  --color-bg-surface-secondary: rgb(var(--accent, 229 231 224));
+  --color-bg-surface-tertiary: rgb(var(--accent, 229 231 224));
+  --color-bg-surface-popover: rgb(var(--bg, 255 255 255));
+  --color-bg-fill-primary: rgb(var(--bg, 255 255 255));
+  --color-bg-fill-secondary: rgb(var(--accent, 229 231 224));
+  --color-bg-fill-tertiary: rgb(var(--accent, 229 231 224));
+  --color-bg-fill-input: rgb(var(--input-bg, var(--accent, 238 239 233)));
+  --color-bg-fill-button-secondary: rgb(var(--accent, 229 231 224));
+  --color-bg-fill-button-secondary-hover: rgb(var(--accent, 229 231 224));
+  --secondary-3000-button-border: rgb(var(--border, 191 193 183));
+  --secondary-3000-button-border-hover: rgb(var(--border, 182 183 175));
+  --secondary-3000-frame-bg: rgb(var(--accent, 229 231 224));
+  --border-3000: rgb(var(--border, 191 193 183));
+  --border-bold-3000: rgb(var(--border, 182 183 175));
+  --color-border-primary: rgb(var(--border, 191 193 183));
+  --color-border-secondary: rgb(var(--border, 182 183 175));
+  --shadow-elevation-3000: 0 10px 38px rgba(0, 0, 0, 0.14);
+  --color-text-primary: rgb(var(--text-primary, 17 17 17));
+  --text-3000: rgb(var(--text-primary, 17 17 17));
 }
-.notebook-app-scope.dark,
-.notebook-app-scope .dark {
+/* Portaled popovers may sit outside [data-scheme]; pin light/dark to host html class */
+html.light .notebook-app-scope,
+.light .notebook-app-scope:not(.dark) {
+  --color-bg-surface-primary: #ffffff;
+  --color-bg-surface-secondary: #ffffff;
+  --color-bg-surface-tertiary: #f5f5f5;
+  --color-bg-surface-popover: #ffffff;
+  --color-bg-fill-primary: #ffffff;
+  --color-bg-fill-secondary: #f5f5f5;
+  --color-bg-fill-tertiary: #f5f5f5;
+  --color-bg-fill-input: #ffffff;
+  --color-bg-fill-button-secondary: #f5f5f5;
+  --color-bg-fill-button-secondary-hover: #eeeeee;
+  --secondary-3000-button-border: #e0e0e0;
+  --secondary-3000-button-border-hover: #cfcfcf;
+  --secondary-3000-frame-bg: #f0f0f0;
+  --border-3000: #e0e0e0;
+  --border-bold-3000: #cfcfcf;
+  --color-border-primary: #e0e0e0;
+  --color-border-secondary: #cfcfcf;
+}
+html.dark .notebook-app-scope,
+.dark .notebook-app-scope,
+.notebook-app-scope.dark {
   --color-bg-surface-primary: #1e1f23;
-  --color-bg-surface-secondary: #25262b;
-  --color-bg-surface-tertiary: #2d2e37;
-  --color-bg-surface-popover: #25262b;
+  --color-bg-surface-secondary: #232429;
+  --color-bg-surface-tertiary: #2a2b31;
+  --color-bg-surface-popover: #1e1f23;
   --color-bg-fill-primary: #1e1f23;
-  --color-bg-fill-secondary: #25262b;
-  --color-bg-fill-tertiary: #2d2e37;
-  --color-bg-fill-input: #25262b;
-  --color-bg-fill-button-secondary: #2d2e37;
-  --color-bg-fill-button-secondary-hover: #32333d;
+  --color-bg-fill-secondary: #232429;
+  --color-bg-fill-tertiary: #2a2b31;
+  --color-bg-fill-input: #232429;
+  --color-bg-fill-button-secondary: #232429;
+  --color-bg-fill-button-secondary-hover: #2a2b31;
   --secondary-3000-button-border: #3e424f;
   --secondary-3000-button-border-hover: #4a4e5c;
-  --secondary-3000-frame-bg: #2d2e37;
+  --secondary-3000-frame-bg: #232429;
   --border-3000: #3e424f;
   --border-bold-3000: #4a4e5c;
   --color-border-primary: #3e424f;
   --color-border-secondary: #4a4e5c;
+  --color-text-primary: #fafafa;
+  --text-3000: #fafafa;
   --shadow-elevation-3000: 0 12px 40px rgba(0, 0, 0, 0.35);
 }
 .notebook-app-scope.Popover > .Popover__box {

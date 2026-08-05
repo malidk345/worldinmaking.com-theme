@@ -82,27 +82,27 @@
     --primary-highlight: rgb(29 78 216 / 12%);
 
     /*
-     * Surfaces — WorldInMaking light palette (warm cream), not PostHog pure white/black.
-     * Matches site .light [data-scheme='primary']: --bg 253 253 248, --accent 229 231 224
+     * Surfaces — host site tokens (tailwind light/dark), not PostHog product black
+     * and not hardcoded cream. Live values come from ensureLemonStyles palette inject.
      */
-    --color-bg-surface-primary: #fdfdf8;
-    --color-bg-surface-secondary: #eeefe9;
-    --color-bg-surface-tertiary: #e5e7e0;
-    --color-bg-surface-popover: #fdfdf8;
-    --color-bg-fill-primary: #fdfdf8;
-    --color-bg-fill-secondary: #eeefe9;
-    --color-bg-fill-tertiary: #e5e7e0;
-    --color-bg-fill-input: #eeefe9;
-    --color-bg-fill-button-secondary: #eeefe9;
-    --color-bg-fill-button-secondary-hover: #e5e7e0;
-    --secondary-3000-button-border: #bfc1b7;
-    --secondary-3000-button-border-hover: #a8aa9f;
-    --secondary-3000-frame-bg: #e5e7e0;
-    --border-3000: #bfc1b7;
-    --border-bold-3000: #a8aa9f;
-    --color-border-primary: #bfc1b7;
-    --color-border-secondary: #a8aa9f;
-    --shadow-elevation-3000: 0 10px 38px rgba(77, 79, 70, 0.18);
+    --color-bg-surface-primary: #ffffff;
+    --color-bg-surface-secondary: #f5f5f5;
+    --color-bg-surface-tertiary: #f5f5f5;
+    --color-bg-surface-popover: #ffffff;
+    --color-bg-fill-primary: #ffffff;
+    --color-bg-fill-secondary: #f5f5f5;
+    --color-bg-fill-tertiary: #f5f5f5;
+    --color-bg-fill-input: #ffffff;
+    --color-bg-fill-button-secondary: #f5f5f5;
+    --color-bg-fill-button-secondary-hover: #eeeeee;
+    --secondary-3000-button-border: #e0e0e0;
+    --secondary-3000-button-border-hover: #cfcfcf;
+    --secondary-3000-frame-bg: #f0f0f0;
+    --border-3000: #e0e0e0;
+    --border-bold-3000: #cfcfcf;
+    --color-border-primary: #e0e0e0;
+    --color-border-secondary: #cfcfcf;
+    --shadow-elevation-3000: 0 10px 38px rgba(0, 0, 0, 0.14);
 }
 
 .notebook-app-scope.dark,
@@ -120,23 +120,20 @@
     --link-3000: #60a5fa;
     --primary-highlight: rgb(59 130 246 / 14%);
 
-    /*
-     * Surfaces — site dark scheme (#1e1f23 family), not pure black / #15161b.
-     * Matches .dark [data-scheme='primary'|'secondary']
-     */
+    /* Surfaces — tailwind dark / accent-dark (#1e1f23 / #232429) */
     --color-bg-surface-primary: #1e1f23;
-    --color-bg-surface-secondary: #25262b;
-    --color-bg-surface-tertiary: #2d2e37;
-    --color-bg-surface-popover: #25262b;
+    --color-bg-surface-secondary: #232429;
+    --color-bg-surface-tertiary: #2a2b31;
+    --color-bg-surface-popover: #1e1f23;
     --color-bg-fill-primary: #1e1f23;
-    --color-bg-fill-secondary: #25262b;
-    --color-bg-fill-tertiary: #2d2e37;
-    --color-bg-fill-input: #25262b;
-    --color-bg-fill-button-secondary: #2d2e37;
-    --color-bg-fill-button-secondary-hover: #32333d;
+    --color-bg-fill-secondary: #232429;
+    --color-bg-fill-tertiary: #2a2b31;
+    --color-bg-fill-input: #232429;
+    --color-bg-fill-button-secondary: #232429;
+    --color-bg-fill-button-secondary-hover: #2a2b31;
     --secondary-3000-button-border: #3e424f;
     --secondary-3000-button-border-hover: #4a4e5c;
-    --secondary-3000-frame-bg: #2d2e37;
+    --secondary-3000-frame-bg: #232429;
     --border-3000: #3e424f;
     --border-bold-3000: #4a4e5c;
     --color-border-primary: #3e424f;
