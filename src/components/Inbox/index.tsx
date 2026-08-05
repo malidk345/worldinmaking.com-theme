@@ -221,6 +221,8 @@ const QuestionRow = ({
     containerRef,
     pinned = false,
 }: QuestionRowProps) => {
+    const { appWindow } = useWindow()
+    const { updateWindow } = useApp()
     const q = question?.attributes || question || {}
     const subject = q.subject || q.title || 'Community Discussion'
     const numReplies = q.numReplies || 0
@@ -233,7 +235,8 @@ const QuestionRow = ({
     const replyList = Array.isArray(replies?.data) ? replies.data : Object.values(replies ?? {})
     const lastReply = replyList[replyList.length - 1]
     const latestAuthor = lastReply?.profile || lastReply?.attributes?.profile || profile
-    const active = `/questions/${permalink}` === appWindowPath
+    const threadPath = `/questions/${permalink}`
+    const active = threadPath === appWindowPath
     const authorName = profile?.firstName
         ? `${profile.firstName} ${profile.lastName || ''}`.trim()
         : profile?.username || 'Community Member'
@@ -242,7 +245,7 @@ const QuestionRow = ({
         <div key={question.id} ref={lastQuestionRef}>
             <OSButton
                 asLink
-                to={`/questions/${permalink}`}
+                to={threadPath}
                 align="left"
                 width="full"
                 hover="background"
@@ -257,9 +260,21 @@ const QuestionRow = ({
                     if (e && e.preventDefault) {
                         e.preventDefault()
                     }
+                    // Keep AppWindow path in sync with the thread URL. Raw pushState alone left
+                    // path at /questions; mobile focus handlers then router.push('/questions') and
+                    // the detail panel closed mid-scroll / mid-touch.
+                    if (appWindow) {
+                        updateWindow(appWindow, {
+                            path: threadPath,
+                            props: { ...(appWindow.props || {}), path: threadPath },
+                        })
+                    }
                     if (typeof window !== 'undefined') {
-                        window.history.pushState(null, '', `/questions/${permalink}`)
-                        window.dispatchEvent(new Event('popstate'))
+                        window.history.pushState(
+                            { windowKey: appWindow?.key || 'forum-main-window' },
+                            '',
+                            threadPath
+                        )
                     }
                     if (containerRef.current && bottomHeight <= 45) {
                         setBottomHeight(containerRef.current.getBoundingClientRect().height * 0.8)
@@ -455,8 +470,25 @@ const QuestionToolbar = React.memo(
                                             />
                                         }
                                         onClick={() => {
+                                            // Mobile side-by-side: collapse detail without navigating
+                                            // away (navigate(menuValue) was closing the thread panel
+                                            // and felt like a random dismiss while interacting).
                                             if (isMobile && sideBySide) {
-                                                navigate(menuValue)
+                                                expandOrCollapse(false)
+                                                // Optional: return to topic list path without full reload
+                                                try {
+                                                    const listPath =
+                                                        menuValue && menuValue.startsWith('/questions')
+                                                            ? menuValue
+                                                            : '/questions'
+                                                    window.history.replaceState(
+                                                        { windowKey: 'forum-main-window' },
+                                                        '',
+                                                        listPath
+                                                    )
+                                                } catch {
+                                                    /* ignore */
+                                                }
                                             } else {
                                                 expandOrCollapse(expandable)
                                             }
@@ -566,6 +598,7 @@ export default function Inbox(props) {
         filters,
     })
     const { appWindow } = useWindow()
+    const { updateWindow } = useApp()
     const bottomHeightDefault = useMemo(() => Math.max(380, ((appWindow?.size?.height || 600) * 3) / 5), [appWindow?.size?.height])
     const [bottomHeight, setBottomHeight] = useState(bottomHeightDefault)
     const [sideWidth, setSideWidth] = useState(SIDE_WIDTH_DEFAULT)
@@ -590,10 +623,25 @@ export default function Inbox(props) {
         if (permalink) {
             if (bottomHeight <= 45) {
                 const containerH = containerRef.current?.getBoundingClientRect().height || 500
-                setBottomHeight(Math.max(350, containerH * 0.6))
+                // On mobile open nearly full height so content can scroll inside the panel
+                // without the strip collapsing under the list gesture.
+                const ratio = isMobile ? 0.85 : 0.6
+                setBottomHeight(Math.max(isMobile ? 280 : 350, containerH * ratio))
             }
         }
-    }, [permalink])
+    }, [permalink, isMobile])
+
+    // Keep AppWindow path aligned when browser URL is a thread but window path lagged
+    useEffect(() => {
+        if (!appWindow || !permalink) return
+        const threadPath = `/questions/${permalink}`
+        if (appWindow.path !== threadPath && (appWindow.path === '/questions' || appWindow.path?.startsWith('/questions'))) {
+            updateWindow(appWindow, {
+                path: threadPath,
+                props: { ...(appWindow.props || {}), path: threadPath },
+            })
+        }
+    }, [permalink, appWindow?.path])
 
     const expandable = useMemo(() => {
         if (!containerRef.current) return true

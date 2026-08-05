@@ -32,6 +32,10 @@ import usePostHog from '../../hooks/usePostHog'
 import Modal from 'components/RadixUI/Modal'
 import FloatingModal from 'components/FloatingModal'
 import { MOTION_LAYER, WINDOW_BG } from '../../constants/frostedSurfaces'
+import { isMaximizedWindow, transitionWindowMode, windowModeFlags } from 'lib/windowState'
+import { getViewportMetrics } from 'hooks/useViewportMetrics'
+import WindowErrorBoundary from './WindowErrorBoundary'
+import WindowResizeHandles from './WindowResizeHandles'
 
 const recursiveSearch = (array: MenuItem[] | undefined, value: string): boolean => {
     if (!array) return false
@@ -263,6 +267,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
         closeWindow,
         isActiveWindowsPanelOpen,
         addWindow,
+        isMobile,
     } = useApp()
 
     const navigate = useCallback(
@@ -283,7 +288,16 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
 
     const isSSR = typeof window === 'undefined'
     const controls = useDragControls()
-    const sizeConstraints = item.sizeConstraints
+    // A few lightweight windows are created from partial descriptors (for example
+    // chat shortcuts). Keep resize resilient when those descriptors have not been
+    // normalized with full window constraints yet.
+    const sizeConstraints = item.sizeConstraints ?? {
+        min: { width: 280, height: 180 },
+        max: {
+            width: typeof window !== 'undefined' ? window.innerWidth : 1920,
+            height: typeof window !== 'undefined' ? window.innerHeight : 1200,
+        },
+    }
     const size = item.size
     const previousSize = item.previousSize
     const position = item.position
@@ -408,6 +422,12 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
         }
     }, [windowRef.current])
 
+    useEffect(() => {
+        if (focusedWindow?.key === item.key) {
+            windowRef.current?.focus({ preventScroll: true })
+        }
+    }, [focusedWindow?.key, item.key])
+
     const isMaximized = () => {
         if (item.expanded) return true
         const taskbarRect = taskbarRef.current?.getBoundingClientRect()
@@ -415,22 +435,11 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
         return size.width >= expandedWidth
     }
 
-    const beyondViewport = (windowSize: { width: number; height: number }) => {
-        const rightEdge = position.x + windowSize.width
-        const bottomEdge = position.y + windowSize.height
-
-        return (
-            rightEdge > window.innerWidth ||
-            bottomEdge > window.innerHeight - taskbarHeight ||
-            position.x < 0 ||
-            position.y < 0
-        )
-    }
-
     const handleDragResize = (
         item: AppWindowType,
         info: PanInfo,
-        change: { x: boolean } | { y: boolean } | { x: boolean; y: boolean }
+        change: { x: boolean } | { y: boolean } | { x: boolean; y: boolean },
+        isLeftResize = leftDragResizing
     ) => {
         if (item.expanded && windowRef.current) {
             const rect = windowRef.current.getBoundingClientRect()
@@ -454,9 +463,9 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
         if ('y' in change) update.size = { height: Math.max(size.height + info.delta.y, sizeConstraints.min.height) }
         if ('x' in change) {
             update.size ||= {}
-            const delta = leftDragResizing ? -1 * info.delta.x : info.delta.x
+            const delta = isLeftResize ? -1 * info.delta.x : info.delta.x
             update.size.width = Math.max(size.width + delta, sizeConstraints.min.width)
-            if (leftDragResizing) update.position = { x: item.position.x + size.width - update.size.width }
+            if (isLeftResize) update.position = { x: item.position.x + size.width - update.size.width }
         }
         updateWindow(item, update)
     }
@@ -467,17 +476,28 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
         const fullW = bounds ? bounds.width : (typeof window !== 'undefined' ? window.innerWidth - 16 : 1200)
         const fullH = bounds ? bounds.height : (typeof window !== 'undefined' ? window.innerHeight - taskbarHeight : 800)
 
-        const isMax = item.expanded || (item.size.width >= fullW - 10 && item.size.height >= fullH - 10)
+        const isMax = isMaximizedWindow(item) || (item.size.width >= fullW - 10 && item.size.height >= fullH - 10)
 
         if (isMax) {
-            const prevSize = item.previousSize || { width: Math.min(900, fullW * 0.8), height: Math.min(650, fullH * 0.8) }
-            const prevPos = item.previousPosition || { x: Math.max(0, (fullW - prevSize.width) / 2), y: Math.max(0, (fullH - prevSize.height) / 2) }
+            const prevSize = isMobile
+                ? {
+                      width: Math.min(item.previousSize?.width || fullW * 0.9, fullW * 0.92),
+                      height: Math.min(item.previousSize?.height || fullH * 0.78, fullH * 0.78),
+                  }
+                : item.previousSize || {
+                      width: Math.min(900, fullW * 0.8),
+                      height: Math.min(650, fullH * 0.8),
+                  }
+            const prevPos = isMobile
+                ? { x: Math.max(0, (fullW - prevSize.width) / 2), y: Math.max(0, (fullH - prevSize.height) / 2) }
+                : item.previousPosition || {
+                      x: Math.max(0, (fullW - prevSize.width) / 2),
+                      y: Math.max(0, (fullH - prevSize.height) / 2),
+                  }
             updateWindow(item, {
                 size: prevSize,
                 position: prevPos,
-                expanded: false,
-                windowed: true,
-                snapped: false,
+                ...windowModeFlags(transitionWindowMode('maximized', { type: 'toggle-maximize' })),
             })
         } else {
             updateWindow(item, {
@@ -485,9 +505,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                 previousPosition: item.position,
                 size: { width: fullW, height: fullH },
                 position: { x: 0, y: 0 },
-                expanded: true,
-                windowed: false,
-                snapped: false,
+                ...windowModeFlags(transitionWindowMode('normal', { type: 'toggle-maximize' })),
             })
         }
     }
@@ -625,6 +643,34 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
 
     const handleMouseDown = () => {
         if (focusedWindow === item) return
+        // Mobile: never router.push on focus — pushState thread URLs would get wiped back
+        // to the stale window path (e.g. /questions) and the forum detail panel would close
+        // mid-scroll / mid-touch. Just raise z-index.
+        if (isMobile) {
+            bringToFront(item)
+            return
+        }
+        // Desktop: if the browser is already on a deeper path under this window (forum thread),
+        // don't clobber it with a shallower item.path.
+        try {
+            const browserPath = typeof window !== 'undefined' ? window.location.pathname : ''
+            const windowPath = item.path || ''
+            if (
+                windowPath.startsWith('/') &&
+                browserPath.startsWith(windowPath) &&
+                browserPath.length > windowPath.length
+            ) {
+                bringToFront(item)
+                return
+            }
+            // Forum shell always lives at /questions/* — never force-navigate to list root on focus
+            if (windowPath === '/questions' && browserPath.startsWith('/questions/')) {
+                bringToFront(item)
+                return
+            }
+        } catch {
+            /* ignore */
+        }
         if (item.path.startsWith('/')) {
             router.push(`${item.path}${item.location?.search || ''}`)
         } else {
@@ -634,18 +680,35 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
 
     useEffect(() => {
         const handleResize = () => {
-            if (item.expanded) return
-            if (beyondViewport(size)) {
-                const newSize = {
-                    width: Math.min(size.width, window.innerWidth),
-                    height: Math.min(size.height, window.innerHeight - taskbarHeight),
-                }
+            const { width: viewportWidth, height: viewportHeight } = getViewportMetrics()
+            const containerBounds = constraintsRef.current?.getBoundingClientRect()
+            const availableWidth = Math.min(viewportWidth, containerBounds?.width ?? viewportWidth)
+            const availableHeight = Math.min(
+                Math.max(0, viewportHeight - taskbarHeight),
+                containerBounds?.height ?? Math.max(0, viewportHeight - taskbarHeight)
+            )
+            const constrainedSize = {
+                width: Math.min(size.width, availableWidth),
+                height: Math.min(size.height, availableHeight),
+            }
+            const newPosition = {
+                x: Math.min(Math.max(0, position.x), Math.max(0, availableWidth - constrainedSize.width)),
+                y: Math.min(Math.max(0, position.y), Math.max(0, availableHeight - constrainedSize.height)),
+            }
+            const newSize = item.expanded
+                ? { width: availableWidth, height: availableHeight }
+                : constrainedSize
+            const needsResize = size.width !== newSize.width || size.height !== newSize.height
+            const needsReposition = position.x !== newPosition.x || position.y !== newPosition.y
 
-                const newPosition = {
-                    x: Math.min(Math.max(0, position.x), window.innerWidth - newSize.width),
-                    y: Math.min(Math.max(0, position.y), window.innerHeight - taskbarHeight - newSize.height),
+            if (item.expanded) {
+                if (needsResize || needsReposition) {
+                    updateWindow(item, {
+                        size: newSize,
+                        position: { x: 0, y: 0 },
+                    })
                 }
-
+            } else if (needsResize || needsReposition) {
                 updateWindow(item, {
                     size: newSize,
                     position: newPosition,
@@ -654,7 +717,12 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
         }
         if (!isSSR) {
             window.addEventListener('resize', handleResize)
-            return () => window.removeEventListener('resize', handleResize)
+            window.visualViewport?.addEventListener('resize', handleResize)
+            handleResize()
+            return () => {
+                window.removeEventListener('resize', handleResize)
+                window.visualViewport?.removeEventListener('resize', handleResize)
+            }
         }
     }, [item])
 
@@ -751,6 +819,32 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
         setClosing(true)
     }
 
+    useEffect(() => {
+        if (focusedWindow !== item || compact || isMobile) return
+
+        const handleShortcut = (event: KeyboardEvent) => {
+            const key = event.key.toLowerCase()
+            const modifier = event.metaKey || event.ctrlKey
+
+            if ((modifier && key === 'w') || (event.shiftKey && key === 'w')) {
+                event.preventDefault()
+                handleClose()
+            } else if (event.shiftKey && event.key === 'ArrowUp') {
+                event.preventDefault()
+                expandWindow(item)
+            } else if (event.shiftKey && event.key === 'ArrowLeft') {
+                event.preventDefault()
+                handleSnapToSide('left')
+            } else if (event.shiftKey && event.key === 'ArrowRight') {
+                event.preventDefault()
+                handleSnapToSide('right')
+            }
+        }
+
+        window.addEventListener('keydown', handleShortcut)
+        return () => window.removeEventListener('keydown', handleShortcut)
+    }, [focusedWindow, item, compact, isMobile, expandWindow, handleSnapToSide])
+
     const onAnimationStart = () => {
         animationStartTimeRef.current = performance.now()
     }
@@ -826,7 +920,20 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
             <WindowContainer closing={closing}>
                 {item.appSettings?.size?.fixed && (
                     <div
-                        onClick={handleClose}
+                        // Ignore scroll-end ghost clicks (common on mobile after touchmove)
+                        onPointerDown={(e) => {
+                            ;(e.currentTarget as HTMLElement).dataset.pointerY = String(e.clientY)
+                            ;(e.currentTarget as HTMLElement).dataset.pointerX = String(e.clientX)
+                        }}
+                        onClick={(e) => {
+                            const el = e.currentTarget as HTMLElement
+                            const startX = Number(el.dataset.pointerX || 0)
+                            const startY = Number(el.dataset.pointerY || 0)
+                            const moved =
+                                Math.abs(e.clientX - startX) > 10 || Math.abs(e.clientY - startY) > 10
+                            if (moved) return
+                            handleClose()
+                        }}
                         className={`fixed inset-0 z-50 bg-black/50 ${
                             closing ? 'animate-overlay-fade-out' : !skipsOpenAnimation ? 'animate-overlay-fade-in' : ''
                         }`}
@@ -847,6 +954,10 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                     data-expanded={item.expanded || undefined}
                     data-windowed={item.windowed || undefined}
                     data-snapped={item.snapped || undefined}
+                    role="dialog"
+                    aria-label={item.meta?.title || item.path || 'Window'}
+                    aria-modal={item.modal?.type === 'standard' || undefined}
+                    tabIndex={-1}
                     data-scheme="tertiary"
                     className={`group @container absolute overflow-hidden pointer-events-auto !select-auto flex flex-col border-primary ${
                         isCompositorActive ? MOTION_LAYER : ''
@@ -867,6 +978,8 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         rotateY: compact || isActiveWindowsPanelOpen ? 0 : tiltY,
                         transformPerspective: 1200,
                         zIndex: isActiveWindowsPanelOpen ? 10001 + activePanelIndex : item.zIndex,
+                        contentVisibility: inView ? 'visible' : 'auto',
+                        willChange: isCompositorActive ? 'transform' : undefined,
                         ...(item.appSettings?.size?.fixed
                             ? {
                                   maxWidth: item.sizeConstraints.min.width,
@@ -962,11 +1075,13 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                                 <div className="window-expand-control flex justify-end">
                                     <Tooltip
                                         trigger={
-                                            <OSButton
-                                                windowButton
-                                                size="md"
-                                                onClick={toggleExpanded}
-                                                icon={
+                                             <OSButton
+                                                 windowButton
+                                                 size="md"
+                                                 onClick={toggleExpanded}
+                                                 aria-label={item.expanded ? 'Restore window size' : 'Maximize window'}
+                                                 title={item.expanded ? 'Restore window size' : 'Maximize window'}
+                                                 icon={
                                                     item.expanded ? (
                                                         <IconCollapse45Chevrons />
                                                     ) : (
@@ -1021,8 +1136,18 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                                 : ''
                         }`}
                     >
-                        <Router {...item.props}>{item.element}</Router>
+                        <WindowErrorBoundary>
+                            <Router {...item.props}>{item.element}</Router>
+                        </WindowErrorBoundary>
                     </div>
+                    {!item.fixedSize && !item.expanded && !isMobile && (
+                        <>
+                            <WindowResizeHandles
+                                onResize={(info, change, left) => handleDragResize(item, info, change, left)}
+                                onResizeEnd={() => setLeftDragResizing(false)}
+                            />
+                        </>
+                    )}
                 </motion.div>
             </WindowContainer>
         </WindowProvider>
