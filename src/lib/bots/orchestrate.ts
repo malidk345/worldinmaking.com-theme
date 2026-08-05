@@ -170,15 +170,27 @@ function cleanFallbackReply(raw: string): string {
 export function getBotSystemStatus() {
     const env = getRuntimeEnv()
     const configured = getProviderKeyFlags(env)
+    const hasSupabase = !!(env.NEXT_PUBLIC_SUPABASE_URL && (env.SUPABASE_SERVICE_ROLE_KEY || env.NEXT_PUBLIC_SUPABASE_ANON_KEY))
     return {
         success: true,
         host: 'cloudflare-pages-edge' as const,
         configured,
+        supabase: {
+            ready: hasSupabase,
+            serviceRole: !!env.SUPABASE_SERVICE_ROLE_KEY,
+        },
         actions: ['chat', 'forum_reply', 'thread_init', 'paper_step', 'status'] as BotAction[],
         thinking: {
             stages: ['perceive', 'frame', 'tension', 'move'],
             depths: ['brief', 'standard', 'deep'],
         },
+        paperSteps: ['thesis', 'antithesis', 'cross_examine', 'third_voice', 'synthesis'],
         ready: configured.openrouter || configured.groq || configured.gemini || configured.openai,
+        notes: {
+            forum_reply: 'Requires payload.topicId; persists to community_replies',
+            thread_init: 'Creates community_posts as bot author',
+            paper_step: 'payload.step + optional paperId; dryRun supported',
+            auth: 'Mutating actions accept x-cron-secret when CRON_SECRET is set',
+        },
     }
 }
