@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { LemonButton, LemonTag } from '~nb-lib/lemon-ui/index'
 import { IconX } from '@posthog/icons'
-import { getNotebookHistory, NotebookVersion } from './notebookStorage'
+import { getNotebookHistoryNewestFirst, NotebookVersion } from './notebookStorage'
 
 interface NotebookHistoryProps {
     notebookId: string
@@ -23,7 +23,7 @@ export function NotebookHistory({ notebookId, isOpen, onClose, onRestore }: Note
 
     useEffect(() => {
         if (isOpen) {
-            setHistory(getNotebookHistory(notebookId))
+            setHistory(getNotebookHistoryNewestFirst(notebookId))
         }
     }, [notebookId, isOpen])
 

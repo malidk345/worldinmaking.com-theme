@@ -1,9 +1,6 @@
 import React, { useRef } from 'react'
 import { LemonInput, LemonTextArea } from '~nb-lib/lemon-ui/index'
-import {
-    COMMON_INSERT_COMMAND_CATEGORY,
-    createMarkdownNotebookRegistry,
-} from '../../lib/components/MarkdownNotebook'
+import { createMarkdownNotebookRegistry } from '../../lib/components/MarkdownNotebook'
 import {
     NotebookComponentBlockNode,
     NotebookComponentDefinition,
@@ -127,18 +124,10 @@ export const MARKDOWN_NODE_DEFINITIONS: {
             defaultProps: () => ({ nodeId: uuid() }),
         },
     },
+    // SQL / analytics blocks stay renderable if present in markdown, but have no slash insert.
     { tagName: 'DuckSQL', category: 'SQL', label: 'SQL (DuckDB)' },
     { tagName: 'HogQLSQL', category: 'SQL', label: 'SQL (HogQL)' },
-    {
-        tagName: 'SQLV2',
-        category: 'SQL',
-        label: 'SQL',
-        insertCommand: {
-            category: COMMON_INSERT_COMMAND_CATEGORY,
-            aliases: ['data', 'sql'],
-            defaultProps: () => ({ nodeId: uuid() }),
-        },
-    },
+    { tagName: 'SQLV2', category: 'SQL', label: 'SQL' },
     { tagName: 'RecordingPlaylist', category: 'Data', label: 'Session recordings' },
     { tagName: 'Experiment', category: 'Experiment' },
     { tagName: 'Image', category: 'Media', EditComponent: ImageEdit },

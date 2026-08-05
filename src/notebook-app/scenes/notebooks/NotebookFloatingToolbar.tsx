@@ -1,16 +1,6 @@
 import React from 'react'
-import { LemonButton, LemonTag } from '~nb-lib/lemon-ui/index'
-import {
-    IconPlus,
-    IconSparkles,
-    IconDatabase,
-    IconRewindPlay,
-    IconToggle,
-    IconCode,
-    IconList,
-    IconPencil,
-    IconFlask,
-} from '@posthog/icons'
+import { LemonButton } from '~nb-lib/lemon-ui/index'
+import { IconPlus, IconSparkles, IconList, IconPencil } from '@posthog/icons'
 
 export interface NotebookFloatingToolbarProps {
     onOpenAI: () => void
@@ -18,6 +8,7 @@ export interface NotebookFloatingToolbarProps {
     isEditable?: boolean
 }
 
+/** Writing-focused quick tools — no Insights / Data / SQL. */
 export function NotebookFloatingToolbar({
     onOpenAI,
     onInsertCommand,
@@ -36,8 +27,8 @@ export function NotebookFloatingToolbar({
                     size="small"
                     type="secondary"
                     icon={<IconPlus className="w-3.5 h-3.5" />}
-                    onClick={() => onInsertCommand('ask-ai')}
-                    tooltip="Add new block or press '/'"
+                    onClick={() => onInsertCommand('text-paragraph')}
+                    tooltip="Add text block or press '/'"
                 >
                     <span className="text-xs">Add block</span>
                 </LemonButton>
@@ -45,9 +36,9 @@ export function NotebookFloatingToolbar({
                 <LemonButton
                     size="small"
                     type="secondary"
-                    icon={<IconSparkles className="w-3.5 h-3.5 text-amber-500" />}
+                    icon={<IconSparkles className="w-3.5 h-3.5" />}
                     onClick={onOpenAI}
-                    tooltip="Ask PostHog AI to write or generate queries"
+                    tooltip="Ask AI to write or edit"
                 >
                     <span className="text-xs font-medium">Ask AI</span>
                 </LemonButton>
@@ -57,41 +48,11 @@ export function NotebookFloatingToolbar({
                 <LemonButton
                     size="small"
                     type="tertiary"
-                    icon={<IconDatabase className="w-3.5 h-3.5" />}
-                    onClick={() => onInsertCommand('query-sql')}
-                    tooltip="Insert HogQL SQL query table"
+                    icon={<IconPencil className="w-3.5 h-3.5" />}
+                    onClick={() => onInsertCommand('text-heading-1')}
+                    tooltip="Insert heading"
                 >
-                    <span className="text-xs hidden sm:inline">SQL</span>
-                </LemonButton>
-
-                <LemonButton
-                    size="small"
-                    type="tertiary"
-                    icon={<IconRewindPlay className="w-3.5 h-3.5" />}
-                    onClick={() => onInsertCommand('data-session-recordings')}
-                    tooltip="Insert session recordings playlist"
-                >
-                    <span className="text-xs hidden sm:inline">Replays</span>
-                </LemonButton>
-
-                <LemonButton
-                    size="small"
-                    type="tertiary"
-                    icon={<IconToggle className="w-3.5 h-3.5" />}
-                    onClick={() => onInsertCommand('product-feature-flag')}
-                    tooltip="Insert feature flag"
-                >
-                    <span className="text-xs hidden sm:inline">Flag</span>
-                </LemonButton>
-
-                <LemonButton
-                    size="small"
-                    type="tertiary"
-                    icon={<IconFlask className="w-3.5 h-3.5" />}
-                    onClick={() => onInsertCommand('experiment')}
-                    tooltip="Insert experiment block"
-                >
-                    <span className="text-xs hidden md:inline">Experiment</span>
+                    <span className="text-xs hidden sm:inline">Heading</span>
                 </LemonButton>
 
                 <LemonButton
@@ -101,7 +62,7 @@ export function NotebookFloatingToolbar({
                     onClick={() => onInsertCommand('media-table')}
                     tooltip="Insert table"
                 >
-                    <span className="text-xs hidden lg:inline">Table</span>
+                    <span className="text-xs hidden sm:inline">Table</span>
                 </LemonButton>
             </div>
         </div>

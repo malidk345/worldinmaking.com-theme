@@ -1,6 +1,13 @@
-import { LemonModal, LemonButton, LemonDivider, LemonBanner } from '~nb-lib/lemon-ui/index'
-import { IconCopy } from '@posthog/icons'
-import { getNotebook, exportNotebookAsJSON, exportNotebookAsMarkdown } from './notebookStorage'
+import { useMemo, useState } from 'react'
+import { LemonModal, LemonButton, LemonDivider, LemonBanner, LemonTag } from '~nb-lib/lemon-ui/index'
+import { IconCopy, IconCheck } from '@posthog/icons'
+import {
+    getNotebook,
+    getNotebookPublicUrl,
+    getNotebookEditorUrl,
+    exportNotebookAsJSON,
+    exportNotebookAsMarkdown,
+} from './notebookStorage'
 
 interface NotebookShareModalProps {
     isOpen: boolean
@@ -15,16 +22,21 @@ export function NotebookShareModal({
     notebookId,
     notebookTitle,
 }: NotebookShareModalProps) {
-    const handleCopyInternalLink = async () => {
-        await navigator.clipboard.writeText(window.location.href)
-    }
+    const [copied, setCopied] = useState<'public' | 'editor' | null>(null)
 
-    const handleCopyTemplateLink = async () => {
-        const notebook = getNotebook(notebookId)
-        if (!notebook) return
-        const encodedContent = encodeURIComponent(JSON.stringify(notebook.content))
-        const templateLink = `${window.location.origin}${window.location.pathname}#/canvas?template=${encodedContent}`
-        await navigator.clipboard.writeText(templateLink)
+    const notebook = useMemo(() => (isOpen ? getNotebook(notebookId) : undefined), [isOpen, notebookId])
+    const isPublished = Boolean(notebook?.isPublished)
+    const publicUrl = notebook ? getNotebookPublicUrl(notebook) : ''
+    const editorUrl = notebook ? getNotebookEditorUrl(notebook) : ''
+
+    const copy = async (kind: 'public' | 'editor', value: string) => {
+        try {
+            await navigator.clipboard.writeText(value)
+            setCopied(kind)
+            setTimeout(() => setCopied(null), 1500)
+        } catch {
+            /* ignore */
+        }
     }
 
     const handleDownloadMd = () => {
@@ -63,19 +75,37 @@ export function NotebookShareModal({
             }
         >
             <div className="flex flex-col gap-4">
-                <LemonBanner type="info">This notebook is stored locally</LemonBanner>
-                
+                {isPublished ? (
+                    <LemonBanner type="success">
+                        This notebook is published. Anyone with the public link can read it on this device browser
+                        (local storage).
+                    </LemonBanner>
+                ) : (
+                    <LemonBanner type="info">
+                        Draft only — publish from the Publish menu to enable a public read link.
+                    </LemonBanner>
+                )}
+
                 <div>
-                    <h3 className="text-base font-semibold mb-2">Internal link</h3>
+                    <div className="flex items-center gap-2 mb-2">
+                        <h3 className="text-base font-semibold m-0">Public link</h3>
+                        <LemonTag type={isPublished ? 'success' : 'muted'}>
+                            {isPublished ? 'Live' : 'Unavailable'}
+                        </LemonTag>
+                    </div>
                     <div className="flex items-center gap-2">
                         <input
                             type="text"
-                            value={window.location.href}
+                            value={isPublished ? publicUrl : 'Publish the notebook to get a public link'}
                             readOnly
-                            className="flex-1 px-3 py-2 border rounded bg-gray-50 text-sm"
+                            className="flex-1 px-3 py-2 border border-border rounded bg-surface-secondary text-sm text-primary"
                         />
-                        <LemonButton icon={<IconCopy />} onClick={handleCopyInternalLink}>
-                            Copy
+                        <LemonButton
+                            icon={copied === 'public' ? <IconCheck /> : <IconCopy />}
+                            disabled={!isPublished}
+                            onClick={() => copy('public', publicUrl)}
+                        >
+                            {copied === 'public' ? 'Copied' : 'Copy'}
                         </LemonButton>
                     </div>
                 </div>
@@ -83,22 +113,30 @@ export function NotebookShareModal({
                 <LemonDivider />
 
                 <div>
-                    <h3 className="text-base font-semibold mb-2">Template link</h3>
-                    <p className="text-xs text-gray-500 mb-2">
-                        Share this link to let others create a canvas from this notebook's content.
-                    </p>
-                    <LemonButton icon={<IconCopy />} onClick={handleCopyTemplateLink}>
-                        Copy template link
-                    </LemonButton>
+                    <h3 className="text-base font-semibold mb-2">Editor link</h3>
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="text"
+                            value={editorUrl}
+                            readOnly
+                            className="flex-1 px-3 py-2 border border-border rounded bg-surface-secondary text-sm text-primary"
+                        />
+                        <LemonButton
+                            icon={copied === 'editor' ? <IconCheck /> : <IconCopy />}
+                            onClick={() => copy('editor', editorUrl)}
+                        >
+                            {copied === 'editor' ? 'Copied' : 'Copy'}
+                        </LemonButton>
+                    </div>
                 </div>
 
                 <LemonDivider />
 
                 <div>
-                    <h3 className="text-base font-semibold mb-2">Export options</h3>
+                    <h3 className="text-base font-semibold mb-2">Export</h3>
                     <div className="flex gap-2">
                         <LemonButton type="secondary" onClick={handleDownloadMd}>
-                            Download .md
+                            Download Markdown
                         </LemonButton>
                         <LemonButton type="secondary" onClick={handleExportJSON}>
                             Export JSON

@@ -13,6 +13,13 @@ interface SidebarContextPanelMenuProps {
     notebookTitle?: string
     onOpenAI?: () => void
     onCreateNew?: () => void
+    onPublish?: (meta: {
+        title: string
+        subtitle: string
+        coverImage: string
+        category: string
+        isPublished: boolean
+    }) => void
 }
 
 /**
@@ -26,20 +33,28 @@ export function SidebarContextPanelMenu({
     notebookTitle = 'Untitled Notebook',
     onOpenAI,
     onCreateNew,
+    onPublish,
 }: SidebarContextPanelMenuProps) {
     const hostTheme = useSiteThemeSync()
     const isDark = hostTheme === 'dark'
     const [isOpen, setIsOpen] = useState(false)
     const [title, setTitle] = useState(notebookTitle)
-    const [subtitle, setSubtitle] = useState('Production release specifications & telemetry RCA log')
+    const [subtitle, setSubtitle] = useState('')
     const [coverUrl, setCoverUrl] = useState('')
-    const [category, setCategory] = useState('engineering')
+    const [category, setCategory] = useState('research')
     const [isPublished, setIsPublished] = useState(false)
     const [savedSuccess, setSavedSuccess] = useState(false)
 
     const handleSave = () => {
         setIsPublished(true)
         setSavedSuccess(true)
+        onPublish?.({
+            title: title || notebookTitle,
+            subtitle,
+            coverImage: coverUrl,
+            category,
+            isPublished: true,
+        })
         setTimeout(() => {
             setSavedSuccess(false)
             setIsOpen(false)
@@ -112,13 +127,13 @@ export function SidebarContextPanelMenu({
                     <LemonSelect
                         size="small"
                         value={category}
-                        onChange={(val) => setCategory(val || 'engineering')}
+                        onChange={(val) => setCategory(val || 'research')}
                         fullWidth
                         options={[
-                            { value: 'engineering', label: 'Engineering & RCA' },
-                            { value: 'product', label: 'Product Spec' },
-                            { value: 'analytics', label: 'HogQL Telemetry' },
-                            { value: 'research', label: 'User Research' },
+                            { value: 'research', label: 'Research' },
+                            { value: 'essay', label: 'Essay' },
+                            { value: 'debate', label: 'Debate' },
+                            { value: 'notes', label: 'Notes' },
                         ]}
                     />
                 </div>

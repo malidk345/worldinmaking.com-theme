@@ -3,6 +3,7 @@ import { MarkdownNotebook } from './lib/components/MarkdownNotebook/MarkdownNote
 import { LemonButton, LemonInput, LemonTag, LemonBanner } from '~nb-lib/lemon-ui/index'
 import { ArrowLeft } from 'lucide-react'
 import { buildExtraInsertCommands } from './scenes/notebooks/extraInsertCommands.tsx'
+import { WIM_HIDDEN_INSERT_COMMAND_KEYS } from './scenes/notebooks/hiddenInsertCommands'
 import {
     StoredNotebook,
     DEFAULT_NOTEBOOKS,
@@ -12,7 +13,9 @@ import {
     createNotebook,
     deleteNotebook,
     duplicateNotebook,
+    publishNotebook,
 } from './scenes/notebooks/notebookStorage'
+import { NotebookPublicView } from './scenes/notebooks/NotebookPublicView'
 import { NotebooksListScene } from './scenes/notebooks/NotebooksListScene'
 import { TemplatesGallery } from './scenes/notebooks/TemplatesGallery'
 import { NotebookCanvasScene } from './scenes/notebooks/NotebookCanvasScene'
@@ -58,11 +61,16 @@ type Route =
   | { page: 'templates' }
   | { page: 'canvas' }
   | { page: 'editor'; notebookId: string }
+  | { page: 'public'; notebookId: string }
 
 function parseHash(hash: string): Route {
   const h = hash.replace(/^#\/?/, '')
   if (h.startsWith('notebook/')) {
     return { page: 'editor', notebookId: h.replace('notebook/', '') }
+  }
+  // Public read view: #/n/:short_id
+  if (h.startsWith('n/')) {
+    return { page: 'public', notebookId: h.replace(/^n\//, '') }
   }
   if (h === 'canvas') return { page: 'canvas' }
   if (h === 'templates') return { page: 'templates' }
@@ -81,6 +89,7 @@ function useHashRouter(): [Route, (route: Route) => void] {
   const navigate = useCallback((newRoute: Route) => {
     let hash = '#/'
     if (newRoute.page === 'editor') hash = `#/notebook/${newRoute.notebookId}`
+    else if (newRoute.page === 'public') hash = `#/n/${newRoute.notebookId}`
     else if (newRoute.page === 'canvas') hash = '#/canvas'
     else if (newRoute.page === 'templates') hash = '#/templates'
     window.location.hash = hash
@@ -154,16 +163,50 @@ export function App() {
     }
   }, [route])
 
-  // Auto-save with debounce
+  // Auto-save with debounce (snapshots throttled inside saveNotebook)
   useEffect(() => {
     if (!currentNotebook || route.page !== 'editor') return
     setSyncStatus('edited')
     const timer = setTimeout(() => {
-      saveNotebook({ ...currentNotebook, title, content: markdown })
+      const saved = saveNotebook({ ...currentNotebook, title, content: markdown })
+      setCurrentNotebook(saved)
       setSyncStatus('saved')
     }, 800)
     return () => clearTimeout(timer)
   }, [markdown, title]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handlePublish = useCallback(
+    (meta: {
+      title?: string
+      subtitle?: string
+      coverImage?: string
+      category?: string
+      tags?: string
+      isPublished?: boolean
+    }) => {
+      if (!currentNotebook) return
+      const tags = meta.tags
+        ? meta.tags
+              .split(',')
+              .map((t) => t.trim())
+              .filter(Boolean)
+        : undefined
+      const saved = publishNotebook(currentNotebook.id, {
+        publicTitle: meta.title || title,
+        subtitle: meta.subtitle,
+        coverUrl: meta.coverImage,
+        category: meta.category,
+        tags,
+        isPublished: meta.isPublished !== false,
+      })
+      if (saved) {
+        setCurrentNotebook(saved)
+        setTitle(saved.title)
+        setSyncStatus('saved')
+      }
+    },
+    [currentNotebook, title]
+  )
 
   const handleCreateNew = () => {
     const nb = createNotebook()
@@ -207,6 +250,14 @@ export function App() {
     setMarkdown(content)
     setMarkdownVersion((v) => v + 1)
     setShowHistory(false)
+    if (currentNotebook) {
+      const saved = saveNotebook(
+        { ...currentNotebook, title, content },
+        { snapshot: true, snapshotLabel: 'Restored from history' }
+      )
+      setCurrentNotebook(saved)
+      setSyncStatus('saved')
+    }
   }
 
   const handleCanvasSave = (id: string) => {
@@ -240,6 +291,28 @@ export function App() {
       {/* pb so last lines aren't clipped under window edge when scrolling */}
       <main className="p-3 sm:p-6 lg:p-8 pb-16 sm:pb-20 max-w-[1400px] mx-auto space-y-4 sm:space-y-6">
         <ErrorBoundary>
+          {/* ---------- Public notebook (read-only share link) ---------- */}
+          {route.page === 'public' && (() => {
+            const pub = getNotebook(route.notebookId)
+            if (!pub) {
+              return (
+                <div className="p-12 text-center text-muted space-y-4">
+                  <p className="text-lg">Published notebook not found ({route.notebookId})</p>
+                  <LemonButton type="primary" onClick={() => navigate({ page: 'list' })}>
+                    Back to notebooks
+                  </LemonButton>
+                </div>
+              )
+            }
+            return (
+              <NotebookPublicView
+                notebook={pub}
+                onBack={() => navigate({ page: 'list' })}
+                onOpenEditor={() => navigate({ page: 'editor', notebookId: pub.id })}
+              />
+            )
+          })()}
+
           {/* ---------- Notebooks List (Default Entry Scene) ---------- */}
           {route.page === 'list' && (
             <NotebooksListScene
@@ -314,6 +387,7 @@ export function App() {
                       notebookTitle={currentNotebook.title}
                       onOpenAI={() => setShowAIModal(true)}
                       onCreateNew={handleCreateNew}
+                      onPublish={handlePublish}
                     />
                   </div>
                 </div>
@@ -333,6 +407,7 @@ export function App() {
                     focusAIPromptRequest={aiPromptRequest}
                     onChange={(val) => setMarkdown(val)}
                     extraInsertCommands={extraCommands}
+                    hiddenInsertCommandKeys={WIM_HIDDEN_INSERT_COMMAND_KEYS}
                   />
                 </div>
 
@@ -366,6 +441,7 @@ export function App() {
                   isOpen={showPublishModal}
                   onClose={() => setShowPublishModal(false)}
                   notebookTitle={currentNotebook.title}
+                  onPublishSuccess={handlePublish}
                 />
               </div>
             ) : (
