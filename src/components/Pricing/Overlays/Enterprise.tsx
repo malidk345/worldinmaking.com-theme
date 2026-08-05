@@ -38,7 +38,7 @@ export default function Enterprise({ setOpen, open }: { setOpen: (open: boolean)
                                     width="55"
                                     height="43"
                                     rx="3.5"
-                                    stroke="#E5E7DF"
+                                    stroke="#DFE0DB"
                                     shapeRendering="crispEdges"
                                 />
                             </g>

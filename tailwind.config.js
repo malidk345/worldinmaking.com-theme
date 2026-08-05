@@ -44,7 +44,7 @@ module.exports = {
         extend: {
             backgroundColor: {
                 light: '#fff',
-                'accent-light': '#e5e7df',
+                'accent-light': '#dfe0db',
                 dark: '#1e1f23',
                 'accent-dark': '#232429',
                 primary: 'rgb(var(--bg) / <alpha-value>)',
@@ -93,7 +93,7 @@ module.exports = {
             },
             borderColor: {
                 light: '#fff',
-                'accent-light': '#e5e7df',
+                'accent-light': '#dfe0db',
                 dark: '#1e1f23',
                 'accent-dark': '#232429',
                 button: '#1D4ED8',
@@ -121,18 +121,19 @@ module.exports = {
                 16: '16px',
             },
             colors: {
-                // Warm PostHog-3000 grays (notebook base.scss / --color-bg-3000-light)
-                'light-1': '#F3F4EF', // --color-bg-3000-light
-                'light-2': '#EFF0EA', // posthog-3000-100
-                'light-3': '#E5E7DF', // posthog-3000-150
-                'light-4': '#DBDED4', // posthog-3000-200
-                'light-5': '#CFD0C8', // posthog-3000-250
-                'light-6': '#C5C7BD', // posthog-3000-300
-                'light-7': '#B9BBAF', // posthog-3000-350
-                'light-8': '#DADBD2', // border-3000-light
-                'light-9': '#939583', // posthog-3000-500
-                'light-10': '#ABAD9F', // posthog-3000-400
-                'light-11': '#5F5F5F', // --muted
+                // True warm grays from notebook page tone (#f3f4ef) — NOT PostHog beige/olive 3000
+                // Keep R≈G with B slightly lower (warmth) without green-olive cast.
+                'light-1': '#F3F4EF', // notebook warm gray base
+                'light-2': '#E9EAE5',
+                'light-3': '#DFE0DB',
+                'light-4': '#D5D6D1',
+                'light-5': '#CBCCC7',
+                'light-6': '#C1C2BD',
+                'light-7': '#B7B8B3',
+                'light-8': '#D0D1CC',
+                'light-9': '#7A7B76',
+                'light-10': '#A8A9A4',
+                'light-11': '#555650',
                 'light-12': '#1D1F27',
 
                 transparent: 'transparent',
@@ -184,7 +185,7 @@ module.exports = {
                 salmon: '#F35454',
                 seagreen: '#30ABC6',
                 'sky-blue': '#2EA2D3',
-                tan: '#EFF0EA',
+                tan: '#E9EAE5',
                 teal: '#29DBBB',
                 'teal-2': '#6BC0B3',
                 'teal-2-dark': '#34796F',
@@ -201,7 +202,7 @@ module.exports = {
                 primary: 'rgb(var(--bg) / <alpha-value>)',
 
                 light: '#fff',
-                'accent-light': '#e5e7df',
+                'accent-light': '#dfe0db',
                 dark: '#1e1f23',
                 'accent-dark': '#232429',
 

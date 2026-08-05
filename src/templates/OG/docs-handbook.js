@@ -17,7 +17,7 @@ module.exports = docsHandbook = ({ title, timeToRead, excerpt, lastUpdated, brea
         font-family: "MatterVF", "sans-serif";
         overflow: hidden;
         color: black;
-        background-color: #eff0ea;
+        background-color: #e9eae5;
         margin: 0;
       }
       .content {
@@ -165,8 +165,8 @@ module.exports = docsHandbook = ({ title, timeToRead, excerpt, lastUpdated, brea
               width: 856px;
               background: linear-gradient(
                           180deg,
-                          #eff0ea00 0%,
-                          #eff0ea 100%
+                          #e9eae500 0%,
+                          #e9eae5 100%
                         );
               "></div>
           <div style="font-size: 28px">
@@ -271,8 +271,8 @@ module.exports = docsHandbook = ({ title, timeToRead, excerpt, lastUpdated, brea
               >
                 <path
                   d="M1 32C1 49.1208 14.8792 63 32 63C49.1208 63 63 49.1208 63 32C63 14.8792 49.1208 1 32 1C14.8792 1 1 14.8792 1 32Z"
-                  fill="#E5E7DF"
-                  stroke="#eff0ea"
+                  fill="#DFE0DB"
+                  stroke="#e9eae5"
                   stroke-width="2"
                 />
                 <g opacity="0.3">
