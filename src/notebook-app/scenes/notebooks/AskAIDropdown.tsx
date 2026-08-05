@@ -1,5 +1,11 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { LemonButton, LemonSelect, ProfilePicture, LemonTag } from '~nb-lib/lemon-ui/index'
+import {
+    LemonDropdown,
+    LemonButton,
+    LemonSelect,
+    LemonTag,
+    ProfilePicture,
+} from '~nb-lib/lemon-ui/index'
 import { IconSparkles, IconChevronDown, IconArrowRight, IconTrash, IconPlus } from '@posthog/icons'
 import {
     PHILOSOPHER_BOTS,
@@ -10,8 +16,6 @@ import {
 } from '~nb-lib/philosophers'
 import { useSiteThemeSync } from '../../lib/useSiteThemeSync'
 import { ReasoningAnswer } from './ReasoningAnswer'
-import { Popover } from 'components/RadixUI/Popover'
-import OSButton from 'components/OSButton'
 
 export interface AskAIDropdownProps {
     onInsertPromptBlock: (initialPrompt?: string) => void
@@ -61,8 +65,16 @@ function buildBotSelectOptions(roster: PhilosopherBot[]) {
     ]
 }
 
+/**
+ * Content layout matches CollaboratorsBanner / NotebookSelectButton.
+ * Shell (bg, border, radius, shadow) comes from Lemon Popover__box — do not re-chrome here.
+ */
+const panelClassName =
+    'w-[min(100vw-1.5rem,28rem)] sm:w-[36rem] max-h-[min(78dvh,40rem)] p-2 sm:p-3 space-y-3 text-xs overflow-y-auto overscroll-contain'
+
 export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.Element {
     const hostTheme = useSiteThemeSync()
+    const isDark = hostTheme === 'dark'
     const [isOpen, setIsOpen] = useState(false)
     const [prompt, setPrompt] = useState('')
     const [roster, setRoster] = useState<PhilosopherBot[]>(PHILOSOPHER_BOTS)
@@ -162,7 +174,7 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                     : `Request failed (${res.status}). Try again.`)
 
             if (data?.success === false || res.status >= 400) {
-                console.warn('[AskAI] provider failure', {
+                console.warn('[Ask AI] provider failure', {
                     status: res.status,
                     provider: data?.provider,
                     configured: data?.configured,
@@ -204,7 +216,7 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                 },
             ])
         } catch (error) {
-            console.warn('[AskAI] philosopher-bot error:', error)
+            console.warn('[Ask AI] philosopher-bot error:', error)
             setMessages((prev) => [
                 ...prev,
                 {
@@ -220,222 +232,203 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
         }
     }
 
-    // Same shell as site Display Options / OS Header menus
-    const contentClassName =
-        'w-[min(100vw-1rem,28rem)] sm:w-[min(96vw,36rem)] lg:w-[min(96vw,40rem)] max-h-[min(78dvh,40rem)] overflow-hidden p-0 border border-primary'
-
-    return (
-        <Popover
-            open={isOpen}
-            onOpenChange={setIsOpen}
-            dataScheme="primary"
-            side="bottom"
-            sideOffset={8}
-            contentClassName={contentClassName}
-            trigger={
-                <OSButton
-                    size="md"
-                    icon={<IconSparkles className="size-4" />}
-                    hover="background"
-                    active={isOpen}
-                    tooltip="Open philosopher AI chat"
-                >
-                    <span className="hidden sm:inline font-medium">Ask AI</span>
-                    <IconChevronDown className="size-5 -mr-1 hidden sm:inline" />
-                </OSButton>
-            }
-        >
-            {/* Lemon controls still need notebook scope for their CSS variables */}
-            <div
-                className={`notebook-app-scope flex flex-col gap-3 p-3 max-h-[min(78dvh,40rem)] overflow-y-auto overscroll-contain ${
-                    hostTheme === 'dark' ? 'dark' : ''
-                }`}
-                data-host-theme={hostTheme}
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="flex items-center justify-between gap-2 shrink-0 pb-2 border-b border-primary">
-                    <div className="flex items-center gap-2 min-w-0">
-                        <ProfilePicture user={philosopherAsUser(activeBot)} size="md" />
-                        <div className="min-w-0">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                                <span className="font-bold text-primary text-sm truncate">{activeBot.displayName}</span>
-                                <LemonTag type="muted" size="small">
-                                    Bot
-                                </LemonTag>
-                            </div>
-                            <p className="text-[11px] text-secondary mt-0.5 mb-0 truncate">{activeBot.shortStance}</p>
+    const overlay = (
+        <div className={panelClassName} onClick={(e) => e.stopPropagation()}>
+            {/* Header — same structure as CollaboratorsBanner */}
+            <div className="flex items-center justify-between border-b border-border pb-2 gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                    <ProfilePicture user={philosopherAsUser(activeBot)} size="md" />
+                    <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="font-semibold text-primary truncate">{activeBot.displayName}</span>
+                            <LemonTag type="muted" size="small">
+                                Bot
+                            </LemonTag>
                         </div>
+                        <p className="text-[10px] text-muted mt-0.5 mb-0 truncate">{activeBot.shortStance}</p>
                     </div>
-                    {hasThread && (
-                        <OSButton
-                            size="sm"
-                            icon={<IconTrash />}
-                            hover="background"
-                            onClick={() => setMessages([])}
-                            tooltip="Clear conversation"
-                        >
-                            <span className="hidden sm:inline">Clear</span>
-                        </OSButton>
-                    )}
                 </div>
-
-                {!hasThread && (
-                    <div className="space-y-2.5 shrink-0">
-                        <p className="text-xs text-secondary mb-0 leading-snug">
-                            Chat with a resident philosopher. Stance and style come from the WorldInMaking persona
-                            engine.
-                        </p>
-                        <div className="flex flex-wrap gap-1.5">
-                            {SUGGESTIONS.map((suggestion) => (
-                                <button
-                                    key={suggestion}
-                                    type="button"
-                                    className="text-left text-xs px-2.5 py-1.5 rounded border border-primary bg-primary hover:bg-accent transition-colors text-primary"
-                                    onClick={() => void sendPrompt(suggestion)}
-                                >
-                                    {suggestion}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
                 {hasThread && (
-                    <div className="flex-1 min-h-0 max-h-[min(38dvh,280px)] sm:max-h-[min(42dvh,340px)] overflow-y-auto overscroll-contain space-y-3 pr-0.5 text-xs leading-relaxed">
-                        {messages.map((msg) => {
-                            const bot =
-                                msg.sender === 'ai' && msg.philosopherId
-                                    ? getPhilosopherBot(msg.philosopherId, roster)
-                                    : activeBot
-                            return (
-                                <div
-                                    key={msg.id}
-                                    className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
-                                >
-                                    <div className="flex items-center gap-1.5 mb-1 text-[10px] text-secondary font-mono">
-                                        {msg.sender === 'ai' ? (
-                                            <>
-                                                <ProfilePicture user={philosopherAsUser(bot)} size="xs" />
-                                                <span className="font-semibold text-primary">{bot.name}</span>
-                                            </>
-                                        ) : (
-                                            <span className="font-semibold">You</span>
-                                        )}
-                                        <span>• {msg.timestamp}</span>
+                    <LemonButton
+                        size="xsmall"
+                        type="tertiary"
+                        icon={<IconTrash />}
+                        onClick={() => setMessages([])}
+                        tooltip="Clear conversation"
+                    >
+                        Clear
+                    </LemonButton>
+                )}
+            </div>
+
+            {!hasThread && (
+                <div className="space-y-2">
+                    <p className="text-secondary mb-0 leading-snug">
+                        Chat with a resident philosopher. Stance and style come from the WorldInMaking persona engine.
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                        {SUGGESTIONS.map((suggestion) => (
+                            <LemonButton
+                                key={suggestion}
+                                size="xsmall"
+                                type="secondary"
+                                onClick={() => void sendPrompt(suggestion)}
+                            >
+                                {suggestion}
+                            </LemonButton>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {hasThread && (
+                <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+                    {messages.map((msg) => {
+                        const bot =
+                            msg.sender === 'ai' && msg.philosopherId
+                                ? getPhilosopherBot(msg.philosopherId, roster)
+                                : activeBot
+                        return (
+                            <div
+                                key={msg.id}
+                                className={`flex gap-2.5 items-start p-1.5 rounded hover:bg-surface-secondary transition-colors ${
+                                    msg.sender === 'user' ? 'flex-row-reverse' : ''
+                                }`}
+                            >
+                                {msg.sender === 'ai' ? (
+                                    <ProfilePicture user={philosopherAsUser(bot)} size="sm" />
+                                ) : (
+                                    <ProfilePicture name="You" size="sm" />
+                                )}
+                                <div className="flex-1 min-w-0 space-y-1">
+                                    <div className="flex justify-between items-center gap-2">
+                                        <span className="font-semibold text-primary truncate">
+                                            {msg.sender === 'ai' ? bot.name : 'You'}
+                                        </span>
+                                        <span className="text-[10px] text-muted shrink-0">{msg.timestamp}</span>
                                     </div>
 
-                                    <div
-                                        className={`flex flex-col gap-1.5 max-w-[92%] ${
-                                            msg.sender === 'user' ? 'items-end' : 'items-start'
-                                        }`}
-                                    >
-                                        {msg.sender === 'ai' && (msg.thinkingStages?.length || msg.thought) && (
-                                            <ReasoningAnswer
-                                                id={`${msg.id}-thought`}
-                                                completed
-                                                content={msg.thought || ''}
-                                                stages={msg.thinkingStages}
-                                                latencyMs={msg.latencyMs}
-                                            />
-                                        )}
+                                    {msg.sender === 'ai' && (msg.thinkingStages?.length || msg.thought) && (
+                                        <ReasoningAnswer
+                                            id={`${msg.id}-thought`}
+                                            completed
+                                            content={msg.thought || ''}
+                                            stages={msg.thinkingStages}
+                                            latencyMs={msg.latencyMs}
+                                        />
+                                    )}
 
-                                        <div
-                                            className={`p-3 rounded border border-primary text-primary whitespace-pre-wrap w-full ${
-                                                msg.sender === 'user' ? 'bg-accent' : 'bg-primary'
-                                            }`}
+                                    <p className="text-secondary leading-snug whitespace-pre-wrap mb-0">{msg.text}</p>
+
+                                    {msg.sender === 'ai' && (
+                                        <LemonButton
+                                            size="xsmall"
+                                            type="tertiary"
+                                            icon={<IconPlus />}
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                onInsertPromptBlock(`${msg.text}\n\n— ${bot.displayName}`)
+                                                setIsOpen(false)
+                                            }}
                                         >
-                                            {msg.text}
-                                        </div>
-
-                                        {msg.sender === 'ai' && (
-                                            <div className="self-start mt-0.5">
-                                                <OSButton
-                                                    size="sm"
-                                                    icon={<IconPlus />}
-                                                    hover="background"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation()
-                                                        e.preventDefault()
-                                                        const attribution = `— ${bot.displayName}`
-                                                        onInsertPromptBlock(`${msg.text}\n\n${attribution}`)
-                                                        setIsOpen(false)
-                                                    }}
-                                                    tooltip="Insert into notebook"
-                                                >
-                                                    Insert into Notebook
-                                                </OSButton>
-                                            </div>
-                                        )}
-                                    </div>
+                                            Insert into Notebook
+                                        </LemonButton>
+                                    )}
                                 </div>
-                            )
-                        })}
+                            </div>
+                        )
+                    })}
 
-                        {isGenerating && (
-                            <div className="flex flex-col gap-1.5 items-start w-full max-w-[92%]">
-                                <div className="flex items-center gap-1.5 text-[10px] text-secondary font-mono">
-                                    <ProfilePicture user={philosopherAsUser(activeBot)} size="xs" />
-                                    <span className="font-semibold text-primary">{activeBot.name}</span>
-                                </div>
+                    {isGenerating && (
+                        <div className="flex gap-2.5 items-start p-1.5">
+                            <ProfilePicture user={philosopherAsUser(activeBot)} size="sm" />
+                            <div className="flex-1 min-w-0 space-y-1">
+                                <span className="font-semibold text-primary">{activeBot.name}</span>
                                 <ReasoningAnswer id="live-thinking" completed={false} />
                             </div>
-                        )}
-                        <div ref={chatEndRef} />
-                    </div>
-                )}
+                        </div>
+                    )}
+                    <div ref={chatEndRef} />
+                </div>
+            )}
 
-                <div className="relative flex flex-col border border-primary bg-primary rounded p-2.5 sm:p-3 focus-within:border-input transition-colors shrink-0">
-                    <textarea
-                        ref={textareaRef}
-                        value={prompt}
-                        onChange={(e) => setPrompt(e.target.value)}
-                        onKeyDown={(e) => {
-                            e.stopPropagation()
-                            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                                e.preventDefault()
-                                void sendPrompt()
-                            }
-                        }}
-                        placeholder={
-                            messages.length === 0
-                                ? `Ask ${activeBot.name} anything...`
-                                : `Reply to ${activeBot.name} (Cmd + Enter)...`
+            {/* Composer — same footer rhythm as CollaboratorsBanner */}
+            <div className="border-t border-border pt-2 space-y-2">
+                <textarea
+                    ref={textareaRef}
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    onKeyDown={(e) => {
+                        e.stopPropagation()
+                        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                            e.preventDefault()
+                            void sendPrompt()
                         }
-                        rows={3}
-                        className="w-full bg-transparent text-sm text-primary placeholder:text-secondary focus:outline-none resize-none leading-relaxed min-h-[72px] sm:min-h-[96px] p-0 border-none shadow-none"
-                    />
+                    }}
+                    placeholder={
+                        messages.length === 0
+                            ? `Ask ${activeBot.name} anything...`
+                            : `Reply to ${activeBot.name} (Cmd + Enter)...`
+                    }
+                    rows={3}
+                    className="w-full bg-surface-secondary border border-border rounded p-2 text-xs text-primary placeholder:text-muted focus:outline-none focus:border-primary resize-none leading-relaxed"
+                />
 
-                    <div className="flex items-center justify-between pt-2 mt-1 gap-2 min-w-0">
-                        <div className="notebook-app-scope min-w-0 max-w-[min(200px,45vw)] sm:max-w-[min(280px,50vw)]">
-                            <LemonSelect
-                                value={selectedBotId}
-                                onChange={(val) => {
-                                    setSelectedBotId(val || roster[0]!.id)
-                                    setMessages([])
-                                }}
-                                options={botSelectOptions}
-                                size="small"
-                                type="tertiary"
-                                dropdownPlacement="top-start"
-                                dropdownMatchSelectWidth={false}
-                                className="border border-primary !py-0.5 !px-2 w-full min-w-0"
-                            />
-                        </div>
+                <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0 max-w-[55%]">
+                        <LemonSelect
+                            value={selectedBotId}
+                            onChange={(val) => {
+                                setSelectedBotId(val || roster[0]!.id)
+                                setMessages([])
+                            }}
+                            options={botSelectOptions}
+                            size="small"
+                            type="tertiary"
+                            dropdownPlacement="top-start"
+                            dropdownMatchSelectWidth={false}
+                            className="w-full"
+                        />
+                    </div>
 
-                        <div className="flex items-center gap-2 shrink-0">
-                            <span className="text-secondary text-[10px] hidden sm:inline font-mono">Cmd + Enter</span>
-                            <OSButton
-                                size="md"
-                                variant="primary"
-                                icon={<IconArrowRight className="size-4" />}
-                                onClick={() => void sendPrompt()}
-                                disabled={isGenerating || !prompt.trim()}
-                                tooltip={`Send to ${activeBot.name}`}
-                            />
-                        </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-muted text-[10px] hidden sm:inline">Cmd + Enter</span>
+                        <LemonButton
+                            size="small"
+                            type="primary"
+                            icon={<IconArrowRight />}
+                            onClick={() => void sendPrompt()}
+                            disabled={isGenerating || !prompt.trim()}
+                            tooltip={`Send to ${activeBot.name}`}
+                        />
                     </div>
                 </div>
             </div>
-        </Popover>
+        </div>
+    )
+
+    return (
+        <LemonDropdown
+            overlay={overlay}
+            visible={isOpen}
+            onVisibilityChange={setIsOpen}
+            closeOnClickInside={false}
+            padded={false}
+            placement="bottom-end"
+            fallbackPlacements={['bottom-start', 'top-end', 'top-start']}
+            className={`notebook-app-scope ${isDark ? 'dark' : ''}`}
+        >
+            <LemonButton
+                size="small"
+                type="secondary"
+                icon={<IconSparkles />}
+                // No custom size classes — LemonButton__icon sets icon size like the other toolbar buttons
+                sideIcon={<IconChevronDown />}
+                active={isOpen}
+                tooltip="Open philosopher AI chat"
+            >
+                <span className="hidden sm:inline">Ask AI</span>
+            </LemonButton>
+        </LemonDropdown>
     )
 }
