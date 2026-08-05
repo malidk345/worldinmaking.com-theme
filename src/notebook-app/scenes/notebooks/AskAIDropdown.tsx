@@ -31,6 +31,8 @@ export interface ChatMessage {
     thought?: string
     /** Structured stages: perceive → frame → tension → move */
     thinkingStages?: ThinkingStageView[]
+    /** Provider latency for "Thought for Xs" */
+    latencyMs?: number
 }
 
 const SUGGESTIONS = [
@@ -189,6 +191,11 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                       ? stages.map((s) => s.text).join('\n\n')
                       : undefined
 
+            const latencyMs =
+                typeof data?.latencyMs === 'number' && Number.isFinite(data.latencyMs)
+                    ? data.latencyMs
+                    : undefined
+
             setMessages((prev) => [
                 ...prev,
                 {
@@ -197,6 +204,7 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                     text: reply,
                     thought: thoughtText,
                     thinkingStages: stages.length > 0 ? stages : undefined,
+                    latencyMs,
                     philosopherId: activeBot.id,
                     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 },
@@ -321,7 +329,7 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                                                         completed
                                                         content={msg.thought || ''}
                                                         stages={msg.thinkingStages}
-                                                        completedLabel="Thought"
+                                                        latencyMs={msg.latencyMs}
                                                     />
                                                 )}
 
@@ -365,11 +373,8 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                                         <ProfilePicture user={philosopherAsUser(activeBot)} size="xs" />
                                         <span className="font-semibold text-primary">{activeBot.name}</span>
                                     </div>
-                                    <ReasoningAnswer
-                                        id="live-thinking"
-                                        completed={false}
-                                        progressLabel="Thinking…"
-                                    />
+                                    {/* Multi-stage pipeline animates while the request is in flight */}
+                                    <ReasoningAnswer id="live-thinking" completed={false} />
                                 </div>
                             )}
                             <div ref={chatEndRef} />
