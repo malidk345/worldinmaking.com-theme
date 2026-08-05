@@ -94,10 +94,19 @@ export function buildThinkingInstruction(taskType: TaskType, depth?: ThinkingDep
 THINKING PROCESS (mandatory before any public reply):
 You must reason privately inside <thinking>...</thinking> using these four stages, in order:
 
-1. <perceive> — What is actually being said or asked? Quote or paraphrase the core claim without spinning it yet.
-2. <frame> — Through your epistemic stance, how does this land? What kind of problem is this for you?
-3. <tension> — Where is the contradiction, blind spot, or pressure point? What would a weak reply ignore?
-4. <move> — What rhetorical / philosophical move will your public reply make? (e.g. reverse, ground in material, diagnose bad faith)
+1. <perceive>...</perceive> — What is actually being said or asked? Quote or paraphrase the core claim without spinning it yet.
+2. <frame>...</frame> — Through your epistemic stance, how does this land? What kind of problem is this for you?
+3. <tension>...</tension> — Where is the contradiction, blind spot, or pressure point? What would a weak reply ignore?
+4. <move>...</move> — What rhetorical / philosophical move will your public reply make? (e.g. reverse, ground in material, diagnose bad faith)
+
+Always close every tag. Example shape:
+<thinking>
+  <perceive>...</perceive>
+  <frame>...</frame>
+  <tension>...</tension>
+  <move>...</move>
+</thinking>
+Public reply here only.
 
 ${lengthHint}
 Do NOT put the public answer inside <thinking>. After </thinking>, write only the public reply in your voice.
@@ -109,9 +118,51 @@ Legacy fallback: if you cannot use nested tags, wrap the whole private reasoning
 }
 
 function extractTag(block: string, tag: string): string {
-    const re = new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`, 'i')
-    const m = block.match(re)
-    return m ? cleanAIOutput(m[1].trim()) : ''
+    const closed = new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`, 'i')
+    const m = block.match(closed)
+    if (m) return cleanAIOutput(m[1].trim())
+    return ''
+}
+
+const STAGE_ORDER = [
+    ['perceive', 'Perceive'],
+    ['frame', 'Frame'],
+    ['tension', 'Tension'],
+    ['move', 'Move'],
+] as const
+
+/**
+ * Parse stage tags even when the model omits closing tags:
+ *   <perceive>…\n<frame>…\n<tension>…\n<move>…
+ */
+function extractStagesLoose(block: string): ThinkingStage[] {
+    const stages: ThinkingStage[] = []
+    for (let i = 0; i < STAGE_ORDER.length; i++) {
+        const [id, label] = STAGE_ORDER[i]
+        const nextId = STAGE_ORDER[i + 1]?.[0]
+        const closed = extractTag(block, id)
+        if (closed) {
+            stages.push({ id, label, text: closed })
+            continue
+        }
+        // open tag until next stage open tag or end
+        const openRe = nextId
+            ? new RegExp(`<${id}>\\s*([\\s\\S]*?)(?=<${nextId}>|<\\/thinking>|<\\/thought>|$)`, 'i')
+            : new RegExp(`<${id}>\\s*([\\s\\S]*?)(?=<\\/thinking>|<\\/thought>|$)`, 'i')
+        const m = block.match(openRe)
+        if (m?.[1]?.trim()) {
+            stages.push({ id, label, text: cleanAIOutput(m[1].trim()) })
+        }
+    }
+    return stages
+}
+
+function stagesFromBlock(inner: string): ThinkingStage[] {
+    const stages = extractStagesLoose(inner)
+    if (stages.length > 0) return stages
+    const raw = cleanAIOutput(inner.replace(/<\/?(?:perceive|frame|tension|move|thinking|thought)>/gi, '').trim())
+    if (raw) return [{ id: 'raw', label: 'Thought', text: raw }]
+    return []
 }
 
 /**
@@ -128,48 +179,59 @@ export function parseThinkingAndReply(
     // Structured <thinking>...</thinking>
     const thinkingMatch = text.match(/<thinking>([\s\S]*?)<\/thinking>/i)
     if (thinkingMatch) {
-        const inner = thinkingMatch[1]
-        const stages: ThinkingStage[] = (
-            [
-                ['perceive', 'Perceive', extractTag(inner, 'perceive')],
-                ['frame', 'Frame', extractTag(inner, 'frame')],
-                ['tension', 'Tension', extractTag(inner, 'tension')],
-                ['move', 'Move', extractTag(inner, 'move')],
-            ] as const
-        )
-            .filter(([, , t]) => !!t)
-            .map(([id, label, t]) => ({ id, label, text: t }))
-
-        // If nested stages missing, use whole thinking body as raw
-        if (stages.length === 0) {
-            const raw = cleanAIOutput(inner)
-            if (raw) {
-                stages.push({ id: 'raw', label: 'Thought', text: raw })
-            }
-        }
-
+        const stages = stagesFromBlock(thinkingMatch[1])
         const reply = cleanAIOutput(text.replace(/<thinking>[\s\S]*?<\/thinking>/i, '').trim())
         const summary = stages.map((s) => s.text).join('\n\n')
 
         return {
-            thinking: { summary, stages, structured: stages.some((s) => s.id !== 'raw'), depth: d },
+            thinking: {
+                summary,
+                stages,
+                structured: stages.some((s) => s.id !== 'raw'),
+                depth: d,
+            },
             reply,
         }
     }
 
-    // Legacy <thought>...</thought>
+    // Legacy <thought>...</thought> (may still contain stage tags)
     const thoughtMatch = text.match(/<thought>([\s\S]*?)<\/thought>/i)
     if (thoughtMatch) {
-        const summary = cleanAIOutput(thoughtMatch[1].trim())
+        const stages = stagesFromBlock(thoughtMatch[1])
         const reply = cleanAIOutput(text.replace(/<thought>[\s\S]*?<\/thought>/i, '').trim())
+        const summary = stages.map((s) => s.text).join('\n\n')
         return {
             thinking: {
                 summary,
-                stages: summary ? [{ id: 'raw', label: 'Thought', text: summary }] : [],
-                structured: false,
+                stages,
+                structured: stages.some((s) => s.id !== 'raw'),
                 depth: d,
             },
             reply,
+        }
+    }
+
+    // Bare stage tags at top of output (model ignored wrapper)
+    if (/<perceive>/i.test(text) || /<frame>/i.test(text)) {
+        const stages = stagesFromBlock(text)
+        // Reply = text after last stage content (heuristic: strip all stage blocks)
+        let reply = text
+        for (const [id] of STAGE_ORDER) {
+            reply = reply
+                .replace(new RegExp(`<${id}>[\\s\\S]*?<\\/${id}>`, 'gi'), '')
+                .replace(new RegExp(`<${id}>[\\s\\S]*?(?=<perceive>|<frame>|<tension>|<move>|$)`, 'gi'), '')
+        }
+        reply = cleanAIOutput(reply)
+        // If stripping left nothing, treat non-stage paragraphs as reply is already empty — keep reply empty rather than duplicating
+        const summary = stages.map((s) => s.text).join('\n\n')
+        return {
+            thinking: {
+                summary,
+                stages,
+                structured: stages.some((s) => s.id !== 'raw'),
+                depth: d,
+            },
+            reply: reply || '',
         }
     }
 
