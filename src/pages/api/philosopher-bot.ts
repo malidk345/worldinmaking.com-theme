@@ -273,25 +273,40 @@ export default async function handler(req: Request) {
         attempts.push(`groq: ${r.detail}`)
     }
 
-    // 2) OpenRouter
+    // 2) OpenRouter — try several models (IDs change; CF only has OPENROUTER_API_KEY today)
     if (openRouterKey) {
-        const r = await chatCompletions(
-            'https://openrouter.ai/api/v1/chat/completions',
-            openRouterKey,
-            'google/gemini-2.0-flash-001',
-            systemPrompt,
-            userPrompt,
-            {
-                'HTTP-Referer':
-                    envFrom(runtimeEnv, 'NEXT_PUBLIC_SITE_URL') || 'https://worldinmaking.com',
-                'X-Title': 'WorldInMaking Philosopher Bots',
+        const openRouterModels = [
+            envFrom(runtimeEnv, 'OPENROUTER_MODEL') || '',
+            'meta-llama/llama-3.3-70b-instruct',
+            'meta-llama/llama-3.1-8b-instruct',
+            'meta-llama/llama-3.1-8b-instruct:free',
+            'google/gemini-2.5-flash-preview-05-20',
+            'google/gemini-flash-1.5',
+            'openai/gpt-4o-mini',
+            'openrouter/auto',
+        ].filter(Boolean)
+        const seen = new Set<string>()
+        for (const model of openRouterModels) {
+            if (seen.has(model)) continue
+            seen.add(model)
+            const r = await chatCompletions(
+                'https://openrouter.ai/api/v1/chat/completions',
+                openRouterKey,
+                model,
+                systemPrompt,
+                userPrompt,
+                {
+                    'HTTP-Referer':
+                        envFrom(runtimeEnv, 'NEXT_PUBLIC_SITE_URL') || 'https://worldinmaking.com',
+                    'X-Title': 'WorldInMaking Philosopher Bots',
+                }
+            )
+            if (r.ok) {
+                const { thought, reply } = parseThoughtAndReply(r.text)
+                return json(successPayload(persona, thought, reply, `openrouter:${model}`))
             }
-        )
-        if (r.ok) {
-            const { thought, reply } = parseThoughtAndReply(r.text)
-            return json(successPayload(persona, thought, reply, 'openrouter'))
+            attempts.push(`openrouter(${model}): ${r.detail}`)
         }
-        attempts.push(`openrouter: ${r.detail}`)
     }
 
     // 3) Gemini — plain fetch (Workers-friendly; no AI SDK bundle risk)
