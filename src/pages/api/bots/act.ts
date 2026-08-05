@@ -32,6 +32,7 @@ import {
 } from 'lib/bots'
 import { createForumReply, createForumTopic } from 'lib/bots/actions/forum'
 import { runPaperStep, type PaperStepKind } from 'lib/bots/actions/paper'
+import { checkRateLimit } from 'lib/bots/rate-limit'
 import { envFrom, getRuntimeEnv } from 'lib/bots/runtime-env'
 
 function json(body: Record<string, unknown>, status = 200) {
@@ -88,6 +89,24 @@ export default async function handler(req: Request) {
     const authErr = assertCronIfNeeded(req, action, dryRun)
     if (authErr) {
         return json({ success: false, error: authErr, action }, 401)
+    }
+
+    // Per-bot rate limit for mutating / LLM-heavy actions
+    if (action !== 'status') {
+        const rlKey = `act:${action}:${bot.toLowerCase()}`
+        const limit = action === 'chat' ? 40 : 15
+        const rl = checkRateLimit(rlKey, limit, 60 * 60 * 1000)
+        if (!rl.allowed) {
+            return json(
+                {
+                    success: false,
+                    error: `Rate limited for ${action}/${bot}. Retry in ${rl.retryAfterSec}s`,
+                    action,
+                    retryAfterSec: rl.retryAfterSec,
+                },
+                429
+            )
+        }
     }
 
     // ── thread_init ──────────────────────────────────────────────

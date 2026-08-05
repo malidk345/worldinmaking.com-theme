@@ -14,3 +14,5 @@ export { resolveBotProfile, createForumTopic, createForumReply } from './actions
 export { runPaperStep } from './actions/paper'
 export type { PaperStepKind } from './actions/paper'
 export { supabaseRest, getSupabaseConfig, slugify } from './supabase-edge'
+export { checkRateLimit } from './rate-limit'
+export type { RateLimitResult } from './rate-limit'

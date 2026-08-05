@@ -316,41 +316,82 @@ const MaxReply = ({ children, isInForum }: { children: React.ReactNode; isInForu
     )
 }
 
+const PHILOSOPHER_PICKS = [
+    'nietzsche',
+    'marx',
+    'hegel',
+    'sartre',
+    'zizek',
+    'deleuze',
+    'arendt',
+    'spinoza',
+] as const
+
 const PhilosopherBotReply = ({
     questionTitle,
     questionBody,
     isInForum,
+    topicId,
 }: {
     questionTitle: string
     questionBody: string
     isInForum: boolean
+    /** Supabase community_posts id when available — enables real forum_reply persist */
+    topicId?: string | number
 }) => {
     const [loading, setLoading] = useState(false)
     const [thought, setThought] = useState('')
     const [reply, setReply] = useState('')
-    const [philosopher, setPhilosopher] = useState('Nietzsche')
+    const [philosopher, setPhilosopher] = useState('nietzsche')
+    const [provider, setProvider] = useState('')
+    const [persisted, setPersisted] = useState(false)
     const [hasTriggered, setHasTriggered] = useState(false)
+    const [error, setError] = useState('')
 
-    const handleAskPhilosopher = async (selectedName = 'Nietzsche') => {
+    const handleAskPhilosopher = async (selectedName = 'nietzsche') => {
         setLoading(true)
         setHasTriggered(true)
         setPhilosopher(selectedName)
+        setError('')
+        setPersisted(false)
         try {
-            const res = await fetch('/api/philosopher-bot', {
+            const hasTopic = topicId != null && String(topicId).length > 0
+            const res = await fetch('/api/bots/act', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    question: `${questionTitle}\n\n${questionBody}`,
-                    philosopher: selectedName,
-                    taskType: 'community_reply',
-                }),
+                body: JSON.stringify(
+                    hasTopic
+                        ? {
+                              action: 'forum_reply',
+                              bot: selectedName,
+                              question: `Engage this community thread. Title: ${questionTitle}\n\nBody: ${questionBody}`,
+                              thinkingDepth: 'standard',
+                              // Preview in UI first — set dryRun false only when we want DB write
+                              dryRun: true,
+                              payload: { topicId: String(topicId) },
+                          }
+                        : {
+                              action: 'chat',
+                              bot: selectedName,
+                              question: `${questionTitle}\n\n${questionBody}`,
+                              taskType: 'community_reply',
+                              thinkingDepth: 'standard',
+                          }
+                ),
             })
             const data = await res.json()
             if (data.thought) setThought(data.thought)
             if (data.reply) setReply(data.reply)
-            if (data.philosopher) setPhilosopher(data.philosopher)
+            if (data.philosopher) setPhilosopher(String(data.philosopher))
+            if (data.provider) setProvider(String(data.provider))
+            if (data.persisted) setPersisted(true)
+            if (data.success === false && data.error) setError(String(data.error))
+            if (!data.reply && !data.thought && data.error) {
+                setReply(String(data.error))
+            }
         } catch (err) {
             console.error('Philosopher bot forum reply error:', err)
+            setError('Philosopher network unreachable')
         } finally {
             setLoading(false)
         }
@@ -358,15 +399,27 @@ const PhilosopherBotReply = ({
 
     if (!hasTriggered) {
         return (
-            <div className="my-2 flex items-center gap-2">
+            <div className={`my-2 flex flex-wrap items-center gap-2 ${isInForum ? 'px-5' : 'pl-8'}`}>
                 <OSButton
-                    onClick={() => handleAskPhilosopher('Nietzsche')}
-                    icon={<IconSparkles className="text-accent" />}
+                    onClick={() => handleAskPhilosopher('nietzsche')}
+                    icon={<IconSparkles className="text-[var(--color-accent,#1d4ed8)]" />}
                     size="sm"
-                    tooltip="Ask Philosopher Bot for an AI insight"
+                    tooltip="Ask a resident philosopher (thinking process + persona reply)"
                 >
-                    <span className="text-xs font-semibold">Ask Philosopher Bot ⚡</span>
+                    <span className="text-xs font-semibold">Ask Philosopher</span>
                 </OSButton>
+                <div className="flex flex-wrap gap-1">
+                    {PHILOSOPHER_PICKS.slice(0, 5).map((name) => (
+                        <button
+                            key={name}
+                            type="button"
+                            className="text-[10px] px-2 py-0.5 rounded-full border border-primary bg-accent/40 hover:bg-accent capitalize text-secondary hover:text-primary"
+                            onClick={() => void handleAskPhilosopher(name)}
+                        >
+                            {name}
+                        </button>
+                    ))}
+                </div>
             </div>
         )
     }
@@ -374,14 +427,39 @@ const PhilosopherBotReply = ({
     return (
         <MaxReply isInForum={isInForum}>
             <div className="text-primary font-normal question-content community-post-markdown !p-0">
-                <div className="flex items-center gap-2 mb-2">
-                    <span className="font-bold text-xs text-accent">@{philosopher} (AI Bot)</span>
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <span className="font-bold text-xs text-[var(--color-accent,#1d4ed8)]">
+                        @{philosopher} (AI Bot)
+                    </span>
+                    {provider && (
+                        <span className="text-[10px] text-secondary font-mono opacity-70">{provider}</span>
+                    )}
+                    {persisted && (
+                        <span className="text-[10px] text-green font-semibold">posted</span>
+                    )}
                 </div>
                 <PhilosopherThought thought={thought} philosopherName={philosopher} isLiveThinking={loading} />
                 {loading ? (
-                    <p className="text-xs text-secondary italic animate-pulse">Formulating persona critique...</p>
+                    <p className="text-xs text-secondary italic animate-pulse">
+                        perceive → frame → tension → move…
+                    </p>
                 ) : (
                     reply && <p className="!mb-0 text-sm leading-relaxed whitespace-pre-wrap">{reply}</p>
+                )}
+                {error && !reply && <p className="text-xs text-red mb-0">{error}</p>}
+                {!loading && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                        {PHILOSOPHER_PICKS.map((name) => (
+                            <button
+                                key={name}
+                                type="button"
+                                className="text-[10px] px-2 py-0.5 rounded-full border border-primary hover:bg-accent capitalize"
+                                onClick={() => void handleAskPhilosopher(name)}
+                            >
+                                {name}
+                            </button>
+                        ))}
+                    </div>
                 )}
             </div>
         </MaxReply>
@@ -601,6 +679,12 @@ export function Question(props: QuestionProps) {
                             questionTitle={questionData.attributes.subject || ''}
                             questionBody={questionData.attributes.body || ''}
                             isInForum={isInForum}
+                            topicId={
+                                // Prefer Supabase community id when present on the question payload
+                                (questionData as any)?.attributes?.communityPostId ||
+                                (questionData as any)?.attributes?.supabaseId ||
+                                undefined
+                            }
                         />
                     </div>
                     <div

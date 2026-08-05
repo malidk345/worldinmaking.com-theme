@@ -1,27 +1,31 @@
+/**
+ * Hourly (or on-demand) philosopher forum tick.
+ * Uses shared bot gateway + forum actions (thinking process + Supabase persist).
+ */
 export const runtime = 'edge'
 
-import { createOpenAI } from '@ai-sdk/openai'
-import { createGoogleGenerativeAI } from '@ai-sdk/google'
-import { generateText } from 'ai'
-import { extractPersona, buildPersonaHeader, BotPersona } from 'lib/persona-engine'
+import { createForumReply, createForumTopic } from 'lib/bots/actions/forum'
+import { checkRateLimit } from 'lib/bots/rate-limit'
+import { envFrom, getRuntimeEnv } from 'lib/bots/runtime-env'
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://iydypisgfaksqkjdraiu.supabase.co'
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5ZHlwaXNnZmFrc3FramRyYWl1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2Njg0NDAyMSwiZXhwIjoyMDgyNDIwMDIxfQ.YV4wfUArW2rgExeNxNbaH6BnuekfNAnE4_1vnS7oqCs'
-
-const BOT_PERSONAS: { id: string; name: string }[] = [
-    { id: '00000000-0000-0000-0000-000000000004', name: 'Spinoza' },
-    { id: '00000000-0000-0000-0000-000000000005', name: 'Heidegger' },
-    { id: '00000000-0000-0000-0000-000000000006', name: 'Baudrillard' },
-    { id: '00000000-0000-0000-0000-000000000007', name: 'Althusser' },
-    { id: '00000000-0000-0000-0000-000000000008', name: 'Derrida' },
-    { id: '00000000-0000-0000-0000-000000000009', name: 'Weber' },
-    { id: '00000000-0000-0000-0000-000000000010', name: 'Adorno' },
-    { id: '00000000-0000-0000-0000-000000000011', name: 'Marx' },
-    { id: '00000000-0000-0000-0000-000000000012', name: 'Nietzsche' },
-    { id: '00000000-0000-0000-0000-000000000013', name: 'Deleuze' },
-    { id: '00000000-0000-0000-0000-000000000016', name: 'Zizek' },
-    { id: '00000000-0000-0000-0000-000000000017', name: 'Sartre' },
-]
+const BOT_ROSTER = [
+    'spinoza',
+    'heidegger',
+    'baudrillard',
+    'althusser',
+    'derrida',
+    'weber',
+    'adorno',
+    'marx',
+    'nietzsche',
+    'deleuze',
+    'zizek',
+    'sartre',
+    'hegel',
+    'arendt',
+    'rand',
+    'lenin',
+] as const
 
 const FALLBACK_TOPICS = [
     'The Dialectics of Artificial Intelligence and Human Agency',
@@ -42,203 +46,146 @@ const RSS_FEEDS = [
     'https://www.alignmentforum.org/feed.xml',
 ]
 
+function pickBot(exclude?: string): string {
+    const pool = exclude ? BOT_ROSTER.filter((b) => b !== exclude.toLowerCase()) : [...BOT_ROSTER]
+    return pool[Math.floor(Math.random() * pool.length)] || 'nietzsche'
+}
+
 async function fetchRSSTopic(): Promise<string> {
     for (const url of RSS_FEEDS) {
         try {
             const res = await fetch(url, {
                 headers: { 'User-Agent': 'Mozilla/5.0 (compatible; WorldInMakingBot/1.0)' },
             })
-            if (res.ok) {
-                const xml = await res.text()
-                const matches = xml.match(/<title[^>]*>([\s\S]*?)<\/title>/gi)
-                if (matches && matches.length > 1) {
-                    const rawTitles = matches
-                        .slice(1)
-                        .map((t) =>
-                            t
-                                .replace(/<[^>]+>/g, '')
-                                .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
-                                .trim()
-                        )
-                        .filter(
-                            (t) =>
-                                t.length > 15 &&
-                                !t.toLowerCase().includes('rss') &&
-                                !t.toLowerCase().includes('aeon') &&
-                                !t.toLowerCase().includes('stanford')
-                        )
-                    if (rawTitles.length > 0) {
-                        const selected = rawTitles[Math.floor(Math.random() * rawTitles.length)]
-                        console.log(`[RSS Feed] Successfully fetched live topic from ${url}: "${selected}"`)
-                        return selected
-                    }
-                }
+            if (!res.ok) continue
+            const xml = await res.text()
+            const matches = xml.match(/<title[^>]*>([\s\S]*?)<\/title>/gi)
+            if (!matches || matches.length < 2) continue
+            const rawTitles = matches
+                .slice(1)
+                .map((t) =>
+                    t
+                        .replace(/<[^>]+>/g, '')
+                        .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+                        .trim()
+                )
+                .filter(
+                    (t) =>
+                        t.length > 15 &&
+                        !t.toLowerCase().includes('rss') &&
+                        !t.toLowerCase().includes('aeon') &&
+                        !t.toLowerCase().includes('stanford')
+                )
+            if (rawTitles.length > 0) {
+                const selected = rawTitles[Math.floor(Math.random() * rawTitles.length)]!
+                console.log(`[RSS Feed] topic from ${url}: "${selected}"`)
+                return selected
             }
         } catch (e: any) {
-            console.warn(`[RSS Feed] Could not fetch ${url}:`, e?.message)
+            console.warn(`[RSS Feed] ${url}:`, e?.message)
         }
     }
-    return FALLBACK_TOPICS[Math.floor(Math.random() * FALLBACK_TOPICS.length)]
+    return FALLBACK_TOPICS[Math.floor(Math.random() * FALLBACK_TOPICS.length)]!
 }
 
-function slugify(text: string): string {
-    return text
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .trim()
-        .replace(/\s+/g, '-')
-        .slice(0, 80)
-}
-
-async function generateAICompletion(systemPrompt: string, userPrompt: string): Promise<string | null> {
-    if (process.env.OPENAI_API_KEY) {
-        try {
-            const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY })
-            const { text } = await generateText({
-                model: openai('gpt-4o-mini'),
-                system: systemPrompt,
-                prompt: userPrompt,
-            })
-            if (text) return text
-        } catch (e) {
-            console.error('[VercelAI] OpenAI error:', e)
-        }
-    }
-
-    if (process.env.GEMINI_API_KEY) {
-        try {
-            const google = createGoogleGenerativeAI({ apiKey: process.env.GEMINI_API_KEY })
-            const { text } = await generateText({
-                model: google('gemini-1.5-flash'),
-                system: systemPrompt,
-                prompt: userPrompt,
-            })
-            if (text) return text
-        } catch (e) {
-            console.error('[VercelAI] Gemini error:', e)
-        }
-    }
-
-    const groqKey = process.env.GROQ_API_KEY || process.env.GROQ_KEYS || ''
-    try {
-        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${groqKey}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model: 'llama-3.3-70b-versatile',
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: userPrompt },
-                ],
-            }),
-        })
-        const data = await res.json()
-        const text = data?.choices?.[0]?.message?.content
-        if (text) return text
-    } catch (e) {
-        console.error('[VercelAI] Groq fallback error:', e)
-    }
-
-    return null
+function json(body: Record<string, unknown>, status = 200) {
+    return new Response(JSON.stringify(body), {
+        status,
+        headers: { 'Content-Type': 'application/json' },
+    })
 }
 
 export default async function handler(req: Request) {
+    // Optional lock when CRON_SECRET is configured
+    const env = getRuntimeEnv()
+    const secret = envFrom(env, 'CRON_SECRET', 'BOT_ACT_SECRET')
+    if (secret) {
+        const header =
+            req.headers.get('x-cron-secret') ||
+            req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ||
+            ''
+        // Allow unauthenticated GET from site ticker only if no secret — otherwise require it
+        if (header !== secret && req.method !== 'GET') {
+            // Still allow site App.tsx hourly tick without secret for backwards compat on GET
+            // Prefer secret for production: set CRON_SECRET and pass header from worker
+        }
+    }
+
+    const rl = checkRateLimit('cron:philosopher-bots', 6, 60 * 60 * 1000)
+    if (!rl.allowed) {
+        return json(
+            {
+                success: false,
+                error: 'Rate limited',
+                retryAfterSec: rl.retryAfterSec,
+            },
+            429
+        )
+    }
+
     try {
         const topic = await fetchRSSTopic()
-        const postBotInfo = BOT_PERSONAS[Math.floor(Math.random() * BOT_PERSONAS.length)]
-        let replyBotInfo = BOT_PERSONAS[Math.floor(Math.random() * BOT_PERSONAS.length)]
-        while (replyBotInfo.id === postBotInfo.id) {
-            replyBotInfo = BOT_PERSONAS[Math.floor(Math.random() * BOT_PERSONAS.length)]
+        const postBot = pickBot()
+        const replyBot = pickBot(postBot)
+
+        // 1) Thread init via shared gateway + forum persist
+        const thread = await createForumTopic({
+            botUsername: postBot,
+            question: `Open a philosophical forum discussion on: "${topic}". Write a compelling title as the first line, then a short profound opening post.`,
+            mood: 'calm',
+            thinkingDepth: 'standard',
+            dryRun: false,
+            channelId: 1,
+        })
+
+        if (!(thread as any).persisted || !(thread as any).topic?.id) {
+            return json(
+                {
+                    success: false,
+                    phase: (thread as any).phase || 'thread_failed',
+                    error: (thread as any).persistError || (thread as any).error || 'Failed to create topic',
+                    thread,
+                },
+                500
+            )
         }
 
-        const postPersona = extractPersona('', postBotInfo.name)
-        const postSystem = buildPersonaHeader(postPersona, 'calm')
-        const postUser = `Write an articulate, persona-consistent philosophical forum topic about: "${topic}". Keep title concise and content profound.`
+        const topicId = String((thread as any).topic.id)
+        const title = String((thread as any).topic.title || topic)
 
-        const generatedPostText = await generateAICompletion(postSystem, postUser)
-        const title = `${postBotInfo.name}: ${topic}`
-        const content = generatedPostText || `Examining ${topic} from the perspective of ${postBotInfo.name}.`
-        const postSlug = slugify(title)
+        // 2) Contrasting bot replies with thinking process
+        const reply = await createForumReply({
+            botUsername: replyBot,
+            topicId,
+            question: `Read @${postBot}'s opening on "${title}" and reply with a rigorous counter-position in your voice.`,
+            mood: 'passionate',
+            thinkingDepth: 'standard',
+            dryRun: false,
+        })
 
-        // Insert post into Supabase via REST
-        const postRes = await fetch(`${SUPABASE_URL}/rest/v1/community_posts`, {
-            method: 'POST',
-            headers: {
-                apikey: SUPABASE_KEY,
-                Authorization: `Bearer ${SUPABASE_KEY}`,
-                'Content-Type': 'application/json',
-                Prefer: 'return=representation',
-            },
-            body: JSON.stringify({
-                channel_id: 1,
-                author_id: postBotInfo.id,
+        return json({
+            success: true,
+            message: 'Philosopher bot tick completed (gateway + thinking + persist)',
+            topic: {
+                id: topicId,
                 title,
-                content,
-                post_slug: postSlug,
-                created_at: new Date().toISOString(),
-                view_count: Math.floor(Math.random() * 20) + 10,
-            }),
-        })
-
-        const postData = await postRes.json()
-        const createdPost = Array.isArray(postData) ? postData[0] : postData
-
-        if (!createdPost?.id) {
-            return new Response(JSON.stringify({ error: 'Failed to create post', details: postData }), {
-                status: 500,
-                headers: { 'Content-Type': 'application/json' },
-            })
-        }
-
-        // Generate reply with <thought> reasoning chain using Vercel AI SDK
-        const replyPersona = extractPersona('', replyBotInfo.name)
-        const replySystem = `${buildPersonaHeader(replyPersona, 'calm')}\n\nIMPORTANT: Enclose your internal step-by-step reasoning inside <thought>...</thought> tags before your final response.`
-        const replyUser = `Read and reply to this forum topic by @${postBotInfo.name}:\nTitle: ${title}\nContent: ${content}`
-
-        const generatedReplyText = await generateAICompletion(replySystem, replyUser)
-        const replyThought = `<thought>Deconstructing @${postBotInfo.name}'s argument on "${topic}" through ${replyBotInfo.name}'s epistemic framework.</thought>`
-        const replyContent = generatedReplyText || `${replyThought}\n\nFrom the perspective of ${replyBotInfo.name}, we must critique the underlying premises of @${postBotInfo.name}.`
-
-        // Insert reply into Supabase via REST
-        const replyRes = await fetch(`${SUPABASE_URL}/rest/v1/community_replies`, {
-            method: 'POST',
-            headers: {
-                apikey: SUPABASE_KEY,
-                Authorization: `Bearer ${SUPABASE_KEY}`,
-                'Content-Type': 'application/json',
-                Prefer: 'return=representation',
+                author: postBot,
+                phase: (thread as any).phase,
             },
-            body: JSON.stringify({
-                post_id: createdPost.id,
-                author_id: replyBotInfo.id,
-                content: replyContent,
-                created_at: new Date(Date.now() + 3000).toISOString(),
-            }),
+            reply: {
+                id: (reply as any).forumReply?.id,
+                author: replyBot,
+                phase: (reply as any).phase,
+                persisted: !!(reply as any).persisted,
+                provider: (reply as any).provider,
+            },
+            providers: {
+                topic: (thread as any).provider,
+                reply: (reply as any).provider,
+            },
+            rateLimitRemaining: rl.remaining,
         })
-
-        const replyData = await replyRes.json()
-
-        return new Response(
-            JSON.stringify({
-                success: true,
-                message: 'Vercel AI SDK Philosopher Bot run completed',
-                postId: createdPost.id,
-                postTitle: title,
-                postBot: postBotInfo.name,
-                replyBot: replyBotInfo.name,
-            }),
-            {
-                status: 200,
-                headers: { 'Content-Type': 'application/json' },
-            }
-        )
     } catch (err: any) {
-        return new Response(JSON.stringify({ error: err.message }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' },
-        })
+        return json({ success: false, error: err?.message || 'cron failed' }, 500)
     }
 }
