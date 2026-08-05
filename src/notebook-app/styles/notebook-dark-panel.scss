@@ -1,0 +1,103 @@
+/**
+ * Dark chrome for Ask AI + Publish dropdown overlays.
+ * Rebinds Lemon UI CSS variables so inputs/selects/buttons match the
+ * dark panels (source app used the same dark hex surfaces; lemon tokens
+ * otherwise stay on light 3000 surfaces and look broken when embedded).
+ */
+.notebook-dark-panel {
+    /* Surfaces */
+    --color-bg-surface-primary: #15161b;
+    --color-bg-surface-secondary: #1a1b23;
+    --color-bg-surface-tertiary: #1d1e24;
+    --color-bg-surface-popover: #1a1b23;
+    --color-bg-fill-primary: #15161b;
+    --color-bg-fill-secondary: #1a1b23;
+    --color-bg-fill-tertiary: #1d1e24;
+    --color-bg-fill-input: #111216;
+    --color-bg-fill-button-secondary: #232530;
+    --color-bg-fill-button-secondary-hover: #2a2b36;
+    --color-bg-fill-button-tertiary-hover: rgba(255, 255, 255, 0.06);
+    --color-bg-fill-button-tertiary-active: rgba(255, 255, 255, 0.1);
+
+    /* Borders */
+    --color-border-primary: #2c2d38;
+    --color-border-secondary: #3b3c4a;
+    --border-3000: #2c2d38;
+    --border-bold-3000: #3b3c4a;
+    --secondary-3000-button-border: #3b3c4a;
+    --secondary-3000-button-border-hover: #4a4b5a;
+
+    /* Text */
+    --text-3000: #f1f5f9;
+    --color-text-primary: #f1f5f9;
+    --color-text-secondary: rgba(241, 245, 249, 0.72);
+    --color-text-secondary-3000: rgba(241, 245, 249, 0.72);
+    --color-text-tertiary: rgba(241, 245, 249, 0.55);
+    --muted-3000: rgba(241, 245, 249, 0.55);
+
+    /* Popover chrome */
+    --color-bg-surface-popover: #1a1b23;
+    --shadow-elevation-3000: 0 8px 28px rgba(0, 0, 0, 0.45);
+
+    color: #e2e8f0;
+    background-color: #111216;
+    border-color: #2c2d38;
+
+    /* Host-site Tailwind `text-primary` uses --text-primary (RGB channels) */
+    --text-primary: 241 245 249;
+    --text-secondary: 148 163 184;
+    --text-muted: 100 116 139;
+    --bg: 17 18 22;
+    --accent: 35 37 48;
+    --border: 44 45 56;
+    --input-bg: 17 18 22;
+    --input-border: 44 45 56;
+
+    .LemonInput,
+    .LemonSelect,
+    .LemonButton {
+        color: var(--text-3000);
+    }
+
+    .LemonInput {
+        background-color: var(--color-bg-fill-input);
+        border-color: var(--color-border-primary);
+        color: var(--text-3000);
+
+        input,
+        textarea {
+            color: var(--text-3000);
+            background: transparent;
+
+            &::placeholder {
+                color: rgba(241, 245, 249, 0.4);
+            }
+        }
+    }
+
+    .LemonSelect {
+        background-color: #111216;
+        border-color: #2c2d38;
+        color: #f1f5f9;
+    }
+
+    /* Nested select menus (portaled) that receive this class via menu.className */
+    &.Popover,
+    &.Popover .Popover__box {
+        background: transparent;
+        border-color: transparent;
+    }
+
+    &.Popover .Popover__box {
+        background: #1a1b23;
+        border: 1px solid #2c2d38;
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+        opacity: 1;
+        transform: none;
+    }
+
+    .LemonMenuItemButton,
+    .LemonButton {
+        color: #f1f5f9;
+    }
+}

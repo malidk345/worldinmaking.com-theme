@@ -220,7 +220,7 @@ export function App() {
   )
 
   return (
-    <div className="App notebook-app-scope min-h-screen bg-[var(--bg-3000,#f3f4f5)] text-[var(--text-3000,#1d1f27)]">
+    <div className="App notebook-app-scope min-h-screen bg-[var(--color-bg-3000,var(--bg-3000,#f3f4ef))] text-[var(--text-3000,#111)]">
       {/* ===== Main Content Area matching PostHog's SceneContent ===== */}
       <main className="p-3 sm:p-6 lg:p-8 max-w-[1400px] mx-auto space-y-4 sm:space-y-6">
         <ErrorBoundary>
@@ -274,7 +274,7 @@ export function App() {
                     />
                     {currentNotebook.isTemplate && <LemonTag type="highlight">TEMPLATE</LemonTag>}
                     <CollaboratorsBanner editedByText={currentNotebook.created_by?.first_name || 'Mustafa'} />
-                    <span className="text-muted opacity-30 hidden sm:inline">â€¢</span>
+                    <span className="text-muted opacity-30 hidden sm:inline">•</span>
                     <div className="hidden sm:block">
                       <NotebookSyncInfo syncStatus={syncStatus} />
                     </div>

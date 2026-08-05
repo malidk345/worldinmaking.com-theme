@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { LemonModal, LemonInput, LemonButton, LemonTag, LemonSelect } from '~nb-lib/lemon-ui/index'
-import { IconShare, IconPlus, IconCheck } from '@posthog/icons'
+import { IconShare, IconSparkles, IconPlus, IconCheck } from '@posthog/icons'
 
 interface NotebookPublishModalProps {
     isOpen: boolean
@@ -48,13 +48,13 @@ export function NotebookPublishModal({
         <LemonModal
             isOpen={isOpen}
             onClose={onClose}
-            title="Publish & Notebook Meta Settings (YayÄ±nlama ve GÃ¶rsel AyarlarÄ±)"
+            title="Publish & Notebook Meta Settings (Yayınlama ve Görsel Ayarları)"
             width={640}
         >
             <div className="space-y-5 p-1 text-sm">
                 {/* Banner / Cover Image Preview */}
                 <div className="space-y-2">
-                    <label className="font-semibold text-primary block">Main Cover Banner (Ana GÃ¶rsel)</label>
+                    <label className="font-semibold text-primary block">Main Cover Banner (Ana Görsel)</label>
                     <div className="relative h-40 w-full rounded-lg overflow-hidden border border-border bg-surface-secondary shadow-inner">
                         {coverImage ? (
                             <img src={coverImage} alt="Cover preview" className="w-full h-full object-cover" />
@@ -91,7 +91,7 @@ export function NotebookPublishModal({
                 {/* Metadata Fields */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                        <label className="font-semibold text-primary">Public Title (YayÄ±n BaÅŸlÄ±ÄŸÄ±)</label>
+                        <label className="font-semibold text-primary">Public Title (Yayın Başlığı)</label>
                         <LemonInput value={title} onChange={setTitle} size="small" />
                     </div>
 
@@ -102,17 +102,17 @@ export function NotebookPublishModal({
                             value={category}
                             onChange={(val) => setCategory(val || 'engineering')}
                             options={[
-                                { value: 'engineering', label: 'ğŸ› ï¸ Engineering & RCA' },
-                                { value: 'product', label: 'ğŸš€ Product Release Plan' },
-                                { value: 'analytics', label: 'ğŸ“Š HogQL Analytics & Data' },
-                                { value: 'design', label: 'ğŸ¨ Design & User Research' },
+                                { value: 'engineering', label: '🛠️ Engineering & RCA' },
+                                { value: 'product', label: '🚀 Product Release Plan' },
+                                { value: 'analytics', label: '📊 HogQL Analytics & Data' },
+                                { value: 'design', label: '🎨 Design & User Research' },
                             ]}
                         />
                     </div>
                 </div>
 
                 <div className="space-y-1.5">
-                    <label className="font-semibold text-primary">Subtitle & SEO Excerpt (Ã–zet Metin)</label>
+                    <label className="font-semibold text-primary">Subtitle & SEO Excerpt (Özet Metin)</label>
                     <LemonInput
                         value={subtitle}
                         onChange={setSubtitle}
@@ -143,7 +143,7 @@ export function NotebookPublishModal({
                         </p>
                     </div>
                     <LemonTag type={isPublished ? 'success' : 'highlight'}>
-                        {isPublished ? 'Published ğŸŒ' : 'Draft ğŸ“'}
+                        {isPublished ? 'Published 🌐' : 'Draft 📝'}
                     </LemonTag>
                 </div>
 

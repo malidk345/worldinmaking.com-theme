@@ -63,7 +63,7 @@ export function NotebookCanvasScene({ onSaveAsNotebook }: NotebookCanvasScenePro
             <header className="flex items-center justify-between mb-4 pb-3 border-b border-border">
                 <div className="flex items-center gap-3">
                     <h2 className="text-xl font-bold m-0">Canvas</h2>
-                    <span className="text-xs text-muted">Temporary â€” not saved until you choose "Save as Notebook"</span>
+                    <span className="text-xs text-muted">Temporary — not saved until you choose "Save as Notebook"</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <LemonMenu

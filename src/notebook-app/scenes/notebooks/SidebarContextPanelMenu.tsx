@@ -33,7 +33,10 @@ export function SidebarContextPanelMenu({
     const hasCoverUrl = Boolean(coverUrl && coverUrl.trim().length > 0)
 
     const overlay = (
-        <div className="w-[440px] p-5 space-y-5 bg-[#111216] rounded-xl shadow-2xl text-xs text-slate-200">
+        <div
+            className="notebook-dark-panel w-[440px] p-5 space-y-5 rounded-xl shadow-2xl text-xs"
+            style={{ backgroundColor: '#111216', color: '#e2e8f0' }}
+        >
             {/* Top Bar Header - No Border */}
             <div className="flex items-center justify-between pb-1">
                 <div className="flex items-center gap-2 font-semibold text-white text-sm">
@@ -109,6 +112,7 @@ export function SidebarContextPanelMenu({
                             { value: 'analytics', label: 'HogQL Telemetry' },
                             { value: 'research', label: 'User Research' },
                         ]}
+                        menu={{ className: 'notebook-dark-panel notebook-app-scope' }}
                     />
                 </div>
 
@@ -122,6 +126,7 @@ export function SidebarContextPanelMenu({
                             { value: 'draft', label: 'Draft Mode' },
                             { value: 'published', label: 'Published' },
                         ]}
+                        menu={{ className: 'notebook-dark-panel notebook-app-scope' }}
                     />
                 </div>
             </div>
@@ -189,6 +194,8 @@ export function SidebarContextPanelMenu({
             visible={isOpen}
             onVisibilityChange={(v) => setIsOpen(v)}
             onClickOutside={() => setIsOpen(false)}
+            className="notebook-dark-panel"
+            closeOnClickInside={false}
         >
             <LemonButton
                 type="secondary"

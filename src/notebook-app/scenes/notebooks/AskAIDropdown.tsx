@@ -37,7 +37,7 @@ const BOT_SELECT_OPTIONS = [
             label: (
                 <span className="flex items-center gap-2 text-xs font-medium py-1">
                     <ProfilePicture user={{ first_name: bot.name }} size="sm" />
-                    <span className="font-semibold text-white text-xs">{bot.name}</span>
+                    <span className="font-semibold text-xs">{bot.name}</span>
                 </span>
             ),
         })),
@@ -142,9 +142,12 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
             onVisibilityChange={(v) => setIsOpen(v)}
             onClickOutside={() => setIsOpen(false)}
             placement="bottom-end"
+            className="notebook-dark-panel"
+            closeOnClickInside={false}
             overlay={
                 <div
-                    className="w-[1100px] max-w-[96vw] p-3 bg-[#15161b] rounded-xl shadow-2xl text-slate-200 flex flex-col gap-3"
+                    className="notebook-dark-panel w-[1100px] max-w-[96vw] p-3 rounded-xl shadow-2xl flex flex-col gap-3"
+                    style={{ backgroundColor: '#15161b', color: '#e2e8f0' }}
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
@@ -186,7 +189,7 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                                         ) : (
                                             <span className="font-semibold text-slate-300">You</span>
                                         )}
-                                        <span>â€¢ {msg.timestamp}</span>
+                                        <span>• {msg.timestamp}</span>
                                     </div>
 
                                     {/* Speech Bubble */}
@@ -237,7 +240,7 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                         </div>
                     )}
 
-                    {/* Input Container â€” NO inner border-t line */}
+                    {/* Input Container — NO inner border-t line */}
                     <div className="relative flex flex-col border border-[#3b3c4a] bg-[#15161b] rounded-xl p-3 focus-within:border-blue-500 shadow-sm transition-colors">
                         <textarea
                             ref={textareaRef}
@@ -259,7 +262,7 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                             className="w-full bg-transparent text-sm text-white placeholder:text-slate-500 focus:outline-none resize-none leading-relaxed min-h-[110px] p-0 border-none shadow-none"
                         />
 
-                        {/* Controls Row â€” WITHOUT border-t line */}
+                        {/* Controls Row — WITHOUT border-t line */}
                         <div className="flex items-center justify-between pt-2 mt-1">
                             <LemonSelect
                                 value={selectedBot}
@@ -273,6 +276,7 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                                 dropdownPlacement="top-start"
                                 dropdownMatchSelectWidth={false}
                                 className="border border-[#2c2d38] bg-[#111216] !py-0.5 !px-2"
+                                menu={{ className: 'notebook-dark-panel notebook-app-scope' }}
                             />
 
                             <div className="flex items-center gap-2.5">

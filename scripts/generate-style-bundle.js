@@ -36,6 +36,7 @@ const priorityOrder = [
     'styles/lemon-skin.scss',
     'styles/utilities-legacy.scss',
     'styles/index.css',
+    'styles/notebook-dark-panel.scss',
     'styles/notebook.css',
     'styles/quill-bridge.scss'
 ]

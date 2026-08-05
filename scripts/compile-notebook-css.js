@@ -30,7 +30,7 @@ try {
     // the rest of the combinator chain is preserved intact.
     // Match whole BEM roots only — do NOT partially match `.Popover__arrow` as `.Popover`.
     const PORTAL_ROOT =
-        String.raw`\.(?:Popover|LemonModal|LemonPopover|LemonMenu|ReactModal|Tooltip)(?:--[\w-]+)?(?![A-Za-z0-9_])`
+        String.raw`\.(?:Popover|LemonModal|LemonPopover|LemonMenu|ReactModal|Tooltip|notebook-dark-panel)(?:--[\w-]+)?(?![A-Za-z0-9_])`
     const COMPOUND = String.raw`${PORTAL_ROOT}(?:\.[^\s,>+~{\[:]+)*(?:\[[^\]]*\])*`
     const CHAIN_TAIL = String.raw`(?:\s*[>+~\s]\s*[^\s,{]+)*`
     const portalRewrite = new RegExp(
