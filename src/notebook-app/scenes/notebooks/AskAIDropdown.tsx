@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { LemonDropdown, LemonButton, LemonSelect, ProfilePicture } from '~nb-lib/lemon-ui/index'
+import { LemonDropdown, LemonButton, LemonSelect, ProfilePicture, LemonTag } from '~nb-lib/lemon-ui/index'
 import {
     IconSparkles,
     IconChevronDown,
@@ -22,12 +22,19 @@ export interface ChatMessage {
 const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY || ''
 
 const BOTS = [
-    { value: 'aria', name: 'Aria' },
-    { value: 'nova', name: 'Nova' },
-    { value: 'rex', name: 'Rex' },
-    { value: 'luna', name: 'Luna' },
-    { value: 'zed', name: 'Zed' },
-    { value: 'sage', name: 'Sage' },
+    { value: 'aria', name: 'Aria', hint: 'General writing' },
+    { value: 'nova', name: 'Nova', hint: 'Product & specs' },
+    { value: 'rex', name: 'Rex', hint: 'Engineering' },
+    { value: 'luna', name: 'Luna', hint: 'Research' },
+    { value: 'zed', name: 'Zed', hint: 'Data & HogQL' },
+    { value: 'sage', name: 'Sage', hint: 'Summaries' },
+]
+
+const SUGGESTIONS = [
+    'Summarize this notebook',
+    'Draft a release note',
+    'Explain the next steps',
+    'Turn notes into action items',
 ]
 
 const BOT_SELECT_OPTIONS = [
@@ -35,9 +42,12 @@ const BOT_SELECT_OPTIONS = [
         options: BOTS.map((bot) => ({
             value: bot.value,
             label: (
-                <span className="flex items-center gap-2 text-xs font-medium py-1">
+                <span className="flex items-center gap-2 py-0.5">
                     <ProfilePicture user={{ first_name: bot.name }} size="sm" />
-                    <span className="font-semibold text-xs">{bot.name}</span>
+                    <span className="flex flex-col leading-tight">
+                        <span className="font-medium text-xs">{bot.name}</span>
+                        <span className="text-[10px] text-muted">{bot.hint}</span>
+                    </span>
                 </span>
             ),
         })),
@@ -54,14 +64,11 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
     const chatEndRef = useRef<HTMLDivElement | null>(null)
 
     const activeBot = BOTS.find((b) => b.value === selectedBot) || BOTS[0]!
+    const hasThread = messages.length > 0 || isGenerating
 
     useEffect(() => {
         if (isOpen) {
-            const timer = setTimeout(() => {
-                if (textareaRef.current) {
-                    textareaRef.current.focus()
-                }
-            }, 50)
+            const timer = setTimeout(() => textareaRef.current?.focus(), 50)
             return () => clearTimeout(timer)
         }
     }, [isOpen])
@@ -70,8 +77,8 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }, [messages, isGenerating])
 
-    const handleSendPrompt = async () => {
-        const text = prompt.trim()
+    const sendPrompt = async (raw?: string) => {
+        const text = (raw ?? prompt).trim()
         if (!text || isGenerating) return
 
         const userMsg: ChatMessage = {
@@ -90,7 +97,7 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                 .map((m) => `${m.sender === 'user' ? 'User' : 'Assistant'}: ${m.text}`)
                 .join('\n')
 
-            const systemInstructions = `You are a helpful AI assistant named ${activeBot.name}. Answer concisely and accurately using markdown.`
+            const systemInstructions = `You are a helpful AI assistant named ${activeBot.name} (${activeBot.hint}). Answer concisely using markdown.`
 
             const response = await fetch(
                 `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
@@ -114,23 +121,26 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
             const data = await response.json()
             const candidateText = data?.candidates?.[0]?.content?.parts?.[0]?.text
 
-            const aiMsg: ChatMessage = {
-                id: (Date.now() + 1).toString(),
-                sender: 'ai',
-                text: candidateText ? candidateText.trim() : 'I answered your request above.',
-                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            }
-
-            setMessages((prev) => [...prev, aiMsg])
+            setMessages((prev) => [
+                ...prev,
+                {
+                    id: (Date.now() + 1).toString(),
+                    sender: 'ai',
+                    text: candidateText ? candidateText.trim() : 'I could not generate a response. Try again.',
+                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                },
+            ])
         } catch (error) {
             console.warn('AI error:', error)
-            const fallbackMsg: ChatMessage = {
-                id: (Date.now() + 1).toString(),
-                sender: 'ai',
-                text: `Response for: "${text}"`,
-                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            }
-            setMessages((prev) => [...prev, fallbackMsg])
+            setMessages((prev) => [
+                ...prev,
+                {
+                    id: (Date.now() + 1).toString(),
+                    sender: 'ai',
+                    text: 'Something went wrong while generating a reply. Please try again.',
+                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                },
+            ])
         } finally {
             setIsGenerating(false)
         }
@@ -139,107 +149,128 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
     return (
         <LemonDropdown
             visible={isOpen}
-            onVisibilityChange={(v) => setIsOpen(v)}
+            onVisibilityChange={setIsOpen}
             onClickOutside={() => setIsOpen(false)}
             placement="bottom-end"
             closeOnClickInside={false}
             overlay={
                 <div
-                    className="w-[1100px] max-w-[96vw] p-3 rounded-xl shadow-2xl flex flex-col gap-3 bg-surface-primary border border-border text-primary"
+                    className="w-[min(420px,92vw)] flex flex-col text-primary"
                     onClick={(e) => e.stopPropagation()}
                 >
-                    {/* Header */}
-                    <div className="flex items-center justify-between pb-2 border-b border-border">
-                        <div className="flex items-center gap-2">
-                            <ProfilePicture user={{ first_name: activeBot.name }} size="md" />
-                            <span className="font-bold text-sm">{activeBot.name}</span>
+                    {/* Compact header — single row, no extra chrome boxes */}
+                    <div className="flex items-center gap-2 px-3 pt-3 pb-2">
+                        <div className="flex items-center justify-center size-8 rounded-lg bg-surface-secondary">
+                            <IconSparkles className="text-orange size-4" />
                         </div>
-
-                        {messages.length > 0 && (
+                        <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                                <span className="font-semibold text-sm leading-none">Ask AI</span>
+                                <LemonTag type="muted" size="small">
+                                    Beta
+                                </LemonTag>
+                            </div>
+                            <p className="text-[11px] text-muted mt-1 mb-0 truncate">
+                                Write with {activeBot.name} · insert straight into the notebook
+                            </p>
+                        </div>
+                        {hasThread && (
                             <LemonButton
                                 size="xsmall"
                                 type="tertiary"
                                 icon={<IconTrash />}
                                 onClick={() => setMessages([])}
                                 tooltip="Clear conversation"
-                            >
-                                Clear Thread
-                            </LemonButton>
+                            />
                         )}
                     </div>
 
-                    {/* Conversation Thread */}
-                    {messages.length > 0 && (
-                        <div className="max-h-[350px] overflow-y-auto space-y-3 pr-1 pb-1 text-xs leading-relaxed">
-                            {messages.map((msg) => (
-                                <div
-                                    key={msg.id}
-                                    className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
-                                >
-                                    <div className="flex items-center gap-1.5 mb-1 text-[10px] text-muted font-mono">
-                                        {msg.sender === 'ai' ? (
-                                            <>
-                                                <ProfilePicture user={{ first_name: activeBot.name }} size="xs" />
-                                                <span className="font-semibold text-primary">
-                                                    {activeBot.name}
-                                                </span>
-                                            </>
-                                        ) : (
-                                            <span className="font-semibold text-secondary">You</span>
-                                        )}
-                                        <span>• {msg.timestamp}</span>
-                                    </div>
+                    {/* Thread or empty state — flat, no nested black panels */}
+                    <div className="px-3 max-h-[320px] overflow-y-auto">
+                        {!hasThread ? (
+                            <div className="py-2 space-y-3">
+                                <p className="text-xs text-muted mb-0">
+                                    Ask for a summary, draft, rewrite, or action list. Pick a specialist agent if you
+                                    want a tighter voice.
+                                </p>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {SUGGESTIONS.map((suggestion) => (
+                                        <button
+                                            key={suggestion}
+                                            type="button"
+                                            className="text-left text-xs px-2.5 py-1.5 rounded-full border border-border bg-surface-secondary hover:bg-surface-tertiary transition-colors"
+                                            onClick={() => sendPrompt(suggestion)}
+                                        >
+                                            {suggestion}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="py-1 space-y-3">
+                                {messages.map((msg) => (
+                                    <div
+                                        key={msg.id}
+                                        className={`flex flex-col gap-1 ${
+                                            msg.sender === 'user' ? 'items-end' : 'items-start'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-1.5 text-[10px] text-muted">
+                                            {msg.sender === 'ai' ? (
+                                                <>
+                                                    <ProfilePicture user={{ first_name: activeBot.name }} size="xs" />
+                                                    <span className="font-medium text-secondary">{activeBot.name}</span>
+                                                </>
+                                            ) : (
+                                                <span className="font-medium text-secondary">You</span>
+                                            )}
+                                            <span>{msg.timestamp}</span>
+                                        </div>
 
-                                    {/* Speech Bubble */}
-                                    <div className={`flex flex-col gap-1.5 max-w-[92%] ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
                                         <div
-                                            className={`p-3 rounded-xl border whitespace-pre-wrap w-full ${
+                                            className={`max-w-[92%] text-xs leading-relaxed whitespace-pre-wrap px-3 py-2 rounded-2xl ${
                                                 msg.sender === 'user'
-                                                    ? 'bg-surface-secondary border-border text-primary'
-                                                    : 'bg-[var(--bg-3000,#f3f4f5)] border-border text-primary shadow-inner'
+                                                    ? 'bg-blue text-white rounded-br-md'
+                                                    : 'bg-surface-secondary text-primary rounded-bl-md'
                                             }`}
                                         >
                                             {msg.text}
                                         </div>
 
-                                        {/* Insert to Notebook button OUTSIDE the speech bubble */}
                                         {msg.sender === 'ai' && (
-                                            <div className="self-start mt-0.5">
-                                                <LemonButton
-                                                    size="xsmall"
-                                                    type="secondary"
-                                                    icon={<IconPlus />}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation()
-                                                        e.preventDefault()
-                                                        onInsertPromptBlock(msg.text)
-                                                        setIsOpen(false)
-                                                    }}
-                                                    tooltip="Insert into notebook"
-                                                >
-                                                    Insert into Notebook
-                                                </LemonButton>
-                                            </div>
+                                            <LemonButton
+                                                size="xsmall"
+                                                type="tertiary"
+                                                icon={<IconPlus />}
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    e.preventDefault()
+                                                    onInsertPromptBlock(msg.text)
+                                                    setIsOpen(false)
+                                                }}
+                                            >
+                                                Insert into notebook
+                                            </LemonButton>
                                         )}
                                     </div>
-                                </div>
-                            ))}
+                                ))}
 
-                            {isGenerating && (
-                                <div className="flex items-center gap-2 text-muted text-xs py-2 italic">
-                                    <ProfilePicture user={{ first_name: activeBot.name }} size="xs" />
-                                    <span>
-                                        <span className="font-semibold text-primary">{activeBot.name}</span>
-                                        {' is thinking...'}
-                                    </span>
-                                </div>
-                            )}
-                            <div ref={chatEndRef} />
-                        </div>
-                    )}
+                                {isGenerating && (
+                                    <div className="flex items-center gap-2 text-xs text-muted py-1">
+                                        <ProfilePicture user={{ first_name: activeBot.name }} size="xs" />
+                                        <span>
+                                            <span className="font-medium text-secondary">{activeBot.name}</span> is
+                                            thinking…
+                                        </span>
+                                    </div>
+                                )}
+                                <div ref={chatEndRef} />
+                            </div>
+                        )}
+                    </div>
 
-                    {/* Input Container */}
-                    <div className="relative flex flex-col border border-border bg-surface-secondary rounded-xl p-3 focus-within:border-blue-500 shadow-sm transition-colors">
+                    {/* Composer — flat footer, not a second nested box */}
+                    <div className="px-3 pt-2 pb-3 mt-1 border-t border-border space-y-2">
                         <textarea
                             ref={textareaRef}
                             value={prompt}
@@ -248,19 +279,19 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                                 e.stopPropagation()
                                 if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                                     e.preventDefault()
-                                    handleSendPrompt()
+                                    void sendPrompt()
                                 }
                             }}
                             placeholder={
-                                messages.length === 0
-                                    ? `Ask ${activeBot.name} anything...`
-                                    : `Reply to ${activeBot.name} (Cmd + Enter)...`
+                                hasThread
+                                    ? `Reply to ${activeBot.name}…`
+                                    : `Ask ${activeBot.name} anything…`
                             }
-                            rows={4}
-                            className="w-full bg-transparent text-sm text-primary placeholder:text-muted focus:outline-none resize-none leading-relaxed min-h-[110px] p-0 border-none shadow-none"
+                            rows={3}
+                            className="w-full bg-transparent text-sm text-primary placeholder:text-muted focus:outline-none resize-none leading-relaxed min-h-[72px] p-0 border-none shadow-none"
                         />
 
-                        <div className="flex items-center justify-between pt-2 mt-1">
+                        <div className="flex items-center justify-between gap-2">
                             <LemonSelect
                                 value={selectedBot}
                                 onChange={(val) => {
@@ -268,25 +299,25 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                                     setMessages([])
                                 }}
                                 options={BOT_SELECT_OPTIONS}
-                                size="small"
-                                type="secondary"
+                                size="xsmall"
+                                type="tertiary"
                                 dropdownPlacement="top-start"
                                 dropdownMatchSelectWidth={false}
                             />
 
-                            <div className="flex items-center gap-2.5">
-                                <span className="text-muted text-[10px] hidden sm:inline font-mono">
-                                    Cmd + Enter
-                                </span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-muted text-[10px] hidden sm:inline">⌘↵</span>
                                 <LemonButton
                                     type="primary"
                                     size="small"
                                     icon={<IconArrowRight />}
-                                    onClick={handleSendPrompt}
+                                    onClick={() => void sendPrompt()}
                                     loading={isGenerating}
                                     disabled={!prompt.trim()}
-                                    tooltip={`Send to ${activeBot.name} (Cmd + Enter)`}
-                                />
+                                    tooltip={`Send to ${activeBot.name}`}
+                                >
+                                    Send
+                                </LemonButton>
                             </div>
                         </div>
                     </div>
@@ -296,9 +327,9 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
             <LemonButton
                 type="secondary"
                 size="small"
-                icon={<IconSparkles className="text-amber-500" />}
+                icon={<IconSparkles className="text-orange" />}
                 sideIcon={<IconChevronDown />}
-                tooltip="Open AI Chat"
+                tooltip="Open AI chat"
             >
                 <span className="hidden sm:inline font-medium">Ask AI</span>
             </LemonButton>
