@@ -1,28 +1,50 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
-
 /**
  * Public list of resident philosopher bots + avatar URLs from site profiles.
  * Avatars come from Supabase profiles linked via bot_profiles (same as WIMBot).
+ * Cloudflare Pages requires Edge Runtime for all API routes.
  */
+export const runtime = 'edge'
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-const SUPABASE_KEY =
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+import { getRequestContext } from '@cloudflare/next-on-pages'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+function getEnv(name: string): string {
+    const fromProcess = process.env[name]
+    if (fromProcess && String(fromProcess).trim()) return String(fromProcess).trim()
+    try {
+        const ctx = getRequestContext()
+        const v = ctx?.env?.[name]
+        if (typeof v === 'string' && v.trim()) return v.trim()
+    } catch {
+        /* local next dev */
+    }
+    return ''
+}
+
+function json(body: Record<string, unknown>, status = 200, headers: Record<string, string> = {}) {
+    return new Response(JSON.stringify(body), {
+        status,
+        headers: { 'Content-Type': 'application/json', ...headers },
+    })
+}
+
+export default async function handler(req: Request) {
     if (req.method !== 'GET') {
-        return res.status(405).json({ error: 'Method not allowed' })
+        return json({ error: 'Method not allowed' }, 405)
     }
 
+    const SUPABASE_URL = getEnv('NEXT_PUBLIC_SUPABASE_URL')
+    const SUPABASE_KEY =
+        getEnv('SUPABASE_SERVICE_ROLE_KEY') || getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY')
+
     if (!SUPABASE_URL || !SUPABASE_KEY) {
-        return res.status(200).json({
+        return json({
             bots: [],
             error: 'Supabase not configured',
             debug: {
                 hasUrl: !!SUPABASE_URL,
                 keyLen: SUPABASE_KEY.length,
-                hasService: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-                hasAnon: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+                hasService: !!getEnv('SUPABASE_SERVICE_ROLE_KEY'),
+                hasAnon: !!getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
             },
         })
     }
@@ -43,7 +65,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (!botRes.ok) {
             const errText = await botRes.text()
             console.error('[philosopher-bots] bot_profiles', botRes.status, errText)
-            return res.status(200).json({
+            return json({
                 bots: [],
                 error: `bot_profiles ${botRes.status}`,
                 detail: errText.slice(0, 300),
@@ -66,10 +88,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             })
             .filter(Boolean)
 
-        res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
-        return res.status(200).json({ bots })
+        return json(
+            { bots },
+            200,
+            { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' }
+        )
     } catch (e: any) {
         console.error('[philosopher-bots]', e?.message || e)
-        return res.status(200).json({ bots: [], error: e?.message || 'fetch failed' })
+        return json({ bots: [], error: e?.message || 'fetch failed' })
     }
 }

@@ -1,4 +1,8 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
+/**
+ * Local search API (Supabase posts). Cloudflare Pages requires Edge Runtime.
+ */
+export const runtime = 'edge'
+
 import { fetchSupabasePosts } from '../../lib/supabaseBlog'
 
 type SearchHit = {
@@ -17,23 +21,34 @@ const getPosts = () => {
     return postsPromise
 }
 
-const getFacetValues = (value: string | string[] | undefined): string[] => {
+const getFacetValues = (value: string | string[] | null): string[] => {
     if (!value) return []
     return (Array.isArray(value) ? value : [value]).flatMap((item) => item.split(','))
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+function json(body: Record<string, unknown>, status = 200, headers: Record<string, string> = {}) {
+    return new Response(JSON.stringify(body), {
+        status,
+        headers: { 'Content-Type': 'application/json', ...headers },
+    })
+}
+
+export default async function handler(req: Request) {
     if (req.method !== 'GET') {
-        return res.status(405).json({ error: 'Method not allowed' })
+        return json({ error: 'Method not allowed' }, 405)
     }
 
-    res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600')
-    const query = String(req.query.q || '').trim().toLowerCase()
-    const facetFilters = getFacetValues(req.query.facetFilters)
+    const url = new URL(req.url)
+    const query = String(url.searchParams.get('q') || '')
+        .trim()
+        .toLowerCase()
+    const facetFilters = getFacetValues(url.searchParams.get('facetFilters'))
     const requestedType = facetFilters.find((filter) => filter.startsWith('type:'))?.replace('type:', '')
 
+    const cacheHeaders = { 'Cache-Control': 's-maxage=300, stale-while-revalidate=600' }
+
     if (query.length < 2) {
-        return res.status(200).json({ hits: [], nbHits: 0, facets: { type: {} } })
+        return json({ hits: [], nbHits: 0, facets: { type: {} } }, 200, cacheHeaders)
     }
 
     try {
@@ -59,13 +74,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 fields: { slug },
             }))
 
-        return res.status(200).json({
-            hits,
-            nbHits: hits.length,
-            facets: { type: { post: hits.length } },
-        })
+        return json(
+            {
+                hits,
+                nbHits: hits.length,
+                facets: { type: { post: hits.length } },
+            },
+            200,
+            cacheHeaders
+        )
     } catch (error) {
         console.error('[local-search]', error)
-        return res.status(500).json({ hits: [], nbHits: 0, facets: { type: {} } })
+        return json({ hits: [], nbHits: 0, facets: { type: {} } }, 500, cacheHeaders)
     }
 }
