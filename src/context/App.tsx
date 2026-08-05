@@ -22,6 +22,7 @@ import { IconDay, IconLaptop, IconNight } from '@posthog/icons'
 import { themeOptions } from '../hooks/useTheme'
 import qs from 'qs'
 import usePostHog from '../hooks/usePostHog'
+import { windowModeFlags } from 'lib/windowState'
 
 const ContactSales = dynamic(() => import('components/ContactSales'), { ssr: false })
 
@@ -1643,6 +1644,7 @@ const getInitialSiteSettings = (): SiteSettings => {
 export const Provider = ({ children, element, location }: AppProviderProps) => {
     const isSSR = typeof window === 'undefined'
     const [hasMounted, setHasMounted] = useState(false)
+    const layoutRestoredRef = useRef(false)
 
     useEffect(() => {
         setHasMounted(true)
@@ -1779,6 +1781,56 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             )
         }
     }, [])
+
+    useEffect(() => {
+        if (!hasMounted || isMobile || layoutRestoredRef.current) return
+
+        try {
+            const saved = JSON.parse(localStorage.getItem('worldinmaking-window-layout:v1') || '{}')
+            if (saved && typeof saved === 'object' && !Array.isArray(saved)) {
+                setWindows((prev) =>
+                    prev.map((win) => {
+                        const stored = saved[win.path]
+                        if (!stored) return win
+                        return {
+                            ...win,
+                            size: { ...win.size, ...stored.size },
+                            position: { ...win.position, ...stored.position },
+                            expanded: stored.expanded ?? win.expanded,
+                            snapped: stored.snapped ?? win.snapped,
+                            windowed: stored.windowed ?? win.windowed,
+                        }
+                    })
+                )
+            }
+        } catch {
+            // Ignore malformed layout data and use the default window positions.
+        }
+        layoutRestoredRef.current = true
+    }, [hasMounted, isMobile])
+
+    useEffect(() => {
+        if (!layoutRestoredRef.current || isMobile) return
+
+        const layout = windows.reduce<Record<string, unknown>>((result, win) => {
+            if (win.path.startsWith('/')) {
+                result[win.path] = {
+                    size: win.size,
+                    position: win.position,
+                    expanded: win.expanded,
+                    snapped: win.snapped,
+                    windowed: win.windowed,
+                }
+            }
+            return result
+        }, {})
+
+        try {
+            localStorage.setItem('worldinmaking-window-layout:v1', JSON.stringify(layout))
+        } catch {
+            // Storage can be unavailable in private browsing or embedded contexts.
+        }
+    }, [windows, isMobile])
 
     const destinationNav = useDataPipelinesNav({ type: 'destination' })
     const transformationNav = useDataPipelinesNav({ type: 'transformation' })
@@ -2370,6 +2422,13 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 position,
                 previousSize: item.size || { width: 900, height: 650 },
                 previousPosition: item.position || { x: 50, y: 50 },
+                sizeConstraints: item.sizeConstraints || {
+                    min: { width: 280, height: 180 },
+                    max: { width: fullW, height: fullH },
+                },
+                fixedSize: item.fixedSize || false,
+                element: item.element,
+                meta: { title: item.title || path.split('/').pop() || 'Window' },
                 zIndex: maxZ + 1,
                 minimized: false,
                 windowed: true,
@@ -2391,7 +2450,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
     }
 
     const updateWindowRef = (appWindow: AppWindow, ref: React.RefObject<HTMLDivElement>) => {
-        setWindows((windows) => windows.map((w) => (w === appWindow ? { ...appWindow, ref } : w)))
+        setWindows((windows) => windows.map((w) => (w.key === appWindow.key ? { ...w, ref } : w)))
     }
 
     const updateWindow = (
@@ -2406,34 +2465,54 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             windowed?: boolean
             snapped?: 'left' | 'right' | false
             appSettings?: AppSetting
+            /** In-window navigation (forum threads, etc.) */
+            path?: string
+            props?: Record<string, any>
+            location?: any
         }
     ) => {
-        const newAppWindow = {
-            ...appWindow,
-            position: {
-                ...appWindow.position,
-                ...(updates.position || {}),
-            },
-            size: {
-                ...appWindow.size,
-                ...(updates.size || {}),
-            },
-            previousPosition: {
-                ...appWindow.previousPosition,
-                ...(updates.previousPosition || {}),
-            },
-            previousSize: {
-                ...appWindow.previousSize,
-                ...(updates.previousSize || {}),
-            },
-            ...(updates.element ? { element: updates.element } : {}),
-            ...(updates.expanded !== undefined ? { expanded: updates.expanded } : {}),
-            ...(updates.windowed !== undefined ? { windowed: updates.windowed } : {}),
-            ...(updates.snapped !== undefined ? { snapped: updates.snapped } : {}),
-            ...(updates.appSettings ? { appSettings: { ...appWindow.appSettings, ...updates.appSettings } } : {}),
-        }
-        setWindows((windows) => windows.map((w) => (w === appWindow ? newAppWindow : w)))
-        return newAppWindow
+        let nextWindow: AppWindow | undefined
+        setWindows((windows) =>
+            windows.map((window) => {
+                if (window.key !== appWindow.key) return window
+
+                const nextPath = updates.path !== undefined ? updates.path : window.path
+                nextWindow = {
+                    ...window,
+                    position: { ...window.position, ...(updates.position || {}) },
+                    size: { ...window.size, ...(updates.size || {}) },
+                    previousPosition: { ...window.previousPosition, ...(updates.previousPosition || {}) },
+                    previousSize: { ...window.previousSize, ...(updates.previousSize || {}) },
+                    ...(updates.element ? { element: updates.element } : {}),
+                    ...(updates.expanded !== undefined ? { expanded: updates.expanded } : {}),
+                    ...(updates.windowed !== undefined ? { windowed: updates.windowed } : {}),
+                    ...(updates.snapped !== undefined ? { snapped: updates.snapped } : {}),
+                    ...(updates.appSettings
+                        ? { appSettings: { ...window.appSettings, ...updates.appSettings } }
+                        : {}),
+                    ...(updates.path !== undefined ? { path: updates.path } : {}),
+                    ...(updates.props
+                        ? { props: { ...(window.props || {}), ...updates.props, path: nextPath } }
+                        : updates.path !== undefined
+                          ? { props: { ...(window.props || {}), path: updates.path } }
+                          : {}),
+                    ...(updates.location !== undefined
+                        ? { location: updates.location }
+                        : updates.path !== undefined
+                          ? {
+                                location: {
+                                    ...(window.location || {}),
+                                    pathname: updates.path,
+                                },
+                            }
+                          : {}),
+                }
+                return nextWindow
+            })
+        )
+        // React state updates are batched, so the callback result is not
+        // synchronously available. Callers only need a window identity here.
+        return nextWindow || appWindow
     }
 
     const openSearch = (initialFilter?: string) => {
@@ -2514,9 +2593,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             size,
             previousSize: prevSize,
             previousPosition: prevPos,
-            snapped: side,
-            expanded: false,
-            windowed: false,
+            ...windowModeFlags(side === 'left' ? 'snapped-left' : 'snapped-right'),
         })
     }
 
@@ -2546,17 +2623,15 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         setWindows((windows) =>
             windows
                 .filter(
-                    (w) => !(dropSnappedSiblings && w !== windowToExpand && w.snapped && !w.appSettings?.size?.fixed)
+                    (w) => !(dropSnappedSiblings && w.key !== windowToExpand.key && w.snapped && !w.appSettings?.size?.fixed)
                 )
                 .map((w) =>
-                    w === windowToExpand
+                    w.key === windowToExpand.key
                         ? {
                               ...w,
                               previousSize: w.size,
                               previousPosition: w.position,
-                              expanded: true,
-                              windowed: false,
-                              snapped: false,
+                              ...windowModeFlags('maximized'),
                               zIndex: windows.length,
                           }
                         : w
@@ -2810,7 +2885,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 // Cycle to next window
                 if (windows.length > 1) {
                     // Find the currently focused window index
-                    const currentIndex = windows.findIndex((w) => w === focusedWindow)
+                    const currentIndex = windows.findIndex((w) => w.key === focusedWindow?.key)
                     // Calculate next window index (wrap around to first if at end)
                     const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % windows.length
                     const nextWindow = windows[nextIndex]

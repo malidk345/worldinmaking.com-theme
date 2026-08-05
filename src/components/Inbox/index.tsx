@@ -210,6 +210,8 @@ interface QuestionRowProps {
     setBottomHeight: (height: number) => void
     containerRef: React.RefObject<HTMLDivElement>
     pinned?: boolean
+    /** Open thread detail panel (must set local + window path so React re-renders) */
+    onOpenThread: (permalink: string) => void
 }
 
 const QuestionRow = ({
@@ -220,9 +222,8 @@ const QuestionRow = ({
     setBottomHeight,
     containerRef,
     pinned = false,
+    onOpenThread,
 }: QuestionRowProps) => {
-    const { appWindow } = useWindow()
-    const { updateWindow } = useApp()
     const q = question?.attributes || question || {}
     const subject = q.subject || q.title || 'Community Discussion'
     const numReplies = q.numReplies || 0
@@ -236,7 +237,7 @@ const QuestionRow = ({
     const lastReply = replyList[replyList.length - 1]
     const latestAuthor = lastReply?.profile || lastReply?.attributes?.profile || profile
     const threadPath = `/questions/${permalink}`
-    const active = threadPath === appWindowPath
+    const active = threadPath === appWindowPath || appWindowPath?.endsWith(`/${permalink}`)
     const authorName = profile?.firstName
         ? `${profile.firstName} ${profile.lastName || ''}`.trim()
         : profile?.username || 'Community Member'
@@ -260,24 +261,17 @@ const QuestionRow = ({
                     if (e && e.preventDefault) {
                         e.preventDefault()
                     }
-                    // Keep AppWindow path in sync with the thread URL. Raw pushState alone left
-                    // path at /questions; mobile focus handlers then router.push('/questions') and
-                    // the detail panel closed mid-scroll / mid-touch.
-                    if (appWindow) {
-                        updateWindow(appWindow, {
-                            path: threadPath,
-                            props: { ...(appWindow.props || {}), path: threadPath },
-                        })
+                    if (e && e.stopPropagation) {
+                        e.stopPropagation()
                     }
-                    if (typeof window !== 'undefined') {
-                        window.history.pushState(
-                            { windowKey: appWindow?.key || 'forum-main-window' },
-                            '',
-                            threadPath
-                        )
-                    }
-                    if (containerRef.current && bottomHeight <= 45) {
-                        setBottomHeight(containerRef.current.getBoundingClientRect().height * 0.8)
+                    onOpenThread(String(permalink))
+                    // Always lift the detail panel when opening a thread
+                    if (containerRef.current) {
+                        const h = containerRef.current.getBoundingClientRect().height
+                        const next = Math.max(280, h * 0.8)
+                        if (bottomHeight < next * 0.5) {
+                            setBottomHeight(next)
+                        }
                     }
                 }}
             >
@@ -357,6 +351,7 @@ interface QuestionToolbarProps {
     expandOrCollapse: (expandable: boolean) => void
     isMobile: boolean
     menuValue: string
+    onCloseThread?: () => void
 }
 
 const QuestionToolbar = React.memo(
@@ -376,6 +371,7 @@ const QuestionToolbar = React.memo(
         expandOrCollapse,
         isMobile,
         menuValue,
+        onCloseThread,
     }: QuestionToolbarProps) => {
         const router = useRouter()
         const navigate = (to: string, options?: any) => {
@@ -470,25 +466,8 @@ const QuestionToolbar = React.memo(
                                             />
                                         }
                                         onClick={() => {
-                                            // Mobile side-by-side: collapse detail without navigating
-                                            // away (navigate(menuValue) was closing the thread panel
-                                            // and felt like a random dismiss while interacting).
                                             if (isMobile && sideBySide) {
-                                                expandOrCollapse(false)
-                                                // Optional: return to topic list path without full reload
-                                                try {
-                                                    const listPath =
-                                                        menuValue && menuValue.startsWith('/questions')
-                                                            ? menuValue
-                                                            : '/questions'
-                                                    window.history.replaceState(
-                                                        { windowKey: 'forum-main-window' },
-                                                        '',
-                                                        listPath
-                                                    )
-                                                } catch {
-                                                    /* ignore */
-                                                }
+                                                onCloseThread?.()
                                             } else {
                                                 expandOrCollapse(expandable)
                                             }
@@ -614,34 +593,68 @@ export default function Inbox(props) {
     const [showSubscribedQuestions, setShowSubscribedQuestions] = useState(false)
     const { questions: subscribedQuestions } = useSubscribedQuestions()
     const [menuValue, setMenuValue] = useState('')
+    // Local open-thread state — must not rely only on pushState (no React re-render)
+    const [activeThread, setActiveThread] = useState<string | undefined>(permalink || undefined)
     const isMobile = useMemo(() => {
         if (typeof window !== 'undefined' && window.innerWidth < 896) return true
         return (appWindow?.size?.width || (typeof window !== 'undefined' ? window.innerWidth : 1024)) < 896
     }, [appWindow?.size?.width])
 
+    // Prefer explicit selection; fall back to props/URL-derived permalink
+    const openPermalink = activeThread || permalink
+
+    const openThread = useCallback(
+        (slug: string) => {
+            const clean = String(slug || '')
+                .replace(/^\/questions\/?/, '')
+                .replace(/^\/+/, '')
+            if (!clean) return
+            const threadPath = `/questions/${clean}`
+            setActiveThread(clean)
+            if (appWindow) {
+                updateWindow(appWindow, {
+                    path: threadPath,
+                    props: { ...(appWindow.props || {}), path: threadPath },
+                })
+            }
+            if (typeof window !== 'undefined') {
+                try {
+                    window.history.pushState(
+                        { windowKey: appWindow?.key || 'forum-main-window' },
+                        '',
+                        threadPath
+                    )
+                } catch {
+                    /* ignore */
+                }
+            }
+            // Ensure panel is tall enough to see
+            requestAnimationFrame(() => {
+                if (!containerRef.current) return
+                const h = containerRef.current.getBoundingClientRect().height
+                const ratio = isMobile ? 0.85 : 0.65
+                setBottomHeight(Math.max(isMobile ? 280 : 350, h * ratio))
+            })
+        },
+        [appWindow, updateWindow, isMobile]
+    )
+
+    // Sync from external navigation (window path / props)
     useEffect(() => {
-        if (permalink) {
+        if (permalink && permalink !== activeThread) {
+            setActiveThread(permalink)
+        }
+    }, [permalink])
+
+    useEffect(() => {
+        if (openPermalink) {
             if (bottomHeight <= 45) {
                 const containerH = containerRef.current?.getBoundingClientRect().height || 500
-                // On mobile open nearly full height so content can scroll inside the panel
-                // without the strip collapsing under the list gesture.
                 const ratio = isMobile ? 0.85 : 0.6
                 setBottomHeight(Math.max(isMobile ? 280 : 350, containerH * ratio))
             }
         }
-    }, [permalink, isMobile])
-
-    // Keep AppWindow path aligned when browser URL is a thread but window path lagged
-    useEffect(() => {
-        if (!appWindow || !permalink) return
-        const threadPath = `/questions/${permalink}`
-        if (appWindow.path !== threadPath && (appWindow.path === '/questions' || appWindow.path?.startsWith('/questions'))) {
-            updateWindow(appWindow, {
-                path: threadPath,
-                props: { ...(appWindow.props || {}), path: threadPath },
-            })
-        }
-    }, [permalink, appWindow?.path])
+    }, [openPermalink, isMobile])
 
     const expandable = useMemo(() => {
         if (!containerRef.current) return true
@@ -801,6 +814,7 @@ export default function Inbox(props) {
                                                     setBottomHeight={setBottomHeight}
                                                     containerRef={containerRef}
                                                     pinned
+                                                    onOpenThread={openThread}
                                                 />
                                             ))}
                                             {(showSubscribedQuestions
@@ -817,6 +831,7 @@ export default function Inbox(props) {
                                                     bottomHeight={bottomHeight}
                                                     setBottomHeight={setBottomHeight}
                                                     containerRef={containerRef}
+                                                    onOpenThread={openThread}
                                                 />
                                             ))}
                                             {!isLoading && (!questions.data || questions.data.length === 0) && (
@@ -847,7 +862,7 @@ export default function Inbox(props) {
                                     </ScrollArea>
                                 </div>
                                 <AnimatePresence>
-                                    {permalink && (
+                                    {openPermalink && (
                                         <motion.div
                                             ref={bottomContainerRef}
                                             className={`flex-none relative min-h-0 min-w-0 ${
@@ -855,16 +870,21 @@ export default function Inbox(props) {
                                             } ${
                                                 sideBySide ? '@4xl:border-l border-primary' : 'border-t border-primary'
                                             }`}
-                                            initial={{
-                                                width: 0,
-                                            }}
+                                            initial={
+                                                sideBySide
+                                                    ? { width: 0 }
+                                                    : { height: 0, opacity: 0.6 }
+                                            }
                                             animate={{
                                                 height: sideBySide ? '100%' : bottomHeight,
                                                 width: sideBySide ? sideWidth : '100%',
+                                                opacity: 1,
                                             }}
-                                            exit={{
-                                                width: 0,
-                                            }}
+                                            exit={
+                                                sideBySide
+                                                    ? { width: 0 }
+                                                    : { height: 0, opacity: 0 }
+                                            }
                                             transition={{
                                                 type: 'tween',
                                                 ...(isDragging ? { duration: 0 } : {}),
@@ -905,8 +925,8 @@ export default function Inbox(props) {
                                             <ScrollArea>
                                                 <div className="pb-[64px]">
                                                     <Question
-                                                        key={permalink}
-                                                        id={permalink}
+                                                        key={openPermalink}
+                                                        id={openPermalink}
                                                         onQuestionReady={(question) => setQuestion(question)}
                                                         subscribeButton={false}
                                                         showSlug
@@ -931,6 +951,33 @@ export default function Inbox(props) {
                                                 expandOrCollapse={expandOrCollapse}
                                                 isMobile={isMobile}
                                                 menuValue={menuValue}
+                                                onCloseThread={() => {
+                                                    setActiveThread(undefined)
+                                                    setBottomHeight(45)
+                                                    if (appWindow) {
+                                                        const listPath =
+                                                            menuValue && menuValue.startsWith('/questions')
+                                                                ? menuValue
+                                                                : '/questions'
+                                                        updateWindow(appWindow, {
+                                                            path: listPath,
+                                                            props: { ...(appWindow.props || {}), path: listPath },
+                                                        })
+                                                    }
+                                                    try {
+                                                        const listPath =
+                                                            menuValue && menuValue.startsWith('/questions')
+                                                                ? menuValue
+                                                                : '/questions'
+                                                        window.history.replaceState(
+                                                            { windowKey: 'forum-main-window' },
+                                                            '',
+                                                            listPath
+                                                        )
+                                                    } catch {
+                                                        /* ignore */
+                                                    }
+                                                }}
                                             />
                                         </motion.div>
                                     )}
