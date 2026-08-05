@@ -48,7 +48,6 @@ export default function AmbientPlayer() {
         audio.src = currentStation.url
 
         const handleError = (e: any) => {
-            console.warn('Audio stream error for station:', currentStation.name, e)
             if (stationIndex < STATIONS.length - 1) {
                 setStationIndex((prev) => prev + 1)
             } else {

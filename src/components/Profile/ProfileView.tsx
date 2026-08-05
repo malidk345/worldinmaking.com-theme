@@ -1153,7 +1153,6 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                             duration: 3000,
                         })
                     } else {
-                        console.error('Failed to block user:', response.status)
                         addToast({
                             description: 'Failed to block user',
                             error: true,
@@ -1193,7 +1192,6 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                         duration: 3000,
                     })
                 } else {
-                    console.error('Failed to unblock user:', response.status)
                     addToast({
                         description: 'Failed to unblock user',
                         error: true,

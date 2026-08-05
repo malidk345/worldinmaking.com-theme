@@ -70,8 +70,6 @@ export const CopyMarkdownActionsDropdown: React.FC<CopyMarkdownActionsDropdownPr
                 navigator.clipboard.writeText(markdownContent)
                 setCopied(true)
                 setTimeout(() => setCopied(false), 2000)
-            } else {
-                console.error('Failed to fetch markdown:', response.statusText)
             }
         } catch (error) {
             console.error('Error fetching markdown:', error)

@@ -41,7 +41,6 @@ export const FounderNote = () => {
             if (audioRef.current) {
                 audioRef.current.src = randomMp3
                 audioRef.current.play().then(() => {
-                    console.log('Audio played successfully')
                 })
             }
         } catch (error) {

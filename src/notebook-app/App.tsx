@@ -35,7 +35,6 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
     return { hasError: true, error }
   }
   override componentDidCatch(error: Error, errorInfo: any) {
-    console.error('App ErrorBoundary caught:', error, errorInfo)
   }
   override render() {
     if (this.state.hasError) {

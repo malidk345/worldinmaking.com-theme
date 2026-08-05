@@ -157,7 +157,6 @@ export default function PlacesMap({
 
     const setupMap = useCallback(() => {
         if (!isClient) {
-            console.error('Not client')
             return
         }
         if (isLocationLoading) {
@@ -166,11 +165,9 @@ export default function PlacesMap({
         }
         const mapboxgl = getMapbox()
         if (!mapboxgl) {
-            console.error('No mapboxgl')
             return
         }
         if (!token) {
-            console.error('No token')
             return
         }
         const clearMarkers = () => {

@@ -137,8 +137,6 @@ export function InProgress(
     )
 
     if (error) {
-        console.error(error)
-
         posthog?.capture('squeak error', {
             source: 'InProgress',
             error: JSON.stringify(error),

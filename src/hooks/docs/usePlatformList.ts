@@ -162,11 +162,6 @@ export default function usePlatformList(
         // Warn about MDX files that exist but aren't in the sidenav
         const orphanedFiles = result.filter((platform: Platform) => !section.urls.includes(platform.url))
         if (orphanedFiles.length > 0) {
-            console.warn(
-                `[usePlatformList] Found ${orphanedFiles.length} MDX file(s) in "${basePath}" not listed in sidenav:\n` +
-                    orphanedFiles.map((p: Platform) => `  - ${p.url}`).join('\n') +
-                    `\nAdd these to src/navs/index.js or delete the MDX files if they're no longer needed.`
-            )
         }
 
         // Default: follow the sidebar source order from navs/index.js. When `sortAlpha` is passed, sort by label instead.
