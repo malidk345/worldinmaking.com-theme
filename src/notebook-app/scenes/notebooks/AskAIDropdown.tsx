@@ -9,6 +9,7 @@ import {
     type PhilosopherBot,
 } from '~nb-lib/philosophers'
 import { useSiteThemeSync } from '../../lib/useSiteThemeSync'
+import { ReasoningAnswer } from './ReasoningAnswer'
 
 export interface AskAIDropdownProps {
     onInsertPromptBlock: (initialPrompt?: string) => void
@@ -286,34 +287,13 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                                         >
                                             {msg.sender === 'ai' &&
                                                 (msg.thinkingStages?.length || msg.thought) && (
-                                                    <details className="w-full group rounded-lg border border-[var(--border-3000,#e2e8f0)] bg-[var(--color-bg-fill-tertiary)]/40 px-2.5 py-1.5">
-                                                        <summary className="cursor-pointer text-[10px] font-semibold uppercase tracking-wide text-muted select-none list-none flex items-center gap-1.5">
-                                                            <span className="opacity-70">Thinking process</span>
-                                                            <span className="font-normal normal-case opacity-60">
-                                                                {msg.thinkingStages?.length
-                                                                    ? `${msg.thinkingStages.length} stages`
-                                                                    : 'inner monologue'}
-                                                            </span>
-                                                        </summary>
-                                                        <div className="mt-2 space-y-2 pb-1">
-                                                            {msg.thinkingStages && msg.thinkingStages.length > 0
-                                                                ? msg.thinkingStages.map((stage) => (
-                                                                      <div key={`${msg.id}-${stage.id}`}>
-                                                                          <div className="text-[10px] font-bold text-secondary uppercase tracking-wide mb-0.5">
-                                                                              {stage.label}
-                                                                          </div>
-                                                                          <p className="text-[11px] text-muted whitespace-pre-wrap mb-0 leading-snug">
-                                                                              {stage.text}
-                                                                          </p>
-                                                                      </div>
-                                                                  ))
-                                                                : msg.thought && (
-                                                                      <p className="text-[11px] text-muted whitespace-pre-wrap mb-0 leading-snug">
-                                                                          {msg.thought}
-                                                                      </p>
-                                                                  )}
-                                                        </div>
-                                                    </details>
+                                                    <ReasoningAnswer
+                                                        id={`${msg.id}-thought`}
+                                                        completed
+                                                        content={msg.thought || ''}
+                                                        stages={msg.thinkingStages}
+                                                        completedLabel="Thought"
+                                                    />
                                                 )}
 
                                             <div
@@ -351,12 +331,16 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                             })}
 
                             {isGenerating && (
-                                <div className="flex items-center gap-2 text-muted text-xs py-2 italic">
-                                    <ProfilePicture user={philosopherAsUser(activeBot)} size="xs" />
-                                    <span>
+                                <div className="flex flex-col gap-1.5 items-start w-full max-w-[92%]">
+                                    <div className="flex items-center gap-1.5 text-[10px] text-muted font-mono">
+                                        <ProfilePicture user={philosopherAsUser(activeBot)} size="xs" />
                                         <span className="font-semibold text-primary">{activeBot.name}</span>
-                                        {' — perceive → frame → tension → move…'}
-                                    </span>
+                                    </div>
+                                    <ReasoningAnswer
+                                        id="live-thinking"
+                                        completed={false}
+                                        progressLabel="Thinking…"
+                                    />
                                 </div>
                             )}
                             <div ref={chatEndRef} />
