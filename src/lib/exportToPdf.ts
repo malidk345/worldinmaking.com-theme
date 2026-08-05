@@ -27,7 +27,6 @@ export const exportToPdf = async ({ slideId, filename }: ExportToPdfOptions = {}
 
         const container = document.querySelector(containerSelector)
         if (!container) {
-            console.error('Presentation container not found')
             return false
         }
 
@@ -37,7 +36,6 @@ export const exportToPdf = async ({ slideId, filename }: ExportToPdfOptions = {}
         const slideElements = container.querySelectorAll(slideSelector) as NodeListOf<HTMLElement>
 
         if (slideElements.length === 0) {
-            console.error('No slides found')
             return false
         }
 

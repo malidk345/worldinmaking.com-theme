@@ -69,7 +69,6 @@ async function fetchRSSTopic(): Promise<string> {
                         )
                     if (rawTitles.length > 0) {
                         const selected = rawTitles[Math.floor(Math.random() * rawTitles.length)]
-                        console.log(`[RSS Feed] Successfully fetched live topic from ${url}: "${selected}"`)
                         return selected
                     }
                 }

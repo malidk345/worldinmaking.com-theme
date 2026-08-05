@@ -139,7 +139,6 @@ export const addRoadmapEmojiReaction = async ({
 
         if (!response.ok) {
             const errorData = await response.text()
-            console.error('Error response:', errorData)
             throw new Error(`Failed to ${remove ? 'remove' : 'add'} emoji reaction: ${response.status} ${errorData}`)
         }
 

@@ -5377,7 +5377,6 @@ function MarkdownNotebookEditor({
             }
         })
         if (responseNodeIndex === -1) {
-            console.error('Prompt node not found for AI submission')
             return false
         }
 

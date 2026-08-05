@@ -153,7 +153,6 @@ export default function EventsMap({
 
     const setupMap = useCallback(() => {
         if (!isClient) {
-            console.error('Not client')
             return
         }
         if (isLocationLoading) {
@@ -162,12 +161,10 @@ export default function EventsMap({
         }
         const mapboxgl = getMapbox()
         if (!mapboxgl) {
-            console.error('No mapboxgl')
             return
         }
         if (!token) {
             // No token available on client – do not init the map
-            console.error('No token')
             return
         }
         const clearMarkers = () => {
