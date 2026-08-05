@@ -107,7 +107,8 @@ WindowRouterMemo.displayName = 'WindowRouterInner'
 // No solid bg-primary wrapper here — opaque fills kill WINDOW_BG frosted glass.
 // Pages set their own data-scheme / backgrounds (same as wimpos AppWindow content).
 const WindowRouter = (props: WindowRouterProps) => (
-    <div data-scheme="primary" className="text-primary size-full flex flex-col min-h-0">
+    // min-h-full + h-auto: short pages fill the window; long pages grow so parent can scroll
+    <div data-scheme="primary" className="text-primary min-h-full h-auto flex flex-col">
         <WindowRouterMemo {...props} />
     </div>
 )

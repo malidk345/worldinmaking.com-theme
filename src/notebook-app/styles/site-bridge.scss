@@ -2,10 +2,18 @@
  * Embed-only sizing for AppWindow.
  * Color tokens come from posthog-notebook-app (index.css + base.scss).
  */
+/* Fill the window when short; grow with content when long (parent WindowContent scrolls) */
 .App {
     min-height: 100%;
-    height: 100%;
+    height: auto;
     box-sizing: border-box;
+}
+
+.App.notebook-app-scope {
+    min-height: 100%;
+    height: auto;
+    /* Prefer native page scroll inside AppWindow content pane */
+    overflow: visible;
 }
 
 /*

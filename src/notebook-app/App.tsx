@@ -230,14 +230,15 @@ export function App() {
   // Host light/dark → .dark so index tokens (--bg-3000 etc.) resolve.
   return (
     <div
-      className={`App notebook-app-scope bg-[var(--bg-3000,#f3f4f5)] text-[var(--text-3000,#1d1f27)] ${
+      className={`App notebook-app-scope min-h-full h-auto bg-[var(--bg-3000,#f3f4f5)] text-[var(--text-3000,#1d1f27)] ${
         hostTheme === 'dark' ? 'dark' : ''
       }`}
       data-lemon-scope
       data-host-theme={hostTheme}
     >
       {/* ===== Main Content Area matching PostHog Notebook SceneContent ===== */}
-      <main className="p-3 sm:p-6 lg:p-8 max-w-[1400px] mx-auto space-y-4 sm:space-y-6">
+      {/* pb so last lines aren't clipped under window edge when scrolling */}
+      <main className="p-3 sm:p-6 lg:p-8 pb-16 sm:pb-20 max-w-[1400px] mx-auto space-y-4 sm:space-y-6">
         <ErrorBoundary>
           {/* ---------- Notebooks List (Default Entry Scene) ---------- */}
           {route.page === 'list' && (
