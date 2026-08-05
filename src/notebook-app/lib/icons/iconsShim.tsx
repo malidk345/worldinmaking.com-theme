@@ -78,6 +78,7 @@ import {
   ArrowUp,
   ChevronLeft,
   ArrowUpDown,
+  Brain,
 } from 'lucide-react'
 
 export const IconCode = (props: any) => <Code className="w-4 h-4 inline-block" strokeWidth={1.5} {...props} />
@@ -149,6 +150,8 @@ export const IconHide = (props: any) => <EyeOff className="w-4 h-4 inline-block"
 export const IconWarning = (props: any) => <AlertTriangle className="w-4 h-4 inline-block" {...props} />
 export const IconImage = (props: any) => <Image className="w-4 h-4 inline-block" {...props} />
 export const IconAI = (props: any) => <Bot className="w-4 h-4 inline-block" {...props} />
+/** PostHog AI thinking / ReasoningAnswer — notebook webpack maps @posthog/icons → this shim */
+export const IconBrain = (props: any) => <Brain className="w-4 h-4 inline-block" strokeWidth={1.5} {...props} />
 export const IconChat = (props: any) => <MessageSquare className="w-4 h-4 inline-block" {...props} />
 export const IconGroups = (props: any) => <Users className="w-4 h-4 inline-block" {...props} />
 export const IconMapPin = (props: any) => <MapPin className="w-4 h-4 inline-block" {...props} />
