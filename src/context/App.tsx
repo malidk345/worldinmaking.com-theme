@@ -22,7 +22,7 @@ import { IconDay, IconLaptop, IconNight } from '@posthog/icons'
 import { themeOptions } from '../hooks/useTheme'
 import qs from 'qs'
 import usePostHog from '../hooks/usePostHog'
-import { windowModeFlags } from 'lib/windowState'
+import { mergeWindowUpdate, windowModeFlags, type WindowUpdate } from 'lib/windowState'
 
 const ContactSales = dynamic(() => import('components/ContactSales'), { ssr: false })
 
@@ -1791,7 +1791,16 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 setWindows((prev) =>
                     prev.map((win) => {
                         const stored = saved[win.path]
-                        if (!stored) return win
+                        if (
+                            !stored ||
+                            typeof stored !== 'object' ||
+                            typeof stored.size?.width !== 'number' ||
+                            typeof stored.size?.height !== 'number' ||
+                            typeof stored.position?.x !== 'number' ||
+                            typeof stored.position?.y !== 'number'
+                        ) {
+                            return win
+                        }
                         return {
                             ...win,
                             size: { ...win.size, ...stored.size },
@@ -1805,6 +1814,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             }
         } catch {
             // Ignore malformed layout data and use the default window positions.
+            localStorage.removeItem('worldinmaking-window-layout:v1')
         }
         layoutRestoredRef.current = true
     }, [hasMounted, isMobile])
@@ -2455,58 +2465,14 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
 
     const updateWindow = (
         appWindow: AppWindow,
-        updates: {
-            position?: { x?: number; y?: number }
-            size?: { width?: number; height?: number }
-            previousPosition?: { x?: number; y?: number }
-            previousSize?: { width?: number; height?: number }
-            element?: any
-            expanded?: boolean
-            windowed?: boolean
-            snapped?: 'left' | 'right' | false
-            appSettings?: AppSetting
-            /** In-window navigation (forum threads, etc.) */
-            path?: string
-            props?: Record<string, any>
-            location?: any
-        }
+        updates: WindowUpdate
     ) => {
         let nextWindow: AppWindow | undefined
         setWindows((windows) =>
             windows.map((window) => {
                 if (window.key !== appWindow.key) return window
 
-                const nextPath = updates.path !== undefined ? updates.path : window.path
-                nextWindow = {
-                    ...window,
-                    position: { ...window.position, ...(updates.position || {}) },
-                    size: { ...window.size, ...(updates.size || {}) },
-                    previousPosition: { ...window.previousPosition, ...(updates.previousPosition || {}) },
-                    previousSize: { ...window.previousSize, ...(updates.previousSize || {}) },
-                    ...(updates.element ? { element: updates.element } : {}),
-                    ...(updates.expanded !== undefined ? { expanded: updates.expanded } : {}),
-                    ...(updates.windowed !== undefined ? { windowed: updates.windowed } : {}),
-                    ...(updates.snapped !== undefined ? { snapped: updates.snapped } : {}),
-                    ...(updates.appSettings
-                        ? { appSettings: { ...window.appSettings, ...updates.appSettings } }
-                        : {}),
-                    ...(updates.path !== undefined ? { path: updates.path } : {}),
-                    ...(updates.props
-                        ? { props: { ...(window.props || {}), ...updates.props, path: nextPath } }
-                        : updates.path !== undefined
-                          ? { props: { ...(window.props || {}), path: updates.path } }
-                          : {}),
-                    ...(updates.location !== undefined
-                        ? { location: updates.location }
-                        : updates.path !== undefined
-                          ? {
-                                location: {
-                                    ...(window.location || {}),
-                                    pathname: updates.path,
-                                },
-                            }
-                          : {}),
-                }
+                nextWindow = mergeWindowUpdate(window, updates)
                 return nextWindow
             })
         )

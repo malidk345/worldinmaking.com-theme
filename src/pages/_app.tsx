@@ -54,7 +54,7 @@ export default function App({ Component, pageProps }: AppProps) {
         <div
             data-scheme="primary"
             suppressHydrationWarning
-            className="h-screen w-screen overflow-hidden bg-light dark:bg-dark text-primary"
+            className="h-dvh min-h-0 w-screen overflow-hidden bg-light dark:bg-dark text-primary"
         >
             <ToastProvider>
                 <Provider element={<Component {...pageProps} />} location={location as any}>

@@ -537,12 +537,36 @@
 body {
     @apply font-rounded overflow-x-hidden m-0;
     word-wrap: break-word;
+    min-height: 100dvh;
+    -webkit-text-size-adjust: 100%;
 }
 body.light {
-    background-color: #eeefe9;
+    background-color: var(--color-bg-3000-light);
 }
 body.dark {
-    background-color: #1d1f27;
+    background-color: var(--color-bg-3000-dark);
+}
+
+#app-container {
+    height: 100%;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+    overscroll-behavior: none;
+}
+
+[data-app='AppWindow']:focus-visible {
+    outline: 2px solid var(--accent, #f54e00);
+    outline-offset: -2px;
+}
+
+@media (max-width: 767px) {
+    input,
+    textarea,
+    select {
+        /* Prevent iOS Safari from zooming the page when a small control gets focus. */
+        font-size: max(16px, 1em);
+    }
 }
 
 p {
@@ -576,6 +600,9 @@ hr {
 }
 
 :root {
+    /* Shared with the notebook PostHog-3000 background tokens. */
+    --color-bg-3000-light: #f3f4ef;
+    --color-bg-3000-dark: #1d1f27;
     --squeak-primary-color: 0, 0, 0;
     --squeak-default-avatar-fill: 255, 255, 255;
     --squeak-button-color: 245, 78, 0;

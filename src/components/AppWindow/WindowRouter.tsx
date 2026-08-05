@@ -10,9 +10,19 @@ import BlogPost from '../../templates/BlogPost'
 import PostListing from '../../templates/PostListing'
 import DisplayOptions from 'components/DisplayOptions'
 import Legal from 'components/Legal'
-import { AppWindow } from '../../context/Window'
+import type { AppWindow } from '../../context/Window'
 import Editor from 'components/Editor'
 import PostEditorWindow from 'components/Community/PostEditorWindow'
+import WimAuthPortal from 'components/Auth/WimAuthPortal'
+import TapePlayer from 'components/TapePlayer'
+import { useApp } from '../../context/App'
+import { useWindow } from '../../context/Window'
+
+function AuthWindow() {
+    const { appWindow } = useWindow()
+    const { closeWindow } = useApp()
+    return <WimAuthPortal onSuccess={() => closeWindow(appWindow)} />
+}
 
 
 export interface WindowRouterProps {
@@ -53,6 +63,16 @@ function WindowRouterInner({ item }: WindowRouterProps) {
     }
     if (path === '/editor' || path.startsWith('/editor')) {
         return <Editor {...props} />
+    }
+    if (/^\/tape-player|^\/mixtapes/.test(path)) {
+        return <TapePlayer {...props} />
+    }
+    if (/^\/login|^\/signup/.test(path)) {
+        return (
+            <div className="flex min-h-full items-center justify-center bg-slate-950/90 p-6">
+                <AuthWindow />
+            </div>
+        )
     }
     if (path === '/manifesto' || path === '/about-wim' || path === '/world-in-making') {
         return null

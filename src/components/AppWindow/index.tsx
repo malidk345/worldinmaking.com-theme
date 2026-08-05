@@ -2,40 +2,27 @@ import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import {
     AnimatePresence,
     motion,
-    PanInfo,
     useDragControls,
     useMotionValue,
     useSpring,
     useTransform,
     useVelocity,
 } from 'framer-motion'
-import {
-    IconMinus,
-    IconX,
-    IconCollapse45Chevrons,
-    IconSquare,
-} from '@posthog/icons'
 import { MenuItem, useApp } from '../../context/App'
 import { Provider as WindowProvider, AppWindow as AppWindowType, useWindow } from '../../context/Window'
-import Tooltip from 'components/RadixUI/Tooltip'
-import OSButton from 'components/OSButton'
 import type { MenuItemType } from 'components/RadixUI/MenuBar'
 import { IMenu } from 'components/PostLayout/types'
 import { useRouter } from 'next/router'
-import Inbox from 'components/Inbox'
-import Handbook from '../../templates/Handbook'
-import BlogPost from '../../templates/BlogPost'
-import Legal from 'components/Legal'
-import KeyboardShortcut from 'components/KeyboardShortcut'
 import { useToast } from '../../context/Toast'
 import usePostHog from '../../hooks/usePostHog'
-import Modal from 'components/RadixUI/Modal'
-import FloatingModal from 'components/FloatingModal'
 import { MOTION_LAYER, WINDOW_BG } from '../../constants/frostedSurfaces'
 import { isMaximizedWindow, transitionWindowMode, windowModeFlags } from 'lib/windowState'
-import { getViewportMetrics } from 'hooks/useViewportMetrics'
-import WindowErrorBoundary from './WindowErrorBoundary'
+import { useWindowResize } from 'hooks/useWindowResize'
+import { useWindowManager } from 'hooks/useWindowManager'
 import WindowResizeHandles from './WindowResizeHandles'
+import WindowChrome from './WindowChrome'
+import WindowContent from './WindowContent'
+import WindowRouter from './WindowRouter'
 
 const recursiveSearch = (array: MenuItem[] | undefined, value: string): boolean => {
     if (!array) return false
@@ -56,147 +43,6 @@ const recursiveSearch = (array: MenuItem[] | undefined, value: string): boolean 
     }
 
     return false
-}
-
-const snapThreshold = -50
-
-const PageModal = ({ children }: { children: React.ReactNode }) => {
-    const [open, setOpen] = useState(true)
-    const { appWindow } = useWindow()
-    const { closeWindow } = useApp()
-
-    useEffect(() => {
-        if (!open) {
-            closeWindow(appWindow)
-        }
-    }, [open])
-
-    return (
-        <Modal open={open} onOpenChange={setOpen}>
-            {children}
-        </Modal>
-    )
-}
-
-import WimAuthPortal from 'components/Auth/WimAuthPortal'
-import Editor from 'components/Editor'
-import PostEditorWindow from 'components/Community/PostEditorWindow'
-import PostListing from '../../templates/PostListing'
-import { fetchSupabasePostBySlug } from '../../lib/supabaseCommunity'
-
-
-function BlogRouteView(props: any) {
-    const rawPath = props.path || ''
-    const slugStr = rawPath.replace(/^\/(blog|posts)\/?/, '')
-    const [spPostData, setSpPostData] = useState<any>(null)
-    const [loading, setLoading] = useState(!props.data?.postData && !props.data?.post)
-
-    useEffect(() => {
-        if (!props.data?.postData && !props.data?.post && slugStr) {
-            let mounted = true
-            setLoading(true)
-            fetchSupabasePostBySlug(slugStr).then((res) => {
-                if (mounted) {
-                    setSpPostData(res)
-                    setLoading(false)
-                }
-            })
-            return () => {
-                mounted = false
-            }
-        }
-    }, [slugStr, props.data?.postData, props.data?.post])
-
-    if (props.data?.postData || props.data?.post) {
-        return <BlogPost {...props} />
-    }
-
-    if (loading) {
-        return (
-            <div className="p-8 text-center text-primary font-bold lowercase">
-                <p>fetching post content...</p>
-            </div>
-        )
-    }
-
-    if (spPostData?.postData) {
-        return <BlogPost {...props} data={spPostData} />
-    }
-
-    const title = slugStr.replace(/-/g, ' ')
-    const content = `# ${title}\n\nNo content found for this post.`
-    const postData = {
-        body: content,
-        excerpt: title,
-        frontmatter: {
-            title,
-            date: '2026-01-01',
-            contributors: [
-                {
-                    name: 'WorldInMaking',
-                    role: 'Author',
-                    image: 'https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/pages-content/images/hog-9.png',
-                },
-            ],
-        },
-        fields: {
-            slug: rawPath,
-        },
-    }
-
-    return <BlogPost {...props} data={{ postData }} />
-}
-
-import TapePlayer from 'components/TapePlayer'
-
-const Router = (props: any) => {
-    const { appWindow } = useWindow()
-    const { closeWindow } = useApp()
-    const { children, path } = props
-
-    if (/^\/tape-player|^\/mixtapes/.test(path)) {
-        return <TapePlayer {...props} />
-    }
-    if (/^\/login|^\/signup/.test(path)) {
-        return (
-            <div className="p-6 flex items-center justify-center min-h-full bg-slate-950/90">
-                <WimAuthPortal onSuccess={() => closeWindow(appWindow)} />
-            </div>
-        )
-    }
-    if (/^\/community\/new|^\/editor\/post/.test(path)) {
-        return <PostEditorWindow />
-    }
-    if (/^\/editor/.test(path)) {
-        return <Editor {...props} />
-    }
-    if (/^\/questions/.test(path)) {
-        return <Inbox {...props} />
-    }
-    if (path === '/blog' || path === '/posts') {
-        const root = path.replace('/', '')
-        return <PostListing {...props} activeMenu={root} root={root} title={root === 'blog' ? 'Blog' : 'Posts'} />
-    }
-    if (/^\/(blog|posts)\/.+/.test(path) || props.pageContext?.post || props.data?.postData) {
-        return <BlogRouteView {...props} />
-    }
-    if (/^\/handbook|^\/docs\/(?!api)|^\/manual/.test(path) && props.data?.post) {
-        return <Handbook {...props} />
-    }
-    if (['/terms', '/privacy', '/dpa', '/baa', '/subprocessors'].includes(path)) {
-        return <Legal defaultTab={path}>{children}</Legal>
-    }
-    return (
-        <>
-            {appWindow?.modal?.type === 'standard' ? (
-                <PageModal>{children}</PageModal>
-            ) : appWindow?.modal?.type === 'floating' ? (
-                <FloatingModal>{children}</FloatingModal>
-            ) : (
-                (!props.minimizing || appWindow?.appSettings?.size?.autoHeight) && children
-            )}
-        </>
-    )
 }
 
 const WindowContainer = ({ children, closing }: { children: React.ReactNode; closing: boolean }) => {
@@ -349,12 +195,34 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
     const windowRef = useRef<HTMLDivElement>(null)
     const [rendered, setRendered] = useState(false)
     const [dragging, setDragging] = useState(false)
-    const [leftDragResizing, setLeftDragResizing] = useState(false)
-    const contentRef = useRef<HTMLDivElement>(null)
     const [pageOptions, setPageOptions] = useState<MenuItemType[]>()
     const [closing, setClosing] = useState(false)
     const [closed, setClosed] = useState(false)
     const [minimizing, setMinimizing] = useState(false)
+    const { handleDragResize, handleResizeEnd, isResizing } = useWindowResize({
+        item,
+        size,
+        position,
+        sizeConstraints,
+        taskbarHeight,
+        constraintsRef,
+        windowRef,
+        isSSR,
+        updateWindow,
+    })
+    const { handleDrag, handleDragEnd, handleDragTransitionEnd } = useWindowManager({
+        item,
+        position,
+        size,
+        constraintsRef,
+        windowRef,
+        isDragging: dragging,
+        snapIndicator,
+        setDragging,
+        setSnapIndicator,
+        handleSnapToSide,
+        updateWindow,
+    })
     // The open animation should only play once, on mount. `playOpenAnimation` is
     // decided from mount-time props and cleared when the animation finishes, so
     // later state changes (expand/collapse) never replay the pop-in.
@@ -367,7 +235,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
     const [hasDeveloperMode, setHasDeveloperMode] = useState(false)
     const hasToolbar = item.appSettings?.toolbar
     const hideTitle = item.appSettings?.hideTitle
-    const isCompositorActive = animating || dragging || leftDragResizing || closing
+    const isCompositorActive = animating || dragging || isResizing || closing
     const inView = useMemo(() => {
         if (item.expanded) return true
 
@@ -435,41 +303,6 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
         return size.width >= expandedWidth
     }
 
-    const handleDragResize = (
-        item: AppWindowType,
-        info: PanInfo,
-        change: { x: boolean } | { y: boolean } | { x: boolean; y: boolean },
-        isLeftResize = leftDragResizing
-    ) => {
-        if (item.expanded && windowRef.current) {
-            const rect = windowRef.current.getBoundingClientRect()
-            const containerRect = constraintsRef.current?.getBoundingClientRect()
-            const measuredPos = {
-                x: rect.left - (containerRect?.left ?? 0),
-                y: rect.top - (containerRect?.top ?? 0),
-            }
-            const measuredSize = { width: rect.width, height: rect.height }
-            updateWindow(item, {
-                position: measuredPos,
-                size: measuredSize,
-                previousSize: measuredSize,
-                previousPosition: measuredPos,
-                expanded: false,
-                snapped: false,
-            })
-            return
-        }
-        const update: { size?: { height?: number; width?: number }; position?: { x: number } } = {}
-        if ('y' in change) update.size = { height: Math.max(size.height + info.delta.y, sizeConstraints.min.height) }
-        if ('x' in change) {
-            update.size ||= {}
-            const delta = isLeftResize ? -1 * info.delta.x : info.delta.x
-            update.size.width = Math.max(size.width + delta, sizeConstraints.min.width)
-            if (isLeftResize) update.position = { x: item.position.x + size.width - update.size.width }
-        }
-        updateWindow(item, update)
-    }
-
     const toggleExpanded = () => {
         if (item.fixedSize) return
         const bounds = constraintsRef.current?.getBoundingClientRect()
@@ -530,76 +363,6 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
 
     const handleMinimize = () => {
         setMinimizing(true)
-    }
-
-    const handleDrag = (_event: any, info: any) => {
-        if (!dragging) setDragging(true)
-        if (item.expanded && windowRef.current) {
-            const rect = windowRef.current.getBoundingClientRect()
-            const containerRect = constraintsRef.current?.getBoundingClientRect()
-            const measuredPos = {
-                x: rect.left - (containerRect?.left ?? 0),
-                y: rect.top - (containerRect?.top ?? 0),
-            }
-            const measuredSize = { width: rect.width, height: rect.height }
-            updateWindow(item, {
-                position: measuredPos,
-                size: measuredSize,
-                previousSize: measuredSize,
-                previousPosition: measuredPos,
-                expanded: false,
-                snapped: false,
-            })
-            return
-        }
-        if (item.fixedSize || !constraintsRef.current) return
-
-        const bounds = constraintsRef.current.getBoundingClientRect()
-        const newX = position.x + info.offset.x
-
-        if (newX < snapThreshold) {
-            setSnapIndicator('left')
-        } else if (newX > bounds.width - size.width - snapThreshold) {
-            setSnapIndicator('right')
-        } else {
-            setSnapIndicator(null)
-        }
-    }
-
-    const handleDragEnd = (_event: any, info: any) => {
-        if (dragging) setDragging(false)
-        if (!item.fixedSize && snapIndicator !== null) {
-            handleSnapToSide(snapIndicator)
-            setSnapIndicator(null)
-            return
-        } else {
-            if (!constraintsRef.current) return
-
-            const bounds = constraintsRef.current.getBoundingClientRect()
-            const newX = position.x + info?.offset?.x
-            const newY = position.y + info?.offset?.y
-
-            if (newX >= 0 && newY >= 0 && newX + size.width <= bounds.width && newY + size.height <= bounds.height) {
-                updateWindow(item, {
-                    position: { x: newX, y: newY },
-                })
-            }
-        }
-    }
-
-    const handleDragTransitionEnd = () => {
-        if (!dragging) setDragging(false)
-        if (!constraintsRef.current || !item.ref?.current) return
-
-        const containerBounds = constraintsRef.current.getBoundingClientRect()
-        const windowBounds = item.ref.current.getBoundingClientRect()
-
-        const newX = windowBounds.left - containerBounds.left
-        const newY = windowBounds.top - containerBounds.top
-
-        updateWindow(item, {
-            position: { x: newX, y: newY },
-        })
     }
 
     const windowPosition = useMemo(() => {
@@ -677,54 +440,6 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
             bringToFront(item)
         }
     }
-
-    useEffect(() => {
-        const handleResize = () => {
-            const { width: viewportWidth, height: viewportHeight } = getViewportMetrics()
-            const containerBounds = constraintsRef.current?.getBoundingClientRect()
-            const availableWidth = Math.min(viewportWidth, containerBounds?.width ?? viewportWidth)
-            const availableHeight = Math.min(
-                Math.max(0, viewportHeight - taskbarHeight),
-                containerBounds?.height ?? Math.max(0, viewportHeight - taskbarHeight)
-            )
-            const constrainedSize = {
-                width: Math.min(size.width, availableWidth),
-                height: Math.min(size.height, availableHeight),
-            }
-            const newPosition = {
-                x: Math.min(Math.max(0, position.x), Math.max(0, availableWidth - constrainedSize.width)),
-                y: Math.min(Math.max(0, position.y), Math.max(0, availableHeight - constrainedSize.height)),
-            }
-            const newSize = item.expanded
-                ? { width: availableWidth, height: availableHeight }
-                : constrainedSize
-            const needsResize = size.width !== newSize.width || size.height !== newSize.height
-            const needsReposition = position.x !== newPosition.x || position.y !== newPosition.y
-
-            if (item.expanded) {
-                if (needsResize || needsReposition) {
-                    updateWindow(item, {
-                        size: newSize,
-                        position: { x: 0, y: 0 },
-                    })
-                }
-            } else if (needsResize || needsReposition) {
-                updateWindow(item, {
-                    size: newSize,
-                    position: newPosition,
-                })
-            }
-        }
-        if (!isSSR) {
-            window.addEventListener('resize', handleResize)
-            window.visualViewport?.addEventListener('resize', handleResize)
-            handleResize()
-            return () => {
-                window.removeEventListener('resize', handleResize)
-                window.visualViewport?.removeEventListener('resize', handleResize)
-            }
-        }
-    }, [item])
 
     useEffect(() => {
         setRendered(true)
@@ -1036,115 +751,23 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         aria-hidden
                         className={`pointer-events-none absolute inset-0 rounded-[inherit] ${WINDOW_BG}`}
                     />
-                    <div className={`relative ${hasToolbar ? 'bg-primary flex items-center py-0.5 px-1' : ''}`}>
-                        {hasToolbar && (
-                            <>
-                                {!hideTitle && (
-                                    <p className="text-primary text-left text-sm font-semibold ml-1.5 my-0 line-clamp-1">
-                                        {item.meta?.title?.replace(/ - PostHog$/, '')}
-                                    </p>
-                                )}
-                                <div className="flex-1" />
-                            </>
-                        )}
-                        <div
-                            data-scheme="tertiary"
-                            onDoubleClick={handleDoubleClick}
-                            className={`inline-flex gap-1 items-center py-0.5 pl-1.5 pr-0.5 skin-classic:bg-primary opacity-40 hover:opacity-75 transition-opacity duration-100 ${
-                                hasToolbar ? 'flex-1 justify-end' : 'absolute z-20 right-1 top-1'
-                            }`}
-                        >
-                            <div className="window-minimize-control flex justify-end">
-                                <Tooltip
-                                    trigger={
-                                        <OSButton
-                                            windowButton
-                                            size="md"
-                                            onClick={() => minimizeWindow(item)}
-                                            icon={<IconMinus />}
-                                            aria-label="Minimize window"
-                                        />
-                                    }
-                                >
-                                    <div className="flex flex-col items-center gap-2">
-                                        <span>Minimize window</span>
-                                    </div>
-                                </Tooltip>
-                            </div>
-                            {!item.fixedSize && (
-                                <div className="window-expand-control flex justify-end">
-                                    <Tooltip
-                                        trigger={
-                                             <OSButton
-                                                 windowButton
-                                                 size="md"
-                                                 onClick={toggleExpanded}
-                                                 aria-label={item.expanded ? 'Restore window size' : 'Maximize window'}
-                                                 title={item.expanded ? 'Restore window size' : 'Maximize window'}
-                                                 icon={
-                                                    item.expanded ? (
-                                                        <IconCollapse45Chevrons />
-                                                    ) : (
-                                                        <IconSquare className="scale-110" />
-                                                    )
-                                                }
-                                            />
-                                        }
-                                    >
-                                        <div className="flex flex-col items-center gap-2">
-                                            <span>{item.expanded ? 'Restore window' : 'Expand window'}</span>
-                                            <div>
-                                                <KeyboardShortcut text="Shift" size="xs" />
-                                                &nbsp;
-                                                <KeyboardShortcut text="↑" size="xs" />
-                                            </div>
-                                        </div>
-                                    </Tooltip>
-                                </div>
-                            )}
-                            <div className="flex justify-end">
-                                <Tooltip
-                                    trigger={<OSButton windowButton size="md" onClick={handleClose} icon={<IconX />} />}
-                                >
-                                    <div className="flex flex-col items-center gap-2">
-                                        <span>Close window</span>
-                                        <div>
-                                            <KeyboardShortcut text="Shift" size="xs" />
-                                            &nbsp;
-                                            <KeyboardShortcut text="W" size="xs" />
-                                        </div>
-                                    </div>
-                                </Tooltip>
-                            </div>
-                        </div>
-                    </div>
-                    <div
-                        ref={contentRef}
-                        onPointerDown={(e) => e.stopPropagation()}
-                        onTouchStart={(e) => e.stopPropagation()}
-                        className={`size-full flex-grow relative z-[1] ${
-                            chrome
-                                ? `overflow-hidden rounded-lg ${hasToolbar ? 'rounded-t-none' : ''} ${
-                                      item.expanded
-                                          ? 'rounded-tr-none rounded-tl-none'
-                                          : item.snapped === 'left'
-                                          ? 'rounded-tl-none rounded-tr-none rounded-br-none'
-                                          : item.snapped === 'right'
-                                          ? 'rounded-tl-none rounded-tr-none rounded-bl-none'
-                                          : ''
-                                  }`
-                                : ''
-                        }`}
-                    >
-                        <WindowErrorBoundary>
-                            <Router {...item.props}>{item.element}</Router>
-                        </WindowErrorBoundary>
-                    </div>
+                    <WindowChrome
+                        item={item}
+                        hasToolbar={hasToolbar}
+                        hideTitle={hideTitle}
+                        onMinimize={() => minimizeWindow(item)}
+                        onToggleExpanded={toggleExpanded}
+                        onClose={handleClose}
+                        onDoubleClick={handleDoubleClick}
+                    />
+                    <WindowContent item={item} chrome={chrome} hasToolbar={hasToolbar}>
+                        <WindowRouter item={{ ...item, children: item.element }} />
+                    </WindowContent>
                     {!item.fixedSize && !item.expanded && !isMobile && (
                         <>
                             <WindowResizeHandles
                                 onResize={(info, change, left) => handleDragResize(item, info, change, left)}
-                                onResizeEnd={() => setLeftDragResizing(false)}
+                                onResizeEnd={handleResizeEnd}
                             />
                         </>
                     )}

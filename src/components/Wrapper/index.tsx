@@ -54,7 +54,7 @@ export default function Wrapper() {
 
     return (
         <TooltipProvider delayDuration={300}>
-            <AppContainer suppressHydrationWarning className="h-dvh flex flex-col p-2 overflow-hidden touch-none select-none">
+            <AppContainer suppressHydrationWarning className="h-full min-h-0 flex flex-col p-2 overflow-hidden overscroll-none touch-none select-none">
                 {!compact && <TaskBarMenu />}
                 <div ref={constraintsRef} className={`flex-grow relative min-h-0 overflow-hidden touch-none`}>
                     <Desktop />
