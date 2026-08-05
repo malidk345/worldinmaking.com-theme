@@ -33,7 +33,6 @@ export function SidebarContextPanelMenu({
     const hasCoverUrl = Boolean(coverUrl && coverUrl.trim().length > 0)
 
     const overlay = (
-    const overlay = (
         <div className="w-[min(380px,92vw)] text-xs text-primary">
             <div className="flex items-center justify-between gap-2 px-3 pt-3 pb-2">
                 <div className="flex items-center gap-2 min-w-0">
