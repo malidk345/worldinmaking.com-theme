@@ -382,7 +382,7 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                     )}
 
                     {/* Input */}
-                    <div className="relative flex flex-col border border-[var(--border-3000,#e2e8f0)] bg-[var(--color-bg-fill-input)] rounded-xl p-3 focus-within:border-[var(--primary-3000,#eb9d2a)] shadow-sm transition-colors">
+                    <div className="relative flex flex-col border border-[var(--border-3000,#e2e8f0)] bg-[var(--color-bg-fill-input)] rounded-xl p-3 focus-within:border-[var(--primary-3000,#1d4ed8)] shadow-sm transition-colors">
                         <textarea
                             ref={textareaRef}
                             value={prompt}
@@ -438,7 +438,7 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
             <LemonButton
                 type="secondary"
                 size="small"
-                icon={<IconSparkles className="text-amber-500" />}
+                icon={<IconSparkles className="text-[var(--color-accent,#1d4ed8)]" />}
                 sideIcon={<IconChevronDown />}
                 onClick={() => setIsOpen(!isOpen)}
                 tooltip="Open philosopher AI chat"

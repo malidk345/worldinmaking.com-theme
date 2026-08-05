@@ -4,22 +4,22 @@
   --font-button: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', helvetica, arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
   --font-mono: ui-monospace, 'SFMono-Regular', 'SF Mono', 'Menlo', 'Consolas', 'Liberation Mono', monospace;
 
-  /* PostHog Brand Hues */
-  --color-posthog-brand-orange-hue: 19;
-  --color-posthog-brand-orange-saturation: 100%;
+  /* Brand hues — navy (#1D4ED8), not PostHog orange */
+  --color-posthog-brand-orange-hue: 221;
+  --color-posthog-brand-orange-saturation: 83%;
   --color-posthog-brand-orange-lightness: 48%;
-  --color-posthog-brand-blue-hue: 228;
-  --color-posthog-brand-blue-saturation: 100%;
-  --color-posthog-brand-blue-lightness: 56%;
-  --color-posthog-brand-yellow-hue: 43;
-  --color-posthog-brand-yellow-saturation: 94%;
-  --color-posthog-brand-yellow-lightness: 57%;
+  --color-posthog-brand-blue-hue: 221;
+  --color-posthog-brand-blue-saturation: 83%;
+  --color-posthog-brand-blue-lightness: 48%;
+  --color-posthog-brand-yellow-hue: 217;
+  --color-posthog-brand-yellow-saturation: 91%;
+  --color-posthog-brand-yellow-lightness: 60%;
 
-  /* Accent Colors */
-  --color-accent: hsl(19 100% 48%);
-  --color-accent-hover: hsl(19 100% 58%);
-  --color-accent-active: hsl(19 100% 63%);
-  --color-accent-inverted: hsl(43 94% 57%);
+  /* Accent Colors (navy) */
+  --color-accent: hsl(221 83% 48%);
+  --color-accent-hover: hsl(221 83% 55%);
+  --color-accent-active: hsl(221 83% 42%);
+  --color-accent-inverted: hsl(217 91% 60%);
 
   /* Surface & Background Tokens */
   --bg-3000: #f3f4f5;
@@ -79,9 +79,9 @@
   --border-3000: #2e3038;
   --color-border-primary: rgba(255, 255, 255, 0.12);
 
-  --color-accent: hsl(19 100% 58%);
-  --color-accent-hover: hsl(19 100% 68%);
-  --color-accent-active: hsl(19 100% 73%);
+  --color-accent: hsl(217 91% 60%);
+  --color-accent-hover: hsl(213 94% 68%);
+  --color-accent-active: hsl(221 83% 55%);
 }
 
 html, body {

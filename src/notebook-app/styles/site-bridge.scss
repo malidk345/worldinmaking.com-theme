@@ -48,3 +48,44 @@
 .notebook-app-scope.Popover > .Popover__box {
     border-color: var(--secondary-3000-button-border, #ccc) !important;
 }
+
+/*
+ * Force navy brand accents inside notebook islands (no PostHog orange).
+ * Mirrors site Tailwind brand (#1D4ED8 family).
+ */
+.notebook-app-scope {
+    --color-posthog-brand-orange-hue: 221;
+    --color-posthog-brand-orange-saturation: 83%;
+    --color-posthog-brand-orange-lightness: 48%;
+    --color-brand-primary-hue: 221;
+    --color-brand-primary-saturation: 83%;
+    --color-brand-primary-lightness: 48%;
+    --color-accent: #1d4ed8;
+    --color-accent-hover: #2563eb;
+    --color-accent-active: #1e40af;
+    --primary-3000: #1d4ed8;
+    --primary-3000-hover: #2563eb;
+    --primary-3000-active: #1e40af;
+    --primary-3000-frame-bg: #1e40af;
+    --primary-3000-button-border: #1e3a8a;
+    --primary-3000-button-border-hover: #172554;
+    --link: #1d4ed8;
+    --link-3000: #1d4ed8;
+    --primary-highlight: rgb(29 78 216 / 12%);
+}
+
+.notebook-app-scope.dark,
+.notebook-app-scope .dark {
+    --color-accent: #3b82f6;
+    --color-accent-hover: #60a5fa;
+    --color-accent-active: #2563eb;
+    --primary-3000: #3b82f6;
+    --primary-3000-hover: #60a5fa;
+    --primary-3000-active: #2563eb;
+    --primary-3000-frame-bg: #1e3a8a;
+    --primary-3000-button-border: #1e40af;
+    --primary-3000-button-border-hover: #3b82f6;
+    --link: #60a5fa;
+    --link-3000: #60a5fa;
+    --primary-highlight: rgb(59 130 246 / 14%);
+}

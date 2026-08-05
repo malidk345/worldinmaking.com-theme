@@ -334,7 +334,7 @@ export function ReasoningAnswer({
                                     <span
                                         className={clsx(
                                             'relative inline-flex items-center justify-center w-5 h-5 shrink-0 rounded',
-                                            isActive && 'text-[var(--primary-3000,#eb9d2a)]',
+                                            isActive && 'text-[var(--primary-3000,#1d4ed8)]',
                                             isDone && 'text-muted'
                                         )}
                                     >

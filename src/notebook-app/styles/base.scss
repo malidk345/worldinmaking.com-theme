@@ -296,18 +296,19 @@
     --color-posthog-3000-450: hsl(67deg 8% 60%);
     --color-posthog-3000-500: hsl(67deg 8% 55%);
 
-    // PostHog brand colors
-    // Split into hue, saturation, lightness to make it easier to change the brand colors
+    // Brand colors — WorldInMaking navy (was PostHog orange / yellow)
+    // Token names kept for Lemon UI compatibility; values are navy family.
+    // #1D4ED8 ≈ hsl(221 83% 48%)
     // //////////////////////////////////////////////////////////
-    --color-posthog-brand-orange-hue: 19;
-    --color-posthog-brand-orange-saturation: 100%;
+    --color-posthog-brand-orange-hue: 221;
+    --color-posthog-brand-orange-saturation: 83%;
     --color-posthog-brand-orange-lightness: 48%;
-    --color-posthog-brand-blue-hue: 228;
-    --color-posthog-brand-blue-saturation: 100%;
-    --color-posthog-brand-blue-lightness: 56%;
-    --color-posthog-brand-yellow-hue: 43;
-    --color-posthog-brand-yellow-saturation: 94%;
-    --color-posthog-brand-yellow-lightness: 57%;
+    --color-posthog-brand-blue-hue: 221;
+    --color-posthog-brand-blue-saturation: 83%;
+    --color-posthog-brand-blue-lightness: 48%;
+    --color-posthog-brand-yellow-hue: 217;
+    --color-posthog-brand-yellow-saturation: 91%;
+    --color-posthog-brand-yellow-lightness: 60%;
 
     // Product specific colors
     --color-product-data-pipeline-light: rgb(46 162 211);
@@ -559,7 +560,7 @@
     // Brand colors
     // //////////////////////////////////////////////////////////
     --brand-blue: #1d4aff;
-    --brand-red: #f54e00;
+    --brand-red: #1d4ed8;
     --brand-yellow: #f9bd2b;
     --brand-key: #000;
 
@@ -778,10 +779,11 @@
     --color-text-secondary-3000-light: rgb(17 17 17 / 70%);
     --muted-3000-light: rgb(17 17 17 / 60%);
     --trace-3000-light: rgb(17 17 17 / 25%);
-    --primary-3000-light: #f54e01;
-    --primary-highlight-light: rgb(245 78 1 / 10%);
-    --primary-3000-hover-light: #f54e01;
-    --primary-3000-active-light: #f54e01;
+    /* PostHog-3000 primary family → navy (#1D4ED8) */
+    --primary-3000-light: #1d4ed8;
+    --primary-highlight-light: rgb(29 78 216 / 12%);
+    --primary-3000-hover-light: #2563eb;
+    --primary-3000-active-light: #1e40af;
     --secondary-3000-light: rgb(207 209 194 / 60%);
     --secondary-3000-hover-light: #cfd1c2;
     --color-accent-3000-light: #eeefe9;
@@ -790,28 +792,28 @@
     --border-bold-3000-light: #c1c2b9;
     --glass-bg-3000-light: #e4e5deb3;
     --glass-border-3000-light: #e4e5de;
-    --link-3000-light: #f54e00;
-    --primary-3000-frame-bg-light: #eb9d2a;
+    --link-3000-light: #1d4ed8;
+    --primary-3000-frame-bg-light: #1e40af;
     --primary-3000-button-bg-light: #fff;
-    --primary-3000-button-border-light: #b17816;
-    --primary-3000-button-border-hover-light: #8e5b03;
+    --primary-3000-button-border-light: #1e3a8a;
+    --primary-3000-button-border-hover-light: #172554;
     --secondary-3000-frame-bg-light: #e1dddd;
     --secondary-3000-button-bg-light: #f3f4ef;
     --secondary-3000-button-border-light: #ccc;
     --secondary-3000-button-border-hover-light: #aaa;
-    --danger-3000-frame-bg-light: #f54e0080;
-    --danger-3000-button-border-light: #e96b30;
-    --danger-3000-button-border-hover-light: #f54e00;
+    --danger-3000-frame-bg-light: #dc262680;
+    --danger-3000-button-border-light: #b91c1c;
+    --danger-3000-button-border-hover-light: #991b1b;
     --shadow-elevation-3000-light: 0 3px 0 var(--border-3000-light);
     --shadow-elevation-3000-dark: 0 3px 0 var(--border-3000-dark);
     --text-3000-dark: #fff;
     --color-text-secondary-3000-dark: rgb(255 255 255 / 70%);
     --muted-3000-dark: rgb(255 255 255 / 50%);
     --trace-3000-dark: rgb(255 255 255 / 25%);
-    --primary-3000-dark: #f7a503;
-    --primary-highlight-dark: rgb(247 165 3 / 10%);
-    --primary-3000-hover-dark: #f7a503;
-    --primary-3000-active-dark: #f7a503;
+    --primary-3000-dark: #3b82f6;
+    --primary-highlight-dark: rgb(59 130 246 / 14%);
+    --primary-3000-hover-dark: #60a5fa;
+    --primary-3000-active-dark: #2563eb;
     --primary-alt-highlight-light: #e5e7e0;
     --secondary-3000-dark: #1d1f27;
     --secondary-3000-hover-dark: #575d77;
@@ -821,19 +823,19 @@
     --border-bold-3000-dark: #3f4046;
     --glass-bg-3000-dark: #24262a99;
     --glass-border-3000-dark: var(--border-3000-dark);
-    --link-3000-dark: #f1a82c;
-    --primary-3000-frame-bg-dark: #926826;
+    --link-3000-dark: #60a5fa;
+    --primary-3000-frame-bg-dark: #1e3a8a;
     --primary-3000-button-bg-dark: var(--color-accent);
-    --primary-3000-button-border-dark: #b17816;
-    --primary-3000-button-border-hover-dark: #8e5b03;
+    --primary-3000-button-border-dark: #1e40af;
+    --primary-3000-button-border-hover-dark: #3b82f6;
     --primary-alt-highlight-dark: #232429;
     --secondary-3000-frame-bg-dark: #323232;
     --secondary-3000-button-bg-dark: #1d1f27;
     --secondary-3000-button-border-dark: #4a4c52;
     --secondary-3000-button-border-hover-dark: #5e6064;
-    --danger-3000-frame-bg-dark: #f54e0080;
-    --danger-3000-button-border-dark: #c44003;
-    --danger-3000-button-border-hover-dark: #f54e00;
+    --danger-3000-frame-bg-dark: #dc262680;
+    --danger-3000-button-border-dark: #b91c1c;
+    --danger-3000-button-border-hover-dark: #ef4444;
 
     // Light mode
     --text-3000: var(--text-3000-light);
