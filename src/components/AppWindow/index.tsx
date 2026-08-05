@@ -9,12 +9,7 @@ import {
     useTransform,
     useVelocity,
 } from 'framer-motion'
-import {
-    IconMinus,
-    IconX,
-    IconCollapse45Chevrons,
-    IconSquare,
-} from '@posthog/icons'
+import { IconMinus, IconX, IconCollapse45Chevrons, IconSquare } from '@posthog/icons'
 import { MenuItem, useApp } from '../../context/App'
 import { Provider as WindowProvider, AppWindow as AppWindowType, useWindow } from '../../context/Window'
 import Tooltip from 'components/RadixUI/Tooltip'
@@ -74,126 +69,7 @@ const PageModal = ({ children }: { children: React.ReactNode }) => {
     )
 }
 
-import WimAuthPortal from 'components/Auth/WimAuthPortal'
-import Editor from 'components/Editor'
-import PostEditorWindow from 'components/Community/PostEditorWindow'
-import PostListing from '../../templates/PostListing'
-import { fetchSupabasePostBySlug } from '../../lib/supabaseCommunity'
-
-
-function BlogRouteView(props: any) {
-    const rawPath = props.path || ''
-    const slugStr = rawPath.replace(/^\/(blog|posts)\/?/, '')
-    const [spPostData, setSpPostData] = useState<any>(null)
-    const [loading, setLoading] = useState(!props.data?.postData && !props.data?.post)
-
-    useEffect(() => {
-        if (!props.data?.postData && !props.data?.post && slugStr) {
-            let mounted = true
-            setLoading(true)
-            fetchSupabasePostBySlug(slugStr).then((res) => {
-                if (mounted) {
-                    setSpPostData(res)
-                    setLoading(false)
-                }
-            })
-            return () => {
-                mounted = false
-            }
-        }
-    }, [slugStr, props.data?.postData, props.data?.post])
-
-    if (props.data?.postData || props.data?.post) {
-        return <BlogPost {...props} />
-    }
-
-    if (loading) {
-        return (
-            <div className="p-8 text-center text-primary font-bold lowercase">
-                <p>fetching post content...</p>
-            </div>
-        )
-    }
-
-    if (spPostData?.postData) {
-        return <BlogPost {...props} data={spPostData} />
-    }
-
-    const title = slugStr.replace(/-/g, ' ')
-    const content = `# ${title}\n\nNo content found for this post.`
-    const postData = {
-        body: content,
-        excerpt: title,
-        frontmatter: {
-            title,
-            date: '2026-01-01',
-            contributors: [
-                {
-                    name: 'WorldInMaking',
-                    role: 'Author',
-                    image: 'https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/src/pages-content/images/hog-9.png',
-                },
-            ],
-        },
-        fields: {
-            slug: rawPath,
-        },
-    }
-
-    return <BlogPost {...props} data={{ postData }} />
-}
-
-import TapePlayer from 'components/TapePlayer'
-
-const Router = (props: any) => {
-    const { appWindow } = useWindow()
-    const { closeWindow } = useApp()
-    const { children, path } = props
-
-    if (/^\/tape-player|^\/mixtapes/.test(path)) {
-        return <TapePlayer {...props} />
-    }
-    if (/^\/login|^\/signup/.test(path)) {
-        return (
-            <div className="p-6 flex items-center justify-center min-h-full bg-slate-950/90">
-                <WimAuthPortal onSuccess={() => closeWindow(appWindow)} />
-            </div>
-        )
-    }
-    if (/^\/community\/new|^\/editor\/post/.test(path)) {
-        return <PostEditorWindow />
-    }
-    if (/^\/editor/.test(path)) {
-        return <Editor {...props} />
-    }
-    if (/^\/questions/.test(path)) {
-        return <Inbox {...props} />
-    }
-    if (path === '/blog' || path === '/posts') {
-        const root = path.replace('/', '')
-        return <PostListing {...props} activeMenu={root} root={root} title={root === 'blog' ? 'Blog' : 'Posts'} />
-    }
-    if (/^\/(blog|posts)\/.+/.test(path) || props.pageContext?.post || props.data?.postData) {
-        return <BlogRouteView {...props} />
-    }
-    if (/^\/handbook|^\/docs\/(?!api)|^\/manual/.test(path) && props.data?.post) {
-        return <Handbook {...props} />
-    }
-    if (['/terms', '/privacy', '/dpa', '/baa', '/subprocessors'].includes(path)) {
-        return <Legal defaultTab={path}>{children}</Legal>
-    }
-    return (
-        <>
-            {appWindow?.modal?.type === 'standard' ? (
-                <PageModal>{children}</PageModal>
-            ) : appWindow?.modal?.type === 'floating' ? (
-                <FloatingModal>{children}</FloatingModal>
-            ) : (
-                (!props.minimizing || appWindow?.appSettings?.size?.autoHeight) && children
-            )}
-        </>
-    )
-}
+import WindowRouter from './WindowRouter'
 
 const WindowContainer = ({ children, closing }: { children: React.ReactNode; closing: boolean }) => {
     const { closeWindow } = useApp()
@@ -464,14 +340,20 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
     const toggleExpanded = () => {
         if (item.fixedSize) return
         const bounds = constraintsRef.current?.getBoundingClientRect()
-        const fullW = bounds ? bounds.width : (typeof window !== 'undefined' ? window.innerWidth - 16 : 1200)
-        const fullH = bounds ? bounds.height : (typeof window !== 'undefined' ? window.innerHeight - taskbarHeight : 800)
+        const fullW = bounds ? bounds.width : typeof window !== 'undefined' ? window.innerWidth - 16 : 1200
+        const fullH = bounds ? bounds.height : typeof window !== 'undefined' ? window.innerHeight - taskbarHeight : 800
 
         const isMax = item.expanded || (item.size.width >= fullW - 10 && item.size.height >= fullH - 10)
 
         if (isMax) {
-            const prevSize = item.previousSize || { width: Math.min(900, fullW * 0.8), height: Math.min(650, fullH * 0.8) }
-            const prevPos = item.previousPosition || { x: Math.max(0, (fullW - prevSize.width) / 2), y: Math.max(0, (fullH - prevSize.height) / 2) }
+            const prevSize = item.previousSize || {
+                width: Math.min(900, fullW * 0.8),
+                height: Math.min(650, fullH * 0.8),
+            }
+            const prevPos = item.previousPosition || {
+                x: Math.max(0, (fullW - prevSize.width) / 2),
+                y: Math.max(0, (fullH - prevSize.height) / 2),
+            }
             updateWindow(item, {
                 size: prevSize,
                 position: prevPos,
@@ -879,8 +761,14 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                     animate={{
                         scale: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.scale : 1,
                         opacity: 1,
-                        x: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.x : Math.round(position.x),
-                        y: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.y : Math.round(position.y),
+                        x:
+                            isActiveWindowsPanelOpen && missionControlLayout
+                                ? missionControlLayout.x
+                                : Math.round(position.x),
+                        y:
+                            isActiveWindowsPanelOpen && missionControlLayout
+                                ? missionControlLayout.y
+                                : Math.round(position.y),
                         width: size.width,
                         height: size.height,
                     }}
@@ -1000,15 +888,15 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                                       item.expanded
                                           ? 'rounded-tr-none rounded-tl-none'
                                           : item.snapped === 'left'
-                                          ? 'rounded-tl-none rounded-tr-none rounded-br-none'
-                                          : item.snapped === 'right'
-                                          ? 'rounded-tl-none rounded-tr-none rounded-bl-none'
-                                          : ''
+                                            ? 'rounded-tl-none rounded-tr-none rounded-br-none'
+                                            : item.snapped === 'right'
+                                              ? 'rounded-tl-none rounded-tr-none rounded-bl-none'
+                                              : ''
                                   }`
                                 : ''
                         }`}
                     >
-                        <Router {...item.props}>{item.element}</Router>
+                        <WindowRouter item={{ ...item, children: item.element }} />
                     </div>
                 </motion.div>
             </WindowContainer>
