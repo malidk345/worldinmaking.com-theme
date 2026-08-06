@@ -245,8 +245,6 @@ const QuestionRow = ({
     return (
         <div key={question.id} ref={lastQuestionRef}>
             <OSButton
-                asLink
-                to={threadPath}
                 align="left"
                 width="full"
                 hover="background"
@@ -258,21 +256,11 @@ const QuestionRow = ({
                     ${pinned ? 'bg-accent border-b border-primary' : ''}
                 `}
                 onClick={(e: any) => {
-                    if (e && e.preventDefault) {
-                        e.preventDefault()
-                    }
-                    if (e && e.stopPropagation) {
-                        e.stopPropagation()
-                    }
+                    // Plain button (not asLink) — Next Link was racing pushState and
+                    // collapsing the detail panel right after open.
+                    e?.preventDefault?.()
+                    e?.stopPropagation?.()
                     onOpenThread(String(permalink))
-                    // Always lift the detail panel when opening a thread
-                    if (containerRef.current) {
-                        const h = containerRef.current.getBoundingClientRect().height
-                        const next = Math.max(280, h * 0.8)
-                        if (bottomHeight < next * 0.5) {
-                            setBottomHeight(next)
-                        }
-                    }
                 }}
             >
                 <div
@@ -466,11 +454,9 @@ const QuestionToolbar = React.memo(
                                             />
                                         }
                                         onClick={() => {
-                                            if (isMobile && sideBySide) {
-                                                onCloseThread?.()
-                                            } else {
-                                                expandOrCollapse(expandable)
-                                            }
+                                            // Always expand/collapse — never auto-close the thread
+                                            // (mobile side-by-side close was making the panel vanish)
+                                            expandOrCollapse(expandable)
                                         }}
                                     />
                                 </span>
@@ -595,32 +581,86 @@ export default function Inbox(props) {
     const [menuValue, setMenuValue] = useState('')
     // Local open-thread state — must not rely only on pushState (no React re-render)
     const [activeThread, setActiveThread] = useState<string | undefined>(permalink || undefined)
-    const isMobile = useMemo(() => {
-        if (typeof window !== 'undefined' && window.innerWidth < 896) return true
-        return (appWindow?.size?.width || (typeof window !== 'undefined' ? window.innerWidth : 1024)) < 896
+    // Sticky ref survives transient prop clears so the panel does not vanish mid-open
+    const activeThreadRef = useRef<string | undefined>(activeThread)
+    activeThreadRef.current = activeThread
+
+    const [isMobile, setIsMobile] = useState(() => {
+        if (typeof window === 'undefined') return false
+        return window.innerWidth < 896 || (appWindow?.size?.width || 1024) < 896
+    })
+    useEffect(() => {
+        const check = () => {
+            const w = appWindow?.size?.width || window.innerWidth
+            setIsMobile(window.innerWidth < 896 || w < 896)
+        }
+        check()
+        window.addEventListener('resize', check)
+        return () => window.removeEventListener('resize', check)
     }, [appWindow?.size?.width])
 
     // Prefer explicit selection; fall back to props/URL-derived permalink
     const openPermalink = activeThread || permalink
+
+    const handleSideBySide = useCallback((nextSideBySide: boolean) => {
+        setSideBySide((prev) => {
+            if (prev !== nextSideBySide) {
+                try {
+                    localStorage.setItem('sideBySide', nextSideBySide.toString())
+                } catch {
+                    /* ignore */
+                }
+                return nextSideBySide
+            }
+            return prev
+        })
+    }, [])
+
+    const liftPanel = useCallback(() => {
+        if (!containerRef.current) return
+        const h = containerRef.current.getBoundingClientRect().height || 500
+        if (sideBySide && !isMobile) {
+            const w = containerRef.current.getBoundingClientRect().width
+            setSideWidth(Math.max(SIDE_WIDTH_DEFAULT, Math.min(w * 0.55, w - 280)))
+        } else {
+            const ratio = isMobile ? 0.82 : 0.62
+            const minH = isMobile ? 300 : 360
+            // Never leave the panel at the 45px "collapsed chrome" height while a thread is open
+            setBottomHeight(Math.max(minH, h * ratio))
+        }
+    }, [isMobile, sideBySide])
 
     const openThread = useCallback(
         (slug: string) => {
             const clean = String(slug || '')
                 .replace(/^\/questions\/?/, '')
                 .replace(/^\/+/, '')
+                .replace(/^\/forum\/?/, '')
+                .replace(/^\/community\/?/, '')
             if (!clean) return
             const threadPath = `/questions/${clean}`
             setActiveThread(clean)
+            activeThreadRef.current = clean
+            // Mobile: stacked panel only — side-by-side was closing on expand toggle
+            if (isMobile) {
+                setSideBySide(false)
+                try {
+                    localStorage.setItem('sideBySide', 'false')
+                } catch {
+                    /* ignore */
+                }
+            }
             if (appWindow) {
                 updateWindow(appWindow, {
                     path: threadPath,
-                    props: { ...(appWindow.props || {}), path: threadPath },
+                    props: { ...(appWindow.props || {}), path: threadPath, permalink: clean },
                 })
             }
             if (typeof window !== 'undefined') {
                 try {
-                    window.history.pushState(
-                        { windowKey: appWindow?.key || 'forum-main-window' },
+                    // replaceState avoids stacking history entries that Next may fight
+                    window.history.replaceState(
+                        { windowKey: appWindow?.key || 'forum-main-window', forumThread: clean },
                         '',
                         threadPath
                     )
@@ -628,55 +668,52 @@ export default function Inbox(props) {
                     /* ignore */
                 }
             }
-            // Ensure panel is tall enough to see
-            requestAnimationFrame(() => {
-                if (!containerRef.current) return
-                const h = containerRef.current.getBoundingClientRect().height
-                const ratio = isMobile ? 0.85 : 0.65
-                setBottomHeight(Math.max(isMobile ? 280 : 350, h * ratio))
-            })
+            requestAnimationFrame(() => liftPanel())
         },
-        [appWindow, updateWindow, isMobile]
+        [appWindow, updateWindow, isMobile, liftPanel]
     )
 
-    // Sync from external navigation (window path / props)
+    // Sync from external navigation (window path / props) — never clear open thread here
     useEffect(() => {
-        if (permalink && permalink !== activeThread) {
+        if (permalink && permalink !== activeThreadRef.current) {
             setActiveThread(permalink)
+            activeThreadRef.current = permalink
+            requestAnimationFrame(() => liftPanel())
         }
-    }, [permalink])
+    }, [permalink, liftPanel])
 
+    // Ensure an open thread always has usable panel size
     useEffect(() => {
-        if (openPermalink) {
-            if (bottomHeight <= 45) {
-                const containerH = containerRef.current?.getBoundingClientRect().height || 500
-                const ratio = isMobile ? 0.85 : 0.6
-                setBottomHeight(Math.max(isMobile ? 280 : 350, containerH * ratio))
-            }
+        if (!openPermalink) return
+        if (!sideBySide && bottomHeight < 120) {
+            liftPanel()
         }
-    }, [openPermalink, isMobile])
+        if (sideBySide && sideWidth < 200 && !isMobile) {
+            liftPanel()
+        }
+    }, [openPermalink, bottomHeight, sideWidth, sideBySide, isMobile, liftPanel])
+
+    const [containerSize, setContainerSize] = useState({ w: 0, h: 0 })
+    useEffect(() => {
+        const el = containerRef.current
+        if (!el || typeof ResizeObserver === 'undefined') return
+        const ro = new ResizeObserver((entries) => {
+            const cr = entries[0]?.contentRect
+            if (!cr) return
+            setContainerSize({ w: cr.width, h: cr.height })
+        })
+        ro.observe(el)
+        return () => ro.disconnect()
+    }, [])
 
     const expandable = useMemo(() => {
-        if (!containerRef.current) return true
-        const containerRect = containerRef.current.getBoundingClientRect()
         if (sideBySide) {
-            return isMobile ? sideWidth <= 0 : sideWidth <= 400
-        } else {
-            return bottomHeight <= containerRect.height / 2
+            if (isMobile) return sideWidth <= containerSize.w * 0.5
+            return sideWidth <= Math.max(400, containerSize.w * 0.45)
         }
-    }, [bottomHeight, sideWidth, sideBySide, containerRef.current, isMobile])
-
-    const handleSideBySide = useCallback((nextSideBySide: boolean) => {
-        setSideBySide((prev) => {
-            if (prev !== nextSideBySide) {
-                try {
-                    localStorage.setItem('sideBySide', nextSideBySide.toString())
-                } catch {}
-                return nextSideBySide
-            }
-            return prev
-        })
-    }, [])
+        const half = (containerSize.h || 500) / 2
+        return bottomHeight <= half
+    }, [bottomHeight, sideWidth, sideBySide, isMobile, containerSize])
 
     const expandOrCollapse = useCallback(
         (expandable: boolean) => {
@@ -687,11 +724,12 @@ export default function Inbox(props) {
                 setSideWidth(expandable ? containerWidth : minWidth)
             } else {
                 const containerHeight = containerRef.current.getBoundingClientRect().height
-                const minHeight = 45
+                // Keep enough height for the toolbar when "collapsed" so controls don't vanish
+                const minHeight = openPermalink ? 140 : 45
                 setBottomHeight(expandable ? containerHeight : minHeight)
             }
         },
-        [sideBySide, isMobile]
+        [sideBySide, isMobile, openPermalink]
     )
 
     const handleVerticalDrag = (_event, info) => {
@@ -748,23 +786,33 @@ export default function Inbox(props) {
         }
     }, [])
 
+    // Only reset layout dimensions when the user toggles stacked ↔ side-by-side.
+    // Previously this also re-ran on bottomHeightDefault (window resize) and fought
+    // openThread's liftPanel — panel would flash open then collapse.
+    const prevSideBySide = useRef(sideBySide)
     useEffect(() => {
+        if (prevSideBySide.current === sideBySide) return
+        prevSideBySide.current = sideBySide
         if (!containerRef.current) return
-
         if (sideBySide) {
-            setSideWidth((prev) =>
-                prev !== Math.max(400, SIDE_WIDTH_DEFAULT) ? Math.max(400, SIDE_WIDTH_DEFAULT) : prev
-            )
+            if (isMobile) {
+                setSideWidth(containerRef.current.getBoundingClientRect().width)
+            } else {
+                setSideWidth(Math.max(400, SIDE_WIDTH_DEFAULT))
+            }
+        } else if (openPermalink) {
+            liftPanel()
         } else {
-            setBottomHeight((prev) => (prev !== bottomHeightDefault ? bottomHeightDefault : prev))
+            setBottomHeight(45)
         }
-    }, [sideBySide, bottomHeightDefault])
+    }, [sideBySide, isMobile, openPermalink, liftPanel])
 
+    // Force stacked on narrow viewports so expand/collapse chrome stays stable
     useEffect(() => {
-        if (isMobile && sideBySide && containerRef.current) {
-            setSideWidth(containerRef.current.getBoundingClientRect().width)
+        if (isMobile && sideBySide) {
+            handleSideBySide(false)
         }
-    }, [isMobile, sideBySide, containerRef.current, appWindow?.size.width])
+    }, [isMobile, sideBySide, handleSideBySide])
 
     return (
         <>
@@ -953,7 +1001,9 @@ export default function Inbox(props) {
                                                 menuValue={menuValue}
                                                 onCloseThread={() => {
                                                     setActiveThread(undefined)
+                                                    activeThreadRef.current = undefined
                                                     setBottomHeight(45)
+                                                    setQuestion(undefined)
                                                     if (appWindow) {
                                                         const listPath =
                                                             menuValue && menuValue.startsWith('/questions')
@@ -961,7 +1011,11 @@ export default function Inbox(props) {
                                                                 : '/questions'
                                                         updateWindow(appWindow, {
                                                             path: listPath,
-                                                            props: { ...(appWindow.props || {}), path: listPath },
+                                                            props: {
+                                                                ...(appWindow.props || {}),
+                                                                path: listPath,
+                                                                permalink: undefined,
+                                                            },
                                                         })
                                                     }
                                                     try {
@@ -970,7 +1024,7 @@ export default function Inbox(props) {
                                                                 ? menuValue
                                                                 : '/questions'
                                                         window.history.replaceState(
-                                                            { windowKey: 'forum-main-window' },
+                                                            { windowKey: appWindow?.key || 'forum-main-window' },
                                                             '',
                                                             listPath
                                                         )
