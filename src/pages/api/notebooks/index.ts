@@ -6,8 +6,11 @@
  * Body (POST):
  *   { owner_key, notebook } | { owner_key, notebooks: [] }
  *   optional: { history?: { [notebookId]: NotebookVersion[] } }
+ *
+ * Cloudflare Pages (next-on-pages) requires Edge Runtime.
  */
-import type { NextApiRequest, NextApiResponse } from 'next'
+export const runtime = 'edge'
+
 import {
     listNotebooksByOwner,
     getNotebookByIdOrShort,
@@ -18,49 +21,54 @@ import {
     type NotebookVersionDTO,
 } from '../../../../lib/notebooks-repo'
 
-function badRequest(res: NextApiResponse, message: string) {
-    return res.status(400).json({ error: message })
+function json(body: Record<string, unknown>, status = 200) {
+    return new Response(JSON.stringify(body), {
+        status,
+        headers: { 'Content-Type': 'application/json' },
+    })
 }
 
 function isOwnerKey(v: unknown): v is string {
     return typeof v === 'string' && v.length >= 8 && v.length <= 128
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: Request) {
     try {
+        const url = new URL(req.url)
+
         if (req.method === 'GET') {
-            const ownerKey = typeof req.query.owner_key === 'string' ? req.query.owner_key : ''
-            const shortId = typeof req.query.short_id === 'string' ? req.query.short_id : ''
-            const asPublic = req.query.public === '1' || req.query.public === 'true'
+            const ownerKey = url.searchParams.get('owner_key') || ''
+            const shortId = url.searchParams.get('short_id') || ''
+            const asPublic = url.searchParams.get('public') === '1' || url.searchParams.get('public') === 'true'
 
             if (shortId && asPublic) {
                 const nb = await getNotebookByIdOrShort(shortId, { publishedOnly: true })
-                if (!nb) return res.status(404).json({ error: 'Not found' })
-                return res.status(200).json({ notebook: nb })
+                if (!nb) return json({ error: 'Not found' }, 404)
+                return json({ notebook: nb })
             }
 
             if (!isOwnerKey(ownerKey)) {
-                return badRequest(res, 'owner_key is required')
+                return json({ error: 'owner_key is required' }, 400)
             }
 
             const notebooks = await listNotebooksByOwner(ownerKey)
-            return res.status(200).json({ notebooks })
+            return json({ notebooks })
         }
 
         if (req.method === 'POST') {
-            const body = req.body || {}
-            const ownerKey = body.owner_key
+            const body = await req.json().catch(() => ({} as Record<string, unknown>))
+            const ownerKey = (body as any).owner_key
             if (!isOwnerKey(ownerKey)) {
-                return badRequest(res, 'owner_key is required')
+                return json({ error: 'owner_key is required' }, 400)
             }
 
-            if (Array.isArray(body.notebooks)) {
-                const notebooks = body.notebooks as StoredNotebookDTO[]
+            if (Array.isArray((body as any).notebooks)) {
+                const notebooks = (body as any).notebooks as StoredNotebookDTO[]
                 const count = await upsertNotebooks(notebooks, ownerKey)
 
                 // Optional bulk history sync: { history: { [id]: versions[] } }
-                if (body.history && typeof body.history === 'object') {
-                    const historyMap = body.history as Record<string, NotebookVersionDTO[]>
+                if ((body as any).history && typeof (body as any).history === 'object') {
+                    const historyMap = (body as any).history as Record<string, NotebookVersionDTO[]>
                     for (const [notebookId, entries] of Object.entries(historyMap)) {
                         if (Array.isArray(entries)) {
                             await replaceHistory(notebookId, entries)
@@ -68,37 +76,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     }
                 }
 
-                return res.status(200).json({ ok: true, count })
+                return json({ ok: true, count })
             }
 
-            if (body.notebook) {
-                const notebook = body.notebook as StoredNotebookDTO
-                if (!notebook?.id) return badRequest(res, 'notebook.id is required')
+            if ((body as any).notebook) {
+                const notebook = (body as any).notebook as StoredNotebookDTO
+                if (!notebook?.id) return json({ error: 'notebook.id is required' }, 400)
                 const saved = await upsertNotebook(notebook, ownerKey)
 
-                if (Array.isArray(body.history_entries)) {
-                    await replaceHistory(notebook.id, body.history_entries as NotebookVersionDTO[])
+                if (Array.isArray((body as any).history_entries)) {
+                    await replaceHistory(notebook.id, (body as any).history_entries as NotebookVersionDTO[])
                 }
 
-                return res.status(200).json({ notebook: saved })
+                return json({ notebook: saved })
             }
 
-            return badRequest(res, 'notebook or notebooks required')
+            return json({ error: 'notebook or notebooks required' }, 400)
         }
 
-        res.setHeader('Allow', 'GET, POST')
-        return res.status(405).json({ error: 'Method not allowed' })
+        return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+            status: 405,
+            headers: {
+                'Content-Type': 'application/json',
+                Allow: 'GET, POST',
+            },
+        })
     } catch (err: any) {
         const message = err?.message || String(err)
         // Table missing → clear signal for migration
         if (message.includes('wim_notebooks') || message.includes('schema cache') || err?.code === 'PGRST205') {
-            return res.status(503).json({
-                error: 'Notebooks table not ready',
-                code: 'MIGRATION_REQUIRED',
-                hint: 'Run supabase/migrations/20260806_wim_notebooks.sql',
-            })
+            return json(
+                {
+                    error: 'Notebooks table not ready',
+                    code: 'MIGRATION_REQUIRED',
+                    hint: 'Run supabase/migrations/20260806_wim_notebooks.sql',
+                },
+                503
+            )
         }
         console.error('[api/notebooks]', err)
-        return res.status(500).json({ error: message })
+        return json({ error: message }, 500)
     }
 }

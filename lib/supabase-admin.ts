@@ -1,9 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Load env variables if running in local script to bypass ESM hoisting traps
-if (typeof process !== 'undefined' && !process.env.NEXT_RUNTIME) {
+/** True on Cloudflare Workers / next-on-pages / Next edge — skip Node-only fs/require. */
+function isEdgeRuntime(): boolean {
+    if (typeof (globalThis as { EdgeRuntime?: unknown }).EdgeRuntime !== 'undefined') return true;
+    if (typeof process !== 'undefined' && process.env?.NEXT_RUNTIME === 'edge') return true;
+    return false;
+}
+
+// Load env variables if running in local Node scripts (not edge / not Next)
+if (typeof process !== 'undefined' && !process.env.NEXT_RUNTIME && !isEdgeRuntime()) {
     try {
-        const req = eval('require');
+        // Avoid static require so edge bundlers do not pull in fs/path
+        const req = (0, eval)('require') as NodeRequire;
         const fs = req('fs');
         const path = req('path');
         const envPath = path.resolve(process.cwd(), '.env.local');
@@ -44,15 +52,15 @@ if (!supabaseServiceKey) {
     console.warn('[Supabase Admin] SUPABASE_SERVICE_ROLE_KEY is missing! Admin operations will fail.');
 }
 
-// Helper to get robust fetch on local Node environment
-function getCustomFetch() {
-    if (typeof process !== 'undefined' && !process.env.NEXT_RUNTIME) {
+// Always use global fetch on edge (workerd). Optional node-fetch only for local Node scripts.
+function getCustomFetch(): typeof fetch {
+    if (!isEdgeRuntime() && typeof process !== 'undefined' && !process.env.NEXT_RUNTIME) {
         try {
-            const req = eval('require');
+            const req = (0, eval)('require') as NodeRequire;
             const res = req('node-fetch');
-            return res.default || res;
+            return (res.default || res) as typeof fetch;
         } catch {
-            // fallback
+            // fall through to global fetch
         }
     }
     return fetch;
@@ -65,6 +73,6 @@ export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
         persistSession: false,
     },
     global: {
-        fetch: getCustomFetch()
-    }
+        fetch: getCustomFetch(),
+    },
 });

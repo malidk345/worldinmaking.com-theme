@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
+import { useRouter } from 'next/router'
 import { useLayoutData } from 'components/Layout/hooks'
 import {
     fetchSupabasePostBySlug,
@@ -41,11 +42,14 @@ const NotFound = ({ slug }: { slug: string }) => (
  * Single post page — Supabase `posts` only (Squeak path removed).
  */
 export default function PostPage({ params }: { params?: { slug?: string } }) {
+    const router = useRouter()
     const [post, setPost] = useState<SupabasePost | null>(null)
     const [loading, setLoading] = useState(true)
     const [missing, setMissing] = useState(false)
 
-    const slug = normalizePostSlug(params?.slug || '')
+    // Prefer SSR props; fall back to router for client navigations / edge shells
+    const routeSlug = typeof router.query.slug === 'string' ? router.query.slug : Array.isArray(router.query.slug) ? router.query.slug[0] : ''
+    const slug = normalizePostSlug(params?.slug || routeSlug || '')
 
     const load = async () => {
         if (!slug) {
