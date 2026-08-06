@@ -250,6 +250,8 @@ export type MarkdownNotebookProps = {
     /** Built-in insert-menu commands to drop, by key (e.g. `QUERY_SQL_INSERT_COMMAND_KEY`). For a
      * caller whose registry supplies its own block for the same job and must not offer both. */
     hiddenInsertCommandKeys?: string[]
+    /** Floating-toolbar selection AI quick actions (Rewrite / Challenge / …). */
+    selectionAIActions?: Array<{ id: string; label: string; tooltip: string; prompt: string }>
     remoteValue?: string
     /** Notebook version `remoteValue` corresponds to, for version-aware caret mapping. */
     remoteVersion?: number
@@ -571,6 +573,7 @@ function MarkdownNotebookEditor({
     registry,
     extraInsertCommands,
     hiddenInsertCommandKeys,
+    selectionAIActions,
     remoteValue,
     remoteVersion,
     deferRemoteValue = false,
@@ -3761,7 +3764,7 @@ function MarkdownNotebookEditor({
         ],
     })
 
-    const askAIAboutSelection = (): void => {
+    const askAIAboutSelection = (presetQuery?: string): void => {
         if (!floatingToolbar || !onAskAI) {
             return
         }
@@ -3803,12 +3806,13 @@ function MarkdownNotebookEditor({
         }
         const targetNodeId = nodes[targetNodeIndex].id
 
+        const trimmedPreset = presetQuery?.trim()
         const promptNode: NotebookComponentBlockNode = {
             id: makeEmptyParagraph(`ai-selection-${targetNodeId}`).id,
             type: 'component',
             tagName: 'Prompt',
             props: {
-                question: '',
+                question: trimmedPreset || '',
                 source: 'selection',
                 selectedMarkdown,
                 ...(refId ? { ref: refId } : {}),
@@ -3855,6 +3859,15 @@ function MarkdownNotebookEditor({
 
         floatingToolbarPositionLockRef.current = null
         setFloatingToolbar(null)
+
+        if (trimmedPreset) {
+            // Auto-run Rewrite / Challenge / Expand / Counter without an extra prompt step.
+            queueMicrotask(() => {
+                submitAIPromptForNode(promptNode.id, trimmedPreset)
+            })
+            return
+        }
+
         setInsertMenu({
             nodeId: promptNode.id,
             query: '',
@@ -6123,7 +6136,8 @@ function MarkdownNotebookEditor({
                             setBlockStyle={setSelectedBlockStyle}
                             copySelection={copyFloatingToolbarSelection}
                             askAIAboutSelection={onAskAI ? askAIAboutSelection : undefined}
-                            isAskAIDisabled={false}
+                            selectionAIActions={onAskAI ? selectionAIActions : undefined}
+                            isAskAIDisabled={isAIPromptSubmitDisabled}
                             startInlineCommentAtSelection={
                                 canStartInlineCommentAtSelection() ? startInlineCommentAtSelection : undefined
                             }

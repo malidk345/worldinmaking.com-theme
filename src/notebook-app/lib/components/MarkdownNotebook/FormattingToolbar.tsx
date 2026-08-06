@@ -52,6 +52,7 @@ export function FormattingToolbar({
     setBlockStyle,
     copySelection,
     askAIAboutSelection,
+    selectionAIActions,
     isAskAIDisabled,
     startInlineCommentAtSelection,
     lockPosition,
@@ -70,7 +71,10 @@ export function FormattingToolbar({
     initialLinkEditorOpen: boolean
     setBlockStyle: (style: TextBlockStyle) => void
     copySelection: () => void
-    askAIAboutSelection?: () => void
+    /** Freeform Ask AI (opens inline prompt). Optional `presetQuery` auto-runs. */
+    askAIAboutSelection?: (presetQuery?: string) => void
+    /** Quick actions shown next to Ask AI when selection is non-empty. */
+    selectionAIActions?: Array<{ id: string; label: string; tooltip: string; prompt: string }>
     isAskAIDisabled?: boolean
     startInlineCommentAtSelection?: () => void
     lockPosition: () => void
@@ -344,15 +348,31 @@ export function FormattingToolbar({
                 />
             ) : null}
             {showInlineActions && askAIAboutSelection ? (
-                <LemonButton
-                    size="xsmall"
-                    icon={<IconSparkles />}
-                    tooltip="Ask AI"
-                    aria-label="Ask AI"
-                    disabled={isAskAIDisabled}
-                    disabledReason={isAskAIDisabled ? 'Ask AI is already active' : undefined}
-                    onClick={askAIAboutSelection}
-                />
+                <>
+                    <span className="MarkdownNotebook__format-divider" aria-hidden />
+                    {selectionAIActions?.map((action) => (
+                        <LemonButton
+                            key={action.id}
+                            size="xsmall"
+                            tooltip={action.tooltip}
+                            aria-label={action.label}
+                            disabled={isAskAIDisabled}
+                            disabledReason={isAskAIDisabled ? 'Ask AI is already active' : undefined}
+                            onClick={() => askAIAboutSelection(action.prompt)}
+                        >
+                            <span className="text-xs font-medium">{action.label}</span>
+                        </LemonButton>
+                    ))}
+                    <LemonButton
+                        size="xsmall"
+                        icon={<IconSparkles />}
+                        tooltip="Ask AI about selection"
+                        aria-label="Ask AI"
+                        disabled={isAskAIDisabled}
+                        disabledReason={isAskAIDisabled ? 'Ask AI is already active' : undefined}
+                        onClick={() => askAIAboutSelection()}
+                    />
+                </>
             ) : null}
             {showInlineActions && isLinkEditorOpen ? (
                 <div className="MarkdownNotebook__format-link-editor">

@@ -1,9 +1,15 @@
-import React, { useState, useEffect, Component, useCallback } from 'react'
-import { MarkdownNotebook } from './lib/components/MarkdownNotebook/MarkdownNotebook'
+import React, { useState, useEffect, Component, useCallback, useRef } from 'react'
+import {
+    MarkdownNotebook,
+    type MarkdownNotebookAskAIRequest,
+} from './lib/components/MarkdownNotebook/MarkdownNotebook'
+import { replaceNotebookAIResponseMarkdown } from './lib/components/MarkdownNotebook/notebookAI'
 import { LemonButton, LemonInput, LemonTag, LemonBanner } from '~nb-lib/lemon-ui/index'
 import { ArrowLeft } from 'lucide-react'
 import { buildExtraInsertCommands } from './scenes/notebooks/extraInsertCommands.tsx'
 import { WIM_HIDDEN_INSERT_COMMAND_KEYS } from './scenes/notebooks/hiddenInsertCommands'
+import { SELECTION_AI_ACTIONS } from './scenes/notebooks/selectionAI'
+import { PHILOSOPHER_BOTS } from './lib/philosophers'
 import {
     StoredNotebook,
     DEFAULT_NOTEBOOKS,
@@ -133,6 +139,8 @@ export function App() {
   const [showAIModal, setShowAIModal] = useState(false)
   const [showCommandPalette, setShowCommandPalette] = useState(false)
   const [showPublishModal, setShowPublishModal] = useState(false)
+  const [isAskAIBusy, setIsAskAIBusy] = useState(false)
+  const askAIAbortRef = useRef(0)
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -143,6 +151,79 @@ export function App() {
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  /** Inline / selection AI: fills Thinking… placeholder via philosopher bots. */
+  const handleNotebookAskAI = useCallback(async (request: MarkdownNotebookAskAIRequest) => {
+    const requestId = ++askAIAbortRef.current
+    setIsAskAIBusy(true)
+    const defaultBot = PHILOSOPHER_BOTS[0]?.id || 'socrates'
+
+    const applyReply = (reply: string) => {
+      if (requestId !== askAIAbortRef.current) return
+      try {
+        const result = replaceNotebookAIResponseMarkdown(
+          request.markdownWithResponse,
+          request.responseNodeIndex,
+          reply.trim(),
+          1
+        )
+        setMarkdown(result.markdown)
+        setMarkdownVersion((v) => v + 1)
+      } catch (err) {
+        console.warn('[notebook AI] failed to apply reply', err)
+      }
+    }
+
+    try {
+      let res = await fetch('/api/bots/act', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'chat',
+          bot: defaultBot,
+          question: request.query,
+          mood: 'calm',
+          taskType: 'paper_section',
+          thinkingDepth: 'standard',
+        }),
+      })
+
+      if (res.status === 404 || res.status === 405) {
+        res = await fetch('/api/philosopher-bot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            philosopher: defaultBot,
+            question: request.query,
+            mood: 'calm',
+            taskType: 'paper_section',
+            thinkingDepth: 'standard',
+          }),
+        })
+      }
+
+      let data: any = null
+      try {
+        data = await res.json()
+      } catch {
+        data = null
+      }
+
+      const reply =
+        (typeof data?.reply === 'string' && data.reply.trim()) ||
+        (typeof data?.error === 'string' && data.error) ||
+        (res.ok ? 'No reply returned. Try again.' : `Request failed (${res.status}).`)
+
+      applyReply(reply)
+    } catch (error) {
+      console.warn('[notebook AI] request failed', error)
+      applyReply('The philosopher network is unreachable right now. Please try again.')
+    } finally {
+      if (requestId === askAIAbortRef.current) {
+        setIsAskAIBusy(false)
+      }
+    }
   }, [])
 
   // Load notebook when route changes to editor
@@ -406,8 +487,11 @@ export function App() {
                     value={markdown}
                     focusAIPromptRequest={aiPromptRequest}
                     onChange={(val) => setMarkdown(val)}
+                    onAskAI={handleNotebookAskAI}
+                    isAskAIDisabled={isAskAIBusy}
                     extraInsertCommands={extraCommands}
                     hiddenInsertCommandKeys={WIM_HIDDEN_INSERT_COMMAND_KEYS}
+                    selectionAIActions={SELECTION_AI_ACTIONS}
                   />
                 </div>
 
