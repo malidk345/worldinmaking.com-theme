@@ -51,6 +51,5 @@ for (const rel of files) {
     for (const [a, b] of pairs) n = n.split(a).join(b)
     if (n !== c) {
         fs.writeFileSync(file, n)
-        console.log('updated', rel)
     }
 }

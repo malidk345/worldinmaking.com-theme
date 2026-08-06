@@ -440,7 +440,6 @@ export default function HubSpotForm({
             },
             body: JSON.stringify(submission),
         }).catch((err) => {
-            console.log(err)
             return err
         })
         if (res.status === 200) {
@@ -475,8 +474,8 @@ export default function HubSpotForm({
                                         ? Yup.array().of(Yup.string()).required(`${field.label} is a required field`)
                                         : Yup.string().required(`${field.label} is a required field`)
                                     : field.fieldType === 'checkbox'
-                                    ? Yup.array().of(Yup.string())
-                                    : Yup.string(),
+                                      ? Yup.array().of(Yup.string())
+                                      : Yup.string(),
                             ])
                         )
                     )

@@ -22,7 +22,8 @@ if (fs.existsSync(srcPath)) {
     css = css.replace(/:root|:host/g, '&')
 
     // Wrap the entire CSS in container scopes
-    const scopes = '.notebook-app-scope, .Popover, .LemonModal, .LemonPopover, .ReactModal__Content, [data-lemon-popover]'
+    const scopes =
+        '.notebook-app-scope, .Popover, .LemonModal, .LemonPopover, .ReactModal__Content, [data-lemon-popover]'
     const wrappedCss = `${scopes} {\n${css}\n}\n`
 
     // Verify depth
@@ -36,10 +37,7 @@ if (fs.existsSync(srcPath)) {
         }
     }
 
-    console.log(`Wrapped depth: ${depth}, Valid: ${!invalid && depth === 0}`)
-
     fs.writeFileSync(destPath, wrappedCss)
-    console.log('Successfully generated strictly scoped quill-shim.css')
 } else {
     fs.writeFileSync(destPath, '/* quill-shim fallback */')
 }

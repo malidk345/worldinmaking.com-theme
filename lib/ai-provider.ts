@@ -1,40 +1,40 @@
-import { GoogleGenAI } from '@google/genai';
-import type { TaskType } from './persona-engine';
+import { GoogleGenAI } from '@google/genai'
+import type { TaskType } from './persona-engine'
 
 function loadEnv() {
-    if (typeof window !== 'undefined') return;
+    if (typeof window !== 'undefined') return
     try {
-        const req = eval('require');
-        const fs = req('fs');
-        const path = req('path');
-        const envPath = path.resolve(process.cwd(), '.env.local');
+        const req = eval('require')
+        const fs = req('fs')
+        const path = req('path')
+        const envPath = path.resolve(process.cwd(), '.env.local')
         if (fs.existsSync(envPath)) {
-            const envContent = fs.readFileSync(envPath, 'utf-8');
+            const envContent = fs.readFileSync(envPath, 'utf-8')
             envContent.split('\n').forEach((line: string) => {
-                const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+                const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/)
                 if (match) {
-                    const key = match[1];
-                    let value = match[2] || '';
+                    const key = match[1]
+                    let value = match[2] || ''
                     if (value.includes('#') && !value.startsWith('"') && !value.startsWith("'")) {
-                        value = value.split('#')[0].trim();
+                        value = value.split('#')[0].trim()
                     }
-                    value = value.trim();
-                    if (value.startsWith('"') && value.endsWith('"')) value = value.slice(1, -1);
-                    else if (value.startsWith("'") && value.endsWith("'")) value = value.slice(1, -1);
-                    if (process.env[key] === undefined) process.env[key] = value;
+                    value = value.trim()
+                    if (value.startsWith('"') && value.endsWith('"')) value = value.slice(1, -1)
+                    else if (value.startsWith("'") && value.endsWith("'")) value = value.slice(1, -1)
+                    if (process.env[key] === undefined) process.env[key] = value
                 }
-            });
+            })
         }
     } catch {
         // browser environment
     }
 }
-loadEnv();
+loadEnv()
 
 /**
  * Supported providers list in order of fallback.
  */
-export type AIProvider = 'gemini' | 'grok' | 'groq' | 'openrouter' | 'huggingface';
+export type AIProvider = 'gemini' | 'grok' | 'groq' | 'openrouter' | 'huggingface'
 
 /**
  * @deprecated Use buildPersonaPrompt() from persona-engine.ts instead.
@@ -50,14 +50,14 @@ WRITING FORMAT DIRECTIVES:
 - NEVER use: "certainly", "of course", "great question", "as an AI"
 - NEVER use emojis
 - Write as a specific intellectual persona, not a generic assistant
-`.trim();
+`.trim()
 
 /**
  * @deprecated Use buildPersonaHeader() from persona-engine.ts for new code.
  * Kept for backward compatibility.
  */
 export function buildBotPrompt(rawPrompt: string): string {
-    return `${EDITORIAL_SYSTEM_PROMPT}\n\n---\n\n${rawPrompt}`;
+    return `${EDITORIAL_SYSTEM_PROMPT}\n\n---\n\n${rawPrompt}`
 }
 
 /**
@@ -67,17 +67,57 @@ export function buildBotPrompt(rawPrompt: string): string {
  */
 const TASK_MODEL_PREFERENCE: Record<TaskType, { gemini: string; grok: string; groq: string; openrouter: string }> = {
     // Synthesis gets the most capable model — worth the extra latency
-    synthesis:           { gemini: 'gemini-2.0-flash-thinking-exp', grok: 'grok-2-latest', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
+    synthesis: {
+        gemini: 'gemini-2.0-flash-thinking-exp',
+        grok: 'grok-2-latest',
+        groq: 'llama-3.3-70b-versatile',
+        openrouter: 'meta-llama/llama-3.3-70b-instruct',
+    },
     // Paper tasks need strong instruction following and fluency
-    paper_section:       { gemini: 'gemini-2.0-flash', grok: 'grok-2-latest', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
-    dialectic_challenge: { gemini: 'gemini-2.0-flash', grok: 'grok-2-latest', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
-    cross_examine:       { gemini: 'gemini-2.0-flash', grok: 'grok-2-latest', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
-    third_voice:         { gemini: 'gemini-2.0-flash', grok: 'grok-2-latest', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
+    paper_section: {
+        gemini: 'gemini-2.0-flash',
+        grok: 'grok-2-latest',
+        groq: 'llama-3.3-70b-versatile',
+        openrouter: 'meta-llama/llama-3.3-70b-instruct',
+    },
+    dialectic_challenge: {
+        gemini: 'gemini-2.0-flash',
+        grok: 'grok-2-latest',
+        groq: 'llama-3.3-70b-versatile',
+        openrouter: 'meta-llama/llama-3.3-70b-instruct',
+    },
+    cross_examine: {
+        gemini: 'gemini-2.0-flash',
+        grok: 'grok-2-latest',
+        groq: 'llama-3.3-70b-versatile',
+        openrouter: 'meta-llama/llama-3.3-70b-instruct',
+    },
+    third_voice: {
+        gemini: 'gemini-2.0-flash',
+        grok: 'grok-2-latest',
+        groq: 'llama-3.3-70b-versatile',
+        openrouter: 'meta-llama/llama-3.3-70b-instruct',
+    },
     // Community tasks use fast models — speed matters more than depth
-    community_reply:     { gemini: 'gemini-2.0-flash', grok: 'grok-2-latest', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
-    thread_init:         { gemini: 'gemini-2.0-flash', grok: 'grok-2-latest', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
-    fact_critique:       { gemini: 'gemini-2.0-flash', grok: 'grok-2-latest', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
-};
+    community_reply: {
+        gemini: 'gemini-2.0-flash',
+        grok: 'grok-2-latest',
+        groq: 'llama-3.3-70b-versatile',
+        openrouter: 'meta-llama/llama-3.3-70b-instruct',
+    },
+    thread_init: {
+        gemini: 'gemini-2.0-flash',
+        grok: 'grok-2-latest',
+        groq: 'llama-3.3-70b-versatile',
+        openrouter: 'meta-llama/llama-3.3-70b-instruct',
+    },
+    fact_critique: {
+        gemini: 'gemini-2.0-flash',
+        grok: 'grok-2-latest',
+        groq: 'llama-3.3-70b-versatile',
+        openrouter: 'meta-llama/llama-3.3-70b-instruct',
+    },
+}
 
 /**
  * Provider cooldown registry.
@@ -85,37 +125,49 @@ const TASK_MODEL_PREFERENCE: Record<TaskType, { gemini: string; grok: string; gr
  * for COOLDOWN_MS milliseconds and moved to the end of the rotation.
  * Resets on worker restart — acceptable for serverless.
  */
-const PROVIDER_COOLDOWNS = new Map<AIProvider, number>();
-const COOLDOWN_MS = 60_000; // 60 seconds
+const PROVIDER_COOLDOWNS = new Map<AIProvider, number>()
+const COOLDOWN_MS = 60_000 // 60 seconds
 
 function isProviderCooling(provider: AIProvider): boolean {
-    const coolUntil = PROVIDER_COOLDOWNS.get(provider);
-    if (!coolUntil) return false;
+    const coolUntil = PROVIDER_COOLDOWNS.get(provider)
+    if (!coolUntil) return false
     if (Date.now() > coolUntil) {
-        PROVIDER_COOLDOWNS.delete(provider);
-        return false;
+        PROVIDER_COOLDOWNS.delete(provider)
+        return false
     }
-    return true;
+    return true
 }
 
 export function markProviderCooling(provider: AIProvider): void {
-    PROVIDER_COOLDOWNS.set(provider, Date.now() + COOLDOWN_MS);
-    console.warn(`[AI-Provider] ${provider} rate-limited — cooling down for ${COOLDOWN_MS / 1000}s.`);
+    PROVIDER_COOLDOWNS.set(provider, Date.now() + COOLDOWN_MS)
+    console.warn(`[AI-Provider] ${provider} rate-limited — cooling down for ${COOLDOWN_MS / 1000}s.`)
 }
 
 /**
  * Base provider rotation — all 5 providers in order.
  * Each bot is assigned a starting offset via consistent hashing.
  */
-const PROVIDER_ORDER_BASE: AIProvider[] = ['gemini', 'grok', 'groq', 'openrouter', 'huggingface'];
+const PROVIDER_ORDER_BASE: AIProvider[] = ['gemini', 'grok', 'groq', 'openrouter', 'huggingface']
 
 const BOT_INDEX: Record<string, number> = {
-    marx: 0, nietzsche: 1, deleuze: 2,   sartre: 3,
-    spinoza: 4, althusser: 5, heidegger: 6, hegel: 7,
-    baudrillard: 8, weber: 9, adorno: 10, zizek: 11,
-    derrida: 12, lenin: 13, arendt: 14,  rand: 15,
+    marx: 0,
+    nietzsche: 1,
+    deleuze: 2,
+    sartre: 3,
+    spinoza: 4,
+    althusser: 5,
+    heidegger: 6,
+    hegel: 7,
+    baudrillard: 8,
+    weber: 9,
+    adorno: 10,
+    zizek: 11,
+    derrida: 12,
+    lenin: 13,
+    arendt: 14,
+    rand: 15,
     wimbot: 0, // WIMBot always starts with Gemini for synthesis quality
-};
+}
 
 /**
  * Returns the provider order for a bot.
@@ -123,36 +175,35 @@ const BOT_INDEX: Record<string, number> = {
  * then rotates through the rest.
  */
 function getProviderOrder(botName: string): AIProvider[] {
-    const name = botName.toLowerCase().trim();
-    const botIdx = BOT_INDEX[name] ?? (name.charCodeAt(0) % 5);
-    const startOffset = botIdx % PROVIDER_ORDER_BASE.length;
+    const name = botName.toLowerCase().trim()
+    const botIdx = BOT_INDEX[name] ?? name.charCodeAt(0) % 5
+    const startOffset = botIdx % PROVIDER_ORDER_BASE.length
 
-    const rotation: AIProvider[] = [];
+    const rotation: AIProvider[] = []
     for (let i = 0; i < PROVIDER_ORDER_BASE.length; i++) {
-        rotation.push(PROVIDER_ORDER_BASE[(startOffset + i) % PROVIDER_ORDER_BASE.length]);
+        rotation.push(PROVIDER_ORDER_BASE[(startOffset + i) % PROVIDER_ORDER_BASE.length])
     }
 
-    const active = rotation.filter(p => !isProviderCooling(p));
-    const cooling = rotation.filter(p => isProviderCooling(p));
-    const result = [...active, ...cooling];
+    const active = rotation.filter((p) => !isProviderCooling(p))
+    const cooling = rotation.filter((p) => isProviderCooling(p))
+    const result = [...active, ...cooling]
 
     if (cooling.length > 0) {
-        console.log(`[AI-Provider] @${name} order: ${result.join(' → ')} (${cooling.join(', ')} cooling)`);
     }
-    return result;
+    return result
 }
 
 async function getFetchFn(): Promise<typeof fetch> {
     if (typeof process !== 'undefined' && !process.env.NEXT_RUNTIME) {
         try {
-            const req = eval('require');
-            const res = req('node-fetch');
-            return (res.default || res) as unknown as typeof fetch;
+            const req = eval('require')
+            const res = req('node-fetch')
+            return (res.default || res) as unknown as typeof fetch
         } catch {
             // fallback
         }
     }
-    return fetch;
+    return fetch
 }
 
 /**
@@ -163,46 +214,51 @@ async function getFetchFn(): Promise<typeof fetch> {
  *   - `${BASE}_2`, `${BASE}_3`, ... — numbered variables
  */
 function getApiKeys(baseName: string): string[] {
-    const keys: string[] = [];
-    const bases = [baseName];
+    const keys: string[] = []
+    const bases = [baseName]
     if (baseName === 'GROK_API_KEY') {
-        bases.push('XAI_API_KEY');
+        bases.push('XAI_API_KEY')
     }
 
     for (const base of bases) {
-        const combined = process.env[`${base}S`];
+        const combined = process.env[`${base}S`]
         if (combined) {
-            keys.push(...combined.split(',').map((k) => k.trim()).filter(Boolean));
+            keys.push(
+                ...combined
+                    .split(',')
+                    .map((k) => k.trim())
+                    .filter(Boolean)
+            )
         }
 
-        const single = process.env[base];
+        const single = process.env[base]
         if (single && !keys.includes(single)) {
-            keys.push(single);
+            keys.push(single)
         }
 
         for (let i = 2; i <= 10; i++) {
-            const numbered = process.env[`${base}_${i}`];
+            const numbered = process.env[`${base}_${i}`]
             if (numbered && !keys.includes(numbered)) {
-                keys.push(numbered);
+                keys.push(numbered)
             }
         }
     }
 
-    return keys;
+    return keys
 }
 
 /** Fisher-Yates shuffle so key rotation isn't always biased toward the first key. */
 function shuffle<T>(arr: T[]): T[] {
-    const shuffled = [...arr];
+    const shuffled = [...arr]
     for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
     }
-    return shuffled;
+    return shuffled
 }
 
 function maskKey(key: string): string {
-    return key.length > 8 ? `${key.slice(0, 4)}...${key.slice(-4)}` : '***';
+    return key.length > 8 ? `${key.slice(0, 4)}...${key.slice(-4)}` : '***'
 }
 
 /**
@@ -216,57 +272,63 @@ async function callGemini(
     userPrompt: string,
     model: string = 'gemini-2.0-flash'
 ): Promise<string> {
-    const apiKeys = getApiKeys('GEMINI_API_KEY');
-    if (apiKeys.length === 0) throw new Error('GEMINI_API_KEY is missing');
+    const apiKeys = getApiKeys('GEMINI_API_KEY')
+    if (apiKeys.length === 0) throw new Error('GEMINI_API_KEY is missing')
 
     const combinedContents = systemPrompt
         ? `SYSTEM INSTRUCTIONS:\n${systemPrompt}\n\n---\n\nUSER TASK:\n${userPrompt}`
-        : userPrompt;
+        : userPrompt
 
-    let lastError: Error | null = null;
-    const customFetch = await getFetchFn();
+    let lastError: Error | null = null
+    const customFetch = await getFetchFn()
 
     for (const apiKey of shuffle(apiKeys)) {
         try {
             if (GoogleGenAI) {
                 try {
-                    const ai = new GoogleGenAI({ apiKey });
+                    const ai = new GoogleGenAI({ apiKey })
                     const response = await ai.models.generateContent({
                         model,
-                        contents: combinedContents
-                    });
-                    const text = response.text?.trim();
-                    if (text) return text;
+                        contents: combinedContents,
+                    })
+                    const text = response.text?.trim()
+                    if (text) return text
                 } catch (sdkErr) {
-                    console.warn(`[AI-Provider] Gemini SDK attempt failed, using REST API...`, (sdkErr as Error)?.message);
+                    console.warn(
+                        `[AI-Provider] Gemini SDK attempt failed, using REST API...`,
+                        (sdkErr as Error)?.message
+                    )
                 }
             }
 
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
             const res = await customFetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    contents: [{ parts: [{ text: combinedContents }] }]
-                })
-            });
+                    contents: [{ parts: [{ text: combinedContents }] }],
+                }),
+            })
 
             if (!res.ok) {
-                const errText = await res.text();
-                throw new Error(`Gemini HTTP Error ${res.status}: ${errText}`);
+                const errText = await res.text()
+                throw new Error(`Gemini HTTP Error ${res.status}: ${errText}`)
             }
 
-            const data = await res.json();
-            const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-            if (!text) throw new Error('Gemini REST API returned empty response');
-            return text;
+            const data = await res.json()
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
+            if (!text) throw new Error('Gemini REST API returned empty response')
+            return text
         } catch (e) {
-            lastError = e instanceof Error ? e : new Error(String(e));
-            console.warn(`[AI-Provider] Gemini key ${maskKey(apiKey)} failed (model: ${model}), trying next:`, lastError.message);
+            lastError = e instanceof Error ? e : new Error(String(e))
+            console.warn(
+                `[AI-Provider] Gemini key ${maskKey(apiKey)} failed (model: ${model}), trying next:`,
+                lastError.message
+            )
         }
     }
 
-    throw lastError || new Error('All Gemini API keys failed');
+    throw lastError || new Error('All Gemini API keys failed')
 }
 
 /**
@@ -275,55 +337,50 @@ async function callGemini(
  * @param userPrompt   - The actual task prompt.
  * @param model        - Override model (defaults to grok-2-latest).
  */
-async function callGrok(
-    systemPrompt: string,
-    userPrompt: string,
-    model: string = 'grok-2-latest'
-): Promise<string> {
-    const apiKeys = getApiKeys('GROK_API_KEY');
-    if (apiKeys.length === 0) throw new Error('GROK_API_KEY / XAI_API_KEY is missing');
+async function callGrok(systemPrompt: string, userPrompt: string, model: string = 'grok-2-latest'): Promise<string> {
+    const apiKeys = getApiKeys('GROK_API_KEY')
+    if (apiKeys.length === 0) throw new Error('GROK_API_KEY / XAI_API_KEY is missing')
 
-    const customFetch = await getFetchFn();
-    const messages: Array<{ role: string; content: string }> = [];
+    const customFetch = await getFetchFn()
+    const messages: Array<{ role: string; content: string }> = []
     if (systemPrompt) {
-        messages.push({ role: 'system', content: systemPrompt });
+        messages.push({ role: 'system', content: systemPrompt })
     }
-    messages.push({ role: 'user', content: userPrompt });
+    messages.push({ role: 'user', content: userPrompt })
 
-    let lastError: Error | null = null;
+    let lastError: Error | null = null
     for (const apiKey of shuffle(apiKeys)) {
         try {
-            console.log(`[AI-Provider] Sending request to Grok (xAI) using model: ${model} (key ${maskKey(apiKey)})`);
             const res = await customFetch('https://api.x.ai/v1/chat/completions', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'Content-Type': 'application/json'
+                    Authorization: `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
                     model,
                     messages,
                     temperature: 0.7,
-                    max_tokens: 4096
-                })
-            });
+                    max_tokens: 4096,
+                }),
+            })
 
             if (!res.ok) {
-                const errText = await res.text();
-                throw new Error(`Grok HTTP Error ${res.status}: ${errText}`);
+                const errText = await res.text()
+                throw new Error(`Grok HTTP Error ${res.status}: ${errText}`)
             }
 
-            const data = await res.json();
-            const text = data.choices?.[0]?.message?.content?.trim();
-            if (!text) throw new Error('Grok returned empty response');
-            return text;
+            const data = await res.json()
+            const text = data.choices?.[0]?.message?.content?.trim()
+            if (!text) throw new Error('Grok returned empty response')
+            return text
         } catch (e) {
-            lastError = e instanceof Error ? e : new Error(String(e));
-            console.warn(`[AI-Provider] Grok key ${maskKey(apiKey)} failed, trying next:`, lastError.message);
+            lastError = e instanceof Error ? e : new Error(String(e))
+            console.warn(`[AI-Provider] Grok key ${maskKey(apiKey)} failed, trying next:`, lastError.message)
         }
     }
 
-    throw lastError || new Error('All Grok API keys failed');
+    throw lastError || new Error('All Grok API keys failed')
 }
 
 /**
@@ -337,52 +394,54 @@ async function callGroq(
     userPrompt: string,
     model: string = 'llama-3.3-70b-versatile'
 ): Promise<string> {
-    const apiKeys = getApiKeys('GROQ_API_KEY');
-    if (apiKeys.length === 0) throw new Error('GROQ_API_KEY is missing');
+    const apiKeys = getApiKeys('GROQ_API_KEY')
+    if (apiKeys.length === 0) throw new Error('GROQ_API_KEY is missing')
 
-    const customFetch = await getFetchFn();
+    const customFetch = await getFetchFn()
 
     // Build messages array: system message + user message for proper role separation
-    const messages: Array<{ role: string; content: string }> = [];
+    const messages: Array<{ role: string; content: string }> = []
     if (systemPrompt) {
-        messages.push({ role: 'system', content: systemPrompt });
+        messages.push({ role: 'system', content: systemPrompt })
     }
-    messages.push({ role: 'user', content: userPrompt });
+    messages.push({ role: 'user', content: userPrompt })
 
-    let lastError: Error | null = null;
+    let lastError: Error | null = null
     for (const apiKey of shuffle(apiKeys)) {
         try {
-            console.log(`[AI-Provider] Sending request to Groq using model: ${model} (key ${maskKey(apiKey)})`);
             const res = await customFetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'Content-Type': 'application/json'
+                    Authorization: `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
                     model,
                     messages,
                     temperature: 0.75,
-                    max_tokens: 4096
-                })
-            });
+                    max_tokens: 4096,
+                }),
+            })
 
             if (!res.ok) {
-                const errText = await res.text();
-                throw new Error(`Groq HTTP Error ${res.status}: ${errText}`);
+                const errText = await res.text()
+                throw new Error(`Groq HTTP Error ${res.status}: ${errText}`)
             }
 
-            const data = await res.json();
-            const text = data.choices?.[0]?.message?.content?.trim();
-            if (!text) throw new Error('Groq returned empty response');
-            return text;
+            const data = await res.json()
+            const text = data.choices?.[0]?.message?.content?.trim()
+            if (!text) throw new Error('Groq returned empty response')
+            return text
         } catch (e) {
-            lastError = e instanceof Error ? e : new Error(String(e));
-            console.warn(`[AI-Provider] Groq key ${maskKey(apiKey)} failed, trying next key if available:`, lastError.message);
+            lastError = e instanceof Error ? e : new Error(String(e))
+            console.warn(
+                `[AI-Provider] Groq key ${maskKey(apiKey)} failed, trying next key if available:`,
+                lastError.message
+            )
         }
     }
 
-    throw lastError || new Error('All Groq API keys failed');
+    throw lastError || new Error('All Groq API keys failed')
 }
 
 /**
@@ -396,53 +455,55 @@ async function callOpenRouter(
     userPrompt: string,
     model: string = 'meta-llama/llama-3.3-70b-instruct'
 ): Promise<string> {
-    const apiKeys = getApiKeys('OPENROUTER_API_KEY');
-    if (apiKeys.length === 0) throw new Error('OPENROUTER_API_KEY is missing');
+    const apiKeys = getApiKeys('OPENROUTER_API_KEY')
+    if (apiKeys.length === 0) throw new Error('OPENROUTER_API_KEY is missing')
 
-    const customFetch = await getFetchFn();
+    const customFetch = await getFetchFn()
 
-    const messages: Array<{ role: string; content: string }> = [];
+    const messages: Array<{ role: string; content: string }> = []
     if (systemPrompt) {
-        messages.push({ role: 'system', content: systemPrompt });
+        messages.push({ role: 'system', content: systemPrompt })
     }
-    messages.push({ role: 'user', content: userPrompt });
+    messages.push({ role: 'user', content: userPrompt })
 
-    let lastError: Error | null = null;
+    let lastError: Error | null = null
     for (const apiKey of shuffle(apiKeys)) {
         try {
-            console.log(`[AI-Provider] Sending request to OpenRouter using model: ${model} (key ${maskKey(apiKey)})`);
             const res = await customFetch('https://openrouter.ai/api/v1/chat/completions', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${apiKey}`,
+                    Authorization: `Bearer ${apiKey}`,
                     'Content-Type': 'application/json',
                     'HTTP-Referer': 'https://worldinmaking.com',
-                    'X-Title': 'World In Making'
+                    'X-Title': 'World In Making',
                 },
                 body: JSON.stringify({
                     model,
                     messages,
                     temperature: 0.75,
-                    max_tokens: 4096
-                })
-            });
+                    max_tokens: 4096,
+                }),
+            })
 
             if (!res.ok) {
-                const errText = await res.text();
-                throw new Error(`OpenRouter HTTP Error ${res.status}: ${errText}`);
+                const errText = await res.text()
+                throw new Error(`OpenRouter HTTP Error ${res.status}: ${errText}`)
             }
 
-            const data = await res.json();
-            const text = data.choices?.[0]?.message?.content?.trim();
-            if (!text) throw new Error('OpenRouter returned empty response');
-            return text;
+            const data = await res.json()
+            const text = data.choices?.[0]?.message?.content?.trim()
+            if (!text) throw new Error('OpenRouter returned empty response')
+            return text
         } catch (e) {
-            lastError = e instanceof Error ? e : new Error(String(e));
-            console.warn(`[AI-Provider] OpenRouter key ${maskKey(apiKey)} failed, trying next key if available:`, lastError.message);
+            lastError = e instanceof Error ? e : new Error(String(e))
+            console.warn(
+                `[AI-Provider] OpenRouter key ${maskKey(apiKey)} failed, trying next key if available:`,
+                lastError.message
+            )
         }
     }
 
-    throw lastError || new Error('All OpenRouter API keys failed');
+    throw lastError || new Error('All OpenRouter API keys failed')
 }
 
 /**
@@ -450,56 +511,55 @@ async function callOpenRouter(
  * @param systemPrompt - System-level instructions (persona header).
  * @param userPrompt   - The actual task prompt.
  */
-async function callHuggingFace(
-    systemPrompt: string,
-    userPrompt: string
-): Promise<string> {
-    const apiKeys = getApiKeys('HUGGINGFACE_API_KEY');
-    if (apiKeys.length === 0) throw new Error('HUGGINGFACE_API_KEY is missing');
+async function callHuggingFace(systemPrompt: string, userPrompt: string): Promise<string> {
+    const apiKeys = getApiKeys('HUGGINGFACE_API_KEY')
+    if (apiKeys.length === 0) throw new Error('HUGGINGFACE_API_KEY is missing')
 
-    const model = 'meta-llama/Meta-Llama-3-8B-Instruct';
-    const customFetch = await getFetchFn();
+    const model = 'meta-llama/Meta-Llama-3-8B-Instruct'
+    const customFetch = await getFetchFn()
 
-    const messages: Array<{ role: string; content: string }> = [];
+    const messages: Array<{ role: string; content: string }> = []
     if (systemPrompt) {
-        messages.push({ role: 'system', content: systemPrompt });
+        messages.push({ role: 'system', content: systemPrompt })
     }
-    messages.push({ role: 'user', content: userPrompt });
+    messages.push({ role: 'user', content: userPrompt })
 
-    let lastError: Error | null = null;
+    let lastError: Error | null = null
     for (const apiKey of shuffle(apiKeys)) {
         try {
-            console.log(`[AI-Provider] Sending request to Hugging Face using model: ${model} (key ${maskKey(apiKey)})`);
             const res = await customFetch('https://router.huggingface.co/v1/chat/completions', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'Content-Type': 'application/json'
+                    Authorization: `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
                     model,
                     messages,
                     temperature: 0.7,
-                    max_tokens: 2048
-                })
-            });
+                    max_tokens: 2048,
+                }),
+            })
 
             if (!res.ok) {
-                const errText = await res.text();
-                throw new Error(`Hugging Face HTTP Error ${res.status}: ${errText}`);
+                const errText = await res.text()
+                throw new Error(`Hugging Face HTTP Error ${res.status}: ${errText}`)
             }
 
-            const data = await res.json();
-            const text = data.choices?.[0]?.message?.content?.trim();
-            if (!text) throw new Error('Hugging Face returned empty response');
-            return text;
+            const data = await res.json()
+            const text = data.choices?.[0]?.message?.content?.trim()
+            if (!text) throw new Error('Hugging Face returned empty response')
+            return text
         } catch (e) {
-            lastError = e instanceof Error ? e : new Error(String(e));
-            console.warn(`[AI-Provider] Hugging Face key ${maskKey(apiKey)} failed, trying next key if available:`, lastError.message);
+            lastError = e instanceof Error ? e : new Error(String(e))
+            console.warn(
+                `[AI-Provider] Hugging Face key ${maskKey(apiKey)} failed, trying next key if available:`,
+                lastError.message
+            )
         }
     }
 
-    throw lastError || new Error('All Hugging Face API keys failed');
+    throw lastError || new Error('All Hugging Face API keys failed')
 }
 
 /**
@@ -516,36 +576,34 @@ export async function generateBotResponse(
     systemPrompt: string = '',
     task: TaskType = 'community_reply'
 ): Promise<string> {
-    const providers = getProviderOrder(botName);
-    let lastError: Error | null = null;
-    const modelOverrides = TASK_MODEL_PREFERENCE[task];
+    const providers = getProviderOrder(botName)
+    let lastError: Error | null = null
+    const modelOverrides = TASK_MODEL_PREFERENCE[task]
 
     for (const provider of providers) {
         try {
-            console.log(`[AI-Provider] Bot "${botName}" / task "${task}" requesting generation via "${provider}"...`);
-            let result = '';
+            let result = ''
 
             if (provider === 'gemini') {
-                result = await callGemini(systemPrompt, prompt, modelOverrides.gemini);
+                result = await callGemini(systemPrompt, prompt, modelOverrides.gemini)
             } else if (provider === 'grok') {
-                result = await callGrok(systemPrompt, prompt, modelOverrides.grok);
+                result = await callGrok(systemPrompt, prompt, modelOverrides.grok)
             } else if (provider === 'groq') {
-                result = await callGroq(systemPrompt, prompt, modelOverrides.groq);
+                result = await callGroq(systemPrompt, prompt, modelOverrides.groq)
             } else if (provider === 'openrouter') {
-                result = await callOpenRouter(systemPrompt, prompt, modelOverrides.openrouter);
+                result = await callOpenRouter(systemPrompt, prompt, modelOverrides.openrouter)
             } else if (provider === 'huggingface') {
-                result = await callHuggingFace(systemPrompt, prompt);
+                result = await callHuggingFace(systemPrompt, prompt)
             }
 
             if (result) {
-                console.log(`[AI-Provider] Successfully generated response for "${botName}" via "${provider}" (task: ${task}).`);
-                return introduceHumanTypos(result, botName);
+                return introduceHumanTypos(result, botName)
             }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (e: any) {
-            lastError = e;
-            const msg: string = e?.message || String(e);
-            console.error(`[AI-Provider] Provider "${provider}" failed for bot "${botName}" (task: ${task}):`, msg);
+            lastError = e
+            const msg: string = e?.message || String(e)
+            console.error(`[AI-Provider] Provider "${provider}" failed for bot "${botName}" (task: ${task}):`, msg)
 
             // Auto-detect rate limits and mark the provider as cooling
             // so all subsequent bots avoid it for the next 60 seconds
@@ -555,90 +613,114 @@ export async function generateBotResponse(
                 msg.toLowerCase().includes('rate_limit') ||
                 msg.toLowerCase().includes('quota') ||
                 msg.toLowerCase().includes('too many requests') ||
-                msg.toLowerCase().includes('resource_exhausted');
+                msg.toLowerCase().includes('resource_exhausted')
 
             if (isRateLimit) {
-                markProviderCooling(provider);
+                markProviderCooling(provider)
             }
         }
     }
 
-    throw new Error(`All AI providers failed for bot "${botName}" (task: ${task}). Last error: ${lastError?.message || lastError}`);
+    throw new Error(
+        `All AI providers failed for bot "${botName}" (task: ${task}). Last error: ${lastError?.message || lastError}`
+    )
 }
 
-
 const QWERTY_NEIGHBORS: Record<string, string> = {
-    a: 'qwsz', b: 'vghn', c: 'xdfv', d: 'ersfxc', e: 'wsdr', f: 'rtgvcd', g: 'tyhbvf', h: 'yujnbg',
-    i: 'ujko', j: 'uikmnh', k: 'ijlm', l: 'okp', m: 'njk', n: 'bhjm', o: 'iklp', p: 'ol',
-    q: 'wa', r: 'edft', s: 'wedxza', t: 'rfgy', u: 'yhji', v: 'cfgb', w: 'qase', x: 'zsdc',
-    y: 'tghu', z: 'asx'
-};
+    a: 'qwsz',
+    b: 'vghn',
+    c: 'xdfv',
+    d: 'ersfxc',
+    e: 'wsdr',
+    f: 'rtgvcd',
+    g: 'tyhbvf',
+    h: 'yujnbg',
+    i: 'ujko',
+    j: 'uikmnh',
+    k: 'ijlm',
+    l: 'okp',
+    m: 'njk',
+    n: 'bhjm',
+    o: 'iklp',
+    p: 'ol',
+    q: 'wa',
+    r: 'edft',
+    s: 'wedxza',
+    t: 'rfgy',
+    u: 'yhji',
+    v: 'cfgb',
+    w: 'qase',
+    x: 'zsdc',
+    y: 'tghu',
+    z: 'asx',
+}
 
 /**
  * Subtly introduces 1 or 2 human keyboard typos into the text based on the bot's personality.
  */
 function introduceHumanTypos(text: string, botName: string): string {
-    const name = botName.toLowerCase().trim();
-    
+    const name = botName.toLowerCase().trim()
+
     // Define typo probability based on bot personality
-    let typoChance = 0.05; // 5% chance for highly precise/academic writers
-    
+    let typoChance = 0.05 // 5% chance for highly precise/academic writers
+
     // 30% chance for more frantic, casual, or cynical writers
     if (['nietzsche', 'deleuze', 'zizek', 'sartre', 'rand', 'baudrillard'].includes(name)) {
-        typoChance = 0.30;
+        typoChance = 0.3
     }
 
     if (Math.random() > typoChance) {
-        return text;
+        return text
     }
 
-    const words = text.split(' ');
+    const words = text.split(' ')
     const candidates = words
         .map((w, idx) => ({ word: w, index: idx }))
-        .filter(c => c.word.length > 4 && /^[a-zA-Z]+$/.test(c.word));
+        .filter((c) => c.word.length > 4 && /^[a-zA-Z]+$/.test(c.word))
 
     if (candidates.length === 0) {
-        return text;
+        return text
     }
 
-    const numTypos = Math.random() < 0.8 ? 1 : 2;
-    const shuffled = [...candidates].sort(() => Math.random() - 0.5);
-    const targets = shuffled.slice(0, numTypos);
+    const numTypos = Math.random() < 0.8 ? 1 : 2
+    const shuffled = [...candidates].sort(() => Math.random() - 0.5)
+    const targets = shuffled.slice(0, numTypos)
 
     for (const target of targets) {
-        let word = target.word;
-        const typoType = Math.floor(Math.random() * 4);
-        const charIdx = Math.floor(Math.random() * (word.length - 2)) + 1; // Avoid first/last letter for realism
+        let word = target.word
+        const typoType = Math.floor(Math.random() * 4)
+        const charIdx = Math.floor(Math.random() * (word.length - 2)) + 1 // Avoid first/last letter for realism
 
         if (typoType === 0) {
             // Swap adjacent letters (Transposition)
-            const chars = word.split('');
-            const temp = chars[charIdx];
-            chars[charIdx] = chars[charIdx + 1];
-            chars[charIdx + 1] = temp;
-            word = chars.join('');
+            const chars = word.split('')
+            const temp = chars[charIdx]
+            chars[charIdx] = chars[charIdx + 1]
+            chars[charIdx + 1] = temp
+            word = chars.join('')
         } else if (typoType === 1) {
             // Omit a letter (Omission)
-            word = word.slice(0, charIdx) + word.slice(charIdx + 1);
+            word = word.slice(0, charIdx) + word.slice(charIdx + 1)
         } else if (typoType === 2) {
             // Double press (Double character)
-            word = word.slice(0, charIdx) + word[charIdx] + word.slice(charIdx);
+            word = word.slice(0, charIdx) + word[charIdx] + word.slice(charIdx)
         } else {
             // QWERTY keyboard neighbor substitution
-            const char = word[charIdx].toLowerCase();
-            const neighbors = QWERTY_NEIGNBORS_TYPO(char);
+            const char = word[charIdx].toLowerCase()
+            const neighbors = QWERTY_NEIGNBORS_TYPO(char)
             if (neighbors) {
-                const replacement = neighbors[Math.floor(Math.random() * neighbors.length)];
-                const finalChar = word[charIdx] === word[charIdx].toUpperCase() ? replacement.toUpperCase() : replacement;
-                word = word.slice(0, charIdx) + finalChar + word.slice(charIdx + 1);
+                const replacement = neighbors[Math.floor(Math.random() * neighbors.length)]
+                const finalChar =
+                    word[charIdx] === word[charIdx].toUpperCase() ? replacement.toUpperCase() : replacement
+                word = word.slice(0, charIdx) + finalChar + word.slice(charIdx + 1)
             }
         }
-        words[target.index] = word;
+        words[target.index] = word
     }
 
-    return words.join(' ');
+    return words.join(' ')
 }
 
 function QWERTY_NEIGNBORS_TYPO(char: string): string | null {
-    return QWERTY_NEIGHBORS[char] || null;
+    return QWERTY_NEIGHBORS[char] || null
 }

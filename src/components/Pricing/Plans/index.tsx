@@ -1,4 +1,5 @@
-const graphql = (s) => s; const useStaticQuery = () => ({});
+const graphql = (s) => s
+const useStaticQuery = () => ({})
 
 import { capitalize } from 'instantsearch.js/es/lib/utils'
 import React, { useEffect, useState } from 'react'
@@ -124,14 +125,14 @@ export const PricingTiers = ({ plans, unit, compact = false, type, test = false,
                                 index === 0 && up_to
                                     ? `First ${formatCompactNumber(up_to)} ${pluralizeUnit(unit, up_to)}`
                                     : index === 0 && !up_to
-                                    ? `${hasFreeAllocation ? 'Unlimited' : 'All'} ${pluralizeUnit(unit, 2)}`
-                                    : !up_to
-                                    ? `${formatCompactNumber(plans[plans.length - 1].tiers[index - 1]?.up_to)}+`
-                                    : `${
-                                          formatCompactNumber(plans[plans.length - 1].tiers[index - 1]?.up_to).split(
-                                              / |k/
-                                          )[0]
-                                      }-${formatCompactNumber(up_to)}`
+                                      ? `${hasFreeAllocation ? 'Unlimited' : 'All'} ${pluralizeUnit(unit, 2)}`
+                                      : !up_to
+                                        ? `${formatCompactNumber(plans[plans.length - 1].tiers[index - 1]?.up_to)}+`
+                                        : `${
+                                              formatCompactNumber(
+                                                  plans[plans.length - 1].tiers[index - 1]?.up_to
+                                              ).split(/ |k/)[0]
+                                          }-${formatCompactNumber(up_to)}`
                             }
                         />
                         <div
@@ -243,7 +244,6 @@ const AddonTooltipContent = ({ addon }: { addon: BillingProductV2Type }) => {
     } else {
         referencePlan = addon.plans[0]
     }
-    console.log(addon.name, 'referencePlan', referencePlan)
     const tiers = referencePlan?.tiers
     const isFirstTierFree = parseFloat(tiers?.[0].unit_amount_usd || '') === 0
     const [showDiscounts, setShowDiscounts] = useState(false)
