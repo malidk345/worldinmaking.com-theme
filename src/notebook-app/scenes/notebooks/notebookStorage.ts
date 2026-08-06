@@ -168,20 +168,28 @@ export function saveNotebook(
     const history = getNotebookHistory(notebook.id)
     const lastSnap = history[history.length - 1]
     const lastSnapAge = lastSnap ? Date.now() - new Date(lastSnap.timestamp).getTime() : Infinity
-    const shouldSnapshot =
-        options.snapshot === true ||
-        (contentChanged && (history.length === 0 || lastSnapAge >= SNAPSHOT_MIN_INTERVAL_MS))
+    const identicalToLastSnap =
+        !!lastSnap && lastSnap.content === next.content && (lastSnap.title || '') === (next.title || '')
 
-    if (shouldSnapshot && contentChanged) {
-        history.push({
-            version: next.version,
-            content: next.content,
-            title: next.title,
-            timestamp: now,
-            label: options.snapshotLabel,
-        })
-        writeHistory(notebook.id, history)
-        next.version = (next.version || 1) + 1
+    // Auto: throttle by interval when content changes.
+    // Manual / labeled: always snapshot unless identical to the last entry (no spam).
+    const shouldSnapshot = options.snapshot
+        ? !identicalToLastSnap || Boolean(options.snapshotLabel)
+        : contentChanged && (history.length === 0 || lastSnapAge >= SNAPSHOT_MIN_INTERVAL_MS)
+
+    if (shouldSnapshot && (contentChanged || options.snapshot)) {
+        // Avoid pure duplicates on forced snapshot without label
+        if (!(identicalToLastSnap && !options.snapshotLabel)) {
+            history.push({
+                version: next.version,
+                content: next.content,
+                title: next.title,
+                timestamp: now,
+                label: options.snapshotLabel,
+            })
+            writeHistory(notebook.id, history)
+            next.version = (next.version || 1) + 1
+        }
     }
 
     if (index >= 0) {

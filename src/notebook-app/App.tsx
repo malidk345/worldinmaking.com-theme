@@ -329,19 +329,27 @@ export function App() {
     setMarkdownVersion((v) => v + 1)
   }, [])
 
-  const handleRestoreVersion = (content: string) => {
-    setMarkdown(content)
-    setMarkdownVersion((v) => v + 1)
-    setShowHistory(false)
-    if (currentNotebook) {
-      const saved = saveNotebook(
-        { ...currentNotebook, title, content },
-        { snapshot: true, snapshotLabel: 'Restored from history' }
-      )
-      setCurrentNotebook(saved)
+  const handleHistoryRestored = useCallback(
+    (payload: { content: string; title: string }) => {
+      setMarkdown(payload.content)
+      setTitle(payload.title)
+      setMarkdownVersion((v) => v + 1)
+      const nb = getNotebook(currentNotebook?.id || '')
+      if (nb) setCurrentNotebook(nb)
       setSyncStatus('saved')
-    }
-  }
+    },
+    [currentNotebook?.id]
+  )
+
+  const handleHistorySnapshotNow = useCallback(() => {
+    if (!currentNotebook) return
+    const saved = saveNotebook(
+      { ...currentNotebook, title, content: markdown },
+      { snapshot: true, snapshotLabel: 'Manual snapshot' }
+    )
+    setCurrentNotebook(saved)
+    setSyncStatus('saved')
+  }, [currentNotebook, title, markdown])
 
   const handleCanvasSave = (id: string) => {
     navigate({ page: 'editor', notebookId: id })
@@ -506,7 +514,10 @@ export function App() {
                   <NotebookHistory
                     notebookId={currentNotebook.id}
                     isOpen={showHistory}
-                    onRestore={handleRestoreVersion}
+                    currentContent={markdown}
+                    currentTitle={title}
+                    onSnapshotNow={handleHistorySnapshotNow}
+                    onRestored={handleHistoryRestored}
                     onClose={() => setShowHistory(false)}
                   />
                 )}
