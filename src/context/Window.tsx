@@ -7,6 +7,8 @@ export interface AppWindow {
     element: React.ReactNode
     key: string
     zIndex: number
+    /** Optional short title (also mirrored in meta.title when set). */
+    title?: string
     meta?: {
         title: string
     }
@@ -54,7 +56,7 @@ export interface AppWindow {
         x: number
         y: number
     }
-    minimal: boolean
+    minimal?: boolean
     appSettings?: AppSetting
     location?: Location
     modal?: {

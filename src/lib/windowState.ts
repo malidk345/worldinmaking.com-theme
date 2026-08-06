@@ -29,11 +29,19 @@ export const transitionWindowMode = (mode: WindowMode, action: WindowModeAction)
     return 'normal'
 }
 
-export const windowModeFlags = (mode: WindowMode) => ({
-    expanded: mode === 'maximized',
-    windowed: mode === 'normal',
-    snapped: mode === 'snapped-left' ? ('left' as const) : mode === 'snapped-right' ? ('right' as const) : false,
-})
+export const windowModeFlags = (
+    mode: WindowMode
+): { expanded: boolean; windowed: boolean; snapped: AppWindow['snapped'] } => {
+    // Explicit AppWindow['snapped'] so `false` is not widened to `boolean`.
+    let snapped: AppWindow['snapped'] = false
+    if (mode === 'snapped-left') snapped = 'left'
+    else if (mode === 'snapped-right') snapped = 'right'
+    return {
+        expanded: mode === 'maximized',
+        windowed: mode === 'normal',
+        snapped,
+    }
+}
 
 export const getWindowMode = (window: Pick<AppWindow, 'expanded' | 'snapped'>): WindowMode => {
     if (window.expanded) return 'maximized'

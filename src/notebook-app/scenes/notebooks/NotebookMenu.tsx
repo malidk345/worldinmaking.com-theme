@@ -8,7 +8,7 @@ import {
     downloadTextFile,
     getNotebook,
 } from './notebookStorage'
-import { notebookFilename } from './notebookOutline'
+import { notebookFilename } from './outlineModel'
 
 interface NotebookMenuProps {
     notebookId: string

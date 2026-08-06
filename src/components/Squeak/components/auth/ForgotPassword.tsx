@@ -20,16 +20,11 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ setMessage, setParentVi
             email: values.email,
         }
 
-        const { error } = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/auth/forgot-password`, {
-            method: 'POST',
-            body: JSON.stringify(body),
-            headers: {
-                'content-type': 'application/json',
-            },
-        }).then((res) => res.json())
+        const { requestPasswordReset } = await import('lib/wim-auth')
+        const { error } = await requestPasswordReset(body.email)
 
         if (error) {
-            setMessage(error?.message)
+            setMessage(error)
         } else {
             setEmailSent(true)
         }

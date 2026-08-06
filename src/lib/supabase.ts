@@ -13,7 +13,8 @@ if (supabaseUrl && supabaseKey) {
 
         client = createClient(trimmedUrl, trimmedKey, {
             auth: {
-                detectSessionInUrl: false,
+                // true so magic-link / recovery redirects establish a session
+                detectSessionInUrl: true,
                 flowType: 'pkce',
                 autoRefreshToken: true,
                 persistSession: true,

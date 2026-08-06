@@ -16,26 +16,36 @@ export default function TeamUpdates() {
     const { user } = useUser()
 
     const fetchUpdates = async () => {
-        const { data } = await fetch(
-            `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/team-updates?${qs.stringify(
-                {
-                    populate: ['question', 'team'],
-                    sort: ['createdAt:desc'],
-                    filters: {
-                        thingOfTheWeek: true,
-                        question: {
-                            createdAt: {
-                                $gte: dayjs().startOf('week').format(),
+        const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+        if (!host) {
+            setUpdates({})
+            setLoading(false)
+            return
+        }
+        try {
+            const { data } = await fetch(
+                `${host}/api/team-updates?${qs.stringify(
+                    {
+                        populate: ['question', 'team'],
+                        sort: ['createdAt:desc'],
+                        filters: {
+                            thingOfTheWeek: true,
+                            question: {
+                                createdAt: {
+                                    $gte: dayjs().startOf('week').format(),
+                                },
                             },
                         },
                     },
-                },
-                { encodeValuesOnly: true }
-            )}`
-        ).then((res) => res.json())
+                    { encodeValuesOnly: true }
+                )}`
+            ).then((res) => res.json())
 
-        const updates = groupBy(data, (update) => update?.attributes?.team?.data?.attributes?.name)
-        setUpdates(updates)
+            const updates = groupBy(data || [], (update) => update?.attributes?.team?.data?.attributes?.name)
+            setUpdates(updates)
+        } catch {
+            setUpdates({})
+        }
         setLoading(false)
     }
 

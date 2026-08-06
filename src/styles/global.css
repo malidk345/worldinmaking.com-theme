@@ -534,8 +534,16 @@
     }
 }
 
+html,
+body,
+#__next {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
 body {
-    @apply font-rounded overflow-x-hidden m-0;
+    @apply font-rounded m-0;
     word-wrap: break-word;
     min-height: 100dvh;
     -webkit-text-size-adjust: 100%;

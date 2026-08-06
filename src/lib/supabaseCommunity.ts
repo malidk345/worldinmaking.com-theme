@@ -102,53 +102,100 @@ export function formatSupabaseCommunityToStrapi(post: SupabaseCommunityPost) {
     }
 }
 
-export async function postSupabaseCommunityQuestion(title: string, content: string, slug?: string): Promise<boolean> {
+/** Prefer live Supabase session JWT so RLS author_id checks pass. */
+async function getAuthedRestHeaders(): Promise<{ headers: Record<string, string>; userId: string } | null> {
     try {
-        const payload: any = {
+        const { data } = await supabase.auth.getSession()
+        const session = data.session
+        if (!session?.user?.id || !session.access_token) return null
+        return {
+            userId: session.user.id,
+            headers: {
+                apikey: SUPABASE_ANON_KEY,
+                Authorization: `Bearer ${session.access_token}`,
+                'Content-Type': 'application/json',
+                Prefer: 'return=minimal',
+            },
+        }
+    } catch {
+        return null
+    }
+}
+
+export async function postSupabaseCommunityQuestion(
+    title: string,
+    content: string,
+    slug?: string,
+    channelId: number = 1
+): Promise<{ ok: boolean; id?: number | string; error?: string }> {
+    try {
+        const auth = await getAuthedRestHeaders()
+        if (!auth) {
+            console.warn('[community] post requires signed-in Supabase session')
+            return { ok: false, error: 'Not signed in' }
+        }
+        const payload: Record<string, unknown> = {
             title: slug ? `comment_${slug}_${title}` : title,
             content,
+            author_id: auth.userId,
+            channel_id: channelId,
             created_at: new Date().toISOString(),
         }
         if (slug) {
             payload.post_slug = slug
         }
+        const headers = { ...auth.headers, Prefer: 'return=representation' }
         const res = await fetch(`${SUPABASE_URL}/rest/v1/community_posts`, {
             method: 'POST',
-            headers: {
-                apikey: SUPABASE_ANON_KEY,
-                Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-                'Content-Type': 'application/json',
-                Prefer: 'return=minimal',
-            },
+            headers,
             body: JSON.stringify(payload),
         })
-        return res.ok
+        if (!res.ok) {
+            const text = await res.text()
+            console.error('[community] post failed', res.status, text)
+            return { ok: false, error: text.slice(0, 200) }
+        }
+        const rows = await res.json()
+        const row = Array.isArray(rows) ? rows[0] : rows
+        return { ok: true, id: row?.id }
     } catch (e) {
         console.error('Error posting question to Supabase:', e)
-        return false
+        return { ok: false, error: e instanceof Error ? e.message : 'failed' }
     }
 }
 
-export async function postSupabaseCommunityReply(postId: number | string, content: string): Promise<boolean> {
+export async function postSupabaseCommunityReply(
+    postId: number | string,
+    content: string
+): Promise<{ ok: boolean; id?: number | string; error?: string }> {
     try {
+        const auth = await getAuthedRestHeaders()
+        if (!auth) {
+            console.warn('[community] reply requires signed-in Supabase session')
+            return { ok: false, error: 'Not signed in' }
+        }
+        const headers = { ...auth.headers, Prefer: 'return=representation' }
         const res = await fetch(`${SUPABASE_URL}/rest/v1/community_replies`, {
             method: 'POST',
-            headers: {
-                apikey: SUPABASE_ANON_KEY,
-                Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-                'Content-Type': 'application/json',
-                Prefer: 'return=minimal',
-            },
+            headers,
             body: JSON.stringify({
                 post_id: postId,
                 content,
+                author_id: auth.userId,
                 created_at: new Date().toISOString(),
             }),
         })
-        return res.ok
+        if (!res.ok) {
+            const text = await res.text()
+            console.error('[community] reply failed', res.status, text)
+            return { ok: false, error: text.slice(0, 200) }
+        }
+        const rows = await res.json()
+        const row = Array.isArray(rows) ? rows[0] : rows
+        return { ok: true, id: row?.id }
     } catch (e) {
         console.error('Error posting reply to Supabase:', e)
-        return false
+        return { ok: false, error: e instanceof Error ? e.message : 'failed' }
     }
 }
 

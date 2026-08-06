@@ -63,12 +63,22 @@ export default function Orders() {
     const [orders, setOrders] = useState([])
 
     const fetchOrders = async () => {
-        const { data } = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/orders`, {
-            headers: {
-                Authorization: `Bearer ${await getJwt()}`,
-            },
-        }).then((res) => res.json())
-        setOrders(data)
+        // WIM: merch orders live on Squeak — disabled (Supabase-only)
+        const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+        if (!host) {
+            setOrders([])
+            return
+        }
+        try {
+            const { data } = await fetch(`${host}/api/orders`, {
+                headers: {
+                    Authorization: `Bearer ${await getJwt()}`,
+                },
+            }).then((res) => res.json())
+            setOrders(data || [])
+        } catch {
+            setOrders([])
+        }
     }
 
     useEffect(() => {

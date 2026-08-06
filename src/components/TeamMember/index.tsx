@@ -138,7 +138,7 @@ export const TeamMemberLink = ({
 }
 
 export const FutureTeamMember = ({ href }: { href: string }): JSX.Element => (
-    <TeamMemberLink firstName="You?" photo showOnlyFirstName href={href || '/careers'} />
+    <TeamMemberLink firstName="You?" photo showOnlyFirstName href={href || '/about'} />
 )
 
 export default function TeamMember({

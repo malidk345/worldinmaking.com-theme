@@ -24,7 +24,7 @@ export const HomepageCards = [
         top: 'You love needlessly wasting company money',
         bottom: (
             <>
-                We only have usage-based pricing that <Link to="/pricing">decreases exponentially</Link> with scale.
+                We only have usage-based pricing that decreases exponentially with scale.
             </>
         ),
         color: '#DCE7D0',

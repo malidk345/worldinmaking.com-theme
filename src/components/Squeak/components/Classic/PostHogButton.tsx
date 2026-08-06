@@ -1,18 +1,22 @@
 import React from 'react'
 import { CallToAction } from 'components/CallToAction'
 import { Logo } from '../Logo'
-import { SQUEAK_HOST } from 'lib/strapi'
+import { useToast } from '../../../../context/Toast'
 
 interface PostHogButtonProps {
     label?: string
     className?: string
 }
 
-// Kicks off the PostHog OAuth flow with a full-page redirect to Strapi, which
-// builds the PKCE state and forwards the browser to oauth.posthog.com.
+/** WIM: PostHog OAuth via Squeak is disabled. Button is a no-op with toast. */
 const PostHogButton: React.FC<PostHogButtonProps> = ({ label = 'Sign in with PostHog', className = '' }) => {
+    const { addToast } = useToast()
+
     const handleClick = () => {
-        window.location.href = `${SQUEAK_HOST}/api/connect/posthog`
+        addToast({
+            title: 'Not available',
+            description: 'Use email and password to sign in on WorldInMaking.',
+        })
     }
 
     return (

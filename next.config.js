@@ -6,7 +6,16 @@ const nextConfig = {
     transpilePackages: ['ai', '@ai-sdk/openai', '@ai-sdk/google', '@ai-sdk/provider', '@ai-sdk/provider-utils'],
     eslint: { ignoreDuringBuilds: true },
     typescript: { ignoreBuildErrors: true },
-    images: { unoptimized: true },
+    images: {
+        formats: ['image/avif', 'image/webp'],
+        remotePatterns: [
+            { protocol: 'https', hostname: 'res.cloudinary.com' },
+            { protocol: 'https', hostname: 'user-images.githubusercontent.com' },
+            { protocol: 'https', hostname: 'raw.githubusercontent.com' },
+            { protocol: 'https', hostname: 'posthog.com' },
+            { protocol: 'https', hostname: '*.posthog.com' },
+        ],
+    },
     trailingSlash: false,
     reactStrictMode: false,
     experimental: { serverComponentsExternalPackages: ['kea'] },

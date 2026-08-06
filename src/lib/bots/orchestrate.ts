@@ -17,6 +17,9 @@ import {
 } from './thinking'
 import { getProviderKeyFlags, getRuntimeEnv } from './runtime-env'
 
+/** Re-export for action modules that import depth from the orchestrator surface. */
+export type { ThinkingDepth } from './thinking'
+
 export type BotAction = 'chat' | 'forum_reply' | 'thread_init' | 'paper_step' | 'status'
 
 export interface BotRunInput {

@@ -31,9 +31,15 @@ export default function PostPage({ params }: { params?: { slug?: string } }) {
             },
             { encodeValuesOnly: true }
         )
-        return fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/posts?${query}`)
+        const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+        if (!host) {
+            setPost(null)
+            return Promise.resolve()
+        }
+        return fetch(`${host}/api/posts?${query}`)
             .then((res) => res.json())
             .then((post) => setPost(post?.data?.[0]))
+            .catch(() => setPost(null))
     }
 
     useEffect(() => {

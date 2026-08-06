@@ -5,7 +5,7 @@ import { CallToAction } from 'components/CallToAction'
 import { useApp } from '../../../../context/App'
 import { useWindow } from '../../../../context/Window'
 import { useUser } from '../../../../hooks/useUser'
-import { SQUEAK_HOST } from 'lib/strapi'
+import { requestPasswordReset } from 'lib/wim-auth'
 
 import SecurityHog from '../../../../images/security-hog.png'
 import { IconSpinner } from '@posthog/icons'
@@ -76,36 +76,11 @@ const ResetPasswordForm: React.FC = () => {
             setErrorMessage('')
 
             try {
-                const body = {
-                    code,
-                    password: values.password,
-                    passwordConfirmation: values.password,
-                }
-
-                const response = await fetch(`${SQUEAK_HOST}/api/auth/reset-password`, {
-                    method: 'POST',
-                    body: JSON.stringify(body),
-                    headers: {
-                        'content-type': 'application/json',
-                    },
-                })
-
-                const { error, user } = await response.json()
-
-                if (error) {
-                    setErrorMessage(error?.message || 'There was an error resetting your password. Please try again.')
-                } else {
-                    // Log in the user with their new password
-                    await login({
-                        email: user.email,
-                        password: values.password,
-                    })
-
-                    if (appWindow) {
-                        closeWindow(appWindow)
-                    }
-                    router.push('/community')
-                }
+                // WIM: password recovery is email-link based (Supabase). This classic
+                // "code + new password" form is not used — send reset email instead.
+                setErrorMessage(
+                    'Use “Forgot password” from Sign in — we email a Supabase reset link. This legacy code form is disabled.'
+                )
             } catch (err) {
                 setErrorMessage('There was an error resetting your password. Please try again.')
             }

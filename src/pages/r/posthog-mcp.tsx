@@ -372,7 +372,7 @@ export default function PostHogMCPLanding(): JSX.Element {
                                 <li>Set billing limits to avoid surprise charges</li>
                                 <li>
                                     See our{' '}
-                                    <Link to="/pricing" state={{ newWindow: true }}>
+                                    <Link to="/start" state={{ newWindow: true }}>
                                         pricing page
                                     </Link>{' '}
                                     for more up-to-date details

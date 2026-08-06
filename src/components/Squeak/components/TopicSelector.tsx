@@ -11,8 +11,10 @@ type TopicSelectorProps = {
 }
 
 export const TopicSelector = (props: TopicSelectorProps) => {
+    // WIM: Squeak topics API disabled — empty list (forum topics come from Supabase elsewhere)
+    const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
     const { data } = useSWR<StrapiRecord<TopicData>[]>(
-        `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/topics?sort=label:asc&pagination[pageSize]=100`,
+        host ? `${host}/api/topics?sort=label:asc&pagination[pageSize]=100` : null,
         async (url) => {
             const res = await fetch(url)
             const { data } = await res.json()

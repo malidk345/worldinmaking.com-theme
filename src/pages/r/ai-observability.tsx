@@ -407,7 +407,7 @@ export default function AIObservabilityLanding(): JSX.Element {
                                 <li>Set billing limits to avoid surprise charges</li>
                                 <li>
                                     See{' '}
-                                    <Link to="/pricing" state={{ newWindow: true }}>
+                                    <Link to="/start" state={{ newWindow: true }}>
                                         pricing page
                                     </Link>{' '}
                                     for full details

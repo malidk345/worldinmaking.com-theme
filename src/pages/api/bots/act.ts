@@ -91,22 +91,20 @@ export default async function handler(req: Request) {
         return json({ success: false, error: authErr, action }, 401)
     }
 
-    // Per-bot rate limit for mutating / LLM-heavy actions
-    if (action !== 'status') {
-        const rlKey = `act:${action}:${bot.toLowerCase()}`
-        const limit = action === 'chat' ? 40 : 15
-        const rl = checkRateLimit(rlKey, limit, 60 * 60 * 1000)
-        if (!rl.allowed) {
-            return json(
-                {
-                    success: false,
-                    error: `Rate limited for ${action}/${bot}. Retry in ${rl.retryAfterSec}s`,
-                    action,
-                    retryAfterSec: rl.retryAfterSec,
-                },
-                429
-            )
-        }
+    // Per-bot rate limit for mutating / LLM-heavy actions (`status` already returned above).
+    const rlKey = `act:${action}:${bot.toLowerCase()}`
+    const limit = action === 'chat' ? 40 : 15
+    const rl = checkRateLimit(rlKey, limit, 60 * 60 * 1000)
+    if (!rl.allowed) {
+        return json(
+            {
+                success: false,
+                error: `Rate limited for ${action}/${bot}. Retry in ${rl.retryAfterSec}s`,
+                action,
+                retryAfterSec: rl.retryAfterSec,
+            },
+            429
+        )
     }
 
     // ── thread_init ──────────────────────────────────────────────

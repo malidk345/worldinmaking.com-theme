@@ -114,10 +114,20 @@ export default function Hub({ folder, sidebar, title }: { folder: string; sideba
             },
             { encodeValuesOnly: true }
         )
-        fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/post-tags?${query}`)
+        const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+        if (!host) {
+            setTags([])
+            setLoading(false)
+            return
+        }
+        fetch(`${host}/api/post-tags?${query}`)
             .then((response) => response.json())
             .then((data) => {
-                setTags(data.data)
+                setTags(data.data || [])
+                setLoading(false)
+            })
+            .catch(() => {
+                setTags([])
                 setLoading(false)
             })
     }, [])

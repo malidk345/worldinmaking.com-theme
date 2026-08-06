@@ -114,12 +114,6 @@ export function useMenuData(): MenuType[] {
                     icon: <Icons.IconShieldPeople className="size-4 text-teal" />,
                 },
                 {
-                    type: 'item',
-                    label: 'Careers',
-                    link: '/careers',
-                    icon: <Icons.IconLaptop className="size-4 text-purple" />,
-                },
-                {
                     type: 'separator',
                 },
                 {

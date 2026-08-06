@@ -1,36 +1,41 @@
 import { useContext } from 'react'
 import React, { createContext, useEffect, useState } from 'react'
-import qs from 'qs'
-import { ProfileData, SQUEAK_HOST } from 'lib/strapi'
+import { ProfileData } from 'lib/strapi'
 import usePostHog from './usePostHog'
 import Link from 'components/Link'
 import { useToast } from '../context/Toast'
+import {
+    getSessionAccessToken,
+    loadCurrentWimUser,
+    signInWithPassword,
+    signOutWim,
+    signUpWithPassword,
+} from 'lib/wim-auth'
+import {
+    addUserBookmark,
+    fetchUserBookmarks,
+    fetchUserPostLikes,
+    removeUserBookmark,
+    setPostLike,
+    setReplyVote,
+} from 'lib/wim-user-data'
+import { supabase, isSupabaseConfigured } from 'lib/supabase'
 
 // Sentinel value used by posthog-js for cookieless tracking mode
 const COOKIELESS_SENTINEL_VALUE = '$posthog_cookieless'
 
-// Shared POST + JSON-parse + Strapi error extraction for the /api/auth/posthog/*
-// endpoints. Returns the parsed body plus a normalized `error` string; callers
-// handle the success shape (jwt vs ok). Throws only on network/JSON failure.
+// Legacy PostHog Squeak OAuth helpers — kept for type compatibility; WIM uses Supabase only.
 const postPosthogAuth = async (
-    path: string,
-    body: Record<string, unknown>,
-    token?: string | null
+    _path: string,
+    _body: Record<string, unknown>,
+    _token?: string | null
 ): Promise<{ ok: boolean; data: any; error?: string }> => {
-    const res = await fetch(`${SQUEAK_HOST}/api/auth/posthog/${path}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(body),
-    })
-    const data = await res.json()
-    return { ok: res.ok, data, error: data?.error?.message || data?.message }
+    return { ok: false, data: null, error: 'PostHog OAuth is not used on WorldInMaking. Sign in with email.' }
 }
 
 export type User = {
-    id: number
+    /** Supabase auth.users.id (UUID string). Legacy Strapi used numbers. */
+    id: number | string
     email: string
     isMember: boolean
     isModerator: boolean
@@ -40,7 +45,8 @@ export type User = {
     provider: 'local' | 'github' | 'google' | 'posthog'
     username: string
     profile: {
-        id: number
+        /** Supabase profiles.id (UUID). */
+        id: number | string
     } & ProfileData
     role: {
         type: 'authenticated' | 'public' | 'moderator'
@@ -63,8 +69,7 @@ export type User = {
         monthlyCount: number
     }
     picasso?: boolean
-    // Surfaced by the Strapi `me` override (the raw posthogUserId is private).
-    // True when a PostHog OAuth identity is linked to this account.
+    // Legacy PostHog OAuth flag — always false on WIM (Supabase-only).
     hasPosthogLogin?: boolean
 }
 
@@ -176,10 +181,27 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     const posthog = usePostHog()
 
     const validateUser = async () => {
-        const jwt = localStorage.getItem('jwt')
-        if (jwt && (await fetchUser(jwt))) {
-            setJwt(jwt)
-        } else {
+        try {
+            if (isSupabaseConfigured) {
+                const token = await getSessionAccessToken()
+                if (token) {
+                    setJwt(token)
+                    localStorage.setItem('jwt', token)
+                    const u = await fetchUser()
+                    if (u) {
+                        try {
+                            localStorage.setItem('wim_auth_user_id', String(u.id))
+                        } catch {
+                            /* ignore */
+                        }
+                        setIsValidating(false)
+                        return
+                    }
+                }
+            }
+            clearUser()
+        } catch (e) {
+            console.warn('[useUser] validateUser', e)
             clearUser()
         }
         setIsValidating(false)
@@ -187,58 +209,65 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
     useEffect(() => {
         validateUser()
+
+        if (!isSupabaseConfigured) return
+        const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
+            if (event === 'SIGNED_OUT') {
+                setUser(null)
+                setJwt(null)
+                localStorage.removeItem('jwt')
+                return
+            }
+            if (session?.access_token) {
+                setJwt(session.access_token)
+                localStorage.setItem('jwt', session.access_token)
+                const u = await loadCurrentWimUser()
+                if (u) setUser(u)
+            }
+        })
+        return () => {
+            sub.subscription.unsubscribe()
+        }
     }, [])
 
     const getJwt = async () => {
+        const token = await getSessionAccessToken()
+        if (token) {
+            setJwt(token)
+            return token
+        }
         return jwt || localStorage.getItem('jwt')
     }
 
-    // Shared post-authentication steps once a JWT has been obtained (via password
-    // login or an OAuth provider): hydrate the user, persist the token, and run
-    // the distinct-id link + achievements check.
-    const finalizeLogin = async (token: string): Promise<User> => {
-        const user = await fetchUser(token)
-
-        if (!user) {
-            throw new Error('Failed to fetch user data')
+    // After Supabase password auth: store token, then full hydrate (profile + bookmarks + likes).
+    const finalizeLogin = async (nextUser: User): Promise<User> => {
+        const token = await getSessionAccessToken()
+        if (token) {
+            localStorage.setItem('jwt', token)
+            setJwt(token)
         }
-
-        localStorage.setItem('jwt', token)
-        setJwt(token)
+        try {
+            localStorage.setItem('wim_auth_user_id', String(nextUser.id))
+        } catch {
+            /* ignore */
+        }
+        setUser(nextUser)
 
         try {
             const distinctId = posthog?.get_distinct_id?.()
-
-            if (distinctId && distinctId !== COOKIELESS_SENTINEL_VALUE) {
-                await fetch(`${SQUEAK_HOST}/api/users/${user.id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({
-                        distinctId,
-                    }),
+            if (distinctId && distinctId !== COOKIELESS_SENTINEL_VALUE && nextUser.email) {
+                posthog?.identify?.(String(nextUser.id), {
+                    email: nextUser.email,
+                    username: nextUser.username,
                 })
             }
-
-            fetch(`${SQUEAK_HOST}/api/achievements/check`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                    data: {
-                        date: new Date(),
-                    },
-                }),
-            })
         } catch (error) {
             console.error(error)
         }
 
-        return user
+        // Enrich bookmarks/likes via fetchUser (same session)
+        const enriched = await fetchUser()
+        return enriched || nextUser
     }
 
     const login = async ({
@@ -251,206 +280,73 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         setIsLoading(true)
 
         try {
-            posthog?.capture('squeak login start')
-
-            const userRes = await fetch(`${SQUEAK_HOST}/api/auth/local`, {
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                method: 'POST',
-                body: JSON.stringify({
-                    identifier: email,
-                    password,
-                }),
-            })
-
-            const userData = await userRes.json()
-
-            if (!userRes.ok) {
-                throw new Error(userData?.error?.message)
+            posthog?.capture('wim login start')
+            const { user: nextUser, error } = await signInWithPassword(email, password)
+            if (error || !nextUser) {
+                return { error: error || 'Invalid email or password' }
             }
-
-            const user = await finalizeLogin(userData.jwt)
-
-            posthog?.capture('squeak login success', {
-                email,
-            })
-
-            return user
+            await finalizeLogin(nextUser)
+            posthog?.capture('wim login success', { email })
+            return nextUser
         } catch (error) {
-            posthog?.capture('squeak error', {
+            posthog?.capture('wim error', {
                 source: 'useUser.login',
                 email,
                 error: JSON.stringify(error),
             })
-
             console.error(error)
-
-            if (error instanceof Error) {
-                return { error: error.message }
-            }
-
+            if (error instanceof Error) return { error: error.message }
             return null
         } finally {
             setIsLoading(false)
         }
     }
 
-    const loginWithProvider = async ({
-        provider,
-        accessToken,
-    }: {
+    const loginWithProvider = async (_args: {
         provider: 'posthog'
         accessToken: string
     }): Promise<User | null | { error: string } | DisambiguationResult> => {
-        setIsLoading(true)
-
-        try {
-            posthog?.capture('squeak oauth login start', { provider })
-
-            const res = await fetch(
-                `${SQUEAK_HOST}/api/auth/posthog/resolve?access_token=${encodeURIComponent(accessToken)}`
-            )
-
-            const data = await res.json()
-
-            if (!res.ok) {
-                throw new Error(data?.error?.message || data?.message)
-            }
-
-            // Non-employee with no durable link and no email match: the redirect
-            // page renders the disambiguation screen (create vs. log in to link).
-            if (data.status === 'needs_disambiguation') {
-                return {
-                    status: 'needs_disambiguation',
-                    pendingToken: data.pendingToken,
-                    emailInUse: data.emailInUse,
-                }
-            }
-
-            const user = await finalizeLogin(data.jwt)
-
-            posthog?.capture('squeak oauth login success', {
-                provider,
-                email: user.email,
-            })
-
-            return user
-        } catch (error) {
-            posthog?.capture('squeak error', {
-                source: 'useUser.loginWithProvider',
-                provider,
-                error: JSON.stringify(error),
-            })
-
-            console.error(error)
-
-            if (error instanceof Error) {
-                return { error: error.message }
-            }
-
-            return null
-        } finally {
-            setIsLoading(false)
-        }
+        return { error: 'PostHog OAuth is not available on WorldInMaking. Use email and password.' }
     }
 
-    // Disambiguation: create a brand-new community account from the verified
-    // PostHog identity carried in the pending token.
-    const createWithProvider = async ({
-        pendingToken,
-    }: {
+    const createWithProvider = async (_args: {
         pendingToken: string
     }): Promise<User | null | { error: string }> => {
-        try {
-            const { ok, data, error } = await postPosthogAuth('create', { pendingToken })
-            if (!ok) {
-                return { error: error || 'Could not create account.' }
-            }
-            // await so a failure inside finalizeLogin (e.g. /me errors) is caught
-            // here rather than becoming an unhandled rejection in the caller.
-            return await finalizeLogin(data.jwt)
-        } catch (error) {
-            console.error(error)
-            return { error: 'Your account was created, but loading it failed. Please refresh and sign in.' }
-        }
+        return { error: 'PostHog OAuth is not available on WorldInMaking.' }
     }
 
-    // Disambiguation: prove ownership of an existing account via password, then
-    // additively link the PostHog identity (keeps password login — dual auth).
-    const linkExisting = async ({
-        pendingToken,
-        identifier,
-        password,
-    }: {
+    const linkExisting = async (_args: {
         pendingToken: string
         identifier: string
         password: string
     }): Promise<User | null | { error: string }> => {
-        try {
-            const { ok, data, error } = await postPosthogAuth('link', { pendingToken, identifier, password })
-            if (!ok) {
-                return { error: error || 'Could not link account.' }
-            }
-            return await finalizeLogin(data.jwt)
-        } catch (error) {
-            console.error(error)
-            return { error: 'Your account was linked, but loading it failed. Please refresh and sign in.' }
-        }
+        return { error: 'PostHog OAuth is not available on WorldInMaking.' }
     }
 
-    // Proactive link from account settings (user is already logged in).
-    const linkCurrent = async ({ accessToken }: { accessToken: string }): Promise<{ ok: true } | { error: string }> => {
-        try {
-            const token = await getJwt()
-            const { ok, error } = await postPosthogAuth('link-current', { accessToken }, token)
-            if (!ok) {
-                return { error: error || 'Could not connect PostHog.' }
-            }
-            await fetchUser(token)
-            return { ok: true }
-        } catch (error) {
-            console.error(error)
-            return { error: 'Could not connect PostHog. Please try again.' }
-        }
+    const linkCurrent = async (_args: { accessToken: string }): Promise<{ ok: true } | { error: string }> => {
+        return { error: 'PostHog account linking is not available on WorldInMaking.' }
     }
 
     const unlinkProvider = async (): Promise<{ ok: true } | { error: string }> => {
-        try {
-            const token = await getJwt()
-            const { ok, error } = await postPosthogAuth('unlink', {}, token)
-            if (!ok) {
-                return { error: error || 'Could not disconnect PostHog.' }
-            }
-            await fetchUser(token)
-            return { ok: true }
-        } catch (error) {
-            console.error(error)
-            return { error: 'Could not disconnect PostHog. Please try again.' }
-        }
+        return { error: 'PostHog account linking is not available on WorldInMaking.' }
     }
 
     const clearUser = async (): Promise<void> => {
         localStorage.removeItem('jwt')
         localStorage.removeItem('user')
-
+        localStorage.removeItem('wim_auth_user_id')
         setUser(null)
         setJwt(null)
     }
 
     const logout = async (): Promise<void> => {
-        posthog?.capture('squeak logout')
-
-        addToast({
-            title: 'Successfully signed out of PostHog.com',
-            description: (
-                <Link to="https://app.posthog.com" className="text-red dark:text-yellow font-semibold">
-                    Looking for the app?
-                </Link>
-            ),
-        })
-
+        posthog?.capture('wim logout')
+        await signOutWim()
         clearUser()
+        addToast({
+            title: 'Signed out',
+            description: 'You have been signed out of WorldInMaking.',
+        })
     }
 
     const signUp = async ({
@@ -467,396 +363,145 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         setIsLoading(true)
 
         try {
-            posthog?.capture('squeak signup start')
-
-            const res = await fetch(`${SQUEAK_HOST}/api/auth/local/register`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    username: email,
-                    email,
-                    password,
-                    firstName,
-                    lastName,
-                }),
-            })
-
-            const userData = await res.json()
-
-            if (!res.ok) {
-                throw new Error(userData?.error?.message)
-            }
-
-            const user = await fetchUser(userData.jwt)
-
-            localStorage.setItem('jwt', userData.jwt)
-            setJwt(userData.jwt)
-
-            posthog?.capture('squeak signup success', {
+            posthog?.capture('wim signup start')
+            const { user: nextUser, error, needsEmailConfirm } = await signUpWithPassword({
                 email,
-            })
-
-            return user
-        } catch (error) {
-            posthog?.capture('squeak error', {
-                type: 'useUser.signup',
-                email,
+                password,
                 firstName,
                 lastName,
-                error: JSON.stringify(error),
             })
 
-            console.error(error)
-
-            if (error instanceof Error) {
-                return { error: error.message }
+            if (error || !nextUser) {
+                return {
+                    error:
+                        error ||
+                        (needsEmailConfirm
+                            ? 'Check your email to confirm your account, then sign in.'
+                            : 'Sign up failed'),
+                }
             }
 
+            await finalizeLogin(nextUser)
+            posthog?.capture('wim signup success', { email })
+            return nextUser
+        } catch (error) {
+            posthog?.capture('wim error', {
+                type: 'useUser.signup',
+                email,
+                error: JSON.stringify(error),
+            })
+            console.error(error)
+            if (error instanceof Error) return { error: error.message }
             return null
         } finally {
             setIsLoading(false)
         }
     }
 
-    const fetchUser = async (token?: string | null): Promise<User | null> => {
-        const meQuery = qs.stringify(
-            {
-                populate: {
-                    profile: {
-                        populate: {
-                            images: {
-                                sort: ['createdAt:desc'],
-                                populate: {
-                                    mediaFolder: true,
-                                    tags: true,
-                                    related: true,
-                                },
-                            },
-                            avatar: true,
-                            questionSubscriptions: {
-                                filters: {
-                                    $or: [
-                                        {
-                                            archived: {
-                                                $null: true,
-                                            },
-                                        },
-                                        {
-                                            archived: {
-                                                $eq: false,
-                                            },
-                                        },
-                                    ],
-                                },
-                            },
-                            topicSubscriptions: {
-                                fields: ['slug', 'label'],
-                            },
-                            postLikes: {
-                                fields: ['id'],
-                            },
-                            roadmapLikes: {
-                                fields: ['id'],
-                            },
-                            teams: {
-                                fields: ['id'],
-                            },
-                            notifications: {
-                                populate: {
-                                    question: {
-                                        populate: {
-                                            replies: true,
-                                        },
-                                    },
-                                },
-                            },
-                            bookmarks: true,
-                            achievements: {
-                                populate: {
-                                    achievement: {
-                                        populate: {
-                                            image: true,
-                                            icon: true,
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                    },
-                    role: {
-                        fields: ['type'],
-                    },
-                    wallet: {
-                        populate: {
-                            transactions: true,
-                        },
-                    },
-                },
-            },
-            {
-                encodeValuesOnly: true,
+    /** Hydrate current Supabase session into User (token arg ignored — session is source of truth). */
+    const fetchUser = async (_token?: string | null): Promise<User | null> => {
+        try {
+            const meData = await loadCurrentWimUser()
+            if (!meData) {
+                posthog?.capture('community', { error: 'failed to fetch user' })
+                return null
             }
-        )
-
-        if (!token) {
-            token = await getJwt()
-        }
-
-        const meRes = await fetch(`${SQUEAK_HOST}/api/users/me?${meQuery}`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        })
-
-        if (!meRes.ok) {
-            posthog?.capture('community', {
-                error: 'failed to fetch user',
-            })
+            // Enrich with bookmarks + post likes from Supabase
+            const uid = String(meData.id)
+            const [bookmarks, postLikes] = await Promise.all([fetchUserBookmarks(uid), fetchUserPostLikes(uid)])
+            const enriched: User = {
+                ...meData,
+                profile: {
+                    ...meData.profile,
+                    bookmarks: bookmarks as User['profile']['bookmarks'],
+                    postLikes: postLikes as any,
+                },
+            }
+            setUser(enriched)
+            setNotifications([])
+            try {
+                posthog?.setPersonProperties({
+                    wimEmail: enriched.email,
+                    wimUsername: enriched.username,
+                    wimProfileId: enriched.profile?.id,
+                    wimFirstName: enriched.profile?.firstName,
+                    wimLastName: enriched.profile?.lastName,
+                })
+            } catch (error) {
+                console.error(error)
+            }
+            return enriched
+        } catch (e) {
+            console.error(e)
             return null
         }
-
-        const meData: User = await meRes.json()
-
-        setUser(meData)
-
-        const notifications = await fetch(`${SQUEAK_HOST}/api/profile/notifications`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        }).then((res) => res.json())
-
-        setNotifications(notifications || [])
-
-        // We don't want any error thrown here to bubble up to the caller.
-        try {
-            if (meData?.profile) {
-                posthog?.setPersonProperties({
-                    // IMPORTANT: Make sure all properties start with `squeak` so we don't override any existing properties!
-                    squeakEmail: meData.email,
-                    squeakUsername: meData.username,
-                    squeakCreatedAt: meData.createdAt,
-                    squeakProfileId: meData.profile.id,
-                    squeakFirstName: meData.profile.firstName,
-                    squeakLastName: meData.profile.lastName,
-                    squeakBiography: meData.profile.biography,
-                    squeakCompany: meData.profile.company,
-                    squeakCompanyRole: meData.profile.companyRole,
-                    squeakGithub: meData.profile.github,
-                    squeakLinkedIn: meData.profile.linkedin,
-                    squeakLocation: meData.profile.location,
-                    squeakTwitter: meData.profile.twitter,
-                    squeakWebsite: meData.profile.website,
-                })
-            }
-        } catch (error) {
-            console.error(error)
-        }
-
-        return meData
     }
 
-    const isSubscribed = async (contentType: 'topic' | 'question', id: number | string) => {
-        const profileID = user?.profile?.id
-        if (!profileID || !contentType || !id) return false
-
-        const query = qs.stringify({
-            filters: {
-                id: {
-                    $eq: profileID,
-                },
-                [`${contentType}Subscriptions`]: {
-                    id: {
-                        $eq: id,
-                    },
-                },
-            },
-            populate: {
-                [`${contentType}Subscriptions`]: true,
-            },
-        })
-
-        const profileRes = await fetch(`${SQUEAK_HOST}/api/profiles?${query}`)
-
-        if (!profileRes.ok) {
-            throw new Error(`Failed to fetch profile`)
-        }
-
-        const { data } = await profileRes.json()
-
-        return data?.length > 0
+    const isSubscribed = async (_contentType: 'topic' | 'question', _id: number | string) => {
+        // Subscriptions: Supabase tables exist; UI wiring TBD. Safe default.
+        return false
     }
 
-    const setSubscription = async ({
-        contentType,
-        id,
-        subscribe,
-        ...other
-    }: {
+    const setSubscription = async (_args: {
         contentType: 'topic' | 'question'
         id: number | string
         subscribe: boolean
         user?: User
     }): Promise<void> => {
-        const profileID = other?.user?.profile?.id || user?.profile?.id
-        if (!profileID || !contentType || !id) return
-
-        const body = {
-            data: {
-                [`${contentType}Subscriptions`]: {
-                    [subscribe ? 'connect' : 'disconnect']: [id],
-                },
-            },
-        }
-
-        const jwt = await getJwt()
-
-        const subscriptionRes = await fetch(`${SQUEAK_HOST}/api/profiles/${profileID}`, {
-            method: 'PUT',
-            body: JSON.stringify(body),
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${jwt}`,
-            },
-        })
-
-        if (!subscriptionRes.ok) {
-            throw new Error(`Failed to update subscription`)
-        }
-
-        await fetchUser()
+        /* Topic subscriptions table not yet wired */
     }
 
     const likePost = async (id: number, unlike = false, slug = '') => {
-        const profileID = user?.profile?.id
-        if (!profileID || !id) return
-        const body = {
-            data: {
-                postLikes: unlike
-                    ? { disconnect: [id] }
-                    : {
-                          connect: [id],
-                      },
-            },
+        const result = await setPostLike(id, unlike, slug)
+        if (!result.ok) {
+            console.warn('[likePost]', result.error)
+            return
         }
-        const likeRes = await fetch(`${SQUEAK_HOST}/api/profiles/${profileID}`, {
-            method: 'PUT',
-            body: JSON.stringify(body),
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${await getJwt()}`,
-            },
-        })
-
-        if (!likeRes.ok) {
-            throw new Error(`Failed to like post`)
+        posthog?.capture(unlike ? 'post downvote' : 'post upvote', { post: { id, url: slug } })
+        // optimistic local update
+        if (user?.profile) {
+            const likes = ((user.profile as any).postLikes || []) as { id: string | number }[]
+            const next = unlike ? likes.filter((p) => String(p.id) !== String(id)) : [...likes, { id }]
+            setUser({ ...user, profile: { ...user.profile, postLikes: next as any } })
         }
-
-        posthog?.capture(unlike ? 'post downvote' : 'post upvote', {
-            post: {
-                id,
-                url: `https://posthog.com${slug}`,
-            },
-        })
-
-        await fetchUser()
     }
 
     const likeRoadmap = async ({
         id,
         unlike = false,
         title = '',
-        ...other
     }: {
         id: number
         unlike?: boolean
         title?: string
         user?: User
     }) => {
-        const profileID = (other?.user || user)?.profile?.id
-        if (!profileID || !id) return
-        const body = {
-            data: {
-                roadmapLikes: unlike
-                    ? { disconnect: [id] }
-                    : {
-                          connect: [id],
-                      },
-            },
-        }
-        const likeRes = await fetch(`${SQUEAK_HOST}/api/profiles/${profileID}`, {
-            method: 'PUT',
-            body: JSON.stringify(body),
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${await getJwt()}`,
-            },
-        })
-
-        if (!likeRes.ok) {
-            throw new Error(`Failed to like roadmap`)
-        }
-
-        posthog?.capture(unlike ? 'roadmap downvote' : 'roadmap upvote', {
-            post: {
-                id,
-                title,
-            },
-        })
-
-        await fetchUser()
+        // Roadmap likes share post_likes with id prefix
+        await setPostLike(`roadmap:${id}`, unlike, title)
+        posthog?.capture(unlike ? 'roadmap downvote' : 'roadmap upvote', { post: { id, title } })
     }
 
-    const updateNotifications = async (notifications: any) => {
-        setNotifications(notifications)
-        await fetch(`${SQUEAK_HOST}/api/profiles/${user?.profile.id}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${jwt}`,
-            },
-            body: JSON.stringify({
-                data: {
-                    notifications,
-                },
-            }),
-        })
+    const updateNotifications = async (next: any) => {
+        setNotifications(next)
     }
 
-    const voteReply = async (id: number, vote: 'up' | 'down', user: User) => {
-        const profileID = user?.profile?.id
-        if (!profileID) return
-        const jwt = await getJwt()
-        await fetch(`${SQUEAK_HOST}/api/replies/${id}/${vote}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${jwt}`,
-            },
-        })
+    const voteReply = async (id: number, vote: 'up' | 'down', _user?: User) => {
+        const result = await setReplyVote(id, vote)
+        if (!result.ok) console.warn('[voteReply]', result.error)
     }
 
     const addBookmark = async ({ url, title, description }: { url: string; title: string; description: string }) => {
-        const profileID = user?.profile?.id
-        if (!profileID) return
-        const jwt = await getJwt()
-        await fetch(`${SQUEAK_HOST}/api/profiles/${profileID}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${jwt}`,
-            },
-            body: JSON.stringify({
-                data: {
-                    bookmarks: [
-                        ...(user?.profile?.bookmarks?.filter((b) => b.url !== url) || []),
-                        { url, title, description },
-                    ],
-                },
-            }),
-        })
-
+        if (!user?.profile) return
+        const result = await addUserBookmark({ url, title, description })
+        if (!result.ok) {
+            addToast({ title: 'Could not save bookmark', description: result.error || 'Try again' })
+            return
+        }
+        const bookmarks = [
+            ...(user.profile.bookmarks?.filter((b) => b.url !== url) || []),
+            { url, title, description, notes: '' },
+        ]
+        setUser({ ...user, profile: { ...user.profile, bookmarks } })
         addToast({
             title: 'Bookmark added',
             description: (
@@ -872,26 +517,18 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
                 removeBookmark({ url, title, description })
             },
         })
-        await fetchUser()
     }
 
     const removeBookmark = async ({ url, title, description }: { url: string; title: string; description: string }) => {
-        const profileID = user?.profile?.id
-        if (!profileID) return
-        const jwt = await getJwt()
-        await fetch(`${SQUEAK_HOST}/api/profiles/${profileID}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${jwt}`,
+        if (!user?.profile) return
+        await removeUserBookmark({ url })
+        setUser({
+            ...user,
+            profile: {
+                ...user.profile,
+                bookmarks: user.profile.bookmarks?.filter((b) => b.url !== url) || [],
             },
-            body: JSON.stringify({
-                data: {
-                    bookmarks: user?.profile?.bookmarks?.filter((b) => b.url !== url),
-                },
-            }),
         })
-        await fetchUser()
         addToast({
             title: 'Bookmark removed',
             description: 'This page has been removed from your bookmarks.',
@@ -901,23 +538,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         })
     }
 
-    const reportSpam = async (type: 'reply' | 'question', id: number) => {
-        const profileID = user?.profile?.id
-        if (!profileID) return
-        const jwt = await getJwt()
-        await fetch(`${SQUEAK_HOST}/api/report-spam`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${jwt}`,
-            },
-            body: JSON.stringify({
-                data: {
-                    type,
-                    id,
-                },
-            }),
-        })
+    const reportSpam = async (_type: 'reply' | 'question', _id: number) => {
+        /* Moderation queue TBD */
     }
 
     const contextValue = {

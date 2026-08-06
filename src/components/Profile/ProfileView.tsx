@@ -1133,8 +1133,17 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
         if (blockUser) {
             if (confirm('Are you sure you want to block this user and remove all of their posts and replies?')) {
                 try {
+                    const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+                    if (!host) {
+                        addToast({
+                            description: 'User moderation is not available yet on WorldInMaking',
+                            error: true,
+                            duration: 3000,
+                        })
+                        return
+                    }
                     const jwt = await getJwt()
-                    const response = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profile/block/${id}`, {
+                    const response = await fetch(`${host}/api/profile/block/${id}`, {
                         method: 'PUT',
                         headers: {
                             Authorization: `Bearer ${jwt}`,
@@ -1173,8 +1182,17 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
             }
         } else {
             try {
+                const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+                if (!host) {
+                    addToast({
+                        description: 'User moderation is not available yet on WorldInMaking',
+                        error: true,
+                        duration: 3000,
+                    })
+                    return
+                }
                 const jwt = await getJwt()
-                const response = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profile/unblock/${id}`, {
+                const response = await fetch(`${host}/api/profile/unblock/${id}`, {
                     method: 'PUT',
                     headers: {
                         Authorization: `Bearer ${jwt}`,
@@ -1260,11 +1278,23 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                 const JWT = await getJwt()
                 let image = avatar
 
+                // WIM: profile edits go through community/profile/edit → updateWimProfile.
+                // This ProfileView editor still targets Squeak/Strapi when host is set.
+                const squeakHost = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+                if (!squeakHost) {
+                    addToast({
+                        description: 'Use Community → Edit profile to update your Supabase profile.',
+                        duration: 4000,
+                    })
+                    setIsEditing(false)
+                    return
+                }
+
                 if (avatar && typeof avatar === 'object') {
                     const formData = new FormData()
                     formData.append('files', avatar)
 
-                    const uploadedImage = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/upload`, {
+                    const uploadedImage = await fetch(`${squeakHost}/api/upload`, {
                         method: 'POST',
                         body: formData,
                         headers: {
@@ -1298,17 +1328,14 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
                     },
                 }
 
-                const { data } = await fetch(
-                    `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles/${id}?populate=avatar`,
-                    {
-                        method: 'PUT',
-                        body: JSON.stringify(body),
-                        headers: {
-                            'Content-Type': 'application/json',
-                            Authorization: `Bearer ${JWT}`,
-                        },
-                    }
-                ).then((res) => res.json())
+                const { data } = await fetch(`${squeakHost}/api/profiles/${id}?populate=avatar`, {
+                    method: 'PUT',
+                    body: JSON.stringify(body),
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${JWT}`,
+                    },
+                }).then((res) => res.json())
 
                 if (data) {
                     await mutate()
@@ -1356,8 +1383,17 @@ export default function ProfileView({ profileIdOrUsername }: ProfileViewProps = 
 
         setGiftSubmitting(true)
         try {
+            const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+            if (!host) {
+                addToast({
+                    description: 'Points gifting is not available on WorldInMaking yet',
+                    error: true,
+                    duration: 3000,
+                })
+                return
+            }
             const jwt = await getJwt()
-            const response = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/points/gift`, {
+            const response = await fetch(`${host}/api/points/gift`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

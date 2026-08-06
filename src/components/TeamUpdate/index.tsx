@@ -46,13 +46,18 @@ export default function TeamUpdate({
             },
             onSubmit: async ({ body, thingOfTheWeek, roadmap, roadmapID, images, impersonate, team }) => {
                 try {
+                    const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+                    if (!host) {
+                        console.warn('[wim] team updates disabled (Squeak)')
+                        return
+                    }
                     const jwt = await getJwt()
                     const profileID = user?.profile?.id
                     if (!profileID || !jwt) return
 
                     const {
                         data: { id: updateID },
-                    } = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/team-updates`, {
+                    } = await fetch(`${host}/api/team-updates`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -76,7 +81,7 @@ export default function TeamUpdate({
                     }).then((res) => res.json())
 
                     const transformedValues = await transformValues({ body, images: images ?? [] }, profileID, jwt)
-                    await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/questions`, {
+                    await fetch(`${host}/api/questions`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -109,22 +114,31 @@ export default function TeamUpdate({
         })
 
     const fetchTeam = async () => {
-        const {
-            data: [team],
-        } = await fetch(
-            `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/teams?${qs.stringify(
-                {
-                    populate: ['profiles', 'leadProfiles'],
-                    filters: {
-                        name: {
-                            $eqi: teamName,
+        const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+        if (!host) {
+            setFieldValue('team', null)
+            return
+        }
+        try {
+            const {
+                data: [team],
+            } = await fetch(
+                `${host}/api/teams?${qs.stringify(
+                    {
+                        populate: ['profiles', 'leadProfiles'],
+                        filters: {
+                            name: {
+                                $eqi: teamName,
+                            },
                         },
                     },
-                },
-                { encodeValuesOnly: true }
-            )}`
-        ).then((res) => res.json())
-        setFieldValue('team', team)
+                    { encodeValuesOnly: true }
+                )}`
+            ).then((res) => res.json())
+            setFieldValue('team', team)
+        } catch {
+            setFieldValue('team', null)
+        }
     }
 
     useEffect(() => {

@@ -60,24 +60,10 @@ export const useMediaLibrary = (options?: UseMediaLibraryOptions) => {
     const { getJwt, user } = useUser()
     const { showAll = false } = options || {}
 
+    // WIM: Squeak media library disabled — empty library (no dead API calls)
     const { data, size, setSize, isLoading, error, mutate, isValidating } = useSWRInfinite<any>(
-        (offset) => (showAll ? `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/upload/all?${query(offset, options)}` : null),
-        async (url: string) => {
-            const jwt = await getJwt()
-            const response = await fetch(url, {
-                headers: {
-                    Authorization: `Bearer ${jwt}`,
-                },
-            })
-
-            if (!response.ok) {
-                const body = await response.json().catch(() => null)
-                const message = body?.error?.message || `Request failed with status ${response.status}`
-                throw new Error(message)
-            }
-
-            return response.json()
-        },
+        () => null,
+        async () => ({ data: [], meta: { pagination: { total: 0 } } }),
         {
             revalidateOnFocus: options?.revalidateOnFocus ?? false,
         }

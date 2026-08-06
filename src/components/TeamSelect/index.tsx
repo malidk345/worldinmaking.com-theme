@@ -4,11 +4,18 @@ import React, { useEffect, useState } from 'react'
 export default function TeamSelect({ value, onChange }) {
     const [teams, setTeams] = useState([])
     useEffect(() => {
-        fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/teams?populate=*&pagination[limit]=100`)
+        // WIM: Squeak teams API disabled
+        const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+        if (!host) {
+            setTeams([])
+            return
+        }
+        fetch(`${host}/api/teams?populate=*&pagination[limit]=100`)
             .then((res) => res.json())
             .then(({ data }) => {
-                setTeams(data)
+                setTeams(data || [])
             })
+            .catch(() => setTeams([]))
     }, [])
 
     return (

@@ -1,0 +1,30 @@
+# Core shell TypeScript allowlist gate (WIM Phase B quality roadmap).
+# Full-repo tsc remains too noisy; this job only fails on non-quarantined shell paths.
+name: Typecheck shell
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+jobs:
+  typecheck-shell:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck core shell allowlist
+        run: pnpm typecheck:shell

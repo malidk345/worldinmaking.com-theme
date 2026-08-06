@@ -1,12 +1,11 @@
 import React, { useEffect } from 'react'
 import useSWR from 'swr'
-import qs from 'qs'
-import { useUser } from './useUser'
+import { supabase } from 'lib/supabase'
 
 const PROFILES_PER_PAGE = 25
 
 export type CommunityProfile = {
-    id: number
+    id: string | number
     firstName: string | null
     lastName: string | null
     email: string | null
@@ -15,6 +14,7 @@ export type CommunityProfile = {
     avatarUrl: string | null
     color: string | null
     isTeamMember: boolean
+    username?: string | null
 }
 
 export type CommunityProfilesFilters = {
@@ -24,97 +24,68 @@ export type CommunityProfilesFilters = {
     sort?: string
 }
 
-function mapProfile(profile: any): CommunityProfile {
-    const attrs = profile.attributes || profile
-    const user = attrs.user?.data?.attributes || attrs.user
+function mapRow(row: any): CommunityProfile {
+    const username = row.username || null
+    const display = username
+        ? username
+              .split(/[-_]/)
+              .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+              .join(' ')
+        : null
     return {
-        id: profile.id,
-        firstName: attrs.firstName || null,
-        lastName: attrs.lastName || null,
-        email: user?.email || null,
-        createdAt: attrs.createdAt || profile.createdAt || null,
-        reputation: attrs.reputation ?? null,
-        avatarUrl: attrs.avatar?.data?.attributes?.url || attrs.avatar?.url || null,
-        color: attrs.color || null,
-        isTeamMember: !!attrs.startDate,
+        id: row.id,
+        firstName: display,
+        lastName: null,
+        email: null,
+        createdAt: row.created_at || null,
+        reputation: null,
+        avatarUrl: row.avatar_url || null,
+        color: null,
+        isTeamMember: row.role === 'admin' || row.role === 'moderator',
+        username,
     }
 }
 
-function buildFilters({ minReputation, search, teamMember }: CommunityProfilesFilters) {
-    const and: Record<string, any>[] = []
-
-    if (minReputation != null && minReputation > 0) {
-        and.push({ reputation: { $gte: minReputation } })
+function applyFilters(q: any, filters: CommunityProfilesFilters) {
+    let query = q
+    if (filters.search?.trim()) {
+        query = query.ilike('username', `%${filters.search.trim()}%`)
     }
-
-    const trimmedSearch = search?.trim()
-    if (trimmedSearch) {
-        and.push({
-            $or: [
-                { firstName: { $containsi: trimmedSearch } },
-                { lastName: { $containsi: trimmedSearch } },
-                { user: { email: { $containsi: trimmedSearch } } },
-            ],
-        })
+    if (filters.teamMember === 'yes') {
+        query = query.in('role', ['admin', 'moderator'])
+    } else if (filters.teamMember === 'no') {
+        query = query.not('role', 'in', '("admin","moderator")')
     }
-
-    if (teamMember === 'yes') {
-        and.push({ startDate: { $notNull: true } })
-    } else if (teamMember === 'no') {
-        and.push({ startDate: { $null: true } })
-    }
-
-    if (and.length === 0) return undefined
-    if (and.length === 1) return and[0]
-    return { $and: and }
-}
-
-function buildQuery(filters: CommunityProfilesFilters, page: number, pageSize: number) {
-    return qs.stringify(
-        {
-            populate: {
-                avatar: { fields: ['url'] },
-                user: {
-                    fields: ['email'],
-                },
-            },
-            fields: ['firstName', 'lastName', 'reputation', 'color', 'startDate', 'createdAt'],
-            filters: buildFilters(filters),
-            sort: [filters.sort || 'reputation:desc'],
-            pagination: {
-                page: page + 1,
-                pageSize,
-            },
-        },
-        { encodeValuesOnly: true }
-    )
+    // Hide bots when column exists
+    query = query.or('is_bot.is.null,is_bot.eq.false')
+    return query
 }
 
 export async function fetchAllCommunityProfiles(
     filters: CommunityProfilesFilters,
-    getJwt: () => Promise<string | null>,
+    _getJwt?: () => Promise<string | null>,
     pageSize = 100
 ): Promise<CommunityProfile[]> {
-    const allProfiles: CommunityProfile[] = []
-    let page = 0
-    let pageCount = 1
-
-    while (page < pageCount) {
-        const query = buildQuery(filters, page, pageSize)
-        const jwt = await getJwt()
-        const res = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles?${query}`, {
-            headers: jwt ? { Authorization: `Bearer ${jwt}` } : undefined,
-        })
-        if (!res.ok) {
-            throw new Error(`Failed to export profiles (${res.status})`)
+    const all: CommunityProfile[] = []
+    let from = 0
+    for (let page = 0; page < 30; page++) {
+        let q = supabase
+            .from('profiles')
+            .select('id, username, avatar_url, role, created_at, is_bot')
+            .order('created_at', { ascending: false })
+            .range(from, from + pageSize - 1)
+        q = applyFilters(q, filters)
+        const { data, error } = await q
+        if (error) {
+            console.warn('[useCommunityProfiles] export', error.message)
+            break
         }
-        const { data, meta } = await res.json()
-        allProfiles.push(...(data || []).map(mapProfile))
-        pageCount = meta?.pagination?.pageCount || 1
-        page++
+        if (!data?.length) break
+        all.push(...data.map(mapRow))
+        if (data.length < pageSize) break
+        from += pageSize
     }
-
-    return allProfiles
+    return all
 }
 
 export function useCommunityProfiles({
@@ -126,28 +97,43 @@ export function useCommunityProfiles({
     pageSize?: number
     enabled?: boolean
 } = {}) {
-    const { getJwt } = useUser()
     const [currentPage, setCurrentPage] = React.useState(0)
 
-    const query = buildQuery(filters, currentPage, pageSize)
-    const key = enabled ? `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles?${query}` : null
+    const key = enabled ? ['wim-community-profiles', JSON.stringify(filters), currentPage, pageSize] : null
 
     const { data, isLoading, error, isValidating, mutate } = useSWR(
         key,
-        async (url: string) => {
-            const jwt = await getJwt()
-            const res = await fetch(url, jwt ? { headers: { Authorization: `Bearer ${jwt}` } } : undefined)
-            if (!res.ok) {
-                throw new Error(`Failed to load profiles (${res.status})`)
+        async () => {
+            const from = currentPage * pageSize
+            const to = from + pageSize - 1
+
+            // Count
+            let countQ = supabase
+                .from('profiles')
+                .select('id', { count: 'exact', head: true })
+            countQ = applyFilters(countQ, filters)
+            const { count } = await countQ
+
+            let q = supabase
+                .from('profiles')
+                .select('id, username, avatar_url, role, created_at, is_bot')
+                .order('created_at', { ascending: false })
+                .range(from, to)
+            q = applyFilters(q, filters)
+
+            const { data: rows, error: err } = await q
+            if (err) throw err
+            return {
+                profiles: (rows || []).map(mapRow),
+                total: count ?? 0,
             }
-            return res.json()
         },
         { revalidateOnFocus: false }
     )
 
-    const profiles: CommunityProfile[] = (data?.data || []).map(mapProfile)
-    const total = data?.meta?.pagination?.total ?? 0
-    const totalPages = data?.meta?.pagination?.pageCount ?? (total ? Math.ceil(total / pageSize) : 0)
+    const profiles = data?.profiles || []
+    const total = data?.total ?? 0
+    const totalPages = total ? Math.ceil(total / pageSize) : 0
     const hasNextPage = currentPage < totalPages - 1
     const hasPrevPage = currentPage > 0
 

@@ -50,7 +50,7 @@ import { useApp } from '../../context/App'
 export default function Wrapper() {
     const { constraintsRef } = useAppActions()
     const { compact } = useAppSettings()
-    const { isAuthModalOpen, setIsAuthModalOpen, authModalView } = useApp()
+    const { isAuthModalOpen, setIsAuthModalOpen, authModalView, authModalOnSuccess } = useApp() as any
 
     return (
         <TooltipProvider delayDuration={300}>
@@ -73,6 +73,9 @@ export default function Wrapper() {
                     isOpen={!!isAuthModalOpen}
                     onClose={() => setIsAuthModalOpen?.(false)}
                     initialView={authModalView || 'sign-in'}
+                    onSuccess={(user) => {
+                        authModalOnSuccess?.(user)
+                    }}
                 />
             </AppContainer>
         </TooltipProvider>

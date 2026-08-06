@@ -375,8 +375,11 @@ export default function BlogPost({ data = {}, pageContext = {}, mobile = false }
     }, [])
 
     useEffect(() => {
+        // WIM: Squeak post IDs disabled; community comments use Supabase by slug
+        const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+        if (!host) return
         fetch(
-            `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/posts?${qs.stringify(
+            `${host}/api/posts?${qs.stringify(
                 {
                     fields: ['id'],
                     filters: {
@@ -394,6 +397,7 @@ export default function BlogPost({ data = {}, pageContext = {}, mobile = false }
                     setPostID(posts.data[0].id)
                 }
             })
+            .catch(() => {})
     }, [pathname])
 
     useEffect(() => {

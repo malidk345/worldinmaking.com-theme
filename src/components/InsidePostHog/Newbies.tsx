@@ -28,10 +28,20 @@ export default function Newbies() {
             },
             { encodeValuesOnly: true }
         )
-        fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles?${query}`)
+        const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+        if (!host) {
+            setNewbies([])
+            setLoading(false)
+            return
+        }
+        fetch(`${host}/api/profiles?${query}`)
             .then((res) => res.json())
             .then(({ data }) => {
-                setNewbies(data)
+                setNewbies(data || [])
+                setLoading(false)
+            })
+            .catch(() => {
+                setNewbies([])
                 setLoading(false)
             })
     }, [])

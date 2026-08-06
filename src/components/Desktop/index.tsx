@@ -3,20 +3,6 @@ import Link from 'components/Link'
 import { useAppActions, useAppSettings, useAppUIState } from '../../context/App'
 import { GlassIcon } from 'components/OSIcons'
 import { AppIcon, AppItem } from 'components/OSIcons/AppIcon'
-import {
-    HOME_SILHOUETTE,
-    SELF_DRIVING_SILHOUETTE,
-    DOWNLOAD_SILHOUETTE,
-    DOCS_SILHOUETTE,
-    TALK_TO_A_HUMAN_SILHOUETTE,
-    WHY_POSTHOG_SILHOUETTE,
-    CHANGELOG_SILHOUETTE,
-    HANDBOOK_SILHOUETTE,
-    STORE_SILHOUETTE,
-    WORK_HERE_SILHOUETTE,
-    TRASH_SILHOUETTE,
-    CONTEXT_WAREHOUSE_SILHOUETTE,
-} from 'components/OSIcons/glyphs'
 import ContextMenu from 'components/RadixUI/ContextMenu'
 import DesktopIcon from './DesktopIcon'
 import { Screensaver } from '../Screensaver'

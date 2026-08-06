@@ -1,8 +1,23 @@
+import { isSqueakEnabled, squeakApiUrl } from 'lib/squeak'
+
+/**
+ * Legacy Strapi/Squeak media upload.
+ * On WIM (Supabase-only) this is disabled — use data URLs or a future Storage bucket.
+ */
 export default async function uploadImage(
     image: string | Blob,
     jwt: string,
     ref?: { id: number; type: string; field: string; folderId?: number }
 ) {
+    if (!isSqueakEnabled()) {
+        throw new Error('Image upload via Squeak is not available on WorldInMaking')
+    }
+
+    const uploadUrl = squeakApiUrl('/api/upload')
+    if (!uploadUrl) {
+        throw new Error('Squeak host not configured')
+    }
+
     const formData = new FormData()
     formData.append('files', image)
     if (ref && ref.field && ref.id && ref.type) {
@@ -11,7 +26,7 @@ export default async function uploadImage(
         formData.append('field', ref.field)
     }
 
-    const imageRes = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/upload`, {
+    const imageRes = await fetch(uploadUrl, {
         method: 'POST',
         body: formData,
         headers: {
@@ -21,14 +36,17 @@ export default async function uploadImage(
 
     const imageData = await imageRes.json()
     if (ref?.folderId) {
-        await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/media-folders/add-media`, {
-            method: 'POST',
-            body: JSON.stringify({ mediaId: imageData?.[0]?.id, folderId: ref.folderId }),
-            headers: {
-                Authorization: `Bearer ${jwt}`,
-                'Content-Type': 'application/json',
-            },
-        })
+        const folderUrl = squeakApiUrl('/api/media-folders/add-media')
+        if (folderUrl) {
+            await fetch(folderUrl, {
+                method: 'POST',
+                body: JSON.stringify({ mediaId: imageData?.[0]?.id, folderId: ref.folderId }),
+                headers: {
+                    Authorization: `Bearer ${jwt}`,
+                    'Content-Type': 'application/json',
+                },
+            })
+        }
     }
 
     if (!imageRes?.ok) {

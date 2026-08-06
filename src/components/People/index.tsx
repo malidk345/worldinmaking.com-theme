@@ -412,7 +412,7 @@ export default function People() {
 
                             <p>
                                 Interested in a hand-drawn sketch of your face?{' '}
-                                <Link href={`/careers`} state={{ newWindow: true }}>
+                                <Link href="/about" state={{ newWindow: true }}>
                                     We're hiring.
                                 </Link>
                             </p>

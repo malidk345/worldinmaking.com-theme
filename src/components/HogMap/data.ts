@@ -15,6 +15,9 @@ export const getPlaces = async (): Promise<Record<string, unknown>[]> => {
     let hasMore = true
     const pageSize = 100 // Strapi's max limit
 
+    const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+    if (!host) return []
+
     while (hasMore) {
         const placesQuery = qs.stringify(
             {
@@ -26,7 +29,7 @@ export const getPlaces = async (): Promise<Record<string, unknown>[]> => {
             { encodeValuesOnly: true }
         )
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/places?${placesQuery}`)
+        const response = await fetch(`${host}/api/places?${placesQuery}`)
 
         if (!response.ok) {
             throw new Error(`Failed to fetch places: ${response.statusText}`)
@@ -71,7 +74,9 @@ export const addPlace = async (
     jwt: string,
     payload: { name: string; address: string; type: string; latitude: number; longitude: number }
 ): Promise<Record<string, unknown>> => {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/places`, {
+    const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+    if (!host) throw new Error('Places are not available on WorldInMaking')
+    const response = await fetch(`${host}/api/places`, {
         method: 'POST',
         body: JSON.stringify({ data: payload }),
         headers: {
@@ -89,7 +94,9 @@ export const addPlace = async (
 
 // Delete a place (moderators only)
 export const deletePlace = async (jwt: string, placeId: number): Promise<void> => {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/places/${placeId}`, {
+    const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+    if (!host) throw new Error('Places are not available on WorldInMaking')
+    const response = await fetch(`${host}/api/places/${placeId}`, {
         method: 'DELETE',
         headers: {
             Authorization: `Bearer ${jwt}`,
@@ -103,6 +110,9 @@ export const deletePlace = async (jwt: string, placeId: number): Promise<void> =
 
 // Fetch all place reviews (public endpoint, no JWT required)
 export const getPlaceReviews = async (): Promise<Record<string, unknown>[]> => {
+    const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+    if (!host) return []
+
     const allReviews: Array<{
         id: number
         rating: number
@@ -138,7 +148,7 @@ export const getPlaceReviews = async (): Promise<Record<string, unknown>[]> => {
             { encodeValuesOnly: true }
         )
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/place-reviews?${reviewsQuery}`)
+        const response = await fetch(`${host}/api/place-reviews?${reviewsQuery}`)
 
         if (!response.ok) {
             throw new Error(`Failed to fetch place reviews: ${response.statusText}`)
@@ -211,7 +221,9 @@ export const addPlaceReview = async (
     jwt: string,
     payload: Record<string, unknown>
 ): Promise<Record<string, unknown>> => {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/place-reviews`, {
+    const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+    if (!host) throw new Error('Place reviews are not available on WorldInMaking')
+    const response = await fetch(`${host}/api/place-reviews`, {
         method: 'POST',
         body: JSON.stringify({ data: payload }),
         headers: {
@@ -229,7 +241,9 @@ export const addPlaceReview = async (
 
 // Delete a place review (moderators only)
 export const deletePlaceReview = async (jwt: string, reviewId: number): Promise<void> => {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/place-reviews/${reviewId}`, {
+    const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+    if (!host) throw new Error('Place reviews are not available on WorldInMaking')
+    const response = await fetch(`${host}/api/place-reviews/${reviewId}`, {
         method: 'DELETE',
         headers: {
             Authorization: `Bearer ${jwt}`,

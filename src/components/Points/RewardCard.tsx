@@ -130,8 +130,12 @@ export default function RewardCard({ reward, total }: { reward: Reward; total: n
         setError(null)
 
         try {
+            const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+            if (!host) {
+                throw new Error('Points redeem is not available on WorldInMaking')
+            }
             const jwt = await getJwt()
-            const response = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/points/redeem`, {
+            const response = await fetch(`${host}/api/points/redeem`, {
                 method: 'POST',
                 body: JSON.stringify({
                     handle: reward.handle,

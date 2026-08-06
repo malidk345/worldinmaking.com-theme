@@ -38,17 +38,23 @@ export default function RoadmapSelect({ teamID, onChange, value }: RoadmapOption
             },
             { encodeValuesOnly: true }
         )
-        fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/roadmaps?${query}`)
+        const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+        if (!host) {
+            setRoadmaps([])
+            return
+        }
+        fetch(`${host}/api/roadmaps?${query}`)
             .then((res) => res.json())
             .then(({ data }) => {
                 setRoadmaps(
-                    data.map(({ attributes: { title, updatedAt }, id }) => ({
+                    (data || []).map(({ attributes: { title, updatedAt }, id }) => ({
                         value: id,
                         label: title,
                         subtext: `Last updated ${dayjs(updatedAt).fromNow()}`,
                     }))
                 )
             })
+            .catch(() => setRoadmaps([]))
     }, [teamID])
 
     return <Select value={value} placeholder="Select a roadmap item" onChange={onChange} options={roadmaps} />

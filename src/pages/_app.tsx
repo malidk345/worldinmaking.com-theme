@@ -1,6 +1,5 @@
 import { AppProps } from 'next/app'
 import '../styles/global.css'
-import '../components/Careers/InterviewProcess/index.css'
 import '../components/HiddenSection/style.css'
 import '../components/Layout/Fonts.css'
 import '../components/Layout/SkeletonLoading.css'
@@ -10,7 +9,6 @@ import '../components/Spacer/style.css'
 import '../components/Corpus/styles.css'
 import 'react-medium-image-zoom/dist/styles.css'
 import 'rc-slider/assets/index.css'
-import '../components/Pricing/PricingSlider/slider.css'
 // Do NOT import components/LemonUI/lemon-ui.css globally.
 // That thin stylesheet restyles .LemonButton with padding/border and fights the full
 // PostHog LemonButton chrome (.LemonButton + .LemonButton__chrome frame). Full styles

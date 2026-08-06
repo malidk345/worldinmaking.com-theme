@@ -23,83 +23,29 @@ This is the repository for the PostHog website. We treat it like a product. It c
 - Features like questions and answers (using [Squeak!](https://github.com/PostHog/squeak)), job listings (using [Ashby](https://www.ashbyhq.com/customers/posthog-customer-story)), pricing calculator, roadmap, API docs, and more
 - All the components, templates, logic, and styling to make this work, look pretty, and spark joy
 
-## Table of contents
-- [Quick start](#quick-start)
-- [Advanced setup](#advanced-setup)
-- [Contributing](#contributing)
-
 ## Quick start
 
-> `AGENTS.md` is equipped with instructions for the most fundamental parts of running the app.
->
-> If you find places where current documentation is lacking, email cory@posthog.com with the subject, "AGENTS.md".
-
 1. **Pre-installation**
+   Ensure Node.js (version 22) and `pnpm` are installed.
 
-    Install [Node](https://nodejs.org/en/download/) (version 22) - if you installed Node using nvm, you can run `nvm use` to automatically switch to the correct version.
+2. **Start developing**
+   Install site dependencies and start Next.js dev server:
 
-    Install `pnpm`. The easiest way to do this is via `corepack use pnpm@latest-10`.
+   ```bash
+   pnpm install
+   pnpm dev
+   ```
 
+   > **Note:** Only `pnpm` is supported. `package-lock.json` has been removed.
 
-2.  **Start developing**
-
-    Clone the repo and navigate into your new site’s directory:
-
-    ```bash
-    git clone git@github.com:PostHog/posthog.com.git && cd posthog.com/
-    ```
-
-    If you're using an Apple Silicon Mac (M1 or later) you'll need to run the following commands:
-
-    ```bash
-    rm -rf ./node_modules
-    brew install vips
-    ```
-
-    Then install the site dependencies, and start it up:
-
-    ```bash
-    pnpm install
-    pnpm start
-    ```
-
-    > **Tip:** Seeing a discrepancy between local development and staging/production? Preview the production build locally by running `gatsby build && gatsby serve`
-
-3.  **Open the source code and start editing!**
-
-    Your site is now running at `http://localhost:8001`!
-    
-    > **Note:** You'll also see a second link: `http://localhost:8001/___graphql`. This is a tool you can use to experiment with querying your data. Learn more about using this tool in the [Gatsby tutorial](https://www.gatsbyjs.org/tutorial/part-five/#introducing-graphiql).
-
-See full instructions on [developing PostHog.com locally in our manual](https://posthog.com/handbook/engineering/posthog-com/developing-the-website).
-
-## Advanced setup
-
-### Debugging errors on start
-1. Pull the latest changes from `master`
-2. Run `pnpm clean && mkdir .cache & pnpm start` or delete `node_modules` and `.cache`
-3. Make sure you're not in an activated flox environment for a different project
-4. Check builds are passing in [deployment to Vercel](https://github.com/PostHog/posthog.com/deployments)
-
-### Working on `/docs/api`?
-
-The site will load the API schema from US Cloud by default. You can override this to use your local PostHog instance with an env var:
-
-```
-POSTHOG_OPEN_API_SPEC_URL="http://127.0.0.1:8000/api/schema/" pnpm start
-```
-
-
-### Want Ashby job listings or GitHub contributors to load?
-
-You’ll need to set environment variables for these. [See (private) instructions](https://github.com/PostHog/company-internal/blob/master/website-api-keys.md) for this.
+3. **Open the site**
+   Your site is now running at `http://localhost:3000` (desktop shell at `http://localhost:3000/desktop`).
+   See [architecture docs](docs/architecture/FULL_PERFORMANCE_AND_GROWTH_REPORT.md) and [AI memory](docs/architecture/AI_MEMORY.md) for details.
 
 ### Developing the posts section
 To see your local version of the posts section, `/posts` needs to be visited directly (`http://localhost:8001/posts`)
 
 ### Developing the merch store
-Additional environment variables are needed to develop the merch store:
-- `SHOPIFY_APP_PASSWORD`
 - `GATSBY_MYSHOPIFY_URL`
 - `GATSBY_SHOPIFY_STOREFRONT_TOKEN`
 

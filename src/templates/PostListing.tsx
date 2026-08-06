@@ -137,12 +137,19 @@ export default function Posts({ pageContext = {} }: { pageContext?: any }) {
                 encodeValuesOnly: true,
             }
         )
-        fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles?${query}`)
+        const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+        if (!host) {
+            setAuthors([])
+            return
+        }
+        fetch(`${host}/api/profiles?${query}`)
             .then((res) => res.json())
             .then((data) => {
                 setAuthors(data?.data || [])
             })
-            .catch(() => {})
+            .catch(() => {
+                setAuthors([])
+            })
     }, [])
 
     useEffect(() => {

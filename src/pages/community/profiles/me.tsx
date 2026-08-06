@@ -1,4 +1,4 @@
-import { useRouter } from 'next/navigation'
+import { useRouter } from 'next/router'
 import React, { useEffect } from 'react'
 import SEO from 'components/seo'
 import { useUser } from 'hooks/useUser'
@@ -7,14 +7,16 @@ import OSButton from 'components/OSButton'
 import ScrollArea from 'components/RadixUI/ScrollArea'
 
 export default function MyProfilePage() {
+    const router = useRouter()
     const { user, isValidating } = useUser()
     const { openSignIn } = useApp()
 
     useEffect(() => {
         if (!isValidating && user?.profile?.id) {
-            router.push(`/community/profiles/${user.profile.id}`, { replace: true })
+            const id = user.username || user.profile.id
+            router.replace(`/community/profiles/${id}`)
         }
-    }, [isValidating, user])
+    }, [isValidating, user, router])
 
     if (isValidating || user?.profile?.id) {
         return (
@@ -40,7 +42,7 @@ export default function MyProfilePage() {
                         onClick={() => {
                             openSignIn((user) => {
                                 if (user?.profile?.id) {
-                                    router.push(`/community/profiles/${user.profile.id}`, { replace: true })
+                                    router.replace(`/community/profiles/${user.profile.id}`)
                                 }
                             })
                         }}

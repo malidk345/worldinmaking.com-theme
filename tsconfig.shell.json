@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo.shell",
+    "declaration": false,
+    "declarationMap": false,
+    "plugins": []
+  },
+  "include": [
+    "src/context/**/*",
+    "src/components/AppWindow/**/*",
+    "src/components/Wrapper/**/*",
+    "src/components/Desktop/**/*",
+    "src/components/Auth/**/*",
+    "src/components/AppContainer/**/*",
+    "src/pages/api/**/*",
+    "src/lib/wim-auth.ts",
+    "src/lib/bots/**/*",
+    "src/custom.d.ts",
+    "src/types/**/*"
+  ],
+  "exclude": [
+    "node_modules/**/*",
+    "staticfiles/**/*",
+    "frontend/dist/**/*",
+    "src/notebook-app/**/*",
+    "**/*.stories.tsx",
+    "**/*.stories.ts",
+    "**/*.stories.js",
+    "**/*.test.tsx",
+    "**/*.test.ts",
+    "**/*.test.js",
+    "**/*.spec.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.js"
+  ]
+}

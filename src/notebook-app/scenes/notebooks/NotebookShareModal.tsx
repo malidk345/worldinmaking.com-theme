@@ -10,7 +10,7 @@ import {
     exportNotebookAsPaperMarkdown,
     downloadTextFile,
 } from './notebookStorage'
-import { notebookFilename } from './notebookOutline'
+import { notebookFilename } from './outlineModel'
 
 interface NotebookShareModalProps {
     isOpen: boolean

@@ -28,10 +28,16 @@ export default function Anniversaries() {
             },
             { encodeValuesOnly: true }
         )
-        fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles?${query}`)
+        const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+        if (!host) {
+            setAnniversaries([])
+            setLoading(false)
+            return
+        }
+        fetch(`${host}/api/profiles?${query}`)
             .then((res) => res.json())
             .then(({ data }) => {
-                const teamMembers = data.filter((teamMember) => {
+                const teamMembers = (data || []).filter((teamMember) => {
                     const {
                         attributes: { startDate },
                     } = teamMember

@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { IconList } from '@posthog/icons'
-import { extractOutlineHeadings, scrollToNotebookNode, type OutlineHeading } from './notebookOutline'
+import { extractOutlineHeadings, scrollToNotebookNode, type OutlineHeading } from './outlineModel'
 
 interface NotebookOutlineProps {
     markdown: string

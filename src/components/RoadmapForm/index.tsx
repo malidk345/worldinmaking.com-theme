@@ -118,7 +118,7 @@ const ProfileSelect = ({ value, onChange }: { value: any; onChange: (value: any)
                 },
             },
         })
-        fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles?${query}`)
+        fetch(`${(process.env.NEXT_PUBLIC_SQUEAK_API_HOST || '')}/api/profiles?${query}`)
             .then((res) => res.json())
             .then(({ data }) => {
                 setProfiles(data)
@@ -609,7 +609,7 @@ export default function RoadmapForm({
                     },
                 })
                 const { data: roadmap } = await fetch(
-                    `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/roadmaps/${id ?? ''}`,
+                    `${(process.env.NEXT_PUBLIC_SQUEAK_API_HOST || '')}/api/roadmaps/${id ?? ''}`,
                     {
                         body: data,
                         method: id ? 'PUT' : 'POST',

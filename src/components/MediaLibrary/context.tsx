@@ -57,7 +57,12 @@ export function MediaLibraryProvider({ children }: { children: React.ReactNode }
                 { populate: ['parent', 'children'], sort: ['name:asc'] },
                 { encodeValuesOnly: true }
             )
-            const response = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/media-folders?${query}`, {
+            const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+            if (!host) {
+                setFolders([])
+                return
+            }
+            const response = await fetch(`${host}/api/media-folders?${query}`, {
                 headers: {
                     Authorization: `Bearer ${jwt}`,
                 },
@@ -77,7 +82,12 @@ export function MediaLibraryProvider({ children }: { children: React.ReactNode }
             const jwt = await getJwt()
             if (!jwt) return
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/media-tags`, {
+            const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+            if (!host) {
+                setTags([])
+                return
+            }
+            const response = await fetch(`${host}/api/media-tags`, {
                 headers: {
                     Authorization: `Bearer ${jwt}`,
                 },

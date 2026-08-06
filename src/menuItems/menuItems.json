@@ -4,10 +4,6 @@
         "link": "/docs"
     },
     {
-        "name": "Pricing",
-        "link": "/pricing"
-    },
-    {
         "name": "Install",
         "link": "/docs/self-host"
     },

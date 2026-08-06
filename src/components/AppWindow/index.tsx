@@ -64,34 +64,8 @@ const WindowContainer = ({ children, closing }: { children: React.ReactNode; clo
     )
 }
 
-function SnapIndicator({ side }: { side: 'left' | 'right' }) {
-    const { taskbarRef, taskbarHeight } = useApp()
-    const taskbarRect = taskbarRef.current?.getBoundingClientRect()
-    const left = taskbarRect?.left ?? 0
-    const top = taskbarRect?.top ?? 0
-    const availableWidth = window.innerWidth - left * 2
-    const halfWidth = availableWidth / 2
-
-    return (
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.3 }}
-            exit={{ opacity: 0 }}
-            className={`fixed border-2 border-blue bg-blue/40 pointer-events-none ${
-                side === 'left' ? 'rounded-bl-lg' : 'rounded-br-lg'
-            }`}
-            style={{
-                left: side === 'left' ? left : left + halfWidth,
-                width: halfWidth,
-                top: taskbarHeight,
-                height: window.innerHeight - taskbarHeight - (taskbarRect?.top ?? 0),
-            }}
-        />
-    )
-}
-
 function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: boolean }) {
-    const { addToast, toasts } = useToast()
+    const { toasts } = useToast()
     const {
         minimizeWindow,
         bringToFront,
@@ -100,17 +74,12 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
         windows,
         updateWindowRef,
         updateWindow,
-        getDesktopCenterPosition,
         handleSnapToSide,
         constraintsRef,
         expandWindow,
         siteSettings,
-        updateSiteSettings,
-        openNewChat,
         compact,
         menu: appMenu,
-        taskbarRef,
-        closeWindow,
         isActiveWindowsPanelOpen,
         addWindow,
         isMobile,
@@ -145,9 +114,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
         },
     }
     const size = item.size
-    const previousSize = item.previousSize
     const position = item.position
-    const previousPosition = item.previousPosition
 
     const activePanelIndex = useMemo(() => windows.findIndex((w) => w.key === item.key), [windows, item.key])
     const totalWindows = windows.length
@@ -188,17 +155,13 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
         return { x: targetX, y: targetY, scale }
     }, [isActiveWindowsPanelOpen, activePanelIndex, totalWindows, size.width, size.height])
     const [snapIndicator, setSnapIndicator] = useState<'left' | 'right' | null>(null)
-    const [windowOptionsTooltipVisible, setWindowOptionsTooltipVisible] = useState(false)
     const [menu, setMenu] = useState<IMenu[]>([])
     const [history, setHistory] = useState<string[]>([])
     const [activeHistoryIndex, setActiveHistoryIndex] = useState(0)
     const windowRef = useRef<HTMLDivElement>(null)
-    const [rendered, setRendered] = useState(false)
     const [dragging, setDragging] = useState(false)
     const [pageOptions, setPageOptions] = useState<MenuItemType[]>()
     const [closing, setClosing] = useState(false)
-    const [closed, setClosed] = useState(false)
-    const [minimizing, setMinimizing] = useState(false)
     const { handleDragResize, handleResizeEnd, isResizing } = useWindowResize({
         item,
         size,
@@ -210,7 +173,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
         isSSR,
         updateWindow,
     })
-    const { handleDrag, handleDragEnd, handleDragTransitionEnd } = useWindowManager({
+    const { handleDrag, handleDragEnd } = useWindowManager({
         item,
         position,
         size,
@@ -296,13 +259,6 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
         }
     }, [focusedWindow?.key, item.key])
 
-    const isMaximized = () => {
-        if (item.expanded) return true
-        const taskbarRect = taskbarRef.current?.getBoundingClientRect()
-        const expandedWidth = window.innerWidth - (taskbarRect?.left ?? 0) * 2
-        return size.width >= expandedWidth
-    }
-
     const toggleExpanded = () => {
         if (item.fixedSize) return
         const bounds = constraintsRef.current?.getBoundingClientRect()
@@ -346,36 +302,6 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
     const handleDoubleClick = () => {
         toggleExpanded()
     }
-
-    const collapseWindow = () => {
-        toggleExpanded()
-    }
-
-    const getActiveWindowsButtonPosition = () => {
-        const activeWindowsButton = isSSR ? null : taskbarRef.current?.querySelector('[data-active-windows]')
-        if (!activeWindowsButton) return { x: 0, y: 0 }
-        const rect = activeWindowsButton.getBoundingClientRect()
-        return {
-            x: rect.left + rect.width / 2,
-            y: rect.top + rect.height / 2,
-        }
-    }
-
-    const handleMinimize = () => {
-        setMinimizing(true)
-    }
-
-    const windowPosition = useMemo(() => {
-        if (isSSR) return { x: 0, y: 0 }
-        const activeWindowsPosition = getActiveWindowsButtonPosition()
-        if (activeWindowsPosition.x === 0 && activeWindowsPosition.y === 0) {
-            return undefined
-        }
-        return {
-            x: activeWindowsPosition.x - size.width / 2,
-            y: activeWindowsPosition.y - size.height / 2,
-        }
-    }, [size.width, size.height, taskbarRef.current])
 
     const canGoBack = history.length > 0 && activeHistoryIndex > 0
     const canGoForward = activeHistoryIndex < history.length - 1
@@ -442,10 +368,6 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
     }
 
     useEffect(() => {
-        setRendered(true)
-    }, [])
-
-    useEffect(() => {
         const handleWindowClose = (event: CustomEvent) => {
             if (event.detail.windowKey === item.key) {
                 handleClose()
@@ -473,62 +395,6 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
 
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [closing, focusedWindow, item])
-
-    const chatWindows = windows.filter((w) => w.key?.startsWith('ask-max'))
-    const defaultPageOptions = useMemo(
-        () => [
-            {
-                type: 'submenu',
-                label: 'Ask PostHog AI about this page',
-                items: [
-                    {
-                        type: 'item',
-                        label: 'New PostHog AI chat',
-                        onClick() {
-                            openNewChat({
-                                path: `ask-max-${item.path}`,
-                                context: [{ type: 'page', value: { path: item.path, label: item.meta?.title } }],
-                            })
-                        },
-                    },
-
-                    ...(chatWindows.length > 0
-                        ? [
-                              {
-                                  type: 'separator',
-                              },
-                              ...chatWindows.map((appWindow, index) => ({
-                                  type: 'item',
-                                  label: appWindow.meta?.title || `Chat ${index + 1}`,
-                                  onClick: () => {
-                                      const newAppWindow = updateWindow(appWindow, {
-                                          element: {
-                                              ...appWindow.element,
-                                              props: {
-                                                  ...appWindow.props,
-                                                  context: [
-                                                      {
-                                                          type: 'page',
-                                                          value: { path: item.path, label: item.meta?.title },
-                                                      },
-                                                  ],
-                                              },
-                                          },
-                                      })
-                                      bringToFront(newAppWindow)
-                                  },
-                              })),
-                          ]
-                        : []),
-                ],
-            },
-            {
-                type: 'item',
-                label: 'Bookmark',
-            },
-        ],
-        [item, chatWindows]
-    )
 
     const handleClose = () => {
         setClosing(true)
@@ -623,7 +489,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
             activeInternalMenu={activeInternalMenu}
             setActiveInternalMenu={setActiveInternalMenu}
             internalMenu={internalMenu}
-            parent={parent}
+            parent={parent || { name: '', url: '', children: [] }}
             view={view}
             setView={setView}
             hasDeveloperMode={hasDeveloperMode}
@@ -753,20 +619,20 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                     />
                     <WindowChrome
                         item={item}
-                        hasToolbar={hasToolbar}
-                        hideTitle={hideTitle}
+                        hasToolbar={!!hasToolbar}
+                        hideTitle={!!hideTitle}
                         onMinimize={() => minimizeWindow(item)}
                         onToggleExpanded={toggleExpanded}
                         onClose={handleClose}
                         onDoubleClick={handleDoubleClick}
                     />
-                    <WindowContent item={item} chrome={chrome} hasToolbar={hasToolbar}>
+                    <WindowContent item={item} chrome={chrome} hasToolbar={!!hasToolbar}>
                         <WindowRouter item={{ ...item, children: item.element }} />
                     </WindowContent>
                     {!item.fixedSize && !item.expanded && !isMobile && (
                         <>
                             <WindowResizeHandles
-                                onResize={(info, change, left) => handleDragResize(item, info, change, left)}
+                                onResize={(info, change, left) => handleDragResize(info, change, left)}
                                 onResizeEnd={handleResizeEnd}
                             />
                         </>

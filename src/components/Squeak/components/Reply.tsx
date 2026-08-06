@@ -45,8 +45,15 @@ const AIDisclaimerMod = ({ opName, replyID, mutate }) => {
 
     const handleHelpful = async (helpful: boolean) => {
         setLoading(true)
+        const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+        if (!host) {
+            // WIM: moderator AI publish/delete not on Supabase yet
+            setLoading(false)
+            mutate()
+            return
+        }
         if (helpful) {
-            await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/ask-max/publish/${replyID}`, {
+            await fetch(`${host}/api/ask-max/publish/${replyID}`, {
                 method: 'POST',
                 headers: {
                     'content-type': 'application/json',
@@ -54,7 +61,7 @@ const AIDisclaimerMod = ({ opName, replyID, mutate }) => {
                 },
             })
         } else {
-            await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/replies/${replyID}`, {
+            await fetch(`${host}/api/replies/${replyID}`, {
                 method: 'DELETE',
                 headers: {
                     Authorization: `Bearer ${await getJwt()}`,
@@ -110,18 +117,21 @@ const AIDisclaimer = ({ replyID, mutate, topic, confidence, resolvable }) => {
                 },
             })
 
-            await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/replies/${replyID}`, {
-                method: 'PUT',
-                body: JSON.stringify({
-                    data: {
-                        helpful,
+            const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+            if (host) {
+                await fetch(`${host}/api/replies/${replyID}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        data: {
+                            helpful,
+                        },
+                    }),
+                    headers: {
+                        'content-type': 'application/json',
+                        Authorization: `Bearer ${await getJwt()}`,
                     },
-                }),
-                headers: {
-                    'content-type': 'application/json',
-                    Authorization: `Bearer ${await getJwt()}`,
-                },
-            })
+                })
+            }
 
             if (resolvable) {
                 await handleResolve(helpful, replyID)

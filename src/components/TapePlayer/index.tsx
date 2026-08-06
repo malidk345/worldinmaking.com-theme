@@ -71,9 +71,15 @@ export default function TapePlayer({ id }: TapePlayerProps): JSX.Element {
         }
         setFetchingMixtape(true)
         try {
+            const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+            if (!host) {
+                setMixtapeSongs([])
+                setFetchingMixtape(false)
+                return
+            }
             const jwt = await getJwt()
             const response = await fetch(
-                `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/mixtapes/${mixtapeId}?populate=*`,
+                `${host}/api/mixtapes/${mixtapeId}?populate=*`,
                 jwt
                     ? {
                           headers: {

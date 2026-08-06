@@ -5,7 +5,6 @@ import IdeasHub from 'components/Ideas'
 import ProfileWrapper from 'components/Profile'
 import { NotebooksListSkeleton } from 'components/Notebooks/NotebooksList'
 import Inbox from 'components/Inbox'
-import Handbook from '../../templates/Handbook'
 import BlogPost from '../../templates/BlogPost'
 import PostListing from '../../templates/PostListing'
 import DisplayOptions from 'components/DisplayOptions'
@@ -21,7 +20,13 @@ import { useWindow } from '../../context/Window'
 function AuthWindow() {
     const { appWindow } = useWindow()
     const { closeWindow } = useApp()
-    return <WimAuthPortal onSuccess={() => closeWindow(appWindow)} />
+    return (
+        <WimAuthPortal
+            onSuccess={() => {
+                if (appWindow) closeWindow(appWindow)
+            }}
+        />
+    )
 }
 
 
@@ -134,16 +139,19 @@ const WindowRouterMemo = React.memo(WindowRouterInner, (prev, next) => {
 })
 WindowRouterMemo.displayName = 'WindowRouterInner'
 
+export const isForumPath = (p: string): boolean =>
+    typeof p === 'string' &&
+    (/^\/questions/.test(p) ||
+        /^\/forum/.test(p) ||
+        (p.startsWith('/community') &&
+            !p.startsWith('/community/profiles') &&
+            !p.startsWith('/community/achievements')))
+
 // No solid bg-primary wrapper here — opaque fills kill WINDOW_BG frosted glass.
 // Pages set their own data-scheme / backgrounds (same as wimpos AppWindow content).
 const WindowRouter = (props: WindowRouterProps) => {
     const path = props.item?.path || props.item?.props?.path || ''
-    const isForum =
-        /^\/questions/.test(path) ||
-        /^\/forum/.test(path) ||
-        (/^\/community/.test(path) &&
-            !path.startsWith('/community/profiles') &&
-            !path.startsWith('/community/achievements'))
+    const isForum = isForumPath(path)
     // Forum needs fixed height; other pages grow with content (notebooks scroll).
     return (
         <div

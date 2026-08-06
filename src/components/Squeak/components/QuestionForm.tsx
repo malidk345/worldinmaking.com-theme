@@ -335,73 +335,28 @@ export const QuestionForm = ({
         ))
 
     const createQuestion = async ({ subject, body, topic }: QuestionFormValues) => {
-        const token = await getJwt()
-        const topicQuery = qs.stringify(
-            {
-                filters: {
-                    label: {
-                        $eq: parentName,
-                    },
-                },
-            },
-            {
-                encodeValuesOnly: true,
-            }
-        )
+        // WorldInMaking: Supabase community_posts only (no Squeak)
+        const result = await postSupabaseCommunityQuestion(subject, body, slug)
+        if (!result.ok) {
+            throw new Error(result.error || 'Could not create question. Sign in and try again.')
+        }
 
-        const topicID =
-            topic?.id ||
-            other?.topicID ||
-            (parentName &&
-                (await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/topics?${topicQuery}`)
-                    .then((res) => res.json())
-                    .then((topic) => topic?.data && topic?.data[0]?.id)))
-
-        const data = {
+        posthog?.capture('wim question created', {
+            questionId: result.id,
+            topicId: topic?.id || other?.topicID,
+            slug,
             subject,
-            body,
-            resolved: false,
-            slugs: [] as { slug: string }[],
-            permalink: '',
-            topics: {
-                // 346 is uncategorized topic
-                connect: [topicID || 346],
-            },
-        }
+        })
 
-        if (slug) {
-            data.slugs = [
-                {
-                    slug,
-                },
-            ]
-        }
-
-        const { data: questionData } = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/questions`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-                data,
-            }),
-        }).then((res) => res.json())
-
-        // Fires only for new questions (replies use a separate `reply()` path), and only
-        // after the API confirms creation — a reliable count of new questions asked.
-        if (questionData?.id) {
-            posthog?.capture('squeak question created', {
-                questionId: questionData.id,
-                topicId: topicID,
-                slug,
+        return {
+            id: result.id,
+            attributes: {
                 subject,
-            })
-
-            postSupabaseCommunityQuestion(subject, body, slug).catch(() => null)
+                body,
+                permalink: String(result.id),
+                createdAt: new Date().toISOString(),
+            },
         }
-
-        return questionData
     }
 
     const transformValues = async (values: QuestionFormValues, user: User) => {

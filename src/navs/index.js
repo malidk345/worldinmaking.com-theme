@@ -1825,10 +1825,6 @@ export const handbookSidebar = [
                 url: '/handbook/engineering/posthog-com/jobs',
             },
             {
-                name: 'Managing cool tech jobs',
-                url: '/handbook/engineering/posthog-com/cool-tech-jobs',
-            },
-            {
                 name: 'Managing small teams',
                 url: '/handbook/engineering/posthog-com/small-teams',
             },
@@ -2118,12 +2114,6 @@ export const communityMenu = {
             url: '/deskhog',
         },
         {
-            name: 'Cool tech jobs',
-            icon: 'IconLaptop',
-            color: 'purple',
-            url: '/cool-tech-jobs',
-        },
-        {
             name: 'Newsletter',
             icon: 'IconNewspaper',
             color: 'green',
@@ -2214,7 +2204,6 @@ export const companyMenu = {
                 },
             ],
         },
-        { name: 'Careers', icon: 'IconLaptop', color: 'purple', url: '/careers' },
     ],
 }
 
@@ -7826,7 +7815,6 @@ const menu = [
         icon: 'IconLightBulb',
         color: 'yellow',
     },
-    pricingMenu,
     docsMenu,
     communityMenu,
     companyMenu,

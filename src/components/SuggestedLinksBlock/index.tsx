@@ -29,24 +29,6 @@ const SUGGESTED_LINKS: Record<string, SuggestedLink> = {
     imageSize: "w-24",
     imagePosition: "-top-2"
   },
-  pricing: {
-    title: "Usage-based pricing",
-    image: "https://res.cloudinary.com/dmukukwp6/image/upload/hog_cash_64f561fac6.png",
-    imageAlt: "Hog with cash",
-    buttonText: "Explore pricing",
-    buttonLink: "/pricing",
-    imageSize: "w-28",
-    imagePosition: "-left-1"
-  },
-  careers: {
-    title: "Want to work here?",
-    image: "https://res.cloudinary.com/dmukukwp6/image/upload/hog_zilla_7414378873.png",
-    imageAlt: "Hogzilla",
-    buttonText: "View careers",
-    buttonLink: "/careers",
-    imageSize: "w-28",
-    imagePosition: ""
-  },
   hate: {
     title: "Will you hate PostHog?",
     image: "https://res.cloudinary.com/dmukukwp6/image/upload/commitment_issues_d433b343b5.png",

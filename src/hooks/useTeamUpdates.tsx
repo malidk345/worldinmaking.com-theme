@@ -1,69 +1,12 @@
-import { useEffect, useState } from 'react'
-import qs from 'qs'
-
-export type Update = {
-    thingOfTheWeek: boolean
-    roadmap: boolean
-    roadmapID: number | null
-    question: number
-    team: number
-}
-
-export default function useTeamUpdates({ teamName, filters }: { teamName: string; filters?: any }) {
-    const [teamID, setTeamID] = useState()
-    const [updates, setUpdates] = useState([])
-    const fetchUpdates = async () => {
-        if (!teamName) return
-        const { data: teamData } = await fetch(
-            `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/teams?${qs.stringify(
-                {
-                    filters: {
-                        name: {
-                            $eqi: teamName,
-                        },
-                    },
-                },
-                { encodeValuesOnly: true }
-            )}`
-        ).then((res) => res.json())
-        const teamID = teamData[0]?.id
-        setTeamID(teamID)
-        const { data } = await fetch(
-            `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/team-updates?${qs.stringify(
-                {
-                    populate: ['question.id', 'roadmap.id', 'team.id'],
-                    sort: ['createdAt:desc'],
-                    filters: {
-                        $and: [
-                            {
-                                team: {
-                                    id: {
-                                        $eq: teamID,
-                                    },
-                                },
-                            },
-                            ...[filters || {}],
-                        ],
-                    },
-                },
-                { encodeValuesOnly: true }
-            )}`
-        ).then((res) => res.json())
-
-        const updates = data?.map(({ attributes: { thingOfTheWeek, roadmap, question, team } }) => {
-            return {
-                thingOfTheWeek,
-                roadmap: roadmap?.data?.id,
-                question: question?.data?.id,
-                team: team?.data?.id,
-            }
-        })
-        setUpdates(updates ?? [])
+/**
+ * Team updates — Squeak feature. Empty stub for WIM.
+ */
+export function useTeamUpdates(_options?: any) {
+    return {
+        teamUpdates: [] as any[],
+        isLoading: false,
+        teams: [] as any[],
     }
-
-    useEffect(() => {
-        fetchUpdates()
-    }, [teamName])
-
-    return { updates, teamID }
 }
+
+export default useTeamUpdates

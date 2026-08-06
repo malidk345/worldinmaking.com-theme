@@ -110,7 +110,7 @@ export default function NewPost({ id, onSubmit, ...other }: { id?: number; onSub
                         },
                     },
                 })
-                const { data: post } = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/posts/${id || ''}`, {
+                const { data: post } = await fetch(`${(process.env.NEXT_PUBLIC_SQUEAK_API_HOST || '')}/api/posts/${id || ''}`, {
                     body: data,
                     method: id ? 'PUT' : 'POST',
                     headers: {

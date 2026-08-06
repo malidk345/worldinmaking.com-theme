@@ -198,7 +198,9 @@ const Roadmap = ({
             'Unpublishing will remove this item from the changelog on the next build. You can republish it later in Strapi. No data will be lost.'
         )
         if (confirmed) {
-            await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/roadmaps/${roadmap.id}`, {
+            const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+            if (!host) return
+            await fetch(`${host}/api/roadmaps/${roadmap.id}`, {
                 body: JSON.stringify({
                     data: {
                         publishedAt: null,

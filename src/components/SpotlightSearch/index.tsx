@@ -1,11 +1,10 @@
-import { useRouter } from 'next/navigation'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Dialog as RadixDialog } from 'radix-ui'
 import { InstantSearch, useConfigure, useHits, useInstantSearch, useSearchBox } from 'react-instantsearch-hooks-web'
 import usePostHog from 'hooks/usePostHog'
 import { algoliaIndexName, algoliaSearchClient } from 'lib/algoliaSearch'
-import { useApp } from '../../context/App'
+import { useApp, useAppActions } from '../../context/App'
 import { useSpotlightActions } from './actions'
 import type { SpotlightAction } from './actions'
 import { configForType, filterOptions, matchCategory } from './categories'
@@ -43,6 +42,7 @@ function SpotlightSearchContent({
     initialFilter?: string
 }): JSX.Element {
     const { openNewChat } = useApp()
+    const { addWindow } = useAppActions()
     const posthog = usePostHog()
     const [query, setQuery] = useState('')
     const [filterQuery, setFilterQuery] = useState('')
@@ -163,7 +163,19 @@ function SpotlightSearchContent({
             type: result.type,
         })
         close()
-        router.push(result.url, { state: { newWindow: true } })
+        const url = sanitizeNavigationUrl(result.url)
+        if (!url || !url.startsWith('/')) {
+            if (url) window.open(url, '_blank', 'noopener,noreferrer')
+            return
+        }
+        // Same path as Link: open desktop window (not next/navigation router)
+        addWindow({
+            key: `${url}-${Date.now()}`,
+            path: url,
+            title: result.title || url.split('/').filter(Boolean).pop() || 'window',
+            newWindow: true,
+            preventScroll: true,
+        } as any)
     }
 
     const applyFilter = (type: string, { keepQuery = false }: { keepQuery?: boolean } = {}) => {

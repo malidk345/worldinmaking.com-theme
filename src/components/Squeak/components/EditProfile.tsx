@@ -241,6 +241,20 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onSubmit }) => {
                 ...values,
             })
 
+            // WIM: prefer Supabase profile update (not Squeak/Strapi)
+            const squeakHost = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+            if (!squeakHost) {
+                const { updateWimProfile } = await import('lib/wim-auth')
+                const patch: Record<string, unknown> = { ...values }
+                // Avatar file upload needs Storage; allow string URL / data URL only for now
+                if (typeof avatar === 'string') patch.avatar = avatar
+                const { error } = await updateWimProfile(id, patch as any)
+                if (error) throw new Error(error)
+                await fetchUser()
+                onSubmit?.()
+                return
+            }
+
             const JWT = await getJwt()
             let image = avatar
 
@@ -248,7 +262,7 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onSubmit }) => {
                 const formData = new FormData()
                 formData.append('files', avatar)
 
-                const uploadedImage = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/upload`, {
+                const uploadedImage = await fetch(`${squeakHost}/api/upload`, {
                     method: 'POST',
                     body: formData,
                     headers: {
@@ -268,7 +282,7 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onSubmit }) => {
                 },
             }
 
-            const { data } = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles/${id}?populate=avatar`, {
+            const { data } = await fetch(`${squeakHost}/api/profiles/${id}?populate=avatar`, {
                 method: 'PUT',
                 body: JSON.stringify(body),
                 headers: {

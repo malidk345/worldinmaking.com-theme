@@ -68,6 +68,86 @@ export async function resolveBotProfile(username: string): Promise<
     return { ok: false, error: `No active bot_profiles row for "${username}"` }
 }
 
+export interface ForumTopicValidation {
+    isValid: boolean
+    errors: string[]
+    sanitizedTitle?: string
+    sanitizedContent?: string
+}
+
+export interface ForumReplyValidation {
+    isValid: boolean
+    errors: string[]
+    sanitizedContent?: string
+}
+
+export function sanitizeBotOutput(text: string): string {
+    if (typeof text !== 'string') return ''
+    return text.replace(/\0/g, '').trim()
+}
+
+export function validateForumTopicPayload(params: {
+    title: unknown
+    content: unknown
+    channelId?: unknown
+    authorId?: unknown
+}): ForumTopicValidation {
+    const errors: string[] = []
+    const rawTitle = typeof params.title === 'string' ? params.title : ''
+    const rawContent = typeof params.content === 'string' ? params.content : ''
+
+    const sanitizedTitle = sanitizeBotOutput(rawTitle).slice(0, 250)
+    const sanitizedContent = sanitizeBotOutput(rawContent)
+
+    if (!sanitizedTitle) {
+        errors.push('Title cannot be empty')
+    }
+    if (!sanitizedContent) {
+        errors.push('Content cannot be empty')
+    }
+    if (params.channelId !== undefined && typeof params.channelId !== 'number') {
+        errors.push('channelId must be a valid number')
+    }
+    if (params.authorId !== undefined && (!params.authorId || typeof params.authorId !== 'string')) {
+        errors.push('authorId must be a non-empty string')
+    }
+
+    return {
+        isValid: errors.length === 0,
+        errors,
+        sanitizedTitle,
+        sanitizedContent,
+    }
+}
+
+export function validateForumReplyPayload(params: {
+    postId: unknown
+    content: unknown
+    authorId?: unknown
+}): ForumReplyValidation {
+    const errors: string[] = []
+    const rawPostId = typeof params.postId === 'string' ? params.postId : ''
+    const rawContent = typeof params.content === 'string' ? params.content : ''
+
+    const sanitizedContent = sanitizeBotOutput(rawContent)
+
+    if (!rawPostId.trim()) {
+        errors.push('post_id is required and must be a non-empty string')
+    }
+    if (!sanitizedContent) {
+        errors.push('Reply content cannot be empty')
+    }
+    if (params.authorId !== undefined && (!params.authorId || typeof params.authorId !== 'string')) {
+        errors.push('authorId must be a non-empty string')
+    }
+
+    return {
+        isValid: errors.length === 0,
+        errors,
+        sanitizedContent,
+    }
+}
+
 export async function createForumTopic(params: {
     botUsername: string
     /** Topic seed / question for the LLM */
@@ -93,10 +173,28 @@ export async function createForumTopic(params: {
 
     // Derive title from first line or truncated reply
     const lines = llm.reply.split('\n').map((l) => l.trim()).filter(Boolean)
-    let title = lines[0]?.replace(/^#+\s*/, '').replace(/\*\*/g, '') || params.question
-    if (title.length > 120) title = title.slice(0, 117) + '…'
-    const content = lines.length > 1 ? lines.slice(1).join('\n\n').trim() || llm.reply : llm.reply
-    const innerThoughts = llm.thought || null
+    let rawTitle = lines[0]?.replace(/^#+\s*/, '').replace(/\*\*/g, '') || params.question
+    const rawContent = lines.length > 1 ? lines.slice(1).join('\n\n').trim() || llm.reply : llm.reply
+
+    const validation = validateForumTopicPayload({
+        title: rawTitle,
+        content: rawContent,
+        channelId: params.channelId,
+    })
+
+    if (!validation.isValid) {
+        return {
+            ...llm,
+            action: 'thread_init' as const,
+            phase: 'validation_failed' as const,
+            persisted: false,
+            validationErrors: validation.errors,
+        }
+    }
+
+    const title = validation.sanitizedTitle!
+    const content = validation.sanitizedContent!
+    const innerThoughts = sanitizeBotOutput(llm.thought || '') || null
 
     if (params.dryRun) {
         return {
@@ -232,13 +330,31 @@ export async function createForumReply(params: {
         return { ...llm, action: 'forum_reply' as const, phase: 'llm_failed' as const, persisted: false }
     }
 
+    const replyValidation = validateForumReplyPayload({
+        postId: topic.id,
+        content: llm.reply,
+    })
+
+    if (!replyValidation.isValid) {
+        return {
+            ...llm,
+            action: 'forum_reply' as const,
+            phase: 'validation_failed' as const,
+            persisted: false,
+            validationErrors: replyValidation.errors,
+        }
+    }
+
+    const replyContent = replyValidation.sanitizedContent!
+    const innerThoughts = sanitizeBotOutput(llm.thought || '') || null
+
     if (params.dryRun) {
         return {
             ...llm,
             action: 'forum_reply' as const,
             phase: 'dry_run' as const,
             persisted: false,
-            replyPreview: { post_id: topic.id, content: llm.reply, inner_thoughts: llm.thought },
+            replyPreview: { post_id: topic.id, content: replyContent, inner_thoughts: innerThoughts },
         }
     }
 

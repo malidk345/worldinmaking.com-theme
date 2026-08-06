@@ -9,9 +9,9 @@ export const PricingCTA = ({ dark = false, className = '' }: { dark?: boolean; c
                 type: 'homepage',
             }}
             type="secondary"
-            to={'/pricing'}
+            to={'/start'}
         >
-            <span>View pricing</span>
+            <span>Get started</span>
         </TrackedCTA>
     )
 }

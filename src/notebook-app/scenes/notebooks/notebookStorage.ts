@@ -1,4 +1,11 @@
 import { uuid } from '../../lib/utils/dom'
+import {
+    deleteNotebookRemote,
+    mergeNotebookLists,
+    pullNotebooksFromRemote,
+    pushAllNotebooksToRemote,
+    pushNotebookToRemote,
+} from './notebookRemote'
 
 export interface NotebookPublishMeta {
     publicTitle?: string
@@ -40,6 +47,57 @@ const LEGACY_STORAGE_KEYS = ['ph_standalone_notebooks', 'wim_notebooks_v1', 'wim
 const MAX_HISTORY = 50
 /** Min ms between automatic history snapshots while typing */
 const SNAPSHOT_MIN_INTERVAL_MS = 20_000
+
+/** Fire-and-forget remote sync — never throws into UI paths */
+function queueRemote(promise: Promise<unknown>): void {
+    promise.catch(() => {
+        /* localStorage remains authoritative */
+    })
+}
+
+function schedulePushNotebook(notebook: StoredNotebook): void {
+    if (typeof window === 'undefined') return
+    const history = getNotebookHistory(notebook.id)
+    queueRemote(pushNotebookToRemote(notebook, history))
+}
+
+function schedulePushAll(): void {
+    if (typeof window === 'undefined') return
+    const notebooks = readLocalNotebooks()
+    if (!notebooks.length) return
+    const history: Record<string, NotebookVersion[]> = {}
+    for (const nb of notebooks) {
+        history[nb.id] = getNotebookHistory(nb.id)
+    }
+    queueRemote(pushAllNotebooksToRemote(notebooks, history))
+}
+
+/** Background pull + merge into localStorage (no React state — next read/remount sees data) */
+let hydrateStarted = false
+function ensureRemoteHydrate(): void {
+    if (typeof window === 'undefined' || hydrateStarted) return
+    hydrateStarted = true
+    queueRemote(
+        (async () => {
+            const remote = await pullNotebooksFromRemote()
+            if (!remote) {
+                // Table missing or offline: still try to push local when API becomes ready later
+                schedulePushAll()
+                return
+            }
+            const local = readLocalNotebooks()
+            if (!remote.length) {
+                // First remote session: upload local cache
+                if (local.length) schedulePushAll()
+                return
+            }
+            const merged = mergeNotebookLists(local, remote)
+            writeAll(merged)
+            // Push any local-only or newer local rows
+            schedulePushAll()
+        })()
+    )
+}
 
 const WELCOME_CONTENT = `# Welcome to WIM
 
@@ -96,10 +154,11 @@ function writeHistory(id: string, history: NotebookVersion[]): void {
     localStorage.setItem(`${HISTORY_KEY_PREFIX}${id}`, JSON.stringify(history.slice(-MAX_HISTORY)))
 }
 
-export function getNotebooks(): StoredNotebook[] {
+/** Pure local read — no hydrate side effects (used by remote merge). */
+function readLocalNotebooks(): StoredNotebook[] {
+    if (typeof window === 'undefined') return [...DEFAULT_NOTEBOOKS]
     const data = localStorage.getItem(STORAGE_KEY)
     if (!data) {
-        // Migrate from v2 if present
         const legacy = localStorage.getItem('wim_notebooks_v2')
         if (legacy) {
             try {
@@ -123,6 +182,11 @@ export function getNotebooks(): StoredNotebook[] {
     } catch {
         return seedDefaults()
     }
+}
+
+export function getNotebooks(): StoredNotebook[] {
+    ensureRemoteHydrate()
+    return readLocalNotebooks()
 }
 
 export function getNotebook(id: string): StoredNotebook | undefined {
@@ -198,6 +262,7 @@ export function saveNotebook(
         notebooks.push(next)
     }
     writeAll(notebooks)
+    schedulePushNotebook(next)
     return next
 }
 
@@ -238,9 +303,16 @@ export function unpublishNotebook(id: string): StoredNotebook | undefined {
 }
 
 export function deleteNotebook(id: string): void {
+    const target = getNotebook(id)
     const notebooks = getNotebooks().filter((n) => n.id !== id && n.short_id !== id)
     writeAll(notebooks)
     localStorage.removeItem(`${HISTORY_KEY_PREFIX}${id}`)
+    if (target) {
+        localStorage.removeItem(`${HISTORY_KEY_PREFIX}${target.id}`)
+        queueRemote(deleteNotebookRemote(target.id))
+    } else {
+        queueRemote(deleteNotebookRemote(id))
+    }
 }
 
 export function createNotebook(title?: string, content?: string): StoredNotebook {
@@ -260,6 +332,7 @@ export function createNotebook(title?: string, content?: string): StoredNotebook
     const notebooks = getNotebooks()
     notebooks.push(notebook)
     writeAll(notebooks)
+    schedulePushNotebook(notebook)
 
     return notebook
 }

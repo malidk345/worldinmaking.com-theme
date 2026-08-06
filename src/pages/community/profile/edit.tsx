@@ -1,4 +1,4 @@
-import { useRouter } from 'next/navigation'
+import { useRouter } from 'next/router'
 import React, { useState, useEffect, useRef, ChangeEventHandler } from 'react'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
@@ -471,75 +471,70 @@ const ValidationSchema = Yup.object().shape({
 
 function EditProfile({ profile, mutate }) {
     const { addToast } = useToast()
-    const { getJwt, user } = useUser()
+    const { fetchUser, user } = useUser()
     const posthog = usePostHog()
 
     const onSubmit = async ({ avatar, ...values }, { setSubmitting }) => {
-        const id = profile?.id
+        const id = String(profile?.id || user?.id || '')
         setSubmitting(true)
 
         try {
-            posthog?.capture('squeak profile update start', {
-                profileId: id,
-                ...values,
-            })
+            posthog?.capture('wim profile update start', { profileId: id, ...values })
 
-            const JWT = await getJwt()
-            const newAvatar = avatar instanceof File
-            let image
-            if (avatar && newAvatar) {
-                const formData = new FormData()
-                formData.append('files', avatar)
-
-                const uploadedImage = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/upload`, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        Authorization: `Bearer ${JWT}`,
-                    },
-                }).then((res) => res.json())
-
-                if (uploadedImage?.length > 0) {
-                    image = uploadedImage[0]
-                }
+            // Optional local avatar: store as data URL on profiles.avatar_url (text)
+            let avatarUrl: string | undefined
+            if (avatar instanceof File) {
+                avatarUrl = await new Promise((resolve, reject) => {
+                    const reader = new FileReader()
+                    reader.onloadend = () => resolve(String(reader.result || ''))
+                    reader.onerror = reject
+                    reader.readAsDataURL(avatar)
+                })
+            } else if (avatar === null) {
+                avatarUrl = ''
+            } else if (typeof avatar === 'string') {
+                avatarUrl = avatar
+            } else if (avatar?.url) {
+                avatarUrl = avatar.url
             }
 
-            const body = {
-                data: {
-                    ...values,
-                    ...(newAvatar || avatar === null ? { avatar: image?.id ?? null } : {}),
-                },
+            const { updateWimProfile } = await import('lib/wim-auth')
+            const patch: Record<string, string | null> = {
+                bio: values.biography ?? null,
+                location: values.location ?? null,
+                website: values.website ?? null,
+                github: values.github ?? null,
+                linkedin: values.linkedin ?? null,
+                twitter: values.twitter ?? null,
+                pronouns: values.pronouns ?? null,
+            }
+            if (avatarUrl !== undefined) {
+                patch.avatar_url = avatarUrl || null
+            }
+            // Prefer username from first+last if present
+            if (values.firstName || values.lastName) {
+                const uname = [values.firstName, values.lastName].filter(Boolean).join(' ').trim()
+                if (uname) patch.username = uname.replace(/\s+/g, '_').toLowerCase().slice(0, 32)
             }
 
-            const { data } = await fetch(`${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles/${id}`, {
-                method: 'PUT',
-                body: JSON.stringify(body),
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${JWT}`,
-                },
-            }).then((res) => res.json())
+            const { error } = await updateWimProfile(id, patch as any)
+            if (error) throw new Error(error)
 
-            if (data) {
-                await mutate()
-            }
+            await fetchUser()
+            await mutate?.()
 
-            posthog?.capture('squeak profile update', {
-                profileId: id,
-                ...values,
-            })
+            posthog?.capture('wim profile update', { profileId: id })
+            addToast({ description: 'Profile updated!' })
         } catch (error) {
-            posthog?.capture('squeak error', {
+            posthog?.capture('wim error', {
                 source: 'EditProfile.handleSubmit',
                 error: JSON.stringify(error),
                 profileId: id,
-                ...values,
             })
-
+            addToast({ description: error instanceof Error ? error.message : 'Profile update failed' })
             throw error
         } finally {
             setSubmitting(false)
-            addToast({ description: 'Profile updated!' })
         }
     }
 
@@ -626,23 +621,16 @@ function EditProfile({ profile, mutate }) {
 }
 
 export default function EditProfilePage({ location }) {
+    const router = useRouter()
     const [ready, setReady] = useState(false)
     const [profile, setProfile] = useState<any>()
     const { fetchUser } = useUser()
 
     const getProfile = async () => {
         const user = await fetchUser()
-        let editProfile
         if (user) {
-            if (location?.state?.profileID && user?.role?.type === 'moderator' && user?.webmaster) {
-                const profile = await fetch(
-                    `${process.env.NEXT_PUBLIC_SQUEAK_API_HOST}/api/profiles/${location?.state?.profileID}?populate=*`
-                ).then((res) => res.json())
-                editProfile = flattenStrapiResponse(profile)
-            } else {
-                editProfile = user.profile
-            }
-            setProfile(editProfile)
+            // Supabase session profile (moderator remote edit not yet on WIM)
+            setProfile(user.profile)
             setReady(true)
         } else {
             router.push('/community')

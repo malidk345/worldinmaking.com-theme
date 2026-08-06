@@ -511,7 +511,7 @@ export default function ProductsTest(): JSX.Element {
                 <h2>Try it – free</h2>
                 <p className="text-[15px] leading-relaxed">
                     We've got a{' '}
-                    <Link href="/pricing" state={{ newWindow: true }} className="font-semibold">
+                    <Link href="/start" state={{ newWindow: true }} className="font-semibold">
                         generous free tier
                     </Link>
                     , so you can kick the tires without even entering a credit card.

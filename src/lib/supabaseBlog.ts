@@ -52,6 +52,28 @@ export async function fetchSupabasePosts(): Promise<SupabasePost[]> {
     }
 }
 
+export async function searchSupabasePosts(query: string): Promise<SupabasePost[]> {
+    const cleanQuery = query.trim()
+    if (!cleanQuery) return []
+    try {
+        const encoded = encodeURIComponent(`*${cleanQuery}*`)
+        const url = `${SUPABASE_URL}/rest/v1/posts?or=(title.ilike.${encoded},excerpt.ilike.${encoded},content.ilike.${encoded})&select=*&limit=20`
+        const data = await fetchWithCache(url)
+        if (Array.isArray(data) && data.length > 0) return data
+
+        const lower = cleanQuery.toLowerCase()
+        return MOCK_SUPABASE_POSTS.filter((p) =>
+            [p.title, p.excerpt, p.content].some((field) => field?.toLowerCase().includes(lower))
+        )
+    } catch (e) {
+        console.error('Error searching Supabase posts:', e)
+        const lower = cleanQuery.toLowerCase()
+        return MOCK_SUPABASE_POSTS.filter((p) =>
+            [p.title, p.excerpt, p.content].some((field) => field?.toLowerCase().includes(lower))
+        )
+    }
+}
+
 export async function fetchSupabasePostBySlug(slug: string): Promise<SupabasePost | null> {
     try {
         const cleanSlugStr = slug.replace(/^\/posts\/?/, '').replace(/^\/blog\/?/, '')
