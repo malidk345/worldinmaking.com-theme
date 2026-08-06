@@ -2396,11 +2396,11 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                         /^\/(?:questions|forum)\/(?!topic(?:\/|$)|subscriptions(?:\/|$))([^/?#]+)\/?$/
                     )
                     const permalink = threadMatch?.[1]
+                    // Keep existing key stable — changing key remounts AppWindow and kills panel state
                     return prev.map((w) =>
                         w.key === existingForum.key
                             ? {
                                   ...w,
-                                  key: 'forum-main-window',
                                   path,
                                   zIndex: maxZ + 1,
                                   minimized: false,

@@ -171,6 +171,8 @@ interface QuestionRowProps {
     setBottomHeight: (height: number) => void
     containerRef: React.RefObject<HTMLDivElement>
     pinned?: boolean
+    /** Direct open — does not rely on Link/addWindow path races */
+    onOpenThread: (permalink: string) => void
 }
 
 const QuestionRow = ({
@@ -181,6 +183,7 @@ const QuestionRow = ({
     setBottomHeight,
     containerRef,
     pinned = false,
+    onOpenThread,
 }: QuestionRowProps) => {
     // Support both flat (wimpos) and Strapi attributes shapes
     const q = question?.attributes || question || {}
@@ -189,7 +192,7 @@ const QuestionRow = ({
     const activeAt = q.activeAt || q.createdAt || q.created_at
     const replies = q.replies
     const profile = q.profile?.data?.attributes || q.profile || {}
-    const permalink = q.permalink || String(question.id)
+    const permalink = String(q.permalink || question.id || '')
     const resolved = q.resolved || false
     const replyList = Array.isArray(replies?.data) ? replies.data : Object.values(replies ?? {})
     const lastReply = replyList[replyList.length - 1]
@@ -206,8 +209,6 @@ const QuestionRow = ({
     return (
         <div key={question.id} ref={lastQuestionRef}>
             <OSButton
-                asLink
-                to={`/questions/${permalink}`}
                 align="left"
                 width="full"
                 hover="background"
@@ -218,11 +219,13 @@ const QuestionRow = ({
                     ${active ? 'font-bold bg-accent' : ''}
                     ${pinned ? 'bg-accent border-b border-primary' : ''}
                 `}
-                onClick={() => {
-                    // Link → addWindow updates path (opens panel). Lift height if collapsed.
-                    if (!containerRef.current) return
-                    if (bottomHeight <= 45) {
-                        setBottomHeight(containerRef.current.getBoundingClientRect().height * 0.8)
+                onClick={(e: any) => {
+                    e?.preventDefault?.()
+                    e?.stopPropagation?.()
+                    if (!permalink) return
+                    onOpenThread(permalink)
+                    if (containerRef.current && bottomHeight < 200) {
+                        setBottomHeight(Math.max(320, containerRef.current.getBoundingClientRect().height * 0.75))
                     }
                 }}
             >
@@ -302,6 +305,7 @@ interface QuestionToolbarProps {
     expandOrCollapse: (expandable: boolean) => void
     isMobile: boolean
     menuValue: string
+    onCloseThread?: () => void
 }
 
 const QuestionToolbar = ({
@@ -320,6 +324,7 @@ const QuestionToolbar = ({
     expandOrCollapse,
     isMobile,
     menuValue,
+    onCloseThread,
 }: QuestionToolbarProps) => {
     const navigate = useDesktopNavigate()
     return (
@@ -404,7 +409,8 @@ const QuestionToolbar = ({
                                     }
                                     onClick={() => {
                                         if (isMobile && sideBySide) {
-                                            navigate(menuValue)
+                                            if (onCloseThread) onCloseThread()
+                                            else navigate(menuValue || '/questions')
                                         } else {
                                             expandOrCollapse(expandable)
                                         }
@@ -470,13 +476,17 @@ export function extractQuestionPermalink(pathOrSlug?: string): string | undefine
 export default function Inbox(props) {
     const { data, params } = props
     const navigate = useDesktopNavigate()
+    const { updateWindow } = useAppActions()
     const initialTopicID = data?.topic?.squeakId
-    // Path-driven like wimpos params.permalink — WindowRouter supplies props.permalink
-    const permalink =
+    // Path-driven permalink from window path / props
+    const pathPermalink =
         extractQuestionPermalink(props.permalink) ||
         extractQuestionPermalink(params?.permalink) ||
         extractQuestionPermalink(props.path) ||
         extractQuestionPermalink(typeof window !== 'undefined' ? window.location.pathname : undefined)
+    // Local selection opens the panel immediately (does not wait for path/addWindow)
+    const [activeThread, setActiveThread] = useState<string | undefined>(pathPermalink)
+    const permalink = activeThread || pathPermalink
     const defaultFilters = {
         subject: {
             $ne: '',
@@ -502,11 +512,57 @@ export default function Inbox(props) {
         () => Math.max(320, ((appWindow?.size?.height || 600) * 3) / 5),
         [appWindow?.size?.height]
     )
-    const [bottomHeight, setBottomHeight] = useState(bottomHeightDefault)
+    const [bottomHeight, setBottomHeight] = useState(() => Math.max(320, bottomHeightDefault))
     const [sideWidth, setSideWidth] = useState(SIDE_WIDTH_DEFAULT)
     const [notificationsEnabled, setNotificationsEnabled] = useState(false)
     const [question, setQuestion] = useState<StrapiRecord<QuestionData>>()
     const containerRef = useRef<HTMLDivElement>(null)
+
+    // Keep local thread in sync when path changes externally (back/forward, topic nav)
+    useEffect(() => {
+        if (pathPermalink) {
+            setActiveThread(pathPermalink)
+        }
+    }, [pathPermalink])
+
+    const openThread = useCallback(
+        (slug: string) => {
+            const clean = String(slug || '')
+                .replace(/^\/questions\/?/, '')
+                .replace(/^\/+/, '')
+            if (!clean) return
+            const threadPath = `/questions/${clean}`
+            // 1) Open panel immediately
+            setActiveThread(clean)
+            // 2) Lift panel
+            requestAnimationFrame(() => {
+                if (!containerRef.current) {
+                    setBottomHeight((h) => Math.max(h, 360))
+                    return
+                }
+                const ch = containerRef.current.getBoundingClientRect().height || 600
+                setBottomHeight(Math.max(360, ch * 0.72))
+            })
+            // 3) Sync window path (stable key — no remount)
+            if (appWindow) {
+                updateWindow(appWindow, {
+                    path: threadPath,
+                    props: { ...(appWindow.props || {}), path: threadPath, permalink: clean },
+                })
+            }
+            try {
+                window.history.replaceState(
+                    { windowKey: appWindow?.key || 'forum-main-window', forumThread: clean },
+                    '',
+                    threadPath
+                )
+            } catch {
+                /* ignore */
+            }
+        },
+        [appWindow, updateWindow]
+    )
+
     const bottomContainerRef = useRef<HTMLDivElement>(null)
     const [isDragging, setIsDragging] = useState(false)
     const [dragStartHeight, setDragStartHeight] = useState(0)
@@ -517,6 +573,27 @@ export default function Inbox(props) {
     const { questions: subscribedQuestions } = useSubscribedQuestions()
     const [menuValue, setMenuValue] = useState('')
     const isMobile = useMemo(() => (appWindow?.size?.width || 1024) < 896, [appWindow?.size?.width])
+
+    const closeThread = useCallback(() => {
+        setActiveThread(undefined)
+        setQuestion(undefined)
+        setBottomHeight(45)
+        const listPath =
+            menuValue && (menuValue.startsWith('/questions') || menuValue.startsWith('/forum'))
+                ? menuValue
+                : '/questions'
+        if (appWindow) {
+            updateWindow(appWindow, {
+                path: listPath,
+                props: { ...(appWindow.props || {}), path: listPath, permalink: undefined },
+            })
+        }
+        try {
+            window.history.replaceState({ windowKey: appWindow?.key || 'forum-main-window' }, '', listPath)
+        } catch {
+            /* ignore */
+        }
+    }, [appWindow, updateWindow, menuValue])
 
     const expandable = useMemo(() => {
         if (!containerRef.current) return true
@@ -672,6 +749,7 @@ export default function Inbox(props) {
                                                     setBottomHeight={setBottomHeight}
                                                     containerRef={containerRef}
                                                     pinned
+                                                    onOpenThread={openThread}
                                                 />
                                             ))}
                                             {(showSubscribedQuestions
@@ -688,6 +766,7 @@ export default function Inbox(props) {
                                                     bottomHeight={bottomHeight}
                                                     setBottomHeight={setBottomHeight}
                                                     containerRef={containerRef}
+                                                    onOpenThread={openThread}
                                                 />
                                             ))}
                                             {!isLoading && (!questions.data || questions.data.length === 0) && (
@@ -728,19 +807,20 @@ export default function Inbox(props) {
                                             } ${
                                                 sideBySide ? '@4xl:border-l border-primary' : 'border-t border-primary'
                                             }`}
-                                            initial={{
-                                                width: 0,
-                                            }}
+                                            initial={false}
                                             animate={{
-                                                height: sideBySide ? '100%' : bottomHeight,
-                                                width: sideBySide ? sideWidth : '100%',
+                                                height: sideBySide ? '100%' : Math.max(bottomHeight, 280),
+                                                width: sideBySide ? Math.max(sideWidth, 280) : '100%',
+                                                opacity: 1,
                                             }}
                                             exit={{
-                                                width: 0,
+                                                height: sideBySide ? '100%' : 0,
+                                                width: sideBySide ? 0 : '100%',
+                                                opacity: 0,
                                             }}
                                             transition={{
                                                 type: 'tween',
-                                                ...(isDragging ? { duration: 0 } : {}),
+                                                duration: isDragging ? 0 : 0.2,
                                             }}
                                         >
                                             {sideBySide ? (
@@ -804,6 +884,7 @@ export default function Inbox(props) {
                                                 expandOrCollapse={expandOrCollapse}
                                                 isMobile={isMobile}
                                                 menuValue={menuValue}
+                                                onCloseThread={closeThread}
                                             />
                                         </motion.div>
                                     )}
