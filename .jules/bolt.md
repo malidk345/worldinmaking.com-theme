@@ -5,3 +5,7 @@
 ## 2024-11-20 - Array Flattening in SWR Infinite Hooks
 **Learning:** Using `reduce` combined with array spread syntax (`[...acc, ...cur]`) for array flattening inside SWR Infinite hooks creates an O(N^2) rendering bottleneck due to redundant array allocations on each iteration.
 **Action:** Always use the single-pass `flatMap()` (or `flat()`) method to combine paginated array data, ensuring O(N) allocation time and avoiding main thread blocking.
+
+## 2024-10-24 - [Avoid Array Spread in Reduce for Flattening]
+**Learning:** Using `reduce` combined with array spread syntax (`[...acc, ...cur]`) creates a new array object and copies elements in every iteration, leading to O(N^2) time complexity and excess memory allocation. This causes main thread blocking during React renders, especially when dealing with large, paginated data sets from SWR Infinite hooks.
+**Action:** Always use the single-pass O(N) method `flatMap()` or `flat()` for array flattening instead of `.reduce()` with the spread operator.
