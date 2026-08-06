@@ -176,17 +176,9 @@ export default function CountriesWeHireIn({
         )
 
         // Log zoom level and rotation when they change
-        chart.events.on('wheelended', function () {
-            console.log('Zoom level:', chart.get('zoomLevel'))
-            console.log('Rotation X:', chart.get('rotationX'))
-            console.log('Rotation Y:', chart.get('rotationY'))
-        })
+        chart.events.on('wheelended', function () {})
 
-        chart.events.on('panended', function () {
-            console.log('Zoom level:', chart.get('zoomLevel'))
-            console.log('Rotation X:', chart.get('rotationX'))
-            console.log('Rotation Y:', chart.get('rotationY'))
-        })
+        chart.events.on('panended', function () {})
 
         // Add background series with rounded edges
         const backgroundSeries = chart.series.unshift(am5map.MapPolygonSeries.new(root, {}))

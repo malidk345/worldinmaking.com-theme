@@ -29,14 +29,10 @@ try {
     // Only the first compound (classes + attrs) gets `.notebook-app-scope` dual-form;
     // the rest of the combinator chain is preserved intact.
     // Match whole BEM roots only — do NOT partially match `.Popover__arrow` as `.Popover`.
-    const PORTAL_ROOT =
-        String.raw`\.(?:Popover|LemonModal|LemonPopover|LemonMenu|ReactModal|Tooltip|notebook-dark-panel)(?:--[\w-]+)?(?![A-Za-z0-9_])`
+    const PORTAL_ROOT = String.raw`\.(?:Popover|LemonModal|LemonPopover|LemonMenu|ReactModal|Tooltip|notebook-dark-panel)(?:--[\w-]+)?(?![A-Za-z0-9_])`
     const COMPOUND = String.raw`${PORTAL_ROOT}(?:\.[^\s,>+~{\[:]+)*(?:\[[^\]]*\])*`
     const CHAIN_TAIL = String.raw`(?:\s*[>+~\s]\s*[^\s,{]+)*`
-    const portalRewrite = new RegExp(
-        String.raw`\.notebook-app-scope\s+(${COMPOUND}${CHAIN_TAIL})`,
-        'g'
-    )
+    const portalRewrite = new RegExp(String.raw`\.notebook-app-scope\s+(${COMPOUND}${CHAIN_TAIL})`, 'g')
     cssContent = cssContent.replace(portalRewrite, (match, rest) => {
         const m = rest.match(/^(\.[^\s,>+~{]+)([\s\S]*)$/)
         if (!m) return match
@@ -49,7 +45,6 @@ try {
 
     const tsContent = `// Auto-generated notebook CSS string\nexport const NOTEBOOK_APP_CSS = ${JSON.stringify(cssContent)};\n`
     fs.writeFileSync(bundleTsPath, tsContent)
-    console.log('Successfully compiled bundle.scss to bundleCss.ts (length:', cssContent.length, ')')
 } catch (e) {
     console.error('Error compiling notebook CSS:', e)
     process.exit(1)

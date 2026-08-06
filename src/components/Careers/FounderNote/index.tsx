@@ -40,9 +40,7 @@ export const FounderNote = () => {
             const randomMp3 = mp3Files[randomIndex]
             if (audioRef.current) {
                 audioRef.current.src = randomMp3
-                audioRef.current.play().then(() => {
-                    console.log('Audio played successfully')
-                })
+                audioRef.current.play().then(() => {})
             }
         } catch (error) {
             console.error('Error in playRandomSound:', error)

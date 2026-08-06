@@ -11,7 +11,6 @@ if (fs.existsSync(publishSrc)) {
     let content = fs.readFileSync(publishSrc, 'utf8')
     content = content.replace("from '@posthog/lemon-ui'", "from '~nb-lib/lemon-ui/index'")
     fs.writeFileSync(publishDst, content)
-    console.log('Restored NotebookPublishModal.tsx from source')
 }
 
 // Fix common UTF-8 mojibake sequences
@@ -38,19 +37,12 @@ for (const rel of files) {
         next = next.split(from).join(to)
     }
     // Also fix already-decoded mojibake literals if present as UTF-8 chars
-    next = next
-        .replace(/â€¢/g, '•')
-        .replace(/â€”/g, '—')
-        .replace(/â€“/g, '–')
-        .replace(/â€™/g, "'")
+    next = next.replace(/â€¢/g, '•').replace(/â€”/g, '—').replace(/â€“/g, '–').replace(/â€™/g, "'")
     if (next !== content) {
         fs.writeFileSync(file, next)
-        console.log('Fixed encoding:', rel)
     } else {
-        console.log('No encoding changes:', rel)
     }
 }
 
 const publish = fs.readFileSync(publishDst, 'utf8')
 const m = publish.match(/title="([^"]+)"/)
-console.log('Publish title now:', m ? m[1] : '(none)')

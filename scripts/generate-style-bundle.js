@@ -74,17 +74,19 @@ for (const f of files) {
 }
 
 const stylesDir = path.join(nbDir, 'styles')
-const imports = sortedFiles.map(f => {
+const imports = sortedFiles.map((f) => {
     let rel = path.relative(stylesDir, f).replace(/\\/g, '/')
     return `@import '${rel}';`
 })
 
-const bundleContent = `// Auto-generated master bundle for notebook-app\n` +
-`.notebook-app-scope {\n` +
-`  @tailwind base;\n  @tailwind components;\n  @tailwind utilities;\n\n` +
-`  ` + imports.join('\n  ') + `\n` +
-`}\n`
+const bundleContent =
+    `// Auto-generated master bundle for notebook-app\n` +
+    `.notebook-app-scope {\n` +
+    `  @tailwind base;\n  @tailwind components;\n  @tailwind utilities;\n\n` +
+    `  ` +
+    imports.join('\n  ') +
+    `\n` +
+    `}\n`
 
 const bundlePath = path.join(stylesDir, 'bundle.scss')
 fs.writeFileSync(bundlePath, bundleContent)
-console.log('Successfully generated master bundle.scss wrapped inside .notebook-app-scope.')
