@@ -63,20 +63,33 @@ The site supports dynamic color modes and OS skin customizations driven by HTML 
 
 ---
 
-## 4. Lemon UI Enclosure Rules (Notebook Components)
+## 4. Lemon UI & Quill Isolation Architecture ("Cam Fanus" Mimarisi)
 
-The Notebook product uses `@posthog/lemon-ui` components (`LemonButton`, `LemonInput`, `LemonSelect`).
+The Notebook product uses `@posthog/lemon-ui` controls (`LemonButton`, `LemonInput`, `LemonSelect`) and `@posthog/quill` rich text editing components.
 
-- **Always Wrap:** Outside of `/notebooks` routes, ALWAYS wrap Lemon UI controls with `<LemonScope>`.
-- **Isolation:** NEVER add `notebook-app-scope` class to `body` or global wrapper (prevents Lemon UI styles from polluting OS window chrome).
+### 🛡️ Why Scope Isolation ("Cam Fanus") Exists
+Third-party component frameworks like Lemon UI and Quill contain heavy default CSS resets, typography rules, and `:root` variables. If un-scoped, they leak into the host OS shell and corrupt window title bars, taskbars, and global typography alignment.
+
+- **Strict Containment:** All Lemon UI and Quill styles are strictly scoped inside `.notebook-app-scope` (via `generate-scoped-quill-shim.js` and `ensureLemonStyles.ts`).
+- **Zero Global Pollution:** `:root` and `@property` selectors are bound strictly to container scopes, preventing layout shift or font distortion across the OS site.
+
+### 🎨 100% Theme Harmony & Live Color Sync
+Scope isolation does **NOT** mean visual disconnection:
+- **Site Variable Bridge:** `NOTEBOOK_PALETTE_CSS` bridges host CSS variables (`--bg`, `--accent`, `--text-primary`, `--border`) directly into `.notebook-app-scope`.
+- **Live Dark Mode:** When the host OS toggles between `light` and `dark` modes, Lemon UI buttons and Quill editor surfaces **instantly update their colors to 100% match the site**.
+
+### Usage Contract
+- **Always Wrap:** Outside of `/notebooks` routes, ALWAYS wrap Lemon UI & Quill controls with `<LemonScope>`.
+- **Never Global:** NEVER add `notebook-app-scope` class to `body` or global page wrapper.
 
 ```tsx
 import { LemonScope } from 'components/LemonScope'
-import { LemonButton } from '@posthog/lemon-ui'
+import { LemonButton, LemonInput } from '@posthog/lemon-ui'
 
 export function ActionPanel() {
     return (
         <LemonScope>
+            <LemonInput placeholder="Notebook title..." />
             <LemonButton type="primary">Save Notebook</LemonButton>
         </LemonScope>
     )
