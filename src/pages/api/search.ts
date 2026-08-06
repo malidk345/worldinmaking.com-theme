@@ -1,6 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { fetchSupabasePosts } from '../../lib/supabaseBlog'
 
+export const config = {
+    runtime: 'edge',
+}
+
 type SearchHit = {
     objectID: string
     title: string
