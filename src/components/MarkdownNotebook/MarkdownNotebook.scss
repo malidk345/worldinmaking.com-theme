@@ -1035,6 +1035,15 @@ h3.MarkdownNotebook__text-block--heading {
     border-right: 1px solid var(--color-border-primary);
 }
 
+.MarkdownNotebook__format-divider {
+    display: inline-block;
+    width: 1px;
+    height: 1rem;
+    margin: 0 0.2rem;
+    background: var(--color-border-primary);
+    flex-shrink: 0;
+}
+
 .MarkdownNotebook__format-link-editor {
     display: inline-flex;
     gap: 0.25rem;
