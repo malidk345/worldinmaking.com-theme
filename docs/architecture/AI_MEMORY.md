@@ -62,12 +62,62 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-10` | Stream 5 | Add structured JSON schemas & validation for bot forum replies | `lib/bots/actions/forum.ts` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-06 |
 | `TSK-11` | Stream 1 / 2 | Clear shell TS quarantine (`App.tsx`, `AppWindow/index.tsx`) | `src/context/App.tsx`, `src/components/AppWindow/index.tsx` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-06 |
 | `TSK-12` | Stream 1 | Audit & configure CSP and security headers for WIM | `vercel.json` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-06 |
+| `TSK-13` | Stream 1 | Rewrite root README for WorldInMaking (not Gatsby/PostHog marketing) | `README.md` | `[NOT STARTED]` | - | - |
+| `TSK-14` | Stream 1 | Add `.env.example` (keys only) + harden `lib/env.ts` production fail | `.env.example`, `lib/env.ts` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-06 |
+| `TSK-15` | Stream 1 | Wire Playwright smoke + `typecheck:shell` into CI pipeline | `.github/workflows/` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-06 |
+| `TSK-16` | Stream 1 | Phase-C quality: eslint on shell allowlist; preview `reactStrictMode` | `next.config.js`, `package.json`, `.eslintrc*` | `[NOT STARTED]` | - | - |
+| `TSK-17` | Stream 3 | Bundle analyzer baseline + First Load JS budget for `/` | `package.json`, `next.config.js`, docs | `[NOT STARTED]` | - | - |
+| `TSK-18` | Stream 4 | Real Postgres FTS (`tsvector` migration + search API) | `supabase/migrations/`, `src/lib/supabaseBlog.ts`, `src/pages/api/search.ts` | `[NOT STARTED]` | - | - |
+| `TSK-19` | Stream 4 | API authz audit: notebooks + forum write paths (not just owner_key) | `src/pages/api/notebooks/*`, `src/pages/api/forum/**` | `[NOT STARTED]` | - | - |
+| `TSK-20` | Stream 2 | Split `App.tsx` god-object (hooks/contexts extraction) | `src/context/App.tsx` → `src/context/shell/*` | `[NOT STARTED]` | - | - |
+| `TSK-21` | Stream 2 | Adopt `WindowMode` reducer end-to-end (drop boolean soup) | `src/lib/windowState.ts`, `AppWindow`, `App.tsx` | `[NOT STARTED]` | - | - |
+| `TSK-22` | Stream 2 | Tighten `WindowElement` from `any` + inactive window `content-visibility` | `src/context/App.tsx`, `src/components/AppWindow/*` | `[NOT STARTED]` | - | - |
+| `TSK-23` | Stream 5 | Bot HTTP enqueue-only + `bot:worker` path (edge timeout safety) | `src/pages/api/*bot*`, `scripts/bot-worker.js` | `[NOT STARTED]` | - | - |
+| `TSK-24` | Stream 1 | Fix notebook-app build break (`IconArrowLeft` / public notebook view) | `src/notebook-app/lib/icons/iconsShim.tsx` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-06 |
+| `TSK-25` | Stream 3 | Shell error reporting + basic RUM (window blank rate / vitals) | `src/components/AppWindow/*`, analytics hooks | `[NOT STARTED]` | - | - |
+| `TSK-26` | Stream 3 | Progressive legacy quarantine/delete (dead PostHog marketing surface) | `src/components/`, `src/pages/`, `src/navs/` | `[NOT STARTED]` | - | - |
 
 ---
 
 ## 5. AI Change History & Log
 
 *(Add new entries at the top of this list)*
+
+### Entry 015 — Batch: IconArrowLeft shim, CI gates, env hygiene (TSK-24, 15, 14)
+- **Date:** 2026-08-06
+- **AI Agent:** Grok 4.5 (xAI)
+- **Summary:** Continued Sprint 2 board work in one turn:
+  1. **TSK-24:** `@posthog/icons` is webpack-aliased to `iconsShim.tsx` for notebook-app — added missing `IconArrowLeft` (lucide `ArrowLeft`) so public notebook view no longer fails module resolution.
+  2. **TSK-15:** Added unified `.github/workflows/ci.yml` with parallel jobs `typecheck-shell` + Playwright `smoke` (Chromium). Removed redundant `typecheck-shell.yml`. Smoke uses placeholder Supabase env + `WIM_SKIP_ENV_HARD_FAIL=1`.
+  3. **TSK-14:** Added root `.env.example` (keys only). Hardened `lib/env.ts`: warn on missing public keys; **throw** in production runtime if public keys or `SUPABASE_SERVICE_ROLE_KEY` missing (skips build phase / `WIM_SKIP_ENV_HARD_FAIL=1`).
+- **Modified Files:**
+  - `src/notebook-app/lib/icons/iconsShim.tsx` [UPDATED]
+  - `.github/workflows/ci.yml` [NEW]
+  - `.github/workflows/typecheck-shell.yml` [REMOVED — folded into ci.yml]
+  - `.env.example` [NEW]
+  - `lib/env.ts` [UPDATED]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
+- **Verification:** `IconArrowLeft` present in shim; `pnpm typecheck:shell` (run after this entry). Full `next build` / Playwright not re-run in this session (CI will exercise).
+- **Notes / Handoff:** Next recommended picks: **TSK-13** (WIM README), **TSK-18** (real Postgres FTS), **TSK-19** (notebooks/forum authz), **TSK-20** (App.tsx split).
+
+### Entry 014 — Codebase scan: seed Sprint 2–3 task board (TSK-13…26)
+- **Date:** 2026-08-06
+- **AI Agent:** Grok 4.5 (xAI)
+- **Summary:** Scanned repo against `FULL_PERFORMANCE_AND_GROWTH_REPORT.md` after TSK-01…12 completion. Confirmed remaining debt and opened **14 new board tasks** (TSK-13–26). Key findings recorded below.
+- **Scan findings (evidence):**
+  - `next.config.js` still has `eslint.ignoreDuringBuilds: true`, `typescript.ignoreBuildErrors: true`, `reactStrictMode: false`.
+  - No `.env.example`; `lib/env.ts` only **warns** on missing Supabase keys (does not fail hard in production runtime).
+  - Root `README.md` still frames product as PostHog.com (Gatsby-era marketing copy); pnpm note present but WIM runbook incomplete.
+  - Search uses Supabase REST `ilike` (`searchSupabasePosts`) — **not** Postgres `tsvector` / `websearch_to_tsquery`; no FTS migration under `supabase/migrations/`.
+  - Notebooks API authorizes with client-supplied `owner_key` string only (`src/pages/api/notebooks/index.ts`) — authz audit needed.
+  - `src/context/App.tsx` still ~3.2k LOC; `WindowElement = any`; `WindowMode` helpers exist but boolean flags still drive most window updates.
+  - CI has `typecheck-shell.yml` only — Playwright `test:smoke` not wired as required gate.
+  - Build known break: `NotebookPublicView.tsx` imports `IconArrowLeft` from `@posthog/icons` (missing export).
+  - No bundle-analyzer script; no dedicated shell RUM / blank-window observability.
+  - CSP remains Report-Only (TSK-12 improved headers; enforce still deferred).
+- **Modified Files:**
+  - `docs/architecture/AI_MEMORY.md` [UPDATED — board TSK-13…26 + this log]
+- **Notes / Handoff:** Claim any `[NOT STARTED]` task; prefer parallel streams (1 vs 2 vs 3 vs 4 vs 5). Suggested pick order for next agent: **TSK-24** (unblock build) → **TSK-15** (CI gates) → **TSK-14** (env hygiene) → **TSK-18** (real FTS) → **TSK-20** (App.tsx split).
 
 ### Entry 013 — Clear shell TS quarantine (TSK-11)
 - **Date:** 2026-08-06

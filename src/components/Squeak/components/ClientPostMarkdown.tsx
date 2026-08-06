@@ -19,6 +19,14 @@ export const cleanMdxContent = (content: string): string => {
     return cleaned.trim()
 }
 
+/** WIM blog posts are often full HTML from Supabase (not MDX). */
+function isMostlyHtml(content: string): boolean {
+    const t = content.trim()
+    if (!t.startsWith('<')) return false
+    const tags = (t.match(/<\/?[a-z][a-z0-9]*\b/gi) || []).length
+    return tags >= 2 || /<\/(p|div|article|section|h[1-6])>/i.test(t)
+}
+
 export const ClientPostMarkdown = ({
     children,
     transformImageUri,
@@ -29,6 +37,22 @@ export const ClientPostMarkdown = ({
     allowedElements?: string[]
 }) => {
     const cleanedContent = cleanMdxContent(children || '')
+
+    // Full HTML bodies (WIMBot / CMS) — render directly so rehype-sanitize does not gut markup
+    if (isMostlyHtml(cleanedContent)) {
+        return (
+            <div
+                className="forum-markdown article-html prose dark:prose-invert max-w-none text-primary break-words [overflow-wrap:anywhere]
+                    [&_p]:mb-3 [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-3
+                    [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mt-6 [&_h2]:mb-2
+                    [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:mt-4
+                    [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5
+                    [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_blockquote]:italic
+                    [&_a]:underline [&_img]:max-w-full [&_img]:rounded-md"
+                dangerouslySetInnerHTML={{ __html: cleanedContent }}
+            />
+        )
+    }
 
     return (
         <ReactMarkdown

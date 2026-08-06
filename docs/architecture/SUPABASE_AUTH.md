@@ -53,6 +53,17 @@ Core auth, profiles, community post/reply, bookmarks, likes, votes, and notebook
 
 Team admin, roadmaps write UI, merch, Zendesk, hedgehog generator, Edition CMS writers — kept for PostHog UI compatibility; they do not run network calls when host is empty.
 
+### Blog / posts (Supabase-only)
+
+| Surface | Source |
+|---------|--------|
+| `/posts`, `/blog` listing | `usePaginatedPosts` → `fetchSupabasePosts` |
+| `/posts/[slug]` | `PostPage` → `fetchSupabasePostBySlug` |
+| Catch-all blog-like paths | `[...slug]` `BlogPostContainer` → same |
+| Spotlight search | `/api/search` → `searchSupabasePosts` |
+
+No Squeak CMS, no mock fallback lists. Empty table → empty UI.
+
 ### Smoke
 
 ```bash
@@ -60,3 +71,4 @@ pnpm supabase:smoke
 # or full bootstrap + e2e:
 pnpm supabase:bootstrap
 ```
+

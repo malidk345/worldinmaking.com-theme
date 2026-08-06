@@ -76,6 +76,7 @@ import {
   Link2,
   ArrowDown,
   ArrowUp,
+  ArrowLeft,
   ChevronLeft,
   ArrowUpDown,
   Brain,
@@ -212,6 +213,7 @@ export const IconClipboard = (props: any) => <ClipboardCopy className="w-4 h-4 i
 export const IconSort = (props: any) => <ArrowUpDown className="w-4 h-4 inline-block" {...props} />
 export const IconArrowDown = (props: any) => <ArrowDown className="w-4 h-4 inline-block" {...props} />
 export const IconArrowUp = (props: any) => <ArrowUp className="w-4 h-4 inline-block" {...props} />
+export const IconArrowLeft = (props: any) => <ArrowLeft className="w-4 h-4 inline-block" {...props} />
 export const IconChevronLeft = (props: any) => <ChevronLeft className="w-4 h-4 inline-block" {...props} />
 export const IconDownload = (props: any) => <Download className="w-4 h-4 inline-block" {...props} />
 export const IconArrowRight = (props: any) => <ChevronRight className="w-4 h-4 inline-block" {...props} />

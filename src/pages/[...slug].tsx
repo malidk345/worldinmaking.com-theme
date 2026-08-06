@@ -30,44 +30,63 @@ import DisplayOptions from '../components/DisplayOptions'
 
 function BlogPostContainer({ slugStr, fullPath }: { slugStr: string; fullPath: string }) {
     const [spPost, setSpPost] = useState<SupabasePost | null>(null)
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         let mounted = true
+        setLoading(true)
         fetchSupabasePostBySlug(slugStr).then((res) => {
-            if (mounted && res) {
-                setSpPost(res)
-            }
+            if (!mounted) return
+            setSpPost(res)
+            setLoading(false)
         })
         return () => {
             mounted = false
         }
     }, [slugStr])
 
-    let localPost: any = null;
+    if (loading && !spPost) {
+        return (
+            <div className="p-8 text-secondary text-sm animate-pulse">Loading post…</div>
+        )
+    }
 
-    const title = spPost?.title || localPost?.frontmatter?.title || slugStr.replace(/-/g, ' ')
-    const content = spPost?.content || localPost?.content || `# ${title}\n\nLoading content...`
-    const date = spPost?.created_at ? spPost.created_at.split('T')[0] : localPost?.frontmatter?.date || '2026-01-01'
-    const author = spPost?.author || 'WorldInMaking'
+    if (!spPost) {
+        return (
+            <div className="p-8 text-primary max-w-xl">
+                <h1 className="text-xl font-bold mb-2">Post not found</h1>
+                <p className="text-secondary text-sm m-0">
+                    No row in Supabase <code className="text-xs">posts</code> for “{slugStr}”.
+                </p>
+            </div>
+        )
+    }
+
+    const title = spPost.title
+    const content = spPost.content || ''
+    const date = spPost.created_at ? spPost.created_at.split('T')[0] : '2026-01-01'
+    const author = spPost.author || 'WorldInMaking'
 
     const postData = {
         body: content,
-        excerpt: spPost?.excerpt || title,
+        excerpt: spPost.excerpt || title,
         frontmatter: {
             title,
             date,
-            featuredImage: spPost?.image_url ? { publicURL: spPost.image_url } : null,
+            featuredImage: spPost.image_url ? { publicURL: spPost.image_url } : null,
             featuredVideo: null,
             contributors: [
                 {
                     name: author,
                     role: 'Author',
-                    image: spPost?.author_avatar || 'https://res.cloudinary.com/dmukukwp6/image/upload/v1675204207/james_hawkins_posthog_031f7cf651.png',
+                    image:
+                        spPost.author_avatar ||
+                        'https://res.cloudinary.com/dmukukwp6/image/upload/v1675204207/james_hawkins_posthog_031f7cf651.png',
                 },
             ],
         },
         fields: {
-            slug: fullPath,
+            slug: fullPath.startsWith('/posts') || fullPath.startsWith('/blog') ? fullPath : `/posts/${slugStr}`,
         },
     }
 

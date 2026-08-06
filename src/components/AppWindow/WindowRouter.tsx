@@ -112,7 +112,9 @@ function WindowRouterInner({ item }: WindowRouterProps) {
         return <PostListing {...props} />
     }
     if (/^\/(blog|posts)\/.+/.test(path) || props.pageContext?.post || props.data?.postData) {
-        return <BlogPost {...props} />
+        // Pass path so BlogPost can load Supabase body even when window props are empty
+        // (comments already resolve by slug; content previously did not)
+        return <BlogPost {...props} path={path} />
     }
     if (['/terms', '/privacy', '/dpa', '/baa', '/subprocessors'].includes(path)) {
         return <Legal defaultTab={path}>{(item.element as any)?.element || item.element || item.children}</Legal>

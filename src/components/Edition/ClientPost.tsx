@@ -66,13 +66,13 @@ export default function ClientPost({
     body: string
     CTA?: { url: string; label: string }
     publishedAt: string
-    post_category: { data: { id: number } }
-    id: number
+    post_category: { data: { id?: number | string; attributes?: any } }
+    id: number | string
     excerpt: string
     getPost: () => Promise<void>
     authors: any
     slug: string
-    post_tags: { data: { id: number }[] }
+    post_tags: { data: { id?: number | string; attributes?: any }[] }
 }) {
     const router = useRouter()
     const [location, setLocation] = useState(() => {
@@ -96,16 +96,23 @@ export default function ClientPost({
     const handleDeletePost = async () => {
         if (!confirmDelete) {
             setConfirmDelete(true)
-        } else {
-            await fetch(`${(process.env.NEXT_PUBLIC_SQUEAK_API_HOST || '')}/api/posts/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    Authorization: `Bearer ${await getJwt()}`,
-                },
-            })
-            await mutate?.()
-            router.push('/posts')
+            return
         }
+        // WIM: posts live in Supabase; Squeak CMS delete is disabled
+        const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
+        if (!host) {
+            console.warn('[wim] post delete via CMS is not available — use Supabase dashboard')
+            setConfirmDelete(false)
+            return
+        }
+        await fetch(`${host}/api/posts/${id}`, {
+            method: 'DELETE',
+            headers: {
+                Authorization: `Bearer ${await getJwt()}`,
+            },
+        })
+        await mutate?.()
+        router.push('/posts')
     }
     const author = authors?.data?.[0]
     const imageURL = featuredImage?.url

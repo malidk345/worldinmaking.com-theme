@@ -59,7 +59,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         })
     } catch (error) {
         console.error('[local-search]', error)
-        // Soft-fail: empty results instead of hard error so search UI stays usable
+        // Soft-fail: empty results (no mock posts) so UI stays usable
         return res.status(200).json({ hits: [], nbHits: 0, facets: { type: {} }, error: 'search_unavailable' })
     }
 }
+

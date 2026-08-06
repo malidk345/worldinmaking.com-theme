@@ -34,8 +34,55 @@ import { postsMenu as menu } from 'navs/posts'
 import MenuBar from 'components/RadixUI/MenuBar'
 import slugify from 'slugify'
 import { getVideoClasses } from 'constants'
+import {
+    fetchSupabasePostBySlug,
+    normalizePostSlug,
+    type SupabasePost,
+} from 'lib/supabaseBlog'
 
 const A = (props) => <Link {...props} state={{ newWindow: true }} />
+
+function extractSlugFromPath(path?: string): string {
+    if (!path) return ''
+    const parts = path.split('/').filter(Boolean)
+    // /posts/my-slug or /blog/my-slug
+    if (parts.length >= 2 && (parts[0] === 'posts' || parts[0] === 'blog')) {
+        return normalizePostSlug(parts.slice(1).join('/'))
+    }
+    return normalizePostSlug(parts[parts.length - 1] || '')
+}
+
+function supabaseToBlogData(post: SupabasePost, fullPath: string) {
+    const date = post.created_at ? post.created_at.split('T')[0] : ''
+    const author = post.author || 'WorldInMaking'
+    return {
+        body: post.content || '',
+        content: post.content || '',
+        excerpt: post.excerpt || post.title || '',
+        title: post.title,
+        frontmatter: {
+            title: post.title,
+            date,
+            featuredImage: post.image_url ? { publicURL: post.image_url, url: post.image_url } : null,
+            featuredVideo: null,
+            contributors: [
+                {
+                    name: author,
+                    role: 'Author',
+                    image:
+                        post.author_avatar ||
+                        'https://res.cloudinary.com/dmukukwp6/image/upload/v1675204207/james_hawkins_posthog_031f7cf651.png',
+                },
+            ],
+            tags: Array.isArray(post.tags) ? post.tags : post.category ? [post.category] : [],
+        },
+        fields: {
+            slug: fullPath || `/posts/${normalizePostSlug(post.slug)}`,
+        },
+        date,
+        createdAt: post.created_at,
+    }
+}
 
 export const Intro = ({
     featuredImage,
@@ -278,16 +325,90 @@ const Filters = ({ tag, setTag, sort, setSort, activeMenu }) => {
         </div>
     ) : null
 }
-export default function BlogPost({ data = {}, pageContext = {}, mobile = false }: any) {
-    const rawPostData = data?.postData?.post || data?.postData || (pageContext as any)?.post || (pageContext as any)?.postData || {}
-    const postData = rawPostData?.attributes ? { ...rawPostData.attributes, ...rawPostData } : rawPostData
-    const body = postData?.attributes?.body || postData?.attributes?.content || postData?.body || postData?.content || ''
-    const excerpt = postData?.excerpt || postData?.attributes?.excerpt || ''
-    const fields = postData?.fields || {}
-    const frontmatter = postData?.frontmatter || postData?.attributes || postData || {}
+export default function BlogPost({ data = {}, pageContext = {}, mobile = false, path: pathProp }: any) {
+    const router = useRouter()
+
+    // Desktop windows: WindowRouter passes path=/posts/slug (browser URL may stay on /)
+    const windowPath = pathProp || ''
+    const [browserPath, setBrowserPath] = useState(() => {
+        const asPath = router?.asPath || ''
+        return asPath.split('?')[0].split('#')[0] || '/'
+    })
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            setBrowserPath(window.location.pathname)
+        }
+    }, [router?.asPath])
+
+    const pathname =
+        windowPath && /^\/(blog|posts)\//.test(String(windowPath))
+            ? String(windowPath)
+            : browserPath || String(windowPath) || '/'
+
+    const rawPostData =
+        data?.postData?.post || data?.postData || (pageContext as any)?.post || (pageContext as any)?.postData || {}
+    const initialPostData = rawPostData?.attributes
+        ? { ...rawPostData.attributes, ...rawPostData }
+        : rawPostData
+    const initialBody =
+        initialPostData?.attributes?.body ||
+        initialPostData?.attributes?.content ||
+        initialPostData?.body ||
+        initialPostData?.content ||
+        ''
+
+    // WIM: load HTML/markdown body from Supabase when props are empty (desktop window open)
+    const slug = extractSlugFromPath(pathname) || extractSlugFromPath(windowPath)
+    const [remote, setRemote] = useState<ReturnType<typeof supabaseToBlogData> | null>(null)
+    const [remoteLoading, setRemoteLoading] = useState(!initialBody && !!slug)
+    const [remoteMissing, setRemoteMissing] = useState(false)
+
+    useEffect(() => {
+        if (!slug) {
+            setRemoteLoading(false)
+            return
+        }
+        // Always refresh from Supabase so desktop windows get real content
+        let cancelled = false
+        setRemoteLoading(true)
+        setRemoteMissing(false)
+        fetchSupabasePostBySlug(slug)
+            .then((row) => {
+                if (cancelled) return
+                if (row) {
+                    setRemote(supabaseToBlogData(row, pathname.startsWith('/') ? pathname : `/posts/${slug}`))
+                    setRemoteMissing(false)
+                } else if (!initialBody) {
+                    setRemote(null)
+                    setRemoteMissing(true)
+                }
+            })
+            .catch(() => {
+                if (!cancelled && !initialBody) setRemoteMissing(true)
+            })
+            .finally(() => {
+                if (!cancelled) setRemoteLoading(false)
+            })
+        return () => {
+            cancelled = true
+        }
+    }, [slug, pathname])
+
+    const postData = remote || initialPostData
+    const body =
+        remote?.body ||
+        postData?.attributes?.body ||
+        postData?.attributes?.content ||
+        postData?.body ||
+        postData?.content ||
+        initialBody ||
+        ''
+    const excerpt = remote?.excerpt || postData?.excerpt || postData?.attributes?.excerpt || ''
+    const fields = remote?.fields || postData?.fields || {}
+    const frontmatter = remote?.frontmatter || postData?.frontmatter || postData?.attributes || postData || {}
     const {
-        date = postData?.createdAt || postData?.publishedAt,
-        title = postData?.title || postData?.subject || 'Blog Post',
+        date = remote?.date || postData?.createdAt || postData?.publishedAt,
+        title = remote?.title || postData?.title || postData?.subject || (remoteLoading ? 'Loading…' : 'Blog Post'),
         featuredImage,
         featuredImageCaption,
         featuredVideo,
@@ -332,29 +453,20 @@ export default function BlogPost({ data = {}, pageContext = {}, mobile = false }
     const languageAlternates = pageContext.languageAlternates as LanguageAlternate[] | undefined
     const { fullWidthContent, theoMode } = useLayoutData()
 
-    const router = useRouter()
-    const [loc, setLoc] = useState(() => {
-        const asPath = router?.asPath || ''
-        const pathname = asPath.split('?')[0].split('#')[0] || '/'
-        return { pathname }
-    })
-
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            setLoc({
-                pathname: window.location.pathname,
-            })
-        }
-    }, [router?.asPath])
-    const { pathname } = loc
     const [postID, setPostID] = useState()
     const [posthogInstance, setPosthogInstance] = useState()
 
-    const initialRoot = localizedRoot || (pathname.split('/')[1] !== 'posts' ? pathname.split('/')[1] : undefined)
+    const initialRoot =
+        localizedRoot ||
+        (pathname.split('/')[1] === 'blog' || pathname.split('/')[1] === 'posts'
+            ? pathname.split('/')[1]
+            : pathname.split('/')[1] !== 'posts'
+              ? pathname.split('/')[1]
+              : 'blog')
     const activeMenu = useMemo(() => {
         return menu.find(({ url }) => url?.split('/')[1] === initialRoot)
     }, [initialRoot])
-    const [root, setRoot] = useState(initialRoot)
+    const [root, setRoot] = useState(initialRoot || 'blog')
     const [sort, setSort] = useState(getSortOption(root))
     const [tag, setTag] = useState(initialTag)
 
@@ -375,46 +487,36 @@ export default function BlogPost({ data = {}, pageContext = {}, mobile = false }
     }, [])
 
     useEffect(() => {
-        // WIM: Squeak post IDs disabled; community comments use Supabase by slug
-        const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
-        if (!host) return
-        fetch(
-            `${host}/api/posts?${qs.stringify(
-                {
-                    fields: ['id'],
-                    filters: {
-                        slug: {
-                            $eq: pathname,
-                        },
-                    },
-                },
-                { encodeValuesOnly: true }
-            )}`
-        )
-            .then((res) => res.json())
-            .then((posts) => {
-                if (posts?.data?.length > 0) {
-                    setPostID(posts.data[0].id)
-                }
-            })
-            .catch(() => {})
-    }, [pathname])
-
-    useEffect(() => {
         setParams(getParams(root, tag, sort.sort))
     }, [root, tag, sort])
+
+    if (remoteLoading && !body) {
+        return (
+            <div className="p-8 text-secondary text-sm animate-pulse">Loading post content…</div>
+        )
+    }
+
+    if (remoteMissing && !body) {
+        return (
+            <div className="p-8 text-primary max-w-xl">
+                <h1 className="text-xl font-bold mb-2">Post not found</h1>
+                <p className="text-secondary text-sm m-0">
+                    No Supabase content for <code className="text-xs">{slug || pathname}</code>
+                </p>
+            </div>
+        )
+    }
 
     return (
         <>
             <SEO
-                title={seo?.metaTitle || title + ' - PostHog'}
+                title={seo?.metaTitle || title + ' - WorldInMaking'}
                 description={seo?.metaDescription || excerpt}
                 article
                 image={`${process.env.NEXT_PUBLIC_CLOUDFRONT_OG_URL}/${(fields?.slug || '').replace(/\//g, '')}.jpeg`}
                 imageType="absolute"
                 lang={lang || (languageAlternates ? 'en' : undefined)}
                 languageAlternates={languageAlternates}
-                // Standard.site document rkey (only for /blog posts; this template is shared with other sections)
                 documentRkey={
                     fields?.slug?.startsWith('/blog/')
                         ? (fields.slug || '').replace(/^\/blog\//, '').replace(/\/$/, '')
@@ -469,12 +571,16 @@ export default function BlogPost({ data = {}, pageContext = {}, mobile = false }
                     contributors,
                     date,
                     featuredVideo,
-                    tags: tags?.map((tag) => ({ label: tag, url: `/${root}/${slugify(tag, { lower: true })}` })),
+                    tags: (Array.isArray(tags) ? tags : []).map((tag) =>
+                        typeof tag === 'string'
+                            ? { label: tag, url: `/${root}/${slugify(tag, { lower: true })}` }
+                            : tag
+                    ),
                 }}
                 title={title}
                 tableOfContents={tableOfContents}
                 mdxComponents={components}
-                homeURL={localizedRoot ? '/newsletter' : `/${root}`}
+                homeURL={localizedRoot ? '/newsletter' : `/${root || 'posts'}`}
             />
         </>
     )

@@ -5,9 +5,15 @@ const PostPage = dynamic(() => import('components/posts/PostPage'), {
     loading: () => null,
 })
 
-export const getStaticProps = ({ params }: { params: { slug: string } }) => ({ props: { params } })
-export const getStaticPaths = () => ({
-    paths: [{ params: { slug: 'default' } }],
-    fallback: false,
+export const getStaticProps = ({ params }: { params: { slug: string } }) => ({
+    props: { params },
+    revalidate: 60,
 })
+
+// Do not prebuild every slug; resolve on demand from Supabase
+export const getStaticPaths = () => ({
+    paths: [],
+    fallback: 'blocking',
+})
+
 export default PostPage
