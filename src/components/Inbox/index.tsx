@@ -517,6 +517,16 @@ export default function Inbox(props) {
     const [notificationsEnabled, setNotificationsEnabled] = useState(false)
     const [question, setQuestion] = useState<StrapiRecord<QuestionData>>()
     const containerRef = useRef<HTMLDivElement>(null)
+    const bottomContainerRef = useRef<HTMLDivElement>(null)
+    const [isDragging, setIsDragging] = useState(false)
+    const [dragStartHeight, setDragStartHeight] = useState(0)
+    const [dragStartWidth, setDragStartWidth] = useState(0)
+    const [lastQuestionRef, inView] = useInView({ threshold: 0.1 })
+    const [sideBySide, setSideBySide] = useState(false)
+    const [showSubscribedQuestions, setShowSubscribedQuestions] = useState(false)
+    const { questions: subscribedQuestions } = useSubscribedQuestions()
+    const [menuValue, setMenuValue] = useState('')
+    const isMobile = useMemo(() => (appWindow?.size?.width || 1024) < 896, [appWindow?.size?.width])
 
     // Keep local thread in sync when path changes externally (back/forward, topic nav)
     useEffect(() => {
@@ -561,17 +571,6 @@ export default function Inbox(props) {
         },
         [appWindow, updateWindow, sideBySide]
     )
-
-    const bottomContainerRef = useRef<HTMLDivElement>(null)
-    const [isDragging, setIsDragging] = useState(false)
-    const [dragStartHeight, setDragStartHeight] = useState(0)
-    const [dragStartWidth, setDragStartWidth] = useState(0)
-    const [lastQuestionRef, inView] = useInView({ threshold: 0.1 })
-    const [sideBySide, setSideBySide] = useState(false)
-    const [showSubscribedQuestions, setShowSubscribedQuestions] = useState(false)
-    const { questions: subscribedQuestions } = useSubscribedQuestions()
-    const [menuValue, setMenuValue] = useState('')
-    const isMobile = useMemo(() => (appWindow?.size?.width || 1024) < 896, [appWindow?.size?.width])
 
     const closeThread = useCallback(() => {
         setActiveThread(undefined)
