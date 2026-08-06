@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo, Suspense } from 'react'
+import React, { useEffect, useRef, useState, useMemo, useCallback, Suspense } from 'react'
 import dynamic from 'next/dynamic'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useQuestions } from 'hooks/useQuestions'
