@@ -540,7 +540,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                     aria-modal={item.modal?.type === 'standard' || undefined}
                     tabIndex={-1}
                     data-scheme="tertiary"
-                    className={`group @container absolute overflow-hidden pointer-events-auto !select-auto flex flex-col border-primary ${
+                    className={`group @container absolute overflow-hidden pointer-events-auto !select-auto flex flex-col border-primary ${WINDOW_BG} ${
                         isCompositorActive ? MOTION_LAYER : ''
                     } rounded-lg ${item.appSettings?.size?.fixed ? 'border' : item.expanded ? 'border-t' : ''} ${
                         item.expanded ? 'shadow-none' : 'shadow-md'
@@ -555,12 +555,21 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                     }`}
                     style={{
                         pointerEvents: 'auto',
-                        rotateX: compact || isActiveWindowsPanelOpen ? 0 : tiltX,
-                        rotateY: compact || isActiveWindowsPanelOpen ? 0 : tiltY,
-                        transformPerspective: 1200,
+                        // Position with left/top — NOT transform x/y.
+                        // Any CSS transform on this node (incl. translate3d(0,0,0) / rotateX)
+                        // makes backdrop-filter sample only this stacking context, so frosted
+                        // glass never blurs the desktop wallpaper (unlike wimpos plain divs).
                         zIndex: isActiveWindowsPanelOpen ? 10001 + activePanelIndex : item.zIndex,
                         contentVisibility: inView ? 'visible' : 'auto',
-                        willChange: isCompositorActive ? 'transform' : undefined,
+                        willChange: isCompositorActive ? 'left, top, width, height, transform' : undefined,
+                        // 3D tilt only while dragging (brief transform is OK; rest must be transform-free)
+                        ...(dragging && !compact && !isActiveWindowsPanelOpen
+                            ? {
+                                  rotateX: tiltX,
+                                  rotateY: tiltY,
+                                  transformPerspective: 1200,
+                              }
+                            : {}),
                         ...(item.appSettings?.size?.fixed
                             ? {
                                   maxWidth: item.sizeConstraints.min.width,
@@ -570,19 +579,34 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                               }
                             : {}),
                     }}
+                    // At rest force transform:none so backdrop-filter can blur the desktop.
+                    // Framer often leaves scale(1)/translate3d(0,0,0) which still kills glass.
+                    transformTemplate={(_latest, generated) => {
+                        if (!isCompositorActive && !isActiveWindowsPanelOpen) {
+                            return 'none'
+                        }
+                        return generated
+                    }}
                     initial={{
                         scale: item.fromOrigin && !compact ? 0.4 : 0.96,
                         opacity: 0,
-                        x: item.fromOrigin && !compact ? item.fromOrigin.x : Math.round(position.x),
-                        y: item.fromOrigin && !compact ? item.fromOrigin.y : Math.round(position.y),
+                        left: item.fromOrigin && !compact ? item.fromOrigin.x : Math.round(position.x),
+                        top: item.fromOrigin && !compact ? item.fromOrigin.y : Math.round(position.y),
                         width: size.width,
                         height: size.height,
                     }}
                     animate={{
+                        // Mission Control still uses scale; left/top stay layout properties
                         scale: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.scale : 1,
                         opacity: 1,
-                        x: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.x : Math.round(position.x),
-                        y: isActiveWindowsPanelOpen && missionControlLayout ? missionControlLayout.y : Math.round(position.y),
+                        left:
+                            isActiveWindowsPanelOpen && missionControlLayout
+                                ? missionControlLayout.x
+                                : Math.round(position.x),
+                        top:
+                            isActiveWindowsPanelOpen && missionControlLayout
+                                ? missionControlLayout.y
+                                : Math.round(position.y),
                         width: size.width,
                         height: size.height,
                     }}
@@ -612,11 +636,6 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                     onAnimationStart={onAnimationStart}
                     onAnimationComplete={onAnimationComplete}
                 >
-                    {/* Frosted shell as its own layer so framer-motion transforms don't kill backdrop-filter */}
-                    <div
-                        aria-hidden
-                        className={`pointer-events-none absolute inset-0 rounded-[inherit] ${WINDOW_BG}`}
-                    />
                     <WindowChrome
                         item={item}
                         hasToolbar={!!hasToolbar}
