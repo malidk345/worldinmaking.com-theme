@@ -310,11 +310,66 @@ export function importNotebookFromJSON(jsonStr: string): StoredNotebook {
 export function exportNotebookAsJSON(id: string): string {
     const notebook = getNotebook(id)
     if (!notebook) throw new Error('Notebook not found')
-    return JSON.stringify(notebook, null, 2)
+    const payload = {
+        app: 'WorldInMaking Notebooks',
+        exportedAt: new Date().toISOString(),
+        notebook: {
+            id: notebook.id,
+            short_id: notebook.short_id,
+            title: notebook.title,
+            content: notebook.content,
+            version: notebook.version,
+            isPublished: notebook.isPublished ?? false,
+            publish: notebook.publish ?? null,
+            createdAt: notebook.createdAt,
+            updatedAt: notebook.updatedAt,
+        },
+    }
+    return JSON.stringify(payload, null, 2)
 }
 
 export function exportNotebookAsMarkdown(id: string): string {
     const notebook = getNotebook(id)
     if (!notebook) throw new Error('Notebook not found')
     return notebook.content
+}
+
+/**
+ * Markdown with YAML-ish front matter for paper / archive paste.
+ * Safe plain text — no HTML.
+ */
+export function exportNotebookAsPaperMarkdown(id: string): string {
+    const notebook = getNotebook(id)
+    if (!notebook) throw new Error('Notebook not found')
+
+    const title = notebook.publish?.publicTitle || notebook.title || 'Untitled Notebook'
+    const subtitle = notebook.publish?.subtitle?.trim()
+    const category = notebook.publish?.category?.trim()
+    const tags = notebook.publish?.tags?.filter(Boolean) ?? []
+    const lines = [
+        '---',
+        `title: ${JSON.stringify(title)}`,
+        subtitle ? `subtitle: ${JSON.stringify(subtitle)}` : null,
+        category ? `category: ${JSON.stringify(category)}` : null,
+        tags.length ? `tags: ${JSON.stringify(tags)}` : null,
+        `updated: ${JSON.stringify(notebook.updatedAt)}`,
+        `source: WorldInMaking`,
+        '---',
+        '',
+        `# ${title}`,
+        subtitle ? `\n*${subtitle}*\n` : '',
+        notebook.content.replace(/^\s*#\s+.+\n?/, ''), // drop duplicate leading H1 if same title
+    ].filter((line) => line !== null) as string[]
+
+    return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n'
+}
+
+export function downloadTextFile(filename: string, content: string, mime: string): void {
+    const blob = new Blob([content], { type: mime })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    a.click()
+    URL.revokeObjectURL(url)
 }

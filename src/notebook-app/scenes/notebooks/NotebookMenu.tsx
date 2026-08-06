@@ -1,6 +1,14 @@
+import { useState } from 'react'
 import { LemonButton, LemonMenu } from '~nb-lib/lemon-ui/index'
-import { IconEllipsis, IconCopy, IconClock, IconShare, IconTrash } from '@posthog/icons'
-import { exportNotebookAsMarkdown } from './notebookStorage'
+import { IconEllipsis, IconCopy, IconClock, IconShare, IconTrash, IconCheck } from '@posthog/icons'
+import {
+    exportNotebookAsMarkdown,
+    exportNotebookAsJSON,
+    exportNotebookAsPaperMarkdown,
+    downloadTextFile,
+    getNotebook,
+} from './notebookStorage'
+import { notebookFilename } from './notebookOutline'
 
 interface NotebookMenuProps {
     notebookId: string
@@ -19,41 +27,57 @@ export function NotebookMenu({
     onShare,
     onOpenPublishModal,
 }: NotebookMenuProps) {
-    const handleDownload = () => {
-        const markdown = exportNotebookAsMarkdown(notebookId)
-        if (!markdown) return
-        const blob = new Blob([markdown], { type: 'text/markdown' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `notebook-${notebookId}.md`
-        a.click()
-        URL.revokeObjectURL(url)
-    }
+    const [copied, setCopied] = useState<'md' | 'paper' | null>(null)
 
-    const handleCopyMarkdown = async () => {
-        const markdown = exportNotebookAsMarkdown(notebookId)
-        if (markdown) {
-            await navigator.clipboard.writeText(markdown)
+    const title = () => getNotebook(notebookId)?.title || 'notebook'
+
+    const handleDownloadMd = () => {
+        try {
+            const markdown = exportNotebookAsMarkdown(notebookId)
+            downloadTextFile(notebookFilename(title(), 'md'), markdown, 'text/markdown;charset=utf-8')
+        } catch {
+            /* ignore */
         }
     }
 
     const handleDownloadJSON = () => {
-        const markdown = exportNotebookAsMarkdown(notebookId)
-        if (!markdown) return
-        const data = {
-            id: notebookId,
-            content: markdown,
-            exportedAt: new Date().toISOString(),
-            app: 'PostHog Notebooks',
+        try {
+            const json = exportNotebookAsJSON(notebookId)
+            downloadTextFile(notebookFilename(title(), 'json'), json, 'application/json;charset=utf-8')
+        } catch {
+            /* ignore */
         }
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `notebook-${notebookId}.json`
-        a.click()
-        URL.revokeObjectURL(url)
+    }
+
+    const handleDownloadPaper = () => {
+        try {
+            const paper = exportNotebookAsPaperMarkdown(notebookId)
+            downloadTextFile(notebookFilename(title(), 'paper.md'), paper, 'text/markdown;charset=utf-8')
+        } catch {
+            /* ignore */
+        }
+    }
+
+    const handleCopyMarkdown = async () => {
+        try {
+            const markdown = exportNotebookAsMarkdown(notebookId)
+            await navigator.clipboard.writeText(markdown)
+            setCopied('md')
+            setTimeout(() => setCopied(null), 1500)
+        } catch {
+            /* ignore */
+        }
+    }
+
+    const handleCopyForPaper = async () => {
+        try {
+            const paper = exportNotebookAsPaperMarkdown(notebookId)
+            await navigator.clipboard.writeText(paper)
+            setCopied('paper')
+            setTimeout(() => setCopied(null), 1500)
+        } catch {
+            /* ignore */
+        }
     }
 
     const handlePrintPDF = () => {
@@ -70,7 +94,11 @@ export function NotebookMenu({
                 },
                 {
                     label: 'Download Markdown (.md)',
-                    onClick: handleDownload,
+                    onClick: handleDownloadMd,
+                },
+                {
+                    label: 'Download for paper (.md)',
+                    onClick: handleDownloadPaper,
                 },
                 {
                     label: 'Download JSON',
@@ -81,9 +109,14 @@ export function NotebookMenu({
                     onClick: handlePrintPDF,
                 },
                 {
-                    label: 'Copy markdown',
-                    icon: <IconCopy />,
+                    label: copied === 'md' ? 'Copied markdown' : 'Copy markdown',
+                    icon: copied === 'md' ? <IconCheck /> : <IconCopy />,
                     onClick: handleCopyMarkdown,
+                },
+                {
+                    label: copied === 'paper' ? 'Copied for paper' : 'Copy for paper',
+                    icon: copied === 'paper' ? <IconCheck /> : <IconCopy />,
+                    onClick: handleCopyForPaper,
                 },
                 {
                     label: 'History',
@@ -96,7 +129,7 @@ export function NotebookMenu({
                     onClick: onShare,
                 },
                 {
-                    label: 'Publish & Cover Meta Settings',
+                    label: 'Publish & cover',
                     icon: <IconShare />,
                     onClick: onOpenPublishModal,
                 },

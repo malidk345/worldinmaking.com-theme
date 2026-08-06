@@ -94,6 +94,18 @@ html.dark .notebook-app-scope,
   background: var(--color-bg-surface-popover) !important;
   border-color: var(--secondary-3000-button-border) !important;
 }
+.notebook-app-scope .notebook-outline-flash {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+@media print {
+  .notebook-app-scope .notebook-outline,
+  .notebook-app-scope .MarkdownNotebook__format-toolbar,
+  .notebook-app-scope .MarkdownNotebook__insert-menu {
+    display: none !important;
+  }
+}
 `
 
 let injectCount = 0

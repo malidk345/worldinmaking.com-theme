@@ -35,6 +35,7 @@ import { CollaboratorsBanner } from './scenes/notebooks/CollaboratorsBanner'
 import { SidebarContextPanelMenu } from './scenes/notebooks/SidebarContextPanelMenu'
 import { NotebookPublishModal } from './scenes/notebooks/NotebookPublishModal'
 import { AskAIDropdown } from './scenes/notebooks/AskAIDropdown'
+import { NotebookOutline } from './scenes/notebooks/NotebookOutline'
 import { useSiteThemeSync } from './lib/useSiteThemeSync'
 import { ensureLemonStyles, releaseLemonStyles } from '../lib/lemon/ensureLemonStyles'
 
@@ -141,6 +142,7 @@ export function App() {
   const [showPublishModal, setShowPublishModal] = useState(false)
   const [isAskAIBusy, setIsAskAIBusy] = useState(false)
   const askAIAbortRef = useRef(0)
+  const editorContainerRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -473,26 +475,30 @@ export function App() {
                   </div>
                 </div>
 
-                {/* Main Markdown Notebook Editor */}
-                <div className="w-full min-h-[600px] pt-4 sm:pt-6 mt-4 sm:mt-6">
-                  <LemonInput
-                    value={title}
-                    onChange={setTitle}
-                    className="text-2xl sm:text-3xl font-bold border-none shadow-none focus:outline-none p-0 mb-8 sm:mb-10 bg-transparent w-full"
-                    placeholder="Untitled Notebook..."
-                  />
+                {/* Main editor + outline */}
+                <div className="w-full min-h-[600px] pt-4 sm:pt-6 mt-4 sm:mt-6 flex gap-6 items-start">
+                  <div className="flex-1 min-w-0" ref={editorContainerRef}>
+                    <LemonInput
+                      value={title}
+                      onChange={setTitle}
+                      className="text-2xl sm:text-3xl font-bold border-none shadow-none focus:outline-none p-0 mb-8 sm:mb-10 bg-transparent w-full"
+                      placeholder="Untitled Notebook..."
+                    />
 
-                  <MarkdownNotebook
-                    key={`${currentNotebook.id}-${markdownVersion}`}
-                    value={markdown}
-                    focusAIPromptRequest={aiPromptRequest}
-                    onChange={(val) => setMarkdown(val)}
-                    onAskAI={handleNotebookAskAI}
-                    isAskAIDisabled={isAskAIBusy}
-                    extraInsertCommands={extraCommands}
-                    hiddenInsertCommandKeys={WIM_HIDDEN_INSERT_COMMAND_KEYS}
-                    selectionAIActions={SELECTION_AI_ACTIONS}
-                  />
+                    <MarkdownNotebook
+                      key={`${currentNotebook.id}-${markdownVersion}`}
+                      value={markdown}
+                      focusAIPromptRequest={aiPromptRequest}
+                      onChange={(val) => setMarkdown(val)}
+                      onAskAI={handleNotebookAskAI}
+                      isAskAIDisabled={isAskAIBusy}
+                      extraInsertCommands={extraCommands}
+                      hiddenInsertCommandKeys={WIM_HIDDEN_INSERT_COMMAND_KEYS}
+                      selectionAIActions={SELECTION_AI_ACTIONS}
+                    />
+                  </div>
+
+                  <NotebookOutline markdown={markdown} containerRef={editorContainerRef} />
                 </div>
 
                 {/* History Drawer Panel */}

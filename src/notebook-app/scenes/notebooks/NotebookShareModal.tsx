@@ -7,7 +7,10 @@ import {
     getNotebookEditorUrl,
     exportNotebookAsJSON,
     exportNotebookAsMarkdown,
+    exportNotebookAsPaperMarkdown,
+    downloadTextFile,
 } from './notebookStorage'
+import { notebookFilename } from './notebookOutline'
 
 interface NotebookShareModalProps {
     isOpen: boolean
@@ -40,27 +43,39 @@ export function NotebookShareModal({
     }
 
     const handleDownloadMd = () => {
-        const markdown = exportNotebookAsMarkdown(notebookId)
-        if (!markdown) return
-        const blob = new Blob([markdown], { type: 'text/markdown' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `${notebookTitle.replace(/\s+/g, '_')}.md`
-        a.click()
-        URL.revokeObjectURL(url)
+        try {
+            downloadTextFile(
+                notebookFilename(notebookTitle, 'md'),
+                exportNotebookAsMarkdown(notebookId),
+                'text/markdown;charset=utf-8'
+            )
+        } catch {
+            /* ignore */
+        }
+    }
+
+    const handleDownloadPaper = () => {
+        try {
+            downloadTextFile(
+                notebookFilename(notebookTitle, 'paper.md'),
+                exportNotebookAsPaperMarkdown(notebookId),
+                'text/markdown;charset=utf-8'
+            )
+        } catch {
+            /* ignore */
+        }
     }
 
     const handleExportJSON = () => {
-        const json = exportNotebookAsJSON(notebookId)
-        if (!json) return
-        const blob = new Blob([json], { type: 'application/json' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `${notebookTitle.replace(/\s+/g, '_')}.json`
-        a.click()
-        URL.revokeObjectURL(url)
+        try {
+            downloadTextFile(
+                notebookFilename(notebookTitle, 'json'),
+                exportNotebookAsJSON(notebookId),
+                'application/json;charset=utf-8'
+            )
+        } catch {
+            /* ignore */
+        }
     }
 
     return (
@@ -134,12 +149,18 @@ export function NotebookShareModal({
 
                 <div>
                     <h3 className="text-base font-semibold mb-2">Export</h3>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         <LemonButton type="secondary" onClick={handleDownloadMd}>
-                            Download Markdown
+                            Markdown
+                        </LemonButton>
+                        <LemonButton type="secondary" onClick={handleDownloadPaper}>
+                            For paper
                         </LemonButton>
                         <LemonButton type="secondary" onClick={handleExportJSON}>
-                            Export JSON
+                            JSON
+                        </LemonButton>
+                        <LemonButton type="secondary" onClick={() => window.print()}>
+                            Print / PDF
                         </LemonButton>
                     </div>
                 </div>

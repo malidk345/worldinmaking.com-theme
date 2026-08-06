@@ -147,3 +147,27 @@
     border-color: var(--secondary-3000-button-border) !important;
     color: var(--color-text-primary, inherit);
 }
+
+/* Outline jump highlight */
+.notebook-app-scope .notebook-outline-flash {
+    outline: 2px solid var(--color-accent, #1d4ed8);
+    outline-offset: 4px;
+    border-radius: 4px;
+    transition: outline-color 0.8s ease;
+}
+
+/* Print / PDF: clean paper export */
+@media print {
+    .notebook-app-scope {
+        background: #fff !important;
+        color: #111 !important;
+    }
+
+    .notebook-app-scope .notebook-outline,
+    .notebook-app-scope .LemonButton,
+    .notebook-app-scope [class*='floating'],
+    .notebook-app-scope .MarkdownNotebook__format-toolbar,
+    .notebook-app-scope .MarkdownNotebook__insert-menu {
+        display: none !important;
+    }
+}
