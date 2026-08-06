@@ -2391,6 +2391,11 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                 const existingForum = prev.find((w) => isForumPath(w.path))
                 if (existingForum) {
                     const maxZ = Math.max(...prev.map((w) => w.zIndex), 0)
+                    // Thread slug only (wimpos params.permalink) — not topic/list routes
+                    const threadMatch = path.match(
+                        /^\/(?:questions|forum)\/(?!topic(?:\/|$)|subscriptions(?:\/|$))([^/?#]+)\/?$/
+                    )
+                    const permalink = threadMatch?.[1]
                     return prev.map((w) =>
                         w.key === existingForum.key
                             ? {
@@ -2399,7 +2404,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                                   path,
                                   zIndex: maxZ + 1,
                                   minimized: false,
-                                  props: { ...w.props, path },
+                                  props: { ...w.props, path, permalink },
                               }
                             : w
                     )

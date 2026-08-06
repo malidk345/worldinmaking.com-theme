@@ -90,8 +90,13 @@ function WindowRouterInner({ item }: WindowRouterProps) {
         return <NotebooksListSkeleton />
     }
     if (/^\/questions|^\/forum|^\/community/.test(path)) {
-        const permalink = path.replace(/^\/(questions|forum|community)\/?/, '')
-        return <Inbox permalink={permalink || undefined} {...props} />
+        // Only real thread slugs open the detail panel — not /questions, /topic/*, /subscriptions
+        // (matches wimpos Gatsby params.permalink behavior)
+        const threadMatch = path.match(
+            /^\/(?:questions|forum)\/(?!topic(?:\/|$)|subscriptions(?:\/|$))([^/?#]+)\/?$/
+        )
+        const permalink = threadMatch?.[1]
+        return <Inbox permalink={permalink} path={path} {...props} />
     }
     if (path === '/blog' || path === '/posts') {
         return <PostListing {...props} />

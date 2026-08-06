@@ -1,5 +1,5 @@
-import { useRouter } from 'next/router'
-import React, { useEffect, useRef, useState, useMemo, useCallback, Suspense } from 'react'
+import React, { useEffect, useRef, useState, useMemo, Suspense } from 'react'
+import dynamic from 'next/dynamic'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useQuestions } from 'hooks/useQuestions'
 import ScrollArea from 'components/RadixUI/ScrollArea'
@@ -23,7 +23,7 @@ import Tooltip from 'components/RadixUI/Tooltip'
 import { DebugContainerQuery } from 'components/DebugContainerQuery'
 import { useSubscribedQuestions } from 'hooks/useSubscribedQuestions'
 import { flattenStrapiResponse } from '../../utils'
-import { useApp } from '../../context/App'
+import { useApp, useAppActions } from '../../context/App'
 import Link from 'components/Link'
 import { Select } from 'components/RadixUI/Select'
 import SEO from 'components/seo'
@@ -31,25 +31,29 @@ import SearchProvider, { useSearch } from 'components/Editor/SearchProvider'
 import { InlineSearch, AlgoliaSearchResults } from 'components/Search/InlineSearch'
 dayjs.extend(relativeTime)
 
-import dynamic from 'next/dynamic'
-
 // lottie-react bundles lottie-web (~600 KiB); load it on demand instead of on every page.
 const Lottie = dynamic(() => import('lottie-react'), { ssr: false, loading: () => null })
+
+/** Desktop OS navigate: reuse/update forum window (wimpos gatsby navigate equivalent). */
+function useDesktopNavigate() {
+    const { addWindow } = useAppActions()
+    return (to: string, _options?: any) => {
+        if (!to || typeof to !== 'string') return
+        addWindow({
+            key: to.startsWith('/questions') || to.startsWith('/forum') || to.startsWith('/community')
+                ? 'forum-main-window'
+                : to,
+            path: to,
+            title: to.split('/').filter(Boolean).pop() || 'Window',
+        })
+    }
+}
 
 const Menu = ({ onValueChange }: { onValueChange: (value: string) => void }) => {
     const { user } = useUser()
     const topicsNav = useTopicsNav()
     const { appWindow } = useWindow()
-    const router = useRouter()
-    const navigate = (to: string, options?: any) => {
-        if (typeof window !== 'undefined') {
-            if (options?.replace) {
-                router.replace(to)
-            } else {
-                router.push(to)
-            }
-        }
-    }
+    const navigate = useDesktopNavigate()
 
     const filteredTopicsNav = useMemo(() => {
         return [
@@ -113,19 +117,9 @@ const SidebarContent = ({
     onMenuValueChange: (value: string) => void
     onSubmitQuestion: () => void
 }) => {
+    const { addWindow } = useApp()
     const { searchQuery } = useSearch()
     const isSearching = searchQuery.length >= 2
-    const [askOpen, setAskOpen] = useState(false)
-    const router = useRouter()
-    const navigate = (to: string, options?: any) => {
-        if (typeof window !== 'undefined') {
-            if (options?.replace) {
-                router.replace(to)
-            } else {
-                router.push(to)
-            }
-        }
-    }
 
     return (
         <div className="flex flex-col h-full">
@@ -135,7 +129,16 @@ const SidebarContent = ({
                         variant="primary"
                         size="md"
                         width="full"
-                        onClick={() => setAskOpen(true)}
+                        onClick={() =>
+                            addWindow(
+                                <AskAQuestion
+                                    newWindow
+                                    location={{ pathname: `ask-a-question` }}
+                                    key={`ask-a-question`}
+                                    onSubmit={onSubmitQuestion}
+                                />
+                            )
+                        }
                     >
                         Ask a question
                     </OSButton>
@@ -154,48 +157,6 @@ const SidebarContent = ({
                     <Menu onValueChange={onMenuValueChange} />
                 )}
             </ScrollArea>
-
-            {/* Ask a question modal */}
-            {askOpen && (
-                <div
-                    className="fixed inset-0 z-[9999] flex items-center justify-center"
-                    onClick={(e) => { if (e.target === e.currentTarget) setAskOpen(false) }}
-                >
-                    <div className="absolute inset-0 bg-black/50" />
-                    <div
-                        className="relative z-10 bg-accent border border-primary rounded-xl shadow-2xl w-full max-w-xl mx-4 max-h-[90vh] overflow-y-auto"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="flex items-center justify-between px-4 pt-4 pb-2 border-b border-primary">
-                            <h2 className="font-bold text-base">Ask a question</h2>
-                            <button
-                                onClick={() => setAskOpen(false)}
-                                className="text-primary hover:text-primary/70 transition-colors text-xl leading-none"
-                                aria-label="Close"
-                            >
-                                ×
-                            </button>
-                        </div>
-                        <div className="p-4">
-                            <QuestionForm
-                                showTopicSelector
-                                disclaimer={false}
-                                onSubmit={(_values, _type, data) => {
-                                    setAskOpen(false)
-                                    onSubmitQuestion()
-                                    if (data?.attributes?.permalink) {
-                                        setTimeout(() => {
-                                            navigate(`/questions/${data.attributes.permalink}`)
-                                        }, 0)
-                                    }
-                                }}
-                                initialView="question-form"
-                                slug="/questions"
-                            />
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     )
 }
@@ -210,8 +171,6 @@ interface QuestionRowProps {
     setBottomHeight: (height: number) => void
     containerRef: React.RefObject<HTMLDivElement>
     pinned?: boolean
-    /** Open thread detail panel (must set local + window path so React re-renders) */
-    onOpenThread: (permalink: string) => void
 }
 
 const QuestionRow = ({
@@ -222,8 +181,8 @@ const QuestionRow = ({
     setBottomHeight,
     containerRef,
     pinned = false,
-    onOpenThread,
 }: QuestionRowProps) => {
+    // Support both flat (wimpos) and Strapi attributes shapes
     const q = question?.attributes || question || {}
     const subject = q.subject || q.title || 'Community Discussion'
     const numReplies = q.numReplies || 0
@@ -232,12 +191,14 @@ const QuestionRow = ({
     const profile = q.profile?.data?.attributes || q.profile || {}
     const permalink = q.permalink || String(question.id)
     const resolved = q.resolved || false
-
     const replyList = Array.isArray(replies?.data) ? replies.data : Object.values(replies ?? {})
     const lastReply = replyList[replyList.length - 1]
-    const latestAuthor = lastReply?.profile || lastReply?.attributes?.profile || profile
-    const threadPath = `/questions/${permalink}`
-    const active = threadPath === appWindowPath || appWindowPath?.endsWith(`/${permalink}`)
+    const latestAuthor =
+        lastReply?.profile?.data?.attributes ||
+        lastReply?.profile ||
+        lastReply?.attributes?.profile ||
+        profile
+    const active = `/questions/${permalink}` === appWindowPath || appWindowPath?.endsWith(`/${permalink}`)
     const authorName = profile?.firstName
         ? `${profile.firstName} ${profile.lastName || ''}`.trim()
         : profile?.username || 'Community Member'
@@ -245,6 +206,8 @@ const QuestionRow = ({
     return (
         <div key={question.id} ref={lastQuestionRef}>
             <OSButton
+                asLink
+                to={`/questions/${permalink}`}
                 align="left"
                 width="full"
                 hover="background"
@@ -255,12 +218,12 @@ const QuestionRow = ({
                     ${active ? 'font-bold bg-accent' : ''}
                     ${pinned ? 'bg-accent border-b border-primary' : ''}
                 `}
-                onClick={(e: any) => {
-                    // Plain button (not asLink) — Next Link was racing pushState and
-                    // collapsing the detail panel right after open.
-                    e?.preventDefault?.()
-                    e?.stopPropagation?.()
-                    onOpenThread(String(permalink))
+                onClick={() => {
+                    // Link → addWindow updates path (opens panel). Lift height if collapsed.
+                    if (!containerRef.current) return
+                    if (bottomHeight <= 45) {
+                        setBottomHeight(containerRef.current.getBoundingClientRect().height * 0.8)
+                    }
                 }}
             >
                 <div
@@ -339,153 +302,130 @@ interface QuestionToolbarProps {
     expandOrCollapse: (expandable: boolean) => void
     isMobile: boolean
     menuValue: string
-    onCloseThread?: () => void
 }
 
-const QuestionToolbar = React.memo(
-    ({
-        containerRef,
-        bottomContainerRef,
-        setBottomHeight,
-        question,
-        user,
-        notificationsEnabled,
-        setNotificationsEnabled,
-        setSubscription,
-        addToast,
-        sideBySide,
-        handleSideBySide,
-        expandable,
-        expandOrCollapse,
-        isMobile,
-        menuValue,
-        onCloseThread,
-    }: QuestionToolbarProps) => {
-        const router = useRouter()
-        const navigate = (to: string, options?: any) => {
-            if (typeof window !== 'undefined') {
-                if (options?.replace) {
-                    router.replace(to)
-                } else {
-                    router.push(to)
-                }
-            }
-        }
-        return (
-            <div className="bg-accent border-t border-primary px-4 py-2 flex gap-2 items-center sticky bottom-0 z-10">
-                <OSButton
-                    variant="secondary"
-                    size="xs"
-                    onClick={() => {
-                        if (!containerRef.current) return
-                        const containerHeight = containerRef.current.getBoundingClientRect().height
-                        setBottomHeight(containerHeight)
-                        document.getElementById('question-form-button')?.click()
-                        setTimeout(() => {
-                            const viewport = bottomContainerRef.current?.querySelector(
-                                '[data-radix-scroll-area-viewport]'
-                            )
-                            viewport?.scrollTo({
-                                top: viewport.scrollHeight,
-                                behavior: 'smooth',
+const QuestionToolbar = ({
+    containerRef,
+    bottomContainerRef,
+    setBottomHeight,
+    question,
+    user,
+    notificationsEnabled,
+    setNotificationsEnabled,
+    setSubscription,
+    addToast,
+    sideBySide,
+    handleSideBySide,
+    expandable,
+    expandOrCollapse,
+    isMobile,
+    menuValue,
+}: QuestionToolbarProps) => {
+    const navigate = useDesktopNavigate()
+    return (
+        <div className="bg-accent border-t border-primary px-4 py-2 flex gap-2 items-center sticky bottom-0 z-10">
+            <OSButton
+                variant="secondary"
+                size="xs"
+                onClick={() => {
+                    if (!containerRef.current) return
+                    const containerHeight = containerRef.current.getBoundingClientRect().height
+                    setBottomHeight(containerHeight)
+                    document.getElementById('question-form-button')?.click()
+                    setTimeout(() => {
+                        const viewport = bottomContainerRef.current?.querySelector('[data-radix-scroll-area-viewport]')
+                        viewport?.scrollTo({
+                            top: viewport.scrollHeight,
+                            behavior: 'smooth',
+                        })
+                    }, 300)
+                }}
+            >
+                Reply
+            </OSButton>
+            <div className="ml-auto flex space-x-2">
+                {question?.id && user && (
+                    <Switch
+                        checked={notificationsEnabled}
+                        onChange={(checked) => {
+                            setNotificationsEnabled(checked)
+                            setSubscription({
+                                contentType: 'question',
+                                id: question.id,
+                                subscribe: checked,
                             })
-                        }, 300)
-                    }}
-                >
-                    Reply
-                </OSButton>
-                <div className="ml-auto flex space-x-2">
-                    {question?.id && user && (
-                        <Switch
-                            checked={notificationsEnabled}
-                            onChange={(checked) => {
-                                setNotificationsEnabled(checked)
-                                setSubscription({
-                                    contentType: 'question',
-                                    id: question.id,
-                                    subscribe: checked,
-                                })
-                                addToast({
-                                    description: checked
-                                        ? "You'll be notified of replies by email."
-                                        : "You won't receive notifications for this thread.",
-                                    title: checked ? 'Thread notifications enabled' : 'Thread notifications disabled',
-                                    onUndo: () => {
-                                        setNotificationsEnabled(!checked)
-                                        setSubscription({
-                                            contentType: 'question',
-                                            id: question.id,
-                                            subscribe: !checked,
-                                        })
-                                    },
-                                })
-                            }}
-                            label="Thread notifications"
-                        />
-                    )}
+                            addToast({
+                                description: checked
+                                    ? "You'll be notified of replies by email."
+                                    : "You won't receive notifications for this thread.",
+                                title: checked ? 'Thread notifications enabled' : 'Thread notifications disabled',
+                                onUndo: () => {
+                                    setNotificationsEnabled(!checked)
+                                    setSubscription({
+                                        contentType: 'question',
+                                        id: question.id,
+                                        subscribe: !checked,
+                                    })
+                                },
+                            })
+                        }}
+                        label="Thread notifications"
+                    />
+                )}
 
-                    <div className="ml-2 pl-2 border-l border-primary flex items-center gap-1">
-                        <ToggleGroup
-                            title="Layout"
-                            hideTitle={true}
-                            options={layoutOptions}
-                            onValueChange={(value) => handleSideBySide(value === 'side-by-side')}
-                            value={sideBySide ? 'side-by-side' : 'stacked'}
-                            size="sm"
-                        />
-                        <Tooltip
-                            trigger={
-                                <span>
-                                    <OSButton
-                                        size="sm"
-                                        className="relative"
-                                        style={{ width: 26, height: 26 }}
-                                        icon={
-                                            <IconChevronDown
-                                                className={`w-6 absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 ${
-                                                    sideBySide
-                                                        ? expandable
-                                                            ? 'rotate-90'
-                                                            : '-rotate-90'
-                                                        : expandable
-                                                        ? 'rotate-180'
-                                                        : ''
-                                                }`}
-                                            />
-                                        }
-                                        onClick={() => {
-                                            // Always expand/collapse — never auto-close the thread
-                                            // (mobile side-by-side close was making the panel vanish)
+                <div className="ml-2 pl-2 border-l border-primary flex items-center gap-1">
+                    <ToggleGroup
+                        title="Layout"
+                        hideTitle={true}
+                        options={layoutOptions}
+                        onValueChange={(value) => handleSideBySide(value === 'side-by-side')}
+                        value={sideBySide ? 'side-by-side' : 'stacked'}
+                        size="sm"
+                    />
+                    <Tooltip
+                        trigger={
+                            <span>
+                                <OSButton
+                                    size="sm"
+                                    className="relative"
+                                    style={{ width: 26, height: 26 }}
+                                    icon={
+                                        <IconChevronDown
+                                            className={`w-6 absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 ${
+                                                sideBySide
+                                                    ? expandable
+                                                        ? 'rotate-90'
+                                                        : '-rotate-90'
+                                                    : expandable
+                                                    ? 'rotate-180'
+                                                    : ''
+                                            }`}
+                                        />
+                                    }
+                                    onClick={() => {
+                                        if (isMobile && sideBySide) {
+                                            navigate(menuValue)
+                                        } else {
                                             expandOrCollapse(expandable)
-                                        }}
-                                    />
-                                </span>
-                            }
-                        >
-                            {expandable ? 'Expand' : 'Collapse'}
-                        </Tooltip>
-                    </div>
+                                        }
+                                    }}
+                                />
+                            </span>
+                        }
+                    >
+                        {expandable ? 'Expand' : 'Collapse'}
+                    </Tooltip>
                 </div>
             </div>
-        )
-    }
-)
-QuestionToolbar.displayName = 'QuestionToolbar'
+        </div>
+    )
+}
 
 const AskAQuestion = ({ onSubmit }: { onSubmit: () => void }) => {
-    const router = useRouter()
-    const navigate = (to: string, options?: any) => {
-        if (typeof window !== 'undefined') {
-            if (options?.replace) {
-                router.replace(to)
-            } else {
-                router.push(to)
-            }
-        }
-    }
     const { addToast } = useToast()
     const { appWindow } = useWindow()
     const { closeWindow, setWindowTitle } = useApp()
+    const navigate = useDesktopNavigate()
 
     useEffect(() => {
         setWindowTitle(appWindow, 'Ask a question')
@@ -511,33 +451,32 @@ const AskAQuestion = ({ onSubmit }: { onSubmit: () => void }) => {
     )
 }
 
-export default function Inbox(props) {
-    const router = useRouter()
-    const navigate = (to: string, options?: any) => {
-        if (typeof window !== 'undefined') {
-            if (options?.replace) {
-                router.replace(to)
-            } else {
-                router.push(to)
-            }
-        }
+/**
+ * Thread slug only — not list, subscriptions, or topic routes.
+ * Mirrors wimpos Gatsby `params.permalink` (absent on topic/list pages).
+ */
+export function extractQuestionPermalink(pathOrSlug?: string): string | undefined {
+    if (!pathOrSlug) return undefined
+    const raw = String(pathOrSlug).trim()
+    // Already a bare slug
+    if (raw && !raw.includes('/')) {
+        if (raw === 'subscriptions' || raw === 'topic') return undefined
+        return raw
     }
+    const match = raw.match(/^\/?(?:questions|forum)\/(?!topic(?:\/|$)|subscriptions(?:\/|$))([^/?#]+)\/?$/)
+    return match?.[1] || undefined
+}
+
+export default function Inbox(props) {
     const { data, params } = props
+    const navigate = useDesktopNavigate()
     const initialTopicID = data?.topic?.squeakId
+    // Path-driven like wimpos params.permalink — WindowRouter supplies props.permalink
     const permalink =
-        props.permalink ||
-        params?.permalink ||
-        (props.path &&
-        props.path !== '/questions' &&
-        props.path !== '/questions/subscriptions' &&
-        props.path.startsWith('/questions/')
-            ? props.path.replace(/^\/questions\/?/, '')
-            : undefined) ||
-        (typeof window !== 'undefined' &&
-        window.location.pathname.startsWith('/questions/') &&
-        window.location.pathname !== '/questions'
-            ? window.location.pathname.replace(/^\/questions\/?/, '')
-            : undefined)
+        extractQuestionPermalink(props.permalink) ||
+        extractQuestionPermalink(params?.permalink) ||
+        extractQuestionPermalink(props.path) ||
+        extractQuestionPermalink(typeof window !== 'undefined' ? window.location.pathname : undefined)
     const defaultFilters = {
         subject: {
             $ne: '',
@@ -549,10 +488,6 @@ export default function Inbox(props) {
         },
         topics: { id: { $eq: initialTopicID } },
     }
-    const [mounted, setMounted] = useState(false)
-    useEffect(() => {
-        setMounted(true)
-    }, [])
     const [ready, setReady] = useState(props.path !== '/questions/subscriptions')
     const [filters, setFilters] = useState(defaultFilters)
     const { addToast } = useToast()
@@ -563,8 +498,10 @@ export default function Inbox(props) {
         filters,
     })
     const { appWindow } = useWindow()
-    const { updateWindow } = useApp()
-    const bottomHeightDefault = useMemo(() => Math.max(380, ((appWindow?.size?.height || 600) * 3) / 5), [appWindow?.size?.height])
+    const bottomHeightDefault = useMemo(
+        () => Math.max(320, ((appWindow?.size?.height || 600) * 3) / 5),
+        [appWindow?.size?.height]
+    )
     const [bottomHeight, setBottomHeight] = useState(bottomHeightDefault)
     const [sideWidth, setSideWidth] = useState(SIDE_WIDTH_DEFAULT)
     const [notificationsEnabled, setNotificationsEnabled] = useState(false)
@@ -579,158 +516,35 @@ export default function Inbox(props) {
     const [showSubscribedQuestions, setShowSubscribedQuestions] = useState(false)
     const { questions: subscribedQuestions } = useSubscribedQuestions()
     const [menuValue, setMenuValue] = useState('')
-    // Local open-thread state — must not rely only on pushState (no React re-render)
-    const [activeThread, setActiveThread] = useState<string | undefined>(permalink || undefined)
-    // Sticky ref survives transient prop clears so the panel does not vanish mid-open
-    const activeThreadRef = useRef<string | undefined>(activeThread)
-    activeThreadRef.current = activeThread
-
-    const [isMobile, setIsMobile] = useState(() => {
-        if (typeof window === 'undefined') return false
-        return window.innerWidth < 896 || (appWindow?.size?.width || 1024) < 896
-    })
-    useEffect(() => {
-        const check = () => {
-            const w = appWindow?.size?.width || window.innerWidth
-            setIsMobile(window.innerWidth < 896 || w < 896)
-        }
-        check()
-        window.addEventListener('resize', check)
-        return () => window.removeEventListener('resize', check)
-    }, [appWindow?.size?.width])
-
-    // Prefer explicit selection; fall back to props/URL-derived permalink
-    const openPermalink = activeThread || permalink
-
-    const handleSideBySide = useCallback((nextSideBySide: boolean) => {
-        setSideBySide((prev) => {
-            if (prev !== nextSideBySide) {
-                try {
-                    localStorage.setItem('sideBySide', nextSideBySide.toString())
-                } catch {
-                    /* ignore */
-                }
-                return nextSideBySide
-            }
-            return prev
-        })
-    }, [])
-
-    const liftPanel = useCallback(() => {
-        if (!containerRef.current) return
-        const h = containerRef.current.getBoundingClientRect().height || 500
-        if (sideBySide && !isMobile) {
-            const w = containerRef.current.getBoundingClientRect().width
-            setSideWidth(Math.max(SIDE_WIDTH_DEFAULT, Math.min(w * 0.55, w - 280)))
-        } else {
-            const ratio = isMobile ? 0.82 : 0.62
-            const minH = isMobile ? 300 : 360
-            // Never leave the panel at the 45px "collapsed chrome" height while a thread is open
-            setBottomHeight(Math.max(minH, h * ratio))
-        }
-    }, [isMobile, sideBySide])
-
-    const openThread = useCallback(
-        (slug: string) => {
-            const clean = String(slug || '')
-                .replace(/^\/questions\/?/, '')
-                .replace(/^\/+/, '')
-                .replace(/^\/forum\/?/, '')
-                .replace(/^\/community\/?/, '')
-            if (!clean) return
-            const threadPath = `/questions/${clean}`
-            setActiveThread(clean)
-            activeThreadRef.current = clean
-            // Mobile: stacked panel only — side-by-side was closing on expand toggle
-            if (isMobile) {
-                setSideBySide(false)
-                try {
-                    localStorage.setItem('sideBySide', 'false')
-                } catch {
-                    /* ignore */
-                }
-            }
-            if (appWindow) {
-                updateWindow(appWindow, {
-                    path: threadPath,
-                    props: { ...(appWindow.props || {}), path: threadPath, permalink: clean },
-                })
-            }
-            if (typeof window !== 'undefined') {
-                try {
-                    // replaceState avoids stacking history entries that Next may fight
-                    window.history.replaceState(
-                        { windowKey: appWindow?.key || 'forum-main-window', forumThread: clean },
-                        '',
-                        threadPath
-                    )
-                } catch {
-                    /* ignore */
-                }
-            }
-            requestAnimationFrame(() => liftPanel())
-        },
-        [appWindow, updateWindow, isMobile, liftPanel]
-    )
-
-    // Sync from external navigation (window path / props) — never clear open thread here
-    useEffect(() => {
-        if (permalink && permalink !== activeThreadRef.current) {
-            setActiveThread(permalink)
-            activeThreadRef.current = permalink
-            requestAnimationFrame(() => liftPanel())
-        }
-    }, [permalink, liftPanel])
-
-    // Ensure an open thread always has usable panel size
-    useEffect(() => {
-        if (!openPermalink) return
-        if (!sideBySide && bottomHeight < 120) {
-            liftPanel()
-        }
-        if (sideBySide && sideWidth < 200 && !isMobile) {
-            liftPanel()
-        }
-    }, [openPermalink, bottomHeight, sideWidth, sideBySide, isMobile, liftPanel])
-
-    const [containerSize, setContainerSize] = useState({ w: 0, h: 0 })
-    useEffect(() => {
-        const el = containerRef.current
-        if (!el || typeof ResizeObserver === 'undefined') return
-        const ro = new ResizeObserver((entries) => {
-            const cr = entries[0]?.contentRect
-            if (!cr) return
-            setContainerSize({ w: cr.width, h: cr.height })
-        })
-        ro.observe(el)
-        return () => ro.disconnect()
-    }, [])
+    const isMobile = useMemo(() => (appWindow?.size?.width || 1024) < 896, [appWindow?.size?.width])
 
     const expandable = useMemo(() => {
+        if (!containerRef.current) return true
+        const containerRect = containerRef.current.getBoundingClientRect()
         if (sideBySide) {
-            if (isMobile) return sideWidth <= containerSize.w * 0.5
-            return sideWidth <= Math.max(400, containerSize.w * 0.45)
+            return isMobile ? sideWidth <= 0 : sideWidth <= 400
+        } else {
+            return bottomHeight <= containerRect.height / 2
         }
-        const half = (containerSize.h || 500) / 2
-        return bottomHeight <= half
-    }, [bottomHeight, sideWidth, sideBySide, isMobile, containerSize])
+    }, [bottomHeight, sideWidth, sideBySide, containerRef.current, isMobile])
 
-    const expandOrCollapse = useCallback(
-        (expandable: boolean) => {
-            if (!containerRef.current) return
-            if (sideBySide) {
-                const containerWidth = containerRef.current.getBoundingClientRect().width
-                const minWidth = isMobile ? 0 : 400
-                setSideWidth(expandable ? containerWidth : minWidth)
-            } else {
-                const containerHeight = containerRef.current.getBoundingClientRect().height
-                // Keep enough height for the toolbar when "collapsed" so controls don't vanish
-                const minHeight = openPermalink ? 140 : 45
-                setBottomHeight(expandable ? containerHeight : minHeight)
-            }
-        },
-        [sideBySide, isMobile, openPermalink]
-    )
+    const handleSideBySide = (sideBySide: boolean) => {
+        setSideBySide(sideBySide)
+        localStorage.setItem('sideBySide', sideBySide.toString())
+    }
+
+    const expandOrCollapse = (expandable: boolean) => {
+        if (!containerRef.current) return
+        if (sideBySide) {
+            const containerWidth = containerRef.current.getBoundingClientRect().width
+            const minWidth = isMobile ? 0 : 400
+            setSideWidth(expandable ? containerWidth : minWidth)
+        } else {
+            const containerHeight = containerRef.current.getBoundingClientRect().height
+            const minHeight = 45
+            setBottomHeight(expandable ? containerHeight : minHeight)
+        }
+    }
 
     const handleVerticalDrag = (_event, info) => {
         if (!containerRef.current) return
@@ -780,48 +594,44 @@ export default function Inbox(props) {
     }, [isValidating, props.path])
 
     useEffect(() => {
-        const sideBySideVal = localStorage.getItem('sideBySide')
-        if (sideBySideVal) {
-            setSideBySide(sideBySideVal === 'true')
+        const sideBySide = localStorage.getItem('sideBySide')
+        if (sideBySide) {
+            setSideBySide(sideBySide === 'true')
         }
     }, [])
 
-    // Only reset layout dimensions when the user toggles stacked ↔ side-by-side.
-    // Previously this also re-ran on bottomHeightDefault (window resize) and fought
-    // openThread's liftPanel — panel would flash open then collapse.
-    const prevSideBySide = useRef(sideBySide)
+    // Only when layout mode changes (wimpos) — do not re-run on every size tick
     useEffect(() => {
-        if (prevSideBySide.current === sideBySide) return
-        prevSideBySide.current = sideBySide
         if (!containerRef.current) return
-        if (sideBySide) {
-            if (isMobile) {
-                setSideWidth(containerRef.current.getBoundingClientRect().width)
-            } else {
-                setSideWidth(Math.max(400, SIDE_WIDTH_DEFAULT))
-            }
-        } else if (openPermalink) {
-            liftPanel()
-        } else {
-            setBottomHeight(45)
-        }
-    }, [sideBySide, isMobile, openPermalink, liftPanel])
+        const containerRect = containerRef.current.getBoundingClientRect()
 
-    // Force stacked on narrow viewports so expand/collapse chrome stays stable
-    useEffect(() => {
-        if (isMobile && sideBySide) {
-            handleSideBySide(false)
+        if (sideBySide) {
+            setSideWidth(Math.max(400, SIDE_WIDTH_DEFAULT))
+        } else {
+            setBottomHeight(Math.max(containerRect.height / 2, bottomHeightDefault))
         }
-    }, [isMobile, sideBySide, handleSideBySide])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [sideBySide])
+
+    useEffect(() => {
+        if (isMobile && sideBySide && containerRef.current) {
+            setSideWidth(containerRef.current.getBoundingClientRect().width)
+        }
+    }, [isMobile, sideBySide, appWindow?.size?.width])
+
+    // When a thread opens and panel is collapsed to chrome height, lift it (wimpos QuestionRow onClick)
+    useEffect(() => {
+        if (!permalink || !containerRef.current) return
+        if (bottomHeight <= 45) {
+            setBottomHeight(Math.max(bottomHeightDefault, containerRef.current.getBoundingClientRect().height * 0.8))
+        }
+    }, [permalink, bottomHeight, bottomHeightDefault])
 
     return (
         <>
-            <SEO title={(permalink && question?.attributes.subject) || data?.topic?.label || 'Forums'} />
+            <SEO title={(permalink && question?.attributes?.subject) || data?.topic?.label || 'Forums'} />
             {ready ? (
-                <div
-                    suppressHydrationWarning
-                    className="@container w-full h-full flex flex-col bg-primary text-primary"
-                >
+                <div suppressHydrationWarning className="@container w-full h-full flex flex-col bg-primary text-primary">
                     <div data-scheme="secondary" className={`flex @2xl:flex-row flex-col flex-grow min-h-0`}>
                         <aside
                             data-scheme="secondary"
@@ -862,7 +672,6 @@ export default function Inbox(props) {
                                                     setBottomHeight={setBottomHeight}
                                                     containerRef={containerRef}
                                                     pinned
-                                                    onOpenThread={openThread}
                                                 />
                                             ))}
                                             {(showSubscribedQuestions
@@ -879,7 +688,6 @@ export default function Inbox(props) {
                                                     bottomHeight={bottomHeight}
                                                     setBottomHeight={setBottomHeight}
                                                     containerRef={containerRef}
-                                                    onOpenThread={openThread}
                                                 />
                                             ))}
                                             {!isLoading && (!questions.data || questions.data.length === 0) && (
@@ -892,25 +700,27 @@ export default function Inbox(props) {
                                                     </div>
                                                 </div>
                                             )}
-                                            {isLoading && mounted && (
+                                            {isLoading && (
                                                 <div className="flex items-center justify-center py-8 h-full">
-                                                    <Lottie
-                                                        animationData={hourglassAnimation}
-                                                        className="size-6 opacity-75 dark:hidden"
-                                                        title="Loading questions..."
-                                                    />
-                                                    <Lottie
-                                                        animationData={hourglassAnimationWhite}
-                                                        className="size-6 opacity-75 hidden dark:block"
-                                                        title="Loading questions..."
-                                                    />
+                                                    <Suspense fallback={null}>
+                                                        <Lottie
+                                                            animationData={hourglassAnimation}
+                                                            className="size-6 opacity-75 dark:hidden"
+                                                            title="Loading questions..."
+                                                        />
+                                                        <Lottie
+                                                            animationData={hourglassAnimationWhite}
+                                                            className="size-6 opacity-75 hidden dark:block"
+                                                            title="Loading questions..."
+                                                        />
+                                                    </Suspense>
                                                 </div>
                                             )}
                                         </div>
                                     </ScrollArea>
                                 </div>
                                 <AnimatePresence>
-                                    {openPermalink && (
+                                    {permalink && (
                                         <motion.div
                                             ref={bottomContainerRef}
                                             className={`flex-none relative min-h-0 min-w-0 ${
@@ -918,21 +728,16 @@ export default function Inbox(props) {
                                             } ${
                                                 sideBySide ? '@4xl:border-l border-primary' : 'border-t border-primary'
                                             }`}
-                                            initial={
-                                                sideBySide
-                                                    ? { width: 0 }
-                                                    : { height: 0, opacity: 0.6 }
-                                            }
+                                            initial={{
+                                                width: 0,
+                                            }}
                                             animate={{
                                                 height: sideBySide ? '100%' : bottomHeight,
                                                 width: sideBySide ? sideWidth : '100%',
-                                                opacity: 1,
                                             }}
-                                            exit={
-                                                sideBySide
-                                                    ? { width: 0 }
-                                                    : { height: 0, opacity: 0 }
-                                            }
+                                            exit={{
+                                                width: 0,
+                                            }}
                                             transition={{
                                                 type: 'tween',
                                                 ...(isDragging ? { duration: 0 } : {}),
@@ -973,8 +778,8 @@ export default function Inbox(props) {
                                             <ScrollArea>
                                                 <div className="pb-[64px]">
                                                     <Question
-                                                        key={openPermalink}
-                                                        id={openPermalink}
+                                                        key={permalink}
+                                                        id={permalink}
                                                         onQuestionReady={(question) => setQuestion(question)}
                                                         subscribeButton={false}
                                                         showSlug
@@ -999,39 +804,6 @@ export default function Inbox(props) {
                                                 expandOrCollapse={expandOrCollapse}
                                                 isMobile={isMobile}
                                                 menuValue={menuValue}
-                                                onCloseThread={() => {
-                                                    setActiveThread(undefined)
-                                                    activeThreadRef.current = undefined
-                                                    setBottomHeight(45)
-                                                    setQuestion(undefined)
-                                                    if (appWindow) {
-                                                        const listPath =
-                                                            menuValue && menuValue.startsWith('/questions')
-                                                                ? menuValue
-                                                                : '/questions'
-                                                        updateWindow(appWindow, {
-                                                            path: listPath,
-                                                            props: {
-                                                                ...(appWindow.props || {}),
-                                                                path: listPath,
-                                                                permalink: undefined,
-                                                            },
-                                                        })
-                                                    }
-                                                    try {
-                                                        const listPath =
-                                                            menuValue && menuValue.startsWith('/questions')
-                                                                ? menuValue
-                                                                : '/questions'
-                                                        window.history.replaceState(
-                                                            { windowKey: appWindow?.key || 'forum-main-window' },
-                                                            '',
-                                                            listPath
-                                                        )
-                                                    } catch {
-                                                        /* ignore */
-                                                    }
-                                                }}
                                             />
                                         </motion.div>
                                     )}
