@@ -24,15 +24,6 @@ const Hogzilla = () => (
         <div
             className={`absolute inset-0 bg-[linear-gradient(180deg,#141E40_0%,#46368B_100%)] opacity-0 dark:opacity-100 ${FADE_OPACITY}`}
         />
-        <CloudinaryImage
-            loading="lazy"
-            src="https://res.cloudinary.com/dmukukwp6/image/upload/9000_hogzilla_359a450fb3.png"
-            alt=""
-            width={1780}
-            height={868}
-            className="absolute inset-0 flex items-end justify-end"
-            imgClassName="w-full max-w-[1780px] h-auto z-10"
-        />
     </>
 )
 
