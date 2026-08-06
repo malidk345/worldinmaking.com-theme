@@ -10,13 +10,23 @@ interface WindowContentProps {
 }
 
 export default function WindowContent({ item, chrome, hasToolbar, children }: WindowContentProps) {
+    const path = item.path || item.props?.path || ''
+    // Forum (Inbox) is a fixed split layout (list + thread panel) like wimpos — needs
+    // overflow-hidden + h-full chain. Notebooks/docs still need overflow-y-auto to scroll.
+    const isForumShell =
+        /^\/questions/.test(path) ||
+        /^\/forum/.test(path) ||
+        (/^\/community/.test(path) &&
+            !path.startsWith('/community/profiles') &&
+            !path.startsWith('/community/achievements'))
+
     return (
         <div
             onPointerDown={(event) => event.stopPropagation()}
             onTouchStart={(event) => event.stopPropagation()}
-            // overflow-y-auto: long pages (notebooks, forum, etc.) must scroll inside the window.
-            // overflow-hidden was clipping content with no scrollbar.
-            className={`size-full flex-grow relative z-[1] min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain ${
+            className={`size-full flex-grow relative z-[1] min-h-0 overflow-x-hidden overscroll-contain ${
+                isForumShell ? 'overflow-hidden flex flex-col' : 'overflow-y-auto'
+            } ${
                 chrome
                     ? `rounded-lg ${hasToolbar ? 'rounded-t-none' : ''} ${
                           item.expanded

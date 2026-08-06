@@ -96,7 +96,12 @@ function WindowRouterInner({ item }: WindowRouterProps) {
             /^\/(?:questions|forum)\/(?!topic(?:\/|$)|subscriptions(?:\/|$))([^/?#]+)\/?$/
         )
         const permalink = threadMatch?.[1]
-        return <Inbox permalink={permalink} path={path} {...props} />
+        // h-full min-h-0: Inbox needs a definite height budget for list+panel split (wimpos)
+        return (
+            <div className="h-full min-h-0 flex flex-col overflow-hidden">
+                <Inbox permalink={permalink} path={path} {...props} />
+            </div>
+        )
     }
     if (path === '/blog' || path === '/posts') {
         return <PostListing {...props} />
@@ -131,11 +136,27 @@ WindowRouterMemo.displayName = 'WindowRouterInner'
 
 // No solid bg-primary wrapper here — opaque fills kill WINDOW_BG frosted glass.
 // Pages set their own data-scheme / backgrounds (same as wimpos AppWindow content).
-const WindowRouter = (props: WindowRouterProps) => (
-    // min-h-full + h-auto: short pages fill the window; long pages grow so parent can scroll
-    <div data-scheme="primary" className="text-primary min-h-full h-auto flex flex-col">
-        <WindowRouterMemo {...props} />
-    </div>
-)
+const WindowRouter = (props: WindowRouterProps) => {
+    const path = props.item?.path || props.item?.props?.path || ''
+    const isForum =
+        /^\/questions/.test(path) ||
+        /^\/forum/.test(path) ||
+        (/^\/community/.test(path) &&
+            !path.startsWith('/community/profiles') &&
+            !path.startsWith('/community/achievements'))
+    // Forum needs fixed height; other pages grow with content (notebooks scroll).
+    return (
+        <div
+            data-scheme="primary"
+            className={
+                isForum
+                    ? 'text-primary h-full min-h-0 flex flex-col overflow-hidden'
+                    : 'text-primary min-h-full h-auto flex flex-col'
+            }
+        >
+            <WindowRouterMemo {...props} />
+        </div>
+    )
+}
 
 export default WindowRouter

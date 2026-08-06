@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback, Suspense } from 'react'
 import dynamic from 'next/dynamic'
-import { AnimatePresence, motion } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { useQuestions } from 'hooks/useQuestions'
 import ScrollArea from 'components/RadixUI/ScrollArea'
 import { TreeMenu } from 'components/TreeMenu'
@@ -532,18 +532,17 @@ export default function Inbox(props) {
                 .replace(/^\/+/, '')
             if (!clean) return
             const threadPath = `/questions/${clean}`
-            // 1) Open panel immediately
+            // 1) Open panel immediately (local state — never wait on path)
             setActiveThread(clean)
-            // 2) Lift panel
-            requestAnimationFrame(() => {
-                if (!containerRef.current) {
-                    setBottomHeight((h) => Math.max(h, 360))
-                    return
-                }
-                const ch = containerRef.current.getBoundingClientRect().height || 600
-                setBottomHeight(Math.max(360, ch * 0.72))
-            })
-            // 3) Sync window path (stable key — no remount)
+            // 2) Always set a visible panel height (stacked mode)
+            const ch = containerRef.current?.getBoundingClientRect().height || 0
+            const nextH = ch > 100 ? Math.max(360, ch * 0.72) : 420
+            setBottomHeight(nextH)
+            if (sideBySide) {
+                const cw = containerRef.current?.getBoundingClientRect().width || 800
+                setSideWidth(Math.max(SIDE_WIDTH_DEFAULT, Math.min(cw * 0.55, cw - 280)))
+            }
+            // 3) Sync window path after paint (stable key — no remount)
             if (appWindow) {
                 updateWindow(appWindow, {
                     path: threadPath,
@@ -560,7 +559,7 @@ export default function Inbox(props) {
                 /* ignore */
             }
         },
-        [appWindow, updateWindow]
+        [appWindow, updateWindow, sideBySide]
     )
 
     const bottomContainerRef = useRef<HTMLDivElement>(null)
@@ -708,11 +707,14 @@ export default function Inbox(props) {
         <>
             <SEO title={(permalink && question?.attributes?.subject) || data?.topic?.label || 'Forums'} />
             {ready ? (
-                <div suppressHydrationWarning className="@container w-full h-full flex flex-col bg-primary text-primary">
-                    <div data-scheme="secondary" className={`flex @2xl:flex-row flex-col flex-grow min-h-0`}>
+                <div
+                    suppressHydrationWarning
+                    className="@container w-full h-full min-h-0 flex flex-col bg-primary text-primary overflow-hidden"
+                >
+                    <div data-scheme="secondary" className={`flex @2xl:flex-row flex-col flex-1 min-h-0 overflow-hidden`}>
                         <aside
                             data-scheme="secondary"
-                            className="w-full @2xl:w-64 bg-primary flex-shrink-0 @2xl:border-r border-primary @2xl:h-full"
+                            className="w-full @2xl:w-64 bg-primary flex-shrink-0 @2xl:border-r border-primary @2xl:h-full @2xl:min-h-0"
                         >
                             <SearchProvider>
                                 <SidebarContent onMenuValueChange={setMenuValue} onSubmitQuestion={refresh} />
@@ -720,13 +722,17 @@ export default function Inbox(props) {
                         </aside>
                         <main
                             data-scheme="primary"
-                            className="flex-1 bg-primary overflow-hidden border-primary @2xl:border-none border-t"
+                            className="flex-1 min-h-0 bg-primary overflow-hidden border-primary @2xl:border-none border-t flex flex-col"
                         >
                             <div
                                 ref={containerRef}
-                                className={`flex flex-row h-full ${sideBySide ? 'flex-row' : 'flex-col'}`}
+                                className={`flex flex-1 min-h-0 ${sideBySide ? 'flex-row' : 'flex-col'}`}
                             >
-                                <div className={`@container flex-1 min-h-0 text-sm ${sideBySide ? 'w-0' : 'w-full'}`}>
+                                <div
+                                    className={`@container flex-1 min-h-0 min-w-0 text-sm overflow-hidden ${
+                                        sideBySide ? 'w-0' : 'w-full'
+                                    }`}
+                                >
                                     <ScrollArea className="h-full">
                                         <div className="flex items-center pl-2.5 pr-4 py-2 border-b border-primary font-medium bg-accent text-sm bg-accent-2 sticky top-0 text-primary z-10 whitespace-nowrap">
                                             <div className="w-8 shrink-0 @3xl:block hidden" />
@@ -798,30 +804,23 @@ export default function Inbox(props) {
                                         </div>
                                     </ScrollArea>
                                 </div>
-                                <AnimatePresence>
-                                    {permalink && (
-                                        <motion.div
+                                {permalink ? (
+                                        <div
                                             ref={bottomContainerRef}
-                                            className={`flex-none relative min-h-0 min-w-0 ${
-                                                !isDragging ? 'transition-all duration-200 ease-out' : ''
+                                            className={`relative min-h-0 min-w-0 flex flex-col overflow-hidden bg-primary ${
+                                                !isDragging ? 'transition-[height,width] duration-200 ease-out' : ''
                                             } ${
                                                 sideBySide ? '@4xl:border-l border-primary' : 'border-t border-primary'
                                             }`}
-                                            initial={false}
-                                            animate={{
-                                                height: sideBySide ? '100%' : Math.max(bottomHeight, 280),
-                                                width: sideBySide ? Math.max(sideWidth, 280) : '100%',
-                                                opacity: 1,
-                                            }}
-                                            exit={{
-                                                height: sideBySide ? '100%' : 0,
-                                                width: sideBySide ? 0 : '100%',
-                                                opacity: 0,
-                                            }}
-                                            transition={{
-                                                type: 'tween',
-                                                duration: isDragging ? 0 : 0.2,
-                                            }}
+                                            style={
+                                                sideBySide
+                                                    ? { width: Math.max(sideWidth, 280), height: '100%', flex: '0 0 auto' }
+                                                    : {
+                                                          height: Math.max(bottomHeight, 280),
+                                                          width: '100%',
+                                                          flex: '0 0 auto',
+                                                      }
+                                            }
                                         >
                                             {sideBySide ? (
                                                 <motion.div
@@ -886,9 +885,8 @@ export default function Inbox(props) {
                                                 menuValue={menuValue}
                                                 onCloseThread={closeThread}
                                             />
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
+                                        </div>
+                                ) : null}
                             </div>
                         </main>
                     </div>

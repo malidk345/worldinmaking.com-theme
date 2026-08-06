@@ -780,9 +780,14 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
 const AppWindowMemoized = React.memo(AppWindow, (prevProps, nextProps) => {
     const p = prevProps.item
     const n = nextProps.item
+    // MUST include path / props.permalink — forum thread panel opens by updating path only.
+    // Skipping path comparison left Inbox stuck on /questions and the detail pane never appeared.
     return (
         p === n ||
         (p.key === n.key &&
+            p.path === n.path &&
+            p.props?.permalink === n.props?.permalink &&
+            p.props?.path === n.props?.path &&
             p.zIndex === n.zIndex &&
             p.minimized === n.minimized &&
             p.expanded === n.expanded &&
