@@ -7,14 +7,15 @@ const PostPage = dynamic(() => import('components/posts/PostPage'), {
 
 /**
  * Edge SSR instead of ISR (getStaticPaths fallback: 'blocking' + revalidate).
- * next-on-pages rejects Node-runtime on-demand prerender for this route
- * ("Invalid prerender config" + missing Edge Runtime).
+ * Pages Router + getServerSideProps requires `experimental-edge` (not `edge`).
+ * next-on-pages treats experimental-edge as valid Cloudflare Edge.
  */
-export const runtime = 'edge'
-/** Pages Router also reads `config.runtime` for getServerSideProps. */
-export const config = { runtime: 'edge' as const }
+export const config = {
+    runtime: 'experimental-edge',
+}
 
 export const getServerSideProps = ({ params }: { params: { slug: string } }) => ({
     props: { params: params || {} },
 })
+
 export default PostPage
