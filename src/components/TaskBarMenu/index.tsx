@@ -160,7 +160,7 @@ function TaskBarMenu() {
                           {
                               type: 'item' as const,
                               label: 'My profile',
-                              link: '/community/profiles/me',
+                              link: user?.username ? `/profile/${encodeURIComponent(user.username)}` : '/profile',
                               icon: <IconUser className="opacity-50 group-hover/item:opacity-75 size-4" />,
                           },
                           {

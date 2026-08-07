@@ -4,6 +4,8 @@ import { IconX } from '@posthog/icons'
 import { useUser, type User } from 'hooks/useUser'
 import { requestPasswordReset } from 'lib/wim-auth'
 import { supabase } from 'lib/supabaseCommunity'
+import OSButton from 'components/OSButton'
+import { ToggleGroup } from 'components/RadixUI/ToggleGroup'
 
 type AuthView = 'sign-in' | 'sign-up' | 'forgot-password'
 
@@ -29,14 +31,11 @@ export default function AuthModal({
     const [loading, setLoading] = useState(false)
     const [errorMsg, setErrorMsg] = useState<string | null>(null)
     const [successMsg, setSuccessMsg] = useState<string | null>(null)
-    const [magicLinkSent, setMagicLinkSent] = useState(false)
-
     useEffect(() => {
         if (isOpen) {
             setMode(initialView || 'sign-in')
             setErrorMsg(null)
             setSuccessMsg(null)
-            setMagicLinkSent(false)
             setPassword('')
         }
     }, [isOpen, initialView])
@@ -59,302 +58,274 @@ export default function AuthModal({
                     setErrorMsg('Sign in failed. Please try again.')
                     return
                 }
-                if ('error' in result) {
-                    setErrorMsg(result.error || 'Invalid email or password')
+                if ('error' in result && result.error) {
+                    setErrorMsg(result.error)
                     return
                 }
-                finishSuccess(result)
-                return
-            }
-
-            if (mode === 'sign-up') {
-                const result = await signUp({
-                    email,
-                    password,
-                    firstName: firstName.trim() || email.split('@')[0],
-                    lastName: lastName.trim() || '',
-                })
+                finishSuccess(result as User)
+            } else if (mode === 'sign-up') {
+                if (!firstName.trim()) {
+                    setErrorMsg('First name is required')
+                    return
+                }
+                const result = await signUp({ email, password, firstName, lastName })
                 if (!result) {
                     setErrorMsg('Sign up failed. Please try again.')
                     return
                 }
-                if ('error' in result) {
+                if ('error' in result && result.error) {
                     setErrorMsg(result.error)
                     return
                 }
-                finishSuccess(result)
+                finishSuccess(result as User)
             }
         } catch (err: any) {
-            setErrorMsg(err?.message || 'Something went wrong')
+            setErrorMsg(err.message || 'An unexpected error occurred.')
         } finally {
             setLoading(false)
         }
     }
 
-    const handleForgotSubmit = async (e: React.FormEvent) => {
+    const handleMagicLink = async (e: React.FormEvent) => {
         e.preventDefault()
-        setErrorMsg(null)
-        setSuccessMsg(null)
-        setLoading(true)
-        try {
-            const { error } = await requestPasswordReset(email)
-            if (error) {
-                setErrorMsg(error)
-                return
-            }
-            setSuccessMsg('Check your email for password reset instructions.')
-        } catch (err: any) {
-            setErrorMsg(err?.message || 'Could not send reset email')
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    const handleMagicLink = async () => {
-        setErrorMsg(null)
-        setSuccessMsg(null)
-        if (!email) {
-            setErrorMsg('Enter your email first')
+        if (!email || !email.includes('@')) {
+            setErrorMsg('Please enter a valid email address.')
             return
         }
+        setErrorMsg(null)
+        setSuccessMsg(null)
         setLoading(true)
+
         try {
             const { error } = await supabase.auth.signInWithOtp({
                 email,
                 options: {
-                    emailRedirectTo: `${window.location.origin}/`,
+                    emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/` : undefined,
                 },
             })
-            if (error) throw error
-            setMagicLinkSent(true)
-            setSuccessMsg('Check your email for the magic sign-in link.')
+
+            if (error) {
+                setErrorMsg(error.message)
+            } else {
+                setSuccessMsg('Check your email! We sent you a magic login link.')
+            }
         } catch (err: any) {
-            setErrorMsg(err?.message || 'Failed to send magic link')
+            setErrorMsg(err.message || 'Failed to send magic link.')
         } finally {
             setLoading(false)
         }
     }
 
-    const title =
-        mode === 'sign-up'
-            ? 'create account'
-            : mode === 'forgot-password'
-            ? 'reset password'
-            : 'sign in to the community'
+    const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!email) {
+            setErrorMsg('Please enter your email address.')
+            return
+        }
+        setErrorMsg(null)
+        setSuccessMsg(null)
+        setLoading(true)
 
-    const subtitle =
-        mode === 'sign-up'
-            ? 'join worldinmaking with email and password'
-            : mode === 'forgot-password'
-            ? 'we will email you a reset link'
-            : 'sign in with your worldinmaking account'
+        try {
+            const res = await requestPasswordReset(email)
+            if (res.error) {
+                setErrorMsg(res.error)
+            } else {
+                setSuccessMsg('Password reset instructions sent to your email.')
+            }
+        } catch (err: any) {
+            setErrorMsg(err?.message || 'Failed to request password reset.')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    if (!isOpen) return null
 
     return (
         <AnimatePresence>
-            {isOpen && (
-                <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-black/40">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.96 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.96 }}
-                        transition={{ duration: 0.15 }}
-                        className="relative max-w-sm w-full bg-accent p-6 rounded-xl border border-primary shadow-2xl text-primary"
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+                {/* Backdrop */}
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={onClose}
+                    className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                />
+
+                {/* Forum-styled Modal Container */}
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.96, y: 8 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.96, y: 8 }}
+                    transition={{ duration: 0.18, ease: 'easeOut' }}
+                    data-scheme="primary"
+                    className="relative z-10 w-full max-w-md bg-primary text-primary border border-primary rounded-xl p-6 shadow-2xl overflow-hidden"
+                >
+                    {/* Close Button */}
+                    <button
+                        onClick={onClose}
+                        className="absolute top-4 right-4 text-secondary hover:text-primary p-1 rounded hover:bg-accent/40 transition-colors"
+                        aria-label="Close modal"
                     >
-                        <button
-                            onClick={onClose}
-                            className="absolute top-4 right-4 p-1.5 rounded-md hover:bg-primary/10 text-secondary hover:text-primary transition-colors z-20"
-                            aria-label="Close Modal"
-                            type="button"
-                        >
-                            <IconX className="size-4" />
-                        </button>
+                        <IconX className="size-5" />
+                    </button>
 
-                        <h2 className="text-xl font-extrabold tracking-tight text-primary m-0 mb-1 lowercase">
-                            worldinmaking
-                        </h2>
-                        <p className="text-xs text-secondary mb-4 lowercase">{subtitle}</p>
+                    {/* Banner / Header */}
+                    <div className="bg-[#FFF7E9] dark:bg-accent/40 border border-primary rounded mb-5 p-4">
+                        <h4 className="m-0 text-base font-bold pb-1 text-primary">
+                            {mode === 'sign-in' && 'Sign in to WorldInMaking'}
+                            {mode === 'sign-up' && 'Create your account'}
+                            {mode === 'forgot-password' && 'Reset your password'}
+                        </h4>
+                        <p className="m-0 text-xs text-secondary leading-relaxed">
+                            {mode === 'sign-in' && 'Access your notebooks, forum posts, and philosopher AI settings.'}
+                            {mode === 'sign-up' && 'Join the community to write, discuss, and build.'}
+                            {mode === 'forgot-password' && 'Enter your email to receive password reset instructions.'}
+                        </p>
+                    </div>
 
-                        {mode !== 'forgot-password' && (
-                            <div className="flex border-b border-primary/20 mb-5 gap-6 text-xs font-bold lowercase">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setMode('sign-in')
-                                        setErrorMsg(null)
-                                        setSuccessMsg(null)
-                                    }}
-                                    className={`pb-2 transition-colors ${
-                                        mode === 'sign-in'
-                                            ? 'border-b-2 border-primary text-primary'
-                                            : 'text-secondary hover:text-primary'
-                                    }`}
-                                >
-                                    sign in
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setMode('sign-up')
-                                        setErrorMsg(null)
-                                        setSuccessMsg(null)
-                                    }}
-                                    className={`pb-2 transition-colors ${
-                                        mode === 'sign-up'
-                                            ? 'border-b-2 border-primary text-primary'
-                                            : 'text-secondary hover:text-primary'
-                                    }`}
-                                >
-                                    create account
-                                </button>
-                            </div>
-                        )}
+                    {/* View Switcher (Forum ToggleGroup Style) */}
+                    {mode !== 'forgot-password' && (
+                        <ToggleGroup
+                            title="Authentication"
+                            hideTitle
+                            options={[
+                                { label: 'Login', value: 'sign-in' },
+                                { label: 'Signup', value: 'sign-up' },
+                            ]}
+                            value={mode}
+                            onValueChange={(val) => setMode(val as AuthView)}
+                            className="mb-5"
+                        />
+                    )}
 
-                        {errorMsg && (
-                            <div className="mb-4 p-3 rounded-md bg-red/10 border border-red/30 text-red text-xs font-semibold">
-                                {errorMsg}
-                            </div>
-                        )}
-                        {successMsg && (
-                            <div className="mb-4 p-3 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
-                                {successMsg}
-                            </div>
-                        )}
+                    {/* Error / Success Messages */}
+                    {errorMsg && (
+                        <p className="bg-red/10 border border-red/30 rounded py-2 px-4 text-xs text-red font-semibold mb-4">
+                            {errorMsg}
+                        </p>
+                    )}
+                    {successMsg && (
+                        <p className="bg-green/10 border border-green/30 rounded py-2 px-4 text-xs text-green font-semibold mb-4">
+                            {successMsg}
+                        </p>
+                    )}
 
-                        {mode === 'forgot-password' ? (
-                            <form onSubmit={handleForgotSubmit} className="space-y-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-primary mb-1 lowercase">
-                                        email address
-                                    </label>
-                                    <input
-                                        type="email"
-                                        required
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        placeholder="name@domain.com"
-                                        className="w-full px-3 py-2 rounded-md border border-primary bg-primary text-primary text-sm placeholder:text-secondary focus:outline-none focus:border-primary"
-                                    />
-                                </div>
-                                <SubmitButton loading={loading} label="send reset link" />
-                                <button
-                                    type="button"
-                                    className="w-full text-xs text-secondary hover:text-primary lowercase"
-                                    onClick={() => setMode('sign-in')}
-                                >
-                                    back to sign in
-                                </button>
-                            </form>
-                        ) : (
-                            <form onSubmit={handlePasswordSubmit} className="space-y-3">
-                                {mode === 'sign-up' && (
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <div>
-                                            <label className="block text-xs font-semibold text-primary mb-1 lowercase">
-                                                first name
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={firstName}
-                                                onChange={(e) => setFirstName(e.target.value)}
-                                                placeholder="First"
-                                                className="w-full px-3 py-2 rounded-md border border-primary bg-primary text-primary text-sm placeholder:text-secondary focus:outline-none focus:border-primary"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-semibold text-primary mb-1 lowercase">
-                                                last name
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={lastName}
-                                                onChange={(e) => setLastName(e.target.value)}
-                                                placeholder="Last"
-                                                className="w-full px-3 py-2 rounded-md border border-primary bg-primary text-primary text-sm placeholder:text-secondary focus:outline-none focus:border-primary"
-                                            />
-                                        </div>
-                                    </div>
-                                )}
-                                <div>
-                                    <label className="block text-xs font-semibold text-primary mb-1 lowercase">
-                                        email address
-                                    </label>
-                                    <input
-                                        type="email"
-                                        required
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        placeholder="name@domain.com"
-                                        className="w-full px-3 py-2 rounded-md border border-primary bg-primary text-primary text-sm placeholder:text-secondary focus:outline-none focus:border-primary"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-primary mb-1 lowercase">
-                                        password
-                                    </label>
-                                    <input
-                                        type="password"
-                                        required
-                                        minLength={6}
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        placeholder="••••••••"
-                                        className="w-full px-3 py-2 rounded-md border border-primary bg-primary text-primary text-sm placeholder:text-secondary focus:outline-none focus:border-primary"
-                                    />
-                                </div>
-
-                                <SubmitButton
-                                    loading={loading}
-                                    label={mode === 'sign-in' ? title : 'create account'}
+                    {/* Forms */}
+                    {mode === 'forgot-password' ? (
+                        <form onSubmit={handleForgotPasswordSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-semibold mb-1 opacity-75">Email address</label>
+                                <input
+                                    type="email"
+                                    required
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="you@example.com"
+                                    className="rounded-md border border-primary bg-primary py-2 px-3 w-full text-sm text-primary focus:outline-none focus:ring-1 focus:ring-primary"
                                 />
+                            </div>
+                            <OSButton width="full" variant="primary" type="submit" disabled={loading}>
+                                {loading ? 'Sending instructions...' : 'Send reset instructions'}
+                            </OSButton>
+                            <OSButton
+                                width="full"
+                                variant="secondary"
+                                type="button"
+                                onClick={() => setMode('sign-in')}
+                            >
+                                Back to login
+                            </OSButton>
+                        </form>
+                    ) : (
+                        <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                            {mode === 'sign-up' && (
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-semibold mb-1 opacity-75">First Name *</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={firstName}
+                                            onChange={(e) => setFirstName(e.target.value)}
+                                            placeholder="Jane"
+                                            className="rounded-md border border-primary bg-primary py-2 px-3 w-full text-sm text-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold mb-1 opacity-75">Last Name</label>
+                                        <input
+                                            type="text"
+                                            value={lastName}
+                                            onChange={(e) => setLastName(e.target.value)}
+                                            placeholder="Doe"
+                                            className="rounded-md border border-primary bg-primary py-2 px-3 w-full text-sm text-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="block text-xs font-semibold mb-1 opacity-75">Email address *</label>
+                                <input
+                                    type="email"
+                                    required
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="you@example.com"
+                                    className="rounded-md border border-primary bg-primary py-2 px-3 w-full text-sm text-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold mb-1 opacity-75">Password *</label>
+                                <input
+                                    type="password"
+                                    required
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    className="rounded-md border border-primary bg-primary py-2 px-3 w-full text-sm text-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                />
+                            </div>
+
+                            <div className="space-y-2 pt-2">
+                                <OSButton width="full" variant="primary" type="submit" disabled={loading}>
+                                    {loading
+                                        ? 'Processing...'
+                                        : mode === 'sign-in'
+                                        ? 'Login'
+                                        : 'Create account'}
+                                </OSButton>
 
                                 {mode === 'sign-in' && (
-                                    <div className="flex flex-col gap-2 pt-1">
-                                        <button
+                                    <>
+                                        <OSButton
+                                            width="full"
+                                            variant="secondary"
                                             type="button"
-                                            className="w-full text-xs text-secondary hover:text-primary lowercase"
-                                            onClick={() => {
-                                                setMode('forgot-password')
-                                                setErrorMsg(null)
-                                                setSuccessMsg(null)
-                                            }}
-                                        >
-                                            forgot password?
-                                        </button>
-                                        <button
-                                            type="button"
-                                            disabled={loading || magicLinkSent}
                                             onClick={handleMagicLink}
-                                            className="w-full text-xs text-secondary hover:text-primary lowercase disabled:opacity-50"
+                                            disabled={loading}
                                         >
-                                            {magicLinkSent ? 'magic link sent' : 'or send a magic link instead'}
-                                        </button>
-                                    </div>
-                                )}
-                            </form>
-                        )}
-                    </motion.div>
-                </div>
-            )}
-        </AnimatePresence>
-    )
-}
+                                            Send magic login link
+                                        </OSButton>
 
-function SubmitButton({ loading, label }: { loading: boolean; label: string }) {
-    return (
-        <div className="pt-2">
-            <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-button-shadow dark:bg-button-shadow-dark rounded-[6px] border-[1.5px] border-button block group text-center disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-            >
-                <span className="flex items-center justify-center bg-orange text-white font-bold text-sm px-4 py-2 rounded-[6px] border-[1.5px] border-button dark:border-button-dark dark:bg-orange translate-y-[-2px] hover:translate-y-[-4px] active:translate-y-[-1px] transition-all lowercase select-none">
-                    {loading ? (
-                        <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                    ) : (
-                        label
+                                        <button
+                                            type="button"
+                                            className="block w-full text-center text-xs text-secondary hover:text-primary hover:underline pt-1"
+                                            onClick={() => setMode('forgot-password')}
+                                        >
+                                            Forgot password?
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </form>
                     )}
-                </span>
-            </button>
-        </div>
+                </motion.div>
+            </div>
+        </AnimatePresence>
     )
 }

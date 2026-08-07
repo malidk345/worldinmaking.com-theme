@@ -12,9 +12,10 @@ export default function MyProfilePage() {
     const { openSignIn } = useApp()
 
     useEffect(() => {
-        if (!isValidating && user?.profile?.id) {
-            const id = user.username || user.profile.id
-            router.replace(`/community/profiles/${id}`)
+        if (!isValidating && user?.username) {
+            router.replace(`/profile/${encodeURIComponent(user.username)}`)
+        } else if (!isValidating && user?.profile?.id) {
+            router.replace(`/profile/${user.profile.id}`)
         }
     }, [isValidating, user, router])
 
