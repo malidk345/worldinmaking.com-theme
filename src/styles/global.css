@@ -301,15 +301,15 @@
     }
 
     .light [data-scheme='tertiary'] {
-        --bg: 229 231 224;
-        --accent: 200 202 193;
-        --border: 158 160 150;
-        --input-bg: 238 239 233;
-        --input-border: 191 193 183;
-        --text-primary: 35 37 29;
-        --text-secondary: 77 79 70;
-        --text-muted: 115 117 107;
-        --tw-shadow-color: 35 37 29;
+        --bg: 228 228 228;
+        --accent: 198 198 198;
+        --border: 156 156 156;
+        --input-bg: 237 237 237;
+        --input-border: 189 189 189;
+        --text-primary: 34 34 34;
+        --text-secondary: 75 75 75;
+        --text-muted: 113 113 113;
+        --tw-shadow-color: 34 34 34;
         --primary: var(--text-primary);
         --secondary: var(--text-secondary);
         --muted: var(--text-muted);
@@ -319,14 +319,14 @@
         .hover-invert:hover,
         .hover-invert[data-state='open'],
         .hover-invert[data-state='highlighted'] {
-            --bg: 35 37 29;
-            --accent: 77 79 70;
-            --border: 158 160 150;
-            --input-bg: 238 239 233;
-            --input-border: 191 193 183;
-            --text-primary: 229 231 224;
-            --text-secondary: 200 202 193;
-            --text-muted: 200 202 193;
+            --bg: 34 34 34;
+            --accent: 75 75 75;
+            --border: 156 156 156;
+            --input-bg: 237 237 237;
+            --input-border: 189 189 189;
+            --text-primary: 228 228 228;
+            --text-secondary: 198 198 198;
+            --text-muted: 198 198 198;
             --primary: var(--text-primary);
             --secondary: var(--text-secondary);
             --muted: var(--text-muted);

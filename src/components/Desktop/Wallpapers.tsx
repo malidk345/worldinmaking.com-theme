@@ -28,26 +28,6 @@ const Hogzilla = () => (
 const StartupMonopoly = () => (
     <>
         <div className={`absolute inset-0 bg-[#E7E0DA] dark:bg-[#686E88] ${FADE_COLORS}`} />
-        <div
-            className={`absolute right-0 top-0 w-[1483.5px] h-[731.5px] max-w-full opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
-            style={{
-                backgroundImage:
-                    "url('https://res.cloudinary.com/dmukukwp6/image/upload/9000_monopoly_light_6614a8a5d5.jpg')",
-                backgroundSize: 'cover',
-                backgroundPosition: 'right top',
-                backgroundRepeat: 'no-repeat',
-            }}
-        />
-        <div
-            className={`absolute right-0 top-0 w-[1483.5px] h-[731.5px] max-w-full opacity-0 dark:opacity-100 ${FADE_OPACITY}`}
-            style={{
-                backgroundImage:
-                    "url('https://res.cloudinary.com/dmukukwp6/image/upload/9000_monopoly_dark_26c85ccad8.jpg')",
-                backgroundSize: 'cover',
-                backgroundPosition: 'right top',
-                backgroundRepeat: 'no-repeat',
-            }}
-        />
     </>
 )
 
