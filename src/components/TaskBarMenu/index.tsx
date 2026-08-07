@@ -147,32 +147,28 @@ function TaskBarMenu() {
                               label: 'User Account',
                               disabled: true,
                           },
-                          ...(user?.profile
-                              ? [
-                                    {
-                                        type: 'item' as const,
-                                        label: `Notifications${
-                                            notifications?.length > 0 ? ` (${notifications.length})` : ''
-                                        }`,
-                                        onClick: () => setIsNotificationsPanelOpen(true),
-                                        icon: (
-                                            <IconNotification className="opacity-50 group-hover/item:opacity-75 size-4" />
-                                        ),
-                                    },
-                                    {
-                                        type: 'item' as const,
-                                        label: 'My profile',
-                                        link: `/profile/${user?.username || user?.profile?.id}`,
-                                        icon: <IconUser className="opacity-50 group-hover/item:opacity-75 size-4" />,
-                                    },
-                                    {
-                                        type: 'item' as const,
-                                        label: 'Bookmarks',
-                                        link: '/bookmarks',
-                                        icon: <IconBookmark className="opacity-50 group-hover/item:opacity-75 size-4" />,
-                                    },
-                                ]
-                              : []),
+                          {
+                              type: 'item' as const,
+                              label: `Notifications${
+                                  notifications?.length > 0 ? ` (${notifications.length})` : ''
+                              }`,
+                              onClick: () => setIsNotificationsPanelOpen(true),
+                              icon: (
+                                  <IconNotification className="opacity-50 group-hover/item:opacity-75 size-4" />
+                              ),
+                          },
+                          {
+                              type: 'item' as const,
+                              label: 'My profile',
+                              link: '/community/profiles/me',
+                              icon: <IconUser className="opacity-50 group-hover/item:opacity-75 size-4" />,
+                          },
+                          {
+                              type: 'item' as const,
+                              label: 'Bookmarks',
+                              link: '/bookmarks',
+                              icon: <IconBookmark className="opacity-50 group-hover/item:opacity-75 size-4" />,
+                          },
                           {
                               type: 'separator' as const,
                           },
