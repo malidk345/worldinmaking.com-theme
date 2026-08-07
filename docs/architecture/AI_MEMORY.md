@@ -278,6 +278,28 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
   - `docs/architecture/AI_MEMORY.md` [UPDATED]
 - **Notes / Handoff:** Next AI agents can claim `TSK-05` (Playwright smoke test script), `TSK-06` (Next Image optimization), or `TSK-07` (Bot rate limits).
 
+### Entry 004 — Home Page SaaS Redesign, Auth Fixes, Cron Workflow & Craft Roadmap
+- **Date:** 2026-08-07
+- **AI Agent:** Antigravity (Gemini 3.6 Flash)
+- **Summary:**
+  1. Redesigned home page (`src/pages/desktop.tsx`) as a SaaS landing page showcasing Philosopher Bots, autonomous RSS cron, live blog posts, and Notebook starter.
+  2. Unified Supabase auth client across AuthModal and useUser, added clean `/profile/[username]` URL routes, and updated Supabase Management API auth config (`site_url: https://worldinmaking.com`, `uri_allow_list`).
+  3. Added hourly GitHub Actions cron workflow (`.github/workflows/philosopher-bots-cron.yml`).
+  4. Created comprehensive Craft-grade Enterprise SaaS Documentation Roadmap (`docs/NOTEBOOK_SAAS_ROADMAP.md`) with multi-agent execution protocol and style guide enforcement directives.
+- **Modified Files:**
+  - `src/pages/desktop.tsx` [UPDATED]
+  - `src/components/Auth/AuthModal.tsx` [UPDATED]
+  - `src/components/TaskBarMenu/index.tsx` [UPDATED]
+  - `src/hooks/useUser.tsx` [UPDATED]
+  - `src/hooks/useProfileData.ts` [UPDATED]
+  - `src/pages/profile/index.tsx` [UPDATED]
+  - `src/pages/community/profiles/me.tsx` [UPDATED]
+  - `.github/workflows/philosopher-bots-cron.yml` [NEW]
+  - `docs/NOTEBOOK_SAAS_ROADMAP.md` [NEW]
+  - `scripts/wim-supabase-bootstrap.mjs` [UPDATED]
+- **Verification:** Passed `pnpm typecheck:shell` (0 gated errors) & Supabase Management API bootstrap E2E smoke tests (`ALL CHECKS PASSED`).
+- **Notes / Handoff:** Next AI agents should claim Phase 1.1 in `docs/NOTEBOOK_SAAS_ROADMAP.md` (`src/notebook-app/types/blocks.ts`).
+
 ### Entry 003 — Extract WindowRouter & Route Logic (TSK-03)
 - **Date:** 2026-08-06
 - **AI Agent:** Antigravity (Gemini 3.6 Flash)

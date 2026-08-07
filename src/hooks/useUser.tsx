@@ -183,6 +183,25 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     const validateUser = async () => {
         try {
             if (isSupabaseConfigured) {
+                // If URL has access_token or auth code, let onAuthStateChange establish the session
+                if (typeof window !== 'undefined') {
+                    const hash = window.location.hash || ''
+                    const search = window.location.search || ''
+                    if (hash.includes('access_token=') || search.includes('code=')) {
+                        return
+                    }
+                    if (hash.includes('error_code=otp_expired') || search.includes('error_code=otp_expired')) {
+                        addToast({
+                            description: 'Giriş bağlantısının süresi dolmuş. Lütfen yeni bir giriş bağlantısı isteyin.',
+                            error: true,
+                            duration: 5000,
+                        })
+                        clearUser()
+                        setIsValidating(false)
+                        return
+                    }
+                }
+
                 const token = await getSessionAccessToken()
                 if (token) {
                     setJwt(token)
@@ -216,6 +235,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
                 setUser(null)
                 setJwt(null)
                 localStorage.removeItem('jwt')
+                setIsValidating(false)
                 return
             }
             if (session?.access_token) {
@@ -231,6 +251,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
                     }
                 }
             }
+            setIsValidating(false)
         })
         return () => {
             sub.subscription.unsubscribe()
