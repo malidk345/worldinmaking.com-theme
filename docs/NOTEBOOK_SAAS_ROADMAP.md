@@ -1,32 +1,61 @@
 <!--
 ===================================================================================
-AI DIRECTIVE & DESIGN SYSTEM CONSTRAINT FOR ALL AGENTS
+AI DIRECTIVE, DESIGN CONSTRAINTS & MULTI-AGENT HANDOFF PROTOCOL
 ===================================================================================
 IMPORTANT FOR ALL AI MODELS (Claude, Gemini, Antigravity, GPT, DeepSeek, Cursor):
 
-1. STRICT STYLE GUIDE COMPLIANCE:
-   - All code, components, and UI modifications MUST strictly follow `STYLEGUIDE.md`
-     and the PostHog / WorldInMaking OS design tokens (`src/constants/frostedSurfaces.ts`,
-     `src/styles/vars.scss`, tailwind config).
-   - NEVER generate arbitrary, ad-hoc, or unapproved custom styles, font families,
-     or off-palette colors (e.g. random indigo/purple/slate gradients).
+1. STRICT SEQUENTIAL EXECUTION:
+   - AI models MUST execute roadmap phases STRICTLY IN ORDER (Phase 1 -> Phase 2 -> Phase 3 -> Phase 4).
+   - Do NOT skip phases or attempt future phase features before previous phases pass verification (`pnpm typecheck:shell` / smoke tests).
 
-2. ESTABLISHED UI LIBRARIES & ESTHETIC STANDARDS:
+2. MANDATORY CHANGE LOGGING & PROGRESS UPDATE:
+   - Upon completing any phase or sub-task, the active AI model MUST UPDATE THIS FILE (`docs/NOTEBOOK_SAAS_ROADMAP.md`).
+   - Log exact files created/modified, test status, and progress status (e.g. `[COMPLETED by <ModelName>]`).
+
+3. NEXT AGENT HANDOFF INSTRUCTIONS:
+   - Every active model MUST write a clear, actionable directive under the "CURRENT AGENT HANDOFF & NEXT STEP" section
+     specifying EXACTLY what the NEXT AI model should do next.
+
+4. STRICT STYLE GUIDE COMPLIANCE:
+   - All code, components, and UI modifications MUST strictly follow `STYLEGUIDE.md`
+     and the PostHog / WorldInMaking OS design tokens (`src/constants/frostedSurfaces.ts`, `src/styles/vars.scss`).
+   - NEVER generate arbitrary, ad-hoc, or unapproved custom styles, font families, or off-palette colors.
+
+5. ESTABLISHED UI LIBRARIES & ESTHETIC STANDARDS:
    - Use PostHog Lemon UI components (`@posthog/icons`, `LemonButton`, `LemonInput`, `LemonSelect`)
      and PostHog OS Button / Window primitives (`OSButton`, `OSFieldset`, `RadixUI`).
    - For editor styling, adhere STRICTLY to the established Quill.js shim / scoped CSS rules
      (`src/notebook-app/styles/quill-shim.css` and `src/notebook-app/styles/bundle.scss`).
-
-3. THEME & COLOR PALETTE HARMONY:
-   - Maintain dark/light mode parity using semantic tokens (`bg-primary`, `text-primary`,
-     `border-primary`, `bg-accent`, `text-secondary`, `text-muted`).
-   - Do NOT invent third-party CSS classes or inline style hacks.
 ===================================================================================
 -->
 
 # WorldInMaking Notebook — Craft-Grade Enterprise SaaS Documentation Roadmap
 
 > **Architectural Vision:** Transform the WorldInMaking Notebook from a single-file markdown editor into a high-performance, block-based, local-first documentation & knowledge platform matching **Craft.do**, **Notion**, and **Reflect**.
+
+---
+
+## 📌 CURRENT AGENT HANDOFF & NEXT STEP FOR AI
+
+- **Current Status:** `[READY FOR PHASE 1 EXECUTION]`
+- **Last Model Action:** Roadmap architecture & multi-agent execution protocol defined by Antigravity (Gemini 3.6 Flash).
+- **Instruction for Next AI Agent:**
+  > **Next Task (Phase 1.1 - Block Data Model & Core Types):**
+  > Create the block tree type definitions in `src/notebook-app/types/blocks.ts` following Section 1.1. Ensure full TypeScript export compatibility with `STYLEGUIDE.md` and pass `pnpm typecheck:shell`. Once completed, update the execution log below and update this handoff directive for the next step (Phase 1.2 - Slash Menu & Block Dragging).
+
+---
+
+## 🚦 Phase Execution & Progress Tracker
+
+| Phase | Milestone | Status | Completed By | Log / Notes |
+| :--- | :--- | :--- | :--- | :--- |
+| **Phase 1.1** | Block Data Model & Core Types | `[PENDING]` | - | Define `NotebookBlock`, `BlockType`, and block tree interfaces in `src/notebook-app/types/blocks.ts` |
+| **Phase 1.2** | Slash (`/`) Command System & Block Handles | `[PENDING]` | - | Build fuzzy search block insertion menu & block handles (`⋮⋮`) |
+| **Phase 1.3** | Drag & Drop Reordering (`@dnd-kit`) | `[PENDING]` | - | Add GPU-accelerated block dragging and ghost previews |
+| **Phase 2.1** | Sub-pages & Craft Card Layouts | `[PENDING]` | - | Implement nested document sub-pages & visual card banners |
+| **Phase 2.2** | Sidebar Tree & Global Search (`⌘K`) | `[PENDING]` | - | Collapsible page hierarchy tree & spotlight search |
+| **Phase 3.1** | Relational Database Tables | `[PENDING]` | - | Typed column tables (Text, Select, Date, Checkbox, Formula) |
+| **Phase 4.1** | Realtime WebSockets & Inline Comments | `[PENDING]` | - | Supabase Realtime CRDT sync & text selection commenting |
 
 ---
 
@@ -150,14 +179,11 @@ Standart static tablolar yerine Craft & Notion seviyesinde esnek veritabanı tab
 
 ---
 
-## 7. Implementation Roadmap & Milestones
+## 7. Change Log & AI Model Activity Record
 
-| Phase | Core Deliverables | Target Timeline |
-| :--- | :--- | :--- |
-| **Phase 1: Block Engine** | Moduler Block Tree data structure, Slash (`/`) menu, Dnd-kit block dragging, Callout & Code blocks | Sprint 1 |
-| **Phase 2: Page Hierarchy & Cards** | Nested Sub-pages, Craft Card visual layouts, Sidebar Tree view, Breadcrumb navigation | Sprint 2 |
-| **Phase 3: Relational Tables** | Column-typed tables (Text, Select, Date, Checkbox), Board & Gallery views | Sprint 3 |
-| **Phase 4: Collaboration & Publishing** | Supabase Realtime WebSockets, Inline Comments, Public Web Publishing & PDF Export | Sprint 4 |
+| Date | Model | Phase / Action | Modified Files | Test Status |
+| :--- | :--- | :--- | :--- | :--- |
+| `2026-08-07` | Antigravity (Gemini 3.6 Flash) | Multi-Agent Handoff Protocol & Roadmap Init | `docs/NOTEBOOK_SAAS_ROADMAP.md` | PASS |
 
 ---
 
