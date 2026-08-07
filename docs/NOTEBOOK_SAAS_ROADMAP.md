@@ -1,3 +1,29 @@
+<!--
+===================================================================================
+AI DIRECTIVE & DESIGN SYSTEM CONSTRAINT FOR ALL AGENTS
+===================================================================================
+IMPORTANT FOR ALL AI MODELS (Claude, Gemini, Antigravity, GPT, DeepSeek, Cursor):
+
+1. STRICT STYLE GUIDE COMPLIANCE:
+   - All code, components, and UI modifications MUST strictly follow `STYLEGUIDE.md`
+     and the PostHog / WorldInMaking OS design tokens (`src/constants/frostedSurfaces.ts`,
+     `src/styles/vars.scss`, tailwind config).
+   - NEVER generate arbitrary, ad-hoc, or unapproved custom styles, font families,
+     or off-palette colors (e.g. random indigo/purple/slate gradients).
+
+2. ESTABLISHED UI LIBRARIES & ESTHETIC STANDARDS:
+   - Use PostHog Lemon UI components (`@posthog/icons`, `LemonButton`, `LemonInput`, `LemonSelect`)
+     and PostHog OS Button / Window primitives (`OSButton`, `OSFieldset`, `RadixUI`).
+   - For editor styling, adhere STRICTLY to the established Quill.js shim / scoped CSS rules
+     (`src/notebook-app/styles/quill-shim.css` and `src/notebook-app/styles/bundle.scss`).
+
+3. THEME & COLOR PALETTE HARMONY:
+   - Maintain dark/light mode parity using semantic tokens (`bg-primary`, `text-primary`,
+     `border-primary`, `bg-accent`, `text-secondary`, `text-muted`).
+   - Do NOT invent third-party CSS classes or inline style hacks.
+===================================================================================
+-->
+
 # WorldInMaking Notebook — Craft-Grade Enterprise SaaS Documentation Roadmap
 
 > **Architectural Vision:** Transform the WorldInMaking Notebook from a single-file markdown editor into a high-performance, block-based, local-first documentation & knowledge platform matching **Craft.do**, **Notion**, and **Reflect**.
