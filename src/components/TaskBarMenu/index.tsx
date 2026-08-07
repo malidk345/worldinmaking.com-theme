@@ -163,6 +163,16 @@ function TaskBarMenu() {
                               link: user?.username ? `/profile/${encodeURIComponent(user.username)}` : '/profile',
                               icon: <IconUser className="opacity-50 group-hover/item:opacity-75 size-4" />,
                           },
+                          ...(isModerator
+                              ? [
+                                    {
+                                        type: 'item' as const,
+                                        label: 'Admin OS Dashboard',
+                                        link: '/admin',
+                                        icon: <IconBadge className="opacity-75 text-yellow size-4" />,
+                                    },
+                                ]
+                              : []),
                           {
                               type: 'item' as const,
                               label: 'Bookmarks',

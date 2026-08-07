@@ -30,6 +30,8 @@ function AuthWindow() {
 }
 
 
+import AdminDashboard from 'components/Admin/AdminDashboard'
+
 export interface WindowRouterProps {
     item: AppWindow & { children?: React.ReactNode }
 }
@@ -38,6 +40,10 @@ function WindowRouterInner({ item }: WindowRouterProps) {
     const rawPath: string = item.path || item.props?.path || ''
     const path: string = rawPath.replace(/\/+$/, '') || '/'
     const props = item.props || {}
+
+    if (path === '/admin' || path === '/community/admin') {
+        return <AdminDashboard />
+    }
 
     // 1. If item.element is a valid React Element (e.g. <MyComponent />)
     if (React.isValidElement(item.element)) {

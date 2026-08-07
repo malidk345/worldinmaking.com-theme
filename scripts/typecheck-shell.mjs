@@ -32,8 +32,10 @@ const ALLOWLIST_PREFIXES = [
     'src/components/Wrapper/',
     'src/components/Desktop/',
     'src/components/Auth/',
+    'src/components/Admin/',
     'src/components/AppContainer/',
     'src/pages/api/',
+    'src/pages/admin.tsx',
     'src/lib/wim-auth.ts',
     'src/lib/bots/',
 ]
