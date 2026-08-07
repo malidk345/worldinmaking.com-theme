@@ -166,17 +166,17 @@
 
 @layer utilities {
     .light [data-scheme='primary'] {
-        --bg: 253 253 248;
-        --accent: 229 231 224;
-        --border: 191 193 183;
-        --input-bg: 238 239 233;
-        --input-bg-hover: 238 239 233;
-        --input-border: 210 211 204;
-        --input-border-hover: 210 211 204;
+        --bg: 253 253 253;
+        --accent: 230 230 230;
+        --border: 192 192 192;
+        --input-bg: 240 240 240;
+        --input-bg-hover: 240 240 240;
+        --input-border: 210 210 210;
+        --input-border-hover: 210 210 210;
         --text-primary: 17 17 17;
-        --text-secondary: 101 103 94;
-        --text-muted: 158 160 150;
-        --tw-shadow-color: 77 79 70;
+        --text-secondary: 100 100 100;
+        --text-muted: 155 155 155;
+        --tw-shadow-color: 75 75 75;
         --primary: var(--text-primary);
         --secondary: var(--text-secondary);
         --muted: var(--text-muted);
@@ -186,14 +186,14 @@
         .hover-invert:hover,
         .hover-invert[data-state='open'],
         .hover-invert[data-state='highlighted'] {
-            --bg: 77 79 70;
-            --accent: 158 160 150;
-            --border: 191 193 183;
-            --input-bg: 238 239 233;
-            --input-bg-hover: 238 239 233;
-            --text-primary: 253 253 248;
-            --text-secondary: 229 231 224;
-            --text-muted: 229 231 224;
+            --bg: 75 75 75;
+            --accent: 155 155 155;
+            --border: 192 192 192;
+            --input-bg: 240 240 240;
+            --input-bg-hover: 240 240 240;
+            --text-primary: 253 253 253;
+            --text-secondary: 230 230 230;
+            --text-muted: 230 230 230;
             --primary: var(--text-primary);
             --secondary: var(--text-secondary);
             --muted: var(--text-muted);
@@ -258,19 +258,19 @@
     }
 
     .light[data-skin='classic'] [data-scheme='primary'] {
-        --accent: 253 253 248;
+        --accent: 250 250 250;
     }
 
     .light [data-scheme='secondary'] {
-        --bg: 238 239 233;
-        --accent: 210 211 204;
-        --border: 182 183 175;
-        --input-bg: 253 253 248;
-        --input-border: 191 193 183;
-        --text-primary: 35 37 29;
-        --text-secondary: 35 37 29;
-        --text-muted: 158 160 150;
-        --tw-shadow-color: 35 37 29;
+        --bg: 240 240 240;
+        --accent: 210 210 210;
+        --border: 182 182 182;
+        --input-bg: 250 250 250;
+        --input-border: 192 192 192;
+        --text-primary: 35 35 35;
+        --text-secondary: 75 75 75;
+        --text-muted: 155 155 155;
+        --tw-shadow-color: 35 35 35;
         --primary: var(--text-primary);
         --secondary: var(--text-secondary);
         --muted: var(--text-muted);
@@ -280,14 +280,14 @@
         .hover-invert:hover,
         .hover-invert[data-state='open'],
         .hover-invert[data-state='highlighted'] {
-            --bg: 35 37 29;
-            --accent: 77 79 70;
-            --border: 182 183 175;
-            --input-bg: 253 253 248;
-            --input-border: 191 193 183;
-            --text-primary: 238 239 233;
-            --text-secondary: 210 211 204;
-            --text-muted: 210 211 204;
+            --bg: 35 35 35;
+            --accent: 75 75 75;
+            --border: 182 182 182;
+            --input-bg: 250 250 250;
+            --input-border: 192 192 192;
+            --text-primary: 240 240 240;
+            --text-secondary: 210 210 210;
+            --text-muted: 210 210 210;
             --primary: var(--text-primary);
             --secondary: var(--text-secondary);
             --muted: var(--text-muted);
@@ -361,14 +361,14 @@
         .hover-invert:hover,
         .hover-invert[data-state='open'],
         .hover-invert[data-state='highlighted'] {
-            --bg: 253 253 248;
-            --accent: 210 211 204;
-            --border: 77 79 70;
-            --input-bg: 27 28 26;
-            --input-bg-hover: 27 28 26;
+            --bg: 250 250 250;
+            --accent: 210 210 210;
+            --border: 75 75 75;
+            --input-bg: 27 27 27;
+            --input-bg-hover: 27 27 27;
             --text-primary: 17 17 17;
-            --text-secondary: 101 103 94;
-            --text-muted: 101 103 94;
+            --text-secondary: 100 100 100;
+            --text-muted: 100 100 100;
             --primary: var(--text-primary);
             --secondary: var(--text-secondary);
             --muted: var(--text-muted);
@@ -396,14 +396,14 @@
         .hover-invert:hover,
         .hover-invert[data-state='open'],
         .hover-invert[data-state='highlighted'] {
-            --bg: 238 239 233;
-            --accent: 210 211 204;
-            --border: 58 59 55;
+            --bg: 240 240 240;
+            --accent: 210 210 210;
+            --border: 58 58 58;
             --input-bg: 17 17 17;
-            --input-border: 44 45 42;
-            --text-primary: 27 28 26;
-            --text-secondary: 77 79 70;
-            --text-muted: 101 103 94;
+            --input-border: 44 44 44;
+            --text-primary: 27 27 27;
+            --text-secondary: 75 75 75;
+            --text-muted: 100 100 100;
             --primary: var(--text-primary);
             --secondary: var(--text-secondary);
             --muted: var(--text-muted);
@@ -431,14 +431,14 @@
         .hover-invert:hover,
         .hover-invert[data-state='open'],
         .hover-invert[data-state='highlighted'] {
-            --bg: 229 231 224;
-            --accent: 191 193 183;
-            --border: 77 79 70;
-            --input-bg: 27 28 26;
-            --input-border: 58 59 55;
-            --text-primary: 34 35 32;
-            --text-secondary: 101 103 94;
-            --text-muted: 115 117 107;
+            --bg: 228 228 228;
+            --accent: 191 191 191;
+            --border: 75 75 75;
+            --input-bg: 27 27 27;
+            --input-border: 58 58 58;
+            --text-primary: 34 34 34;
+            --text-secondary: 100 100 100;
+            --text-muted: 115 115 115;
             --primary: var(--text-primary);
             --secondary: var(--text-secondary);
             --muted: var(--text-muted);
@@ -3104,7 +3104,7 @@ div[data-radix-popper-content-wrapper] {
 
 .ph-mapbox-popup .mapboxgl-popup-content {
     /* match bg-primary (data-scheme='primary') */
-    background: rgb(253 253 248);
+    background: rgb(253 253 253);
     color: inherit;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
@@ -3114,16 +3114,16 @@ div[data-radix-popper-content-wrapper] {
 }
 /* Mapbox tip triangle uses border-* colors, not background */
 .ph-mapbox-popup.mapboxgl-popup-anchor-top .mapboxgl-popup-tip {
-    border-bottom-color: rgb(253 253 248) !important;
+    border-bottom-color: rgb(253 253 253) !important;
 }
 .ph-mapbox-popup.mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip {
-    border-top-color: rgb(253 253 248) !important;
+    border-top-color: rgb(253 253 253) !important;
 }
 .ph-mapbox-popup.mapboxgl-popup-anchor-left .mapboxgl-popup-tip {
-    border-right-color: rgb(253 253 248) !important;
+    border-right-color: rgb(253 253 253) !important;
 }
 .ph-mapbox-popup.mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
-    border-left-color: rgb(253 253 248) !important;
+    border-left-color: rgb(253 253 253) !important;
 }
 .dark .ph-mapbox-popup.mapboxgl-popup-anchor-top .mapboxgl-popup-tip {
     border-bottom-color: rgb(30 31 35) !important;

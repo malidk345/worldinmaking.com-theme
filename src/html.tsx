@@ -40,7 +40,7 @@ export default function HTML(props: HTMLProps): JSX.Element {
             <body
                 {...props.bodyAttributes}
                 className="light"
-                data-wallpaper="keyboard-garden"
+                data-wallpaper="hogzilla"
                 data-reduce-transparency="false"
             >
                 {props.preBodyComponents}

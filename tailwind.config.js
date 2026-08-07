@@ -44,7 +44,7 @@ module.exports = {
         extend: {
             backgroundColor: {
                 light: '#fff',
-                'accent-light': '#e5e7e0',
+                'accent-light': '#e4e4e4',
                 dark: '#1e1f23',
                 'accent-dark': '#232429',
                 primary: 'rgb(var(--bg) / <alpha-value>)',
@@ -94,7 +94,7 @@ module.exports = {
             },
             borderColor: {
                 light: '#fff',
-                'accent-light': '#e5e7e0',
+                'accent-light': '#e4e4e4',
                 dark: '#1e1f23',
                 'accent-dark': '#232429',
                 button: '#1D4ED8',

@@ -343,7 +343,7 @@ export const Context = createContext<AppContextType>({
         colorMode: 'light',
         skinMode: 'modern',
         cursor: 'default',
-        wallpaper: 'keyboard-garden',
+        wallpaper: 'hogzilla',
         screensaverDisabled: true,
         reduceTransparency: false,
         clickBehavior: 'double',
@@ -434,7 +434,7 @@ export const SettingsContext = createContext<AppSettingsContextType>({
         colorMode: 'light',
         skinMode: 'modern',
         cursor: 'default',
-        wallpaper: 'keyboard-garden',
+        wallpaper: 'hogzilla',
         screensaverDisabled: true,
         reduceTransparency: false,
         clickBehavior: 'double',
@@ -1582,7 +1582,7 @@ const getInitialSiteSettings = (): SiteSettings => {
         theme: (typeof window !== 'undefined' && (window as any).__theme) || 'light',
         skinMode: 'modern',
         cursor: 'default',
-        wallpaper: 'keyboard-garden',
+        wallpaper: 'hogzilla',
         clickBehavior: 'double',
         performanceBoost: false,
         screensaverDisabled: true,
@@ -1592,7 +1592,7 @@ const getInitialSiteSettings = (): SiteSettings => {
 
     const retiredWallpapers = ['action-figure', '2001-bliss', 'parade', 'coding-at-night', 'custom-pro']
     if (retiredWallpapers.includes(siteSettings.wallpaper)) {
-        siteSettings.wallpaper = 'keyboard-garden'
+        siteSettings.wallpaper = 'hogzilla'
     }
 
     // The classic skin has been retired; force anyone with it saved back to modern
@@ -1662,7 +1662,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         theme: 'light',
         skinMode: 'modern',
         cursor: 'default',
-        wallpaper: 'keyboard-garden',
+        wallpaper: 'hogzilla',
         clickBehavior: 'double',
         performanceBoost: false,
         screensaverDisabled: true,

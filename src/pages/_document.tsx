@@ -16,7 +16,7 @@ const themeScript = `(function () {
     var theme = colorMode === 'system' ? (darkQuery.matches ? 'dark' : 'light') : (preferredTheme === 'system' ? (darkQuery.matches ? 'dark' : 'light') : preferredTheme)
     if (colorMode === 'light' || colorMode === 'dark') theme = colorMode
     var skin = siteSettings.skinMode || siteSettings.skin || 'modern'
-    var wallpaper = siteSettings.wallpaper || 'keyboard-garden'
+    var wallpaper = siteSettings.wallpaper || 'hogzilla'
     var reduceTransparency = siteSettings.reduceTransparency ? 'true' : 'false'
 
     function applyAttributes(el) {
@@ -60,7 +60,7 @@ export default function Document() {
             <Head>
                 <script dangerouslySetInnerHTML={{ __html: themeScript }} />
             </Head>
-            <body data-scheme="primary" data-skin="modern" data-wallpaper="keyboard-garden" suppressHydrationWarning>
+            <body data-scheme="primary" data-skin="modern" data-wallpaper="hogzilla" suppressHydrationWarning>
                 <Main />
                 <NextScript />
             </body>
