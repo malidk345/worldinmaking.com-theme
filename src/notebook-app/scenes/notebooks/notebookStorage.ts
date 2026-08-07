@@ -318,6 +318,25 @@ export function deleteNotebook(id: string): void {
 export function createNotebook(title?: string, content?: string): StoredNotebook {
     const id = uuid()
     const now = new Date().toISOString()
+
+    let createdByObj: { first_name: string; email?: string } = { first_name: 'You' }
+    if (typeof window !== 'undefined') {
+        try {
+            const savedUser = localStorage.getItem('user')
+            if (savedUser) {
+                const parsed = JSON.parse(savedUser)
+                if (parsed?.profile?.firstName || parsed?.username) {
+                    createdByObj = {
+                        first_name: parsed.profile?.firstName || parsed.username,
+                        email: parsed.email,
+                    }
+                }
+            }
+        } catch {
+            /* ignore */
+        }
+    }
+
     const notebook: StoredNotebook = {
         id,
         short_id: id.substring(0, 8),
@@ -327,6 +346,7 @@ export function createNotebook(title?: string, content?: string): StoredNotebook
         updatedAt: now,
         version: 1,
         isPublished: false,
+        created_by: createdByObj,
     }
 
     const notebooks = getNotebooks()

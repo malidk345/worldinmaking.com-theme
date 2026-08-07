@@ -60,7 +60,11 @@ export default async function handler(req: Request) {
 
             if (Array.isArray(body.notebooks)) {
                 const notebooks = body.notebooks as StoredNotebookDTO[]
-                const count = await upsertNotebooks(notebooks, ownerKey)
+                // Tag every notebook with auth_user_id when the user is JWT-authenticated
+                const tagged = auth.userId
+                    ? notebooks.map((nb) => ({ ...nb, auth_user_id: auth.userId }))
+                    : notebooks
+                const count = await upsertNotebooks(tagged, ownerKey)
 
                 if (body.history && typeof body.history === 'object') {
                     const historyMap = body.history as Record<string, NotebookVersionDTO[]>
@@ -77,7 +81,9 @@ export default async function handler(req: Request) {
             if (body.notebook) {
                 const notebook = body.notebook as StoredNotebookDTO
                 if (!notebook?.id) return json({ error: 'notebook.id is required' }, 400)
-                const saved = await upsertNotebook(notebook, ownerKey)
+                // Tag with auth_user_id when JWT-authenticated
+                const tagged = auth.userId ? { ...notebook, auth_user_id: auth.userId } : notebook
+                const saved = await upsertNotebook(tagged, ownerKey)
 
                 if (Array.isArray(body.history_entries)) {
                     await replaceHistoryForOwner(

@@ -448,6 +448,14 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
             setUser(enriched)
             setNotifications([])
             try {
+                if (typeof window !== 'undefined') {
+                    localStorage.setItem('wim_auth_user_id', String(meData.id))
+                    window.dispatchEvent(new Event('wimNotebooksSync'))
+                }
+            } catch {
+                /* ignore */
+            }
+            try {
                 posthog?.setPersonProperties({
                     wimEmail: enriched.email,
                     wimUsername: enriched.username,

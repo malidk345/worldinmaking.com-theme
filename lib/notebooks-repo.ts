@@ -25,6 +25,7 @@ export type StoredNotebookRow = {
     publish: NotebookPublishMeta | null
     version: number
     owner_key: string
+    auth_user_id: string | null
     created_by: { first_name: string; email: string } | null
     last_modified_by: { first_name: string; email: string } | null
 }
@@ -52,6 +53,7 @@ export type StoredNotebookDTO = {
     isPublished?: boolean
     publish?: NotebookPublishMeta
     version: number
+    auth_user_id?: string
     created_by?: { first_name: string; email: string }
     last_modified_by?: { first_name: string; email: string }
 }
@@ -77,6 +79,7 @@ export function rowToDTO(row: StoredNotebookRow): StoredNotebookDTO {
         isPublished: row.is_published ?? undefined,
         publish: row.publish ?? undefined,
         version: row.version ?? 1,
+        auth_user_id: row.auth_user_id ?? undefined,
         created_by: row.created_by ?? undefined,
         last_modified_by: row.last_modified_by ?? undefined,
     }
@@ -96,6 +99,7 @@ export function dtoToRow(nb: StoredNotebookDTO, ownerKey: string): Omit<StoredNo
         publish: nb.publish ?? null,
         version: nb.version ?? 1,
         owner_key: ownerKey,
+        auth_user_id: nb.auth_user_id ?? null,
         created_by: nb.created_by ?? null,
         last_modified_by: nb.last_modified_by ?? null,
     }

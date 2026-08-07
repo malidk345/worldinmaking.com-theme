@@ -206,9 +206,28 @@ export function NotebooksListScene({
             title: 'Created by',
             key: 'created_by',
             render: function RenderCreatedBy(_: any, notebook: StoredNotebook) {
+                let displayName = 'You'
+                if (notebook.isTemplate) {
+                    displayName = 'WIM'
+                } else if (typeof window !== 'undefined') {
+                    try {
+                        const savedUser = localStorage.getItem('user')
+                        if (savedUser) {
+                            const parsed = JSON.parse(savedUser)
+                            if (parsed?.profile?.firstName) {
+                                displayName = parsed.profile.firstName
+                            } else if (parsed?.username) {
+                                displayName = parsed.username
+                            }
+                        }
+                    } catch {
+                        /* ignore */
+                    }
+                }
+
                 const user = notebook.isTemplate
-                    ? { first_name: 'PostHog' }
-                    : notebook.created_by || { first_name: 'Mustafa (you)' }
+                    ? { first_name: 'WIM' }
+                    : { first_name: displayName }
 
                 return (
                     <div className="flex flex-row items-center flex-nowrap">
