@@ -5,3 +5,7 @@
 ## 2024-11-20 - Array Flattening in SWR Infinite Hooks
 **Learning:** Using `reduce` combined with array spread syntax (`[...acc, ...cur]`) for array flattening inside SWR Infinite hooks creates an O(N^2) rendering bottleneck due to redundant array allocations on each iteration.
 **Action:** Always use the single-pass `flatMap()` (or `flat()`) method to combine paginated array data, ensuring O(N) allocation time and avoiding main thread blocking.
+
+## 2024-11-20 - O(N^2) Complexity in Array.reduce with Spread Syntax
+**Learning:** Using `Array.reduce` with the object spread operator (`{ ...acc }`) to transform an array into an object creates unnecessary intermediate objects, causing quadratic allocations that block the main thread and slow down rendering.
+**Action:** Always replace `Array.reduce` combined with object spread for object construction with `Object.fromEntries(array.map(...))` to ensure $O(N)$ allocation time.

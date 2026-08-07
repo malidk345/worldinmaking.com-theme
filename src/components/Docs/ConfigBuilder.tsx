@@ -85,13 +85,12 @@ export const ConfigBuilder: React.FC<ConfigBuilderProps> = ({
                 select?.defaultValue ||
                 select?.options[0]?.value ||
                 '',
-            checkboxes: checkboxes.reduce((acc, c) => ({ ...acc, [c.id]: c.defaultValue ?? false }), {}),
-            inputs: inputs.reduce(
-                (acc, i) => ({
-                    ...acc,
-                    [i.id]: i.type === 'environment-list' ? [] : i.defaultValue ?? (i.type === 'number' ? 0 : ''),
-                }),
-                {}
+            checkboxes: Object.fromEntries(checkboxes.map((c) => [c.id, c.defaultValue ?? false])),
+            inputs: Object.fromEntries(
+                inputs.map((i) => [
+                    i.id,
+                    i.type === 'environment-list' ? [] : (i.defaultValue ?? (i.type === 'number' ? 0 : '')),
+                ])
             ),
         }),
         [toggle, select, checkboxes, inputs]
