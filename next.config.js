@@ -93,8 +93,13 @@ const nextConfig = {
                     }
 
                     // @posthog/icons → iconsShim
+                    // Exception: if the import is FROM iconsShim itself, let it resolve
+                    // to the real package (so iconsShim can re-export real icons).
                     if (req === '@posthog/icons' || req.startsWith('@posthog/icons/')) {
-                        resource.request = path.resolve(__dirname, 'src/notebook-app/lib/icons/iconsShim.tsx')
+                        const issuerNorm = issuer.replace(/\\/g, '/')
+                        if (!issuerNorm.includes('iconsShim')) {
+                            resource.request = path.resolve(__dirname, 'src/notebook-app/lib/icons/iconsShim.tsx')
+                        }
                         return
                     }
 
