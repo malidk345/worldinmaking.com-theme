@@ -2,15 +2,14 @@ import React from 'react'
 import CloudinaryImage from 'components/CloudinaryImage'
 
 /**
- * Wallpapers
+ * Wallpapers — original wimpos scenes (tokens + art).
  *
- * Renders every desktop scene; visibility is driven by `body[data-wallpaper]`,
- * set from localStorage in theme-init.js before React hydrates (and kept in sync
- * by App.tsx). That way the saved wallpaper paints on first frame — no flash of
- * the default scene.
+ * Visibility is driven by `body[data-wallpaper]`, set from localStorage in
+ * theme-init / App.tsx before paint. Light ↔ dark fades via the `dark` class.
  *
- * Light ↔ dark within a scene is a CSS fade via the persistent `dark` class.
- * Scene ↔ scene is an instant swap.
+ * Glass (WINDOW_BG bg-primary/75) blurs whatever is behind the window. The
+ * default keyboard-garden scene is warm cream (#FDEECD → #FFFEF4), not solid
+ * sage — solid #A8B8A8 made frosted chrome look greenish.
  */
 
 const FADE_OPACITY = 'transition-opacity duration-700 ease-in-out'
@@ -24,12 +23,37 @@ const Hogzilla = () => (
         <div
             className={`absolute inset-0 bg-[linear-gradient(180deg,#141E40_0%,#46368B_100%)] opacity-0 dark:opacity-100 ${FADE_OPACITY}`}
         />
+        <CloudinaryImage
+            loading="lazy"
+            src="https://res.cloudinary.com/dmukukwp6/image/upload/9000_hogzilla_359a450fb3.png"
+            alt=""
+            width={1780}
+            height={868}
+            className="absolute inset-0 flex items-end justify-end"
+            imgClassName="w-full max-w-[1780px] h-auto z-10"
+        />
     </>
 )
 
 const StartupMonopoly = () => (
     <>
         <div className={`absolute inset-0 bg-[#E7E0DA] dark:bg-[#686E88] ${FADE_COLORS}`} />
+        <CloudinaryImage
+            loading="lazy"
+            src="https://res.cloudinary.com/dmukukwp6/image/upload/9000_monopoly_light_6614a8a5d5.jpg"
+            alt=""
+            width={2967}
+            height={1463}
+            className={`absolute right-0 top-0 w-[1483.5px] h-[731.5px] max-w-full opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
+        />
+        <CloudinaryImage
+            loading="lazy"
+            src="https://res.cloudinary.com/dmukukwp6/image/upload/9000_monopoly_dark_26c85ccad8.jpg"
+            alt=""
+            width={1582}
+            height={782}
+            className={`absolute right-0 top-0 w-[1483.5px] h-[731.5px] max-w-full opacity-0 dark:opacity-100 ${FADE_OPACITY}`}
+        />
     </>
 )
 
@@ -62,16 +86,68 @@ const OfficeParty = () => (
     </>
 )
 
-/**
- * Default desktop: flat garden green — darker sage so chrome/glass pop.
- * Light #A8B8A8 — mid muted green (not pastel).
- * Dark #0F1612 — deeper green black.
- * Kept under key `keyboard-garden` so existing defaults / localStorage keep working.
- */
-const SolidCanvas = () => (
+const KeyboardGarden = () => (
     <>
-        <div className={`absolute inset-0 bg-[#A8B8A8] opacity-100 dark:opacity-0 ${FADE_COLORS}`} />
-        <div className={`absolute inset-0 bg-[#0F1612] opacity-0 dark:opacity-100 ${FADE_COLORS}`} />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#FDEECD] to-[#FFFEF4]" />
+
+        <div
+            className={`absolute inset-0 sm:hidden opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
+            style={{
+                backgroundImage:
+                    "url('https://res.cloudinary.com/dmukukwp6/image/upload/9000_mobile_bg_light_95ed14e5a3.jpg')",
+                backgroundSize: 'cover',
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right bottom',
+            }}
+        />
+        <div
+            className={`absolute inset-0 sm:hidden opacity-0 dark:opacity-100 ${FADE_OPACITY}`}
+            style={{
+                backgroundImage:
+                    "url('https://res.cloudinary.com/dmukukwp6/image/upload/9000_mobile_bg_dark_8a84515f2d.jpg')",
+                backgroundSize: 'cover',
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right bottom',
+            }}
+        />
+        <div
+            className={`absolute inset-0 hidden sm:block opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
+            style={{
+                backgroundImage:
+                    "url('https://res.cloudinary.com/dmukukwp6/image/upload/9000_bg_light_07316896be.jpg')",
+                backgroundSize: 'cover',
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right bottom',
+            }}
+        />
+        <div
+            className={`absolute inset-0 hidden sm:block opacity-0 dark:opacity-100 ${FADE_OPACITY}`}
+            style={{
+                backgroundImage: "url('https://res.cloudinary.com/dmukukwp6/image/upload/9000_bg_dark_9a32796f77.jpg')",
+                backgroundSize: 'cover',
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right bottom',
+            }}
+        />
+
+        <div className="absolute grid bottom-24 md:bottom-0 -right-4 xs:right-8 md:right-0">
+            <CloudinaryImage
+                loading="lazy"
+                src="https://res.cloudinary.com/dmukukwp6/image/upload/9000_hedge_light_42c729131e.png"
+                width={1555}
+                height={1262}
+                className={`col-start-1 row-start-1 opacity-100 dark:opacity-0 w-full max-w-full md:w-[777px] ${FADE_OPACITY}`}
+                draggable={false}
+            />
+            <CloudinaryImage
+                loading="lazy"
+                src="https://res.cloudinary.com/dmukukwp6/image/upload/9000_hedge_dark_b36706e924.png"
+                width={1555}
+                height={1262}
+                className={`col-start-1 row-start-1 opacity-0 dark:opacity-100 w-full max-w-full md:w-[777px] ${FADE_OPACITY}`}
+                draggable={false}
+            />
+        </div>
     </>
 )
 
@@ -80,7 +156,7 @@ const SCENES: { key: string; Scene: React.FC; visible: string }[] = [
     { key: 'hogzilla', Scene: Hogzilla, visible: 'wallpaper-hogzilla:block' },
     { key: 'startup-monopoly', Scene: StartupMonopoly, visible: 'wallpaper-startup-monopoly:block' },
     { key: 'office-party', Scene: OfficeParty, visible: 'wallpaper-office-party:block' },
-    { key: 'keyboard-garden', Scene: SolidCanvas, visible: 'wallpaper-keyboard-garden:block' },
+    { key: 'keyboard-garden', Scene: KeyboardGarden, visible: 'wallpaper-keyboard-garden:block' },
 ]
 
 export interface WallpaperGlow {
@@ -89,7 +165,6 @@ export interface WallpaperGlow {
 }
 
 export const WALLPAPER_GLOW: Record<string, WallpaperGlow> = {
-    // Icon glow on sage canvas
     'keyboard-garden': { light: '#53FFCB', dark: '#49BAC5' },
     hogzilla: { light: '#FF9528', dark: '#9370F0' },
     'startup-monopoly': { light: '#37B878', dark: '#96B4F0' },
@@ -101,8 +176,8 @@ export const DEFAULT_WALLPAPER_GLOW: WallpaperGlow = WALLPAPER_GLOW['keyboard-ga
 export const getWallpaperGlow = (wallpaper: string): WallpaperGlow =>
     WALLPAPER_GLOW[wallpaper] ?? DEFAULT_WALLPAPER_GLOW
 
-// wallpaper/reduceMotion props are accepted for call-site compatibility; visibility
-// is driven by body[data-wallpaper] (set in App.tsx / theme init), same as wimpos.
+// wallpaper/reduceMotion props accepted for call-site compatibility; visibility
+// is driven by body[data-wallpaper] (App.tsx / theme init), same as wimpos.
 export default function Wallpapers(_props?: {
     wallpaper?: string
     reduceMotion?: boolean
