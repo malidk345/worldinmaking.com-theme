@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 export interface NotebooksListProps {
   onSelectNotebook?: (id: string, title: string) => void;
@@ -6,13 +6,21 @@ export interface NotebooksListProps {
 
 /**
  * NotebooksListSkeleton — Embedded standalone Vite notebook application.
- * Fills 100% of the host container/window viewport smoothly without clipping or layout cuts.
+ * Uses origin-absolute iframe src to ensure 100% reliable loading on both local and live production servers.
  */
 export function NotebooksListSkeleton(_props: NotebooksListProps = {}): JSX.Element {
+  const [iframeUrl, setIframeUrl] = useState('/notebooks-app/index.html');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIframeUrl(`${window.location.origin}/notebooks-app/index.html`);
+    }
+  }, []);
+
   return (
     <div className="w-full h-full min-h-0 flex-1 relative bg-primary overflow-hidden">
       <iframe
-        src="/notebooks-app/index.html"
+        src={iframeUrl}
         title="PostHog Notebooks"
         className="w-full h-full border-none block absolute inset-0"
         style={{

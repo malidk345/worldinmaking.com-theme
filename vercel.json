@@ -62,6 +62,10 @@
     ],
     "rewrites": [
         {
+            "source": "/notebooks-app/:path*",
+            "destination": "/notebooks-app/:path*"
+        },
+        {
             "source": "/docs/:path*/",
             "has": [
                 {
