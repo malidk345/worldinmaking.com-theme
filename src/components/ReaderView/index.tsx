@@ -1769,16 +1769,12 @@ function ReaderViewContent({
                             </article>
                         </ScrollArea>
                         {showSidebar && (
-                            <aside
-                                data-scheme="secondary"
-                                className="hidden md:block w-72 flex-shrink-0 border-l border-primary p-4 overflow-y-auto h-full"
-                            >
-                                <TableOfContents
-                                    tableOfContents={tableOfContents}
-                                    contentRef={contentRef}
-                                    title="Jump to:"
-                                />
-                            </aside>
+                            <FloatingTOC
+                                isTocVisible={isTocVisible}
+                                toggleToc={toggleToc}
+                                tableOfContents={tableOfContents}
+                                contentRef={contentRef}
+                            />
                         )}
                     </div>
                 </div>
