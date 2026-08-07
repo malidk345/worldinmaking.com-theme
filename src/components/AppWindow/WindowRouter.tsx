@@ -31,6 +31,7 @@ function AuthWindow() {
 
 
 import AdminDashboard from 'components/Admin/AdminDashboard'
+import ArchiveWindow from 'components/Archive/ArchiveWindow'
 
 export interface WindowRouterProps {
     item: AppWindow & { children?: React.ReactNode }
@@ -40,6 +41,10 @@ function WindowRouterInner({ item }: WindowRouterProps) {
     const rawPath: string = item.path || item.props?.path || ''
     const path: string = rawPath.replace(/\/+$/, '') || '/'
     const props = item.props || {}
+
+    if (path === '/archive') {
+        return <ArchiveWindow />
+    }
 
     if (path === '/admin' || path === '/community/admin') {
         return <AdminDashboard />

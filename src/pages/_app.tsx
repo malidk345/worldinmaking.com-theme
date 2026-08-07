@@ -17,6 +17,7 @@ import '../components/MarkdownNotebook/MarkdownNotebook.scss'
 import { Provider } from 'context/App'
 import { Provider as ToastProvider } from 'context/Toast'
 import { UserProvider } from 'hooks/useUser'
+import { ArchiveProvider } from 'context/ArchiveContext'
 import Wrapper from 'components/Wrapper'
 import { useRouter } from 'next/router'
 import React from 'react'
@@ -49,7 +50,9 @@ export default function App({ Component, pageProps }: AppProps) {
         return (
             <ToastProvider>
                 <UserProvider>
-                    <Component {...pageProps} />
+                    <ArchiveProvider>
+                        <Component {...pageProps} />
+                    </ArchiveProvider>
                 </UserProvider>
             </ToastProvider>
         )
@@ -63,9 +66,11 @@ export default function App({ Component, pageProps }: AppProps) {
         >
             <ToastProvider>
                 <UserProvider>
-                    <Provider element={<Component {...pageProps} />} location={location as any}>
-                        <Wrapper />
-                    </Provider>
+                    <ArchiveProvider>
+                        <Provider element={<Component {...pageProps} />} location={location as any}>
+                            <Wrapper />
+                        </Provider>
+                    </ArchiveProvider>
                 </UserProvider>
             </ToastProvider>
         </div>

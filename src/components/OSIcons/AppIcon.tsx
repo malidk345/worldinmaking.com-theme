@@ -198,6 +198,10 @@ const PRODUCT_ICON_MAP = {
         classic: 'https://res.cloudinary.com/dmukukwp6/image/upload/switch_classic_91ff9ab635.png',
         default: 'https://res.cloudinary.com/dmukukwp6/image/upload/switch_modern_5aa70666d1.png',
     },
+    archive: {
+        classic: 'https://res.cloudinary.com/dmukukwp6/image/upload/handbook_classic_b7cd7f26f7.png',
+        default: 'https://res.cloudinary.com/dmukukwp6/image/upload/handbook_modern_cf862d2ae6.png',
+    },
 } as const satisfies Record<string, AppIconVariants>
 
 type AppIconName = keyof typeof PRODUCT_ICON_MAP

@@ -59,9 +59,9 @@ export const useProductLinks = () => {
 
 export const apps: AppItem[] = [
     {
-        label: 'Company handbook',
-        Icon: <AppIcon name="handbook" />,
-        url: '/handbook',
+        label: 'Archive',
+        Icon: <AppIcon name="archive" />,
+        url: '/archive',
         source: 'desktop',
     },
     {

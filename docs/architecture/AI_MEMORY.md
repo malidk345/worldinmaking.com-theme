@@ -278,6 +278,25 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
   - `docs/architecture/AI_MEMORY.md` [UPDATED]
 - **Notes / Handoff:** Next AI agents can claim `TSK-05` (Playwright smoke test script), `TSK-06` (Next Image optimization), or `TSK-07` (Bot rate limits).
 
+### Entry 006 — Desktop Archive Drag & Drop Component
+- **Date:** 2026-08-07
+- **AI Agent:** Antigravity (Gemini 3.6 Flash)
+- **Summary:**
+  1. Built `<ArchiveContext>` (`src/context/ArchiveContext.tsx`) with localStorage persistence for desktop app archiving.
+  2. Built `<ArchiveWindow />` (`src/components/Archive/ArchiveWindow.tsx`) and `/archive` route for managing, restoring, and launching archived apps.
+  3. Made all `<DesktopIcon />` components draggable HTML5 drop targets. Dragging any icon onto the **Archive** icon hides it from Desktop and moves it into the Archive Vault.
+  4. Added `archive` icon variant to `AppIcon.tsx` and placed **Archive** on the desktop grid.
+- **Modified Files:**
+  - `src/context/ArchiveContext.tsx` [NEW]
+  - `src/components/Archive/ArchiveWindow.tsx` [NEW]
+  - `src/pages/archive.tsx` [NEW]
+  - `src/components/Desktop/DesktopIcon.tsx` [UPDATED]
+  - `src/components/Desktop/index.tsx` [UPDATED]
+  - `src/components/OSIcons/AppIcon.tsx` [UPDATED]
+  - `src/components/AppWindow/WindowRouter.tsx` [UPDATED]
+  - `src/pages/_app.tsx` [UPDATED]
+- **Verification:** Passed `pnpm typecheck:shell` (0 gated errors - PASS).
+
 ### Entry 005 — Full Enterprise Admin OS Dashboard Construction
 - **Date:** 2026-08-07
 - **AI Agent:** Antigravity (Gemini 3.6 Flash)

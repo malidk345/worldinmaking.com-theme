@@ -199,60 +199,6 @@ const linklist: IProps[] = [
             {
                 title: 'PostHog FM',
                 url: 'https://open.spotify.com/playlist/7A2H2J3WhpJmMEwAhKahWH?si=47418915a8d0447b',
-            },
-            {
-                title: 'PostHog on GitHub',
-                url: 'https://github.com/PostHog/posthog',
-            },
-        ],
-    },
-    {
-        title: 'Handbook',
-        url: '/handbook',
-        items: [
-            {
-                title: "Why we're here",
-                url: '/handbook/why-does-posthog-exist',
-            },
-            {
-                title: 'Our story',
-                url: '/handbook/story',
-            },
-            {
-                title: 'How we work',
-                url: '/handbook/company/culture',
-            },
-            {
-                title: 'Values',
-                url: '/handbook/values',
-            },
-            {
-                title: 'Tips for working here',
-                url: '/handbook/help',
-            },
-            {
-                title: 'Team structure',
-                url: '/handbook/team-structure',
-            },
-            {
-                title: 'Engineering',
-                url: '/handbook/engineering/developing-locally',
-            },
-            {
-                title: 'Brand',
-                url: '/handbook/brand/philosophy',
-            },
-            {
-                title: 'Marketing',
-                url: '/handbook/marketing',
-            },
-        ],
-    },
-    {
-        title: 'Company',
-        url: '/about',
-        items: [
-            {
                 title: 'About',
                 url: '/about',
             },

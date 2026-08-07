@@ -81,12 +81,6 @@ export function useMenuData(): MenuType[] {
                 },
                 {
                     type: 'item',
-                    label: 'Handbook',
-                    link: '/handbook',
-                    icon: <Icons.IconBook className="size-4 text-seagreen" />,
-                },
-                {
-                    type: 'item',
                     label: 'Roadmap',
                     link: '/roadmap',
                     icon: <Icons.IconMap className="size-4 text-orange" />,

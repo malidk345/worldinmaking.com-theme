@@ -2366,7 +2366,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             const newWin: AppWindow = {
                 key,
                 path,
-                title: item.title || path.split('/').pop() || 'Window',
+                title: item.title || (path === '/archive' ? 'Archive Manager' : path.split('/').pop() || 'Window'),
                 size,
                 position,
                 previousSize: item.size || { width: 900, height: 650 },
