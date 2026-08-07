@@ -10,7 +10,6 @@ const handler = async (req: GatsbyFunctionRequest, res: GatsbyFunctionResponse) 
         }).then((res) => res.json())
         return res.status(200).send(form)
     } catch (err) {
-        console.log(err)
         return res.status(500).send(err)
     }
 }
