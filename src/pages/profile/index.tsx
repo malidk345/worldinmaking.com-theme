@@ -44,7 +44,7 @@ export default function ProfileIndexPage() {
                         })
                     }}
                 >
-                    Sign In to Community
+                    Sign in
                 </OSButton>
             </div>
         </div>

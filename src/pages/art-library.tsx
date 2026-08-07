@@ -38,7 +38,7 @@ export default function ArtLibrary(): JSX.Element {
                             </p>
                             {!user && (
                                 <OSButton variant="primary" size="lg" onClick={() => openSignIn()}>
-                                    Sign in to the community
+                                    Sign in
                                 </OSButton>
                             )}
                         </div>

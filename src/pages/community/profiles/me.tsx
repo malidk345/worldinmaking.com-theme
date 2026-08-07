@@ -48,7 +48,7 @@ export default function MyProfilePage() {
                             })
                         }}
                     >
-                        Sign in to the community
+                        Sign in
                     </OSButton>
                 </div>
             </ScrollArea>

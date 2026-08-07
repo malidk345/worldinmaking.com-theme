@@ -23,18 +23,6 @@ export const useProductLinks = () => {
                 source: 'desktop',
             },
             {
-                label: 'Editor',
-                Icon: <AppIcon name="typewriter" />,
-                url: '/editor',
-                source: 'desktop',
-            },
-            {
-                label: 'Write Post',
-                Icon: <AppIcon name="notebook" />,
-                url: '/community/new',
-                source: 'desktop',
-            },
-            {
                 label: 'Community',
                 Icon: <AppIcon name="forums" />,
                 url: '/community',
@@ -44,12 +32,6 @@ export const useProductLinks = () => {
                 label: 'Notebooks',
                 Icon: <AppIcon name="notebook" />,
                 url: '/notebooks',
-                source: 'desktop',
-            },
-            {
-                label: 'customers.mdx',
-                Icon: <AppIcon name="spreadsheet" />,
-                url: '/customers',
                 source: 'desktop',
             },
         ],

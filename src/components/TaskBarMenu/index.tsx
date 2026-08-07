@@ -191,7 +191,7 @@ function TaskBarMenu() {
                           },
                           {
                               type: 'item' as const,
-                              label: 'Sign in to the community',
+                              label: 'Sign in',
                               onClick: handleSignInClick,
                               icon: <IconUser className="opacity-50 group-hover/item:opacity-75 size-4" />,
                           },

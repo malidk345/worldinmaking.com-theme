@@ -10,35 +10,16 @@ import {
     IconLinkedIn,
     IconGithub,
     IconInstagram,
-    IconSparksJoy,
 } from 'components/OSIcons'
 import { useAppSettings } from '../../context/App'
-import { useHedgehogMode } from 'components/HedgehogMode'
-import { useSmallTeamsMenuItems } from './SmallTeamsMenuItems'
 import { useRouter } from 'next/router'
-
-export const SparksJoyItems = {
-    games: [
-        { label: 'Dino run', link: '/dino' },
-        { label: 'Pong', link: '/pong' },
-        { label: 'Pixel painter', link: '/paint' },
-        { label: 'Photo booth', link: '/photobooth' },
-    ],
-    notGames: [
-        { label: 'Coloring book', link: '/coloring-book.pdf' },
-        { label: 'Hog Watch', link: '/hogwatch' },
-        { label: 'Hedgehog generator', link: '/hedgehog-generator' },
-    ],
-}
 
 export function useMenuSelectOptions() {
     return useMenuData()
 }
 
 export function useMenuData(): MenuType[] {
-    const smallTeamsMenuItems = useSmallTeamsMenuItems()
     const { isMobile } = useAppSettings()
-    const [hedgehogModeEnabled, setHedgehogModeEnabled] = useHedgehogMode()
     const router = useRouter()
 
     const mainNavItems: MenuType[] = [
@@ -63,12 +44,6 @@ export function useMenuData(): MenuType[] {
                     link: '/questions',
                     icon: <Icons.IconMessage className="size-4 text-green" />,
                 },
-                {
-                    type: 'item',
-                    label: 'Events',
-                    link: '/events',
-                    icon: <Icons.IconCalendar className="size-4 text-red" />,
-                },
             ],
         },
         {
@@ -78,34 +53,7 @@ export function useMenuData(): MenuType[] {
                     type: 'item',
                     label: 'About',
                     link: '/about',
-                },
-                {
-                    type: 'item',
-                    label: 'Roadmap',
-                    link: '/roadmap',
-                    icon: <Icons.IconMap className="size-4 text-orange" />,
-                },
-                {
-                    type: 'item',
-                    label: 'Changelog',
-                    link: '/changelog',
-                    icon: <Icons.IconCalendar className="size-4 text-red" />,
-                },
-                {
-                    type: 'separator',
-                },
-                {
-                    type: 'item',
-                    label: 'People',
-                    link: '/people',
-                    icon: <Icons.IconPeople className="size-4 text-blue" />,
-                },
-                {
-                    type: 'submenu',
-                    label: 'Small teams',
-                    link: '/small-teams',
-                    items: smallTeamsMenuItems,
-                    icon: <Icons.IconShieldPeople className="size-4 text-teal" />,
+                    icon: <Icons.IconInfo className="size-4 text-blue" />,
                 },
                 {
                     type: 'separator',
@@ -171,59 +119,11 @@ export function useMenuData(): MenuType[] {
             items: [
                 {
                     type: 'submenu',
-                    label: 'Things that spark joy',
-                    icon: <IconSparksJoy className="size-4" />,
-                    items: [
-                        {
-                            type: 'item',
-                            onClick: () => setHedgehogModeEnabled(!hedgehogModeEnabled),
-                            node: (
-                                <span className="px-2.5 flex w-full justify-between items-center gap-2">
-                                    <span>Hedgehog mode</span>
-                                    <span className="relative inline-flex items-center justify-center h-2 w-8 flex-shrink-0">
-                                        <span
-                                            aria-hidden
-                                            className="pointer-events-none absolute w-full h-full rounded-md bg-[#c4c4c4] dark:bg-[#5A5A5A]"
-                                        />
-                                        <span
-                                            aria-hidden
-                                            className={`pointer-events-none absolute left-0 inline-block h-4 w-4 rounded-full transition-transform ease-in-out duration-200 ${
-                                                hedgehogModeEnabled
-                                                    ? 'translate-x-5 bg-teal'
-                                                    : 'translate-x-0 bg-[#555] dark:bg-[#999]'
-                                            }`}
-                                        />
-                                    </span>
-                                </span>
-                            ),
-                        },
-                        { type: 'separator' },
-                        { type: 'item', label: 'Browse all', link: '/sparks-joy' },
-                        { type: 'separator' },
-                        { type: 'item', label: 'Games', disabled: true },
-                        ...SparksJoyItems.games.map((item) => ({
-                            type: 'item' as const,
-                            label: item.label,
-                            link: item.link,
-                        })),
-                        { type: 'item', label: 'Sorta like games', disabled: true },
-                        ...SparksJoyItems.notGames.map((item) => ({
-                            type: 'item' as const,
-                            label: item.label,
-                            link: item.link,
-                        })),
-                    ],
-                },
-                {
-                    type: 'submenu',
-                    label: 'Sexy legal documents',
+                    label: 'Legal documents',
                     icon: <Icons.IconTie className="size-4 text-brown dark:text-creamsicle-dark" />,
                     items: [
-                        { type: 'item', label: 'Terms', link: '/terms' },
-                        { type: 'item', label: 'Privacy', link: '/privacy' },
-                        { type: 'item', label: "DPA generator (it's fun!)", link: '/dpa' },
-                        { type: 'item', label: 'BAA generator (less fun)', link: '/baa' },
-                        { type: 'item', label: 'Subprocessors', link: '/subprocessors' },
+                        { type: 'item', label: 'Terms of Service', link: '/terms' },
+                        { type: 'item', label: 'Privacy Policy', link: '/privacy' },
                     ],
                 },
                 { type: 'separator' },
@@ -253,6 +153,7 @@ export function useMenuData(): MenuType[] {
             type: 'item' as const,
             label: 'About',
             link: '/about',
+            icon: <Icons.IconInfo className="size-4 text-blue" />,
         },
         {
             type: 'item' as const,

@@ -10,8 +10,6 @@ import PostListing from '../../templates/PostListing'
 import DisplayOptions from 'components/DisplayOptions'
 import Legal from 'components/Legal'
 import type { AppWindow } from '../../context/Window'
-import Editor from 'components/Editor'
-import PostEditorWindow from 'components/Community/PostEditorWindow'
 import WimAuthPortal from 'components/Auth/WimAuthPortal'
 import TapePlayer from 'components/TapePlayer'
 import { useApp } from '../../context/App'
@@ -28,7 +26,6 @@ function AuthWindow() {
         />
     )
 }
-
 
 import AdminDashboard from 'components/Admin/AdminDashboard'
 import ArchiveWindow from 'components/Archive/ArchiveWindow'
@@ -74,12 +71,6 @@ function WindowRouterInner({ item }: WindowRouterProps) {
     }
 
     // 4. Route-based resolution
-    if (path === '/editor/post' || path === '/community/new' || path.startsWith('/community/new')) {
-        return <PostEditorWindow />
-    }
-    if (path === '/editor' || path.startsWith('/editor')) {
-        return <Editor {...props} />
-    }
     if (/^\/tape-player|^\/mixtapes/.test(path)) {
         return <TapePlayer {...props} />
     }

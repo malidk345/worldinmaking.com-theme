@@ -21,7 +21,6 @@ import MobileNav from 'components/PostLayout/MobileNav'
 import Default from './Views/Default'
 import Blog from './Views/Blog'
 import Newsletter from './Views/Newsletter'
-import Customers from './Views/Customers'
 import { useLayoutData } from 'components/Layout/hooks'
 import qs from 'qs'
 import { RightArrow } from 'components/Icons'
@@ -205,7 +204,6 @@ const Router = ({ children, prev }: { children: React.ReactNode; prev: string | 
                     '/blog': <Blog />,
                     '/newsletter': <Newsletter />,
                     '/spotlight': <Blog title="Spotlight" />,
-                    '/customers': <Customers />,
                 }[pathname] || <Default>{children}</Default>
             )}
         </div>

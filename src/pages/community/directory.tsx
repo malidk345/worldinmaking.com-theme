@@ -78,7 +78,7 @@ function AccessDenied({ user }: { user: unknown }) {
                         </p>
                         {!user && (
                             <OSButton variant="primary" size="md" onClick={() => openSignIn()}>
-                                Sign in to the community
+                                Sign in
                             </OSButton>
                         )}
                     </div>
