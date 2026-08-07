@@ -31,6 +31,7 @@ export const TeamMemberLink = ({
     photo?: boolean
     showOnlyFirstName?: boolean
     children?: JSX.Element
+    href?: string
 }): JSX.Element => {
     const displayName = showOnlyFirstName ? firstName : [firstName, lastName].filter(Boolean).join(' ')
     const avatarUrl = (avatar as any)?.formats?.thumbnail?.url || (avatar as any)?.url || (typeof avatar === 'string' ? avatar : null)
@@ -157,12 +158,14 @@ export default function TeamMember({
     const staticData: any = typeof useStaticQuery === 'function' ? useStaticQuery(null) : {}
     const nodes = staticData?.profiles?.nodes || []
 
+    const safeName = name ?? ''
+
     const person = nodes.find(
         ({ firstName, lastName }: { firstName: string; lastName: string }) =>
-            `${firstName} ${lastName}`.toLowerCase() === name.toLowerCase()
+            `${firstName} ${lastName}`.toLowerCase() === safeName.toLowerCase()
     ) || {
-        firstName: name,
-        squeakId: name.toLowerCase().replace(/\s+/g, '-'),
+        firstName: safeName,
+        squeakId: safeName.toLowerCase().replace(/\s+/g, '-'),
         color: 'red',
     }
 
