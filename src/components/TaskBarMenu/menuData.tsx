@@ -211,8 +211,6 @@ export function useMenuData(): MenuType[] {
 
     const logoMenuItems = isMobile
         ? [
-              { type: 'item' as const, label: 'home.mdx', link: '/' },
-              { type: 'separator' as const },
               ...processMobileNavItems(),
               { type: 'separator' as const },
               ...baseLogoMenuItems,

@@ -71,6 +71,14 @@ type Route =
   | { page: 'public'; notebookId: string }
 
 function parseHash(hash: string): Route {
+  if (typeof window !== 'undefined' && window.location.search) {
+    const params = new URLSearchParams(window.location.search)
+    const queryId = params.get('id') || params.get('notebookId')
+    if (queryId) {
+      return { page: 'editor', notebookId: queryId }
+    }
+  }
+
   const h = hash.replace(/^#\/?/, '')
   if (h.startsWith('notebook/')) {
     return { page: 'editor', notebookId: h.replace('notebook/', '') }

@@ -15,6 +15,7 @@ import {
     IconTrash,
     IconCopy,
     IconNotebook,
+    IconExport,
 } from '@posthog/icons'
 import {
     StoredNotebook,
@@ -145,6 +146,37 @@ export function NotebooksListScene({
         return true
     })
 
+    const handleExportToDesktop = (notebook: StoredNotebook) => {
+        try {
+            const customAppsKey = 'wim_os_desktop_pinned_items'
+            const existing = JSON.parse(localStorage.getItem(customAppsKey) || '[]')
+            const docUrl = `#/notebook/${notebook.id}`
+            const docTitle = `${notebook.title || 'Untitled'}.md`
+
+            const newItem = {
+                id: notebook.id,
+                label: docTitle,
+                url: docUrl,
+                notebookId: notebook.id,
+                iconType: 'document',
+                pinnedAt: new Date().toISOString(),
+            }
+
+            if (!existing.some((item: any) => item.id === notebook.id)) {
+                existing.push(newItem)
+                localStorage.setItem(customAppsKey, JSON.stringify(existing))
+                window.dispatchEvent(new Event('wimDesktopPinnedChanged'))
+            }
+
+            // Also trigger standard markdown download as document export
+            handleExportMd(notebook)
+            alert(`"${docTitle}" exported to your Desktop & downloaded successfully!`)
+        } catch (e) {
+            console.error('Failed to export notebook to desktop:', e)
+            handleExportMd(notebook)
+        }
+    }
+
     // PostHog's exact columns: Title, Created by, Created, Last modified, Actions
     const columns: LemonTableColumns<StoredNotebook> = [
         {
@@ -231,6 +263,11 @@ export function NotebooksListScene({
                 return (
                     <LemonMenu
                         items={[
+                            {
+                                label: 'Export to Desktop (.md)',
+                                icon: <IconExport />,
+                                onClick: () => handleExportToDesktop(notebook),
+                            },
                             {
                                 label: 'Duplicate',
                                 icon: <IconCopy />,

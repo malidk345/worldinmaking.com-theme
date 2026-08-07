@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'components/Link'
 import { useAppActions, useAppSettings, useAppUIState } from '../../context/App'
 import { GlassIcon } from 'components/OSIcons'
@@ -16,12 +16,6 @@ import { useToast } from '../../context/Toast'
 export const useProductLinks = () => {
     return React.useMemo(
         () => [
-            {
-                label: 'home.mdx',
-                Icon: <AppIcon name="doc" />,
-                url: '/',
-                source: 'desktop',
-            },
             {
                 label: 'Community',
                 Icon: <AppIcon name="forums" />,
@@ -75,6 +69,29 @@ function Desktop() {
     const { setScreensaverPreviewActive, setConfetti, updateSiteSettings } = useAppActions()
     const { siteSettings, compact } = useAppSettings()
     const { screensaverPreviewActive, confetti } = useAppUIState()
+    const [pinnedApps, setPinnedApps] = useState<AppItem[]>([])
+
+    const loadPinnedApps = useCallback(() => {
+        try {
+            const customAppsKey = 'wim_os_desktop_pinned_items'
+            const existing = JSON.parse(localStorage.getItem(customAppsKey) || '[]')
+            const mapped: AppItem[] = existing.map((item: any) => ({
+                label: item.label,
+                Icon: <AppIcon name="doc" />,
+                url: `/notebooks?id=${item.notebookId}`,
+                source: 'desktop',
+            }))
+            setPinnedApps(mapped)
+        } catch (e) {
+            console.error('Failed to load pinned apps', e)
+        }
+    }, [])
+
+    useEffect(() => {
+        loadPinnedApps()
+        window.addEventListener('wimDesktopPinnedChanged', loadPinnedApps)
+        return () => window.removeEventListener('wimDesktopPinnedChanged', loadPinnedApps)
+    }, [loadPinnedApps])
 
     const { isInactive, dismiss } = useInactivityDetection({
         enabled: !siteSettings.screensaverDisabled,
@@ -94,7 +111,7 @@ function Desktop() {
                   }
                 : app
         )
-    const leftApps = applyGlow(productLinks)
+    const leftApps = applyGlow([...productLinks, ...pinnedApps])
     const rightApps = applyGlow(apps)
 
     const mobileIconListClassName = 'list-none m-0 p-0 flex flex-row flex-wrap pointer-events-auto w-full sm:hidden'
