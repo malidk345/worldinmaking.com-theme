@@ -19,6 +19,7 @@ import { MOTION_LAYER, WINDOW_BG } from '../../constants/frostedSurfaces'
 import { isMaximizedWindow, transitionWindowMode, windowModeFlags } from 'lib/windowState'
 import { useWindowResize } from 'hooks/useWindowResize'
 import { useWindowManager } from 'hooks/useWindowManager'
+import { useWindowPhysics } from 'hooks/useWindowPhysics'
 import WindowResizeHandles from './WindowResizeHandles'
 import WindowChrome from './WindowChrome'
 import WindowContent from './WindowContent'
@@ -92,14 +93,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
         [item, updateWindow]
     )
 
-    const motionX = useMotionValue(0)
-    const motionY = useMotionValue(0)
-    const xVelocity = useVelocity(motionX)
-    const yVelocity = useVelocity(motionY)
-    const smoothXVelocity = useSpring(xVelocity, { damping: 40, stiffness: 300 })
-    const smoothYVelocity = useSpring(yVelocity, { damping: 40, stiffness: 300 })
-    const tiltX = useTransform(smoothYVelocity, [-1000, 1000], [6, -6])
-    const tiltY = useTransform(smoothXVelocity, [-1000, 1000], [-6, 6])
+    const { motionX, motionY, physicsStyles } = useWindowPhysics(isActiveWindowsPanelOpen, dragging, compact)
 
     const isSSR = typeof window === 'undefined'
     const controls = useDragControls()
@@ -542,8 +536,8 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                     data-scheme="tertiary"
                     className={`group @container absolute overflow-hidden pointer-events-auto !select-auto flex flex-col border-primary ${WINDOW_BG} ${
                         isCompositorActive ? MOTION_LAYER : ''
-                    } rounded-lg ${item.appSettings?.size?.fixed ? 'border' : item.expanded ? 'border-t' : ''} ${
-                        item.expanded ? 'shadow-none' : 'shadow-md'
+                    } rounded-[32px] ${item.appSettings?.size?.fixed ? 'border' : item.expanded ? 'border-t' : ''} ${
+                        item.expanded ? 'shadow-none' : 'shadow-md shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)]'
                     } ${
                         item.expanded
                             ? 'rounded-tr-none rounded-tl-none'
@@ -563,13 +557,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         contentVisibility: inView ? 'visible' : 'auto',
                         willChange: isCompositorActive ? 'left, top, width, height, transform' : undefined,
                         // 3D tilt only while dragging (brief transform is OK; rest must be transform-free)
-                        ...(dragging && !compact && !isActiveWindowsPanelOpen
-                            ? {
-                                  rotateX: tiltX,
-                                  rotateY: tiltY,
-                                  transformPerspective: 1200,
-                              }
-                            : {}),
+                        ...physicsStyles,
                         ...(item.appSettings?.size?.fixed
                             ? {
                                   maxWidth: item.sizeConstraints.min.width,
@@ -622,8 +610,8 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         compact || siteSettings?.performanceBoost || dragging
                             ? { duration: 0 }
                             : {
-                                  duration: 0.15,
-                                  ease: [0.16, 1, 0.3, 1],
+                                  duration: 0.4,
+                                  ease: [0.25, 1, 0.5, 1],
                               }
                     }
                     drag={isActiveWindowsPanelOpen ? false : !item.fixedSize}
