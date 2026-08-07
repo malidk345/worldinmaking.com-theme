@@ -83,7 +83,7 @@ function buildBotSelectOptions(roster: PhilosopherBot[]) {
  * Shell (bg, border, radius, shadow) comes from Lemon Popover__box — do not re-chrome here.
  */
 const panelClassName =
-    'w-[min(100vw-1.5rem,28rem)] sm:w-[36rem] max-h-[min(78dvh,40rem)] p-3 space-y-3 text-xs overflow-y-auto overscroll-contain'
+    'w-[min(100vw-1.5rem,28rem)] sm:w-[36rem] max-h-[min(78dvh,40rem)] p-3 space-y-3 text-xs overflow-y-auto overscroll-contain bg-surface-secondary'
 
 export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: AskAIDropdownProps): JSX.Element {
     const hostTheme = useSiteThemeSync()
@@ -311,7 +311,7 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                         if (msg.sender === 'user') {
                             return (
                                 <div key={msg.id} className="flex justify-end my-2">
-                                    <div className="max-w-[85%] bg-surface-secondary border border-[var(--color-border-primary)] text-primary rounded-xl px-3.5 py-2 text-xs leading-relaxed font-normal">
+                                    <div className="max-w-[85%] bg-surface-primary border border-[var(--color-border-primary)] text-primary rounded-xl px-3.5 py-2 text-xs leading-relaxed font-normal shadow-xs">
                                         {msg.text}
                                     </div>
                                 </div>
@@ -333,8 +333,8 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                     </div>
                                 )}
 
-                                {/* AI Reply Box — Native Lemon surface card */}
-                                <div className="bg-surface-secondary border border-[var(--color-border-primary)] rounded-xl p-3 space-y-2">
+                                {/* AI Reply Box — White container on gray panel */}
+                                <div className="bg-surface-primary border border-[var(--color-border-primary)] rounded-xl p-3 space-y-2 shadow-xs">
                                     <div className="flex items-center gap-2">
                                         <ProfilePicture user={philosopherAsUser(bot)} size="sm" />
                                         <div className="flex justify-between items-center gap-2 min-w-0 flex-1">
@@ -418,8 +418,8 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                 </div>
             )}
 
-            {/* Composer Input Card */}
-            <div className="mt-2 bg-surface-secondary border border-[var(--color-border-primary)] rounded-xl p-2.5 space-y-2">
+            {/* Composer Input Card — White box on gray panel */}
+            <div className="mt-2 bg-surface-primary border border-[var(--color-border-primary)] rounded-xl p-2.5 space-y-2 shadow-xs">
                 <textarea
                     ref={textareaRef}
                     value={prompt}
