@@ -433,7 +433,7 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                             : `Reply to ${activeBot.name} (Cmd + Enter)...`
                     }
                     rows={3}
-                    className="w-full bg-surface-secondary border border-border rounded p-2 text-xs text-primary placeholder:text-muted focus:outline-none focus:border-primary resize-none leading-relaxed"
+                    className="w-full bg-surface-secondary border border-border rounded p-2 text-xs text-primary placeholder:text-muted focus:outline-none focus:border-border resize-none leading-relaxed"
                 />
 
                 <div className="flex items-center justify-between gap-2">
