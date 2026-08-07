@@ -39,7 +39,7 @@ export interface ThinkingStageView {
 
 export interface ChatMessage {
     id: string
-    sender: 'user' | 'ai'
+    sender: 'user' | 'ai' | 'system'
     text: string
     timestamp: string
     philosopherId?: string
@@ -244,6 +244,24 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
         }
     }
 
+    const handleBotChange = (nextBotId: string) => {
+        if (!nextBotId || nextBotId === selectedBotId) return
+        const nextBot = getPhilosopherBot(nextBotId, roster)
+        setSelectedBotId(nextBotId)
+
+        if (messages.length > 0) {
+            setMessages((prev) => [
+                ...prev,
+                {
+                    id: `${Date.now()}-sys`,
+                    sender: 'system',
+                    text: `Switched bot to ${nextBot.name}`,
+                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                },
+            ])
+        }
+    }
+
     const overlay = (
         <div className={panelClassName} onClick={(e) => e.stopPropagation()}>
             {/* Header with Context Indicator */}
@@ -307,6 +325,17 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                             msg.sender === 'ai' && msg.philosopherId
                                 ? getPhilosopherBot(msg.philosopherId, roster)
                                 : activeBot
+
+                        if (msg.sender === 'system') {
+                            return (
+                                <div key={msg.id} className="flex justify-center my-2 select-none">
+                                    <div className="flex items-center gap-1.5 text-[10px] text-muted bg-surface-primary border border-[var(--color-border-primary)] rounded-full px-3 py-0.5 shadow-2xs">
+                                        <span>🔀</span>
+                                        <span className="font-medium text-secondary">{msg.text}</span>
+                                    </div>
+                                </div>
+                            )
+                        }
 
                         if (msg.sender === 'user') {
                             return (
@@ -441,8 +470,7 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                         <LemonSelect
                             value={selectedBotId}
                             onChange={(val) => {
-                                setSelectedBotId(val || roster[0]!.id)
-                                setMessages([])
+                                if (val) handleBotChange(val)
                             }}
                             options={botSelectOptions}
                             size="xsmall"

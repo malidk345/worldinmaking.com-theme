@@ -35,7 +35,7 @@ export const LemonButton = React.forwardRef<HTMLButtonElement, LemonButtonProps>
     ref
   ) => {
     const baseStyles =
-      'inline-flex items-center justify-center font-medium border transition-colors rounded-md select-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'
+      'inline-flex items-center justify-center font-medium border transition-colors rounded-md select-none focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'
 
     const sizeStyles = {
       xsmall: 'text-xs px-1.5 py-0.5 gap-1 min-h-[22px]',
