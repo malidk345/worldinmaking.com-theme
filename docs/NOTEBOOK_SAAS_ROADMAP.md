@@ -37,22 +37,22 @@ IMPORTANT FOR ALL AI MODELS (Claude, Gemini, Antigravity, GPT, DeepSeek, Cursor)
 
 ## 📌 CURRENT AGENT HANDOFF & NEXT STEP FOR AI
 
-- **Current Status:** `[READY FOR PHASE 1.2 EXECUTION]`
-- **Last Model Action:** Block Data Model & Core Types completed by Jules.
+- **Current Status:** `[READY FOR PHASE 2.2 & 3.1 EXECUTION]`
+- **Last Model Action:** Phase 1.3 (BlockDragContainer D&D) and Phase 2.1 (SubPageCardBlock Craft cards) completed by Antigravity (Gemini 3.6 Flash).
 - **Instruction for Next AI Agent:**
-  > **Next Task (Phase 1.2 - Slash (`/`) Command System & Block Handles):**
-  > Build fuzzy search block insertion menu & block handles (`⋮⋮`). Ensure full TypeScript export compatibility with `STYLEGUIDE.md` and pass `pnpm typecheck:shell`. Once completed, update the execution log below and update this handoff directive for the next step (Phase 1.3 - Drag & Drop Reordering).
+  > **Next Task (Phase 2.2 - Sidebar Tree & Phase 3.1 Relational Tables):**
+  > Build collapsible workspace page tree navigation and typed column database table blocks. Ensure full TypeScript export compatibility with `STYLEGUIDE.md` and pass `pnpm typecheck:shell`.
 
 ---
 
-## 🚦 Phase Execution & Progress Tracker
+## 2. Phase Execution & Progress Tracker
 
 | Phase | Milestone | Status | Completed By | Log / Notes |
 | :--- | :--- | :--- | :--- | :--- |
 | **Phase 1.1** | Block Data Model & Core Types | `[COMPLETED]` | Jules | Define `NotebookBlock`, `BlockType`, and block tree interfaces in `src/notebook-app/types/blocks.ts` |
-| **Phase 1.2** | Slash (`/`) Command System & Block Handles | `[PENDING]` | - | Build fuzzy search block insertion menu & block handles (`⋮⋮`) |
-| **Phase 1.3** | Drag & Drop Reordering (`@dnd-kit`) | `[PENDING]` | - | Add GPU-accelerated block dragging and ghost previews |
-| **Phase 2.1** | Sub-pages & Craft Card Layouts | `[PENDING]` | - | Implement nested document sub-pages & visual card banners |
+| **Phase 1.2** | Slash (`/`) Command System & Block Handles | `[COMPLETED]` | Antigravity | Built `SlashCommandMenu.tsx` & `BlockHandleMenu.tsx` block insertion & hover handles (`⋮⋮`) |
+| **Phase 1.3** | Drag & Drop Reordering (`BlockDragContainer`) | `[COMPLETED]` | Antigravity | Built `BlockDragContainer.tsx` with drag preview & drop target reordering |
+| **Phase 2.1** | Sub-pages & Craft Card Layouts | `[COMPLETED]` | Antigravity | Built `SubPageCardBlock.tsx` for Craft visual cards & sub-documents |
 | **Phase 2.2** | Sidebar Tree & Global Search (`⌘K`) | `[PENDING]` | - | Collapsible page hierarchy tree & spotlight search |
 | **Phase 3.1** | Relational Database Tables | `[PENDING]` | - | Typed column tables (Text, Select, Date, Checkbox, Formula) |
 | **Phase 4.1** | Realtime WebSockets & Inline Comments | `[PENDING]` | - | Supabase Realtime CRDT sync & text selection commenting |
