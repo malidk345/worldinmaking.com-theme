@@ -243,7 +243,6 @@ const AddonTooltipContent = ({ addon }: { addon: BillingProductV2Type }) => {
     } else {
         referencePlan = addon.plans[0]
     }
-    console.log(addon.name, 'referencePlan', referencePlan)
     const tiers = referencePlan?.tiers
     const isFirstTierFree = parseFloat(tiers?.[0].unit_amount_usd || '') === 0
     const [showDiscounts, setShowDiscounts] = useState(false)
