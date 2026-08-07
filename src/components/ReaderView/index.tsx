@@ -1562,11 +1562,11 @@ function ReaderViewContent({
                             type="button"
                             aria-label="Open navigation"
                             onClick={() => setMobileNavOpen(true)}
-                            className={`absolute bottom-4 right-4 z-30 flex size-11 items-center justify-center rounded-full border border-primary text-primary shadow-lg transition-opacity duration-200 hover:bg-accent ${PANEL_BG} ${
+                            className={`absolute top-3 left-3 z-40 flex size-10 items-center justify-center rounded-md border border-primary text-primary shadow-md transition-all duration-200 hover:bg-accent ${PANEL_BG} ${
                                 mobileNavOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'
                             }`}
                         >
-                            <IconSidebarClose className="size-5" />
+                            <IconSidebarOpen className="size-5" />
                         </button>
                     )}
                     <div className="flex flex-1 min-h-0">
