@@ -257,21 +257,21 @@ export function EditablePromptComponent({
                             onClick={() => applyPreset('Convert into a Markdown table')}
                             className="px-2 py-0.5 rounded border border-[var(--color-border-primary)] hover:bg-surface-secondary text-secondary hover:text-primary transition-all bg-surface-primary"
                         >
-                            📊 Table
+                            Table
                         </button>
                         <button
                             type="button"
                             onClick={() => applyPreset('Extract action items & tasks')}
                             className="px-2 py-0.5 rounded border border-[var(--color-border-primary)] hover:bg-surface-secondary text-secondary hover:text-primary transition-all bg-surface-primary"
                         >
-                            💡 Tasks
+                            Tasks
                         </button>
                         <button
                             type="button"
                             onClick={() => applyPreset('Polish & format markdown')}
                             className="px-2 py-0.5 rounded border border-[var(--color-border-primary)] hover:bg-surface-secondary text-secondary hover:text-primary transition-all bg-surface-primary"
                         >
-                            ✍️ Polish
+                            Polish
                         </button>
                     </div>
                 </div>

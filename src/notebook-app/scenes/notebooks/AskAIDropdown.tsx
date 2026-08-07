@@ -6,7 +6,17 @@ import {
     LemonTag,
     ProfilePicture,
 } from '~nb-lib/lemon-ui/index'
-import { IconSparkles, IconChevronDown, IconArrowRight, IconTrash, IconPlus, IconTable } from '@posthog/icons'
+import {
+    IconSparkles,
+    IconChevronDown,
+    IconArrowRight,
+    IconTrash,
+    IconPlus,
+    IconTable,
+    IconPencil,
+    IconList,
+    IconRefresh,
+} from '@posthog/icons'
 import {
     PHILOSOPHER_BOTS,
     getPhilosopherBot,
@@ -41,12 +51,12 @@ export interface ChatMessage {
 }
 
 const EDITORIAL_SUGGESTIONS = [
-    { label: '📊 Comparison Table', prompt: 'Convert this notebook data into a structured Markdown comparison table' },
-    { label: '📌 Executive Summary', prompt: 'Generate a concise Executive Summary with key takeaways for the top of this notebook' },
-    { label: '✍️ Polish & Format', prompt: 'Polish and format this notebook into clean Markdown with proper headers and bullet points' },
-    { label: '💡 Extract Action Items', prompt: 'Extract an Actionable Task List (To-Do items) from this notebook' },
-    { label: '🌐 Translate to Turkish', prompt: 'Translate the entire notebook content into Turkish keeping all formatting' },
-    { label: '⚡ Rewrite Rigorously', prompt: 'Rewrite & refactor this notebook in a more rigorous and persuasive tone' },
+    { label: 'Comparison table', icon: <IconTable />, prompt: 'Convert this notebook data into a structured Markdown comparison table' },
+    { label: 'Executive summary', icon: <IconSparkles />, prompt: 'Generate a concise Executive Summary with key takeaways for the top of this notebook' },
+    { label: 'Polish & format', icon: <IconPencil />, prompt: 'Polish and format this notebook into clean Markdown with proper headers and bullet points' },
+    { label: 'Extract tasks', icon: <IconList />, prompt: 'Extract an Actionable Task List (To-Do items) from this notebook' },
+    { label: 'Translate to Turkish', icon: <IconSparkles />, prompt: 'Translate the entire notebook content into Turkish keeping all formatting' },
+    { label: 'Rewrite rigorously', icon: <IconPencil />, prompt: 'Rewrite & refactor this notebook in a more rigorous and persuasive tone' },
 ]
 
 function buildBotSelectOptions(roster: PhilosopherBot[]) {
@@ -277,6 +287,7 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                 key={item.label}
                                 size="xsmall"
                                 type="secondary"
+                                icon={item.icon}
                                 onClick={() => void sendPrompt(item.prompt)}
                                 className="justify-start text-left truncate"
                             >
@@ -339,7 +350,7 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                         setIsOpen(false)
                                                     }}
                                                 >
-                                                    Insert Table
+                                                    Insert table
                                                 </LemonButton>
                                             )}
                                             <LemonButton
@@ -353,11 +364,12 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                 }}
                                                 tooltip="Append to bottom of notebook"
                                             >
-                                                + Append
+                                                Append
                                             </LemonButton>
                                             <LemonButton
                                                 size="xsmall"
                                                 type="tertiary"
+                                                icon={<IconRefresh />}
                                                 onClick={(e) => {
                                                     e.stopPropagation()
                                                     if (confirm('Replace current notebook content with this AI text?')) {
@@ -367,11 +379,12 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                 }}
                                                 tooltip="Replace entire notebook content"
                                             >
-                                                🔄 Replace Note
+                                                Replace note
                                             </LemonButton>
                                             <LemonButton
                                                 size="xsmall"
                                                 type="tertiary"
+                                                icon={<IconPlus />}
                                                 onClick={(e) => {
                                                     e.stopPropagation()
                                                     onInsertPromptBlock(msg.text, 'prepend')
@@ -379,7 +392,7 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                 }}
                                                 tooltip="Prepend at top of notebook"
                                             >
-                                                ⬆️ Prepend Top
+                                                Prepend top
                                             </LemonButton>
                                         </div>
                                     )}
