@@ -295,7 +295,7 @@ function TaskBarMenu() {
                     }}
                     className={`${TASKBAR_BG} ${
                         isAnimating ? MOTION_LAYER : ''
-                    } skin-classic:bg-accent border-secondary rounded pl-0.5 pr-2 shadow-2xl`}
+                    } skin-classic:bg-accent border border-primary rounded pl-0.5 pr-2 shadow-2xl`}
                 >
                     <div
                         aria-hidden="true"

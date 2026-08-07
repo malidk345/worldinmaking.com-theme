@@ -540,15 +540,13 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                     aria-modal={item.modal?.type === 'standard' || undefined}
                     tabIndex={-1}
                     data-scheme="tertiary"
-                    className={`group @container absolute overflow-hidden pointer-events-auto !select-auto flex flex-col border-primary ${WINDOW_BG} ${
+                    className={`group @container absolute overflow-hidden pointer-events-auto !select-auto flex flex-col border border-primary ${WINDOW_BG} ${
                         isCompositorActive ? MOTION_LAYER : ''
-                    } rounded-lg ${item.appSettings?.size?.fixed ? 'border' : item.expanded ? 'border-t' : ''} ${
-                        item.expanded ? 'shadow-none' : 'shadow-md'
                     } ${
-                        item.expanded
-                            ? 'rounded-tr-none rounded-tl-none'
-                            : item.snapped === 'left'
-                            ? 'rounded-tl-none rounded-tr-none rounded-br-none border-r'
+                        item.expanded ? 'border-t-0 rounded-t-none rounded-b-lg shadow-none' : 'rounded-lg shadow-md'
+                    } ${
+                        item.snapped === 'left'
+                            ? 'rounded-tl-none rounded-tr-none rounded-br-none'
                             : item.snapped === 'right'
                             ? 'rounded-tl-none rounded-tr-none rounded-bl-none'
                             : ''
