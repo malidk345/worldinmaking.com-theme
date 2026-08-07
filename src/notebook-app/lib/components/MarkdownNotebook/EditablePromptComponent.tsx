@@ -224,15 +224,15 @@ export function EditablePromptComponent({
         <div className="MarkdownNotebook__text-row MarkdownNotebook__text-row--ai-prompt my-5">
             <div
                 className={clsx(
-                    'relative w-full rounded-xl p-4 sm:p-5 shadow-xs transition-all duration-200 border border-border',
+                    'relative w-full rounded-xl p-4 sm:p-5 shadow-xs transition-all duration-200 border border-[var(--color-border-primary)]',
                     'bg-surface-primary text-primary',
-                    isGenerating && 'animate-pulse ring-1 ring-border'
+                    isGenerating && 'animate-pulse ring-1 ring-[var(--color-border-primary)]'
                 )}
                 contentEditable={false}
                 data-markdown-notebook-node-id={node.id}
             >
                 {/* TOP HEADER BADGE BAR */}
-                <div className="flex items-center justify-between border-b border-border pb-3 mb-3">
+                <div className="flex items-center justify-between border-b border-[var(--color-border-primary)] pb-3 mb-3">
                     <div className="flex items-center gap-2">
                         <span className="flex items-center justify-center size-6 rounded bg-surface-secondary text-primary">
                             <IconRobot className="size-3.5 text-primary" />
@@ -248,28 +248,28 @@ export function EditablePromptComponent({
                         <button
                             type="button"
                             onClick={() => applyPreset('Summarize key points')}
-                            className="px-2 py-0.5 rounded border border-border hover:bg-surface-secondary text-secondary hover:text-primary transition-all bg-surface-primary"
+                            className="px-2 py-0.5 rounded border border-[var(--color-border-primary)] hover:bg-surface-secondary text-secondary hover:text-primary transition-all bg-surface-primary"
                         >
                             Summarize
                         </button>
                         <button
                             type="button"
                             onClick={() => applyPreset('Convert into a Markdown table')}
-                            className="px-2 py-0.5 rounded border border-border hover:bg-surface-secondary text-secondary hover:text-primary transition-all bg-surface-primary"
+                            className="px-2 py-0.5 rounded border border-[var(--color-border-primary)] hover:bg-surface-secondary text-secondary hover:text-primary transition-all bg-surface-primary"
                         >
                             Table
                         </button>
                         <button
                             type="button"
                             onClick={() => applyPreset('Extract action items & tasks')}
-                            className="px-2 py-0.5 rounded border border-border hover:bg-surface-secondary text-secondary hover:text-primary transition-all bg-surface-primary"
+                            className="px-2 py-0.5 rounded border border-[var(--color-border-primary)] hover:bg-surface-secondary text-secondary hover:text-primary transition-all bg-surface-primary"
                         >
                             Tasks
                         </button>
                         <button
                             type="button"
                             onClick={() => applyPreset('Polish & format markdown')}
-                            className="px-2 py-0.5 rounded border border-border hover:bg-surface-secondary text-secondary hover:text-primary transition-all bg-surface-primary"
+                            className="px-2 py-0.5 rounded border border-[var(--color-border-primary)] hover:bg-surface-secondary text-secondary hover:text-primary transition-all bg-surface-primary"
                         >
                             Polish
                         </button>
@@ -292,7 +292,7 @@ export function EditablePromptComponent({
                 />
 
                 {/* BOTTOM ACTION BAR */}
-                <div className="flex items-center justify-between pt-3 border-t border-border text-xs">
+                <div className="flex items-center justify-between pt-3 border-t border-[var(--color-border-primary)] text-xs">
                     <LemonSelect
                         value={selectedAgentMode}
                         onChange={(val) => setSelectedAgentMode(val || 'auto')}

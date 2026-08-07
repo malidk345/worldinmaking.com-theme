@@ -15,7 +15,6 @@ import {
     IconTable,
     IconPencil,
     IconList,
-    IconRefresh,
 } from '@posthog/icons'
 import {
     PHILOSOPHER_BOTS,
@@ -51,12 +50,12 @@ export interface ChatMessage {
 }
 
 const EDITORIAL_SUGGESTIONS = [
-    { label: 'Comparison table', icon: <IconTable />, prompt: 'Convert this notebook data into a structured Markdown comparison table' },
-    { label: 'Executive summary', icon: <IconSparkles />, prompt: 'Generate a concise Executive Summary with key takeaways for the top of this notebook' },
-    { label: 'Polish & format', icon: <IconPencil />, prompt: 'Polish and format this notebook into clean Markdown with proper headers and bullet points' },
-    { label: 'Extract tasks', icon: <IconList />, prompt: 'Extract an Actionable Task List (To-Do items) from this notebook' },
-    { label: 'Translate to Turkish', icon: <IconSparkles />, prompt: 'Translate the entire notebook content into Turkish keeping all formatting' },
-    { label: 'Rewrite rigorously', icon: <IconPencil />, prompt: 'Rewrite & refactor this notebook in a more rigorous and persuasive tone' },
+    { label: 'Comparison table', icon: IconTable, prompt: 'Convert this notebook data into a structured Markdown comparison table' },
+    { label: 'Executive summary', icon: IconSparkles, prompt: 'Generate a concise Executive Summary with key takeaways for the top of this notebook' },
+    { label: 'Polish & format', icon: IconPencil, prompt: 'Polish and format this notebook into clean Markdown with proper headers and bullet points' },
+    { label: 'Extract tasks', icon: IconList, prompt: 'Extract an Actionable Task List (To-Do items) from this notebook' },
+    { label: 'Translate to Turkish', icon: IconSparkles, prompt: 'Translate the entire notebook content into Turkish keeping all formatting' },
+    { label: 'Rewrite rigorously', icon: IconPencil, prompt: 'Rewrite & refactor this notebook in a more rigorous and persuasive tone' },
 ]
 
 function buildBotSelectOptions(roster: PhilosopherBot[]) {
@@ -248,7 +247,7 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
     const overlay = (
         <div className={panelClassName} onClick={(e) => e.stopPropagation()}>
             {/* Header with Context Indicator */}
-            <div className="flex items-center justify-between border-b border-border pb-2 gap-2">
+            <div className="flex items-center justify-between pb-2 gap-2">
                 <div className="flex items-center gap-2 min-w-0">
                     <ProfilePicture user={philosopherAsUser(activeBot)} size="md" />
                     <div className="min-w-0">
@@ -282,50 +281,48 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                         Full AI Editorial Engine. Transform, format, summarize, or critique your notebook content in real-time.
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                        {EDITORIAL_SUGGESTIONS.map((item) => (
-                            <LemonButton
-                                key={item.label}
-                                size="xsmall"
-                                type="secondary"
-                                icon={item.icon}
-                                onClick={() => void sendPrompt(item.prompt)}
-                                className="justify-start text-left truncate"
-                            >
-                                <span className="truncate">{item.label}</span>
-                            </LemonButton>
-                        ))}
+                        {EDITORIAL_SUGGESTIONS.map((item) => {
+                            const IconComp = item.icon
+                            return (
+                                <LemonButton
+                                    key={item.label}
+                                    size="xsmall"
+                                    type="secondary"
+                                    icon={<IconComp />}
+                                    onClick={() => void sendPrompt(item.prompt)}
+                                    className="justify-start text-left truncate"
+                                >
+                                    <span className="truncate">{item.label}</span>
+                                </LemonButton>
+                            )
+                        })}
                     </div>
                 </div>
             )}
 
             {hasThread && (
-                <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+                <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
                     {messages.map((msg) => {
                         const bot =
                             msg.sender === 'ai' && msg.philosopherId
                                 ? getPhilosopherBot(msg.philosopherId, roster)
                                 : activeBot
-                        return (
-                            <div
-                                key={msg.id}
-                                className={`flex gap-2.5 items-start p-1.5 rounded hover:bg-surface-secondary transition-colors ${
-                                    msg.sender === 'user' ? 'flex-row-reverse' : ''
-                                }`}
-                            >
-                                <ProfilePicture
-                                    user={msg.sender === 'ai' ? philosopherAsUser(bot) : undefined}
-                                    name={msg.sender === 'user' ? 'You' : undefined}
-                                    size="sm"
-                                />
-                                <div className="flex-1 min-w-0 space-y-1">
-                                    <div className="flex justify-between items-center gap-2">
-                                        <span className="font-semibold text-primary truncate">
-                                            {msg.sender === 'ai' ? bot.name : 'You'}
-                                        </span>
-                                        <span className="text-[10px] text-muted shrink-0">{msg.timestamp}</span>
-                                    </div>
 
-                                    {msg.sender === 'ai' && (msg.thinkingStages?.length || msg.thought) && (
+                        if (msg.sender === 'user') {
+                            return (
+                                <div key={msg.id} className="flex justify-end my-2">
+                                    <div className="max-w-[85%] bg-surface-secondary border border-[var(--color-border-primary)] text-primary rounded-xl px-3.5 py-2 text-xs leading-relaxed font-normal">
+                                        {msg.text}
+                                    </div>
+                                </div>
+                            )
+                        }
+
+                        return (
+                            <div key={msg.id} className="space-y-2 my-3">
+                                {/* Thought Process OUTSIDE of the AI reply box */}
+                                {msg.sender === 'ai' && (msg.thinkingStages?.length || msg.thought) && (
+                                    <div className="px-1">
                                         <ReasoningAnswer
                                             id={`${msg.id}-thought`}
                                             completed
@@ -333,79 +330,86 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                             stages={msg.thinkingStages}
                                             latencyMs={msg.latencyMs}
                                         />
-                                    )}
+                                    </div>
+                                )}
 
-                                    <p className="text-secondary leading-snug whitespace-pre-wrap mb-0">{msg.text}</p>
+                                {/* AI Reply Box — Native Lemon surface card */}
+                                <div className="bg-surface-secondary border border-[var(--color-border-primary)] rounded-xl p-3 space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <ProfilePicture user={philosopherAsUser(bot)} size="sm" />
+                                        <div className="flex justify-between items-center gap-2 min-w-0 flex-1">
+                                            <span className="font-semibold text-xs text-primary truncate">{bot.name}</span>
+                                            <span className="text-[10px] text-muted shrink-0">{msg.timestamp}</span>
+                                        </div>
+                                    </div>
 
-                                    {msg.sender === 'ai' && (
-                                        <div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-border/40 mt-1.5">
-                                            {msg.hasTable && (
-                                                <LemonButton
-                                                    size="xsmall"
-                                                    type="secondary"
-                                                    icon={<IconTable />}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation()
-                                                        onInsertPromptBlock(msg.text, 'append')
-                                                        setIsOpen(false)
-                                                    }}
-                                                >
-                                                    Insert table
-                                                </LemonButton>
-                                            )}
+                                    <p className="text-primary text-xs leading-relaxed whitespace-pre-wrap mb-0">{msg.text}</p>
+
+                                    <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-[var(--color-border-primary)]/30">
+                                        {msg.hasTable && (
                                             <LemonButton
                                                 size="xsmall"
-                                                type="tertiary"
-                                                icon={<IconPlus />}
+                                                type="secondary"
+                                                icon={<IconTable />}
                                                 onClick={(e) => {
                                                     e.stopPropagation()
                                                     onInsertPromptBlock(msg.text, 'append')
                                                     setIsOpen(false)
                                                 }}
-                                                tooltip="Append to bottom of notebook"
                                             >
-                                                Append
+                                                Insert table
                                             </LemonButton>
-                                            <LemonButton
-                                                size="xsmall"
-                                                type="tertiary"
-                                                icon={<IconRefresh />}
-                                                onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    if (confirm('Replace current notebook content with this AI text?')) {
-                                                        onInsertPromptBlock(msg.text, 'replace')
-                                                        setIsOpen(false)
-                                                    }
-                                                }}
-                                                tooltip="Replace entire notebook content"
-                                            >
-                                                Replace note
-                                            </LemonButton>
-                                            <LemonButton
-                                                size="xsmall"
-                                                type="tertiary"
-                                                icon={<IconPlus />}
-                                                onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    onInsertPromptBlock(msg.text, 'prepend')
+                                        )}
+                                        <LemonButton
+                                            size="xsmall"
+                                            type="tertiary"
+                                            icon={<IconPlus />}
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                onInsertPromptBlock(msg.text, 'append')
+                                                setIsOpen(false)
+                                            }}
+                                            tooltip="Append to bottom of notebook"
+                                        >
+                                            Append
+                                        </LemonButton>
+                                        <LemonButton
+                                            size="xsmall"
+                                            type="tertiary"
+                                            icon={<IconPencil />}
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                if (confirm('Replace current notebook content with this AI text?')) {
+                                                    onInsertPromptBlock(msg.text, 'replace')
                                                     setIsOpen(false)
-                                                }}
-                                                tooltip="Prepend at top of notebook"
-                                            >
-                                                Prepend top
-                                            </LemonButton>
-                                        </div>
-                                    )}
+                                                }
+                                            }}
+                                            tooltip="Replace entire notebook content"
+                                        >
+                                            Replace note
+                                        </LemonButton>
+                                        <LemonButton
+                                            size="xsmall"
+                                            type="tertiary"
+                                            icon={<IconPlus />}
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                onInsertPromptBlock(msg.text, 'prepend')
+                                                setIsOpen(false)
+                                            }}
+                                            tooltip="Prepend at top of notebook"
+                                        >
+                                            Prepend top
+                                        </LemonButton>
+                                    </div>
                                 </div>
                             </div>
                         )
                     })}
 
                     {isGenerating && (
-                        <div className="flex gap-2.5 items-start p-1.5">
-                            <ProfilePicture user={philosopherAsUser(activeBot)} size="sm" />
-                            <div className="flex-1 min-w-0 space-y-1">
-                                <span className="font-semibold text-primary">{activeBot.name}</span>
+                        <div className="space-y-2 my-3">
+                            <div className="px-1">
                                 <ReasoningAnswer id="live-thinking" completed={false} />
                             </div>
                         </div>
@@ -414,30 +418,26 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                 </div>
             )}
 
-            {/* Composer Bar */}
-            <div className="border-t border-border pt-2 space-y-2">
+            {/* Composer Input Card */}
+            <div className="mt-2 bg-surface-secondary border border-[var(--color-border-primary)] rounded-xl p-2.5 space-y-2">
                 <textarea
                     ref={textareaRef}
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     onKeyDown={(e) => {
                         e.stopPropagation()
-                        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                        if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault()
                             void sendPrompt()
                         }
                     }}
-                    placeholder={
-                        messages.length === 0
-                            ? `Ask ${activeBot.name} anything...`
-                            : `Reply to ${activeBot.name} (Cmd + Enter)...`
-                    }
-                    rows={3}
-                    className="w-full bg-surface-secondary border border-border rounded p-2 text-xs text-primary placeholder:text-muted focus:outline-none focus:border-border resize-none leading-relaxed"
+                    placeholder="Ask follow-up or / for commands..."
+                    rows={2}
+                    className="w-full bg-transparent text-xs text-primary placeholder:text-muted focus:outline-none resize-none leading-relaxed p-1 border-none shadow-none font-normal"
                 />
 
-                <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0 max-w-[55%]">
+                <div className="flex items-center justify-between gap-2 pt-1 border-t border-[var(--color-border-primary)]/40">
+                    <div className="flex items-center gap-1.5 min-w-0">
                         <LemonSelect
                             value={selectedBotId}
                             onChange={(val) => {
@@ -445,16 +445,19 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                 setMessages([])
                             }}
                             options={botSelectOptions}
-                            size="small"
-                            type="tertiary"
+                            size="xsmall"
+                            type="secondary"
                             dropdownPlacement="top-start"
                             dropdownMatchSelectWidth={false}
-                            className="w-full"
                         />
+                        {contentLength > 0 && (
+                            <LemonTag type="completion" size="small" className="text-[10px] truncate max-w-[150px]">
+                                @ Context ({contentLength} chars)
+                            </LemonTag>
+                        )}
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-muted text-[10px] hidden sm:inline">Cmd + Enter</span>
+                    <div className="flex items-center gap-1.5 shrink-0">
                         <LemonButton
                             size="small"
                             type="primary"
@@ -462,6 +465,7 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                             onClick={() => void sendPrompt()}
                             disabled={isGenerating || !prompt.trim()}
                             tooltip={`Send to ${activeBot.name}`}
+                            className="rounded-lg"
                         />
                     </div>
                 </div>
@@ -475,7 +479,6 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
             visible={isOpen}
             onVisibilityChange={setIsOpen}
             closeOnClickInside={false}
-            padded={false}
             placement="bottom-end"
             fallbackPlacements={['bottom-start', 'top-end', 'top-start']}
             className={`notebook-app-scope ${isDark ? 'dark' : ''}`}
@@ -484,7 +487,6 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                 size="small"
                 type="secondary"
                 icon={<IconSparkles />}
-                // No custom size classes — LemonButton__icon sets icon size like the other toolbar buttons
                 sideIcon={<IconChevronDown />}
                 active={isOpen}
                 tooltip="Open philosopher AI chat"

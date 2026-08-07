@@ -75,7 +75,7 @@ function buildUserPrompt(input: BotRunInput, taskType: TaskType): string {
     }
     parts.push(`QUESTION / TOPIC:\n${input.question}`)
     parts.push(
-        'Provide your response adhering strictly to your epistemic stance, thinking-process format, and style rules.'
+        'IMPORTANT: Respond in the EXACT SAME LANGUAGE as the question/topic above. Adhere strictly to your persona identity, epistemic stance, thinking-process format, and style rules.'
     )
     return parts.join('\n\n')
 }
