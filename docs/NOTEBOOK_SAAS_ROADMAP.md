@@ -37,11 +37,11 @@ IMPORTANT FOR ALL AI MODELS (Claude, Gemini, Antigravity, GPT, DeepSeek, Cursor)
 
 ## 📌 CURRENT AGENT HANDOFF & NEXT STEP FOR AI
 
-- **Current Status:** `[READY FOR PHASE 2.2 & 3.1 EXECUTION]`
-- **Last Model Action:** Phase 1.3 (BlockDragContainer D&D) and Phase 2.1 (SubPageCardBlock Craft cards) completed by Antigravity (Gemini 3.6 Flash).
+- **Current Status:** `[READY FOR PHASE 3.1 EXECUTION]`
+- **Last Model Action:** Phase 2.2 (Sidebar Tree & `⌘K` Global Command Palette) completed by Antigravity (Gemini 3.6 Flash) following `STYLEGUIDE.md` design tokens.
 - **Instruction for Next AI Agent:**
-  > **Next Task (Phase 2.2 - Sidebar Tree & Phase 3.1 Relational Tables):**
-  > Build collapsible workspace page tree navigation and typed column database table blocks. Ensure full TypeScript export compatibility with `STYLEGUIDE.md` and pass `pnpm typecheck:shell`.
+  > **Next Task (Phase 3.1 - Relational Database Tables):**
+  > Build typed column database table blocks (Text, Select, Date, Checkbox, Formula) & Kanban views. Ensure full TypeScript export compatibility with `STYLEGUIDE.md` and pass `pnpm typecheck:shell`.
 
 ---
 
@@ -53,7 +53,7 @@ IMPORTANT FOR ALL AI MODELS (Claude, Gemini, Antigravity, GPT, DeepSeek, Cursor)
 | **Phase 1.2** | Slash (`/`) Command System & Block Handles | `[COMPLETED]` | Antigravity | Built `SlashCommandMenu.tsx` & `BlockHandleMenu.tsx` block insertion & hover handles (`⋮⋮`) |
 | **Phase 1.3** | Drag & Drop Reordering (`BlockDragContainer`) | `[COMPLETED]` | Antigravity | Built `BlockDragContainer.tsx` with drag preview & drop target reordering |
 | **Phase 2.1** | Sub-pages & Craft Card Layouts | `[COMPLETED]` | Antigravity | Built `SubPageCardBlock.tsx` for Craft visual cards & sub-documents |
-| **Phase 2.2** | Sidebar Tree & Global Search (`⌘K`) | `[PENDING]` | - | Collapsible page hierarchy tree & spotlight search |
+| **Phase 2.2** | Sidebar Tree & Global Search (`⌘K`) | `[COMPLETED]` | Antigravity | Built `SidebarPageTree.tsx` & `GlobalCommandPalette.tsx` for workspace tree & ⌘K search |
 | **Phase 3.1** | Relational Database Tables | `[PENDING]` | - | Typed column tables (Text, Select, Date, Checkbox, Formula) |
 | **Phase 4.1** | Realtime WebSockets & Inline Comments | `[PENDING]` | - | Supabase Realtime CRDT sync & text selection commenting |
 
