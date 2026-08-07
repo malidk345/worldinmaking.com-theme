@@ -1,76 +1,126 @@
-<p align="center">
-  <img alt="posthoglogo" src="https://user-images.githubusercontent.com/65415371/205059737-c8a4f836-4889-4654-902e-f302b187b6a0.png">
-</p>
+# WorldInMaking (WIM)
 
-# PostHog.com - Website, docs, blog, and handbook
+Desktop OS shell product built on a Next.js (Pages Router) codebase inherited from PostHog.com.
 
-<p align="center">
-  <a href='http://makeapullrequest.com'><img alt='PRs Welcome' src='https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=shields'/></a>
-  <img alt="GitHub contributors" src="https://img.shields.io/github/contributors/posthog/posthog.com"/>
-  <a href='https://posthog.com/community'><img alt="Join Community" src="https://img.shields.io/badge/community-join-blue"/></a>
-  <img alt="GitHub commit activity" src="https://img.shields.io/github/commit-activity/m/posthog/posthog.com"/>
-  <img alt="GitHub closed pull requests" src="https://img.shields.io/github/issues-pr-closed/posthog/posthog.com"/>
-</p>
+**Stack:** Next.js 14 · React 18 · Tailwind 3 · Supabase · multi-provider AI · notebook-app (Lemon UI)
 
-<p align="center">
-  <a href="https://app.posthog.com/home#supportModal">Support</a> - <a href="https://posthog.com/roadmap">Roadmap</a> - <a href="https://github.com/PostHog/posthog.com/issues/new">Open an issue</a> - <a href="https://github.com/PostHog/posthog.com/blob/master/STYLEGUIDE.md">Style guide</a>
-</p>
+| | |
+|---|---|
+| **Product surface** | Desktop windows, taskbar, search, auth, notebooks, community/forum, AI bots |
+| **Package manager** | **pnpm only** (`pnpm-lock.yaml`) — do not use npm or commit `package-lock.json` |
+| **Node** | 22.x |
+| **Architecture** | [`docs/architecture/FULL_PERFORMANCE_AND_GROWTH_REPORT.md`](docs/architecture/FULL_PERFORMANCE_AND_GROWTH_REPORT.md) |
+| **AI agent board** | [`docs/architecture/AI_MEMORY.md`](docs/architecture/AI_MEMORY.md) |
 
-
-This is the repository for the PostHog website. We treat it like a product. It contains:
-
-- All of our written content and visuals including product features, manuals, docs, blogs, case studies, tutorials, and the handbook
-- Features like questions and answers (using [Squeak!](https://github.com/PostHog/squeak)), job listings (using [Ashby](https://www.ashbyhq.com/customers/posthog-customer-story)), pricing calculator, roadmap, API docs, and more
-- All the components, templates, logic, and styling to make this work, look pretty, and spark joy
+---
 
 ## Quick start
 
-1. **Pre-installation**
-   Ensure Node.js (version 22) and `pnpm` are installed.
+```bash
+# Prerequisites: Node 22+, pnpm 10+
+pnpm install
+cp .env.example .env.local   # fill Supabase keys (see below)
+pnpm dev
+```
 
-2. **Start developing**
-   Install site dependencies and start Next.js dev server:
+Open:
 
-   ```bash
-   pnpm install
-   pnpm dev
-   ```
+- **Shell home:** [http://localhost:3000](http://localhost:3000) (renders desktop content)
+- **Desktop route:** [http://localhost:3000/desktop](http://localhost:3000/desktop)
+- **Login:** [http://localhost:3000/login](http://localhost:3000/login)
 
-   > **Note:** Only `pnpm` is supported. `package-lock.json` has been removed.
+Notebook CSS is rebuilt on `predev` / `prebuild`. First `pnpm dev` may take longer.
 
-3. **Open the site**
-   Your site is now running at `http://localhost:3000` (desktop shell at `http://localhost:3000/desktop`).
-   See [architecture docs](docs/architecture/FULL_PERFORMANCE_AND_GROWTH_REPORT.md) and [AI memory](docs/architecture/AI_MEMORY.md) for details.
+---
 
-### Developing the posts section
-To see your local version of the posts section, `/posts` needs to be visited directly (`http://localhost:8001/posts`)
+## Environment
 
-### Developing the merch store
-- `GATSBY_MYSHOPIFY_URL`
-- `GATSBY_SHOPIFY_STOREFRONT_TOKEN`
+1. Copy [`.env.example`](.env.example) → `.env.local`.
+2. Minimum for local shell:
 
-Currently, these environment variables are excluded from Vercel preview builds to disable merch store node creation and speed up build times on non-merch related PRs.
+   | Variable | Purpose |
+   |----------|---------|
+   | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public anon key |
+   | `SUPABASE_SERVICE_ROLE_KEY` | Server-only (notebooks, forum, bots) — never expose as `NEXT_PUBLIC_*` |
 
-### Dynamic open graph images
+3. Optional: AI keys (`GROQ_*`, `OPENROUTER_*`, `OPENAI_*`, `GEMINI_*`), `CRON_SECRET` / `BOT_ACT_SECRET`.
 
-To develop a dynamic open graph image:
+`lib/env.ts` **warns** when public keys are missing in dev; in **production runtime** it **fails hard** if required keys/secrets are absent (override with `WIM_SKIP_ENV_HARD_FAIL=1` only for CI smoke).
 
-1. Run `pnpm build` with both the `ASHBY_API_KEY` and `GITHUB_API_KEY` set.
-1. In `gatsby/onPostBuild.ts`, temporarily comment out the following:
-    ```
-    if (process.env.VERCEL_GIT_COMMIT_REF !== 'master') return
-    ```
-1. Find the generated open graph image in `public/og-images/`
+Bootstrap / smoke against a real project:
 
-## Contributing
+```bash
+pnpm supabase:bootstrap   # needs SUPABASE_ACCESS_TOKEN + service role
+pnpm supabase:smoke
+```
 
-We <3 contributions big and small. In priority order (although everything is appreciated) with the most helpful first:
+Migrations live under [`supabase/migrations/`](supabase/migrations/).
 
-- Ask a [question in our community](https://posthog.com/questions)
-- Submit [bug reports and give us feedback in the app](https://app.posthog.com/home#supportModal)! 
-- Vote on features or get early access to beta functionality in our [roadmap](https://posthog.com/roadmap)
-- Open a PR
-    - Read [our instructions above](#quick-start) on developing PostHog.com locally
-    - Read more [detailed instructions in our manual](https://posthog.com/handbook/engineering/posthog-com/developing-the-website)
-    - For basic edits, go to the file in GitHub and click the edit button (pencil icon)
-- Open [an issue](https://github.com/PostHog/posthog.com/issues/new) or [content idea](https://github.com/PostHog/posthog.com/issues/new?assignees=andyvan-ph&labels=content&template=blog-post-idea-template.md&title=%7BContent+type%7D+-+%7Btitle%7D)
+---
+
+## Common scripts
+
+| Command | Description |
+|---------|-------------|
+| `pnpm dev` | Next dev server (rebuilds notebook styles first) |
+| `pnpm build` / `pnpm start` | Production build & serve |
+| `pnpm typecheck:shell` | Path-filtered TypeScript for core shell / API / bots |
+| `pnpm test:smoke` | Playwright shell smoke (`/`, `/desktop`, `/login`, search, posts, forum) |
+| `pnpm bot:worker` | Long-running bot worker (when edge/cron is not enough) |
+| `pnpm pages:build` | Cloudflare `next-on-pages` (optional dual deploy) |
+
+CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs `typecheck:shell` + Playwright smoke.
+
+---
+
+## Product map (high level)
+
+```
+_app → AppProvider (windows, nav, auth) → Wrapper
+  ├─ TaskBar / Desktop / AppWindow list
+  ├─ Search / Command palette / Auth (dynamic)
+  └─ Footer / Chat overlay
+
+Routes:  /  ·  /desktop  ·  /[...slug]  ·  /api/*
+Data:    Supabase (auth, profiles, notebooks, community, posts)
+AI:      lib/ai-provider · persona-engine · philosopher bots + cron
+```
+
+Key paths:
+
+| Path | Role |
+|------|------|
+| `src/context/App.tsx` | Global shell state |
+| `src/components/AppWindow/` | Window chrome / router |
+| `src/pages/desktop.tsx` | Home content (sections in `DesktopPage/`) |
+| `src/pages/api/` | Search, notebooks, forum, bots |
+| `src/notebook-app/` | Isolated notebook product (lazy) |
+| `src/lib/wim-auth.ts` | Supabase auth mapping |
+
+---
+
+## Multi-agent / contribution protocol
+
+Multiple AI agents share this repo. **Before coding:**
+
+1. Read [`docs/architecture/AI_MEMORY.md`](docs/architecture/AI_MEMORY.md) and the performance report.
+2. Claim a `[NOT STARTED]` task on the board (`[IN PROGRESS by <name>]`).
+3. Stay on that stream’s files; no broad `git add -A`.
+4. On finish: mark `[COMPLETED]`, append a log entry in AI_MEMORY.
+
+Human contributors: prefer small PRs aligned with those streams (Infra, Shell, Performance, Data, AI/Bots).
+
+---
+
+## What this repo is *not*
+
+- Not the live PostHog.com marketing monorepo workflow (Gatsby-era docs in old READMEs are obsolete).
+- Not a full App Router migration (deferred until the shell is clean).
+- Not a free-for-all TypeScript lock on the whole tree — use **`pnpm typecheck:shell`** for the trusted core.
+
+---
+
+## License
+
+MIT (see package metadata). Product branding and content are WorldInMaking unless otherwise noted.

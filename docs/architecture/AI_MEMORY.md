@@ -62,13 +62,13 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-10` | Stream 5 | Add structured JSON schemas & validation for bot forum replies | `lib/bots/actions/forum.ts` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-06 |
 | `TSK-11` | Stream 1 / 2 | Clear shell TS quarantine (`App.tsx`, `AppWindow/index.tsx`) | `src/context/App.tsx`, `src/components/AppWindow/index.tsx` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-06 |
 | `TSK-12` | Stream 1 | Audit & configure CSP and security headers for WIM | `vercel.json` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-06 |
-| `TSK-13` | Stream 1 | Rewrite root README for WorldInMaking (not Gatsby/PostHog marketing) | `README.md` | `[NOT STARTED]` | - | - |
+| `TSK-13` | Stream 1 | Rewrite root README for WorldInMaking (not Gatsby/PostHog marketing) | `README.md` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-07 |
 | `TSK-14` | Stream 1 | Add `.env.example` (keys only) + harden `lib/env.ts` production fail | `.env.example`, `lib/env.ts` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-06 |
 | `TSK-15` | Stream 1 | Wire Playwright smoke + `typecheck:shell` into CI pipeline | `.github/workflows/` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-06 |
 | `TSK-16` | Stream 1 | Phase-C quality: eslint on shell allowlist; preview `reactStrictMode` | `next.config.js`, `package.json`, `.eslintrc*` | `[NOT STARTED]` | - | - |
 | `TSK-17` | Stream 3 | Bundle analyzer baseline + First Load JS budget for `/` | `package.json`, `next.config.js`, docs | `[NOT STARTED]` | - | - |
-| `TSK-18` | Stream 4 | Real Postgres FTS (`tsvector` migration + search API) | `supabase/migrations/`, `src/lib/supabaseBlog.ts`, `src/pages/api/search.ts` | `[NOT STARTED]` | - | - |
-| `TSK-19` | Stream 4 | API authz audit: notebooks + forum write paths (not just owner_key) | `src/pages/api/notebooks/*`, `src/pages/api/forum/**` | `[NOT STARTED]` | - | - |
+| `TSK-18` | Stream 4 | Real Postgres FTS (`tsvector` migration + search API) | `supabase/migrations/`, `src/lib/supabaseBlog.ts`, `src/pages/api/search.ts` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-07 |
+| `TSK-19` | Stream 4 | API authz audit: notebooks + forum write paths (not just owner_key) | `src/pages/api/notebooks/*`, `src/pages/api/forum/**` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-07 |
 | `TSK-20` | Stream 2 | Split `App.tsx` god-object (hooks/contexts extraction) | `src/context/App.tsx` → `src/context/shell/*` | `[NOT STARTED]` | - | - |
 | `TSK-21` | Stream 2 | Adopt `WindowMode` reducer end-to-end (drop boolean soup) | `src/lib/windowState.ts`, `AppWindow`, `App.tsx` | `[NOT STARTED]` | - | - |
 | `TSK-22` | Stream 2 | Tighten `WindowElement` from `any` + inactive window `content-visibility` | `src/context/App.tsx`, `src/components/AppWindow/*` | `[NOT STARTED]` | - | - |
@@ -82,6 +82,39 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ## 5. AI Change History & Log
 
 *(Add new entries at the top of this list)*
+
+### Entry 017 — API authz: notebooks + forum writes (TSK-19)
+- **Date:** 2026-08-07
+- **AI Agent:** Grok 4.5 (xAI)
+- **Summary:** Hardened notebooks and forum write authorization.
+  - **Notebooks:** New `lib/api-authz.ts` — Supabase JWT Bearer forces `owner_key = user.id` (no spoof); device path requires `owner_key` **and** matching `X-WIM-Owner-Key` header. Ownership checks before upsert/history (`assertNotebookWriteAccess`, `replaceHistoryForOwner`) block cross-tenant overwrite. Client `notebookRemote.ts` sends JWT + owner header on all sync calls.
+  - **Forum bot writes:** Shared `resolveForumBotAuth` (min token length, encodeURIComponent, no raw token interpolation). Topic id validated; service URL no longer hardcoded default in write handlers.
+- **Modified Files:**
+  - `lib/api-authz.ts` [NEW]
+  - `lib/notebooks-repo.ts` [UPDATED]
+  - `src/pages/api/notebooks/index.ts` [UPDATED]
+  - `src/pages/api/notebooks/[id].ts` [UPDATED]
+  - `src/pages/api/forum/posts/index.ts` [UPDATED]
+  - `src/pages/api/forum/topics/index.ts` [UPDATED]
+  - `src/notebook-app/scenes/notebooks/notebookRemote.ts` [UPDATED]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
+- **Verification:** `pnpm typecheck:shell` (includes `src/pages/api/*`). Manual: unauthenticated POST without `X-WIM-Owner-Key` → 401; JWT user cannot write another user's notebook id → 403.
+- **Notes / Handoff:** Next: **TSK-20** (App.tsx split), **TSK-17** (bundle analyzer), **TSK-21** (WindowMode e2e). Optional later: drop device-key path once all clients are signed-in only.
+
+### Entry 016 — WIM README + Postgres FTS search (TSK-13, TSK-18)
+- **Date:** 2026-08-07
+- **AI Agent:** Grok 4.5 (xAI)
+- **Summary:**
+  1. **TSK-13:** Replaced Gatsby/PostHog marketing root README with a WorldInMaking runbook: product map, pnpm-only, env table, scripts, architecture links, multi-agent protocol.
+  2. **TSK-18:** Added `supabase/migrations/20260807_posts_fts.sql` (`search_vector` + GIN + trigger + `search_posts(q, lim)` RPC with `websearch_to_tsquery` / `ts_rank_cd`). Updated `searchSupabasePosts` to call RPC first, **ILIKE fallback** if migration not applied. `/api/search` hardened slug handling + `engine` hint.
+- **Modified Files:**
+  - `README.md` [REWRITTEN]
+  - `supabase/migrations/20260807_posts_fts.sql` [NEW]
+  - `src/lib/supabaseBlog.ts` [UPDATED]
+  - `src/pages/api/search.ts` [UPDATED]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
+- **Verification:** Migration is SQL-only (apply via Supabase bootstrap / SQL editor). Search remains soft-fail + ILIKE until RPC exists. `typecheck:shell` not required for these paths but API still TS-clean by inspection.
+- **Notes / Handoff:** **Apply migration** on the project (`pnpm supabase:bootstrap` or run SQL). Next picks: **TSK-19** (notebooks/forum authz), **TSK-20** (App.tsx split), **TSK-17** (bundle analyzer).
 
 ### Entry 015 — Batch: IconArrowLeft shim, CI gates, env hygiene (TSK-24, 15, 14)
 - **Date:** 2026-08-06

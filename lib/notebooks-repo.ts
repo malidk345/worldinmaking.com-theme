@@ -130,7 +130,39 @@ export async function getNotebookByIdOrShort(
     return rowToDTO(data as StoredNotebookRow)
 }
 
+/**
+ * Block ownership takeover: if a notebook id already exists under another owner_key, refuse write.
+ */
+export async function assertNotebookWriteAccess(
+    notebookId: string,
+    ownerKey: string
+): Promise<{ ok: true } | { ok: false; status: 403 | 404; error: string }> {
+    if (!notebookId || !/^[a-zA-Z0-9_.:-]{1,128}$/.test(notebookId)) {
+        return { ok: false, status: 404, error: 'Not found' }
+    }
+    const { data, error } = await supabaseAdmin
+        .from('wim_notebooks')
+        .select('id, owner_key')
+        .or(`id.eq.${notebookId},short_id.eq.${notebookId}`)
+        .limit(1)
+        .maybeSingle()
+
+    if (error) throw error
+    if (!data) return { ok: true } // create path
+    if ((data as { owner_key: string }).owner_key !== ownerKey) {
+        return { ok: false, status: 403, error: 'Forbidden: notebook owned by another principal' }
+    }
+    return { ok: true }
+}
+
 export async function upsertNotebook(nb: StoredNotebookDTO, ownerKey: string): Promise<StoredNotebookDTO> {
+    const access = await assertNotebookWriteAccess(nb.id, ownerKey)
+    if (!access.ok) {
+        const err = new Error(access.error) as Error & { status?: number }
+        err.status = access.status
+        throw err
+    }
+
     const row = dtoToRow(nb, ownerKey)
     const { data, error } = await supabaseAdmin
         .from('wim_notebooks')
@@ -144,6 +176,14 @@ export async function upsertNotebook(nb: StoredNotebookDTO, ownerKey: string): P
 
 export async function upsertNotebooks(notebooks: StoredNotebookDTO[], ownerKey: string): Promise<number> {
     if (!notebooks.length) return 0
+    for (const nb of notebooks) {
+        const access = await assertNotebookWriteAccess(nb.id, ownerKey)
+        if (!access.ok) {
+            const err = new Error(access.error) as Error & { status?: number }
+            err.status = access.status
+            throw err
+        }
+    }
     const rows = notebooks.map((nb) => dtoToRow(nb, ownerKey))
     const { error, count } = await supabaseAdmin.from('wim_notebooks').upsert(rows, {
         onConflict: 'id',
@@ -151,6 +191,23 @@ export async function upsertNotebooks(notebooks: StoredNotebookDTO[], ownerKey: 
     })
     if (error) throw error
     return count ?? rows.length
+}
+
+/** Replace history only after ownership check (prevents cross-tenant history wipe). */
+export async function replaceHistoryForOwner(
+    notebookId: string,
+    ownerKey: string,
+    entries: NotebookVersionDTO[]
+): Promise<void> {
+    const existing = await getNotebookByIdOrShort(notebookId, { ownerKey })
+    if (!existing) {
+        const err = new Error('Forbidden or not found: cannot write history for this notebook') as Error & {
+            status?: number
+        }
+        err.status = 403
+        throw err
+    }
+    await replaceHistory(existing.id, entries)
 }
 
 export async function deleteNotebook(idOrShort: string, ownerKey: string): Promise<boolean> {

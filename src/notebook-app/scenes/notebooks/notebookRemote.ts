@@ -28,6 +28,24 @@ export function getOrCreateOwnerKey(): string {
     }
 }
 
+/** Headers required by /api/notebooks authz (TSK-19). */
+function notebookAuthHeaders(ownerKey: string, jsonBody = false): HeadersInit {
+    const headers: Record<string, string> = {
+        Accept: 'application/json',
+        'X-WIM-Owner-Key': ownerKey,
+    }
+    if (jsonBody) headers['Content-Type'] = 'application/json'
+    try {
+        const jwt = localStorage.getItem('jwt')
+        if (jwt && jwt.length > 20) {
+            headers.Authorization = `Bearer ${jwt}`
+        }
+    } catch {
+        /* ignore */
+    }
+    return headers
+}
+
 type ListResponse = { notebooks: StoredNotebook[] }
 type OneResponse = { notebook: StoredNotebook }
 type ErrorBody = { error?: string; code?: string }
@@ -60,7 +78,7 @@ export async function pullNotebooksFromRemote(): Promise<StoredNotebook[] | null
     try {
         const res = await fetch(`/api/notebooks?owner_key=${encodeURIComponent(ownerKey)}`, {
             method: 'GET',
-            headers: { Accept: 'application/json' },
+            headers: notebookAuthHeaders(ownerKey),
             cache: 'no-store',
         })
         if (res.status === 503) {
@@ -93,7 +111,7 @@ export async function pushNotebookToRemote(
     try {
         const res = await fetch('/api/notebooks', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            headers: notebookAuthHeaders(ownerKey, true),
             body: JSON.stringify({
                 owner_key: ownerKey,
                 notebook,
@@ -122,7 +140,7 @@ export async function pushAllNotebooksToRemote(
     try {
         const res = await fetch('/api/notebooks', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            headers: notebookAuthHeaders(ownerKey, true),
             body: JSON.stringify({
                 owner_key: ownerKey,
                 notebooks,
@@ -147,7 +165,7 @@ export async function deleteNotebookRemote(id: string): Promise<boolean> {
     try {
         const res = await fetch(
             `/api/notebooks/${encodeURIComponent(id)}?owner_key=${encodeURIComponent(ownerKey)}`,
-            { method: 'DELETE', headers: { Accept: 'application/json' } }
+            { method: 'DELETE', headers: notebookAuthHeaders(ownerKey) }
         )
         if (res.status === 503) {
             remoteAvailable = false

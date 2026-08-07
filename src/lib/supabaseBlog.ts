@@ -2,7 +2,7 @@
  * WIM blog — Supabase `public.posts` only.
  * No Squeak/Strapi, no mock fallbacks in production paths.
  */
-import { fetchWithCache, SUPABASE_URL } from './supabase-rest'
+import { fetchWithCache, SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-rest'
 
 export interface SupabasePost {
     id: string
@@ -65,9 +65,41 @@ export async function fetchSupabasePosts(options?: {
     }
 }
 
+/**
+ * Ranked full-text search via `public.search_posts` RPC (migration 20260807_posts_fts).
+ * Falls back to ILIKE if the RPC is missing or errors (pre-migration projects).
+ */
 export async function searchSupabasePosts(query: string): Promise<SupabasePost[]> {
     const cleanQuery = query.trim()
-    if (!cleanQuery) return []
+    if (!cleanQuery || cleanQuery.length < 2) return []
+
+    // Prefer Postgres FTS (tsvector + websearch_to_tsquery + ts_rank_cd)
+    try {
+        const rpcRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/search_posts`, {
+            method: 'POST',
+            headers: {
+                apikey: SUPABASE_ANON_KEY,
+                Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+                'Content-Type': 'application/json',
+                Prefer: 'return=representation',
+            },
+            body: JSON.stringify({ q: cleanQuery, lim: 40 }),
+        })
+        if (rpcRes.ok) {
+            const data = await rpcRes.json()
+            if (Array.isArray(data)) {
+                return data as SupabasePost[]
+            }
+        } else if (rpcRes.status !== 404 && rpcRes.status !== 400) {
+            // 404/400 often mean migration not applied yet — fall through to ILIKE
+            const errText = await rpcRes.text().catch(() => '')
+            console.warn('[supabaseBlog] search_posts RPC', rpcRes.status, errText.slice(0, 200))
+        }
+    } catch (e) {
+        console.warn('[supabaseBlog] search_posts RPC failed, using ILIKE fallback', e)
+    }
+
+    // Fallback: REST ILIKE (pre-FTS or empty vector)
     try {
         const encoded = encodeURIComponent(`*${cleanQuery}*`)
         const url = restPostsUrl(

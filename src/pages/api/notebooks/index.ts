@@ -3,9 +3,10 @@
  * GET  /api/notebooks?short_id=...&public=1  → published notebook by short_id
  * POST /api/notebooks                        → upsert one or many notebooks
  *
- * Body (POST):
- *   { owner_key, notebook } | { owner_key, notebooks: [] }
- *   optional: { history?: { [notebookId]: NotebookVersion[] } }
+ * Authz (TSK-19):
+ *   - Bearer Supabase JWT → owner forced to auth user id
+ *   - Else device owner_key + matching X-WIM-Owner-Key header
+ *   - History writes require ownership of the notebook id
  *
  * Cloudflare Pages (next-on-pages) requires Edge Runtime.
  */
@@ -16,10 +17,11 @@ import {
     getNotebookByIdOrShort,
     upsertNotebook,
     upsertNotebooks,
-    replaceHistory,
+    replaceHistoryForOwner,
     type StoredNotebookDTO,
     type NotebookVersionDTO,
 } from '../../../../lib/notebooks-repo'
+import { resolveNotebookOwner } from '../../../../lib/api-authz'
 
 function json(body: Record<string, unknown>, status = 200) {
     return new Response(JSON.stringify(body), {
@@ -28,16 +30,12 @@ function json(body: Record<string, unknown>, status = 200) {
     })
 }
 
-function isOwnerKey(v: unknown): v is string {
-    return typeof v === 'string' && v.length >= 8 && v.length <= 128
-}
-
 export default async function handler(req: Request) {
     try {
         const url = new URL(req.url)
 
         if (req.method === 'GET') {
-            const ownerKey = url.searchParams.get('owner_key') || ''
+            const claimedOwner = url.searchParams.get('owner_key') || ''
             const shortId = url.searchParams.get('short_id') || ''
             const asPublic = url.searchParams.get('public') === '1' || url.searchParams.get('public') === 'true'
 
@@ -47,48 +45,49 @@ export default async function handler(req: Request) {
                 return json({ notebook: nb })
             }
 
-            if (!isOwnerKey(ownerKey)) {
-                return json({ error: 'owner_key is required' }, 400)
-            }
+            const auth = await resolveNotebookOwner(req, claimedOwner)
+            if (!auth.ok) return json({ error: auth.error }, auth.status)
 
-            const notebooks = await listNotebooksByOwner(ownerKey)
-            return json({ notebooks })
+            const notebooks = await listNotebooksByOwner(auth.ownerKey)
+            return json({ notebooks, auth: { via: auth.via } })
         }
 
         if (req.method === 'POST') {
-            const body = await req.json().catch(() => ({} as Record<string, unknown>))
-            const ownerKey = (body as any).owner_key
-            if (!isOwnerKey(ownerKey)) {
-                return json({ error: 'owner_key is required' }, 400)
-            }
+            const body = (await req.json().catch(() => ({}))) as Record<string, unknown>
+            const auth = await resolveNotebookOwner(req, body.owner_key as string | undefined)
+            if (!auth.ok) return json({ error: auth.error }, auth.status)
+            const ownerKey = auth.ownerKey
 
-            if (Array.isArray((body as any).notebooks)) {
-                const notebooks = (body as any).notebooks as StoredNotebookDTO[]
+            if (Array.isArray(body.notebooks)) {
+                const notebooks = body.notebooks as StoredNotebookDTO[]
                 const count = await upsertNotebooks(notebooks, ownerKey)
 
-                // Optional bulk history sync: { history: { [id]: versions[] } }
-                if ((body as any).history && typeof (body as any).history === 'object') {
-                    const historyMap = (body as any).history as Record<string, NotebookVersionDTO[]>
+                if (body.history && typeof body.history === 'object') {
+                    const historyMap = body.history as Record<string, NotebookVersionDTO[]>
                     for (const [notebookId, entries] of Object.entries(historyMap)) {
                         if (Array.isArray(entries)) {
-                            await replaceHistory(notebookId, entries)
+                            await replaceHistoryForOwner(notebookId, ownerKey, entries)
                         }
                     }
                 }
 
-                return json({ ok: true, count })
+                return json({ ok: true, count, auth: { via: auth.via } })
             }
 
-            if ((body as any).notebook) {
-                const notebook = (body as any).notebook as StoredNotebookDTO
+            if (body.notebook) {
+                const notebook = body.notebook as StoredNotebookDTO
                 if (!notebook?.id) return json({ error: 'notebook.id is required' }, 400)
                 const saved = await upsertNotebook(notebook, ownerKey)
 
-                if (Array.isArray((body as any).history_entries)) {
-                    await replaceHistory(notebook.id, (body as any).history_entries as NotebookVersionDTO[])
+                if (Array.isArray(body.history_entries)) {
+                    await replaceHistoryForOwner(
+                        notebook.id,
+                        ownerKey,
+                        body.history_entries as NotebookVersionDTO[]
+                    )
                 }
 
-                return json({ notebook: saved })
+                return json({ notebook: saved, auth: { via: auth.via } })
             }
 
             return json({ error: 'notebook or notebooks required' }, 400)
@@ -103,7 +102,7 @@ export default async function handler(req: Request) {
         })
     } catch (err: any) {
         const message = err?.message || String(err)
-        // Table missing → clear signal for migration
+        const status = typeof err?.status === 'number' ? err.status : 500
         if (message.includes('wim_notebooks') || message.includes('schema cache') || err?.code === 'PGRST205') {
             return json(
                 {
@@ -114,7 +113,8 @@ export default async function handler(req: Request) {
                 503
             )
         }
+        if (status === 403) return json({ error: message }, 403)
         console.error('[api/notebooks]', err)
-        return json({ error: message }, 500)
+        return json({ error: message }, status >= 400 && status < 600 ? status : 500)
     }
 }
