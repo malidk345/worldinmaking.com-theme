@@ -38,17 +38,29 @@ export function ReaderViewProvider({
     defaultNavVisible?: boolean
 }) {
     const { appWindow } = useWindow()
+    const [viewportWidth, setViewportWidth] = useState<number | undefined>(() =>
+        typeof window !== 'undefined' ? window.innerWidth : undefined
+    )
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const handleResize = () => setViewportWidth(window.innerWidth)
+        window.addEventListener('resize', handleResize)
+        return () => window.removeEventListener('resize', handleResize)
+    }, [])
+
+    const activeWidth = appWindow?.size?.width ?? viewportWidth
+
     // @2xl breakpoint for sidebar visibility (equivalent to @2xl/app-reader used in CSS)
-    const isWideEnoughForSidebar = appWindow?.size?.width && appWindow?.size?.width >= 672 // 42rem = 672px
+    const isWideEnoughForSidebar = activeWidth ? activeWidth >= 672 : true // 42rem = 672px
     // Below the @2xl threshold the inline sidebar rail eats too much of the
     // reading column, so on mobile we hide it entirely and swap in a floating
-    // control cluster + off-canvas drawer. Only treat as narrow once the width
-    // is actually known so SSR/first paint defaults to the desktop layout.
-    const isNarrow = !!appWindow?.size?.width && appWindow.size.width < 672
+    // control cluster + off-canvas drawer.
+    const isNarrow = activeWidth ? activeWidth < 672 : false
     const [isNavVisible, setIsNavVisible] = useState<boolean>(defaultNavVisible ?? true)
     const [navUserToggled, setNavUserToggled] = useState(false)
     // @6xl breakpoint is 72rem = 1152px
-    const isLarge = appWindow?.size?.width && appWindow?.size?.width >= 1152
+    const isLarge = activeWidth ? activeWidth >= 1152 : true
     const [isTocVisible, setIsTocVisible] = useState(true)
     const [tocUserToggled, setTocUserToggled] = useState(false)
     const [fullWidthContent, setFullWidthContent] = useState(false)

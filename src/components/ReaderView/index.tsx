@@ -1494,6 +1494,7 @@ function ReaderViewContent({
         selectedBackgroundOption && selectedBackgroundOption.value !== 'none'
             ? 'before:absolute before:inset-0 before:bg-primary before:opacity-75 before:pointer-events-none'
             : '',
+        renderLeftSidebar && !isNarrow ? (isNavVisible ? 'pl-[250px]' : 'pl-12') : '',
     ]
         .filter(Boolean)
         .join(' ')
@@ -1562,11 +1563,11 @@ function ReaderViewContent({
                             type="button"
                             aria-label="Open navigation"
                             onClick={() => setMobileNavOpen(true)}
-                            className={`absolute top-3 left-3 z-40 flex size-10 items-center justify-center rounded-md border border-primary text-primary shadow-md transition-all duration-200 hover:bg-accent ${PANEL_BG} ${
+                            className={`absolute bottom-4 right-4 z-30 flex size-11 items-center justify-center rounded-full border border-primary text-primary shadow-lg transition-opacity duration-200 hover:bg-accent ${PANEL_BG} ${
                                 mobileNavOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'
                             }`}
                         >
-                            <IconSidebarOpen className="size-5" />
+                            <IconSidebarClose className="size-5" />
                         </button>
                     )}
                     <div className="flex flex-1 min-h-0">
