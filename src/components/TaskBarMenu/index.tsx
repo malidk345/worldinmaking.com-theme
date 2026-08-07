@@ -28,6 +28,8 @@ import CloudinaryImage from 'components/CloudinaryImage'
 import MediaUploadModal from 'components/MediaUploadModal'
 import KeyboardShortcut from 'components/KeyboardShortcut'
 import AmbientPlayer from 'components/AmbientPlayer'
+import Link from 'components/Link'
+import WimLogo from 'components/WimLogo'
 import { MOTION_LAYER, TASKBAR_BG } from '../../constants/frostedSurfaces'
 
 function TaskBarMenu() {
@@ -316,7 +318,15 @@ function TaskBarMenu() {
                         }}
                     />
                     <div className="mx-auto transition-all duration-300 flex justify-between items-center w-full max-w-full">
-                        <div className="flex items-center pl-2" />
+                        <div className="flex items-center pl-1.5 py-0.5">
+                            <Link
+                                href="/"
+                                className="flex items-center p-1.5 rounded hover:bg-primary/10 transition-colors"
+                                aria-label="worldinmaking home"
+                            >
+                                <WimLogo className="size-5 text-primary transition-transform hover:scale-105" />
+                            </Link>
+                        </div>
                         <aside data-scheme="secondary" className="flex items-center gap-0.5 py-1">
                             <AmbientPlayer />
 
