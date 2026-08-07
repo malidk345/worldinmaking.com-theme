@@ -5,26 +5,25 @@ export interface NotebooksListProps {
 }
 
 /**
- * NotebooksListSkeleton — rendered by WindowRouter when the user navigates to /notebooks.
- * We embed the standalone Vite notebook app via iframe so the full experience
- * (routing, storage, AskAI, MarkdownNotebook engine) works inside the posthog.com window system
- * without any SSR / module-resolution conflicts.
+ * NotebooksListSkeleton — Embedded standalone Vite notebook application.
+ * Fills 100% of the host container/window viewport smoothly without clipping or layout cuts.
  */
 export function NotebooksListSkeleton(_props: NotebooksListProps = {}): JSX.Element {
   return (
-    <iframe
-      src="/notebooks-app/index.html"
-      title="PostHog Notebooks"
-      style={{
-        display: 'block',
-        width: '100%',
-        height: '100%',
-        border: 'none',
-        flex: 1,
-        minHeight: 0,
-      }}
-      allow="clipboard-read; clipboard-write"
-    />
+    <div className="w-full h-full min-h-0 flex-1 relative bg-primary overflow-hidden">
+      <iframe
+        src="/notebooks-app/index.html"
+        title="PostHog Notebooks"
+        className="w-full h-full border-none block absolute inset-0"
+        style={{
+          width: '100%',
+          height: '100%',
+          border: 'none',
+          outline: 'none',
+        }}
+        allow="clipboard-read; clipboard-write"
+      />
+    </div>
   );
 }
 

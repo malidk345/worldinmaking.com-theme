@@ -95,7 +95,7 @@ function json(body: Record<string, unknown>, status = 200) {
 }
 
 export default async function handler(req: Request) {
-    // Optional lock when CRON_SECRET is configured
+    // Secret check: Validate if provided, otherwise allow cron execution
     const env = getRuntimeEnv()
     const secret = envFrom(env, 'CRON_SECRET', 'BOT_ACT_SECRET')
     if (secret) {
@@ -103,14 +103,12 @@ export default async function handler(req: Request) {
             req.headers.get('x-cron-secret') ||
             req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ||
             ''
-        // Allow unauthenticated GET from site ticker only if no secret — otherwise require it
-        if (header !== secret && req.method !== 'GET') {
-            // Still allow site App.tsx hourly tick without secret for backwards compat on GET
-            // Prefer secret for production: set CRON_SECRET and pass header from worker
+        if (header && header !== secret && req.method !== 'GET') {
+            return json({ success: false, error: 'Unauthorized secret' }, 401)
         }
     }
 
-    const rl = checkRateLimit('cron:philosopher-bots', 6, 60 * 60 * 1000)
+    const rl = checkRateLimit('cron:philosopher-bots', 12, 60 * 60 * 1000)
     if (!rl.allowed) {
         return json(
             {

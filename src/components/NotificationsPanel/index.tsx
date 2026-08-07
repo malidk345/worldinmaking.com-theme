@@ -1,4 +1,4 @@
-import { useRouter } from 'next/navigation'
+import { useRouter } from 'next/router'
 import React, { useEffect, useRef } from 'react'
 import { IconX } from '@posthog/icons'
 import { useUser } from 'hooks/useUser'
@@ -131,13 +131,20 @@ export default function NotificationsPanel() {
                   height: window.innerHeight - padding - (taskbarRect?.top ?? padding),
               }
 
+    const router = useRouter()
+    const { addWindow } = useApp()
+
     const closeNotificationsPanel = () => {
         setIsNotificationsPanelOpen(false)
     }
 
     const handleItemClick = (url: string) => {
         closeNotificationsPanel()
-        router.push(url, { state: { newWindow: true } })
+        if (addWindow) {
+            addWindow({ path: url })
+        } else {
+            router.push(url)
+        }
     }
 
     const dismiss = async (id: number) => {
