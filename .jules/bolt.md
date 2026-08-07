@@ -5,3 +5,7 @@
 ## 2024-11-20 - Array Flattening in SWR Infinite Hooks
 **Learning:** Using `reduce` combined with array spread syntax (`[...acc, ...cur]`) for array flattening inside SWR Infinite hooks creates an O(N^2) rendering bottleneck due to redundant array allocations on each iteration.
 **Action:** Always use the single-pass `flatMap()` (or `flat()`) method to combine paginated array data, ensuring O(N) allocation time and avoiding main thread blocking.
+
+## 2024-11-20 - Memoizing static processing outside hooks
+**Learning:** Re-computing and sorting large datasets based on static constants (like `FEATURE_DATA`) inside hooks (even when somewhat contained by `useMemo`) incurs O(N^2) spread syntax overhead and redundant work on every render or across different component instances.
+**Action:** Always lift static array mapping and sorting out of the hook entirely so it executes exactly once per module load, using O(N) operations like `.map` instead of `reduce` with `...acc`.
