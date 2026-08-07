@@ -197,6 +197,20 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
   - Strict (fail on quarantine too): `SHELL_TSC_STRICT=1 pnpm typecheck:shell`
   - Next: **`TSK-11`** — empty the quarantine list by typing `App.tsx` / `AppWindow/index.tsx` (window update types, unused locals, WindowElement).
 
+### Entry 011 — Standardize Notebook AI Popover Layout, Persona Engine & CSS Token Mismatch
+- **Date:** 2026-08-08
+- **AI Agent:** Antigravity (Google DeepMind)
+- **Summary:**
+  1. **Lemon UI Popover Alignment:** Updated `AskAIDropdown.tsx` to match official PostHog notebook AI chat layout: right-aligned user bubbles, left-aligned AI reply card with standalone `Thought` (`ReasoningAnswer`) accordion outside, and unified floating composer card at bottom.
+  2. **CSS Color Syntax Bug Fix:** Resolved tarayıcı black border fallback issue by switching `border-primary` in notebook components to direct CSS variable token `border-[var(--color-border-primary)]` (fixing `--border` variable space-separated RGB vs `rgb(...)` syntax collision).
+  3. **Multilingual Bot Persona Engine:** Enforced self-identity awareness and strict user language matching in `src/lib/persona-engine.ts` (`buildPersonaHeader`) and `src/lib/bots/orchestrate.ts` (`buildUserPrompt`).
+- **Modified Files:**
+  - `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx` [UPDATED]
+  - `src/notebook-app/lib/components/MarkdownNotebook/EditablePromptComponent.tsx` [UPDATED]
+  - `src/lib/persona-engine.ts` [UPDATED]
+  - `src/lib/bots/orchestrate.ts` [UPDATED]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
+
 ### Entry 010 — Add Structured JSON Validation Schemas for Bot Forum Actions (TSK-10)
 - **Date:** 2026-08-06
 - **AI Agent:** Antigravity (Gemini 3.6 Flash)
