@@ -18,7 +18,7 @@ import { useSiteThemeSync } from '../../lib/useSiteThemeSync'
 import { ReasoningAnswer } from './ReasoningAnswer'
 
 export interface AskAIDropdownProps {
-    onInsertPromptBlock: (initialPrompt?: string) => void
+    onInsertPromptBlock: (initialPrompt?: string, mode?: 'append' | 'replace' | 'prepend') => void
     currentNotebookContent?: string
 }
 
@@ -40,11 +40,13 @@ export interface ChatMessage {
     hasTable?: boolean
 }
 
-const SUGGESTIONS = [
-    'Create a comparison table for this notebook',
-    'What is at stake in this notebook?',
-    'Challenge the main claim & point out gaps',
-    'Rewrite & format this section into a structured list',
+const EDITORIAL_SUGGESTIONS = [
+    { label: '📊 Comparison Table', prompt: 'Convert this notebook data into a structured Markdown comparison table' },
+    { label: '📌 Executive Summary', prompt: 'Generate a concise Executive Summary with key takeaways for the top of this notebook' },
+    { label: '✍️ Polish & Format', prompt: 'Polish and format this notebook into clean Markdown with proper headers and bullet points' },
+    { label: '💡 Extract Action Items', prompt: 'Extract an Actionable Task List (To-Do items) from this notebook' },
+    { label: '🌐 Translate to Turkish', prompt: 'Translate the entire notebook content into Turkish keeping all formatting' },
+    { label: '⚡ Rewrite Rigorously', prompt: 'Rewrite & refactor this notebook in a more rigorous and persuasive tone' },
 ]
 
 function buildBotSelectOptions(roster: PhilosopherBot[]) {
@@ -85,6 +87,8 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
     const [messages, setMessages] = useState<ChatMessage[]>([])
     const textareaRef = useRef<HTMLTextAreaElement | null>(null)
     const chatEndRef = useRef<HTMLDivElement | null>(null)
+
+    const contentLength = currentNotebookContent?.length || 0
 
     useEffect(() => {
         let cancelled = false
@@ -132,9 +136,8 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                 .map((m) => `${m.sender === 'user' ? 'User' : m.philosopherId || 'Philosopher'}: ${m.text}`)
                 .join('\n')
 
-            // Inject full Notebook Content context so AI has 100% awareness
             const notebookContextSnippet = currentNotebookContent?.trim()
-                ? `[NOTEBOOK CONTEXT]\nThe user is currently working on a notebook with the following markdown content:\n"""\n${currentNotebookContent.slice(0, 4000)}\n"""\nUse this notebook content to accurately answer questions, analyze, synthesize, or generate tables/lists requested by the user.\n`
+                ? `[NOTEBOOK CONTENT CONTEXT]\nThe user is working on a notebook with the following markdown content:\n"""\n${currentNotebookContent.slice(0, 5000)}\n"""\nPerform the user's requested editorial task accurately using this notebook context.\n`
                 : ''
 
             const fullQuestionPrompt = `${notebookContextSnippet}${
@@ -182,15 +185,6 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                     ? `${activeBot.name} could not form a reply. Try again.`
                     : `Request failed (${res.status}). Try again.`)
 
-            if (data?.success === false || res.status >= 400) {
-                console.warn('[Ask AI] provider failure', {
-                    status: res.status,
-                    provider: data?.provider,
-                    configured: data?.configured,
-                    attempts: data?.attempts,
-                })
-            }
-
             const stages: ThinkingStageView[] = Array.isArray(data?.thinking?.stages)
                 ? data.thinking.stages
                       .filter((s: any) => s && typeof s.text === 'string' && s.text.trim())
@@ -208,10 +202,6 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                       ? stages.map((s) => s.text).join('\n\n')
                       : undefined
 
-            const latencyMs =
-                typeof data?.latencyMs === 'number' && Number.isFinite(data.latencyMs) ? data.latencyMs : undefined
-
-            // Detect if response contains Markdown table
             const containsTable = reply.includes('|') && reply.includes('---')
 
             setMessages((prev) => [
@@ -222,20 +212,20 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                     text: reply,
                     thought: thoughtText,
                     thinkingStages: stages.length > 0 ? stages : undefined,
-                    latencyMs,
+                    latencyMs: typeof data?.latencyMs === 'number' ? data.latencyMs : undefined,
                     philosopherId: activeBot.id,
                     hasTable: containsTable,
                     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 },
             ])
         } catch (error) {
-            console.warn('[Ask AI] philosopher-bot error:', error)
+            console.warn('[Ask AI] error:', error)
             setMessages((prev) => [
                 ...prev,
                 {
                     id: `${Date.now()}-a`,
                     sender: 'ai',
-                    text: 'The philosopher network is unreachable right now. Please try again in a moment.',
+                    text: 'The philosopher network is unreachable right now. Please try again.',
                     philosopherId: activeBot.id,
                     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 },
@@ -247,12 +237,19 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
 
     const overlay = (
         <div className={panelClassName} onClick={(e) => e.stopPropagation()}>
-            {/* Header */}
+            {/* Header with Context Indicator */}
             <div className="flex items-center justify-between border-b border-border pb-2 gap-2">
                 <div className="flex items-center gap-2 min-w-0">
                     <ProfilePicture user={philosopherAsUser(activeBot)} size="md" />
                     <div className="min-w-0">
-                        <span className="font-semibold text-xs text-primary truncate block">{activeBot.displayName}</span>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="font-semibold text-xs text-primary truncate">{activeBot.displayName}</span>
+                            {contentLength > 0 && (
+                                <LemonTag type="completion" size="small" className="text-[9px]">
+                                    Context Active ({contentLength} chars)
+                                </LemonTag>
+                            )}
+                        </div>
                         <p className="text-[10px] text-muted mt-0.5 mb-0 truncate">{activeBot.shortStance}</p>
                     </div>
                 </div>
@@ -270,19 +267,20 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
             </div>
 
             {!hasThread && (
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                     <p className="text-secondary mb-0 leading-snug">
-                        Chat with a resident philosopher. Stance and style come from the WorldInMaking persona engine.
+                        Full AI Editorial Engine. Transform, format, summarize, or critique your notebook content in real-time.
                     </p>
-                    <div className="flex flex-wrap gap-1.5">
-                        {SUGGESTIONS.map((suggestion) => (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                        {EDITORIAL_SUGGESTIONS.map((item) => (
                             <LemonButton
-                                key={suggestion}
+                                key={item.label}
                                 size="xsmall"
                                 type="secondary"
-                                onClick={() => void sendPrompt(suggestion)}
+                                onClick={() => void sendPrompt(item.prompt)}
+                                className="justify-start text-left truncate"
                             >
-                                {suggestion}
+                                <span className="truncate">{item.label}</span>
                             </LemonButton>
                         ))}
                     </div>
@@ -329,7 +327,7 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                     <p className="text-secondary leading-snug whitespace-pre-wrap mb-0">{msg.text}</p>
 
                                     {msg.sender === 'ai' && (
-                                        <div className="flex items-center gap-2 pt-1">
+                                        <div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-border/40 mt-1.5">
                                             {msg.hasTable && (
                                                 <LemonButton
                                                     size="xsmall"
@@ -337,11 +335,11 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                     icon={<IconTable />}
                                                     onClick={(e) => {
                                                         e.stopPropagation()
-                                                        onInsertPromptBlock(msg.text)
+                                                        onInsertPromptBlock(msg.text, 'append')
                                                         setIsOpen(false)
                                                     }}
                                                 >
-                                                    Insert Table into Notebook
+                                                    Insert Table
                                                 </LemonButton>
                                             )}
                                             <LemonButton
@@ -350,11 +348,38 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                 icon={<IconPlus />}
                                                 onClick={(e) => {
                                                     e.stopPropagation()
-                                                    onInsertPromptBlock(`${msg.text}\n\n— ${bot.displayName}`)
+                                                    onInsertPromptBlock(msg.text, 'append')
                                                     setIsOpen(false)
                                                 }}
+                                                tooltip="Append to bottom of notebook"
                                             >
-                                                Insert into Notebook
+                                                + Append
+                                            </LemonButton>
+                                            <LemonButton
+                                                size="xsmall"
+                                                type="tertiary"
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    if (confirm('Replace current notebook content with this AI text?')) {
+                                                        onInsertPromptBlock(msg.text, 'replace')
+                                                        setIsOpen(false)
+                                                    }
+                                                }}
+                                                tooltip="Replace entire notebook content"
+                                            >
+                                                🔄 Replace Note
+                                            </LemonButton>
+                                            <LemonButton
+                                                size="xsmall"
+                                                type="tertiary"
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    onInsertPromptBlock(msg.text, 'prepend')
+                                                    setIsOpen(false)
+                                                }}
+                                                tooltip="Prepend at top of notebook"
+                                            >
+                                                ⬆️ Prepend Top
                                             </LemonButton>
                                         </div>
                                     )}

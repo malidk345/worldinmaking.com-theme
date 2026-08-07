@@ -327,12 +327,18 @@ export function App() {
     }
   }
 
-  const handleInsertAIResponse = useCallback((aiContent?: string) => {
+  const handleInsertAIResponse = useCallback((aiContent?: string, mode: 'append' | 'replace' | 'prepend' = 'append') => {
     const text = (aiContent || '').trim()
     if (!text) return
     setMarkdown((prev) => {
       const current = prev || ''
-      return current.trim() + '\n\n' + text + '\n'
+      if (mode === 'replace') {
+        return text + '\n'
+      }
+      if (mode === 'prepend') {
+        return text + '\n\n' + current
+      }
+      return current.trim() ? current.trim() + '\n\n' + text + '\n' : text + '\n'
     })
     setMarkdownVersion((v) => v + 1)
   }, [])
