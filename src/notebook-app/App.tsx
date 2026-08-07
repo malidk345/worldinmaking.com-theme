@@ -461,7 +461,7 @@ export function App() {
                       tooltip="Back to notebooks"
                     />
                     {currentNotebook.isTemplate && <LemonTag type="highlight">TEMPLATE</LemonTag>}
-                    <CollaboratorsBanner editedByText={currentNotebook.created_by?.first_name || 'Mustafa'} />
+                    <CollaboratorsBanner editedByText={currentNotebook.created_by?.first_name || 'You'} />
                     <span className="text-muted opacity-30 hidden sm:inline">•</span>
                     <div className="hidden sm:block">
                       <NotebookSyncInfo syncStatus={syncStatus} />
@@ -469,7 +469,10 @@ export function App() {
                   </div>
 
                   <div className="flex gap-3 items-center">
-                    <AskAIDropdown onInsertPromptBlock={handleInsertAIResponse} />
+                    <AskAIDropdown
+                      onInsertPromptBlock={handleInsertAIResponse}
+                      currentNotebookContent={currentNotebook.content}
+                    />
                     <NotebookMenu
                       notebookId={currentNotebook.id}
                       onDuplicate={handleDuplicate}

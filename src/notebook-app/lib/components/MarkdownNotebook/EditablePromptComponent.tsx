@@ -215,14 +215,54 @@ export function EditablePromptComponent({
         }
     }
 
+    const applyPreset = (presetText: string) => {
+        const next = question ? `${question} (${presetText})` : presetText
+        updateQuestion(next)
+    }
+
     return (
-        <div className="MarkdownNotebook__text-row MarkdownNotebook__text-row--ai-prompt my-4">
+        <div className="MarkdownNotebook__text-row MarkdownNotebook__text-row--ai-prompt my-5">
             <div
-                className="relative w-full border border-[#2c2d38] bg-[#15161b] rounded-xl p-4 shadow-2xl space-y-3 text-slate-200"
+                className={clsx(
+                    'relative w-full rounded-xl p-4 sm:p-5 shadow-xs transition-all duration-200 border border-[var(--color-border-primary)]',
+                    'bg-surface-primary text-primary',
+                    isGenerating && 'animate-pulse ring-1 ring-[var(--color-border-primary)]'
+                )}
                 contentEditable={false}
                 data-markdown-notebook-node-id={node.id}
             >
-                {/* DIRECT FRAMELESS CHATBOT TEXTAREA */}
+                {/* TOP HEADER BADGE BAR */}
+                <div className="flex items-center justify-between border-b border-[var(--color-border-primary)] pb-3 mb-3">
+                    <div className="flex items-center gap-2">
+                        <span className="flex items-center justify-center size-6 rounded bg-surface-secondary text-primary">
+                            <IconRobot className="size-3.5 text-primary" />
+                        </span>
+                        <span className="font-semibold text-xs text-primary tracking-wide">AI Assistant</span>
+                        <LemonTag type={isGenerating ? 'warning' : 'completion'} size="small" className="text-[10px] uppercase font-bold tracking-wider">
+                            {isGenerating ? 'Thinking…' : 'Ready'}
+                        </LemonTag>
+                    </div>
+
+                    {/* QUICK PRESET CHIPS */}
+                    <div className="hidden sm:flex items-center gap-1.5 text-[11px]">
+                        <button
+                            type="button"
+                            onClick={() => applyPreset('Summarize key points')}
+                            className="px-2 py-0.5 rounded border border-[var(--color-border-primary)] hover:bg-surface-secondary text-secondary hover:text-primary transition-all bg-surface-primary"
+                        >
+                            Summarize
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => applyPreset('Challenge main argument')}
+                            className="px-2 py-0.5 rounded border border-[var(--color-border-primary)] hover:bg-surface-secondary text-secondary hover:text-primary transition-all bg-surface-primary"
+                        >
+                            Counter
+                        </button>
+                    </div>
+                </div>
+
+                {/* TEXTAREA INPUT AREA */}
                 <textarea
                     ref={setElementRef}
                     value={question}
@@ -231,14 +271,14 @@ export function EditablePromptComponent({
                         updateQuestion(event.currentTarget.value)
                     }}
                     onKeyDown={handleKeyDown}
-                    placeholder="Ask a question or type / for commands..."
-                    rows={6}
-                    className="w-full bg-transparent text-sm text-white placeholder:text-slate-500 focus:outline-none resize-none leading-relaxed min-h-[140px] p-0 border-none shadow-none"
+                    placeholder="Ask AI anything about this notebook or write a prompt..."
+                    rows={4}
+                    className="w-full bg-transparent text-sm text-primary placeholder:text-muted focus:outline-none resize-none leading-relaxed min-h-[110px] p-0 border-none shadow-none font-medium"
                     disabled={mode !== 'edit' || isGenerating}
                 />
 
-                {/* BOTTOM ACTION CONTROLS */}
-                <div className="flex items-center justify-between pt-3 border-t border-[#2c2d38] text-xs">
+                {/* BOTTOM ACTION BAR */}
+                <div className="flex items-center justify-between pt-3 border-t border-[var(--color-border-primary)] text-xs">
                     <LemonSelect
                         value={selectedAgentMode}
                         onChange={(val) => setSelectedAgentMode(val || 'auto')}
@@ -247,12 +287,12 @@ export function EditablePromptComponent({
                         type="tertiary"
                         dropdownPlacement="top-start"
                         dropdownMatchSelectWidth={false}
-                        className="border border-[#2c2d38] bg-[#111216]"
+                        className="rounded border border-[var(--color-border-primary)] bg-surface-secondary text-primary"
                     />
 
-                    <div className="flex items-center gap-3">
-                        <span className="text-slate-500 text-xs hidden sm:inline font-mono">
-                            Cmd + Enter
+                    <div className="flex items-center gap-2.5">
+                        <span className="text-muted text-[11px] hidden sm:inline font-mono opacity-70">
+                            ⌘ + Enter
                         </span>
 
                         <LemonButton
@@ -263,7 +303,10 @@ export function EditablePromptComponent({
                             loading={isGenerating}
                             disabled={!question.trim()}
                             tooltip="Run Prompt (Cmd + Enter)"
-                        />
+                            className="shadow-md"
+                        >
+                            <span className="font-semibold">Run</span>
+                        </LemonButton>
 
                         <LemonButton
                             size="xsmall"

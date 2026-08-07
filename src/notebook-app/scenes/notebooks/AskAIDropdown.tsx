@@ -6,7 +6,7 @@ import {
     LemonTag,
     ProfilePicture,
 } from '~nb-lib/lemon-ui/index'
-import { IconSparkles, IconChevronDown, IconArrowRight, IconTrash, IconPlus } from '@posthog/icons'
+import { IconSparkles, IconChevronDown, IconArrowRight, IconTrash, IconPlus, IconTable } from '@posthog/icons'
 import {
     PHILOSOPHER_BOTS,
     getPhilosopherBot,
@@ -19,6 +19,7 @@ import { ReasoningAnswer } from './ReasoningAnswer'
 
 export interface AskAIDropdownProps {
     onInsertPromptBlock: (initialPrompt?: string) => void
+    currentNotebookContent?: string
 }
 
 export interface ThinkingStageView {
@@ -36,13 +37,14 @@ export interface ChatMessage {
     thought?: string
     thinkingStages?: ThinkingStageView[]
     latencyMs?: number
+    hasTable?: boolean
 }
 
 const SUGGESTIONS = [
+    'Create a comparison table for this notebook',
     'What is at stake in this notebook?',
-    'Challenge the main claim',
-    'Rewrite this more rigorously',
-    'Give a counter-position',
+    'Challenge the main claim & point out gaps',
+    'Rewrite & format this section into a structured list',
 ]
 
 function buildBotSelectOptions(roster: PhilosopherBot[]) {
@@ -70,9 +72,9 @@ function buildBotSelectOptions(roster: PhilosopherBot[]) {
  * Shell (bg, border, radius, shadow) comes from Lemon Popover__box — do not re-chrome here.
  */
 const panelClassName =
-    'w-[min(100vw-1.5rem,28rem)] sm:w-[36rem] max-h-[min(78dvh,40rem)] p-2 sm:p-3 space-y-3 text-xs overflow-y-auto overscroll-contain'
+    'w-[min(100vw-1.5rem,28rem)] sm:w-[36rem] max-h-[min(78dvh,40rem)] p-3 space-y-3 text-xs overflow-y-auto overscroll-contain'
 
-export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.Element {
+export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: AskAIDropdownProps): JSX.Element {
     const hostTheme = useSiteThemeSync()
     const isDark = hostTheme === 'dark'
     const [isOpen, setIsOpen] = useState(false)
@@ -130,7 +132,14 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                 .map((m) => `${m.sender === 'user' ? 'User' : m.philosopherId || 'Philosopher'}: ${m.text}`)
                 .join('\n')
 
-            const question = history ? `Previous conversation:\n${history}\n\nUser: ${text}` : text
+            // Inject full Notebook Content context so AI has 100% awareness
+            const notebookContextSnippet = currentNotebookContent?.trim()
+                ? `[NOTEBOOK CONTEXT]\nThe user is currently working on a notebook with the following markdown content:\n"""\n${currentNotebookContent.slice(0, 4000)}\n"""\nUse this notebook content to accurately answer questions, analyze, synthesize, or generate tables/lists requested by the user.\n`
+                : ''
+
+            const fullQuestionPrompt = `${notebookContextSnippet}${
+                history ? `Previous conversation:\n${history}\n\nUser directive: ${text}` : text
+            }`
 
             let res = await fetch('/api/bots/act', {
                 method: 'POST',
@@ -138,7 +147,7 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                 body: JSON.stringify({
                     action: 'chat',
                     bot: activeBot.id,
-                    question,
+                    question: fullQuestionPrompt,
                     mood: 'calm',
                     taskType: 'paper_section',
                     thinkingDepth: 'standard',
@@ -151,7 +160,7 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         philosopher: activeBot.id,
-                        question,
+                        question: fullQuestionPrompt,
                         mood: 'calm',
                         taskType: 'paper_section',
                         thinkingDepth: 'standard',
@@ -202,6 +211,9 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
             const latencyMs =
                 typeof data?.latencyMs === 'number' && Number.isFinite(data.latencyMs) ? data.latencyMs : undefined
 
+            // Detect if response contains Markdown table
+            const containsTable = reply.includes('|') && reply.includes('---')
+
             setMessages((prev) => [
                 ...prev,
                 {
@@ -212,6 +224,7 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                     thinkingStages: stages.length > 0 ? stages : undefined,
                     latencyMs,
                     philosopherId: activeBot.id,
+                    hasTable: containsTable,
                     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 },
             ])
@@ -234,17 +247,12 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
 
     const overlay = (
         <div className={panelClassName} onClick={(e) => e.stopPropagation()}>
-            {/* Header — same structure as CollaboratorsBanner */}
+            {/* Header */}
             <div className="flex items-center justify-between border-b border-border pb-2 gap-2">
                 <div className="flex items-center gap-2 min-w-0">
                     <ProfilePicture user={philosopherAsUser(activeBot)} size="md" />
                     <div className="min-w-0">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="font-semibold text-primary truncate">{activeBot.displayName}</span>
-                            <LemonTag type="muted" size="small">
-                                Bot
-                            </LemonTag>
-                        </div>
+                        <span className="font-semibold text-xs text-primary truncate block">{activeBot.displayName}</span>
                         <p className="text-[10px] text-muted mt-0.5 mb-0 truncate">{activeBot.shortStance}</p>
                     </div>
                 </div>
@@ -295,11 +303,11 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                                     msg.sender === 'user' ? 'flex-row-reverse' : ''
                                 }`}
                             >
-                                {msg.sender === 'ai' ? (
-                                    <ProfilePicture user={philosopherAsUser(bot)} size="sm" />
-                                ) : (
-                                    <ProfilePicture name="You" size="sm" />
-                                )}
+                                <ProfilePicture
+                                    user={msg.sender === 'ai' ? philosopherAsUser(bot) : undefined}
+                                    name={msg.sender === 'user' ? 'You' : undefined}
+                                    size="sm"
+                                />
                                 <div className="flex-1 min-w-0 space-y-1">
                                     <div className="flex justify-between items-center gap-2">
                                         <span className="font-semibold text-primary truncate">
@@ -321,18 +329,34 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                                     <p className="text-secondary leading-snug whitespace-pre-wrap mb-0">{msg.text}</p>
 
                                     {msg.sender === 'ai' && (
-                                        <LemonButton
-                                            size="xsmall"
-                                            type="tertiary"
-                                            icon={<IconPlus />}
-                                            onClick={(e) => {
-                                                e.stopPropagation()
-                                                onInsertPromptBlock(`${msg.text}\n\n— ${bot.displayName}`)
-                                                setIsOpen(false)
-                                            }}
-                                        >
-                                            Insert into Notebook
-                                        </LemonButton>
+                                        <div className="flex items-center gap-2 pt-1">
+                                            {msg.hasTable && (
+                                                <LemonButton
+                                                    size="xsmall"
+                                                    type="secondary"
+                                                    icon={<IconTable />}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        onInsertPromptBlock(msg.text)
+                                                        setIsOpen(false)
+                                                    }}
+                                                >
+                                                    Insert Table into Notebook
+                                                </LemonButton>
+                                            )}
+                                            <LemonButton
+                                                size="xsmall"
+                                                type="tertiary"
+                                                icon={<IconPlus />}
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    onInsertPromptBlock(`${msg.text}\n\n— ${bot.displayName}`)
+                                                    setIsOpen(false)
+                                                }}
+                                            >
+                                                Insert into Notebook
+                                            </LemonButton>
+                                        </div>
                                     )}
                                 </div>
                             </div>
@@ -352,7 +376,7 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
                 </div>
             )}
 
-            {/* Composer — same footer rhythm as CollaboratorsBanner */}
+            {/* Composer Bar */}
             <div className="border-t border-border pt-2 space-y-2">
                 <textarea
                     ref={textareaRef}

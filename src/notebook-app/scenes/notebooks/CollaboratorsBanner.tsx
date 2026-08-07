@@ -19,10 +19,10 @@ interface ActivityItem {
 const RECENT_ACTIVITIES: ActivityItem[] = [
     {
         id: '1',
-        user: 'Mustafa (You)',
-        action: 'Edited title & added HogQL query block',
+        user: 'You',
+        action: 'Edited title & added blocks',
         time: 'Just now',
-        avatarName: 'Mustafa',
+        avatarName: 'You',
     },
     {
         id: '2',
@@ -40,14 +40,14 @@ const RECENT_ACTIVITIES: ActivityItem[] = [
     },
     {
         id: '4',
-        user: 'PostHog AI',
+        user: 'WIM AI',
         action: 'Generated summary report & insights',
         time: '3 hours ago',
-        avatarName: 'PostHog AI',
+        avatarName: 'WIM AI',
     },
 ]
 
-export function CollaboratorsBanner({ editedByText = 'Mustafa' }: CollaboratorsBannerProps) {
+export function CollaboratorsBanner({ editedByText = 'You' }: CollaboratorsBannerProps) {
     const [isOpen, setIsOpen] = useState(false)
 
     const overlay = (

@@ -356,8 +356,8 @@ export function NotebooksListScene({
                             onChange={(val) => setCreatedByFilter(val || 'all')}
                             options={[
                                 { value: 'all', label: 'All users' },
-                                { value: 'user', label: 'Mustafa (you)' },
-                                { value: 'templates', label: 'PostHog' },
+                                { value: 'user', label: 'You' },
+                                { value: 'templates', label: 'WIM Templates' },
                             ]}
                         />
                     </div>

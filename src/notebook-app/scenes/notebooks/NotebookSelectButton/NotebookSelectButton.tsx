@@ -90,7 +90,7 @@ export function NotebookSelectButton({
                             onClick={() => handleSelect(nb.id)}
                             sideIcon={
                                 <ProfilePicture
-                                    user={nb.isTemplate ? { first_name: 'PostHog' } : nb.created_by || { first_name: 'Mustafa' }}
+                                    user={nb.isTemplate ? { first_name: 'WIM' } : nb.created_by || { first_name: 'You' }}
                                     size="md"
                                 />
                             }
@@ -100,7 +100,7 @@ export function NotebookSelectButton({
                                     {nb.title || 'Untitled'}
                                 </span>
                                 <span className="text-[10px] text-muted truncate">
-                                    {nb.isTemplate ? 'PostHog' : 'Mustafa'} · {new Date(nb.updatedAt).toLocaleDateString()}
+                                    {nb.isTemplate ? 'WIM' : (nb.created_by?.first_name || 'You')} · {new Date(nb.updatedAt).toLocaleDateString()}
                                 </span>
                             </div>
                         </LemonButton>

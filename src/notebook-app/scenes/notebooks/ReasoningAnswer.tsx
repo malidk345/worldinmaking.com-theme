@@ -361,7 +361,7 @@ export function ReasoningAnswer({
 
                                 {/* Substep body with left rail under the icon (PostHog ActivityDetails) */}
                                 {row.text != null && row.text !== '' && (
-                                    <div className="ml-[9px] border-l-2 border-[var(--border-3000,#e2e8f0)] pl-3">
+                                    <div className="ml-[9px] border-l-2 border-border pl-3">
                                         <p
                                             className={clsx(
                                                 'mb-0 leading-relaxed whitespace-pre-wrap text-[11px]',
