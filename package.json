@@ -69,7 +69,8 @@
     "typescript": "^5.8.2",
     "vercel": "47.0.4",
     "webpack": "5",
-    "wrangler": "^4.67.0"
+    "wrangler": "^4.67.0",
+    "@playwright/test": "^1.41.2"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.28",
