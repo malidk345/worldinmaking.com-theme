@@ -52,14 +52,40 @@ function extractSlugFromPath(path?: string): string {
     return normalizePostSlug(parts[parts.length - 1] || '')
 }
 
+function extractTableOfContents(content?: string) {
+    if (!content) return []
+    const headings: { url: string; value: string; depth: number }[] = []
+    const mdRegex = /^(#{1,6})\s+(.+)$/gm
+    let match
+    while ((match = mdRegex.exec(content)) !== null) {
+        const depth = match[1].length
+        const rawText = match[2].trim().replace(/[*_~`]/g, '')
+        const url = `#${slugify(rawText, { lower: true, strict: true })}`
+        headings.push({ url, value: rawText, depth })
+    }
+    if (headings.length === 0) {
+        const htmlRegex = /<h([1-6])(?:[^>]*id=["']([^"']+)["'])?[^>]*>(.*?)<\/h\1>/gi
+        while ((match = htmlRegex.exec(content)) !== null) {
+            const depth = parseInt(match[1], 10)
+            const id = match[2]
+            const rawText = match[3].replace(/<[^>]+>/g, '').trim()
+            const url = id ? `#${id}` : `#${slugify(rawText, { lower: true, strict: true })}`
+            headings.push({ url, value: rawText, depth })
+        }
+    }
+    return headings
+}
+
 function supabaseToBlogData(post: SupabasePost, fullPath: string) {
     const date = post.created_at ? post.created_at.split('T')[0] : ''
     const author = post.author || 'WorldInMaking'
+    const tableOfContents = extractTableOfContents(post.content || '')
     return {
         body: post.content || '',
         content: post.content || '',
         excerpt: post.excerpt || post.title || '',
         title: post.title,
+        tableOfContents,
         frontmatter: {
             title: post.title,
             date,
@@ -449,7 +475,8 @@ export default function BlogPost({ data = {}, pageContext = {}, mobile = false, 
         ...shortcodes,
     }
     const initialTag = undefined
-    const { tableOfContents, askMax, localizedRoot } = pageContext
+    const { tableOfContents: pageContextToc, askMax, localizedRoot } = pageContext
+    const effectiveToc = remote?.tableOfContents || pageContextToc || extractTableOfContents(body)
     const languageAlternates = pageContext.languageAlternates as LanguageAlternate[] | undefined
     const { fullWidthContent, theoMode } = useLayoutData()
 
@@ -525,6 +552,7 @@ export default function BlogPost({ data = {}, pageContext = {}, mobile = false, 
             />
 
             <ReaderView
+                showAbout
                 leftSidebar={
                     <div data-sidebar-label>
                         <Filters tag={tag} setTag={setTag} sort={sort} setSort={setSort} activeMenu={activeMenu} />
@@ -578,7 +606,7 @@ export default function BlogPost({ data = {}, pageContext = {}, mobile = false, 
                     ),
                 }}
                 title={title}
-                tableOfContents={tableOfContents}
+                tableOfContents={effectiveToc}
                 mdxComponents={components}
                 homeURL={localizedRoot ? '/newsletter' : `/${root || 'posts'}`}
             />
