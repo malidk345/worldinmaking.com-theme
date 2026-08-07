@@ -28,7 +28,7 @@ export default function WindowContent({ item, chrome, hasToolbar, children }: Wi
                 isForumShell ? 'overflow-hidden flex flex-col' : 'overflow-y-auto'
             } ${
                 chrome
-                    ? `rounded-lg ${hasToolbar ? 'rounded-t-none' : ''} ${
+                    ? `rounded-[24px] ${hasToolbar ? 'rounded-t-none' : ''} ${
                           item.expanded
                               ? 'rounded-tr-none rounded-tl-none'
                               : item.snapped === 'left'
