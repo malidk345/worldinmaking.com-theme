@@ -1,19 +1,27 @@
 import React from 'react'
-import CloudinaryImage from 'components/CloudinaryImage'
 
 /**
- * Wallpapers — original wimpos scenes (tokens + art).
+ * Wallpapers — solid scenes only (no 3D / Cloudinary art).
  *
- * Visibility is driven by `body[data-wallpaper]`, set from localStorage in
- * theme-init / App.tsx before paint. Light ↔ dark fades via the `dark` class.
- *
- * Glass (WINDOW_BG bg-primary/75) blurs whatever is behind the window. The
- * default keyboard-garden scene is warm cream (#FDEECD → #FFFEF4), not solid
- * sage — solid #A8B8A8 made frosted chrome look greenish.
+ * Visibility: body[data-wallpaper] (theme-init / App.tsx).
+ * Default keyboard-garden uses the same warm cream base as wimpos
+ * (#FDEECD → #FFFEF4), not sage green — so WINDOW_BG frosted glass
+ * (tertiary --bg /75) stays cream-neutral like original OS chrome.
  */
 
-const FADE_OPACITY = 'transition-opacity duration-700 ease-in-out'
 const FADE_COLORS = 'transition-colors duration-700 ease-in-out'
+const FADE_OPACITY = 'transition-opacity duration-700 ease-in-out'
+
+/** Matches wimpos KeyboardGarden base gradient (no hedge / photo layers). */
+const KeyboardGarden = () => (
+    <>
+        <div
+            className={`absolute inset-0 bg-gradient-to-b from-[#FDEECD] to-[#FFFEF4] opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
+        />
+        {/* Dark: deep charcoal (not sage), keeps glass reading cool-neutral */}
+        <div className={`absolute inset-0 bg-[#1a1b1f] opacity-0 dark:opacity-100 ${FADE_COLORS}`} />
+    </>
+)
 
 const Hogzilla = () => (
     <>
@@ -23,135 +31,23 @@ const Hogzilla = () => (
         <div
             className={`absolute inset-0 bg-[linear-gradient(180deg,#141E40_0%,#46368B_100%)] opacity-0 dark:opacity-100 ${FADE_OPACITY}`}
         />
-        <CloudinaryImage
-            loading="lazy"
-            src="https://res.cloudinary.com/dmukukwp6/image/upload/9000_hogzilla_359a450fb3.png"
-            alt=""
-            width={1780}
-            height={868}
-            className="absolute inset-0 flex items-end justify-end"
-            imgClassName="w-full max-w-[1780px] h-auto z-10"
-        />
     </>
 )
 
 const StartupMonopoly = () => (
     <>
         <div className={`absolute inset-0 bg-[#E7E0DA] dark:bg-[#686E88] ${FADE_COLORS}`} />
-        <CloudinaryImage
-            loading="lazy"
-            src="https://res.cloudinary.com/dmukukwp6/image/upload/9000_monopoly_light_6614a8a5d5.jpg"
-            alt=""
-            width={2967}
-            height={1463}
-            className={`absolute right-0 top-0 w-[1483.5px] h-[731.5px] max-w-full opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
-        />
-        <CloudinaryImage
-            loading="lazy"
-            src="https://res.cloudinary.com/dmukukwp6/image/upload/9000_monopoly_dark_26c85ccad8.jpg"
-            alt=""
-            width={1582}
-            height={782}
-            className={`absolute right-0 top-0 w-[1483.5px] h-[731.5px] max-w-full opacity-0 dark:opacity-100 ${FADE_OPACITY}`}
-        />
     </>
 )
 
 const OfficeParty = () => (
     <>
-        <div
-            className="absolute inset-0 opacity-100"
-            style={{
-                backgroundImage: "url('https://res.cloudinary.com/dmukukwp6/image/upload/carpet_light_27d74f73b5.png')",
-                backgroundSize: '200px 198px',
-                backgroundRepeat: 'repeat',
-            }}
-        />
-        <div
-            className={`absolute inset-0 opacity-0 dark:opacity-100 ${FADE_OPACITY}`}
-            style={{
-                backgroundImage: "url('https://res.cloudinary.com/dmukukwp6/image/upload/carpet_dark_f1c9f5ce39.png')",
-                backgroundSize: '200px 198px',
-                backgroundRepeat: 'repeat',
-            }}
-        />
-        <CloudinaryImage
-            loading="lazy"
-            src="https://res.cloudinary.com/dmukukwp6/image/upload/office_cc4ae8675f.png"
-            alt=""
-            width={997}
-            height={858}
-            className="absolute bottom-24 left-24 md:bottom-12 md:left-36 w-[498.5px] h-[429px]"
-        />
+        {/* Carpet tile color only — no office character art */}
+        <div className={`absolute inset-0 bg-[#C4B8A8] opacity-100 dark:opacity-0 ${FADE_COLORS}`} />
+        <div className={`absolute inset-0 bg-[#2A2520] opacity-0 dark:opacity-100 ${FADE_COLORS}`} />
     </>
 )
 
-const KeyboardGarden = () => (
-    <>
-        <div className="absolute inset-0 bg-gradient-to-b from-[#FDEECD] to-[#FFFEF4]" />
-
-        <div
-            className={`absolute inset-0 sm:hidden opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
-            style={{
-                backgroundImage:
-                    "url('https://res.cloudinary.com/dmukukwp6/image/upload/9000_mobile_bg_light_95ed14e5a3.jpg')",
-                backgroundSize: 'cover',
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'right bottom',
-            }}
-        />
-        <div
-            className={`absolute inset-0 sm:hidden opacity-0 dark:opacity-100 ${FADE_OPACITY}`}
-            style={{
-                backgroundImage:
-                    "url('https://res.cloudinary.com/dmukukwp6/image/upload/9000_mobile_bg_dark_8a84515f2d.jpg')",
-                backgroundSize: 'cover',
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'right bottom',
-            }}
-        />
-        <div
-            className={`absolute inset-0 hidden sm:block opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
-            style={{
-                backgroundImage:
-                    "url('https://res.cloudinary.com/dmukukwp6/image/upload/9000_bg_light_07316896be.jpg')",
-                backgroundSize: 'cover',
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'right bottom',
-            }}
-        />
-        <div
-            className={`absolute inset-0 hidden sm:block opacity-0 dark:opacity-100 ${FADE_OPACITY}`}
-            style={{
-                backgroundImage: "url('https://res.cloudinary.com/dmukukwp6/image/upload/9000_bg_dark_9a32796f77.jpg')",
-                backgroundSize: 'cover',
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'right bottom',
-            }}
-        />
-
-        <div className="absolute grid bottom-24 md:bottom-0 -right-4 xs:right-8 md:right-0">
-            <CloudinaryImage
-                loading="lazy"
-                src="https://res.cloudinary.com/dmukukwp6/image/upload/9000_hedge_light_42c729131e.png"
-                width={1555}
-                height={1262}
-                className={`col-start-1 row-start-1 opacity-100 dark:opacity-0 w-full max-w-full md:w-[777px] ${FADE_OPACITY}`}
-                draggable={false}
-            />
-            <CloudinaryImage
-                loading="lazy"
-                src="https://res.cloudinary.com/dmukukwp6/image/upload/9000_hedge_dark_b36706e924.png"
-                width={1555}
-                height={1262}
-                className={`col-start-1 row-start-1 opacity-0 dark:opacity-100 w-full max-w-full md:w-[777px] ${FADE_OPACITY}`}
-                draggable={false}
-            />
-        </div>
-    </>
-)
-
-// Visibility classes written out in full so Tailwind's JIT scanner can see them.
 const SCENES: { key: string; Scene: React.FC; visible: string }[] = [
     { key: 'hogzilla', Scene: Hogzilla, visible: 'wallpaper-hogzilla:block' },
     { key: 'startup-monopoly', Scene: StartupMonopoly, visible: 'wallpaper-startup-monopoly:block' },
@@ -176,8 +72,6 @@ export const DEFAULT_WALLPAPER_GLOW: WallpaperGlow = WALLPAPER_GLOW['keyboard-ga
 export const getWallpaperGlow = (wallpaper: string): WallpaperGlow =>
     WALLPAPER_GLOW[wallpaper] ?? DEFAULT_WALLPAPER_GLOW
 
-// wallpaper/reduceMotion props accepted for call-site compatibility; visibility
-// is driven by body[data-wallpaper] (App.tsx / theme init), same as wimpos.
 export default function Wallpapers(_props?: {
     wallpaper?: string
     reduceMotion?: boolean
