@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { IconX } from '@posthog/icons'
 import { useUser, type User } from 'hooks/useUser'
 import { requestPasswordReset } from 'lib/wim-auth'
-import { supabase } from 'lib/supabaseCommunity'
+import { supabase } from 'lib/supabase'
 import OSButton from 'components/OSButton'
 import { ToggleGroup } from 'components/RadixUI/ToggleGroup'
 

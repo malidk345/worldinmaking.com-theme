@@ -221,8 +221,15 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
             if (session?.access_token) {
                 setJwt(session.access_token)
                 localStorage.setItem('jwt', session.access_token)
-                const u = await loadCurrentWimUser()
-                if (u) setUser(u)
+                const u = await fetchUser()
+                if (u) {
+                    setUser(u)
+                    try {
+                        localStorage.setItem('wim_auth_user_id', String(u.id))
+                    } catch {
+                        /* ignore */
+                    }
+                }
             }
         })
         return () => {

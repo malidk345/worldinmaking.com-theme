@@ -52,19 +52,17 @@ function mapDbProfileToStrapi(dbProfile: any): StrapiRecord<ProfileData> {
 }
 
 async function fetchWimProfile(identifier: string): Promise<StrapiRecord<ProfileData> | null> {
-    const rawId = identifier.trim()
-    if (!rawId) return null
+    if (!identifier) return null
+    let cleanId = decodeURIComponent(identifier.trim()).replace(/^@/, '')
+    if (!cleanId) return null
 
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawId)
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId)
 
     let query = supabase.from('profiles').select('*')
     if (isUuid) {
-        query = query.eq('id', rawId)
-    } else if (/^\d+$/.test(rawId)) {
-        // Legacy numeric ids are not used in WIM; try username fallback only
-        query = query.ilike('username', rawId)
+        query = query.eq('id', cleanId)
     } else {
-        query = query.ilike('username', rawId)
+        query = query.ilike('username', cleanId)
     }
 
     const { data, error } = await query.maybeSingle()
@@ -77,36 +75,64 @@ async function fetchWimProfile(identifier: string): Promise<StrapiRecord<Profile
 }
 
 export function useProfileData(identifier?: string | number) {
-    const rawId = identifier ? String(identifier).trim() : ''
-    const { user } = useUser()
+    const { user, isValidating: userValidating } = useUser()
+
+    const rawId = useMemo(() => {
+        if (identifier && String(identifier).trim() !== 'me') {
+            return String(identifier).trim()
+        }
+        return user?.username || (user?.profile?.id ? String(user.profile.id) : user?.id ? String(user.id) : '')
+    }, [identifier, user])
+
+    const cleanSearchId = useMemo(() => {
+        if (!rawId) return ''
+        return decodeURIComponent(rawId).replace(/^@/, '')
+    }, [rawId])
 
     const isCurrentUser = Boolean(
-        rawId &&
-            (String(user?.profile?.id) === rawId ||
-                user?.username?.toLowerCase() === rawId.toLowerCase() ||
-                String(user?.id) === rawId)
+        user &&
+            cleanSearchId &&
+            (String(user?.profile?.id) === cleanSearchId ||
+                user?.username?.toLowerCase() === cleanSearchId.toLowerCase() ||
+                String(user?.id) === cleanSearchId)
     )
     const isModerator = user?.role?.type === 'moderator'
 
     const { data, error, isLoading, mutate } = useSWR<StrapiRecord<ProfileData> | null>(
-        rawId ? ['wim-profile', rawId] : null,
-        () => fetchWimProfile(rawId),
+        cleanSearchId ? ['wim-profile', cleanSearchId] : null,
+        () => fetchWimProfile(cleanSearchId),
         {
             revalidateOnFocus: false,
             shouldRetryOnError: false,
         }
     )
 
-    // If logged-in user matches and SWR empty, use session profile instantly
+    // Fallback: If logged-in user matches or data query is pending/empty, populate from session immediately
     const profileData = useMemo(() => {
         if (data) return data
-        if (isCurrentUser && user?.profile) {
+        if (isCurrentUser && user) {
+            const username = user.username || 'user'
+            const display = username
+                .split(/[-_]/)
+                .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                .join(' ')
             return {
-                id: user.profile.id as any,
+                id: (user.profile?.id || user.id) as any,
                 attributes: {
-                    ...user.profile,
-                    firstName: user.profile.firstName || user.username,
-                    biography: user.profile.biography || '',
+                    username,
+                    firstName: user.profile?.firstName || display,
+                    lastName: user.profile?.lastName || '',
+                    biography: user.profile?.biography || '',
+                    location: user.profile?.location || null,
+                    website: user.profile?.website || null,
+                    twitter: user.profile?.twitter || null,
+                    github: user.profile?.github || null,
+                    linkedin: user.profile?.linkedin || null,
+                    avatar: user.profile?.avatar,
+                    reputation: user.profile?.reputation || 0,
+                    companyRole: user.role?.type || 'member',
+                    createdAt: user.createdAt || new Date().toISOString(),
+                    teams: { data: [] } as any,
                 },
             } as StrapiRecord<ProfileData>
         }
@@ -116,7 +142,7 @@ export function useProfileData(identifier?: string | number) {
     return {
         profileData,
         error,
-        isLoading: !rawId ? true : isLoading && !profileData,
+        isLoading: userValidating ? true : !cleanSearchId ? false : isLoading && !profileData,
         isCurrentUser,
         isModerator,
         mutate,
