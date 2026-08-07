@@ -1,28 +1,18 @@
 import React from 'react'
 
 /**
- * Wallpapers — solid scenes only (no 3D / Cloudinary art).
+ * Wallpapers — same scenes / colors as wimpos, without 3D / character overlays.
+ *
+ * Keep: gradients, photo BGs, carpet tiles (the wallpaper itself).
+ * Drop: hedge, hogzilla figure, office prop art, etc. stacked on top.
  *
  * Visibility: body[data-wallpaper] (theme-init / App.tsx).
- * Default keyboard-garden uses the same warm cream base as wimpos
- * (#FDEECD → #FFFEF4), not sage green — so WINDOW_BG frosted glass
- * (tertiary --bg /75) stays cream-neutral like original OS chrome.
  */
 
-const FADE_COLORS = 'transition-colors duration-700 ease-in-out'
 const FADE_OPACITY = 'transition-opacity duration-700 ease-in-out'
+const FADE_COLORS = 'transition-colors duration-700 ease-in-out'
 
-/** Matches wimpos KeyboardGarden base gradient (no hedge / photo layers). */
-const KeyboardGarden = () => (
-    <>
-        <div
-            className={`absolute inset-0 bg-gradient-to-b from-[#FDEECD] to-[#FFFEF4] opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
-        />
-        {/* Dark: deep charcoal (not sage), keeps glass reading cool-neutral */}
-        <div className={`absolute inset-0 bg-[#1a1b1f] opacity-0 dark:opacity-100 ${FADE_COLORS}`} />
-    </>
-)
-
+/** wimpos Hogzilla base — no hogzilla PNG overlay */
 const Hogzilla = () => (
     <>
         <div
@@ -34,17 +24,102 @@ const Hogzilla = () => (
     </>
 )
 
+/** wimpos Startup Monopoly base colors + board photos (scene art, not a 3D sprite) */
 const StartupMonopoly = () => (
     <>
         <div className={`absolute inset-0 bg-[#E7E0DA] dark:bg-[#686E88] ${FADE_COLORS}`} />
+        <div
+            className={`absolute right-0 top-0 w-[1483.5px] h-[731.5px] max-w-full opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
+            style={{
+                backgroundImage:
+                    "url('https://res.cloudinary.com/dmukukwp6/image/upload/9000_monopoly_light_6614a8a5d5.jpg')",
+                backgroundSize: 'cover',
+                backgroundPosition: 'right top',
+                backgroundRepeat: 'no-repeat',
+            }}
+        />
+        <div
+            className={`absolute right-0 top-0 w-[1483.5px] h-[731.5px] max-w-full opacity-0 dark:opacity-100 ${FADE_OPACITY}`}
+            style={{
+                backgroundImage:
+                    "url('https://res.cloudinary.com/dmukukwp6/image/upload/9000_monopoly_dark_26c85ccad8.jpg')",
+                backgroundSize: 'cover',
+                backgroundPosition: 'right top',
+                backgroundRepeat: 'no-repeat',
+            }}
+        />
     </>
 )
 
+/** wimpos Office Party carpet — no office character PNG */
 const OfficeParty = () => (
     <>
-        {/* Carpet tile color only — no office character art */}
-        <div className={`absolute inset-0 bg-[#C4B8A8] opacity-100 dark:opacity-0 ${FADE_COLORS}`} />
-        <div className={`absolute inset-0 bg-[#2A2520] opacity-0 dark:opacity-100 ${FADE_COLORS}`} />
+        <div
+            className="absolute inset-0 opacity-100"
+            style={{
+                backgroundImage: "url('https://res.cloudinary.com/dmukukwp6/image/upload/carpet_light_27d74f73b5.png')",
+                backgroundSize: '200px 198px',
+                backgroundRepeat: 'repeat',
+            }}
+        />
+        <div
+            className={`absolute inset-0 opacity-0 dark:opacity-100 ${FADE_OPACITY}`}
+            style={{
+                backgroundImage: "url('https://res.cloudinary.com/dmukukwp6/image/upload/carpet_dark_f1c9f5ce39.png')",
+                backgroundSize: '200px 198px',
+                backgroundRepeat: 'repeat',
+            }}
+        />
+    </>
+)
+
+/**
+ * wimpos Keyboard Garden — cream base + photo BGs only.
+ * No hedge PNG overlay (that was the 3D layer on top).
+ */
+const KeyboardGarden = () => (
+    <>
+        <div className="absolute inset-0 bg-gradient-to-b from-[#FDEECD] to-[#FFFEF4]" />
+
+        <div
+            className={`absolute inset-0 sm:hidden opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
+            style={{
+                backgroundImage:
+                    "url('https://res.cloudinary.com/dmukukwp6/image/upload/9000_mobile_bg_light_95ed14e5a3.jpg')",
+                backgroundSize: 'cover',
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right bottom',
+            }}
+        />
+        <div
+            className={`absolute inset-0 sm:hidden opacity-0 dark:opacity-100 ${FADE_OPACITY}`}
+            style={{
+                backgroundImage:
+                    "url('https://res.cloudinary.com/dmukukwp6/image/upload/9000_mobile_bg_dark_8a84515f2d.jpg')",
+                backgroundSize: 'cover',
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right bottom',
+            }}
+        />
+        <div
+            className={`absolute inset-0 hidden sm:block opacity-100 dark:opacity-0 ${FADE_OPACITY}`}
+            style={{
+                backgroundImage:
+                    "url('https://res.cloudinary.com/dmukukwp6/image/upload/9000_bg_light_07316896be.jpg')",
+                backgroundSize: 'cover',
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right bottom',
+            }}
+        />
+        <div
+            className={`absolute inset-0 hidden sm:block opacity-0 dark:opacity-100 ${FADE_OPACITY}`}
+            style={{
+                backgroundImage: "url('https://res.cloudinary.com/dmukukwp6/image/upload/9000_bg_dark_9a32796f77.jpg')",
+                backgroundSize: 'cover',
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right bottom',
+            }}
+        />
     </>
 )
 

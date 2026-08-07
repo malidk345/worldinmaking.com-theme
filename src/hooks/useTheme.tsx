@@ -12,7 +12,6 @@ export interface ThemeOption {
     }
 }
 
-// Solid SVG thumbs only (no 3D / remote art) — colors match window chrome tokens
 const svgThumb = (hex: string) =>
     'data:image/svg+xml,' +
     encodeURIComponent(
@@ -24,10 +23,10 @@ export const themeOptions: ThemeOption[] = [
         label: 'Keyboard garden',
         value: 'keyboard-garden',
         background: {
-            // Warm cream base (wimpos keyboard-garden gradient ends), not sage green
+            // Photo BG only (no hedge overlay)
             thumb: {
-                light: svgThumb('#FDF6E3'),
-                dark: svgThumb('#1a1b1f'),
+                light: 'https://res.cloudinary.com/dmukukwp6/image/upload/w_800,h_500,c_fill,g_south_east/9000_bg_light_07316896be.jpg',
+                dark: 'https://res.cloudinary.com/dmukukwp6/image/upload/w_800,h_500,c_fill,g_south_east/9000_bg_dark_9a32796f77.jpg',
             },
             classes: '',
         },
@@ -36,8 +35,9 @@ export const themeOptions: ThemeOption[] = [
         label: 'Hogzilla',
         value: 'hogzilla',
         background: {
+            // Gradient base only (no hogzilla figure)
             thumb: {
-                light: svgThumb('#E3E1E4'),
+                light: svgThumb('#E8E6E9'),
                 dark: svgThumb('#2A1F5C'),
             },
             classes: 'wallpaper-hogzilla:bg-black/50 dark:wallpaper-hogzilla:bg-black/60',
@@ -48,8 +48,8 @@ export const themeOptions: ThemeOption[] = [
         value: 'startup-monopoly',
         background: {
             thumb: {
-                light: svgThumb('#E7E0DA'),
-                dark: svgThumb('#686E88'),
+                light: 'https://res.cloudinary.com/dmukukwp6/image/upload/w_800,h_500,c_fill,g_east/9000_monopoly_light_6614a8a5d5.jpg',
+                dark: 'https://res.cloudinary.com/dmukukwp6/image/upload/w_800,h_500,c_fill,g_east/9000_monopoly_dark_26c85ccad8.jpg',
             },
             classes: 'wallpaper-startup-monopoly:bg-black/50 dark:wallpaper-startup-monopoly:bg-black/60',
         },
@@ -58,9 +58,10 @@ export const themeOptions: ThemeOption[] = [
         label: 'Office party',
         value: 'office-party',
         background: {
+            // Carpet only (no office character)
             thumb: {
-                light: svgThumb('#C4B8A8'),
-                dark: svgThumb('#2A2520'),
+                light: 'https://res.cloudinary.com/dmukukwp6/image/upload/w_800,h_500,c_fill/carpet_light_27d74f73b5.png',
+                dark: 'https://res.cloudinary.com/dmukukwp6/image/upload/w_800,h_500,c_fill/carpet_dark_f1c9f5ce39.png',
             },
         },
     },
