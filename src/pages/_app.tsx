@@ -16,6 +16,7 @@ import 'rc-slider/assets/index.css'
 import '../components/MarkdownNotebook/MarkdownNotebook.scss'
 import { Provider } from 'context/App'
 import { Provider as ToastProvider } from 'context/Toast'
+import { UserProvider } from 'hooks/useUser'
 import Wrapper from 'components/Wrapper'
 import { useRouter } from 'next/router'
 import React from 'react'
@@ -45,7 +46,13 @@ export default function App({ Component, pageProps }: AppProps) {
     // Pages that set `Component.noLayout = true` render without the standard wrapper
     // so full-screen embeds (e.g. /notebooks) can fill the entire viewport.
     if ((Component as any).noLayout) {
-        return <Component {...pageProps} />
+        return (
+            <ToastProvider>
+                <UserProvider>
+                    <Component {...pageProps} />
+                </UserProvider>
+            </ToastProvider>
+        )
     }
 
     return (
@@ -55,9 +62,11 @@ export default function App({ Component, pageProps }: AppProps) {
             className="h-dvh min-h-0 w-screen overflow-hidden bg-light dark:bg-dark text-primary"
         >
             <ToastProvider>
-                <Provider element={<Component {...pageProps} />} location={location as any}>
-                    <Wrapper />
-                </Provider>
+                <UserProvider>
+                    <Provider element={<Component {...pageProps} />} location={location as any}>
+                        <Wrapper />
+                    </Provider>
+                </UserProvider>
             </ToastProvider>
         </div>
     )
