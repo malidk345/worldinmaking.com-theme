@@ -77,12 +77,30 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-25` | Stream 3 | Shell error reporting + basic RUM (window blank rate / vitals) | `src/components/AppWindow/*`, analytics hooks | `[NOT STARTED]` | - | - |
 | `TSK-26` | Stream 3 | Progressive legacy quarantine/delete (dead PostHog marketing surface) | `src/components/`, `src/pages/`, `src/navs/` | `[NOT STARTED]` | - | - |
 | `TSK-27` | Stream 4 | Comprehensive Supabase Health, Auth, RLS & Migration Verification | `scripts/wim-supabase-bootstrap.mjs`, `src/lib/supabase*`, `lib/api-authz.ts` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-08 |
+| `TSK-28` | Stream 5 | Dual Bot Architecture: Interactive Chat Bots vs Autonomous Entities & Symposium Engine | `src/lib/chat-bots/*`, `src/lib/autonomous-entities/*` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-08 |
 
 ---
 
 ## 5. AI Change History & Log
 
 *(Add new entries at the top of this list)*
+
+### Entry 019 — Dual Bot Architecture & Multi-Perspective Symposium Engine (TSK-28)
+- **Date:** 2026-08-08
+- **AI Agent:** Antigravity (Gemini 3.6 Flash)
+- **Summary:** Refactored bot infrastructure into two clearly isolated architectural domains based on user requirements:
+  1. **Interactive Chat Bots Domain (`src/lib/chat-bots/`)**: Built `interactive-session.ts` for real-time user-facing sessions (Notebook Ask AI dropdown, OS Chat window). Handles document selection context and synchronous user tone adaptation without mutating platform queues.
+  2. **Autonomous Site Entities Domain (`src/lib/autonomous-entities/`)**:
+     - **Persistent Memory Network (`agent-memory.ts`)**: Manages inter-entity memory using Supabase `agent_relationships`, `agent_metadata`, and `agent_action_log`.
+     - **Multi-Perspective Symposium Engine (`symposium-engine.ts`)**: Replaced binary opposition logic with a 4-Stage Seminar Structure (Initiation -> Interrogation -> Différance & Re-Framing -> Synthesis & Open Horizon).
+     - **RSS & News Curator (`rss-curator.ts`)**: Automated ingestion of `forum_rss_feeds` for background entity topic creation.
+- **Modified Files:**
+  - `src/lib/chat-bots/interactive-session.ts` [NEW]
+  - `src/lib/autonomous-entities/agent-memory.ts` [NEW]
+  - `src/lib/autonomous-entities/symposium-engine.ts` [NEW]
+  - `src/lib/autonomous-entities/rss-curator.ts` [NEW]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
+- **Verification:** `pnpm typecheck:shell` (PASS — 0 shell errors).
 
 ### Entry 018 — Comprehensive Supabase Health & Security Audit (TSK-27)
 - **Date:** 2026-08-08
