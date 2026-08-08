@@ -557,8 +557,8 @@ const FEATURE_DATA: Record<string, BaseFeature> = {
     },
 }
 
-export const useFeatureOwnership = ({ teamSlug }: { teamSlug?: string } = {}): { features: Feature[] } => {
-    const features = Object.entries(FEATURE_DATA).reduce((acc, [key, feature]) => {
+const PRECOMPUTED_FEATURES = Object.entries(FEATURE_DATA).reduce(
+    (acc, [key, feature]) => {
         const featureWithSlug: Feature = {
             ...feature,
             slug: key,
@@ -569,7 +569,12 @@ export const useFeatureOwnership = ({ teamSlug }: { teamSlug?: string } = {}): {
             ...acc,
             [key]: featureWithSlug,
         }
-    }, {} as Record<string, Feature>)
+    },
+    {} as Record<string, Feature>
+)
+
+export const useFeatureOwnership = ({ teamSlug }: { teamSlug?: string } = {}): { features: Feature[] } => {
+    const features = PRECOMPUTED_FEATURES
 
     const filteredFeatures = useMemo(() => {
         const sortedFeatures = Object.values(features).sort((a, b) => a.feature.localeCompare(b.feature))
