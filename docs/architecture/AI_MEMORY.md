@@ -87,6 +87,21 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 *(Add new entries at the top of this list)*
 
+### Entry 031 — Notebook Co-Authoring Assistant with Real-Time LangChain Token Streaming (TSK-29)
+- **Date:** 2026-08-08
+- **AI Agent:** Antigravity (Gemini 3.6 Flash)
+- **Summary:** Implemented `TSK-29` Notebook Co-Authoring Assistant:
+  1. **SSE Streaming API Route (`/api/notebook/co-author`)**: Built Server-Sent Events endpoint streaming real-time tokens from LangChain model pipelines for bot personas (@Marx, @Spinoza, @Nietzsche, @Adorno, @Heidegger).
+  2. **Notebook Co-Authoring Toolbar (`BotCoAuthor.tsx`)**: Created resident bot selector pill bar and 4 co-authoring modes (`Eleştir`, `Genişlet`, `Diyalektik Üret`, `Felsefi Sentez`) with live daktilo output.
+  3. **Notebook Canvas Integration (`NotebookEditor.tsx`)**: Embedded assistant toolbar directly into active notebook document workspace.
+- **Modified Files:**
+  - `src/pages/api/notebook/co-author.ts` [NEW]
+  - `src/components/Notebook/BotCoAuthor.tsx` [NEW]
+  - `src/components/Notebook/NotebookEditor.tsx` [UPDATED]
+  - `scripts/verify-notebook-coauthor.js` [NEW]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
+- **Verification:** `npx tsx scripts/verify-notebook-coauthor.js` (PASS — Live @Spinoza Critique Streamed) & `pnpm typecheck:shell` (PASS — 0 shell errors).
+
 ### Entry 030 — Fix Next.js `href-interpolation-failed` Error on `/questions/[permalink]` Navigation (TSK-28)
 - **Date:** 2026-08-08
 - **AI Agent:** Antigravity (Gemini 3.6 Flash)

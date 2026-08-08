@@ -16,6 +16,7 @@ import { LemonCard } from '../LemonUI/LemonCard'
 import { LemonTag } from '../LemonUI/LemonTag'
 import { LemonInput } from '../LemonUI/LemonInput'
 import { LemonDivider } from '../LemonUI/LemonDivider'
+import { BotCoAuthor } from './BotCoAuthor'
 
 export interface NotebookNode {
     id: string
@@ -224,6 +225,22 @@ export function NotebookEditor(): JSX.Element {
                             )}
                         </div>
                     ))}
+
+                    {/* ── LangChain Bot Co-Authoring Assistant Bar (TSK-29) ── */}
+                    <BotCoAuthor
+                        documentText={nodes.map((n) => n.content).join('\n\n')}
+                        onCoAuthorComplete={(botName, mode, streamedContent) => {
+                            const newNode: NotebookNode = {
+                                id: String(Date.now()),
+                                type: 'ai_prompt',
+                                content: `@${botName} Co-Author (${mode}):`,
+                                data: {
+                                    aiResponse: streamedContent,
+                                },
+                            }
+                            setNodes((prev) => [...prev, newNode])
+                        }}
+                    />
 
                     {/* Add Block Toolbar at bottom */}
                     <div className="flex items-center gap-2 pt-6 border-t border-slate-100">
