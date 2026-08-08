@@ -69,13 +69,8 @@ export interface ChatParams {
     codeSnippet?: { code: string; language: string; sourceUrl: string }
 }
 
-/**
- * Page element or lightweight window descriptor for addWindow / createNewWindow.
- * Intentionally loose: windows are built from React elements *and* plain descriptors
- * (path/title/size) at runtime; a strict intersection type fights that dual shape.
- */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type WindowElement = any
+export type WindowElement = any
 
 interface AppContextType {
     windows: AppWindow[]
