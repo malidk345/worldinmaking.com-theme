@@ -8,3 +8,7 @@
 ## 2024-08-08 - [O(N) object manipulation over O(N^2)]
 **Learning:** Performance best practice for React hooks: If a component processes static data (e.g., mapping or sorting a static configuration object like `FEATURE_DATA`), move this computation completely outside the hook to a module-level constant. This ensures the O(N) operation executes exactly once per module load rather than repeatedly on every render or component instance. Also avoid using object spread (`...acc`) inside `reduce` loops to build objects (e.g., `Object.entries(data).reduce(...)`), as it causes O(N^2) time complexity and memory churn. Instead, use single-pass O(N) methods like `Object.fromEntries(Object.entries(data).map(...))`.
 **Action:** Move feature data mapping into a module-level constant in `src/hooks/useFeatureOwnership.tsx` and refactor it to avoid O(N^2) operations during build to optimize performance.
+
+## 2024-11-20 - Precompute task ownership data and avoid O(N^2) object spread
+**Learning:** In `src/hooks/useTaskOwnership.tsx`, using `reduce` with object spread (`...acc`) to process static configuration data inside `useMemo` caused unnecessary O(N^2) operations during every component mount/render. Moving the logic to a module-level constant precomputes it once using `Object.fromEntries`, completely eliminating the overhead.
+**Action:** For static configurations, always perform data transformations outside of React components and avoid `reduce` with object spread in favor of `Object.fromEntries`.
