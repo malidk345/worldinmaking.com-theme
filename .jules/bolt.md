@@ -1,4 +1,11 @@
+## 2024-11-20 - Memoizing the Customers Array in useCustomers
+**Learning:** In the `useCustomers` hook, computing the large `customers` map on every render using an inner `.find()` array lookup created an $O(N \times M)$ rendering bottleneck, which cascaded re-renders down to dependent components like `Customer`. Pre-computing an $O(1)$ lookup Map and wrapping the operation in `useMemo` significantly reduces CPU pressure during React re-renders.
+**Action:** When working with large sets of static or semi-static data (like `CUSTOMER_DATA`) joined against dynamic contexts (like `useProducts`), always precompute secondary maps for $O(1)$ lookups and wrap the final merged structure in `useMemo` to prevent deep performance regressions.
 
-## 2026-08-08 - Ignoring Out-of-Scope CI Failures
-**Learning:** The GitHub Actions CI check "Playwright smoke" failed due to a missing `playwright` dependency. However, as the 'Bolt' agent optimizing performance, modifying `package.json` to fix unrelated CI workflows is strictly forbidden by the system boundaries ("Never modify package.json or tsconfig.json without instruction.").
-**Action:** When working on targeted PRs like performance improvements, never bundle out-of-scope configuration fixes (like fixing CI dependencies in package.json), even if they resolve pre-existing CI failures, as this violates strict constraints and will cause the PR to be rejected.
+## 2024-11-20 - Array Flattening in SWR Infinite Hooks
+**Learning:** Using `reduce` combined with array spread syntax (`[...acc, ...cur]`) for array flattening inside SWR Infinite hooks creates an O(N^2) rendering bottleneck due to redundant array allocations on each iteration.
+**Action:** Always use the single-pass `flatMap()` (or `flat()`) method to combine paginated array data, ensuring O(N) allocation time and avoiding main thread blocking.
+
+## 2026-08-08 - Memoizing the Features Array in useFeatureOwnership
+**Learning:** In the `useFeatureOwnership` hook, processing a static configuration object (`FEATURE_DATA`) inside the component using `Object.entries().reduce` and `.sort()` on every instance creation creates redundant O(N) work per render.
+**Action:** When a React hook maps and sorts static constant data, extract this computation completely outside the hook to a module-level constant so it executes exactly once per module load.
