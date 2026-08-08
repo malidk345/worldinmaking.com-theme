@@ -20,23 +20,30 @@ import { loadMemGPTState, extractAndPersistMemoryFacts } from './memgpt-engine';
  */
 export function createLangChainModel(preferredProvider: 'groq' | 'gemini' = 'groq') {
     const rawGroqKey =
-        process.env.GROQ_API_KEYS ||          // CF Dashboard exact name
+        process.env.GROQ_API_KEYS ||          // CF Dashboard exact name (comma-separated)
         process.env.GROQ_API_KEY ||
         process.env.GROQ_KEYS ||
         process.env.GROQ_KEY ||
         '';
-    const groqKey = rawGroqKey.split(',').map((k) => k.trim()).filter((k) => k.startsWith('gsk_'))[0]
-        || rawGroqKey.split(',')[0]?.trim();
 
     const rawGeminiKey =
-        process.env.GEMINI_API_KEYS ||         // CF Dashboard exact name
+        process.env.GEMINI_API_KEYS ||         // CF Dashboard exact name (comma-separated)
         process.env.GEMINI_API_KEY ||
         process.env.GEMINI_KEYS ||
         process.env.GEMINI_KEY ||
         process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
         process.env.GOOGLE_API_KEY ||
         '';
-    const geminiKey = rawGeminiKey.split(',')[0]?.trim() || '';
+
+    // Parse all keys from comma-separated pool
+    const groqKeys = rawGroqKey.split(',').map(k => k.trim()).filter(Boolean);
+    const geminiKeys = rawGeminiKey.split(',').map(k => k.trim()).filter(Boolean);
+
+    // Pick a random key from pool for load balancing across multiple keys
+    const pickRandom = (keys: string[]) => keys[Math.floor(Math.random() * keys.length)] || '';
+
+    const groqKey = pickRandom(groqKeys);
+    const geminiKey = pickRandom(geminiKeys);
 
     if (preferredProvider === 'groq' && groqKey) {
         return new ChatGroq({
@@ -62,8 +69,9 @@ export function createLangChainModel(preferredProvider: 'groq' | 'gemini' = 'gro
         });
     }
 
-    throw new Error('No LangChain API keys found in environment.');
+    throw new Error(`No LangChain API keys found. Groq pool: ${groqKeys.length}, Gemini pool: ${geminiKeys.length}`);
 }
+
 
 /**
  * 2. LangGraph State Annotation definition.

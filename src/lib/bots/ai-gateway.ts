@@ -172,11 +172,12 @@ export async function generateWithGateway(params: {
         'GOOGLE_AI_API_KEY',
         'GOOGLE_GEMINI_API_KEY',
     )
-    // Pick first valid key for Gemini (supports comma-separated list)
-    const geminiKey = splitKeys(geminiRaw)[0] || ''
+    // All keys as arrays — failover through each one
+    const groqKeys = splitKeys(groqRaw)   // e.g. ['gsk_aaa', 'gsk_bbb', 'gsk_ccc']
+    const geminiKeys = splitKeys(geminiRaw) // e.g. ['AIza...1', 'AIza...2']
 
-    // 1) Groq
-    for (const key of splitKeys(groqRaw)) {
+    // 1) Groq — rotate through all keys, first success wins
+    for (const key of groqKeys) {
         const r = await chatCompletions(
             'https://api.groq.com/openai/v1/chat/completions',
             key,
@@ -192,7 +193,7 @@ export async function generateWithGateway(params: {
                 latencyMs: Date.now() - started,
             }
         }
-        attempts.push(`groq: ${r.detail}`)
+        attempts.push(`groq[${groqKeys.indexOf(key) + 1}/${groqKeys.length}]: ${r.detail}`)
     }
 
     // 2) OpenRouter
@@ -228,10 +229,11 @@ export async function generateWithGateway(params: {
         }
     }
 
-    // 3) Gemini plain fetch
-    if (geminiKey) {
+    // 3) Gemini — rotate through all keys × all models, first success wins
+    for (const key of geminiKeys) {
+        const keyIdx = geminiKeys.indexOf(key) + 1
         for (const model of GEMINI_MODELS) {
-            const r = await geminiGenerate(geminiKey, model, params.systemPrompt, params.userPrompt)
+            const r = await geminiGenerate(key, model, params.systemPrompt, params.userPrompt)
             if (r.ok) {
                 return {
                     ok: true,
@@ -240,7 +242,7 @@ export async function generateWithGateway(params: {
                     latencyMs: Date.now() - started,
                 }
             }
-            attempts.push(`gemini(${model}): ${r.detail}`)
+            attempts.push(`gemini[${keyIdx}/${geminiKeys.length}](${model}): ${r.detail}`)
         }
     }
 
