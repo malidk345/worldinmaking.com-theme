@@ -199,8 +199,8 @@ const PRODUCT_ICON_MAP = {
         default: 'https://res.cloudinary.com/dmukukwp6/image/upload/switch_modern_5aa70666d1.png',
     },
     archive: {
-        classic: 'https://res.cloudinary.com/dmukukwp6/image/upload/data_warehouse_classic_224c4dcd25.png',
-        default: 'https://res.cloudinary.com/dmukukwp6/image/upload/data_warehouse_modern_493f5463e7.png',
+        classic: 'https://res.cloudinary.com/dmukukwp6/image/upload/Data_In_Classic_b58bd17dbf.png',
+        default: 'https://res.cloudinary.com/dmukukwp6/image/upload/Data_In_Modern_cf968580e4.png',
     },
 } as const satisfies Record<string, AppIconVariants>
 
