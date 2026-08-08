@@ -11,6 +11,27 @@ export type BlockType =
     | 'quote'
     | 'embed';
 
+export type ColumnType = 'text' | 'select' | 'multi_select' | 'date' | 'checkbox' | 'formula' | 'user' | 'file';
+
+export interface TableColumn {
+    id: string;
+    name: string;
+    type: ColumnType;
+    options?: { id: string; name: string; color: string }[];
+}
+
+export interface TableRow {
+    id: string;
+    cells: Record<string, any>;
+}
+
+export interface TableContent {
+    columns: TableColumn[];
+    rows: TableRow[];
+    views: { id: string; name: string; type: 'table' | 'kanban' | 'gallery'; config: any }[];
+    activeViewId: string;
+}
+
 export interface NotebookBlock {
     id: string; // UUID v4
     parentId: string | null; // Null for root level blocks
