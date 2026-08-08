@@ -67,8 +67,9 @@ const TopicSelect = (props: {
     const { addToast } = useToast()
 
     const handleChange = async (topics: StrapiRecord<TopicData>[]) => {
-        setSelectedTopics(topics)
-        await pinTopics(topics.map((topic) => topic.id))
+        if (typeof pinTopics === 'function') {
+            await pinTopics(topics.map((topic) => topic.id))
+        }
         props.onPinTopics?.(topics)
         const topicsAdded = topics.length - selectedTopics.length
         const action = topicsAdded > 0 ? 'pinned' : 'unpinned'

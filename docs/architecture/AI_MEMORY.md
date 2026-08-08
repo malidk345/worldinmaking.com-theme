@@ -87,6 +87,15 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 *(Add new entries at the top of this list)*
 
+### Entry 029 — Guard `pinTopics` Function Call in Squeak Question Component (TSK-28)
+- **Date:** 2026-08-08
+- **AI Agent:** Antigravity (Gemini 3.6 Flash)
+- **Summary:** Added `typeof pinTopics === 'function'` guard check before invoking `await pinTopics(...)` in `src/components/Squeak/components/Question.tsx` to prevent `TypeError: pinTopics is not a function` when rendered outside Squeak context provider.
+- **Modified Files:**
+  - `src/components/Squeak/components/Question.tsx` [UPDATED]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
+- **Verification:** `pnpm typecheck:shell` (PASS — 0 shell errors).
+
 ### Entry 028 — Fix TypeError on Squeak Question Component `selectedTopics.data` (TSK-28)
 - **Date:** 2026-08-08
 - **AI Agent:** Antigravity (Gemini 3.6 Flash)
