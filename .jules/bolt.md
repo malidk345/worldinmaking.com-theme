@@ -5,3 +5,7 @@
 ## 2024-11-20 - Array Flattening in SWR Infinite Hooks
 **Learning:** Using `reduce` combined with array spread syntax (`[...acc, ...cur]`) for array flattening inside SWR Infinite hooks creates an O(N^2) rendering bottleneck due to redundant array allocations on each iteration.
 **Action:** Always use the single-pass `flatMap()` (or `flat()`) method to combine paginated array data, ensuring O(N) allocation time and avoiding main thread blocking.
+
+## 2026-08-08 - Memoizing the Features Array in useFeatureOwnership
+**Learning:** In the `useFeatureOwnership` hook, processing a static configuration object (`FEATURE_DATA`) inside the component using `Object.entries().reduce` and `.sort()` on every instance creation creates redundant O(N) work per render.
+**Action:** When a React hook maps and sorts static constant data, extract this computation completely outside the hook to a module-level constant so it executes exactly once per module load.
