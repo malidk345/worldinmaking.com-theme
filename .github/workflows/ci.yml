@@ -51,10 +51,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright Chromium
-        run: pnpm exec playwright install --with-deps chromium
+        run: pnpm dlx playwright install --with-deps chromium
 
       - name: Run shell smoke suite
-        run: pnpm test:smoke
+        run: pnpm dlx playwright test
         env:
           CI: true
           # Placeholders so Next can boot without repo secrets.
