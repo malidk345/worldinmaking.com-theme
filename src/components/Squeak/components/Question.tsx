@@ -240,10 +240,15 @@ const DeleteButton = ({ questionID }: { questionID: number }) => {
     const router = useRouter()
     const navigate = (to: string, options?: any) => {
         if (typeof window !== 'undefined') {
+            let target = to
+            if (target.includes('[permalink]')) {
+                const permalinkVal = String(router.query.permalink || options?.permalink || '')
+                target = permalinkVal ? target.replace('[permalink]', permalinkVal) : '/questions'
+            }
             if (options?.replace) {
-                router.replace(to)
+                router.replace(target)
             } else {
-                router.push(to)
+                router.push(target)
             }
         }
     }

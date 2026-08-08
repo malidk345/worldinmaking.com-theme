@@ -1,4 +1,4 @@
-import { useRouter } from 'next/navigation'
+import { useRouter } from 'next/router'
 import React, { useState } from 'react'
 
 import { Dialog } from '@headlessui/react'
@@ -6,6 +6,7 @@ import { Close } from 'components/Icons/Icons'
 
 import { QuestionForm } from 'components/Squeak'
 import { CallToAction } from 'components/CallToAction'
+
 type QuestionFormProps = {
     onSubmit?: () => void
     topicID?: number
@@ -14,18 +15,15 @@ type QuestionFormProps = {
 }
 
 export default function Questions(props: QuestionFormProps): JSX.Element {
+    const router = useRouter()
     const [showModal, setShowModal] = useState(false)
 
-    const handleSubmit = (_formValues, _type, question) => {
+    const handleSubmit = (_formValues: any, _type: any, question: any) => {
         const permalink = question?.attributes?.permalink
         setShowModal(false)
         props.onSubmit?.()
-        if (permalink) {
-            router.push(`/questions/${permalink}`, {
-                state: {
-                    askMax: true,
-                },
-            })
+        if (permalink && permalink !== '[permalink]') {
+            router.push(`/questions/${permalink}`)
         }
     }
 
@@ -37,7 +35,7 @@ export default function Questions(props: QuestionFormProps): JSX.Element {
                 <div className="fixed inset-0 bg-black opacity-30 z-40" />
 
                 <div className="fixed inset-0 flex items-center justify-center z-[50]">
-                    <Dialog.Panel className="p-4 shadow dark:shadow-none w-full max-w-2xl bg-tan  rounded">
+                    <Dialog.Panel className="p-4 shadow dark:shadow-none w-full max-w-2xl bg-tan rounded">
                         <div className="flex justify-between items-center mb-3">
                             <Dialog.Title className="text-2xl font-bold m-0">{label}</Dialog.Title>
                             <button className="p-2" onClick={() => setShowModal(false)}>

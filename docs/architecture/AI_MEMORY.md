@@ -87,6 +87,19 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 *(Add new entries at the top of this list)*
 
+### Entry 030 — Fix Next.js `href-interpolation-failed` Error on `/questions/[permalink]` Navigation (TSK-28)
+- **Date:** 2026-08-08
+- **AI Agent:** Antigravity (Gemini 3.6 Flash)
+- **Summary:** Resolved Next.js Pages Router crash `Error: Provided href (/questions/[permalink]) value does not contain query values`:
+  1. **Dynamic Target Resolution**: Intercepted un-interpolated `[permalink]` placeholders inside `Question.tsx` and `QuestionForm.tsx` `navigate()` functions, replacing them with active route/state permalinks or falling back cleanly to `/questions`.
+  2. **Clean Router Invocation**: Updated `Questions/QuestionForm.tsx` to sanitize permalink parameters prior to `router.push`.
+- **Modified Files:**
+  - `src/components/Squeak/components/Question.tsx` [UPDATED]
+  - `src/components/Squeak/components/QuestionForm.tsx` [UPDATED]
+  - `src/components/Questions/QuestionForm.tsx` [UPDATED]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
+- **Verification:** `pnpm typecheck:shell` (PASS — 0 shell errors).
+
 ### Entry 029 — Guard `pinTopics` Function Call in Squeak Question Component (TSK-28)
 - **Date:** 2026-08-08
 - **AI Agent:** Antigravity (Gemini 3.6 Flash)
