@@ -347,6 +347,23 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 - **Verification:** Passed `pnpm typecheck:shell` (0 gated errors) & Supabase Management API bootstrap E2E smoke tests (`ALL CHECKS PASSED`).
 - **Notes / Handoff:** Next AI agents should claim Phase 1.1 in `docs/NOTEBOOK_SAAS_ROADMAP.md` (`src/notebook-app/types/blocks.ts`).
 
+### Entry 004 — PostHog AI Icon Alignment, Persona Engine Upgrade & AskAIDropdown Refactor
+- **Date:** 2026-08-08
+- **AI Agent:** Antigravity (Gemini 3.6 Flash / Claude 3.5)
+- **Summary:** 
+  1. Removed blue focus ring highlights from `LemonButton` & `MarkdownNotebook.scss`, replacing with neutral `--color-border-bold` tokens.
+  2. Bypassed webpack alias loop in `next.config.js` to allow `iconsShim.tsx` to re-export real `@posthog/icons` (with lucide fallbacks for missing icons), unifying icon visual quality with main site.
+  3. Upgraded `persona-engine.ts` to enforce methodology over caricature, anti-slogan guardrails (concepts allowed when contextually relevant), and dynamic user tone adaptation.
+  4. Refactored `AskAIDropdown.tsx` composer box to match official PostHog `ComposerFrame` + `LemonTextArea` auto-expand architecture.
+- **Modified Files:**
+  - `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx` [UPDATED]
+  - `src/notebook-app/lib/icons/iconsShim.tsx` [UPDATED]
+  - `src/notebook-app/lib/components/MarkdownNotebook/MarkdownNotebook.scss` [UPDATED]
+  - `src/notebook-app/components/ui/LemonButton.tsx` [UPDATED]
+  - `src/lib/persona-engine.ts` [UPDATED]
+  - `next.config.js` [UPDATED]
+- **Verification:** `pnpm typecheck:shell` PASS (0 errors), dev server running on `http://localhost:3000`.
+
 ### Entry 003 — Extract WindowRouter & Route Logic (TSK-03)
 - **Date:** 2026-08-06
 - **AI Agent:** Antigravity (Gemini 3.6 Flash)
