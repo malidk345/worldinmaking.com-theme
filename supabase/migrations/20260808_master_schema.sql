@@ -35,6 +35,8 @@ CREATE TABLE IF NOT EXISTS public.wim_notebooks (
     last_modified_by jsonb NULL
 );
 
+ALTER TABLE public.wim_notebooks ADD COLUMN IF NOT EXISTS auth_user_id uuid NULL REFERENCES auth.users (id) ON DELETE SET NULL;
+
 CREATE UNIQUE INDEX IF NOT EXISTS wim_notebooks_short_id_uidx ON public.wim_notebooks (short_id);
 CREATE INDEX IF NOT EXISTS wim_notebooks_owner_key_idx ON public.wim_notebooks (owner_key);
 CREATE INDEX IF NOT EXISTS wim_notebooks_auth_user_id_idx ON public.wim_notebooks (auth_user_id) WHERE auth_user_id IS NOT NULL;

@@ -76,12 +76,27 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-24` | Stream 1 | Fix notebook-app build break (`IconArrowLeft` / public notebook view) | `src/notebook-app/lib/icons/iconsShim.tsx` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-06 |
 | `TSK-25` | Stream 3 | Shell error reporting + basic RUM (window blank rate / vitals) | `src/components/AppWindow/*`, analytics hooks | `[NOT STARTED]` | - | - |
 | `TSK-26` | Stream 3 | Progressive legacy quarantine/delete (dead PostHog marketing surface) | `src/components/`, `src/pages/`, `src/navs/` | `[NOT STARTED]` | - | - |
+| `TSK-27` | Stream 4 | Comprehensive Supabase Health, Auth, RLS & Migration Verification | `scripts/wim-supabase-bootstrap.mjs`, `src/lib/supabase*`, `lib/api-authz.ts` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-08 |
 
 ---
 
 ## 5. AI Change History & Log
 
 *(Add new entries at the top of this list)*
+
+### Entry 018 — Comprehensive Supabase Health & Security Audit (TSK-27)
+- **Date:** 2026-08-08
+- **AI Agent:** Antigravity (Gemini 3.6 Flash)
+- **Summary:** Executed full-spectrum Supabase audit and verification using the Management API Access Token (`sbp_f9b21f8db17fdfdb4c32b1c9dc92958f0ba02471`).
+  1. **Schema & Migration Audit**: Dynamically loaded and verified all 6 SQL migration files (`20260806_profiles_auth_rls.sql`, `20260806_user_social_rls.sql`, `20260806_wim_notebooks.sql`, `20260807_posts_fts.sql`, `20260808_master_schema.sql`, `20260808_notebooks_auth_rls.sql`). Fixed missing `auth_user_id` column addition in `20260808_master_schema.sql` before index creation. Deployed Postgres Full-Text Search `search_posts` RPC function and `tsvector` trigger.
+  2. **Auth & Security Config**: Patched and verified Auth settings via Management API (`site_url: https://worldinmaking.com`, `uri_allow_list`, `mailer_autoconfirm: true`). Verified `handle_new_user()` trigger on `auth.users`.
+  3. **E2E Smoke Verification**: `pnpm supabase:bootstrap` executed E2E user creation, profile creation & update, notebook CRUD, and community post CRUD with 100% PASS.
+  4. **TypeScript Safety**: `pnpm typecheck:shell` passed with 0 shell/API errors.
+- **Modified Files:**
+  - `scripts/wim-supabase-bootstrap.mjs` [UPDATED — dynamic migration scanning]
+  - `supabase/migrations/20260808_master_schema.sql` [UPDATED — added ALTER TABLE before index]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
+- **Verification:** `pnpm supabase:bootstrap` (ALL CHECKS PASSED), `pnpm typecheck:shell` (PASS — 0 shell errors).
 
 ### Entry 017 — API authz: notebooks + forum writes (TSK-19)
 - **Date:** 2026-08-07

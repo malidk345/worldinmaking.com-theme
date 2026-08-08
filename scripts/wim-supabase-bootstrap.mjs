@@ -88,10 +88,13 @@ async function patchAuthConfig(body, label) {
 }
 
 // ── 1. Core schema ──────────────────────────────────────────────────────────
-const migrationFiles = [
-    'supabase/migrations/20260806_wim_notebooks.sql',
-    'supabase/migrations/20260806_profiles_auth_rls.sql',
-]
+const migrationsDir = path.join(root, 'supabase/migrations')
+const migrationFiles = fs.existsSync(migrationsDir)
+    ? fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql')).sort().map((f) => `supabase/migrations/${f}`)
+    : [
+        'supabase/migrations/20260806_wim_notebooks.sql',
+        'supabase/migrations/20260806_profiles_auth_rls.sql',
+    ]
 
 for (const rel of migrationFiles) {
     const full = path.join(root, rel)
