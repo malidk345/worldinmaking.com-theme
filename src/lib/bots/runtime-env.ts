@@ -1,35 +1,39 @@
 /**
  * Runtime env for Cloudflare Pages (next-on-pages) + local next dev.
- * Secrets on CF live on getRequestContext().env — process.env is often empty.
+ *
+ * CRITICAL: In CF edge runtime, process.env is NOT populated with secrets.
+ * Secrets bound in CF Pages dashboard are ONLY accessible via getRequestContext().env.
+ * We use a static import with try/catch so local Node.js dev falls back gracefully.
  */
-let getRequestContextFn: (() => any) | null = null
-try {
-    // Dynamic import/require to prevent Node.js ERR_PACKAGE_PATH_NOT_EXPORTED
-    const cf = eval('require')('@cloudflare/next-on-pages')
-    getRequestContextFn = cf?.getRequestContext || null
-} catch {
-    getRequestContextFn = null
-}
+
+import { getRequestContext } from '@cloudflare/next-on-pages'
 
 export type EnvStore = Record<string, string | undefined>
 
-export function getRuntimeEnv(): EnvStore {
-    const base: EnvStore = { ...(process.env as EnvStore) }
-
+function getCfEnv(): Record<string, string> {
     try {
-        if (getRequestContextFn) {
-            const ctx = getRequestContextFn()
-            if (ctx?.env && typeof ctx.env === 'object') {
-                for (const [k, v] of Object.entries(ctx.env)) {
-                    if (v === undefined || v === null) continue
-                    if (typeof v === 'string' && v.length > 0) {
-                        base[k] = v
-                    }
-                }
+        const { env } = getRequestContext()
+        if (env && typeof env === 'object') {
+            const out: Record<string, string> = {}
+            for (const [k, v] of Object.entries(env)) {
+                if (typeof v === 'string' && v.length > 0) out[k] = v
             }
+            return out
         }
     } catch {
-        /* local next dev — process.env / .env.local only */
+        // Not in CF edge context (local dev) — silently ignore
+    }
+    return {}
+}
+
+export function getRuntimeEnv(): EnvStore {
+    // Start with process.env (works locally, may be empty in CF edge for secrets)
+    const base: EnvStore = { ...(process.env as EnvStore) }
+
+    // Merge CF secrets on top — these are the authoritative values in production
+    const cfEnv = getCfEnv()
+    for (const [k, v] of Object.entries(cfEnv)) {
+        base[k] = v
     }
 
     return base
@@ -52,11 +56,8 @@ export function splitKeys(raw: string): string[] {
 
 export function hasCloudflareContext(): boolean {
     try {
-        if (getRequestContextFn) {
-            getRequestContextFn()
-            return true
-        }
-        return false
+        getRequestContext()
+        return true
     } catch {
         return false
     }
