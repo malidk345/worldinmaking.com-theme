@@ -19,8 +19,24 @@ import { loadMemGPTState, extractAndPersistMemoryFacts } from './memgpt-engine';
  * 1. Initializes a LangChain LLM model instance based on active API keys.
  */
 export function createLangChainModel(preferredProvider: 'groq' | 'gemini' = 'groq') {
-    const groqKey = process.env.GROQ_API_KEY || (process.env.GROQ_KEYS || '').split(',')[0]?.trim();
-    const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    const rawGroqKey =
+        process.env.GROQ_API_KEYS ||          // CF Dashboard exact name
+        process.env.GROQ_API_KEY ||
+        process.env.GROQ_KEYS ||
+        process.env.GROQ_KEY ||
+        '';
+    const groqKey = rawGroqKey.split(',').map((k) => k.trim()).filter((k) => k.startsWith('gsk_'))[0]
+        || rawGroqKey.split(',')[0]?.trim();
+
+    const rawGeminiKey =
+        process.env.GEMINI_API_KEYS ||         // CF Dashboard exact name
+        process.env.GEMINI_API_KEY ||
+        process.env.GEMINI_KEYS ||
+        process.env.GEMINI_KEY ||
+        process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
+        process.env.GOOGLE_API_KEY ||
+        '';
+    const geminiKey = rawGeminiKey.split(',')[0]?.trim() || '';
 
     if (preferredProvider === 'groq' && groqKey) {
         return new ChatGroq({

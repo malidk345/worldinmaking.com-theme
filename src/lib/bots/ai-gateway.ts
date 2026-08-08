@@ -151,16 +151,29 @@ export async function generateWithGateway(params: {
     const attempts: string[] = []
     const configured = getProviderKeyFlags(runtimeEnv)
 
-    const groqRaw = envFrom(runtimeEnv, 'GROQ_API_KEY', 'GROQ_KEYS', 'GROQ_KEY')
-    const openRouterKey = envFrom(runtimeEnv, 'OPENROUTER_API_KEY', 'OPEN_ROUTER_API_KEY')
-    const openaiKey = envFrom(runtimeEnv, 'OPENAI_API_KEY')
-    const geminiKey = envFrom(
+    // Support all common CF Dashboard naming conventions for key sets
+    const groqRaw = envFrom(
         runtimeEnv,
+        'GROQ_API_KEYS',   // CF Dashboard exact name (comma-separated)
+        'GROQ_API_KEY',
+        'GROQ_KEYS',
+        'GROQ_KEY',
+    )
+    const openRouterKey = envFrom(runtimeEnv, 'OPENROUTER_API_KEY', 'OPEN_ROUTER_API_KEY', 'OPENROUTER_KEY')
+    const openaiKey = envFrom(runtimeEnv, 'OPENAI_API_KEY', 'OPENAI_KEY')
+    const geminiRaw = envFrom(
+        runtimeEnv,
+        'GEMINI_API_KEYS',              // CF Dashboard exact name (comma-separated)
         'GEMINI_API_KEY',
+        'GEMINI_KEYS',
+        'GEMINI_KEY',
         'GOOGLE_GENERATIVE_AI_API_KEY',
         'GOOGLE_API_KEY',
-        'GOOGLE_AI_API_KEY'
+        'GOOGLE_AI_API_KEY',
+        'GOOGLE_GEMINI_API_KEY',
     )
+    // Pick first valid key for Gemini (supports comma-separated list)
+    const geminiKey = splitKeys(geminiRaw)[0] || ''
 
     // 1) Groq
     for (const key of splitKeys(groqRaw)) {

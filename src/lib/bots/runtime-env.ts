@@ -64,15 +64,19 @@ export function hasCloudflareContext(): boolean {
 
 export function getProviderKeyFlags(store: EnvStore) {
     return {
-        groq: !!(envFrom(store, 'GROQ_API_KEY', 'GROQ_KEYS', 'GROQ_KEY')),
-        openrouter: !!envFrom(store, 'OPENROUTER_API_KEY', 'OPEN_ROUTER_API_KEY'),
-        openai: !!envFrom(store, 'OPENAI_API_KEY'),
+        groq: !!(envFrom(store, 'GROQ_API_KEYS', 'GROQ_API_KEY', 'GROQ_KEYS', 'GROQ_KEY')),
+        openrouter: !!envFrom(store, 'OPENROUTER_API_KEY', 'OPEN_ROUTER_API_KEY', 'OPENROUTER_KEY'),
+        openai: !!envFrom(store, 'OPENAI_API_KEY', 'OPENAI_KEY'),
         gemini: !!envFrom(
             store,
+            'GEMINI_API_KEYS',
             'GEMINI_API_KEY',
+            'GEMINI_KEYS',
+            'GEMINI_KEY',
             'GOOGLE_GENERATIVE_AI_API_KEY',
             'GOOGLE_API_KEY',
-            'GOOGLE_AI_API_KEY'
+            'GOOGLE_AI_API_KEY',
+            'GOOGLE_GEMINI_API_KEY',
         ),
         cfContext: hasCloudflareContext(),
         envSource: hasCloudflareContext() ? ('cloudflare+process' as const) : ('process-only' as const),
