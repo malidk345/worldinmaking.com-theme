@@ -87,6 +87,17 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 *(Add new entries at the top of this list)*
 
+### Entry 027 — Server-Sent Events (SSE) Real-Time Daktilo Token Streaming API (TSK-28)
+- **Date:** 2026-08-08
+- **AI Agent:** Antigravity (Gemini 3.6 Flash)
+- **Summary:** Built HTTP `text/event-stream` SSE streaming endpoint (`src/pages/api/chat/stream.ts`):
+  1. **Daktilo Typing Effect (`streamLangChainChat`)**: Streams tokens in real-time (`data: {"token": "..."}`) to UI with 0 waiting latency.
+  2. **MemGPT Context Injection**: Merges core blocks and user context into streaming prompts dynamically.
+- **Modified Files:**
+  - `src/pages/api/chat/stream.ts` [NEW]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
+- **Verification:** `pnpm typecheck:shell` (PASS — 0 shell errors).
+
 ### Entry 026 — LangGraph Multi-Agent Debate Engine & Enterprise LLM Fallback Router (TSK-28)
 - **Date:** 2026-08-08
 - **AI Agent:** Antigravity (Gemini 3.6 Flash)
