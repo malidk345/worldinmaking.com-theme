@@ -1,4 +1,4 @@
-{
+﻿{
     "crons": [
         {
             "path": "/api/cron/philosopher-bots",
@@ -51,11 +51,7 @@
                 },
                 {
                     "key": "Content-Security-Policy-Report-Only",
-                    "value": "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.posthog.com https://www.youtube.com https://fast.wistia.com https://import-cdn.default.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://*.posthog.com https://res.cloudinary.com https://www.gravatar.com https://raw.githubusercontent.com https://*.supabase.co https://cdn.shopify.com https://i.ytimg.com https://embed-ssl.wistia.com https://fast.wistia.com https://cdn.jsdelivr.net https://user-images.githubusercontent.com https://brandbadge.clearbit.com; font-src 'self' data: https://d27nj4tzr3d5tm.cloudfront.net https://res.cloudinary.com https://fonts.gstatic.com https://r2cdn.perplexity.ai https://fast.wistia.com https://use.typekit.net; connect-src 'self' https://*.posthog.com https://*.supabase.co wss://*.supabase.co https://api.github.com https://lottie.host https://forms.default.com https://nucleus.default.com https://import-cdn.default.com https://posthog.myshopify.com https://*.algolia.net https://*.algolianet.com https://api.io.inkeep.com https://fast.wistia.net https://fast.wistia.com https://embed-cloudfront.wistia.com https://api.inkeep.com; media-src 'self' https://d1hovhsvet4m1p.cloudfront.net https://res.cloudinary.com blob:; frame-src 'self' https://www.youtube-nocookie.com https://hogwars.vercel.app https://hedgehog-mode-playground.vercel.app; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; report-uri https://us.i.posthog.com/report/?token=sTMFPsFhdP1Ssg&sample_rate=0.1&v=1; report-to posthog"
-                },
-                {
-                    "key": "Reporting-Endpoints",
-                    "value": "posthog=\"https://us.i.posthog.com/report/?token=sTMFPsFhdP1Ssg&sample_rate=0.1&v=1\""
+                    "value": "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.youtube.com https://fast.wistia.com https://import-cdn.default.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://*.posthog.com https://res.cloudinary.com https://www.gravatar.com https://raw.githubusercontent.com https://*.supabase.co https://cdn.shopify.com https://i.ytimg.com https://embed-ssl.wistia.com https://fast.wistia.com https://cdn.jsdelivr.net https://user-images.githubusercontent.com https://brandbadge.clearbit.com; font-src 'self' data: https://d27nj4tzr3d5tm.cloudfront.net https://res.cloudinary.com https://fonts.gstatic.com https://r2cdn.perplexity.ai https://fast.wistia.com https://use.typekit.net; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.github.com https://lottie.host https://forms.default.com https://nucleus.default.com https://import-cdn.default.com https://posthog.myshopify.com https://fast.wistia.net https://fast.wistia.com https://embed-cloudfront.wistia.com; media-src 'self' https://d1hovhsvet4m1p.cloudfront.net https://res.cloudinary.com blob:; frame-src 'self' https://www.youtube-nocookie.com https://hogwars.vercel.app https://hedgehog-mode-playground.vercel.app; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; frame-ancestors 'none'"
                 }
             ]
         }
@@ -248,11 +244,6 @@
         {
             "source": "/docs/api/product-tours/:path*",
             "destination": "/docs/api",
-            "statusCode": 301
-        },
-        {
-            "source": "/coupons/:path*",
-            "destination": "https://app.posthog.com/coupons/:path*",
             "statusCode": 301
         },
         {
@@ -705,7 +696,6 @@
         { "source": "/features", "destination": "/product" },
         { "source": "/docs/integrate/overview", "destination": "/docs/integrate" },
         { "source": "/docs/integrations", "destination": "/docs/integrate" },
-        { "source": "/signup", "destination": "https://app.posthog.com/signup" },
         { "source": "/docs/tutorials/actions", "destination": "/docs/tutorials/event-tracking-guide" },
         { "source": "/docs/plugins/overview", "destination": "/docs/apps" },
         { "source": "/docs/api/overview", "destination": "/docs/api" },
@@ -1112,107 +1102,7 @@
             "source": "/handbook/company/1-1s",
             "destination": "/handbook/company/management"
         },
-        {
-            "source": "/lenny",
-            "destination": "/?utm_source=influencer&utm_medium=newsletter&utm_campaign=lenny"
-        },
-        {
-            "source": "/zizyo",
-            "destination": "/?utm_source=influencer&utm_medium=youtube&utm_campaign=zizyo"
-        },
-        {
-            "source": "/devopsjourney",
-            "destination": "/?utm_source=influencer&utm_medium=youtube&utm_campaign=devopsjourney"
-        },
-        {
-            "source": "/ebenezer",
-            "destination": "/?utm_source=influencer&utm_medium=youtube&utm_campaign=ebenezer"
-        },
-        {
-            "source": "/codu",
-            "destination": "/?utm_source=influencer&utm_medium=youtube&utm_campaign=codu"
-        },
-        {
-            "source": "/peterelbaum",
-            "destination": "/?utm_source=influencer&utm_medium=youtube&utm_campaign=peterelbaum"
-        },
-        {
-            "source": "/theo",
-            "destination": "/?utm_source=influencer&utm_medium=youtube&utm_campaign=theo"
-        },
-        {
-            "source": "/morningmaker",
-            "destination": "/?utm_source=influencer&utm_medium=youtube&utm_campaign=morningmaker"
-        },
-        {
-            "source": "/enggirlfriend",
-            "destination": "/?utm_source=influencer&utm_medium=youtube&utm_campaign=enggirlfriend"
-        },
-        {
-            "source": "/youraveragetechbro",
-            "destination": "/?utm_source=influencer&utm_medium=youtube&utm_campaign=youraveragetechbro"
-        },
-        {
-            "source": "/simongrimm",
-            "destination": "/?utm_source=influencer&utm_medium=youtube&utm_campaign=simongrimm"
-        },
-        {
-            "source": "/howtheygrow",
-            "destination": "/?utm_source=influencer&utm_medium=newsletter&utm_campaign=howtheygrow"
-        },
-        {
-            "source": "/mikebifulco",
-            "destination": "/?utm_source=influencer&utm_medium=youtube&utm_campaign=mikebifulco"
-        },
-        {
-            "source": "/kikisbytes",
-            "destination": "/?utm_source=influencer&utm_medium=youtube&utm_campaign=kikisbytes"
-        },
-        {
-            "source": "/raroque",
-            "destination": "/?utm_source=influencer&utm_medium=youtube&utm_campaign=raroque"
-        },
-        {
-            "source": "/ashishps",
-            "destination": "/?utm_source=influencer&utm_medium=youtube&utm_campaign=ashishps"
-        },
-        {
-            "source": "/codesource",
-            "destination": "/?utm_source=influencer&utm_medium=youtube&utm_campaign=codesource"
-        },
-        {
-            "source": "/bytegrad",
-            "destination": "/?utm_source=influencer&utm_medium=youtube&utm_campaign=bytegrad"
-        },
-        {
-            "source": "/fireship",
-            "destination": "/?utm_source=influencer&utm_medium=youtube&utm_campaign=fireship"
-        },
-        {
-            "source": "/jesseshowalter",
-            "destination": "/?utm_source=influencer&utm_medium=youtube&utm_campaign=jesseshowalter"
-        },
-        {
-            "source": "/benjamincode",
-            "destination": "/?utm_source=influencer&utm_medium=youtube&utm_campaign=benjamincode"
-        },
-        {
-            "source": "/travismedia",
-            "destination": "/?utm_source=influencer&utm_medium=youtube&utm_campaign=travismedia"
-        },
-        {
-            "source": "/viktor",
-            "destination": "/?utm_source=influencer&utm_medium=youtube&utm_campaign=viktor"
-        },
-        {
-            "source": "/starterstory",
-            "destination": "/?utm_source=influencer&utm_medium=podcast&utm_campaign=starterstory"
-        },
-        {
-            "source": "/jsmastery",
-            "destination": "/?utm_source=influencer&utm_medium=youtube&utm_campaign=jsmastery"
-        },
-        {
+                                                                                                                                                                                                                {
             "source": "/docs/self-host/migrate-to-cloud",
             "destination": "/docs/migrate/migrate-to-cloud"
         },
@@ -1220,11 +1110,11 @@
             "source": "/tutorials/categories/plugins",
             "destination": "/tutorials/categories/apps"
         },
-        {
+                {
             "source": "/trial",
-            "destination": "/pricing"
+            "destination": "/start"
         },
-        {
+{
             "source": "/schedule-demo",
             "destination": "/book-a-demo"
         },
@@ -2072,7 +1962,6 @@
         { "source": "/docs/integrate/rudderstack", "destination": "/docs/libraries/rudderstack" },
         { "source": "/docs/integrate/segment", "destination": "/docs/libraries/segment" },
         { "source": "/docs/sdks/ios", "destination": "/docs/libraries/ios" },
-        { "source": "/signup/cloud/enterprise", "destination": "/contact-sales" },
         {
             "source": "/docs/feature-flags/bootstrapping-and-local-evaluation",
             "destination": "/docs/feature-flags/bootstrapping"
@@ -4590,14 +4479,6 @@
             "destination": "/startups"
         },
         {
-            "source": "/startups/apply",
-            "destination": "https://app.posthog.com/startups"
-        },
-        {
-            "source": "/yc-onboarding",
-            "destination": "https://app.posthog.com/startups/yc"
-        },
-        {
             "source": "/max-ai",
             "destination": "/ai"
         },
@@ -4609,11 +4490,7 @@
             "source": "/docs/surveys/webhook",
             "destination": "/docs/surveys/destinations"
         },
-        {
-            "source": "/heysf",
-            "destination": "/?utm_source=billboard&utm_campaign=may25-triples"
-        },
-        {
+                {
             "source": "/teams/video",
             "destination": "/teams/content"
         },
@@ -4968,10 +4845,6 @@
         {
             "source": "/handbook/brand/design-principles",
             "destination": "/handbook/brand/foundations"
-        },
-        {
-            "source": "/login",
-            "destination": "https://app.posthog.com/login"
         }
     ]
 }

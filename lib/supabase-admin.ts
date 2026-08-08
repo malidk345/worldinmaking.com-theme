@@ -1,4 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { getRuntimeEnv, envFrom } from '../src/lib/bots/runtime-env'
 
 /** True on Cloudflare Workers / next-on-pages / Next edge — skip Node-only fs/require. */
 function isEdgeRuntime(): boolean {
@@ -42,16 +43,6 @@ if (typeof process !== 'undefined' && !process.env.NEXT_RUNTIME && !isEdgeRuntim
     }
 }
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-key';
-
-if (!supabaseUrl) {
-    console.warn('[Supabase Admin] NEXT_PUBLIC_SUPABASE_URL is missing!');
-}
-if (!supabaseServiceKey) {
-    console.warn('[Supabase Admin] SUPABASE_SERVICE_ROLE_KEY is missing! Admin operations will fail.');
-}
-
 // Always use global fetch on edge (workerd). Optional node-fetch only for local Node scripts.
 function getCustomFetch(): typeof fetch {
     if (!isEdgeRuntime() && typeof process !== 'undefined' && !process.env.NEXT_RUNTIME) {
@@ -66,13 +57,40 @@ function getCustomFetch(): typeof fetch {
     return fetch;
 }
 
-// Create a client with the service role key to bypass RLS policies on the server side
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-    auth: {
-        autoRefreshToken: false,
-        persistSession: false,
+// ── Lazy edge-safe client ─────────────────────────────────────────────────
+// CF Pages edge does NOT populate secrets in process.env — they only exist
+// in getRequestContext().env. The client is therefore created on FIRST USE
+// (inside the request handler call chain) via getRuntimeEnv(), which merges
+// process.env + CF secrets. Kept behind a Proxy so existing call sites
+// (`supabaseAdmin.from(...)`) keep working unchanged.
+let cachedClient: SupabaseClient | null = null
+
+function getSupabaseClient(): SupabaseClient {
+    if (cachedClient) return cachedClient
+    const env = getRuntimeEnv()
+    const supabaseUrl = envFrom(env, 'NEXT_PUBLIC_SUPABASE_URL') || 'https://placeholder.supabase.co'
+    const supabaseServiceKey =
+        envFrom(env, 'SUPABASE_SERVICE_ROLE_KEY', 'NEXT_PUBLIC_SUPABASE_ANON_KEY') || 'placeholder-key'
+    cachedClient = createClient(supabaseUrl, supabaseServiceKey, {
+        auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+        },
+        global: {
+            fetch: getCustomFetch(),
+        },
+    })
+    return cachedClient
+}
+
+export const supabaseAdmin: SupabaseClient = new Proxy({} as SupabaseClient, {
+    get(_target, prop) {
+        const client = getSupabaseClient()
+        const value = (client as unknown as Record<string, unknown>)[prop as string]
+        return typeof value === 'function' ? (value as (...args: unknown[]) => unknown).bind(client) : value
     },
-    global: {
-        fetch: getCustomFetch(),
+    set(_target, prop, value) {
+        ;(getSupabaseClient() as unknown as Record<string, unknown>)[prop as string] = value
+        return true
     },
-});
+})

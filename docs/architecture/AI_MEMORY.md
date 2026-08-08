@@ -80,12 +80,62 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-26` | Stream 3 | Progressive legacy quarantine/delete (dead PostHog marketing surface) | `src/components/`, `src/pages/`, `src/navs/` | `[NOT STARTED]` | - | - |
 | `TSK-27` | Stream 4 | Comprehensive Supabase Health, Auth, RLS & Migration Verification | `scripts/wim-supabase-bootstrap.mjs`, `src/lib/supabase*`, `lib/api-authz.ts` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-08 |
 | `TSK-28` | Stream 5 | Dual Bot Architecture: Interactive Chat Bots vs Autonomous Entities & Symposium Engine | `src/lib/chat-bots/*`, `src/lib/autonomous-entities/*` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-08 |
+| `TSK-31` | Stream 5 | Bot API hardening: null-body crash, input caps, IP-scoped rate limits, cron auth | `src/pages/api/philosopher-bot.ts`, `src/pages/api/bots/act.ts`, `src/pages/api/cron/philosopher-bots.ts` | `[COMPLETED]` | DeepSeek (opencode) | 2026-08-08 |
 
 ---
 
 ## 5. AI Change History & Log
 
 *(Add new entries at the top of this list)*
+
+### Entry 034 — Edge-env hardening, dead route removal, co-author SSE rewrite, vercel.json PostHog cleanup (TSK-31)
+- **Date:** 2026-08-08
+- **AI Agent:** DeepSeek (opencode)
+- **Summary:** Executed the 4-part approval package from Entry 033:
+  1. **Edge-env family migrated to `getRuntimeEnv()`:** `lib/supabase-admin.ts` now lazy-loads credentials via `getRuntimeEnv()`/`envFrom()` behind a `Proxy` (cache-safe, works on CF Pages edge where `process.env` is NOT populated); `src/lib/chat-bots/langchain-pipeline.ts` `createLangChainModel()` resolves provider keys via runtime env with extended variants; `lib/api-authz.ts` `getSupabaseUserFromRequest` + `resolveForumBotAuth` use `getRuntimeEnv()`.
+  2. **Dead routes deleted:** `src/pages/api/forum/topics/index.ts`, `src/pages/api/forum/posts/index.ts`, `src/pages/api/forum/topics/active.ts`, `src/pages/api/chat/stream.ts` (all unreferenced from clients + carried the module-scope env bug). Empty `forum/` and `chat/` dirs removed. `src/lib/chat-bots/langchain-stream.ts` (no remaining importers) also deleted.
+  3. **`/api/notebook/co-author` hardened:** rewritten as pure edge SSE (`runtime='edge'`, `ReadableStream`), JSON `null`/scalar body guard, doc/node cap 4000 chars, per-IP rate limit 20/hour (`checkRateLimit`).
+  4. **vercel.json PostHog cleanup:** removed `/signup`, `/signup/cloud/enterprise`, `/coupons/:path*`, `/login`, `/startups/apply`, `/yc-onboarding` (all → app.posthog.com) and 26 `/?utm_*` influencer/billboard redirects; `/trial` now → `/start`; CSP header: removed `https://*.posthog.com` from script-src/connect-src, removed algolia/inkeep connect-src entries, removed `report-uri`/`report-to` and the `Reporting-Endpoints` header (kept `*.posthog.com` in img-src for content images). File: 4972 → 4851 lines.
+- **Verification:** JSON validated (`ConvertFrom-Json` OK, 0 trailing commas); dev server restarted; tests: co-author valid POST → 200 `text/event-stream` with live Groq tokens, `null` body → 200 (no 500), GET → 405; `/api/search` → 200 JSON; `/api/notebooks` → 401 JSON (authz active); `/api/chat/stream`, `/api/forum/*`, unknown `/api/*` → 200 HTML via the `pages/[...slug]` catch-all page (handlers are gone — no code executes; catch-all serves the OS shell).
+- **Modified Files:**
+  - `lib/supabase-admin.ts` [REWRITTEN — lazy Proxy + runtime env]
+  - `src/lib/chat-bots/langchain-pipeline.ts` [UPDATED]
+  - `lib/api-authz.ts` [UPDATED]
+  - `src/pages/api/notebook/co-author.ts` [REWRITTEN]
+  - `src/pages/api/forum/topics/index.ts`, `src/pages/api/forum/posts/index.ts`, `src/pages/api/forum/topics/active.ts`, `src/pages/api/chat/stream.ts` [DELETED]
+  - `src/lib/chat-bots/langchain-stream.ts` [DELETED — no importers]
+  - `vercel.json` [UPDATED — −121 lines]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
+- **Notes / Handoff:** (a) Uncommitted working tree contains this work + earlier bot hardening (Entry 032) + careers/pricing cleanup — still uncommitted/unpushed on `main`. (b) Optional follow-up: add `src/pages/api/[...slug].ts` 404 JSON guard so dead `/api/*` paths return 404 instead of catch-all page HTML. (c) Notebook casing warnings (`notebookOutline.tsx` vs `NotebookOutline.tsx`) predate this work.
+
+### Entry 033 — Full API-surface audit: notebooks/chat/forum family risks (TSK-31 follow-up)
+- **Date:** 2026-08-08
+- **AI Agent:** DeepSeek (opencode)
+- **Summary:** Extended audit across ALL API routes + vercel.json. Findings:
+  1. **PROD RISK (edge env)**: `lib/supabase-admin.ts` and `src/lib/chat-bots/langchain-pipeline.ts` read secrets via `process.env` at MODULE SCOPE. CF Pages edge does NOT populate secrets in `process.env` (repo's own `runtime-env.ts` docs + commit bba43b7d). Affected in production: `/api/notebooks/*` (placeholder key → Supabase 403), `/api/notebook/co-author`, `/api/chat/stream`, memgpt `agent_metadata` writes, `/api/forum/*`, `api-authz.resolveForumBotAuth`. Bots family uses `getRuntimeEnv()` correctly.
+  2. **500 crash confirmed**: `/api/chat/stream` JSON `null` body → 500 (same destructure bug fixed in philosopher-bot). Also NO rate limit / input cap on any LLM streaming route.
+  3. **`/api/notebook/co-author.ts`** is Node-style SSE (`NextApiRequest`, `res.write/end`) without `export const runtime = 'edge'` — next-on-pages build/runtime risk.
+  4. **Dead routes**: `/api/forum/topics`, `/api/forum/posts`, `/api/chat/stream` — zero client references.
+  5. **vercel.json** ~2900+ lines of inherited PostHog redirects; `/signup`→app.posthog.com, `/coupons`→app.posthog.com, `/trial`→`/pricing` (now →/start), influencer redirects target `/` (404). CSP header still reports to us.i.posthog.com + algolia connect-src.
+  6. Verified OK: `/api/search` (cached, soft-fail), `/api/notebooks*` authz (JWT/device + ownership), `/api/philosopher-bots` (anon key inlined).
+- **Modified Files:** none (audit only).
+- **Verification:** local live tests (notebooks 200 with device key; stream null → 500 reproduced).
+
+### Entry 032 — Bot System Review & Hardening: crash/input/security fixes (TSK-31)
+- **Date:** 2026-08-08
+- **AI Agent:** DeepSeek (opencode)
+- **Summary:** Full review of the philosopher-bot system (`/api/philosopher-bot`, `/api/bots/act`, `/api/cron/philosopher-bots`, `src/lib/bots/*`) and end-to-end local testing against a running dev server:
+  1. **Fixed 500 crash** on JSON `null` / scalar request bodies (destructuring `null` threw TypeError) in `philosopher-bot.ts` + `act.ts`.
+  2. **Added input caps**: question max 8000 chars, context max 12000 chars (200KB question previously hung ~55s before failing).
+  3. **Hardened rate limits**: buckets now keyed by client IP + philosopher (`chat:{ip}:{philosopher}`, `act:{action}:{ip}:{bot}`) — previously rotating philosopher names bypassed the 30/hr limit.
+  4. **Fixed cron security hole**: `/api/cron/philosopher-bots` ran unauthenticated via GET/no-header even when `CRON_SECRET` was set (condition `header && header !== secret` was inverted). Now POST-only (405 otherwise) and secret REQUIRED when configured (401).
+  5. **Verified working**: real chat via Groq 200 ~1.4s; status/diag/validation/rate-limit (30×200 + 1×429 burst) all correct.
+- **Modified Files:**
+  - `src/pages/api/philosopher-bot.ts` [UPDATED]
+  - `src/pages/api/bots/act.ts` [UPDATED]
+  - `src/pages/api/cron/philosopher-bots.ts` [UPDATED]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
+- **Verification:** `node C:\Users\MUSTAFA\AppData\Local\Temp\opencode\bot-retest.mjs` — all 12 checks PASS (400/401/405 paths, no 500s, real chat OK). Not committed yet.
 
 ### Entry 031 — Notebook Co-Authoring Assistant with Real-Time LangChain Token Streaming (TSK-29)
 - **Date:** 2026-08-08

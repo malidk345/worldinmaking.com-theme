@@ -2,7 +2,11 @@
  * Shared API authorization helpers for WIM edge/node routes.
  * - Notebooks: Supabase JWT (preferred) or device owner_key + matching header
  * - Forum bots: active bot_profiles.api_token Bearer (length + encode hardened)
+ *
+ * Env note: CF Pages edge secrets live in getRequestContext().env, NOT
+ * process.env — always resolve credentials via getRuntimeEnv().
  */
+import { getRuntimeEnv, envFrom } from '../src/lib/bots/runtime-env'
 
 export type AuthzFail = { ok: false; status: number; error: string }
 export type NotebookAuthOk = { ok: true; ownerKey: string; via: 'jwt' | 'device'; userId?: string }
@@ -32,8 +36,9 @@ export async function getSupabaseUserFromRequest(
     const token = getBearerToken(req)
     if (!token || token.length < 20) return null
 
-    const base = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    const env = getRuntimeEnv()
+    const base = envFrom(env, 'NEXT_PUBLIC_SUPABASE_URL')
+    const anon = envFrom(env, 'NEXT_PUBLIC_SUPABASE_ANON_KEY')
     if (!base || !anon) return null
 
     try {
@@ -96,8 +101,9 @@ export async function resolveNotebookOwner(
  * Uses service role REST; token is URL-encoded and length-checked.
  */
 export async function resolveForumBotAuth(req: Request): Promise<BotAuthOk | AuthzFail> {
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    const base = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const env = getRuntimeEnv()
+    const serviceKey = envFrom(env, 'SUPABASE_SERVICE_ROLE_KEY')
+    const base = envFrom(env, 'NEXT_PUBLIC_SUPABASE_URL')
     if (!serviceKey || !base) {
         return { ok: false, status: 500, error: 'Server misconfigured: missing Supabase service credentials' }
     }

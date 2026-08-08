@@ -55,27 +55,44 @@ export default async function handler(req: Request) {
         body = {}
     }
 
+    // Guard against JSON `null` / scalars — destructuring them throws
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+        body = {}
+    }
+
     const {
-        question,
         philosopher = 'Nietzsche',
         mood = 'calm',
         taskType = 'community_reply',
         thinkingDepth,
-        context,
     }: {
-        question: string
         philosopher?: string
         mood?: string
         taskType?: TaskType
         thinkingDepth?: ThinkingDepth
-        context?: string
     } = body
 
-    if (!question || typeof question !== 'string') {
+    const rawQuestion = body.question
+    if (typeof rawQuestion !== 'string' || !rawQuestion.trim()) {
         return json({ error: 'Question string is required', success: false }, 400)
     }
+    const question = rawQuestion.trim()
+    if (question.length > 8000) {
+        return json({ error: 'Question too long (max 8000 chars)', success: false }, 400)
+    }
 
-    const rlKey = `chat:${philosopher.toLowerCase()}`
+    const context =
+        typeof body.context === 'string' && body.context.trim()
+            ? body.context.slice(0, 12000)
+            : undefined
+
+    // Scope rate limit per client IP so a caller cannot bypass it by
+    // rotating philosopher names (in-memory buckets reset on isolate recycle).
+    const clientIp =
+        req.headers.get('cf-connecting-ip') ||
+        req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+        'local'
+    const rlKey = `chat:${clientIp}:${philosopher.toLowerCase()}`
     const rl = checkRateLimit(rlKey, 30, 60 * 60 * 1000)
     if (!rl.allowed) {
         return json(

@@ -89,14 +89,31 @@ export default async function handler(req: Request) {
         body = {}
     }
 
+    // Guard against JSON `null` / scalars — destructuring them throws
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+        body = {}
+    }
+
     const action = (body.action || 'chat') as BotAction
     const bot = String(body.bot || body.philosopher || 'nietzsche')
     const mood = body.mood || 'calm'
     const taskType = (body.taskType || defaultTaskForAction(action)) as TaskType
     const thinkingDepth = body.thinkingDepth as ThinkingDepth | undefined
-    const question = body.question || body.input || body.prompt
-    const payload = body.payload && typeof body.payload === 'object' ? body.payload : {}
-    const context = body.context || payload.context
+    const rawQuestion = body.question || body.input || body.prompt
+    const question = typeof rawQuestion === 'string' ? rawQuestion.trim() : ''
+    if (question.length > 8000) {
+        return json(
+            {
+                success: false,
+                error: 'question too long (max 8000 chars)',
+                action,
+                phase: 'validation',
+            },
+            400
+        )
+    }
+    const payload = body.payload && typeof body.payload === 'object' && !Array.isArray(body.payload) ? body.payload : {}
+    const context = typeof body.context === 'string' ? body.context.slice(0, 12000) : payload.context
     const dryRun = body.dryRun === true || payload.dryRun === true
 
     if (action === 'status') {
@@ -109,7 +126,12 @@ export default async function handler(req: Request) {
     }
 
     // Per-bot rate limit for mutating / LLM-heavy actions (`status` already returned above).
-    const rlKey = `act:${action}:${bot.toLowerCase()}`
+    // Scoped per client IP so rotating bot names cannot bypass the bucket.
+    const clientIp =
+        req.headers.get('cf-connecting-ip') ||
+        req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+        'local'
+    const rlKey = `act:${action}:${clientIp}:${bot.toLowerCase()}`
     const limit = action === 'chat' ? 40 : 15
     const rl = checkRateLimit(rlKey, limit, 60 * 60 * 1000)
     if (!rl.allowed) {
@@ -126,7 +148,7 @@ export default async function handler(req: Request) {
 
     // ── thread_init ──────────────────────────────────────────────
     if (action === 'thread_init') {
-        if (!question || typeof question !== 'string') {
+        if (!question) {
             return json(
                 { success: false, error: 'question required for thread_init', action, phase: 'validation' },
                 400
@@ -199,7 +221,7 @@ export default async function handler(req: Request) {
     }
 
     // ── chat (default) ───────────────────────────────────────────
-    if (!question || typeof question !== 'string') {
+    if (!question) {
         return json({ error: 'question string is required', success: false, action: 'chat' }, 400)
     }
 

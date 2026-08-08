@@ -5,8 +5,6 @@
  * PDFs, and markdown documents into semantically coherent paragraphs.
  */
 
-import { RecursiveCharacterTextSplitter } from '@langchain/core/documents';
-
 export interface DocumentChunk {
     pageContent: string;
     metadata: Record<string, any>;
@@ -19,15 +17,27 @@ export async function splitDocumentContent(
     text: string,
     metadata: Record<string, any> = {}
 ): Promise<DocumentChunk[]> {
-    const splitter = new RecursiveCharacterTextSplitter({
-        chunkSize: 1000,
-        chunkOverlap: 200,
-        separators: ['\n\n', '\n', '. ', ' ', ''],
-    });
+    const rawParagraphs = text.split(/\n\n+/).filter((p) => p.trim().length > 0);
+    const chunks: DocumentChunk[] = [];
 
-    const docs = await splitter.createDocuments([text], [metadata]);
-    return docs.map((d) => ({
-        pageContent: d.pageContent,
-        metadata: d.metadata,
-    }));
+    for (const paragraph of rawParagraphs) {
+        if (paragraph.length <= 1000) {
+            chunks.push({ pageContent: paragraph.trim(), metadata });
+        } else {
+            // Split large paragraph by sentence
+            const sentences = paragraph.split(/(?<=[.!?])\s+/);
+            let currentChunk = '';
+            for (const sentence of sentences) {
+                if ((currentChunk + ' ' + sentence).length > 1000) {
+                    if (currentChunk) chunks.push({ pageContent: currentChunk.trim(), metadata });
+                    currentChunk = sentence;
+                } else {
+                    currentChunk += (currentChunk ? ' ' : '') + sentence;
+                }
+            }
+            if (currentChunk) chunks.push({ pageContent: currentChunk.trim(), metadata });
+        }
+    }
+
+    return chunks.length > 0 ? chunks : [{ pageContent: text, metadata }];
 }

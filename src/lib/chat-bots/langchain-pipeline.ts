@@ -14,26 +14,34 @@ import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { StringOutputParser } from '@langchain/core/output_parsers';
 import { StateGraph, START, END, Annotation } from '@langchain/langgraph';
 import { loadMemGPTState, extractAndPersistMemoryFacts } from './memgpt-engine';
+import { getRuntimeEnv, envFrom } from '../bots/runtime-env';
 
 /**
  * 1. Initializes a LangChain LLM model instance based on active API keys.
+ * Uses getRuntimeEnv() so Cloudflare Pages secrets (bound via the dashboard,
+ * only visible through getRequestContext().env) are found at request time.
  */
 export function createLangChainModel(preferredProvider: 'groq' | 'gemini' = 'groq') {
-    const rawGroqKey =
-        process.env.GROQ_API_KEYS ||          // CF Dashboard exact name (comma-separated)
-        process.env.GROQ_API_KEY ||
-        process.env.GROQ_KEYS ||
-        process.env.GROQ_KEY ||
-        '';
+    const env = getRuntimeEnv()
+    const rawGroqKey = envFrom(
+        env,
+        'GROQ_API_KEYS',          // CF Dashboard exact name (comma-separated)
+        'GROQ_API_KEY',
+        'GROQ_KEYS',
+        'GROQ_KEY',
+    );
 
-    const rawGeminiKey =
-        process.env.GEMINI_API_KEYS ||         // CF Dashboard exact name (comma-separated)
-        process.env.GEMINI_API_KEY ||
-        process.env.GEMINI_KEYS ||
-        process.env.GEMINI_KEY ||
-        process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
-        process.env.GOOGLE_API_KEY ||
-        '';
+    const rawGeminiKey = envFrom(
+        env,
+        'GEMINI_API_KEYS',        // CF Dashboard exact name (comma-separated)
+        'GEMINI_API_KEY',
+        'GEMINI_KEYS',
+        'GEMINI_KEY',
+        'GOOGLE_GENERATIVE_AI_API_KEY',
+        'GOOGLE_API_KEY',
+        'GOOGLE_AI_API_KEY',
+        'GOOGLE_GEMINI_API_KEY',
+    );
 
     // Parse all keys from comma-separated pool
     const groqKeys = rawGroqKey.split(',').map(k => k.trim()).filter(Boolean);

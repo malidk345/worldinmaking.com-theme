@@ -95,7 +95,13 @@ function json(body: Record<string, unknown>, status = 200) {
 }
 
 export default async function handler(req: Request) {
-    // Secret check: Validate if provided, otherwise allow cron execution
+    // Mutating endpoint: only POST is allowed (a GET must never trigger writes).
+    if (req.method !== 'POST') {
+        return json({ success: false, error: 'Method not allowed' }, 405)
+    }
+
+    // Secret check: when CRON_SECRET is configured it is REQUIRED — missing or
+    // mismatched headers are rejected, otherwise the tick would run publicly.
     const env = getRuntimeEnv()
     const secret = envFrom(env, 'CRON_SECRET', 'BOT_ACT_SECRET')
     if (secret) {
@@ -103,8 +109,8 @@ export default async function handler(req: Request) {
             req.headers.get('x-cron-secret') ||
             req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ||
             ''
-        if (header && header !== secret && req.method !== 'GET') {
-            return json({ success: false, error: 'Unauthorized secret' }, 401)
+        if (header !== secret) {
+            return json({ success: false, error: 'Unauthorized: x-cron-secret required' }, 401)
         }
     }
 
