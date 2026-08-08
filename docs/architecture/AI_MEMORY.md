@@ -87,6 +87,20 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 *(Add new entries at the top of this list)*
 
+### Entry 025 — Full LangChain Advanced Capability Suite (TSK-28)
+- **Date:** 2026-08-08
+- **AI Agent:** Antigravity (Gemini 3.6 Flash)
+- **Summary:** Built and integrated the full suite of advanced LangChain capabilities:
+  1. **Dynamic Tools & Function Calling (`langchain-tools.ts`)**: Created `DatabaseSearchTool`, `WebSearchTool`, and `NotebookInspectorTool` for bot function execution.
+  2. **Token Streaming (`langchain-stream.ts`)**: Implemented `streamLangChainChat` using `chain.stream()` for typewriter-style real-time UI text streaming.
+  3. **Document RAG Chunking (`langchain-vectorstore.ts`)**: Implemented `splitDocumentContent` via `RecursiveCharacterTextSplitter`.
+- **Modified Files:**
+  - `src/lib/chat-bots/langchain-tools.ts` [NEW]
+  - `src/lib/chat-bots/langchain-stream.ts` [NEW]
+  - `src/lib/chat-bots/langchain-vectorstore.ts` [NEW]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
+- **Verification:** `pnpm typecheck:shell` (PASS — 0 shell errors).
+
 ### Entry 024 — Open-Source LangChain & LangGraph Ecosystem Integration (TSK-28)
 - **Date:** 2026-08-08
 - **AI Agent:** Antigravity (Gemini 3.6 Flash)
