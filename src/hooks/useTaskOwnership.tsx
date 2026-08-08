@@ -1,5 +1,3 @@
-import { useMemo } from 'react'
-
 export interface Task {
     task: string
     owner: string[]
@@ -114,44 +112,35 @@ const TASK_DATA_REGISTRY: Record<
     people: PEOPLE_TASK_DATA,
 }
 
-export const useTaskOwnership = ({ dataKey = 'people' }: { dataKey?: string } = {}) => {
-    const taskData = TASK_DATA_REGISTRY[dataKey] || PEOPLE_TASK_DATA
-
-    // Sort tasks alphabetically within each group
-    const sortedData = useMemo(() => {
-        return Object.entries(taskData).reduce((acc, [key, group]) => {
-            return {
-                ...acc,
-                [key]: {
+// Pre-process data outside the component to avoid unnecessary render-time calculations
+const PROCESSED_DATA_REGISTRY = Object.fromEntries(
+    Object.entries(TASK_DATA_REGISTRY).map(([registryKey, registryData]) => {
+        const sortedData = Object.fromEntries(
+            Object.entries(registryData).map(([key, group]) => [
+                key,
+                {
                     ...group,
                     tasks: [...group.tasks].sort((a, b) => a.task.localeCompare(b.task)),
                 },
-            }
-        }, {} as typeof taskData)
-    }, [taskData])
+            ])
+        )
 
-    // Create groups array for rendering
-    const groups: TaskGroup[] = useMemo(() => {
-        return Object.entries(sortedData).map(([key, group]) => ({
+        const groups = Object.entries(sortedData).map(([key, group]) => ({
             key,
             name: group.name,
             columns: group.columns,
             tasks: group.tasks,
         }))
-    }, [sortedData])
 
-    // Create tasks lookup by group key
-    const tasks = useMemo(() => {
-        return Object.entries(sortedData).reduce((acc, [key, group]) => {
-            return {
-                ...acc,
-                [key]: group.tasks,
-            }
-        }, {} as Record<string, Task[]>)
-    }, [sortedData])
+        const tasksLookup = Object.fromEntries(Object.entries(sortedData).map(([key, group]) => [key, group.tasks]))
 
-    return {
-        groups,
-        tasks,
-    }
+        return [registryKey, { groups, tasks: tasksLookup }]
+    })
+)
+
+export const useTaskOwnership = ({ dataKey = 'people' }: { dataKey?: string } = {}) => {
+    // Fallback to 'people' data if registry doesn't have the key
+    const processedData = PROCESSED_DATA_REGISTRY[dataKey] || PROCESSED_DATA_REGISTRY['people']
+
+    return processedData
 }
