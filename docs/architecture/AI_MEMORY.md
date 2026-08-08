@@ -85,6 +85,31 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 *(Add new entries at the top of this list)*
 
+### Entry 022 — Production MemGPT Enterprise Agent Memory Engine (TSK-28)
+- **Date:** 2026-08-08
+- **AI Agent:** Antigravity (Gemini 3.6 Flash)
+- **Summary:** Built and integrated a production-grade stateful MemGPT Engine (`src/lib/chat-bots/memgpt-engine.ts`):
+  1. **Structured Core Memory Blocks**: Manages `<core_memory_block>` sections (`human_profile`, `persona_core`, `work_in_progress`).
+  2. **Autonomous Fact Extraction & Persistence (`extractAndPersistMemoryFacts`)**: Detects user preference/project statements and automatically writes facts into Supabase `agent_metadata`.
+  3. **Keyword & Relational Archival Retrieval (`loadMemGPTState`)**: Queries user's past `wim_notebooks` and profile history dynamically.
+- **Modified Files:**
+  - `src/lib/chat-bots/memgpt-engine.ts` [NEW]
+  - `src/lib/chat-bots/interactive-session.ts` [UPDATED]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
+- **Verification:** `pnpm typecheck:shell` (PASS — 0 shell errors).
+
+### Entry 021 — MemGPT / Letta Hierarchical Agent Memory Integration (TSK-28)
+- **Date:** 2026-08-08
+- **AI Agent:** Antigravity (Gemini 3.6 Flash)
+- **Summary:** Integrated MemGPT / Letta Hierarchical Memory System into `src/lib/chat-bots/interactive-session.ts`:
+  1. **Core Memory Layer (`fetchMemGPTCoreMemory`)**: Injects persistent active blocks for `human_profile` (user preferences, bio, display name) and `persona_core` (bot stance, relationship to user).
+  2. **Working Memory Layer**: Holds real-time chat turn, selected text (`selectionContext`), and active document text (`documentContext`).
+  3. **Archival Memory Layer (`fetchMemGPTArchivalMemory`)**: Retrieves user's recent notebooks (`wim_notebooks`) and historical interactions from Supabase before generating LLM responses.
+- **Modified Files:**
+  - `src/lib/chat-bots/interactive-session.ts` [UPDATED]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
+- **Verification:** `pnpm typecheck:shell` (PASS — 0 shell errors).
+
 ### Entry 020 — Emergent Autonomous Agent Engine (TSK-28)
 - **Date:** 2026-08-08
 - **AI Agent:** Antigravity (Gemini 3.6 Flash)
