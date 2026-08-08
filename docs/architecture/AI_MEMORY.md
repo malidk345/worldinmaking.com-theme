@@ -71,7 +71,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-19` | Stream 4 | API authz audit: notebooks + forum write paths (not just owner_key) | `src/pages/api/notebooks/*`, `src/pages/api/forum/**` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-07 |
 | `TSK-20` | Stream 2 | Split `App.tsx` god-object (hooks/contexts extraction) | `src/context/App.tsx` → `src/context/shell/*` | `[NOT STARTED]` | - | - |
 | `TSK-21` | Stream 2 | Adopt `WindowMode` reducer end-to-end (drop boolean soup) | `src/lib/windowState.ts`, `AppWindow`, `App.tsx` | `[NOT STARTED]` | - | - |
-| `TSK-22` | Stream 2 | Tighten `WindowElement` from `any` + inactive window `content-visibility` | `src/context/App.tsx`, `src/components/AppWindow/*` | `[NOT STARTED]` | - | - |
+| `TSK-22` | Stream 2 | Tighten `WindowElement` from `any` + inactive window `content-visibility` | `src/context/App.tsx`, `src/components/AppWindow/*` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-08 |
 | `TSK-23` | Stream 5 | Bot HTTP enqueue-only + `bot:worker` path (edge timeout safety) | `src/pages/api/*bot*`, `scripts/bot-worker.js` | `[NOT STARTED]` | - | - |
 | `TSK-24` | Stream 1 | Fix notebook-app build break (`IconArrowLeft` / public notebook view) | `src/notebook-app/lib/icons/iconsShim.tsx` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-06 |
 | `TSK-25` | Stream 3 | Shell error reporting + basic RUM (window blank rate / vitals) | `src/components/AppWindow/*`, analytics hooks | `[NOT STARTED]` | - | - |

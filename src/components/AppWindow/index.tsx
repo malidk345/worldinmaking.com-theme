@@ -550,6 +550,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         // glass never blurs the desktop wallpaper (unlike wimpos plain divs).
                         zIndex: isActiveWindowsPanelOpen ? 10001 + activePanelIndex : item.zIndex,
                         contentVisibility: inView ? 'visible' : 'auto',
+                        containIntrinsicSize: `${Math.round(size.width)}px ${Math.round(size.height)}px`,
                         willChange: isCompositorActive ? 'left, top, width, height, transform' : undefined,
                         x: dragging ? motionX : undefined,
                         y: dragging ? motionY : undefined,
