@@ -196,15 +196,17 @@ export async function generateWithGateway(params: {
         attempts.push(`groq[${groqKeys.indexOf(key) + 1}/${groqKeys.length}]: ${r.detail}`)
     }
 
-    // 2) OpenRouter
+    // 2) OpenRouter — skip all models immediately on 402 (no credits)
     if (openRouterKey) {
         const preferred =
             envFrom(runtimeEnv, 'OPENROUTER_MODEL') || TASK_OPENROUTER[taskType] || ''
         const models = [preferred, ...OPENROUTER_MODELS].filter(Boolean)
         const seen = new Set<string>()
+        let creditsDepleted = false
         for (const model of models) {
             if (seen.has(model)) continue
             seen.add(model)
+            if (creditsDepleted) { attempts.push(`openrouter(${model}): skipped-no-credits`); continue }
             const r = await chatCompletions(
                 'https://openrouter.ai/api/v1/chat/completions',
                 openRouterKey,
@@ -218,14 +220,10 @@ export async function generateWithGateway(params: {
                 }
             )
             if (r.ok) {
-                return {
-                    ok: true,
-                    text: r.text,
-                    provider: `openrouter:${model}`,
-                    latencyMs: Date.now() - started,
-                }
+                return { ok: true, text: r.text, provider: `openrouter:${model}`, latencyMs: Date.now() - started }
             }
-            attempts.push(`openrouter(${model}): ${r.detail}`)
+            if (r.detail.startsWith('402')) creditsDepleted = true
+            attempts.push(`openrouter(${model}): ${r.detail.slice(0, 100)}`)
         }
     }
 
