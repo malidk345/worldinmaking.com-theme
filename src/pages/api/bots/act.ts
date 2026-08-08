@@ -23,6 +23,7 @@
  */
 export const runtime = 'edge'
 
+import { getRequestContext } from '@cloudflare/next-on-pages'
 import type { TaskType } from 'lib/persona-engine'
 import {
     runBotTurn,
@@ -33,7 +34,22 @@ import {
 import { createForumReply, createForumTopic } from 'lib/bots/actions/forum'
 import { runPaperStep, type PaperStepKind } from 'lib/bots/actions/paper'
 import { checkRateLimit } from 'lib/bots/rate-limit'
-import { envFrom, getRuntimeEnv } from 'lib/bots/runtime-env'
+import { envFrom } from 'lib/bots/runtime-env'
+
+/** Read CF secrets + process.env. Must be called inside a handler. */
+function readEnv(): Record<string, string> {
+    const base: Record<string, string> = {}
+    for (const [k, v] of Object.entries(process.env)) {
+        if (typeof v === 'string' && v.length > 0) base[k] = v
+    }
+    try {
+        const { env } = getRequestContext()
+        for (const [k, v] of Object.entries(env as Record<string, unknown>)) {
+            if (typeof v === 'string' && v.length > 0) base[k] = v
+        }
+    } catch { /* local dev */ }
+    return base
+}
 
 function json(body: Record<string, unknown>, status = 200) {
     return new Response(JSON.stringify(body), {
@@ -42,13 +58,11 @@ function json(body: Record<string, unknown>, status = 200) {
     })
 }
 
-function assertCronIfNeeded(req: Request, action: BotAction, dryRun: boolean): string | null {
-    // Mutating actions may be locked behind CRON_SECRET when set
+function assertCronIfNeeded(req: Request, action: BotAction, dryRun: boolean, env: Record<string, string>): string | null {
     if (dryRun) return null
     if (action === 'chat' || action === 'status') return null
-    const env = getRuntimeEnv()
     const secret = envFrom(env, 'CRON_SECRET', 'BOT_ACT_SECRET')
-    if (!secret) return null // open when no secret configured
+    if (!secret) return null
     const header = req.headers.get('x-cron-secret') || req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
     if (header !== secret) {
         return 'Unauthorized: set x-cron-secret (or Authorization Bearer) to CRON_SECRET / BOT_ACT_SECRET'
@@ -57,6 +71,9 @@ function assertCronIfNeeded(req: Request, action: BotAction, dryRun: boolean): s
 }
 
 export default async function handler(req: Request) {
+    // Read CF secrets HERE — must be inside the request handler scope
+    const env = readEnv()
+
     if (req.method === 'GET') {
         return json(getBotSystemStatus())
     }
@@ -86,7 +103,7 @@ export default async function handler(req: Request) {
         return json(getBotSystemStatus())
     }
 
-    const authErr = assertCronIfNeeded(req, action, dryRun)
+    const authErr = assertCronIfNeeded(req, action, dryRun, env)
     if (authErr) {
         return json({ success: false, error: authErr, action }, 401)
     }
@@ -193,7 +210,8 @@ export default async function handler(req: Request) {
         taskType,
         thinkingDepth,
         context: typeof context === 'string' ? context : undefined,
-    })
+        _env: env,
+    } as any)
 
     return json({ ...result, action: 'chat' }, result.success ? 200 : 503)
 }

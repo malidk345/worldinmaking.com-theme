@@ -87,7 +87,8 @@ export async function runBotTurn(input: BotRunInput): Promise<BotRunResult> {
     const philosopher = input.philosopher || 'Nietzsche'
     const mood = input.mood || 'calm'
     const taskType: TaskType = input.taskType || 'community_reply'
-    const runtimeEnv = getRuntimeEnv()
+    // Use injected env (from CF handler) or fall back to getRuntimeEnv()
+    const runtimeEnv = (input as any)._env ?? getRuntimeEnv()
     const persona = extractPersona('', philosopher)
 
     const systemPrompt = [

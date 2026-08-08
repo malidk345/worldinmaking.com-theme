@@ -1,9 +1,11 @@
 /**
- * Philosopher bot chat API — Cloudflare Pages edge + local Next.js compatible.
- * Reads secrets from getRequestContext().env (CF) with process.env fallback (local).
+ * Philosopher bot chat API.
+ * Reads CF secrets directly in the handler (getRequestContext MUST be called
+ * inside the handler, not in a library module) and injects them into runBotTurn.
  */
 export const runtime = 'edge'
 
+import { getRequestContext } from '@cloudflare/next-on-pages'
 import type { TaskType } from 'lib/persona-engine'
 import { runBotTurn, type ThinkingDepth } from 'lib/bots'
 import { checkRateLimit } from 'lib/bots/rate-limit'
@@ -15,10 +17,36 @@ function json(body: Record<string, unknown>, status = 200) {
     })
 }
 
+/** Read ALL env/secrets from CF context + process.env merged together. */
+function readEnv(): Record<string, string> {
+    const base: Record<string, string> = {}
+
+    // 1) process.env (build-time vars, local .env.local)
+    for (const [k, v] of Object.entries(process.env)) {
+        if (typeof v === 'string' && v.length > 0) base[k] = v
+    }
+
+    // 2) CF runtime secrets (overwrite — these are authoritative in production)
+    //    getRequestContext() MUST be called here, inside the handler scope.
+    try {
+        const { env } = getRequestContext()
+        for (const [k, v] of Object.entries(env as Record<string, unknown>)) {
+            if (typeof v === 'string' && v.length > 0) base[k] = v
+        }
+    } catch {
+        // Local dev — CF context not available, process.env already loaded above
+    }
+
+    return base
+}
+
 export default async function handler(req: Request) {
     if (req.method !== 'POST') {
         return json({ error: 'Method not allowed' }, 405)
     }
+
+    // Read env RIGHT HERE — must be inside the request handler
+    const env = readEnv()
 
     let body: any = {}
     try {
@@ -60,6 +88,7 @@ export default async function handler(req: Request) {
         )
     }
 
+    // Inject the env directly so runBotTurn doesn't need to call getRuntimeEnv()
     const result = await runBotTurn({
         question,
         philosopher,
@@ -67,15 +96,17 @@ export default async function handler(req: Request) {
         taskType,
         thinkingDepth,
         context,
-    })
+        _env: env,
+    } as any)
 
     if (!result.success) {
-        // Include debug info so we can diagnose key visibility in CF Pages logs
-        console.error('[philosopher-bot] Provider failure:', {
+        console.error('[philosopher-bot] FAILED', {
             philosopher: result.philosopher,
             configured: result.configured,
             attempts: result.attempts,
             error: result.error,
+            groqKeysFound: !!(env['GROQ_API_KEYS'] || env['GROQ_API_KEY']),
+            geminiKeysFound: !!(env['GEMINI_API_KEYS'] || env['GEMINI_API_KEY']),
         })
 
         return json(
