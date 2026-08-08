@@ -4,6 +4,7 @@ import {
     LemonButton,
     LemonSelect,
     LemonTag,
+    LemonTextArea,
     ProfilePicture,
 } from '~nb-lib/lemon-ui/index'
 import {
@@ -447,57 +448,69 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                 </div>
             )}
 
-            {/* Composer Input Card — White box on gray panel */}
-            <div className="mt-2 bg-surface-primary border border-[var(--color-border-primary)] rounded-xl p-2.5 space-y-2 shadow-xs">
-                <textarea
-                    ref={textareaRef}
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    onKeyDown={(e) => {
-                        e.stopPropagation()
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault()
-                            void sendPrompt()
-                        }
-                    }}
-                    placeholder="Ask follow-up or / for commands..."
-                    rows={2}
-                    className="w-full bg-transparent text-xs text-primary placeholder:text-muted focus:outline-none resize-none leading-relaxed p-1 border-none shadow-none font-normal"
-                />
-
-                <div className="flex items-center justify-between gap-1.5">
-                    <div className="flex items-center gap-1 min-w-0">
-                        <LemonSelect
-                            value={selectedBotId}
-                            onChange={(val) => {
-                                if (val) handleBotChange(val)
-                            }}
-                            options={botSelectOptions}
-                            size="xsmall"
-                            type="tertiary"
-                            dropdownPlacement="top-start"
-                            dropdownMatchSelectWidth={false}
-                        />
-                        {contentLength > 0 && (
-                            <LemonTag type="completion" size="small" className="text-[10px] truncate max-w-[120px] opacity-60">
-                                {contentLength} chars
+            {/* Composer Input Card — Official PostHog ComposerFrame Architecture */}
+            <form
+                onSubmit={(e) => {
+                    e.preventDefault()
+                    if (prompt.trim() && !isGenerating) void sendPrompt()
+                }}
+                className="mt-2 w-full"
+            >
+                <label className="input-like flex flex-col cursor-text border border-[var(--color-border-primary)] bg-surface-primary rounded-xl p-2.5 space-y-1.5 shadow-xs transition-all focus-within:border-[var(--color-border-bold)]">
+                    {/* Header slot for attached context */}
+                    {contentLength > 0 && (
+                        <div className="flex items-center gap-1.5 pt-0.5 px-0.5">
+                            <LemonTag type="completion" size="small" className="text-[10px] truncate max-w-[160px]">
+                                @ Context ({contentLength} chars)
                             </LemonTag>
-                        )}
-                    </div>
+                        </div>
+                    )}
 
-                    <div className="shrink-0">
-                        <LemonButton
-                            size="xsmall"
-                            type="primary"
-                            icon={<IconArrowRight />}
-                            onClick={() => void sendPrompt()}
-                            disabled={isGenerating || !prompt.trim()}
-                            tooltip={`Send to ${activeBot.name}`}
-                            className="rounded-lg"
-                        />
+                    {/* Textarea slot — auto-expanding LemonTextArea */}
+                    <LemonTextArea
+                        ref={textareaRef}
+                        value={prompt}
+                        onChange={(val) => setPrompt(val)}
+                        placeholder="Ask follow-up or / for commands..."
+                        minRows={2}
+                        maxRows={6}
+                        className="!border-none !bg-transparent text-xs text-primary placeholder:text-muted focus:outline-none resize-none leading-relaxed p-0 shadow-none font-normal"
+                        onPressEnter={() => {
+                            if (prompt.trim() && !isGenerating) void sendPrompt()
+                        }}
+                    />
+
+                    {/* Footer slot — bot select & send button */}
+                    <div className="flex items-center justify-between gap-1.5 pt-1">
+                        <div className="flex items-center gap-1 min-w-0">
+                            <LemonSelect
+                                value={selectedBotId}
+                                onChange={(val) => {
+                                    if (val) handleBotChange(val)
+                                }}
+                                options={botSelectOptions}
+                                size="xsmall"
+                                type="tertiary"
+                                dropdownPlacement="top-start"
+                                dropdownMatchSelectWidth={false}
+                            />
+                        </div>
+
+                        <div className="shrink-0">
+                            <LemonButton
+                                size="xsmall"
+                                type="primary"
+                                htmlType="submit"
+                                icon={<IconArrowRight />}
+                                loading={isGenerating}
+                                disabled={!prompt.trim()}
+                                tooltip={`Send to ${activeBot.name}`}
+                                className="rounded-lg"
+                            />
+                        </div>
                     </div>
-                </div>
-            </div>
+                </label>
+            </form>
         </div>
     )
 
