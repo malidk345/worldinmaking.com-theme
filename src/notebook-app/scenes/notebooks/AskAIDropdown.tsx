@@ -465,8 +465,8 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                     className="w-full bg-transparent text-xs text-primary placeholder:text-muted focus:outline-none resize-none leading-relaxed p-1 border-none shadow-none font-normal"
                 />
 
-                <div className="flex items-center justify-between gap-2 pt-1 border-t border-[var(--color-border-primary)]/40">
-                    <div className="flex items-center gap-1.5 min-w-0">
+                <div className="flex items-center justify-between gap-1.5">
+                    <div className="flex items-center gap-1 min-w-0">
                         <LemonSelect
                             value={selectedBotId}
                             onChange={(val) => {
@@ -474,20 +474,20 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                             }}
                             options={botSelectOptions}
                             size="xsmall"
-                            type="secondary"
+                            type="tertiary"
                             dropdownPlacement="top-start"
                             dropdownMatchSelectWidth={false}
                         />
                         {contentLength > 0 && (
-                            <LemonTag type="completion" size="small" className="text-[10px] truncate max-w-[150px]">
-                                @ Context ({contentLength} chars)
+                            <LemonTag type="completion" size="small" className="text-[10px] truncate max-w-[120px] opacity-60">
+                                {contentLength} chars
                             </LemonTag>
                         )}
                     </div>
 
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="shrink-0">
                         <LemonButton
-                            size="small"
+                            size="xsmall"
                             type="primary"
                             icon={<IconArrowRight />}
                             onClick={() => void sendPrompt()}
