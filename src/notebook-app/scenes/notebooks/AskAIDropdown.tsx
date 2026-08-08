@@ -83,7 +83,7 @@ function buildBotSelectOptions(roster: PhilosopherBot[]) {
  * Shell (bg, border, radius, shadow) comes from Lemon Popover__box — do not re-chrome here.
  */
 const panelClassName =
-    'w-[min(100vw-1.5rem,28rem)] sm:w-[36rem] max-h-[min(78dvh,40rem)] p-3 space-y-3 text-xs overflow-y-auto overscroll-contain bg-[var(--color-bg-surface-secondary)]'
+    'w-[min(100vw-1.5rem,22.5rem)] sm:w-[28.5rem] max-h-[min(78dvh,40rem)] p-3 space-y-3 text-xs overflow-y-auto overscroll-contain bg-[var(--color-bg-surface-secondary)]'
 
 export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: AskAIDropdownProps): JSX.Element {
     const hostTheme = useSiteThemeSync()
