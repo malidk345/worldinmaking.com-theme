@@ -57,6 +57,8 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-05` | Stream 1 | Setup Playwright smoke test script for CI | `tests/smoke.spec.ts` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-06 |
 | `TSK-06` | Stream 3 | Enable Next Image optimization strategy | `next.config.js` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-06 |
 | `TSK-07` | Stream 5 | Audit & add rate-limiting for philosopher bots | `src/pages/api/*bot*` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-06 |
+| `TSK-29` | Stream 5 | Notebook Co-Authoring Assistant (Invite multi-bot feedback into documents) | `src/notebook-app/`, `src/lib/chat-bots/` | `[PLANNED]` | - | - |
+| `TSK-30` | Stream 5 | Agent Network Visualizer app (Interactive 2D/3D memory node graph) | `src/components/AgentNetwork/`, `src/pages/` | `[PLANNED]` | - | - |
 | `TSK-08` | Stream 1 | Enable TypeScript allowlist check for core shell | `tsconfig.shell.json`, `scripts/typecheck-shell.mjs` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-06 |
 | `TSK-09` | Stream 4 | Audit & clean up leftover Strapi/Squeak auth handlers | `src/lib/squeak.ts`, `src/lib/wim-auth.ts` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-06 |
 | `TSK-10` | Stream 5 | Add structured JSON schemas & validation for bot forum replies | `lib/bots/actions/forum.ts` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-06 |
@@ -84,6 +86,18 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ## 5. AI Change History & Log
 
 *(Add new entries at the top of this list)*
+
+### Entry 024 — Open-Source LangChain & LangGraph Ecosystem Integration (TSK-28)
+- **Date:** 2026-08-08
+- **AI Agent:** Antigravity (Gemini 3.6 Flash)
+- **Summary:** Installed official open-source packages (`@langchain/core`, `@langchain/langgraph`, `@langchain/groq`, `@langchain/google-genai`) and built the LangChain/LangGraph adapter (`src/lib/chat-bots/langchain-pipeline.ts`):
+  1. **LCEL Pipe Architecture (`createLangChainModel`)**: Leverages LangChain Expression Language (`promptTemplate.pipe(model).pipe(outputParser)`) for structured string & schema parsing.
+  2. **LangGraph StateGraph Execution (`runLangGraphAgentPipeline`)**: Runs stateful agent graph nodes (`fetch_memory` -> `generate_lcel` -> `persist_facts`).
+- **Modified Files:**
+  - `package.json` [UPDATED - LangChain & LangGraph dependencies]
+  - `src/lib/chat-bots/langchain-pipeline.ts` [NEW]
+  - `docs/architecture/AI_MEMORY.md` [UPDATED]
+- **Verification:** `pnpm typecheck:shell` (PASS — 0 shell errors).
 
 ### Entry 022 — Production MemGPT Enterprise Agent Memory Engine (TSK-28)
 - **Date:** 2026-08-08
