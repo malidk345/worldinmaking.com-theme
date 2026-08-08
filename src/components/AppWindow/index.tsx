@@ -3,10 +3,7 @@ import {
     AnimatePresence,
     motion,
     useDragControls,
-    useMotionValue,
-    useSpring,
-    useTransform,
-    useVelocity,
+
 } from 'framer-motion'
 import { MenuItem, useApp } from '../../context/App'
 import { Provider as WindowProvider, AppWindow as AppWindowType, useWindow } from '../../context/Window'
@@ -17,6 +14,7 @@ import { useToast } from '../../context/Toast'
 import usePostHog from '../../hooks/usePostHog'
 import { MOTION_LAYER, WINDOW_BG } from '../../constants/frostedSurfaces'
 import { isMaximizedWindow, transitionWindowMode, windowModeFlags } from 'lib/windowState'
+import { useWindowPhysics } from 'hooks/useWindowPhysics'
 import { useWindowResize } from 'hooks/useWindowResize'
 import { useWindowManager } from 'hooks/useWindowManager'
 import WindowResizeHandles from './WindowResizeHandles'
@@ -92,14 +90,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
         [item, updateWindow]
     )
 
-    const motionX = useMotionValue(0)
-    const motionY = useMotionValue(0)
-    const xVelocity = useVelocity(motionX)
-    const yVelocity = useVelocity(motionY)
-    const smoothXVelocity = useSpring(xVelocity, { damping: 40, stiffness: 300 })
-    const smoothYVelocity = useSpring(yVelocity, { damping: 40, stiffness: 300 })
-    const tiltX = useTransform(smoothYVelocity, [-1000, 1000], [6, -6])
-    const tiltY = useTransform(smoothXVelocity, [-1000, 1000], [-6, 6])
+    const { motionX, motionY, tiltX, tiltY, resetPhysics } = useWindowPhysics()
 
     const isSSR = typeof window === 'undefined'
     const controls = useDragControls()
@@ -560,6 +551,8 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         zIndex: isActiveWindowsPanelOpen ? 10001 + activePanelIndex : item.zIndex,
                         contentVisibility: inView ? 'visible' : 'auto',
                         willChange: isCompositorActive ? 'left, top, width, height, transform' : undefined,
+                        x: dragging ? motionX : undefined,
+                        y: dragging ? motionY : undefined,
                         // 3D tilt only while dragging (brief transform is OK; rest must be transform-free)
                         ...(dragging && !compact && !isActiveWindowsPanelOpen
                             ? {
@@ -630,7 +623,10 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                     dragMomentum={false}
                     dragConstraints={false}
                     onDrag={handleDrag}
-                    onDragEnd={handleDragEnd}
+                    onDragEnd={(e, info) => {
+                        resetPhysics()
+                        handleDragEnd(e, info)
+                    }}
                     onAnimationStart={onAnimationStart}
                     onAnimationComplete={onAnimationComplete}
                 >
