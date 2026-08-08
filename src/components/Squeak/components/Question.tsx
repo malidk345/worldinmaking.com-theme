@@ -80,18 +80,24 @@ const TopicSelect = (props: {
 
     useEffect(() => {
         fetchTopicGroups().then((topicGroups) => {
-            setTopicGroups(topicGroups)
+            setTopicGroups(topicGroups || [])
             const selectedTopics: StrapiRecord<TopicData>[] = []
-            topicGroups.forEach(({ attributes: { topics } }) => {
-                topics.data.forEach((topic) => {
-                    if (props.selectedTopics.data.some((selectedTopic) => selectedTopic.id === topic.id)) {
+            const selectedTopicList = Array.isArray(props.selectedTopics)
+                ? props.selectedTopics
+                : Array.isArray(props.selectedTopics?.data)
+                ? props.selectedTopics.data
+                : []
+
+            ;(topicGroups || []).forEach(({ attributes: { topics } }: any) => {
+                topics?.data?.forEach((topic: any) => {
+                    if (selectedTopicList.some((selectedTopic: any) => selectedTopic?.id === topic?.id)) {
                         selectedTopics.push(topic)
                     }
                 })
             })
             setSelectedTopics(selectedTopics)
         })
-    }, [])
+    }, [props.selectedTopics])
 
     return (
         <div className="relative [&>*]:inline-flex [&>*]:items-center">
@@ -130,7 +136,7 @@ const TopicSelect = (props: {
                                                 <div className="py-1 px-2 text-[13px] border-b border-primary whitespace-nowrap text-secondary">
                                                     {label}
                                                 </div>
-                                                {topics?.data.map((topic) => {
+                                                {topics?.data?.map((topic) => {
                                                     const active = selectedTopics.some(
                                                         (selectedTopic) => selectedTopic.id === topic.id
                                                     )
