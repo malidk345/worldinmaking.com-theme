@@ -1,6 +1,6 @@
 /**
- * Philosopher bot chat API — thin edge wrapper over lib/bots orchestrator.
- * Host: Cloudflare Pages (next-on-pages). Secrets via getRequestContext().env.
+ * Philosopher bot chat API — Cloudflare Pages edge + local Next.js compatible.
+ * Reads secrets from getRequestContext().env (CF) with process.env fallback (local).
  */
 export const runtime = 'edge'
 
@@ -70,6 +70,14 @@ export default async function handler(req: Request) {
     })
 
     if (!result.success) {
+        // Include debug info so we can diagnose key visibility in CF Pages logs
+        console.error('[philosopher-bot] Provider failure:', {
+            philosopher: result.philosopher,
+            configured: result.configured,
+            attempts: result.attempts,
+            error: result.error,
+        })
+
         return json(
             {
                 success: false,
