@@ -374,7 +374,7 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
 
                                     <p className="text-primary text-xs leading-relaxed whitespace-pre-wrap mb-0">{msg.text}</p>
 
-                                    <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-[var(--color-border-primary)]/30">
+                                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
                                         {msg.hasTable && (
                                             <LemonButton
                                                 size="xsmall"
