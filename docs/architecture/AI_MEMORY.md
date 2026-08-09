@@ -81,12 +81,35 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-27` | Stream 4 | Comprehensive Supabase Health, Auth, RLS & Migration Verification | `scripts/wim-supabase-bootstrap.mjs`, `src/lib/supabase*`, `lib/api-authz.ts` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-08 |
 | `TSK-28` | Stream 5 | Dual Bot Architecture: Interactive Chat Bots vs Autonomous Entities & Symposium Engine | `src/lib/chat-bots/*`, `src/lib/autonomous-entities/*` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-08 |
 | `TSK-31` | Stream 5 | Bot API hardening: null-body crash, input caps, IP-scoped rate limits, cron auth | `src/pages/api/philosopher-bot.ts`, `src/pages/api/bots/act.ts`, `src/pages/api/cron/philosopher-bots.ts` | `[COMPLETED]` | DeepSeek (opencode) | 2026-08-08 |
+| `TSK-32` | Stream 5 | Transform Ask AI dropdown into slide-over panel (Notifications Panel style) | `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-09 |
+| `TSK-33` | Stream 1 | Fix Cloudflare build crash caused by UTF-8 BOM in vercel.json | `vercel.json` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-09 |
 
 ---
 
 ## 5. AI Change History & Log
 
 *(Add new entries at the top of this list)*
+
+### Entry 036 — Fix Cloudflare Pages Build Crash (vercel.json UTF-8 BOM Removal) (TSK-33)
+- **Date:** 2026-08-09
+- **AI Agent:** Antigravity (Gemini 3.6 Flash)
+- **Summary:**
+  - Diagnosed Cloudflare Pages build log failure: `Error: Couldn't parse JSON file /opt/buildhome/repo/vercel.json.`
+  - Found hidden UTF-8 Byte Order Mark (`\uFEFF`) at line 1, position 1 of `vercel.json` leftover from previous edit.
+  - Stripped BOM byte header cleanly from `vercel.json`. Verified with Node `JSON.parse()` parser (returns `JSON PARSED SUCCESSFULLY!`).
+- **Modified Files:**
+  - `vercel.json`
+
+### Entry 035 — Ask AI Slide-over Panel Transformation (TSK-32)
+- **Date:** 2026-08-09
+- **AI Agent:** Antigravity (Gemini 3.6 Flash)
+- **Summary:**
+  - Transformed `AskAIDropdown` in `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx` from a popover dropdown into a slide-over side panel (matching `NotificationsPanel` styling).
+  - Integrated `@radix-ui/react-portal` and `framer-motion` (`AnimatePresence`, `motion.div`) for smooth `translateX` right-edge slide animations and backdrop overlay.
+  - Added header with philosopher bot avatar, title, context character count, clear button, and close icon (`IconX`). Added click-outside and `Escape` key close handlers.
+- **Verification:** Built and verified panel JSX structure, Framer Motion portal layer, and TypeScript definitions.
+- **Modified Files:**
+  - `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx`
 
 ### Entry 034 — Edge-env hardening, dead route removal, co-author SSE rewrite, vercel.json PostHog cleanup (TSK-31)
 - **Date:** 2026-08-08
@@ -384,6 +407,34 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
   - `docs/architecture/AI_MEMORY.md` [UPDATED]
 - **Verification:** `pnpm typecheck:shell` → **PASS** (0 shell errors). `SHELL_TSC_STRICT=1` → **PASS**.
 - **Notes / Handoff:** TSK-01…12 complete on the board. Optional follow-up: tighten `WindowElement` from `any` once `createNewWindow`/`addWindow` call sites are normalized; expand allowlist beyond shell when ready.
+
+### Entry 035 — 1:1 Original PostHog Max Scene Migration into PostHog Notebook App
+- **Date:** 2026-08-09
+- **AI Agent:** Antigravity (Google DeepMind)
+- **Summary:**
+  1. Fully transferred the exact original 1:1 `Max.tsx` scene, `HistoryPreview.tsx`, and `phaiSidePanelComposerSeedLogic.ts` from `D:\all works\posthog\frontend\src\scenes\max\` into `D:\all works\posthog-notebook-app\src\scenes\ai\`.
+  2. Fixed Kea Shim runtime engine (`src/lib/kea-shim/index.ts`) logic instance cache binding, event helper argument passing, and `subscribeToConnected` null safety.
+  3. Added null safety guards in `maxContextLogic.ts` (`rawSceneContext`, `contextOptions`, `compiledContext`, `hasData`, `toolContextItems`) and `maxLogic.tsx` (`toolHeadlines`, `toolDescriptions`, `headline`, `conversationLoading`, `breadcrumbs`).
+  4. Verified zero build errors via `npm run build` (1.86s build time).
+  5. Verified clean, error-free DOM rendering of the official PostHog AI Max UI ("What are you curious about?", "Build something people want.") via Playwright automated headless browser test (`check_dom.cjs`) at `http://localhost:5174/#/ai`.
+- **Modified Files:**
+  - `D:\all works\posthog-notebook-app\src\scenes\ai\Max.tsx` [CREATED — 1:1 original PostHog Max scene]
+  - `D:\all works\posthog-notebook-app\src\scenes\ai\HistoryPreview.tsx` [CREATED — 1:1 original PostHog history preview]
+  - `D:\all works\posthog-notebook-app\src\scenes\ai\phaiSidePanelComposerSeedLogic.ts` [CREATED — 1:1 original prompt seeder logic]
+  - `D:\all works\posthog-notebook-app\src\App.tsx` [UPDATED — mounts original `<Max />`]
+  - `D:\all works\posthog-notebook-app\src\scenes\ai\maxGlobalLogic.tsx` [UPDATED — default `phaiViewMode` set to `'legacy'`]
+  - `D:\all works\posthog-notebook-app\src\lib\kea-shim\index.ts` [UPDATED — cache & connect null safety]
+  - `D:\all works\posthog-notebook-app\src\scenes\ai\maxContextLogic.ts` [UPDATED — null safety]
+  - `D:\all works\posthog-notebook-app\src\scenes\ai\maxLogic.tsx` [UPDATED — null safety]
+  - `D:\all works\posthog-notebook-app\src\scenes\ai\maxThreadLogic.tsx` [UPDATED — null safety]
+- **Verification:** `npm run build` (PASS - 0 errors), Playwright live DOM scraper `check_dom.cjs` (PASS - 0 uncaught errors, renders full original PostHog AI scene).
+
+### Entry 034 — Cleanup & Edge Runtime Secret Hardening (TSK-32)
+- **Date:** 2026-08-06
+- **AI Agent:** Antigravity (Gemini 3.6 Flash)
+- **Summary:** Audited [`vercel.json`](file:///D:/all%20works/posthog.com/vercel.json) security headers. Configured standard security headers (`X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-XSS-Protection: 1; mode=block`). Updated `Content-Security-Policy-Report-Only` `connect-src` and `img-src` to explicitly include all Supabase domains (`https://*.supabase.co`, `wss://*.supabase.co`) for auth and realtime websockets.
+- **Modified Files:**
+  - `vercel.json` [UPDATED]
 
 ### Entry 012 — Audit & Configure CSP Security Headers (TSK-12)
 - **Date:** 2026-08-06

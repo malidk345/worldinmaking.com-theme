@@ -1,4 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
+import * as Portal from '@radix-ui/react-portal'
+import { AnimatePresence, motion } from 'framer-motion'
+import { useApp } from '../../../context/App'
 import {
     LemonDropdown,
     LemonButton,
@@ -16,6 +19,7 @@ import {
     IconTable,
     IconPencil,
     IconList,
+    IconX,
 } from '@posthog/icons'
 import {
     PHILOSOPHER_BOTS,
@@ -263,277 +267,336 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
         }
     }
 
-    const overlay = (
-        <div className={panelClassName} onClick={(e) => e.stopPropagation()}>
-            {/* Header with Context Indicator */}
-            <div className="flex items-center justify-between pb-2 gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                    <ProfilePicture user={philosopherAsUser(activeBot)} size="md" />
-                    <div className="min-w-0">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="font-semibold text-xs text-primary truncate">{activeBot.displayName}</span>
-                            {contentLength > 0 && (
-                                <LemonTag type="completion" size="small" className="text-[9px]">
-                                    Context Active ({contentLength} chars)
-                                </LemonTag>
-                            )}
-                        </div>
-                        <p className="text-[10px] text-muted mt-0.5 mb-0 truncate">{activeBot.shortStance}</p>
-                    </div>
-                </div>
-                {hasThread && (
-                    <LemonButton
-                        size="xsmall"
-                        type="tertiary"
-                        icon={<IconTrash />}
-                        onClick={() => setMessages([])}
-                        tooltip="Clear conversation"
-                    >
-                        Clear
-                    </LemonButton>
-                )}
-            </div>
+    const app = useApp()
+    const taskbarRef = app?.taskbarRef
+    const panelRef = useRef<HTMLDivElement | null>(null)
 
-            {!hasThread && (
-                <div className="space-y-2.5">
-                    <p className="text-secondary mb-0 leading-snug">
-                        Full AI Editorial Engine. Transform, format, summarize, or critique your notebook content in real-time.
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                        {EDITORIAL_SUGGESTIONS.map((item) => {
-                            const IconComp = item.icon
-                            return (
-                                <LemonButton
-                                    key={item.label}
-                                    size="xsmall"
-                                    type="secondary"
-                                    icon={<IconComp />}
-                                    onClick={() => void sendPrompt(item.prompt)}
-                                    className="justify-start text-left truncate"
-                                >
-                                    <span className="truncate">{item.label}</span>
-                                </LemonButton>
-                            )
-                        })}
-                    </div>
-                </div>
-            )}
+    const taskbarRect = taskbarRef?.current?.getBoundingClientRect()
+    const padding = taskbarRect?.left ?? 8
+    const panelStyle =
+        typeof window === 'undefined'
+            ? undefined
+            : {
+                  top: padding,
+                  right: padding,
+                  height: window.innerHeight - padding - (taskbarRect?.top ?? padding),
+              }
 
-            {hasThread && (
-                <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
-                    {messages.map((msg) => {
-                        const bot =
-                            msg.sender === 'ai' && msg.philosopherId
-                                ? getPhilosopherBot(msg.philosopherId, roster)
-                                : activeBot
-
-                        if (msg.sender === 'system') {
-                            return (
-                                <div key={msg.id} className="flex justify-center my-2 select-none">
-                                    <div className="flex items-center gap-1.5 text-[10px] text-muted bg-surface-primary border border-[var(--color-border-primary)] rounded-full px-3 py-0.5 shadow-2xs">
-                                        <span>🔀</span>
-                                        <span className="font-medium text-secondary">{msg.text}</span>
-                                    </div>
-                                </div>
-                            )
-                        }
-
-                        if (msg.sender === 'user') {
-                            return (
-                                <div key={msg.id} className="flex justify-end my-2">
-                                    <div className="max-w-[85%] bg-surface-primary border border-[var(--color-border-primary)] text-primary rounded-xl px-3.5 py-2 text-xs leading-relaxed font-normal shadow-xs">
-                                        {msg.text}
-                                    </div>
-                                </div>
-                            )
-                        }
-
-                        return (
-                            <div key={msg.id} className="space-y-2 my-3">
-                                {/* Thought Process OUTSIDE of the AI reply box */}
-                                {msg.sender === 'ai' && (msg.thinkingStages?.length || msg.thought) && (
-                                    <div className="px-1">
-                                        <ReasoningAnswer
-                                            id={`${msg.id}-thought`}
-                                            completed
-                                            content={msg.thought || ''}
-                                            stages={msg.thinkingStages}
-                                            latencyMs={msg.latencyMs}
-                                        />
-                                    </div>
-                                )}
-
-                                {/* AI Reply Box — White container on gray panel */}
-                                <div className="bg-surface-primary border border-[var(--color-border-primary)] rounded-xl p-3 space-y-2 shadow-xs">
-                                    <div className="flex items-center gap-2">
-                                        <ProfilePicture user={philosopherAsUser(bot)} size="sm" />
-                                        <div className="flex justify-between items-center gap-2 min-w-0 flex-1">
-                                            <span className="font-semibold text-xs text-primary truncate">{bot.name}</span>
-                                            <span className="text-[10px] text-muted shrink-0">{msg.timestamp}</span>
-                                        </div>
-                                    </div>
-
-                                    <p className="text-primary text-xs leading-relaxed whitespace-pre-wrap mb-0">{msg.text}</p>
-
-                                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                                        {msg.hasTable && (
-                                            <LemonButton
-                                                size="xsmall"
-                                                type="secondary"
-                                                icon={<IconTable />}
-                                                onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    onInsertPromptBlock(msg.text, 'append')
-                                                    setIsOpen(false)
-                                                }}
-                                            >
-                                                Insert table
-                                            </LemonButton>
-                                        )}
-                                        <LemonButton
-                                            size="xsmall"
-                                            type="tertiary"
-                                            icon={<IconPlus />}
-                                            onClick={(e) => {
-                                                e.stopPropagation()
-                                                onInsertPromptBlock(msg.text, 'append')
-                                                setIsOpen(false)
-                                            }}
-                                            tooltip="Append to bottom of notebook"
-                                        >
-                                            Append
-                                        </LemonButton>
-                                        <LemonButton
-                                            size="xsmall"
-                                            type="tertiary"
-                                            icon={<IconPencil />}
-                                            onClick={(e) => {
-                                                e.stopPropagation()
-                                                if (confirm('Replace current notebook content with this AI text?')) {
-                                                    onInsertPromptBlock(msg.text, 'replace')
-                                                    setIsOpen(false)
-                                                }
-                                            }}
-                                            tooltip="Replace entire notebook content"
-                                        >
-                                            Replace note
-                                        </LemonButton>
-                                        <LemonButton
-                                            size="xsmall"
-                                            type="tertiary"
-                                            icon={<IconPlus />}
-                                            onClick={(e) => {
-                                                e.stopPropagation()
-                                                onInsertPromptBlock(msg.text, 'prepend')
-                                                setIsOpen(false)
-                                            }}
-                                            tooltip="Prepend at top of notebook"
-                                        >
-                                            Prepend top
-                                        </LemonButton>
-                                    </div>
-                                </div>
-                            </div>
-                        )
-                    })}
-
-                    {isGenerating && (
-                        <div className="space-y-2 my-3">
-                            <div className="px-1">
-                                <ReasoningAnswer id="live-thinking" completed={false} />
-                            </div>
-                        </div>
-                    )}
-                    <div ref={chatEndRef} />
-                </div>
-            )}
-
-            {/* Composer Input Card — Official PostHog ComposerFrame Architecture */}
-            <form
-                onSubmit={(e) => {
-                    e.preventDefault()
-                    if (prompt.trim() && !isGenerating) void sendPrompt()
-                }}
-                className="mt-2 w-full"
-            >
-                <label className="input-like flex flex-col cursor-text border border-[var(--color-border-primary)] bg-surface-primary rounded-xl p-2.5 space-y-1.5 shadow-xs transition-all focus-within:border-[var(--color-border-bold)]">
-                    {/* Header slot for attached context */}
-                    {contentLength > 0 && (
-                        <div className="flex items-center gap-1.5 pt-0.5 px-0.5">
-                            <LemonTag type="completion" size="small" className="text-[10px] truncate max-w-[160px]">
-                                @ Context ({contentLength} chars)
-                            </LemonTag>
-                        </div>
-                    )}
-
-                    {/* Textarea slot — auto-expanding LemonTextArea */}
-                    <LemonTextArea
-                        ref={textareaRef}
-                        value={prompt}
-                        onChange={(val) => setPrompt(val)}
-                        placeholder="Ask follow-up or / for commands..."
-                        minRows={2}
-                        maxRows={6}
-                        className="!border-none !bg-transparent text-xs text-primary placeholder:text-muted focus:outline-none resize-none leading-relaxed p-0 shadow-none font-normal"
-                        onPressEnter={() => {
-                            if (prompt.trim() && !isGenerating) void sendPrompt()
-                        }}
-                    />
-
-                    {/* Footer slot — bot select & send button */}
-                    <div className="flex items-center justify-between gap-1.5 pt-1">
-                        <div className="flex items-center gap-1 min-w-0">
-                            <LemonSelect
-                                value={selectedBotId}
-                                onChange={(val) => {
-                                    if (val) handleBotChange(val)
-                                }}
-                                options={botSelectOptions}
-                                size="xsmall"
-                                type="tertiary"
-                                dropdownPlacement="top-start"
-                                dropdownMatchSelectWidth={false}
-                            />
-                        </div>
-
-                        <div className="shrink-0">
-                            <LemonButton
-                                size="xsmall"
-                                type="primary"
-                                htmlType="submit"
-                                icon={<IconArrowRight />}
-                                loading={isGenerating}
-                                disabled={!prompt.trim()}
-                                tooltip={`Send to ${activeBot.name}`}
-                                className="rounded-lg"
-                            />
-                        </div>
-                    </div>
-                </label>
-            </form>
-        </div>
-    )
+    useEffect(() => {
+        if (!isOpen) return
+        const handleClickOutside = (event: MouseEvent) => {
+            if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
+                const target = event.target as HTMLElement
+                if (target.closest?.('[data-lemon-popover]') || target.closest?.('.LemonSelect__dropdown')) {
+                    return
+                }
+                setIsOpen(false)
+            }
+        }
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                setIsOpen(false)
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside)
+        document.addEventListener('keydown', handleKeyDown)
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside)
+            document.removeEventListener('keydown', handleKeyDown)
+        }
+    }, [isOpen])
 
     return (
-        <LemonDropdown
-            overlay={overlay}
-            visible={isOpen}
-            onVisibilityChange={setIsOpen}
-            closeOnClickInside={false}
-            placement="bottom-end"
-            fallbackPlacements={['bottom-start', 'top-end', 'top-start']}
-            className={`notebook-app-scope ${isDark ? 'dark' : ''}`}
-        >
+        <>
             <LemonButton
                 size="small"
                 type="secondary"
                 icon={<IconSparkles />}
                 sideIcon={<IconChevronDown />}
                 active={isOpen}
-                tooltip="Open philosopher AI chat"
+                onClick={() => setIsOpen(!isOpen)}
+                tooltip="Open philosopher AI chat panel"
             >
                 <span className="hidden sm:inline">Ask AI</span>
             </LemonButton>
-        </LemonDropdown>
+
+            <Portal.Root>
+                <AnimatePresence>
+                    {isOpen && (
+                        <motion.div
+                            ref={panelRef}
+                            data-scheme="primary"
+                            initial={{ translateX: '100%' }}
+                            animate={{ translateX: 0 }}
+                            exit={{ translateX: '100%' }}
+                            transition={{ duration: 0.3, type: 'tween' }}
+                            style={panelStyle}
+                            className={`fixed w-96 max-w-[calc(100vw-1rem)] bg-primary border border-primary rounded shadow-xl z-50 text-primary flex flex-col notebook-app-scope ${isDark ? 'dark' : ''}`}
+                        >
+                            <div className="h-full flex flex-col min-h-0">
+                                {/* Header - Identical to NotificationsPanel */}
+                                <div className="flex items-center justify-between px-4 py-2 border-b border-primary flex-shrink-0">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <ProfilePicture user={philosopherAsUser(activeBot)} size="sm" />
+                                        <div className="min-w-0">
+                                            <div className="flex items-center gap-1.5 min-w-0">
+                                                <span className="font-semibold text-sm truncate text-primary">
+                                                    {activeBot.displayName}
+                                                </span>
+                                                {contentLength > 0 && (
+                                                    <LemonTag type="completion" size="small" className="text-[9px]">
+                                                        Context ({contentLength})
+                                                    </LemonTag>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        {hasThread && (
+                                            <LemonButton
+                                                size="xsmall"
+                                                type="tertiary"
+                                                icon={<IconTrash />}
+                                                onClick={() => setMessages([])}
+                                                tooltip="Clear conversation"
+                                            >
+                                                Clear
+                                            </LemonButton>
+                                        )}
+                                        <button
+                                            onClick={() => setIsOpen(false)}
+                                            className="text-sm text-secondary hover:text-primary p-1"
+                                            title="Close AI Panel"
+                                        >
+                                            <IconX className="size-4" />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Body - Scrollable content */}
+                                <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
+                                    {!hasThread && (
+                                        <div className="space-y-2.5">
+                                            <p className="text-xs text-secondary mb-0 leading-snug">
+                                                Full AI Editorial Engine. Transform, format, summarize, or critique your notebook content in real-time.
+                                            </p>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                                                {EDITORIAL_SUGGESTIONS.map((item) => {
+                                                    const IconComp = item.icon
+                                                    return (
+                                                        <LemonButton
+                                                            key={item.label}
+                                                            size="xsmall"
+                                                            type="secondary"
+                                                            icon={<IconComp />}
+                                                            onClick={() => void sendPrompt(item.prompt)}
+                                                            className="justify-start text-left truncate"
+                                                        >
+                                                            <span className="truncate text-xs">{item.label}</span>
+                                                        </LemonButton>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {hasThread && (
+                                        <div className="space-y-3">
+                                            {messages.map((msg) => {
+                                                const bot =
+                                                    msg.sender === 'ai' && msg.philosopherId
+                                                        ? getPhilosopherBot(msg.philosopherId, roster)
+                                                        : activeBot
+
+                                                if (msg.sender === 'system') {
+                                                    return (
+                                                        <div key={msg.id} className="flex justify-center my-2 select-none">
+                                                            <div className="flex items-center gap-1.5 text-[10px] text-muted bg-surface-primary border border-[var(--color-border-primary)] rounded-full px-3 py-0.5 shadow-2xs">
+                                                                <span>🔀</span>
+                                                                <span className="font-medium text-secondary">{msg.text}</span>
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                }
+
+                                                if (msg.sender === 'user') {
+                                                    return (
+                                                        <div key={msg.id} className="flex justify-end my-2">
+                                                            <div className="max-w-[85%] bg-surface-primary border border-[var(--color-border-primary)] text-primary rounded-xl px-3.5 py-2 text-xs leading-relaxed font-normal shadow-xs">
+                                                                {msg.text}
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                }
+
+                                                return (
+                                                    <div key={msg.id} className="space-y-2 my-3">
+                                                        {/* Thought Process */}
+                                                        {msg.sender === 'ai' && (msg.thinkingStages?.length || msg.thought) && (
+                                                            <div className="px-1">
+                                                                <ReasoningAnswer
+                                                                    id={`${msg.id}-thought`}
+                                                                    completed
+                                                                    content={msg.thought || ''}
+                                                                    stages={msg.thinkingStages}
+                                                                    latencyMs={msg.latencyMs}
+                                                                />
+                                                            </div>
+                                                        )}
+
+                                                        {/* AI Reply Card */}
+                                                        <div className="bg-surface-primary border border-[var(--color-border-primary)] rounded-xl p-3 space-y-2 shadow-xs">
+                                                            <div className="flex items-center gap-2">
+                                                                <ProfilePicture user={philosopherAsUser(bot)} size="sm" />
+                                                                <div className="flex justify-between items-center gap-2 min-w-0 flex-1">
+                                                                    <span className="font-semibold text-xs text-primary truncate">{bot.name}</span>
+                                                                    <span className="text-[10px] text-muted shrink-0">{msg.timestamp}</span>
+                                                                </div>
+                                                            </div>
+
+                                                            <p className="text-primary text-xs leading-relaxed whitespace-pre-wrap mb-0">{msg.text}</p>
+
+                                                            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                                                                {msg.hasTable && (
+                                                                    <LemonButton
+                                                                        size="xsmall"
+                                                                        type="secondary"
+                                                                        icon={<IconTable />}
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation()
+                                                                            onInsertPromptBlock(msg.text, 'append')
+                                                                            setIsOpen(false)
+                                                                        }}
+                                                                    >
+                                                                        Insert table
+                                                                    </LemonButton>
+                                                                )}
+                                                                <LemonButton
+                                                                    size="xsmall"
+                                                                    type="tertiary"
+                                                                    icon={<IconPlus />}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation()
+                                                                        onInsertPromptBlock(msg.text, 'append')
+                                                                        setIsOpen(false)
+                                                                    }}
+                                                                    tooltip="Append to bottom of notebook"
+                                                                >
+                                                                    Append
+                                                                </LemonButton>
+                                                                <LemonButton
+                                                                    size="xsmall"
+                                                                    type="tertiary"
+                                                                    icon={<IconPencil />}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation()
+                                                                        if (confirm('Replace current notebook content with this AI text?')) {
+                                                                            onInsertPromptBlock(msg.text, 'replace')
+                                                                            setIsOpen(false)
+                                                                        }
+                                                                    }}
+                                                                    tooltip="Replace entire notebook content"
+                                                                >
+                                                                    Replace note
+                                                                </LemonButton>
+                                                                <LemonButton
+                                                                    size="xsmall"
+                                                                    type="tertiary"
+                                                                    icon={<IconPlus />}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation()
+                                                                        onInsertPromptBlock(msg.text, 'prepend')
+                                                                        setIsOpen(false)
+                                                                    }}
+                                                                    tooltip="Prepend at top of notebook"
+                                                                >
+                                                                    Prepend top
+                                                                </LemonButton>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
+
+                                            {isGenerating && (
+                                                <div className="space-y-2 my-2">
+                                                    <div className="px-1">
+                                                        <ReasoningAnswer id="live-thinking" completed={false} />
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <div ref={chatEndRef} />
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Footer */}
+                                <div className="p-2.5 border-t border-primary bg-primary flex-shrink-0 rounded-b">
+                                    <form
+                                        onSubmit={(e) => {
+                                            e.preventDefault()
+                                            if (prompt.trim() && !isGenerating) void sendPrompt()
+                                        }}
+                                        className="w-full"
+                                    >
+                                        <label className="input-like flex flex-col cursor-text border border-primary bg-surface-primary rounded-xl p-2.5 space-y-2 shadow-xs transition-all focus-within:border-[var(--color-border-bold)]">
+                                            {contentLength > 0 && (
+                                                <div className="flex items-center gap-1.5 pt-0.5 px-0.5">
+                                                    <LemonTag type="completion" size="small" className="text-[10px] truncate max-w-[160px]">
+                                                        @ Context ({contentLength} chars)
+                                                    </LemonTag>
+                                                </div>
+                                            )}
+
+                                            <LemonTextArea
+                                                ref={textareaRef}
+                                                value={prompt}
+                                                onChange={(val) => setPrompt(val)}
+                                                placeholder="Ask follow-up or / for commands..."
+                                                minRows={2}
+                                                maxRows={5}
+                                                className="!border-none !bg-transparent text-xs text-primary placeholder:text-muted focus:outline-none resize-none leading-relaxed p-0 shadow-none font-normal"
+                                                onPressEnter={() => {
+                                                    if (prompt.trim() && !isGenerating) void sendPrompt()
+                                                }}
+                                            />
+
+                                            <div className="flex items-center justify-between gap-1.5 pt-1 border-t border-[var(--color-border-primary)]">
+                                                <div className="flex items-center gap-1 min-w-0">
+                                                    <LemonSelect
+                                                        value={selectedBotId}
+                                                        onChange={(val) => {
+                                                            if (val) handleBotChange(val)
+                                                        }}
+                                                        options={botSelectOptions}
+                                                        size="xsmall"
+                                                        type="tertiary"
+                                                        dropdownPlacement="top-start"
+                                                        dropdownMatchSelectWidth={false}
+                                                    />
+                                                </div>
+
+                                                <div className="shrink-0">
+                                                    <LemonButton
+                                                        size="xsmall"
+                                                        type="primary"
+                                                        htmlType="submit"
+                                                        icon={<IconArrowRight />}
+                                                        loading={isGenerating}
+                                                        disabled={!prompt.trim()}
+                                                        tooltip={`Send to ${activeBot.name}`}
+                                                        className="rounded-lg"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </form>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </Portal.Root>
+        </>
     )
 }
