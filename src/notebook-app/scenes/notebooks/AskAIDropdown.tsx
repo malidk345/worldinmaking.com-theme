@@ -710,13 +710,6 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                 )
                                             })}
 
-                                            {isGenerating && (
-                                                <div className="space-y-2 my-2">
-                                                    <div className="px-1">
-                                                        <ReasoningAnswer id="live-thinking" completed={false} />
-                                                    </div>
-                                                </div>
-                                            )}
                                             <div ref={chatEndRef} />
                                         </div>
                                     )}
