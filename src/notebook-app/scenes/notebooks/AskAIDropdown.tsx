@@ -256,7 +256,7 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                 signal,
                 body: JSON.stringify({
                     botName: activeBot.name,
-                    mode: 'critique',
+                    mode: 'chat',
                     documentText: currentNotebookContent?.slice(0, 4000) || '',
                     nodeContent: text,
                 }),

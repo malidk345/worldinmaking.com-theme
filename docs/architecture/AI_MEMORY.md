@@ -94,6 +94,17 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 *(Add new entries at the top of this list)*
 
+### Entry 043 — Ask AI Conversational Chat Mode Fix
+- **Date:** 2026-08-09
+- **AI Agent:** Antigravity
+- **Summary:** Fixed an issue where the Notebook Ask AI dropdown forced all user messages to be interpreted as document critiques rather than conversation.
+  1. **New API Mode:** Added `chat` mode to `src/pages/api/notebook/co-author.ts` with explicit task instructions to reply conversationally unless the user specifically asks to edit or evaluate the notebook.
+  2. **Prompt Restructuring:** Modified the prompt in `co-author.ts` so that in `chat` mode, the user's input is labeled as `User Message` instead of `Target Block Content`.
+  3. **UI Payload Update:** Changed the default fetch payload in `AskAIDropdown.tsx` to send `mode: 'chat'` instead of the hardcoded `mode: 'critique'`.
+- **Modified Files:**
+  - `src/pages/api/notebook/co-author.ts`
+  - `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx`
+
 ### Entry 042 — UI Bug Fixes and Multilingual Enforcement (Ask AI)
 - **Date:** 2026-08-09
 - **AI Agent:** Antigravity
