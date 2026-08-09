@@ -302,9 +302,9 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
 
                                 const currentCleanText = accumulatedReply.replace(/<thinking>[\s\S]*?(?:<\/thinking>|$)/gi, '').trim()
 
-                                // Single-pass typewriter: advance character-by-character ONLY forward
+                                // Single-pass typewriter: advance 3 characters per step at 2ms for ultra-fast, smooth, flicker-free typing
                                 while (lastRenderedLength < currentCleanText.length) {
-                                    lastRenderedLength++
+                                    lastRenderedLength = Math.min(currentCleanText.length, lastRenderedLength + 3)
                                     const charSlice = currentCleanText.slice(0, lastRenderedLength)
                                     setMessages((prev) =>
                                         prev.map((msgItem) =>
@@ -317,7 +317,7 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                 : msgItem
                                         )
                                     )
-                                    await new Promise((r) => setTimeout(r, 8))
+                                    await new Promise((r) => setTimeout(r, 2))
                                 }
                             }
                         } catch {
@@ -451,9 +451,9 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                 'Synthesize dialectical resolution',
             ]
 
-            // Advance character-by-character ONLY for any remaining characters (never resets or re-types)
+            // Fast completion advance for any remaining characters
             while (lastRenderedLength < finalCleanText.length) {
-                lastRenderedLength++
+                lastRenderedLength = Math.min(finalCleanText.length, lastRenderedLength + 4)
                 const charSlice = finalCleanText.slice(0, lastRenderedLength)
                 setMessages((prev) =>
                     prev.map((m) =>
@@ -466,7 +466,7 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                             : m
                     )
                 )
-                await new Promise((r) => setTimeout(r, 8))
+                await new Promise((r) => setTimeout(r, 2))
             }
 
             // Final completion update
@@ -688,23 +688,21 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                 const hasText = !!msg.text && msg.text.trim().length > 0
 
                                                 return (
-                                                        <div key={msg.id} className="space-y-2 my-3 min-w-0">
-                                                            {/* 1:1 PostHog ReasoningAnswer Component — Multi-stage Thinking Pipeline */}
-                                                            {msg.sender === 'ai' && (
-                                                                <div className="px-1">
-                                                                    <ReasoningAnswer
-                                                                        id={`${msg.id}-thought`}
-                                                                        completed={hasText || !msg.isStreaming}
-                                                                        content={msg.thought || ''}
-                                                                        stages={msg.thinkingStages}
-                                                                        latencyMs={msg.latencyMs}
-                                                                    />
-                                                                </div>
-                                                            )}
+                                                    <div key={msg.id} className="space-y-2 my-3 min-w-0">
+                                                        {msg.sender === 'ai' && (
+                                                            <div className="px-1">
+                                                                <ReasoningAnswer
+                                                                    id={`${msg.id}-thought`}
+                                                                    completed={hasText || !msg.isStreaming}
+                                                                    content={msg.thought || ''}
+                                                                    stages={msg.thinkingStages}
+                                                                    latencyMs={msg.latencyMs}
+                                                                />
+                                                            </div>
+                                                        )}
 
-                                                            {/* AI Reply Card — Opens smoothly ONLY after thinking phase finishes & text starts */}
-                                                            {(hasText || (!msg.isStreaming && !msg.thinkingStages?.length)) && (
-                                                                <div className="bg-surface-primary border border-[var(--color-border-primary)] rounded-xl p-3 space-y-2 shadow-xs animate-fade-in">
+                                                        {(hasText || (!msg.isStreaming && !msg.thinkingStages?.length)) && (
+                                                            <div className="bg-surface-primary border border-[var(--color-border-primary)] rounded-xl p-3 space-y-2 shadow-xs">
                                                                 <div className="flex items-center gap-2">
                                                                     <ProfilePicture user={philosopherAsUser(bot)} size="sm" />
                                                                     <div className="flex justify-between items-center gap-2 min-w-0 flex-1">
@@ -732,11 +730,10 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                                         {msg.text || ''}
                                                                     </Markdown>
                                                                     {msg.isStreaming && (
-                                                                        <span className="inline-block w-1.5 h-3.5 ml-0.5 bg-primary align-middle animate-pulse opacity-80" />
+                                                                        <span className="inline-block w-1.5 h-3.5 ml-0.5 bg-primary align-middle opacity-70 shrink-0" />
                                                                     )}
                                                                 </div>
 
-                                                                {/* Feature 5: Natural Language OS Executable Action Card */}
                                                                 {msg.osAction && (
                                                                     <div className="mt-2.5 p-2.5 rounded-xl bg-surface-primary border border-[var(--color-border-primary)] shadow-2xs space-y-1.5">
                                                                         <div className="flex items-center justify-between gap-2">
