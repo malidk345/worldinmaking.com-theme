@@ -1,6 +1,7 @@
 import React from 'react'
 import { IconMessage } from '@posthog/icons'
 import OSButton from 'components/OSButton'
+import { IconJavaScript, IconApple, IconAndroid, IconReactNative, IconFlutter } from 'components/OSIcons'
 import Link from 'components/Link'
 import MCPInstall from 'components/Products/MCPInstall'
 
