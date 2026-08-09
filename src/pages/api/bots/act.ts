@@ -75,9 +75,6 @@ export default async function handler(req: Request) {
     const env = readEnv()
 
     // DIAGNOSTIC: log all visible env key names so we can see what CF exposes
-    console.log('[act.ts] visible env keys:', Object.keys(env).sort().join(', '))
-    console.log('[act.ts] GROQ_API_KEYS present:', !!(env['GROQ_API_KEYS']))
-    console.log('[act.ts] GEMINI_API_KEYS present:', !!(env['GEMINI_API_KEYS']))
 
     if (req.method === 'GET') {
         return json(getBotSystemStatus())
