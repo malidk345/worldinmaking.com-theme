@@ -661,61 +661,20 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                                     </div>
                                                                 )}
 
-                                                                <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                                                                    {msg.hasTable && (
-                                                                        <LemonButton
-                                                                            size="xsmall"
-                                                                            type="secondary"
-                                                                            icon={<IconTable />}
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation()
-                                                                                onInsertPromptBlock(msg.text, 'append')
-                                                                                setIsOpen(false)
-                                                                            }}
-                                                                        >
-                                                                            Insert table
-                                                                        </LemonButton>
-                                                                    )}
+                                                                {/* Single Contextual Smart Insert Button */}
+                                                                <div className="pt-1">
                                                                     <LemonButton
                                                                         size="xsmall"
-                                                                        type="tertiary"
-                                                                        icon={<IconPlus />}
+                                                                        type="secondary"
+                                                                        icon={msg.hasTable ? <IconTable /> : <IconPlus />}
                                                                         onClick={(e) => {
                                                                             e.stopPropagation()
                                                                             onInsertPromptBlock(msg.text, 'append')
                                                                             setIsOpen(false)
                                                                         }}
-                                                                        tooltip="Append to bottom of notebook"
+                                                                        tooltip="Insert content block into active notebook document"
                                                                     >
-                                                                        Append
-                                                                    </LemonButton>
-                                                                    <LemonButton
-                                                                        size="xsmall"
-                                                                        type="tertiary"
-                                                                        icon={<IconPencil />}
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation()
-                                                                            if (confirm('Replace current notebook content with this AI text?')) {
-                                                                                onInsertPromptBlock(msg.text, 'replace')
-                                                                                setIsOpen(false)
-                                                                            }
-                                                                        }}
-                                                                        tooltip="Replace entire notebook content"
-                                                                    >
-                                                                        Replace note
-                                                                    </LemonButton>
-                                                                    <LemonButton
-                                                                        size="xsmall"
-                                                                        type="tertiary"
-                                                                        icon={<IconPlus />}
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation()
-                                                                            onInsertPromptBlock(msg.text, 'prepend')
-                                                                            setIsOpen(false)
-                                                                        }}
-                                                                        tooltip="Prepend at top of notebook"
-                                                                    >
-                                                                        Prepend top
+                                                                        {msg.hasTable ? 'Insert table into notebook' : 'Insert into notebook'}
                                                                     </LemonButton>
                                                                 </div>
 
