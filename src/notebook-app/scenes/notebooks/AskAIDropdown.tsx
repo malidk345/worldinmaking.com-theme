@@ -255,6 +255,8 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                 }),
             })
 
+            let lastRenderedLength = 0
+
             if (sseRes.ok && sseRes.body) {
                 const reader = sseRes.body.getReader()
                 const decoder = new TextDecoder()
@@ -275,45 +277,47 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                         try {
                             const parsed = JSON.parse(cleanLine)
                             if (parsed.token) {
-                                for (let charIdx = 0; charIdx < parsed.token.length; charIdx++) {
-                                    accumulatedReply += parsed.token[charIdx]
+                                accumulatedReply += parsed.token
 
-                                    // Extract real dynamic thinking stages (<perceive>, <frame>, <tension>, <move>) from LLM stream
-                                    let cleanText = accumulatedReply
-                                    let liveStages: ThinkingStageView[] | undefined = undefined
+                                // Extract real dynamic thinking stages (<perceive>, <frame>, <tension>, <move>) from LLM stream
+                                let liveStages: ThinkingStageView[] | undefined = undefined
+                                const thinkMatch = accumulatedReply.match(/<thinking>([\s\S]*?)(?:<\/thinking>|$)/i)
+                                if (thinkMatch) {
+                                    const thinkBody = thinkMatch[1]
+                                    const p = (thinkBody.match(/<perceive>([\s\S]*?)(?:<\/perceive>|$)/i) || [])[1]?.trim()
+                                    const f = (thinkBody.match(/<frame>([\s\S]*?)(?:<\/frame>|$)/i) || [])[1]?.trim()
+                                    const t = (thinkBody.match(/<tension>([\s\S]*?)(?:<\/tension>|$)/i) || [])[1]?.trim()
+                                    const m = (thinkBody.match(/<move>([\s\S]*?)(?:<\/move>|$)/i) || [])[1]?.trim()
 
-                                    const thinkMatch = accumulatedReply.match(/<thinking>([\s\S]*?)(?:<\/thinking>|$)/i)
-                                    if (thinkMatch) {
-                                        const thinkBody = thinkMatch[1]
-                                        const p = (thinkBody.match(/<perceive>([\s\S]*?)(?:<\/perceive>|$)/i) || [])[1]?.trim()
-                                        const f = (thinkBody.match(/<frame>([\s\S]*?)(?:<\/frame>|$)/i) || [])[1]?.trim()
-                                        const t = (thinkBody.match(/<tension>([\s\S]*?)(?:<\/tension>|$)/i) || [])[1]?.trim()
-                                        const m = (thinkBody.match(/<move>([\s\S]*?)(?:<\/move>|$)/i) || [])[1]?.trim()
+                                    const extracted: ThinkingStageView[] = []
+                                    if (p) extracted.push({ id: 'perceive', label: 'Perceive', text: p })
+                                    if (f) extracted.push({ id: 'frame', label: 'Frame', text: f })
+                                    if (t) extracted.push({ id: 'tension', label: 'Tension', text: t })
+                                    if (m) extracted.push({ id: 'move', label: 'Move', text: m })
 
-                                        const extracted: ThinkingStageView[] = []
-                                        if (p) extracted.push({ id: 'perceive', label: 'Perceive', text: p })
-                                        if (f) extracted.push({ id: 'frame', label: 'Frame', text: f })
-                                        if (t) extracted.push({ id: 'tension', label: 'Tension', text: t })
-                                        if (m) extracted.push({ id: 'move', label: 'Move', text: m })
-
-                                        if (extracted.length > 0) {
-                                            liveStages = extracted
-                                        }
-                                        cleanText = accumulatedReply.replace(/<thinking>[\s\S]*?(?:<\/thinking>|$)/gi, '').trim()
+                                    if (extracted.length > 0) {
+                                        liveStages = extracted
                                     }
+                                }
 
+                                const currentCleanText = accumulatedReply.replace(/<thinking>[\s\S]*?(?:<\/thinking>|$)/gi, '').trim()
+
+                                // Single-pass typewriter: advance character-by-character ONLY forward
+                                while (lastRenderedLength < currentCleanText.length) {
+                                    lastRenderedLength++
+                                    const charSlice = currentCleanText.slice(0, lastRenderedLength)
                                     setMessages((prev) =>
                                         prev.map((msgItem) =>
                                             msgItem.id === aiMsgId
                                                 ? {
                                                       ...msgItem,
-                                                      text: cleanText,
+                                                      text: charSlice,
                                                       thinkingStages: liveStages || msgItem.thinkingStages,
                                                   }
                                                 : msgItem
                                         )
                                     )
-                                    await new Promise((r) => setTimeout(r, 6))
+                                    await new Promise((r) => setTimeout(r, 8))
                                 }
                             }
                         } catch {
@@ -447,28 +451,42 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                 'Synthesize dialectical resolution',
             ]
 
-            // Character-by-character typewriter loop guarantee for final clean text
-            for (let charIndex = 1; charIndex <= finalCleanText.length; charIndex++) {
-                const streamSlice = finalCleanText.slice(0, charIndex)
+            // Advance character-by-character ONLY for any remaining characters (never resets or re-types)
+            while (lastRenderedLength < finalCleanText.length) {
+                lastRenderedLength++
+                const charSlice = finalCleanText.slice(0, lastRenderedLength)
                 setMessages((prev) =>
                     prev.map((m) =>
                         m.id === aiMsgId
                             ? {
                                   ...m,
-                                  text: streamSlice,
-                                  isStreaming: charIndex < finalCleanText.length,
-                                  hasTable: containsTable,
-                                  osAction: detectedAction,
-                                  thought: rawThought,
+                                  text: charSlice,
                                   thinkingStages: thinkingStages,
-                                  reasoningSteps: thinkingStages.map((s) => s.text),
-                                  suggestions: generatedSuggestions,
                               }
                             : m
                     )
                 )
-                await new Promise((r) => setTimeout(r, 10))
+                await new Promise((r) => setTimeout(r, 8))
             }
+
+            // Final completion update
+            setMessages((prev) =>
+                prev.map((m) =>
+                    m.id === aiMsgId
+                        ? {
+                              ...m,
+                              text: finalCleanText,
+                              isStreaming: false,
+                              hasTable: containsTable,
+                              osAction: detectedAction,
+                              thought: rawThought,
+                              thinkingStages: thinkingStages,
+                              reasoningSteps: thinkingStages.map((s) => s.text),
+                              suggestions: generatedSuggestions,
+                          }
+                        : m
+                )
+            )
         } catch (error) {
             console.warn('[Ask AI] error:', error)
             setMessages((prev) =>
