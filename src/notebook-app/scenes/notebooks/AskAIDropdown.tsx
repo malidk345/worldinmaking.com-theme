@@ -240,6 +240,12 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
         setPrompt('')
         setIsGenerating(true)
 
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort()
+        }
+        abortControllerRef.current = new AbortController()
+        const signal = abortControllerRef.current.signal
+
         let accumulatedReply = ''
 
         try {
@@ -247,6 +253,7 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
             const sseRes = await fetch('/api/notebook/co-author', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                signal,
                 body: JSON.stringify({
                     botName: activeBot.name,
                     mode: 'critique',
@@ -526,6 +533,7 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
     const app = useApp()
     const taskbarRef = app?.taskbarRef
     const panelRef = useRef<HTMLDivElement | null>(null)
+    const abortControllerRef = useRef<AbortController | null>(null)
 
     const taskbarRect = taskbarRef?.current?.getBoundingClientRect()
     const padding = taskbarRect?.left ?? 8
@@ -539,7 +547,10 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
               }
 
     useEffect(() => {
-        if (!isOpen) return
+        if (!isOpen) {
+            abortControllerRef.current?.abort()
+            return
+        }
         const handleClickOutside = (event: MouseEvent) => {
             if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
                 const target = event.target as HTMLElement
@@ -559,6 +570,7 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
         return () => {
             document.removeEventListener('mousedown', handleClickOutside)
             document.removeEventListener('keydown', handleKeyDown)
+            abortControllerRef.current?.abort()
         }
     }, [isOpen])
 
