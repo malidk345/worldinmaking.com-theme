@@ -606,17 +606,20 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                 <div className="flex items-center justify-between px-4 py-2 border-b border-primary flex-shrink-0">
                                     <div className="flex items-center gap-2 min-w-0">
                                         <ProfilePicture user={philosopherAsUser(activeBot)} size="sm" />
-                                        <div className="min-w-0">
-                                            <div className="flex items-center gap-1.5 min-w-0">
-                                                <span className="font-semibold text-sm truncate text-primary">
-                                                    {activeBot.displayName}
-                                                </span>
-                                                {contentLength > 0 && (
-                                                    <LemonTag type="completion" size="small" className="text-[9px]">
-                                                        Context ({contentLength})
-                                                    </LemonTag>
-                                                )}
-                                            </div>
+                                        <div className="min-w-0 flex items-center gap-1.5">
+                                            <LemonSelect
+                                                size="small"
+                                                type="tertiary"
+                                                value={selectedBotId}
+                                                options={botSelectOptions}
+                                                onChange={(val) => handleBotChange(val)}
+                                                dropdownMatchSelectWidth={false}
+                                            />
+                                            {contentLength > 0 && (
+                                                <LemonTag type="completion" size="small" className="text-[9px] shrink-0">
+                                                    Context ({contentLength})
+                                                </LemonTag>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-1.5">
