@@ -33,6 +33,7 @@ import { createNotebook } from './notebookStorage'
 import { useSiteThemeSync } from '../../lib/useSiteThemeSync'
 import { ReasoningAnswer } from './ReasoningAnswer'
 
+
 export interface AskAIDropdownProps {
     onInsertPromptBlock: (initialPrompt?: string, mode?: 'append' | 'replace' | 'prepend') => void
     currentNotebookContent?: string
@@ -189,6 +190,19 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         }
 
+        const initialReasoningSteps = [
+            `Deconstructing premises from ${activeBot.name}'s stance`,
+            'Analyzing ideological contradictions & structural trade-offs',
+            'Formulating persona critique & dialectical resolution',
+        ]
+
+        const initialThinkingStages = [
+            { id: 'perceive', label: 'Perceive', text: `Perceiving query through ${activeBot.name}'s lens...` },
+            { id: 'frame', label: 'Frame', text: `Framing epistemic stance & workspace context...` },
+            { id: 'tension', label: 'Tension', text: `Analyzing structural tensions & dialectical trade-offs...` },
+            { id: 'move', label: 'Move', text: `Formulating synthesis response & executable actions...` },
+        ]
+
         const aiMsgId = `${Date.now()}-a`
         const placeholderAiMsg: ChatMessage = {
             id: aiMsgId,
@@ -197,12 +211,8 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
             isStreaming: true,
             philosopherId: activeBot.id,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            thinkingStages: [
-                { id: 'perceive', label: 'Perceive', text: `Perceiving query through ${activeBot.name}'s lens...` },
-                { id: 'frame', label: 'Frame', text: `Framing epistemic stance & workspace context...` },
-                { id: 'tension', label: 'Tension', text: `Analyzing structural tensions & dialectical trade-offs...` },
-                { id: 'move', label: 'Move', text: `Formulating synthesis response & executable actions...` },
-            ],
+            thinkingStages: initialThinkingStages,
+            reasoningSteps: initialReasoningSteps,
         }
 
         setMessages((prev) => [...prev, userMsg, placeholderAiMsg])
@@ -328,7 +338,6 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
 
             const containsTable = accumulatedReply.includes('|') && accumulatedReply.includes('---')
 
-            // 1:1 Monorepo Dynamic Thought Parsing matching PostHog's exact PostHogAIApp.tsx logic
             const rawThought = responseData?.thought || ''
             const parsedReasoningSteps = rawThought
                 ? rawThought
@@ -336,20 +345,21 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                       .map((s: string) => s.replace(/^[-*•\d.]+\s*/, '').trim())
                       .filter((s: string) => s.length > 5)
                 : [
-                      `Deconstructing query through ${activeBot.name}'s epistemic stance`,
+                      `Deconstructing query through ${activeBot.name}'s stance`,
                       'Analyzing structural assumptions & technological enframing',
-                      'Formulating persona critique & workspace action synthesis',
+                      'Formulating persona critique & dialectical resolution',
                   ]
 
-            const thinkingStages = parsedReasoningSteps.map((step, idx) => ({
-                id: idx === 0 ? 'perceive' : idx === 1 ? 'frame' : idx === 2 ? 'tension' : 'move',
-                label: step,
-                text: step,
-            }))
+            const thinkingStages = [
+                { id: 'perceive', label: 'Perceive', text: parsedReasoningSteps[0] || `Perceiving query through ${activeBot.name}'s stance...` },
+                { id: 'frame', label: 'Frame', text: parsedReasoningSteps[1] || 'Framing epistemic stance & workspace context...' },
+                { id: 'tension', label: 'Tension', text: parsedReasoningSteps[2] || 'Analyzing structural tensions & trade-offs...' },
+                { id: 'move', label: 'Move', text: parsedReasoningSteps[3] || 'Formulating synthesis response & workspace actions...' },
+            ]
 
             const generatedSuggestions = [
-                `Deconstruct ${activeBot.name}'s primary premise`,
-                'Extract actionable task list',
+                'Deconstruct primary premises',
+                'Formulate counter-argument',
                 'Synthesize dialectical resolution',
             ]
 
@@ -363,7 +373,8 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                               hasTable: containsTable,
                               osAction: detectedAction,
                               thought: rawThought || parsedReasoningSteps.join('\n'),
-                              thinkingStages: thinkingStages,
+                              thinkingStages,
+                              reasoningSteps: parsedReasoningSteps,
                               suggestions: generatedSuggestions,
                           }
                         : m
@@ -569,8 +580,8 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
 
                                                 return (
                                                         <div key={msg.id} className="space-y-2 my-3">
-                                                            {/* Thought Process */}
-                                                            {msg.sender === 'ai' && (msg.thinkingStages?.length || msg.thought) && (
+                                                            {/* 1:1 PostHog ReasoningAnswer Component — Multi-stage Thinking Pipeline */}
+                                                            {msg.sender === 'ai' && (
                                                                 <div className="px-1">
                                                                     <ReasoningAnswer
                                                                         id={`${msg.id}-thought`}
@@ -581,7 +592,6 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                                     />
                                                                 </div>
                                                             )}
-
 
                                                             {/* AI Reply Card */}
                                                             <div className="bg-surface-primary border border-[var(--color-border-primary)] rounded-xl p-3 space-y-2 shadow-xs">
