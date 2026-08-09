@@ -10,6 +10,7 @@ export const runtime = 'edge'
 
 import { createLangChainModel } from '../../../lib/chat-bots/langchain-pipeline'
 import { loadMemGPTState } from '../../../lib/chat-bots/memgpt-engine'
+import { getFluidSystemPrompt } from '../../../lib/bots/fluid-prompts'
 import { ChatPromptTemplate } from '@langchain/core/prompts'
 import { StringOutputParser } from '@langchain/core/output_parsers'
 import { checkRateLimit } from '../../../lib/bots/rate-limit'
@@ -93,14 +94,12 @@ export default async function handler(req: Request) {
                 // Load MemGPT memory for persona
                 const memState = await loadMemGPTState(botName.toLowerCase())
                 const personaCore =
-                    memState.coreBlocks.persona ||
-                    `You are ${botName}, a resident philosopher bot on WorldInMaking OS.`
+                    memState.coreBlocks.persona || getFluidSystemPrompt(botName, 'notebook_coauthor')
+
+                const systemPrompt = `${personaCore}\n\nTask Instruction:\n${modeInstruction}`
 
                 const prompt = ChatPromptTemplate.fromMessages([
-                    [
-                        'system',
-                        `${personaCore}\n\nTask Instruction:\n${modeInstruction}\n\nCOGNITIVE REASONING & OUTPUT STANDARDS:\n1. NO CONVERSATIONAL FILLER: Never start with pleasantries like "Sure!", "Certainly!", or "Hello!". Begin immediately with substantive value.\n2. PRIVATE THINKING (Mandatory): Output your internal cognitive chain inside <thinking><perceive>...</perceive><frame>...</frame><tension>...</tension><move>...</move></thinking> tags before your public response.\n   - <perceive>: Analyze the user's specific query & active notebook context.\n   - <frame>: Apply your distinct philosophical stance & workspace perspective.\n   - <tension>: Identify structural trade-offs, paradoxes, or key points.\n   - <move>: Formulate your response strategy.\n3. CONDITIONAL VISUAL FORMATTING (Intent-Driven):\n   - Default: Provide direct, crisp, high-density markdown prose with bold headers and bullet points.\n   - IF AND ONLY IF the user asks for a table, comparison, or breakdown (or compares multiple items): Output a clean Markdown table.\n   - IF AND ONLY IF the user asks for a diagram, flowchart, schema, sequence, or structural map: Output a valid Mermaid diagram inside \`\`\`mermaid code fences.\n   - IF AND ONLY IF code is requested: Output syntax-highlighted code fences.\n\nGOLD STANDARD EXAMPLE:\nUser: Compare centralized vs decentralized state management.\n<thinking>\n<perceive>Analyzing state architecture trade-offs.</perceive>\n<frame>Frame through structural complexity & data sovereignty.</frame>\n<tension>Centralized state offers predictable reactivity but creates tight coupling; decentralized state scales cleanly but risks fragmentation.</tension>\n<move>Synthesize architectural comparison table.</move>\n</thinking>\n| Metric | Centralized (Redux/Context) | Decentralized (Atomic/Zustand) |\n|---|---|---|\n| **Coupling** | High global dependency | Isolated local scope |\n| **Scalability** | Complex at scale | High modularity |`,
-                    ],
+                    ['system', systemPrompt],
                     [
                         'user',
                         `Active Notebook Context:\n"""${documentText}"""\n\nTarget Block Content:\n"""${nodeContent || documentText}"""\n\nProvide your co-authoring contribution as @${botName}:`,

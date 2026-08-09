@@ -15,6 +15,7 @@ import {
     type ThinkingDepth,
     type ThinkingProcess,
 } from './thinking'
+import { getFluidSystemPrompt } from './fluid-prompts'
 import { getProviderKeyFlags, getRuntimeEnv } from './runtime-env'
 
 /** Re-export for action modules that import depth from the orchestrator surface. */
@@ -68,15 +69,12 @@ export interface BotRunFailure {
 
 export type BotRunResult = BotRunSuccess | BotRunFailure
 
-function buildUserPrompt(input: BotRunInput, taskType: TaskType): string {
-    const parts = [`TASK TYPE: ${taskType}`]
+function buildUserPrompt(input: BotRunInput, _taskType: TaskType): string {
+    const parts: string[] = []
     if (input.context?.trim()) {
-        parts.push(`CONTEXT:\n${input.context.trim()}`)
+        parts.push(`Context Snippet:\n"""\n${input.context.trim()}\n"""`)
     }
-    parts.push(`QUESTION / TOPIC:\n${input.question}`)
-    parts.push(
-        'IMPORTANT: Respond in the EXACT SAME LANGUAGE as the question/topic above. Adhere strictly to your persona identity, epistemic stance, thinking-process format, and style rules.\n\nIF THE USER ASKS FOR A DIAGRAM, FLOWCHART, SCHEMA, SEQUENCE, OR GRAPH: ALWAYS output a valid Mermaid diagram inside ```mermaid code fences. IF THE USER ASKS FOR A TABLE OR COMPARISON: ALWAYS output a clean Markdown table.'
-    )
+    parts.push(`Query / Prompt:\n${input.question.trim()}`)
     return parts.join('\n\n')
 }
 
@@ -93,6 +91,7 @@ export async function runBotTurn(input: BotRunInput): Promise<BotRunResult> {
 
     const systemPrompt = [
         buildPersonaHeader(persona, mood),
+        getFluidSystemPrompt(persona.name, 'site_wide'),
         buildThinkingInstruction(taskType, input.thinkingDepth),
     ].join('\n\n')
 
