@@ -278,22 +278,42 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                 for (let charIdx = 0; charIdx < parsed.token.length; charIdx++) {
                                     accumulatedReply += parsed.token[charIdx]
 
-                                    const hasThinking = accumulatedReply.includes('<thinking>')
-                                    const cleanText = hasThinking
-                                        ? accumulatedReply.replace(/<thinking>[\s\S]*?(?:<\/thinking>|$)/gi, '').trim()
-                                        : accumulatedReply
+                                    // Extract real dynamic thinking stages (<perceive>, <frame>, <tension>, <move>) from LLM stream
+                                    let cleanText = accumulatedReply
+                                    let liveStages: ThinkingStageView[] | undefined = undefined
+
+                                    const thinkMatch = accumulatedReply.match(/<thinking>([\s\S]*?)(?:<\/thinking>|$)/i)
+                                    if (thinkMatch) {
+                                        const thinkBody = thinkMatch[1]
+                                        const p = (thinkBody.match(/<perceive>([\s\S]*?)(?:<\/perceive>|$)/i) || [])[1]?.trim()
+                                        const f = (thinkBody.match(/<frame>([\s\S]*?)(?:<\/frame>|$)/i) || [])[1]?.trim()
+                                        const t = (thinkBody.match(/<tension>([\s\S]*?)(?:<\/tension>|$)/i) || [])[1]?.trim()
+                                        const m = (thinkBody.match(/<move>([\s\S]*?)(?:<\/move>|$)/i) || [])[1]?.trim()
+
+                                        const extracted: ThinkingStageView[] = []
+                                        if (p) extracted.push({ id: 'perceive', label: 'Perceive', text: p })
+                                        if (f) extracted.push({ id: 'frame', label: 'Frame', text: f })
+                                        if (t) extracted.push({ id: 'tension', label: 'Tension', text: t })
+                                        if (m) extracted.push({ id: 'move', label: 'Move', text: m })
+
+                                        if (extracted.length > 0) {
+                                            liveStages = extracted
+                                        }
+                                        cleanText = accumulatedReply.replace(/<thinking>[\s\S]*?(?:<\/thinking>|$)/gi, '').trim()
+                                    }
 
                                     setMessages((prev) =>
-                                        prev.map((m) =>
-                                            m.id === aiMsgId
+                                        prev.map((msgItem) =>
+                                            msgItem.id === aiMsgId
                                                 ? {
-                                                      ...m,
+                                                      ...msgItem,
                                                       text: cleanText,
+                                                      thinkingStages: liveStages || msgItem.thinkingStages,
                                                   }
-                                                : m
+                                                : msgItem
                                         )
                                     )
-                                    await new Promise((r) => setTimeout(r, 18))
+                                    await new Promise((r) => setTimeout(r, 6))
                                 }
                             }
                         } catch {
@@ -427,23 +447,28 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                 'Synthesize dialectical resolution',
             ]
 
-            setMessages((prev) =>
-                prev.map((m) =>
-                    m.id === aiMsgId
-                        ? {
-                              ...m,
-                              text: finalCleanText,
-                              isStreaming: false,
-                              hasTable: containsTable,
-                              osAction: detectedAction,
-                              thought: rawThought,
-                              thinkingStages: thinkingStages,
-                              reasoningSteps: thinkingStages.map((s) => s.text),
-                              suggestions: generatedSuggestions,
-                          }
-                        : m
+            // Character-by-character typewriter loop guarantee for final clean text
+            for (let charIndex = 1; charIndex <= finalCleanText.length; charIndex++) {
+                const streamSlice = finalCleanText.slice(0, charIndex)
+                setMessages((prev) =>
+                    prev.map((m) =>
+                        m.id === aiMsgId
+                            ? {
+                                  ...m,
+                                  text: streamSlice,
+                                  isStreaming: charIndex < finalCleanText.length,
+                                  hasTable: containsTable,
+                                  osAction: detectedAction,
+                                  thought: rawThought,
+                                  thinkingStages: thinkingStages,
+                                  reasoningSteps: thinkingStages.map((s) => s.text),
+                                  suggestions: generatedSuggestions,
+                              }
+                            : m
+                    )
                 )
-            )
+                await new Promise((r) => setTimeout(r, 10))
+            }
         } catch (error) {
             console.warn('[Ask AI] error:', error)
             setMessages((prev) =>
@@ -642,14 +667,16 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                     )
                                                 }
 
+                                                const hasText = !!msg.text && msg.text.trim().length > 0
+
                                                 return (
-                                                        <div key={msg.id} className="space-y-2 my-3">
+                                                        <div key={msg.id} className="space-y-2 my-3 min-w-0">
                                                             {/* 1:1 PostHog ReasoningAnswer Component — Multi-stage Thinking Pipeline */}
                                                             {msg.sender === 'ai' && (
                                                                 <div className="px-1">
                                                                     <ReasoningAnswer
                                                                         id={`${msg.id}-thought`}
-                                                                        completed={!msg.isStreaming}
+                                                                        completed={hasText || !msg.isStreaming}
                                                                         content={msg.thought || ''}
                                                                         stages={msg.thinkingStages}
                                                                         latencyMs={msg.latencyMs}
@@ -657,8 +684,9 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                                 </div>
                                                             )}
 
-                                                            {/* AI Reply Card */}
-                                                            <div className="bg-surface-primary border border-[var(--color-border-primary)] rounded-xl p-3 space-y-2 shadow-xs">
+                                                            {/* AI Reply Card — Opens smoothly ONLY after thinking phase finishes & text starts */}
+                                                            {(hasText || (!msg.isStreaming && !msg.thinkingStages?.length)) && (
+                                                                <div className="bg-surface-primary border border-[var(--color-border-primary)] rounded-xl p-3 space-y-2 shadow-xs animate-fade-in">
                                                                 <div className="flex items-center gap-2">
                                                                     <ProfilePicture user={philosopherAsUser(bot)} size="sm" />
                                                                     <div className="flex justify-between items-center gap-2 min-w-0 flex-1">
@@ -757,6 +785,7 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                                     </div>
                                                                 )}
                                                             </div>
+                                                            )}
                                                         </div>
                                                 )
                                             })}
