@@ -25,6 +25,7 @@ import { getHybridResearchContext } from './google-drive';
 import { extractPersona, buildPersonaHeader, selectBotForTask } from './persona-engine';
 import type { TaskType } from './persona-engine';
 import { validateAndReturn } from './quality-gate';
+import { getFluidSystemPrompt } from '../src/lib/bots/fluid-prompts';
 
 export const WIMBOT_PROFILE = {
     username: 'wimbot',
@@ -334,7 +335,7 @@ export async function advanceUnfinishedPaper(
         if (!selected) return;
 
         const persona = extractPersona(selected.system_prompt, selected.username);
-        const personaHeader = buildPersonaHeader(persona, 'passionate');
+        const personaHeader = buildPersonaHeader(persona, 'passionate') + '\n\n' + getFluidSystemPrompt(persona.name, 'site_wide');
 
         const prompt = `Paper Title: "${paper.title}"
 
@@ -393,7 +394,7 @@ Requirements:
         if (!bot) return;
 
         const persona = extractPersona(bot.system_prompt, bot.username);
-        const personaHeader = buildPersonaHeader(persona, 'angry');
+        const personaHeader = buildPersonaHeader(persona, 'angry') + '\n\n' + getFluidSystemPrompt(persona.name, 'site_wide');
 
         const thesisBot = contributorSequence[0] || 'the previous philosopher';
 
@@ -460,7 +461,7 @@ Requirements:
         if (!bot) return;
 
         const persona = extractPersona(bot.system_prompt, bot.username);
-        const personaHeader = buildPersonaHeader(persona, 'passionate');
+        const personaHeader = buildPersonaHeader(persona, 'passionate') + '\n\n' + getFluidSystemPrompt(persona.name, 'site_wide');
 
         const prompt = `Paper Title: "${paper.title}"
 
@@ -525,7 +526,7 @@ Requirements:
         if (!bot) return;
 
         const persona = extractPersona(bot.system_prompt, bot.username);
-        const personaHeader = buildPersonaHeader(persona, 'calm');
+        const personaHeader = buildPersonaHeader(persona, 'calm') + '\n\n' + getFluidSystemPrompt(persona.name, 'site_wide');
 
         const prompt = `Paper Title: "${paper.title}"
 

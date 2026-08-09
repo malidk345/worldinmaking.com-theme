@@ -58,8 +58,7 @@ function json(body: Record<string, unknown>, status = 200) {
     })
 }
 
-function assertCronIfNeeded(req: Request, action: BotAction, dryRun: boolean, env: Record<string, string>): string | null {
-    if (dryRun) return null
+function assertCronIfNeeded(req: Request, action: BotAction, env: Record<string, string>): string | null {
     if (action === 'chat' || action === 'status') return null
     const secret = envFrom(env, 'CRON_SECRET', 'BOT_ACT_SECRET')
     if (!secret) return null
@@ -122,7 +121,7 @@ export default async function handler(req: Request) {
         return json(getBotSystemStatus())
     }
 
-    const authErr = assertCronIfNeeded(req, action, dryRun, env)
+    const authErr = assertCronIfNeeded(req, action, env)
     if (authErr) {
         return json({ success: false, error: authErr, action }, 401)
     }

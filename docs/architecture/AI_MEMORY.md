@@ -74,7 +74,7 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-20` | Stream 2 | Split `App.tsx` god-object (hooks/contexts extraction) | `src/context/App.tsx` → `src/context/shell/*` | `[NOT STARTED]` | - | - |
 | `TSK-21` | Stream 2 | Adopt `WindowMode` reducer end-to-end (drop boolean soup) | `src/lib/windowState.ts`, `AppWindow`, `App.tsx` | `[NOT STARTED]` | - | - |
 | `TSK-22` | Stream 2 | Tighten `WindowElement` from `any` + inactive window `content-visibility` | `src/context/App.tsx`, `src/components/AppWindow/*` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-08 |
-| `TSK-23` | Stream 5 | Bot HTTP enqueue-only + `bot:worker` path (edge timeout safety) | `src/pages/api/*bot*`, `scripts/bot-worker.js` | `[NOT STARTED]` | - | - |
+| `TSK-23` | Stream 5 | Bot HTTP enqueue-only + `bot:worker` path (edge timeout safety) | `src/pages/api/*bot*`, `scripts/bot-worker.js` | `[COMPLETED]` | Claude Sonnet 5 (GitHub Copilot) | 2026-08-09 |
 | `TSK-24` | Stream 1 | Fix notebook-app build break (`IconArrowLeft` / public notebook view) | `src/notebook-app/lib/icons/iconsShim.tsx` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-06 |
 | `TSK-25` | Stream 3 | Shell error reporting + basic RUM (window blank rate / vitals) | `src/components/AppWindow/*`, analytics hooks | `[NOT STARTED]` | - | - |
 | `TSK-26` | Stream 3 | Progressive legacy quarantine/delete (dead PostHog marketing surface) | `src/components/`, `src/pages/`, `src/navs/` | `[NOT STARTED]` | - | - |
@@ -91,6 +91,25 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ## 5. AI Change History & Log
 
 *(Add new entries at the top of this list)*
+
+### Entry 039 — AI Output Quality Architecture Hardening (Quality Gate Wiring + Persona Variety) (TSK-23)
+- **Date:** 2026-08-09
+- **AI Agent:** Claude Sonnet 5 (GitHub Copilot)
+- **Summary:** Closed the biggest gap found in an architecture audit of the philosopher-bot pipeline: `runQualityGate`/`validateAndReturn` (filler-word strip, emoji/heading-spam checks, persona-forbidden-word checks, LLM correction retry) existed in `lib/quality-gate.ts` but was only wired into the autonomous paper writer (`lib/wimbot-orchestrator.ts`) — the live chat/forum/notebook co-author path (`src/lib/bots/orchestrate.ts` → `runBotTurn()`) had **zero** quality gate, meaning most real user-facing traffic bypassed it entirely.
+  1. **Quality gate wired into `runBotTurn()`:** every reply from chat, forum reply/thread_init, and paper_step now runs through `validateAndReturn()` before being returned, since `lib/bots/actions/forum.ts` and `lib/bots/actions/paper.ts` both call `runBotTurn()`. Correction retries reuse `generateWithGateway()` with the same env/botName.
+  2. **`freshAngles` are no longer dumped in full every call:** `buildPersonaHeader()` now picks 2 at random via a small in-memory `pickFreshAngles()` (isolate-scoped, same trade-off as `rate-limit.ts`) that avoids repeating the same angle indices across consecutive calls for the same bot — real variety instead of a static menu the model always gravitated to the same 1–2 items from.
+  3. **`lib/wimbot-orchestrator.ts` voice consistency:** all 4 persona-header call sites (thesis/antithesis/cross_examine/third_voice) now also append `getFluidSystemPrompt(name, 'site_wide')` — the self-aware-embodiment layer already used by the live chat/forum/co-author path — so autonomous papers and live chat sound like the same philosopher, not two divergent voice implementations.
+  4. **`scripts/bot-worker.js` deprecated as a standalone generator (resolves TSK-23):** it used to duplicate its own raw Groq/Gemini/OpenRouter `fetch()` calls and write directly to Supabase, completely bypassing persona-engine/quality-gate/gateway failover. Confirmed via `vercel.json` + `.github/workflows/philosopher-bots-cron.yml` that production scheduling already hits the unified `/api/cron/philosopher-bots` endpoint (Vercel cron **and** GitHub Actions both call it hourly — flagged as a minor double-scheduling redundancy to review, not fixed here). Rewrote `bot-worker.js` into a thin manual/local trigger that POSTs to that same endpoint instead of duplicating logic.
+  5. **Cron double-scheduling resolved:** confirmed `vercel.json` and `.github/workflows/philosopher-bots-cron.yml` were both independently hitting `/api/cron/philosopher-bots` hourly. Since production runs on Cloudflare Pages Edge (next-on-pages), the Vercel cron entry was dead config there — removed the `crons` block from `vercel.json`; the GitHub Actions workflow (platform-agnostic `curl` POST with `Bearer CRON_SECRET`) is now the single scheduler.
+  6. **`src/pages/api/notebook/co-author.ts` now quality-gated:** this endpoint used true SSE token-streaming straight from the LLM with zero quality gate. Switched `chain.stream({})` → `chain.invoke({})` to get the full reply first, ran it through `validateAndReturn()` (same LLM-correction-retry pattern as `orchestrate.ts`), then re-chunked the already-gated text word-by-word over SSE with a small delay to preserve the live-typing UX. Users never see an uncorrected draft; trade-off is first-token latency (waits for full generation + gate instead of true incremental streaming).
+- **Known remaining gaps (not done, for next agent):** (a) no LLM-judge/critic-revise pass (user explicitly deferred this — regex-based quality-gate was judged sufficient for now); (b) no persisted (cross-isolate) anti-repetition memory, only in-memory best-effort.
+- **Modified Files:**
+  - `src/lib/bots/orchestrate.ts`
+  - `src/lib/persona-engine.ts`
+  - `lib/wimbot-orchestrator.ts`
+  - `scripts/bot-worker.js`
+  - `vercel.json`
+  - `src/pages/api/notebook/co-author.ts`
 
 ### Entry 038 — PostHog-inspired AI Features (SSE Streaming & OS Action Cards) (TSK-35)
 - **Date:** 2026-08-09

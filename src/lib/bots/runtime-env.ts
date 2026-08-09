@@ -79,6 +79,7 @@ export function getProviderKeyFlags(store: EnvStore) {
             'GOOGLE_AI_API_KEY',
             'GOOGLE_GEMINI_API_KEY',
         ),
+        huggingface: !!envFrom(store, 'HUGGINGFACE_API_KEYS', 'HUGGINGFACE_API_KEY', 'HF_API_KEY', 'HF_TOKEN'),
         cfContext: hasCloudflareContext(),
         envSource: hasCloudflareContext() ? ('cloudflare+process' as const) : ('process-only' as const),
     }
