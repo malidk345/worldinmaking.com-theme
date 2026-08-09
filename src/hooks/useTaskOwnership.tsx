@@ -119,15 +119,15 @@ export const useTaskOwnership = ({ dataKey = 'people' }: { dataKey?: string } = 
 
     // Sort tasks alphabetically within each group
     const sortedData = useMemo(() => {
-        return Object.entries(taskData).reduce((acc, [key, group]) => {
-            return {
-                ...acc,
-                [key]: {
+        return Object.fromEntries(
+            Object.entries(taskData).map(([key, group]) => [
+                key,
+                {
                     ...group,
                     tasks: [...group.tasks].sort((a, b) => a.task.localeCompare(b.task)),
                 },
-            }
-        }, {} as typeof taskData)
+            ])
+        ) as typeof taskData
     }, [taskData])
 
     // Create groups array for rendering
@@ -142,12 +142,10 @@ export const useTaskOwnership = ({ dataKey = 'people' }: { dataKey?: string } = 
 
     // Create tasks lookup by group key
     const tasks = useMemo(() => {
-        return Object.entries(sortedData).reduce((acc, [key, group]) => {
-            return {
-                ...acc,
-                [key]: group.tasks,
-            }
-        }, {} as Record<string, Task[]>)
+        return Object.fromEntries(Object.entries(sortedData).map(([key, group]) => [key, group.tasks])) as Record<
+            string,
+            Task[]
+        >
     }, [sortedData])
 
     return {
