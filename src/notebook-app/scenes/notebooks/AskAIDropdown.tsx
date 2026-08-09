@@ -281,7 +281,7 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                         m.id === aiMsgId ? { ...m, text: accumulatedReply } : m
                                     )
                                 )
-                                await new Promise((r) => setTimeout(r, 20))
+                                await new Promise((r) => setTimeout(r, 10))
                             }
                         } catch {
                             /* ignore malformed chunk */
