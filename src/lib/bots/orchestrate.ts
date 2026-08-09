@@ -75,7 +75,7 @@ function buildUserPrompt(input: BotRunInput, taskType: TaskType): string {
     }
     parts.push(`QUESTION / TOPIC:\n${input.question}`)
     parts.push(
-        'IMPORTANT: Respond in the EXACT SAME LANGUAGE as the question/topic above. Adhere strictly to your persona identity, epistemic stance, thinking-process format, and style rules.'
+        'IMPORTANT: Respond in the EXACT SAME LANGUAGE as the question/topic above. Adhere strictly to your persona identity, epistemic stance, thinking-process format, and style rules.\n\nIF THE USER ASKS FOR A DIAGRAM, FLOWCHART, SCHEMA, SEQUENCE, OR GRAPH: ALWAYS output a valid Mermaid diagram inside ```mermaid code fences. IF THE USER ASKS FOR A TABLE OR COMPARISON: ALWAYS output a clean Markdown table.'
     )
     return parts.join('\n\n')
 }

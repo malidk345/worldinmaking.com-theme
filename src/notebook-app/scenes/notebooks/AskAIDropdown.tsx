@@ -86,6 +86,23 @@ const EDITORIAL_SUGGESTIONS = [
     { label: 'Rewrite rigorously', icon: IconPencil, prompt: 'Rewrite & refactor this notebook in a more rigorous and persuasive tone' },
 ]
 
+function shouldShowInsertButton(msg: ChatMessage, allMessages: ChatMessage[]): boolean {
+    if (msg.hasTable) return true
+    if (msg.text.includes('```mermaid') || msg.text.includes('```')) return true
+
+    const msgIdx = allMessages.findIndex((m) => m.id === msg.id)
+    const userPrompt = msgIdx > 0 ? allMessages[msgIdx - 1]?.text || '' : ''
+
+    const intentKeywords = [
+        'insert', 'notebook', 'table', 'diagram', 'chart', 'schema', 'summary',
+        'list', 'note', 'write', 'generate', 'create', 'tablo', 'şema', 'ekle',
+        'özet', 'liste', 'kod', 'hazırla', 'döküman', 'dokuman', 'çıkar', 'cikar',
+    ]
+
+    const combined = (userPrompt + ' ' + msg.text).toLowerCase()
+    return intentKeywords.some((kw) => combined.includes(kw))
+}
+
 function buildBotSelectOptions(roster: PhilosopherBot[]) {
     return [
         {
@@ -661,22 +678,24 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                                     </div>
                                                                 )}
 
-                                                                {/* Single Contextual Smart Insert Button */}
-                                                                <div className="pt-1">
-                                                                    <LemonButton
-                                                                        size="xsmall"
-                                                                        type="secondary"
-                                                                        icon={msg.hasTable ? <IconTable /> : <IconPlus />}
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation()
-                                                                            onInsertPromptBlock(msg.text, 'append')
-                                                                            setIsOpen(false)
-                                                                        }}
-                                                                        tooltip="Insert content block into active notebook document"
-                                                                    >
-                                                                        {msg.hasTable ? 'Insert table into notebook' : 'Insert into notebook'}
-                                                                    </LemonButton>
-                                                                </div>
+                                                                {/* Single Contextual Smart Insert Button — Appears ONLY when relevant/requested */}
+                                                                {shouldShowInsertButton(msg, messages) && (
+                                                                    <div className="pt-1">
+                                                                        <LemonButton
+                                                                            size="xsmall"
+                                                                            type="secondary"
+                                                                            icon={msg.hasTable ? <IconTable /> : <IconPlus />}
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation()
+                                                                                onInsertPromptBlock(msg.text, 'append')
+                                                                                setIsOpen(false)
+                                                                            }}
+                                                                            tooltip="Insert content block into active notebook document"
+                                                                        >
+                                                                            {msg.hasTable ? 'Insert table into notebook' : 'Insert into notebook'}
+                                                                        </LemonButton>
+                                                                    </div>
+                                                                )}
 
                                                                 {/* PostHog AI Suggestions Thread Chips */}
                                                                 {msg.sender === 'ai' && msg.suggestions && msg.suggestions.length > 0 && (

@@ -99,7 +99,7 @@ export default async function handler(req: Request) {
                 const prompt = ChatPromptTemplate.fromMessages([
                     [
                         'system',
-                        `${personaCore}\n\nTask: ${modeInstruction}\nKeep your response concise, analytical, and structured with clean markdown format.`,
+                        `${personaCore}\n\nTask: ${modeInstruction}\nKeep your response concise, analytical, and structured with clean markdown format. If the user asks for a diagram, flowchart, schema, sequence, or structural map, ALWAYS output a valid Mermaid diagram using \`\`\`mermaid code fences. If the user asks for a table or comparison, ALWAYS output a clean Markdown table.`,
                     ],
                     [
                         'user',
