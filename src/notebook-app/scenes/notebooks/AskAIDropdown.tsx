@@ -276,9 +276,40 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                             const parsed = JSON.parse(cleanLine)
                             if (parsed.token) {
                                 accumulatedReply += parsed.token
+
+                                // Dynamic real-time LLM thought extraction from <thinking> tags
+                                let cleanText = accumulatedReply
+                                let liveStages: ThinkingStageView[] | undefined = undefined
+
+                                const thinkMatch = accumulatedReply.match(/<thinking>([\s\S]*?)(?:<\/thinking>|$)/i)
+                                if (thinkMatch) {
+                                    const thinkBody = thinkMatch[1]
+                                    const p = (thinkBody.match(/<perceive>([\s\S]*?)(?:<\/perceive>|$)/i) || [])[1]?.trim()
+                                    const f = (thinkBody.match(/<frame>([\s\S]*?)(?:<\/frame>|$)/i) || [])[1]?.trim()
+                                    const t = (thinkBody.match(/<tension>([\s\S]*?)(?:<\/tension>|$)/i) || [])[1]?.trim()
+                                    const m = (thinkBody.match(/<move>([\s\S]*?)(?:<\/move>|$)/i) || [])[1]?.trim()
+
+                                    const extracted: ThinkingStageView[] = []
+                                    if (p) extracted.push({ id: 'perceive', label: 'Perceive', text: p })
+                                    if (f) extracted.push({ id: 'frame', label: 'Frame', text: f })
+                                    if (t) extracted.push({ id: 'tension', label: 'Tension', text: t })
+                                    if (m) extracted.push({ id: 'move', label: 'Move', text: m })
+
+                                    if (extracted.length > 0) {
+                                        liveStages = extracted
+                                    }
+                                    cleanText = accumulatedReply.replace(/<thinking>[\s\S]*?(?:<\/thinking>|$)/gi, '').trim()
+                                }
+
                                 setMessages((prev) =>
                                     prev.map((m) =>
-                                        m.id === aiMsgId ? { ...m, text: accumulatedReply } : m
+                                        m.id === aiMsgId
+                                            ? {
+                                                  ...m,
+                                                  text: cleanText,
+                                                  thinkingStages: liveStages || m.thinkingStages,
+                                              }
+                                            : m
                                     )
                                 )
                                 await new Promise((r) => setTimeout(r, 10))
@@ -359,23 +390,53 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
 
             const containsTable = accumulatedReply.includes('|') && accumulatedReply.includes('---')
 
-            const rawThought = responseData?.thought || ''
-            const parsedReasoningSteps = rawThought
+            // Parse real dynamic thoughts from LLM output (<thinking> tags or responseData.thinking)
+            let finalCleanText = accumulatedReply
+            let realThinkingStages: ThinkingStageView[] | undefined = undefined
+
+            const thinkMatch = accumulatedReply.match(/<thinking>([\s\S]*?)(?:<\/thinking>|$)/i)
+            if (thinkMatch) {
+                const thinkBody = thinkMatch[1]
+                const p = (thinkBody.match(/<perceive>([\s\S]*?)(?:<\/perceive>|$)/i) || [])[1]?.trim()
+                const f = (thinkBody.match(/<frame>([\s\S]*?)(?:<\/frame>|$)/i) || [])[1]?.trim()
+                const t = (thinkBody.match(/<tension>([\s\S]*?)(?:<\/tension>|$)/i) || [])[1]?.trim()
+                const m = (thinkBody.match(/<move>([\s\S]*?)(?:<\/move>|$)/i) || [])[1]?.trim()
+
+                const extracted: ThinkingStageView[] = []
+                if (p) extracted.push({ id: 'perceive', label: 'Perceive', text: p })
+                if (f) extracted.push({ id: 'frame', label: 'Frame', text: f })
+                if (t) extracted.push({ id: 'tension', label: 'Tension', text: t })
+                if (m) extracted.push({ id: 'move', label: 'Move', text: m })
+
+                if (extracted.length > 0) {
+                    realThinkingStages = extracted
+                }
+                finalCleanText = accumulatedReply.replace(/<thinking>[\s\S]*?(?:<\/thinking>|$)/gi, '').trim()
+            } else if (responseData?.thinking?.stages?.length > 0) {
+                realThinkingStages = responseData.thinking.stages.map((s: any) => ({
+                    id: s.id,
+                    label: s.label || s.id,
+                    text: s.text,
+                }))
+            }
+
+            const rawThought = responseData?.thought || (realThinkingStages ? realThinkingStages.map((s) => s.text).join('\n') : '')
+            const fallbackSteps = rawThought
                 ? rawThought
                       .split(/\n+|\.\s+/)
                       .map((s: string) => s.replace(/^[-*•\d.]+\s*/, '').trim())
                       .filter((s: string) => s.length > 5)
                 : [
-                      `Deconstructing query through ${activeBot.name}'s stance`,
-                      'Analyzing structural assumptions & technological enframing',
-                      'Formulating persona critique & dialectical resolution',
+                      `Analyzing query through ${activeBot.name}'s stance`,
+                      'Evaluating structural trade-offs & context',
+                      'Formulating synthesis response',
                   ]
 
-            const thinkingStages = [
-                { id: 'perceive', label: 'Perceive', text: parsedReasoningSteps[0] || `Perceiving query through ${activeBot.name}'s stance...` },
-                { id: 'frame', label: 'Frame', text: parsedReasoningSteps[1] || 'Framing epistemic stance & workspace context...' },
-                { id: 'tension', label: 'Tension', text: parsedReasoningSteps[2] || 'Analyzing structural tensions & trade-offs...' },
-                { id: 'move', label: 'Move', text: parsedReasoningSteps[3] || 'Formulating synthesis response & workspace actions...' },
+            const thinkingStages: ThinkingStageView[] = realThinkingStages || [
+                { id: 'perceive', label: 'Perceive', text: fallbackSteps[0] || `Analyzing query through ${activeBot.name}'s stance` },
+                { id: 'frame', label: 'Frame', text: fallbackSteps[1] || 'Evaluating structural trade-offs & context' },
+                { id: 'tension', label: 'Tension', text: fallbackSteps[2] || 'Formulating synthesis response' },
+                { id: 'move', label: 'Move', text: fallbackSteps[3] || 'Preparing actions' },
             ]
 
             const generatedSuggestions = [
@@ -389,13 +450,13 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                     m.id === aiMsgId
                         ? {
                               ...m,
-                              text: accumulatedReply,
+                              text: finalCleanText,
                               isStreaming: false,
                               hasTable: containsTable,
                               osAction: detectedAction,
-                              thought: rawThought || parsedReasoningSteps.join('\n'),
-                              thinkingStages,
-                              reasoningSteps: parsedReasoningSteps,
+                              thought: rawThought,
+                              thinkingStages: thinkingStages,
+                              reasoningSteps: thinkingStages.map((s) => s.text),
                               suggestions: generatedSuggestions,
                           }
                         : m
