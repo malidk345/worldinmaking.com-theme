@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
+import dynamic from 'next/dynamic'
 import * as Portal from '@radix-ui/react-portal'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useApp } from '../../../context/App'
@@ -32,6 +33,9 @@ import {
 import { createNotebook } from './notebookStorage'
 import { useSiteThemeSync } from '../../lib/useSiteThemeSync'
 import { ReasoningAnswer } from './ReasoningAnswer'
+import Markdown from 'components/Markdown'
+
+const Mermaid = dynamic(() => import('components/Mermaid'), { ssr: false })
 
 
 export interface AskAIDropdownProps {
@@ -603,12 +607,28 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                                     </div>
                                                                 </div>
 
-                                                                <p className="text-primary text-xs leading-relaxed whitespace-pre-wrap mb-0">
-                                                                    {msg.text}
+                                                                <div className="text-primary text-xs leading-relaxed mb-0 [&>p]:mb-1.5 [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4 [&>code]:bg-black/10 [&>code]:dark:bg-white/10 [&>code]:px-1 [&>code]:rounded">
+                                                                    <Markdown
+                                                                        components={{
+                                                                            code: ({ className, children, ...props }: any) => {
+                                                                                const match = /language-(\w+)/.exec(className || '')
+                                                                                if (match && match[1] === 'mermaid') {
+                                                                                    return <Mermaid>{String(children).replace(/\n$/, '')}</Mermaid>
+                                                                                }
+                                                                                return (
+                                                                                    <code className={className} {...props}>
+                                                                                        {children}
+                                                                                    </code>
+                                                                                )
+                                                                            },
+                                                                        }}
+                                                                    >
+                                                                        {msg.text || ''}
+                                                                    </Markdown>
                                                                     {msg.isStreaming && (
                                                                         <span className="inline-block w-1.5 h-3 ml-1 bg-amber-500 animate-pulse rounded-full align-middle" />
                                                                     )}
-                                                                </p>
+                                                                </div>
 
                                                                 {/* Feature 5: Natural Language OS Executable Action Card */}
                                                                 {msg.osAction && (
