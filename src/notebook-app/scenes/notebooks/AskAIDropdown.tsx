@@ -281,7 +281,10 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                         m.id === aiMsgId ? { ...m, text: accumulatedReply } : m
                                     )
                                 )
-                                await new Promise((r) => setTimeout(r, 25))
+                                // Realistic typewriter pacing with natural punctuation pauses
+                                const endsWithPunctuation = /[.!?\n]\s*$/.test(parsed.token)
+                                const delay = endsWithPunctuation ? 110 : Math.floor(16 + Math.random() * 14)
+                                await new Promise((r) => setTimeout(r, delay))
                             }
                         } catch {
                             /* ignore malformed chunk */
@@ -643,7 +646,9 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                                         {msg.text || ''}
                                                                     </Markdown>
                                                                     {msg.isStreaming && (
-                                                                        <span className="inline-block w-1.5 h-3 ml-1 bg-amber-500 animate-pulse rounded-full align-middle" />
+                                                                        <span className="inline-flex items-center ml-1 align-baseline select-none">
+                                                                            <span className="w-1.5 h-3.5 bg-amber-500 dark:bg-yellow rounded-[1px] animate-[pulse_0.75s_infinite] shadow-[0_0_8px_rgba(245,158,11,0.7)]" />
+                                                                        </span>
                                                                     )}
                                                                 </div>
 
