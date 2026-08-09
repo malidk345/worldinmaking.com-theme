@@ -16,6 +16,7 @@ import {
     buildMemGPTSystemPrompt,
     extractAndPersistMemoryFacts,
 } from './memgpt-engine';
+import { getFluidSystemPrompt } from './fluid-prompts';
 
 export interface InteractiveChatOptions {
     /** Bot username (e.g. 'nietzsche', 'marx', 'sartre') */
@@ -70,7 +71,8 @@ export async function handleInteractiveChat(
     }
 
     // 4. Build Persona Base Header
-    const basePersonaHeader = `You are @${persona.name}, engaging directly with a user in WorldInMaking OS.
+    const promptScope = (documentContext && documentContext.trim()) ? 'notebook_coauthor' : 'site_wide';
+    const basePersonaHeader = `${getFluidSystemPrompt(persona.name, promptScope)}
 
 EPISTEMIC STANCE: ${persona.epistemicStance}
 WRITING STYLE: ${persona.writingStyle}`;

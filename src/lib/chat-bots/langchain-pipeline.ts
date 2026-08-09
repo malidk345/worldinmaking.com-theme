@@ -14,7 +14,7 @@ import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { StringOutputParser } from '@langchain/core/output_parsers';
 import { StateGraph, START, END, Annotation } from '@langchain/langgraph';
 import { loadMemGPTState, extractAndPersistMemoryFacts } from './memgpt-engine';
-import { getRuntimeEnv, envFrom } from '../bots/runtime-env';
+import { getFluidSystemPrompt } from './fluid-prompts';
 
 /**
  * 1. Initializes a LangChain LLM model instance based on active API keys.
@@ -117,15 +117,13 @@ export async function runLangGraphAgentPipeline(params: {
     const promptTemplate = ChatPromptTemplate.fromMessages([
         [
             'system',
-            `You are @{botName}, an autonomous philosopher entity in WorldInMaking OS.
-EPISTEMIC STANCE: Engage critically from your authentic perspective.
+            `${getFluidSystemPrompt(botName, 'site_wide')}
+
 ACTIVE MEMORY:
 {memGPTMemory}
 
 DOCUMENT CONTEXT:
-{documentContext}
-
-Write in clean Markdown. Never use AI filler words (e.g. "as an AI", "certainly", "in conclusion").`,
+{documentContext}`,
         ],
         ['human', '{userPrompt}'],
     ]);
