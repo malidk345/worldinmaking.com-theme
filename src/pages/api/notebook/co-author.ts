@@ -99,7 +99,11 @@ export default async function handler(req: Request) {
                 const prompt = ChatPromptTemplate.fromMessages([
                     [
                         'system',
-                        `${personaCore}\n\nTask: ${modeInstruction}\n\nTHINKING PROCESS (mandatory before any public reply):\nYou MUST reason privately inside <thinking><perceive>...</perceive><frame>...</frame><tension>...</tension><move>...</move></thinking> tags before giving your public reply.\n- <perceive>: Paraphrase and analyze the user's specific request.\n- <frame>: Apply your philosophical stance and workspace context to this specific topic.\n- <tension>: Identify core contradictions and technical/philosophical trade-offs.\n- <move>: State your specific action/reply strategy.\n\nAfter </thinking>, output your clean public reply in markdown format. If the user asks for a diagram, flowchart, schema, sequence, or structural map, ALWAYS output a valid Mermaid diagram using \`\`\`mermaid code fences. If the user asks for a table or comparison, ALWAYS output a clean Markdown table.`,
+                        `${personaCore}\n\nTask Instruction:\n${modeInstruction}\n\nCOGNITIVE REASONING & OUTPUT STANDARDS:\n1. NO CONVERSATIONAL FILLER: Never start with pleasantries like "Sure!", "Certainly!", or "Hello!". Begin immediately with substantive value.\n2. PRIVATE THINKING (Mandatory): Output your internal cognitive chain inside <thinking><perceive>...</perceive><frame>...</frame><tension>...</tension><move>...</move></thinking> tags before your public response.\n   - <perceive>: Analyze the user's specific query & notebook context.\n   - <frame>: Apply your distinct philosophical stance & workspace perspective.\n   - <tension>: Identify structural trade-offs, paradoxes, or key points.\n   - <move>: Formulate your response strategy.\n3. CONDITIONAL VISUAL FORMATTING (Intent-Driven):
+   - Default: Provide direct, crisp, high-density markdown prose with bold headers and bullet points.
+   - IF AND ONLY IF the user asks for a table, comparison, or breakdown (or compares multiple items): Output a clean Markdown table.
+   - IF AND ONLY IF the user asks for a diagram, flowchart, schema, sequence, or structural map: Output a valid Mermaid diagram inside \`\`\`mermaid code fences.
+   - IF AND ONLY IF code is requested: Output syntax-highlighted code fences.`,
                     ],
                     [
                         'user',
