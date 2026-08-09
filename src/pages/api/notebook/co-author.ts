@@ -99,7 +99,7 @@ export default async function handler(req: Request) {
                 const prompt = ChatPromptTemplate.fromMessages([
                     [
                         'system',
-                        `${personaCore}\n\nTask: ${modeInstruction}\n\nTHINKING PROCESS (mandatory before public reply):\nYou MUST reason privately inside <thinking><perceive>...</perceive><frame>...</frame><tension>...</tension><move>...</move></thinking> tags before giving your public reply.\n- <perceive>: Paraphrase/deconstruct the user query.\n- <frame>: Apply your epistemic stance & workspace context.\n- <tension>: Identify contradictions & trade-offs.\n- <move>: State your rhetorical move.\n\nAfter </thinking>, output your public reply in clean markdown format. If the user asks for a diagram, flowchart, schema, sequence, or structural map, ALWAYS output a valid Mermaid diagram using \`\`\`mermaid code fences. If the user asks for a table or comparison, ALWAYS output a clean Markdown table.`,
+                        `${personaCore}\n\nTask: ${modeInstruction}\nKeep your response concise, analytical, and structured with clean markdown format. If the user asks for a diagram, flowchart, schema, sequence, or structural map, ALWAYS output a valid Mermaid diagram using \`\`\`mermaid code fences. If the user asks for a table or comparison, ALWAYS output a clean Markdown table.`,
                     ],
                     [
                         'user',

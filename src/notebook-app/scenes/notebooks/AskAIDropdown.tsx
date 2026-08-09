@@ -277,29 +277,11 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                             if (parsed.token) {
                                 accumulatedReply += parsed.token
 
-                                // Dynamic real-time LLM thought extraction from <thinking> tags
-                                let cleanText = accumulatedReply
-                                let liveStages: ThinkingStageView[] | undefined = undefined
-
-                                const thinkMatch = accumulatedReply.match(/<thinking>([\s\S]*?)(?:<\/thinking>|$)/i)
-                                if (thinkMatch) {
-                                    const thinkBody = thinkMatch[1]
-                                    const p = (thinkBody.match(/<perceive>([\s\S]*?)(?:<\/perceive>|$)/i) || [])[1]?.trim()
-                                    const f = (thinkBody.match(/<frame>([\s\S]*?)(?:<\/frame>|$)/i) || [])[1]?.trim()
-                                    const t = (thinkBody.match(/<tension>([\s\S]*?)(?:<\/tension>|$)/i) || [])[1]?.trim()
-                                    const m = (thinkBody.match(/<move>([\s\S]*?)(?:<\/move>|$)/i) || [])[1]?.trim()
-
-                                    const extracted: ThinkingStageView[] = []
-                                    if (p) extracted.push({ id: 'perceive', label: 'Perceive', text: p })
-                                    if (f) extracted.push({ id: 'frame', label: 'Frame', text: f })
-                                    if (t) extracted.push({ id: 'tension', label: 'Tension', text: t })
-                                    if (m) extracted.push({ id: 'move', label: 'Move', text: m })
-
-                                    if (extracted.length > 0) {
-                                        liveStages = extracted
-                                    }
-                                    cleanText = accumulatedReply.replace(/<thinking>[\s\S]*?(?:<\/thinking>|$)/gi, '').trim()
-                                }
+                                // Strip <thinking>...</thinking> content from chat text bubble
+                                const hasThinking = accumulatedReply.includes('<thinking>')
+                                const cleanText = hasThinking
+                                    ? accumulatedReply.replace(/<thinking>[\s\S]*?(?:<\/thinking>|$)/gi, '').trim()
+                                    : accumulatedReply
 
                                 setMessages((prev) =>
                                     prev.map((m) =>
@@ -307,7 +289,6 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                             ? {
                                                   ...m,
                                                   text: cleanText,
-                                                  thinkingStages: liveStages || m.thinkingStages,
                                               }
                                             : m
                                     )
