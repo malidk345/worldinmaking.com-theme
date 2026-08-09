@@ -714,17 +714,79 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                                 <div className="text-primary text-xs leading-relaxed mb-0 [&>p]:mb-1.5 [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4 [&>code]:bg-black/10 [&>code]:dark:bg-white/10 [&>code]:px-1 [&>code]:rounded">
                                                                     <Markdown
                                                                         components={{
-                                                                            code: ({ className, children, ...props }: any) => {
+                                                                            code: ({ className, children, inline, ...props }: any) => {
+                                                                                const codeStr = String(children || '').replace(/\n$/, '')
                                                                                 const match = /language-(\w+)/.exec(className || '')
-                                                                                if (match && match[1] === 'mermaid') {
-                                                                                    return <Mermaid>{String(children).replace(/\n$/, '')}</Mermaid>
+                                                                                const isMermaid =
+                                                                                    (match && match[1] === 'mermaid') ||
+                                                                                    codeStr.startsWith('graph ') ||
+                                                                                    codeStr.startsWith('flowchart') ||
+                                                                                    codeStr.startsWith('sequenceDiagram') ||
+                                                                                    codeStr.startsWith('gantt') ||
+                                                                                    codeStr.startsWith('pie') ||
+                                                                                    codeStr.startsWith('classDiagram')
+
+                                                                                if (isMermaid) {
+                                                                                    return (
+                                                                                        <div className="my-2 p-2 rounded-xl border border-[var(--color-border-primary)] bg-surface-primary shadow-xs overflow-hidden">
+                                                                                            <Mermaid>{codeStr}</Mermaid>
+                                                                                        </div>
+                                                                                    )
                                                                                 }
+
+                                                                                if (inline) {
+                                                                                    return (
+                                                                                        <code className="bg-black/10 dark:bg-white/10 px-1.5 py-0.5 rounded text-[11px] font-mono text-primary" {...props}>
+                                                                                            {children}
+                                                                                        </code>
+                                                                                    )
+                                                                                }
+
                                                                                 return (
-                                                                                    <code className={className} {...props}>
-                                                                                        {children}
-                                                                                    </code>
+                                                                                    <div className="my-2 rounded-xl border border-[var(--color-border-primary)] bg-surface-primary p-2.5 overflow-x-auto font-mono text-[11px] leading-normal text-primary shadow-2xs">
+                                                                                        <code className={className} {...props}>
+                                                                                            {children}
+                                                                                        </code>
+                                                                                    </div>
                                                                                 )
                                                                             },
+                                                                            table: ({ children }: any) => (
+                                                                                <div className="my-2.5 w-full overflow-x-auto rounded-xl border border-[var(--color-border-primary)] shadow-2xs">
+                                                                                    <table className="w-full text-xs border-collapse min-w-full divide-y divide-[var(--color-border-primary)]">
+                                                                                        {children}
+                                                                                    </table>
+                                                                                </div>
+                                                                            ),
+                                                                            thead: ({ children }: any) => (
+                                                                                <thead className="bg-surface-primary border-b border-[var(--color-border-primary)] text-primary font-semibold">
+                                                                                    {children}
+                                                                                </thead>
+                                                                            ),
+                                                                            tbody: ({ children }: any) => (
+                                                                                <tbody className="divide-y divide-[var(--color-border-primary)]/50 bg-primary/20">
+                                                                                    {children}
+                                                                                </tbody>
+                                                                            ),
+                                                                            tr: ({ children }: any) => (
+                                                                                <tr className="hover:bg-surface-primary/60 transition-colors">
+                                                                                    {children}
+                                                                                </tr>
+                                                                            ),
+                                                                            th: ({ children }: any) => (
+                                                                                <th className="px-3 py-2 text-left font-semibold text-xs text-primary border-r border-[var(--color-border-primary)]/40 last:border-r-0">
+                                                                                    {children}
+                                                                                </th>
+                                                                            ),
+                                                                            td: ({ children }: any) => (
+                                                                                <td className="px-3 py-2 text-left text-xs text-secondary border-r border-[var(--color-border-primary)]/30 last:border-r-0">
+                                                                                    {children}
+                                                                                </td>
+                                                                            ),
+                                                                            blockquote: ({ children }: any) => (
+                                                                                <blockquote className="border-l-2 border-primary pl-3 my-2 text-secondary italic text-xs">
+                                                                                    {children}
+                                                                                </blockquote>
+                                                                            ),
                                                                         }}
                                                                     >
                                                                         {msg.text || ''}
@@ -763,45 +825,28 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                                         </div>
                                                                     </div>
                                                                 )}
-
-                                                                {/* Single Contextual Smart Insert Button — Appears ONLY when relevant/requested */}
-                                                                {shouldShowInsertButton(msg, messages) && (
-                                                                    <div className="pt-1">
-                                                                        <LemonButton
-                                                                            size="xsmall"
-                                                                            type="secondary"
-                                                                            icon={msg.hasTable ? <IconTable /> : <IconPlus />}
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation()
-                                                                                onInsertPromptBlock(msg.text, 'append')
-                                                                                setIsOpen(false)
-                                                                            }}
-                                                                            tooltip="Insert content block into active notebook document"
-                                                                        >
-                                                                            {msg.hasTable ? 'Insert table into notebook' : 'Insert into notebook'}
-                                                                        </LemonButton>
-                                                                    </div>
-                                                                )}
-
-                                                                {/* PostHog AI Suggestions Thread Chips */}
-                                                                {msg.sender === 'ai' && msg.suggestions && msg.suggestions.length > 0 && (
-                                                                    <div className="flex flex-wrap gap-1.5 pt-1.5 border-t border-[var(--color-border-primary)]/50 mt-2">
-                                                                        {msg.suggestions.map((sug, idx) => (
-                                                                            <LemonButton
-                                                                                key={idx}
-                                                                                size="xsmall"
-                                                                                type="tertiary"
-                                                                                icon={<IconSparkles className="size-3 text-amber-500" />}
-                                                                                onClick={() => sendPrompt(sug)}
-                                                                            >
-                                                                                {sug}
-                                                                            </LemonButton>
-                                                                        ))}
-                                                                    </div>
-                                                                )}
                                                             </div>
-                                                            )}
-                                                        </div>
+                                                        )}
+
+                                                        {/* Single Contextual Smart Insert Button — Rendered OUTSIDE & below the chat reply card */}
+                                                        {shouldShowInsertButton(msg, messages) && (
+                                                            <div className="pt-1 px-1 flex justify-start">
+                                                                <LemonButton
+                                                                    size="xsmall"
+                                                                    type="secondary"
+                                                                    icon={msg.hasTable ? <IconTable /> : <IconPlus />}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation()
+                                                                        onInsertPromptBlock(msg.text, 'append')
+                                                                        setIsOpen(false)
+                                                                    }}
+                                                                    tooltip="Insert content block into active notebook document"
+                                                                >
+                                                                    {msg.hasTable ? 'Insert table into notebook' : 'Insert into notebook'}
+                                                                </LemonButton>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 )
                                             })}
 
