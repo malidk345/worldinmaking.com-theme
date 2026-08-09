@@ -275,25 +275,26 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                         try {
                             const parsed = JSON.parse(cleanLine)
                             if (parsed.token) {
-                                accumulatedReply += parsed.token
+                                for (let charIdx = 0; charIdx < parsed.token.length; charIdx++) {
+                                    accumulatedReply += parsed.token[charIdx]
 
-                                // Strip <thinking>...</thinking> content from chat text bubble
-                                const hasThinking = accumulatedReply.includes('<thinking>')
-                                const cleanText = hasThinking
-                                    ? accumulatedReply.replace(/<thinking>[\s\S]*?(?:<\/thinking>|$)/gi, '').trim()
-                                    : accumulatedReply
+                                    const hasThinking = accumulatedReply.includes('<thinking>')
+                                    const cleanText = hasThinking
+                                        ? accumulatedReply.replace(/<thinking>[\s\S]*?(?:<\/thinking>|$)/gi, '').trim()
+                                        : accumulatedReply
 
-                                setMessages((prev) =>
-                                    prev.map((m) =>
-                                        m.id === aiMsgId
-                                            ? {
-                                                  ...m,
-                                                  text: cleanText,
-                                              }
-                                            : m
+                                    setMessages((prev) =>
+                                        prev.map((m) =>
+                                            m.id === aiMsgId
+                                                ? {
+                                                      ...m,
+                                                      text: cleanText,
+                                                  }
+                                                : m
+                                        )
                                     )
-                                )
-                                await new Promise((r) => setTimeout(r, 10))
+                                    await new Promise((r) => setTimeout(r, 18))
+                                }
                             }
                         } catch {
                             /* ignore malformed chunk */
