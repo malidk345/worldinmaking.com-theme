@@ -67,7 +67,7 @@ export function buildBotPrompt(rawPrompt: string): string {
  */
 const TASK_MODEL_PREFERENCE: Record<TaskType, { gemini: string; grok: string; groq: string; openrouter: string }> = {
     // Synthesis gets the most capable model — worth the extra latency
-    synthesis:           { gemini: 'gemini-2.0-flash-thinking-exp', grok: 'grok-2-latest', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
+    synthesis:           { gemini: 'gemini-2.0-flash', grok: 'grok-2-latest', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
     // Paper tasks need strong instruction following and fluency
     paper_section:       { gemini: 'gemini-2.0-flash', grok: 'grok-2-latest', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },
     dialectic_challenge: { gemini: 'gemini-2.0-flash', grok: 'grok-2-latest', groq: 'llama-3.3-70b-versatile', openrouter: 'meta-llama/llama-3.3-70b-instruct' },

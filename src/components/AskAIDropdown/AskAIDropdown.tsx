@@ -21,8 +21,7 @@ export interface ChatMessage {
     text: string
     timestamp: string
 }
-
-const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY || ''
+}
 
 const BOTS = [
     { value: 'aria', name: 'Aria' },
@@ -86,47 +85,68 @@ export function AskAIDropdown({ onInsertPromptBlock }: AskAIDropdownProps): JSX.
 
         try {
             const conversationContext = messages
-                .map((m) => `${m.sender === 'user' ? 'User' : 'Assistant'}: ${m.text}`)
+                .slice(-6)
+                .map((m) => `${m.sender === 'user' ? 'User' : activeBot.name}: ${m.text}`)
                 .join('\n')
 
-            const systemInstructions = `You are a helpful AI assistant named ${activeBot.name}. Answer concisely and accurately using markdown.`
+            const fullPrompt = conversationContext
+                ? `Previous conversation:\n${conversationContext}\n\nUser request: ${text}`
+                : text
 
-            const response = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-                {
+            let res = await fetch('/api/bots/act', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'chat',
+                    bot: activeBot.value,
+                    question: fullPrompt,
+                    mood: 'calm',
+                    taskType: 'paper_section',
+                    thinkingDepth: 'standard',
+                }),
+            })
+
+            if (res.status === 404 || res.status === 405) {
+                res = await fetch('/api/philosopher-bot', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [
-                            {
-                                parts: [
-                                    {
-                                        text: `${systemInstructions}\n\nPrevious Conversation:\n${conversationContext}\n\nUser Request: ${text}`,
-                                    },
-                                ],
-                            },
-                        ],
+                        philosopher: activeBot.value,
+                        question: fullPrompt,
+                        mood: 'calm',
+                        taskType: 'paper_section',
                     }),
-                }
-            )
+                })
+            }
 
-            const data = await response.json()
-            const candidateText = data?.candidates?.[0]?.content?.parts?.[0]?.text
+            let data: any = null
+            try {
+                data = await res.json()
+            } catch {
+                data = null
+            }
+
+            const reply =
+                (typeof data?.reply === 'string' && data.reply.trim()) ||
+                (typeof data?.error === 'string' && data.error) ||
+                (res.ok
+                    ? `${activeBot.name} could not form a reply. Try again.`
+                    : `Request failed (${res.status}). Try again.`)
 
             const aiMsg: ChatMessage = {
                 id: (Date.now() + 1).toString(),
                 sender: 'ai',
-                text: candidateText ? candidateText.trim() : 'I answered your request above.',
+                text: reply,
                 timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             }
 
             setMessages((prev) => [...prev, aiMsg])
         } catch (error) {
-            console.warn('AI error:', error)
+            console.warn('[Ask AI] error:', error)
             const fallbackMsg: ChatMessage = {
                 id: (Date.now() + 1).toString(),
                 sender: 'ai',
-                text: `Response for: "${text}"`,
+                text: 'The AI assistant is temporarily unreachable. Please try again.',
                 timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             }
             setMessages((prev) => [...prev, fallbackMsg])

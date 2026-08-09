@@ -44,22 +44,47 @@ export function createDatabaseSearchTool() {
 export function createWebSearchTool() {
     return new DynamicTool({
         name: 'web_search',
-        description: 'Fetches recent technology, economic, and philosophical news headlines.',
+        description: 'Fetches real-world factual summaries, encyclopedic knowledge, and current news for any query.',
         func: async (query: string) => {
+            const cleanQuery = query.trim()
+            if (!cleanQuery) return 'No query provided for web search.'
+
             try {
-                const res = await fetch(`https://aeon.co/feed.rss`, {
+                // Tier 1: Wikipedia Search API for encyclopedic & technical queries
+                const wikiUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(cleanQuery)}&format=json&utf8=1&srlimit=3`
+                const wikiRes = await fetch(wikiUrl, {
+                    headers: { 'User-Agent': 'WorldInMaking-LangChain/1.0 (https://worldinmaking.com)' },
+                })
+
+                if (wikiRes.ok) {
+                    const wikiData: any = await wikiRes.json()
+                    const searchResults = wikiData?.query?.search || []
+                    if (searchResults.length > 0) {
+                        const formatted = searchResults.map((item: any) => {
+                            const cleanSnippet = (item.snippet || '').replace(/<[^>]+>/g, '').trim()
+                            return `• ${item.title}: "${cleanSnippet}"`
+                        }).join('\n')
+                        return `Web Search Results for "${cleanQuery}":\n${formatted}`
+                    }
+                }
+
+                // Tier 2: Fallback to Aeon Essay Feed
+                const rssRes = await fetch(`https://aeon.co/feed.rss`, {
                     headers: { 'User-Agent': 'WorldInMaking-LangChain/1.0' },
-                });
-                if (!res.ok) return `Could not fetch live web feed.`;
-                const text = await res.text();
-                const matches = text.match(/<title[^>]*>([\s\S]*?)<\/title>/gi) || [];
-                const headlines = matches.slice(1, 4).map((t) => t.replace(/<[^>]+>/g, '').trim());
-                return `Recent headlines related to "${query}":\n${headlines.join('\n')}`;
+                })
+                if (rssRes.ok) {
+                    const text = await rssRes.text()
+                    const matches = text.match(/<title[^>]*>([\s\S]*?)<\/title>/gi) || []
+                    const headlines = matches.slice(1, 4).map((t) => t.replace(/<[^>]+>/g, '').trim())
+                    return `Recent essay headlines related to "${cleanQuery}":\n${headlines.join('\n')}`
+                }
+
+                return `No web search results found for: "${cleanQuery}"`
             } catch (e: any) {
-                return `Web search error: ${e?.message || 'failed'}`;
+                return `Web search error: ${e?.message || 'failed'}`
             }
         },
-    });
+    })
 }
 
 /**

@@ -83,12 +83,36 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-31` | Stream 5 | Bot API hardening: null-body crash, input caps, IP-scoped rate limits, cron auth | `src/pages/api/philosopher-bot.ts`, `src/pages/api/bots/act.ts`, `src/pages/api/cron/philosopher-bots.ts` | `[COMPLETED]` | DeepSeek (opencode) | 2026-08-08 |
 | `TSK-32` | Stream 5 | Transform Ask AI dropdown into slide-over panel (Notifications Panel style) | `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-09 |
 | `TSK-33` | Stream 1 | Fix Cloudflare build crash caused by UTF-8 BOM in vercel.json | `vercel.json` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-09 |
+| `TSK-34` | Stream 5 | AI System Optimization Package (Web search tool, Gemini model ID stability, client API key security) | `lib/ai-provider.ts`, `src/lib/chat-bots/langchain-tools.ts`, `src/components/AskAIDropdown/AskAIDropdown.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-09 |
+| `TSK-35` | Stream 5 | PostHog-inspired AI Features: Live SSE Token Streaming & OS Executable Action Cards | `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx`, `src/pages/api/notebook/co-author.ts` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-09 |
 
 ---
 
 ## 5. AI Change History & Log
 
 *(Add new entries at the top of this list)*
+
+### Entry 038 — PostHog-inspired AI Features (SSE Streaming & OS Action Cards) (TSK-35)
+- **Date:** 2026-08-09
+- **AI Agent:** Antigravity (Gemini 3.6 Flash)
+- **Summary:** Integrated 2 high-impact PostHog AI features into WIM OS Ask AI panel:
+  1. **Live SSE Token Streaming:** Replaced full-payload waiting with ReadableStream token-by-token live typing in `AskAIDropdown.tsx` via `/api/notebook/co-author`. Added animated pulse streaming cursor.
+  2. **Natural Language OS Action Cards:** Added AI intent recognition for commands like "Create notebook", "Start forum topic", "Open admin". Executable action cards appear inside the AI chat thread with PostHog Lemon UI buttons that automatically invoke workspace actions (`createNotebook`, `addWindow`).
+- **Modified Files:**
+  - `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx`
+
+### Entry 037 — AI System Optimization Package (TSK-34)
+- **Date:** 2026-08-09
+- **AI Agent:** Antigravity (Gemini 3.6 Flash)
+- **Summary:** Executed the 3-part AI optimization package:
+  1. **Web Search Tool Upgraded (`src/lib/chat-bots/langchain-tools.ts`):** Upgraded `createWebSearchTool()` to query Wikipedia Search API for real-world query facts and encyclopedic context with fallback to Aeon RSS.
+  2. **Model ID Stability (`lib/ai-provider.ts`):** Updated synthesis gemini model ID from experimental `gemini-2.0-flash-thinking-exp` to stable production model `gemini-2.0-flash`.
+  3. **Client API Key Security (`src/components/AskAIDropdown/AskAIDropdown.tsx`):** Removed `NEXT_PUBLIC_GEMINI_API_KEY` and direct client-side Google API fetch. All prompt requests now route securely through the server Edge API (`/api/bots/act`).
+- **Verification:** Shell TypeScript typecheck passed cleanly with 0 gated errors.
+- **Modified Files:**
+  - `lib/ai-provider.ts`
+  - `src/lib/chat-bots/langchain-tools.ts`
+  - `src/components/AskAIDropdown/AskAIDropdown.tsx`
 
 ### Entry 036 — Fix Cloudflare Pages Build Crash (vercel.json UTF-8 BOM Removal) (TSK-33)
 - **Date:** 2026-08-09

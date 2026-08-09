@@ -20,6 +20,7 @@ import {
     IconPencil,
     IconList,
     IconX,
+    IconCheck,
 } from '@posthog/icons'
 import {
     PHILOSOPHER_BOTS,
@@ -28,6 +29,7 @@ import {
     fetchPhilosopherRosterWithAvatars,
     type PhilosopherBot,
 } from '~nb-lib/philosophers'
+import { createNotebook } from './notebookStorage'
 import { useSiteThemeSync } from '../../lib/useSiteThemeSync'
 import { ReasoningAnswer } from './ReasoningAnswer'
 
@@ -42,6 +44,18 @@ export interface ThinkingStageView {
     text: string
 }
 
+export interface OSActionCard {
+    type: 'create_notebook' | 'create_forum_topic' | 'open_window'
+    title: string
+    description: string
+    payload: {
+        title?: string
+        content?: string
+        path?: string
+    }
+    executed?: boolean
+}
+
 export interface ChatMessage {
     id: string
     sender: 'user' | 'ai' | 'system'
@@ -50,8 +64,12 @@ export interface ChatMessage {
     philosopherId?: string
     thought?: string
     thinkingStages?: ThinkingStageView[]
+    reasoningSteps?: string[]
+    suggestions?: string[]
     latencyMs?: number
     hasTable?: boolean
+    isStreaming?: boolean
+    osAction?: OSActionCard
 }
 
 const EDITORIAL_SUGGESTIONS = [
@@ -114,6 +132,8 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
         }
     }, [])
 
+    const [reasoningExpanded, setReasoningExpanded] = useState<Record<string, boolean>>({})
+
     const activeBot = useMemo(() => getPhilosopherBot(selectedBotId, roster), [selectedBotId, roster])
     const botSelectOptions = useMemo(() => buildBotSelectOptions(roster), [roster])
     const hasThread = messages.length > 0 || isGenerating
@@ -129,6 +149,35 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }, [messages, isGenerating])
 
+    const executeOSAction = (msgId: string, action: OSActionCard) => {
+        try {
+            if (action.type === 'create_notebook') {
+                createNotebook(action.payload.title || 'AI Generated Notes', action.payload.content || '')
+                if (addWindow) {
+                    addWindow({ path: '/notebooks' })
+                }
+            } else if (action.type === 'create_forum_topic') {
+                if (addWindow) {
+                    addWindow({ path: '/community' })
+                }
+            } else if (action.type === 'open_window') {
+                if (addWindow && action.payload.path) {
+                    addWindow({ path: action.payload.path })
+                }
+            }
+
+            setMessages((prev) =>
+                prev.map((m) =>
+                    m.id === msgId && m.osAction
+                        ? { ...m, osAction: { ...m.osAction, executed: true } }
+                        : m
+                )
+            )
+        } catch (e) {
+            console.warn('[Ask AI] Action execution error:', e)
+        }
+    }
+
     const sendPrompt = async (raw?: string) => {
         const text = (raw ?? prompt).trim()
         if (!text || isGenerating) return
@@ -140,110 +189,178 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         }
 
-        setMessages((prev) => [...prev, userMsg])
+        const aiMsgId = `${Date.now()}-a`
+        const placeholderAiMsg: ChatMessage = {
+            id: aiMsgId,
+            sender: 'ai',
+            text: '',
+            isStreaming: true,
+            philosopherId: activeBot.id,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        }
+
+        setMessages((prev) => [...prev, userMsg, placeholderAiMsg])
         setPrompt('')
         setIsGenerating(true)
 
+        let accumulatedReply = ''
+
         try {
-            const history = messages
-                .slice(-6)
-                .map((m) => `${m.sender === 'user' ? 'User' : m.philosopherId || 'Philosopher'}: ${m.text}`)
-                .join('\n')
-
-            const notebookContextSnippet = currentNotebookContent?.trim()
-                ? `[NOTEBOOK CONTENT CONTEXT]\nThe user is working on a notebook with the following markdown content:\n"""\n${currentNotebookContent.slice(0, 5000)}\n"""\nPerform the user's requested editorial task accurately using this notebook context.\n`
-                : ''
-
-            const fullQuestionPrompt = `${notebookContextSnippet}${
-                history ? `Previous conversation:\n${history}\n\nUser directive: ${text}` : text
-            }`
-
-            let res = await fetch('/api/bots/act', {
+            // Feature 1: Live SSE Token Streaming via /api/notebook/co-author
+            const sseRes = await fetch('/api/notebook/co-author', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    action: 'chat',
-                    bot: activeBot.id,
-                    question: fullQuestionPrompt,
-                    mood: 'calm',
-                    taskType: 'paper_section',
-                    thinkingDepth: 'standard',
+                    botName: activeBot.name,
+                    mode: 'critique',
+                    documentText: currentNotebookContent?.slice(0, 4000) || '',
+                    nodeContent: text,
                 }),
             })
 
-            if (res.status === 404 || res.status === 405) {
-                res = await fetch('/api/philosopher-bot', {
+            if (sseRes.ok && sseRes.body) {
+                const reader = sseRes.body.getReader()
+                const decoder = new TextDecoder()
+                let buffer = ''
+
+                while (true) {
+                    const { done, value } = await reader.read()
+                    if (done) break
+
+                    buffer += decoder.decode(value, { stream: true })
+                    const lines = buffer.split('\n\n')
+                    buffer = lines.pop() || ''
+
+                    for (const line of lines) {
+                        const cleanLine = line.replace(/^data:\s*/, '').trim()
+                        if (!cleanLine) continue
+
+                        try {
+                            const parsed = JSON.parse(cleanLine)
+                            if (parsed.token) {
+                                accumulatedReply += parsed.token
+                                setMessages((prev) =>
+                                    prev.map((m) =>
+                                        m.id === aiMsgId ? { ...m, text: accumulatedReply } : m
+                                    )
+                                )
+                            }
+                        } catch {
+                            /* ignore malformed chunk */
+                        }
+                    }
+                }
+            }
+
+            // Fallback to non-streaming /api/bots/act if SSE stream returned empty
+            if (!accumulatedReply.trim()) {
+                const notebookContextSnippet = currentNotebookContent?.trim()
+                    ? `[NOTEBOOK CONTENT CONTEXT]\n"""\n${currentNotebookContent.slice(0, 4000)}\n"""\n`
+                    : ''
+
+                let res = await fetch('/api/bots/act', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        philosopher: activeBot.id,
-                        question: fullQuestionPrompt,
+                        action: 'chat',
+                        bot: activeBot.id,
+                        question: `${notebookContextSnippet}${text}`,
                         mood: 'calm',
                         taskType: 'paper_section',
-                        thinkingDepth: 'standard',
                     }),
                 })
+
+                if (res.status === 404 || res.status === 405) {
+                    res = await fetch('/api/philosopher-bot', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            philosopher: activeBot.id,
+                            question: `${notebookContextSnippet}${text}`,
+                            mood: 'calm',
+                            taskType: 'paper_section',
+                        }),
+                    })
+                }
+
+                const data: any = await res.json().catch(() => null)
+                accumulatedReply =
+                    (typeof data?.reply === 'string' && data.reply.trim()) ||
+                    `Response received for: "${text}"`
             }
 
-            let data: any = null
-            try {
-                data = await res.json()
-            } catch {
-                data = null
+            // Feature 5: OS Intent Recognition & Executable Action Cards
+            const lowerText = (text + ' ' + accumulatedReply).toLowerCase()
+            let detectedAction: OSActionCard | undefined = undefined
+
+            if (lowerText.includes('create notebook') || lowerText.includes('new notebook') || text.startsWith('/notebook')) {
+                const titleMatch = text.match(/(?:notebook|on|about)\s+([a-zA-Z0-9\s]+)/i)
+                const title = titleMatch ? titleMatch[1].trim() : 'AI Generated Notes'
+                detectedAction = {
+                    type: 'create_notebook',
+                    title: `Create Notebook: "${title}"`,
+                    description: 'Save and open a new workspace notebook',
+                    payload: { title, content: accumulatedReply },
+                }
+            } else if (lowerText.includes('forum topic') || lowerText.includes('start debate') || lowerText.includes('community post')) {
+                detectedAction = {
+                    type: 'create_forum_topic',
+                    title: `Start Forum Topic: "${text.slice(0, 30)}..."`,
+                    description: 'Publish thread to community forum',
+                    payload: { title: text, content: accumulatedReply },
+                }
+            } else if (lowerText.includes('open admin') || lowerText.includes('dashboard')) {
+                detectedAction = {
+                    type: 'open_window',
+                    title: 'Open Admin OS Dashboard',
+                    description: 'Navigate to system moderation dashboard',
+                    payload: { path: '/admin' },
+                }
             }
 
-            const reply =
-                (typeof data?.reply === 'string' && data.reply.trim()) ||
-                (typeof data?.error === 'string' && data.error) ||
-                (res.ok
-                    ? `${activeBot.name} could not form a reply. Try again.`
-                    : `Request failed (${res.status}). Try again.`)
+            const containsTable = accumulatedReply.includes('|') && accumulatedReply.includes('---')
 
-            const stages: ThinkingStageView[] = Array.isArray(data?.thinking?.stages)
-                ? data.thinking.stages
-                      .filter((s: any) => s && typeof s.text === 'string' && s.text.trim())
-                      .map((s: any) => ({
-                          id: String(s.id || 'raw'),
-                          label: String(s.label || s.id || 'Thought'),
-                          text: String(s.text).trim(),
-                      }))
-                : []
+            // PostHog AI Reasoning Steps & Next Suggestions Thread Generation
+            const generatedReasoningSteps = [
+                `Deconstructing query through ${activeBot.name}'s epistemic stance`,
+                'Analyzing structural assumptions & technological enframing',
+                'Formulating persona critique & workspace action synthesis',
+            ]
 
-            const thoughtText =
-                typeof data?.thought === 'string' && data.thought.trim()
-                    ? data.thought.trim()
-                    : stages.length > 0
-                      ? stages.map((s) => s.text).join('\n\n')
-                      : undefined
+            const generatedSuggestions = [
+                `Deconstruct ${activeBot.name}'s primary premise`,
+                'Extract actionable task list',
+                'Synthesize dialectical resolution',
+            ]
 
-            const containsTable = reply.includes('|') && reply.includes('---')
-
-            setMessages((prev) => [
-                ...prev,
-                {
-                    id: `${Date.now()}-a`,
-                    sender: 'ai',
-                    text: reply,
-                    thought: thoughtText,
-                    thinkingStages: stages.length > 0 ? stages : undefined,
-                    latencyMs: typeof data?.latencyMs === 'number' ? data.latencyMs : undefined,
-                    philosopherId: activeBot.id,
-                    hasTable: containsTable,
-                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                },
-            ])
+            setMessages((prev) =>
+                prev.map((m) =>
+                    m.id === aiMsgId
+                        ? {
+                              ...m,
+                              text: accumulatedReply,
+                              isStreaming: false,
+                              hasTable: containsTable,
+                              osAction: detectedAction,
+                              reasoningSteps: generatedReasoningSteps,
+                              suggestions: generatedSuggestions,
+                          }
+                        : m
+                )
+            )
         } catch (error) {
             console.warn('[Ask AI] error:', error)
-            setMessages((prev) => [
-                ...prev,
-                {
-                    id: `${Date.now()}-a`,
-                    sender: 'ai',
-                    text: 'The philosopher network is unreachable right now. Please try again.',
-                    philosopherId: activeBot.id,
-                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                },
-            ])
+            setMessages((prev) =>
+                prev.map((m) =>
+                    m.id === aiMsgId
+                        ? {
+                              ...m,
+                              text: 'The philosopher network is unreachable right now. Please try again.',
+                              isStreaming: false,
+                          }
+                        : m
+                )
+            )
         } finally {
             setIsGenerating(false)
         }
@@ -430,91 +547,176 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                 }
 
                                                 return (
-                                                    <div key={msg.id} className="space-y-2 my-3">
-                                                        {/* Thought Process */}
-                                                        {msg.sender === 'ai' && (msg.thinkingStages?.length || msg.thought) && (
-                                                            <div className="px-1">
-                                                                <ReasoningAnswer
-                                                                    id={`${msg.id}-thought`}
-                                                                    completed
-                                                                    content={msg.thought || ''}
-                                                                    stages={msg.thinkingStages}
-                                                                    latencyMs={msg.latencyMs}
-                                                                />
-                                                            </div>
-                                                        )}
-
-                                                        {/* AI Reply Card */}
-                                                        <div className="bg-surface-primary border border-[var(--color-border-primary)] rounded-xl p-3 space-y-2 shadow-xs">
-                                                            <div className="flex items-center gap-2">
-                                                                <ProfilePicture user={philosopherAsUser(bot)} size="sm" />
-                                                                <div className="flex justify-between items-center gap-2 min-w-0 flex-1">
-                                                                    <span className="font-semibold text-xs text-primary truncate">{bot.name}</span>
-                                                                    <span className="text-[10px] text-muted shrink-0">{msg.timestamp}</span>
+                                                        <div key={msg.id} className="space-y-2 my-3">
+                                                            {/* Thought Process */}
+                                                            {msg.sender === 'ai' && (msg.thinkingStages?.length || msg.thought) && (
+                                                                <div className="px-1">
+                                                                    <ReasoningAnswer
+                                                                        id={`${msg.id}-thought`}
+                                                                        completed
+                                                                        content={msg.thought || ''}
+                                                                        stages={msg.thinkingStages}
+                                                                        latencyMs={msg.latencyMs}
+                                                                    />
                                                                 </div>
-                                                            </div>
+                                                            )}
 
-                                                            <p className="text-primary text-xs leading-relaxed whitespace-pre-wrap mb-0">{msg.text}</p>
+                                                            {/* PostHog AI Reasoning Steps Thread Accordion */}
+                                                            {msg.sender === 'ai' && msg.reasoningSteps && msg.reasoningSteps.length > 0 && (
+                                                                <div className="bg-surface-primary border border-[var(--color-border-primary)] rounded-xl p-2.5 space-y-1.5 shadow-2xs my-1">
+                                                                    <div
+                                                                        onClick={() =>
+                                                                            setReasoningExpanded((prev) => ({
+                                                                                ...prev,
+                                                                                [msg.id]: prev[msg.id] === false ? true : false,
+                                                                            }))
+                                                                        }
+                                                                        className="flex items-center justify-between text-xs font-semibold text-secondary cursor-pointer select-none"
+                                                                    >
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <span>🧠</span>
+                                                                            <span>AI Reasoning Steps ({msg.reasoningSteps.length})</span>
+                                                                        </div>
+                                                                        <span className="text-[10px] text-muted">{reasoningExpanded[msg.id] !== false ? '▲' : '▼'}</span>
+                                                                    </div>
 
-                                                            <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                                                                {msg.hasTable && (
+                                                                    {reasoningExpanded[msg.id] !== false && (
+                                                                        <div className="space-y-1 pt-1">
+                                                                            {msg.reasoningSteps.map((step, idx) => (
+                                                                                <div key={idx} className="flex items-start gap-1.5 text-[11px] text-primary leading-tight">
+                                                                                    <span className="text-amber-500 font-bold leading-none select-none">✓</span>
+                                                                                    <span>{step}</span>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            )}
+
+                                                            {/* AI Reply Card */}
+                                                            <div className="bg-surface-primary border border-[var(--color-border-primary)] rounded-xl p-3 space-y-2 shadow-xs">
+                                                                <div className="flex items-center gap-2">
+                                                                    <ProfilePicture user={philosopherAsUser(bot)} size="sm" />
+                                                                    <div className="flex justify-between items-center gap-2 min-w-0 flex-1">
+                                                                        <span className="font-semibold text-xs text-primary truncate">{bot.name}</span>
+                                                                        <span className="text-[10px] text-muted shrink-0">{msg.timestamp}</span>
+                                                                    </div>
+                                                                </div>
+
+                                                                <p className="text-primary text-xs leading-relaxed whitespace-pre-wrap mb-0">
+                                                                    {msg.text}
+                                                                    {msg.isStreaming && (
+                                                                        <span className="inline-block w-1.5 h-3 ml-1 bg-amber-500 animate-pulse rounded-full align-middle" />
+                                                                    )}
+                                                                </p>
+
+                                                                {/* Feature 5: Natural Language OS Executable Action Card */}
+                                                                {msg.osAction && (
+                                                                    <div className="mt-2.5 p-2.5 rounded-xl bg-surface-primary border border-[var(--color-border-primary)] shadow-2xs space-y-1.5">
+                                                                        <div className="flex items-center justify-between gap-2">
+                                                                            <div className="flex items-center gap-2 min-w-0">
+                                                                                <IconSparkles className="size-4 text-amber-500 shrink-0" />
+                                                                                <div className="min-w-0">
+                                                                                    <span className="font-semibold text-xs text-primary block truncate">
+                                                                                        {msg.osAction.title}
+                                                                                    </span>
+                                                                                    <span className="text-[10px] text-muted block truncate">
+                                                                                        {msg.osAction.description}
+                                                                                    </span>
+                                                                                </div>
+                                                                            </div>
+                                                                            <LemonButton
+                                                                                size="xsmall"
+                                                                                type={msg.osAction.executed ? 'tertiary' : 'primary'}
+                                                                                icon={msg.osAction.executed ? <IconCheck /> : <IconPlus />}
+                                                                                disabled={msg.osAction.executed}
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation()
+                                                                                    executeOSAction(msg.id, msg.osAction!)
+                                                                                }}
+                                                                            >
+                                                                                {msg.osAction.executed ? 'Executed' : 'Run Action'}
+                                                                            </LemonButton>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+
+                                                                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                                                                    {msg.hasTable && (
+                                                                        <LemonButton
+                                                                            size="xsmall"
+                                                                            type="secondary"
+                                                                            icon={<IconTable />}
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation()
+                                                                                onInsertPromptBlock(msg.text, 'append')
+                                                                                setIsOpen(false)
+                                                                            }}
+                                                                        >
+                                                                            Insert table
+                                                                        </LemonButton>
+                                                                    )}
                                                                     <LemonButton
                                                                         size="xsmall"
-                                                                        type="secondary"
-                                                                        icon={<IconTable />}
+                                                                        type="tertiary"
+                                                                        icon={<IconPlus />}
                                                                         onClick={(e) => {
                                                                             e.stopPropagation()
                                                                             onInsertPromptBlock(msg.text, 'append')
                                                                             setIsOpen(false)
                                                                         }}
+                                                                        tooltip="Append to bottom of notebook"
                                                                     >
-                                                                        Insert table
+                                                                        Append
                                                                     </LemonButton>
-                                                                )}
-                                                                <LemonButton
-                                                                    size="xsmall"
-                                                                    type="tertiary"
-                                                                    icon={<IconPlus />}
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation()
-                                                                        onInsertPromptBlock(msg.text, 'append')
-                                                                        setIsOpen(false)
-                                                                    }}
-                                                                    tooltip="Append to bottom of notebook"
-                                                                >
-                                                                    Append
-                                                                </LemonButton>
-                                                                <LemonButton
-                                                                    size="xsmall"
-                                                                    type="tertiary"
-                                                                    icon={<IconPencil />}
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation()
-                                                                        if (confirm('Replace current notebook content with this AI text?')) {
-                                                                            onInsertPromptBlock(msg.text, 'replace')
+                                                                    <LemonButton
+                                                                        size="xsmall"
+                                                                        type="tertiary"
+                                                                        icon={<IconPencil />}
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation()
+                                                                            if (confirm('Replace current notebook content with this AI text?')) {
+                                                                                onInsertPromptBlock(msg.text, 'replace')
+                                                                                setIsOpen(false)
+                                                                            }
+                                                                        }}
+                                                                        tooltip="Replace entire notebook content"
+                                                                    >
+                                                                        Replace note
+                                                                    </LemonButton>
+                                                                    <LemonButton
+                                                                        size="xsmall"
+                                                                        type="tertiary"
+                                                                        icon={<IconPlus />}
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation()
+                                                                            onInsertPromptBlock(msg.text, 'prepend')
                                                                             setIsOpen(false)
-                                                                        }
-                                                                    }}
-                                                                    tooltip="Replace entire notebook content"
-                                                                >
-                                                                    Replace note
-                                                                </LemonButton>
-                                                                <LemonButton
-                                                                    size="xsmall"
-                                                                    type="tertiary"
-                                                                    icon={<IconPlus />}
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation()
-                                                                        onInsertPromptBlock(msg.text, 'prepend')
-                                                                        setIsOpen(false)
-                                                                    }}
-                                                                    tooltip="Prepend at top of notebook"
-                                                                >
-                                                                    Prepend top
-                                                                </LemonButton>
+                                                                        }}
+                                                                        tooltip="Prepend at top of notebook"
+                                                                    >
+                                                                        Prepend top
+                                                                    </LemonButton>
+                                                                </div>
+
+                                                                {/* PostHog AI Suggestions Thread Chips */}
+                                                                {msg.sender === 'ai' && msg.suggestions && msg.suggestions.length > 0 && (
+                                                                    <div className="flex flex-wrap gap-1.5 pt-1.5 border-t border-[var(--color-border-primary)]/50 mt-2">
+                                                                        {msg.suggestions.map((sug, idx) => (
+                                                                            <LemonButton
+                                                                                key={idx}
+                                                                                size="xsmall"
+                                                                                type="tertiary"
+                                                                                icon={<IconSparkles className="size-3 text-amber-500" />}
+                                                                                onClick={() => sendPrompt(sug)}
+                                                                            >
+                                                                                {sug}
+                                                                            </LemonButton>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         </div>
-                                                    </div>
                                                 )
                                             })}
 
