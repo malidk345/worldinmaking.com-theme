@@ -1152,55 +1152,68 @@ export const useCustomers = () => {
         }
 
         // Transform customer data with product titles and case study info
-        return Object.entries(CUSTOMER_DATA).reduce((acc, [key, customer]) => {
-            // Use logo if available, otherwise fall back to legacy logo URLs
-            let logo = customer.logo
-            if (!logo && customer.legacyLogo && customer.legacyLogoDark) {
-                logo = {
-                    light: customer.legacyLogo,
-                    dark: customer.legacyLogoDark,
+        return Object.fromEntries(
+            Object.entries(CUSTOMER_DATA).map(([key, customer]) => {
+                // Use logo if available, otherwise fall back to legacy logo URLs
+                let logo = customer.logo
+                if (!logo && customer.legacyLogo && customer.legacyLogoDark) {
+                    logo = {
+                        light: customer.legacyLogo,
+                        dark: customer.legacyLogoDark,
+                    }
                 }
-            }
 
-            const customerWithSlug: Customer = {
-                ...customer,
-                slug: key,
-                logo,
-                // Keep original handles for product lookup
-                toolsUsedHandles: customer.toolsUsed || [],
-                // Convert handles to human-readable product names for display
-                toolsUsed:
-                    customer.toolsUsed
-                        ?.map((tool) => getProductTitleByHandle(tool))
-                        .filter(Boolean) as string[] || [],
-                // Dynamically check if customer has a case study
-                hasCaseStudy: customersWithCaseStudies.has(key),
-            }
+                const customerWithSlug: Customer = {
+                    ...customer,
+                    slug: key,
+                    logo,
+                    // Keep original handles for product lookup
+                    toolsUsedHandles: customer.toolsUsed || [],
+                    // Convert handles to human-readable product names for display
+                    toolsUsed:
+                        (customer.toolsUsed
+                            ?.map((tool) => getProductTitleByHandle(tool))
+                            .filter(Boolean) as string[]) || [],
+                    // Dynamically check if customer has a case study
+                    hasCaseStudy: customersWithCaseStudies.has(key),
+                }
 
-            // Remove legacy fields from final object
-            delete (customerWithSlug as any).legacyLogo
-            delete (customerWithSlug as any).legacyLogoDark
+                // Remove legacy fields from final object
+                delete (customerWithSlug as any).legacyLogo
+                delete (customerWithSlug as any).legacyLogoDark
 
-            acc[key] = customerWithSlug
-            return acc
-        }, {} as Record<string, Customer>)
+                return [key, customerWithSlug]
+            })
+        ) as Record<string, Customer>
     }, [products])
 
-    const getCustomer = useCallback((slug: string): Customer | undefined => {
-        return customers[slug]
-    }, [customers])
+    const getCustomer = useCallback(
+        (slug: string): Customer | undefined => {
+            return customers[slug]
+        },
+        [customers]
+    )
 
-    const getCustomers = useCallback((slugs: string[]): Customer[] => {
-        return slugs.map((slug) => customers[slug]).filter(Boolean) as Customer[]
-    }, [customers])
+    const getCustomers = useCallback(
+        (slugs: string[]): Customer[] => {
+            return slugs.map((slug) => customers[slug]).filter(Boolean) as Customer[]
+        },
+        [customers]
+    )
 
-    const hasCaseStudy = useCallback((slug: string): boolean => {
-        return customers[slug]?.hasCaseStudy ?? false
-    }, [customers])
+    const hasCaseStudy = useCallback(
+        (slug: string): boolean => {
+            return customers[slug]?.hasCaseStudy ?? false
+        },
+        [customers]
+    )
 
-    const isFeatured = useCallback((slug: string): boolean => {
-        return !!customers[slug]?.featured
-    }, [customers])
+    const isFeatured = useCallback(
+        (slug: string): boolean => {
+            return !!customers[slug]?.featured
+        },
+        [customers]
+    )
 
     return {
         customers,

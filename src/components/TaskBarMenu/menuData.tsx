@@ -224,3 +224,74 @@ export function useMenuData(): MenuType[] {
 
     return [logoMenu, ...mainNavItems]
 }
+
+import type { AppIconName } from 'components/OSIcons/AppIcon'
+import { IconDictator, IconSparksJoy } from 'components/OSIcons'
+
+export const SparksJoyItems = {
+    games: [
+        {
+            label: 'Hedgehog mode',
+            link: '/sparks-joy/hedgehog-mode',
+            iconName: 'hedgehog_mode' as AppIconName,
+            customIcon: null,
+        },
+        {
+            label: 'HogWars',
+            link: '/sparks-joy/hogwars',
+            iconName: 'hogwars' as AppIconName,
+            customIcon: null,
+        },
+        {
+            label: 'Dictator or tech bro?',
+            link: '/sparks-joy/dictator-or-tech-bro',
+            iconName: null,
+            customIcon: <IconDictator />,
+        },
+    ],
+    notGames: [
+        {
+            label: 'PostHog FM',
+            link: '/fm',
+            iconName: null,
+            customIcon: (
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <path
+                        fill="#000"
+                        d="M21.5 5.75a.25.25 0 0 0-.25-.25H2.75a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h18.5a.25.25 0 0 0 .25-.25zM10 12a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0m7 0a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0m1.5 0a3 3 0 0 1-3 3h-7a3 3 0 1 1 3-3c0 .547-.15 1.058-.405 1.5h1.81A3 3 0 0 1 12.5 12a3 3 0 1 1 6 0m4.5 6.25A1.75 1.75 0 0 1 21.25 20H2.75A1.75 1.75 0 0 1 1 18.25V5.75C1 4.784 1.784 4 2.75 4h18.5c.966 0 1.75.784 1.75 1.75z"
+                    />
+                </svg>
+            ),
+        },
+        {
+            label: 'Photobooth',
+            link: '/photobooth',
+            iconName: 'photobooth' as AppIconName,
+            customIcon: null,
+        },
+        {
+            label: 'HogPaint',
+            link: '/paint',
+            iconName: 'hogpaint' as AppIconName,
+            customIcon: null,
+        },
+        {
+            label: 'Coloring book.pdf',
+            link: '/coloring-book.pdf',
+            iconName: 'pdf' as AppIconName,
+            customIcon: null,
+        },
+        {
+            label: 'Post-It note training',
+            link: '/academy',
+            iconName: 'postIt' as AppIconName,
+            customIcon: null,
+        },
+        {
+            label: '404 page',
+            link: '/404',
+            iconName: 'blueScreen' as AppIconName,
+            customIcon: null,
+        },
+    ],
+}

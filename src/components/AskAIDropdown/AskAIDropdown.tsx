@@ -21,7 +21,6 @@ export interface ChatMessage {
     text: string
     timestamp: string
 }
-}
 
 const BOTS = [
     { value: 'aria', name: 'Aria' },
