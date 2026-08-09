@@ -197,6 +197,12 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
             isStreaming: true,
             philosopherId: activeBot.id,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            thinkingStages: [
+                { id: 'perceive', label: 'Perceive', text: `Perceiving query through ${activeBot.name}'s lens...` },
+                { id: 'frame', label: 'Frame', text: `Framing epistemic stance & workspace context...` },
+                { id: 'tension', label: 'Tension', text: `Analyzing structural tensions & dialectical trade-offs...` },
+                { id: 'move', label: 'Move', text: `Formulating synthesis response & executable actions...` },
+            ],
         }
 
         setMessages((prev) => [...prev, userMsg, placeholderAiMsg])
@@ -335,6 +341,12 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                       'Formulating persona critique & workspace action synthesis',
                   ]
 
+            const thinkingStages = parsedReasoningSteps.map((step, idx) => ({
+                id: idx === 0 ? 'perceive' : idx === 1 ? 'frame' : idx === 2 ? 'tension' : 'move',
+                label: step,
+                text: step,
+            }))
+
             const generatedSuggestions = [
                 `Deconstruct ${activeBot.name}'s primary premise`,
                 'Extract actionable task list',
@@ -350,7 +362,8 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                               isStreaming: false,
                               hasTable: containsTable,
                               osAction: detectedAction,
-                              reasoningSteps: parsedReasoningSteps,
+                              thought: rawThought || parsedReasoningSteps.join('\n'),
+                              thinkingStages: thinkingStages,
                               suggestions: generatedSuggestions,
                           }
                         : m
@@ -561,38 +574,11 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                                 <div className="px-1">
                                                                     <ReasoningAnswer
                                                                         id={`${msg.id}-thought`}
-                                                                        completed
+                                                                        completed={!msg.isStreaming}
                                                                         content={msg.thought || ''}
                                                                         stages={msg.thinkingStages}
                                                                         latencyMs={msg.latencyMs}
                                                                     />
-                                                                </div>
-                                                            )}
-
-                                                            {/* 1:1 Storybook PostHog AI Reasoning Step Box */}
-                                                            {msg.sender === 'ai' && msg.reasoningSteps && msg.reasoningSteps.length > 0 && (
-                                                                <div className="bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg p-2.5 space-y-1.5 text-xs my-1 select-none">
-                                                                    <div
-                                                                        onClick={() => setReasoningExpanded((prev) => ({ ...prev, [msg.id]: prev[msg.id] === false ? true : false }))}
-                                                                        className="flex items-center justify-between font-semibold text-secondary cursor-pointer"
-                                                                    >
-                                                                        <div className="flex items-center gap-1.5">
-                                                                            <span>🧠</span>
-                                                                            <span>AI Reasoning Steps ({msg.reasoningSteps.length})</span>
-                                                                        </div>
-                                                                        <span className="text-[10px] text-muted">{reasoningExpanded[msg.id] !== false ? '▲' : '▼'}</span>
-                                                                    </div>
-
-                                                                    {reasoningExpanded[msg.id] !== false && (
-                                                                        <div className="flex flex-col gap-1 pt-1">
-                                                                            {msg.reasoningSteps.map((step, idx) => (
-                                                                                <div key={idx} className="flex items-start gap-1.5 text-[11px] text-primary">
-                                                                                    <span className="text-blue-600 dark:text-amber-500 font-bold leading-none select-none">✓</span>
-                                                                                    <span>{step}</span>
-                                                                                </div>
-                                                                            ))}
-                                                                        </div>
-                                                                    )}
                                                                 </div>
                                                             )}
 
