@@ -320,13 +320,6 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
 
             const containsTable = accumulatedReply.includes('|') && accumulatedReply.includes('---')
 
-            // PostHog AI Reasoning Steps & Next Suggestions Thread Generation
-            const generatedReasoningSteps = [
-                `Deconstructing query through ${activeBot.name}'s epistemic stance`,
-                'Analyzing structural assumptions & technological enframing',
-                'Formulating persona critique & workspace action synthesis',
-            ]
-
             const generatedSuggestions = [
                 `Deconstruct ${activeBot.name}'s primary premise`,
                 'Extract actionable task list',
@@ -342,7 +335,6 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                               isStreaming: false,
                               hasTable: containsTable,
                               osAction: detectedAction,
-                              reasoningSteps: generatedReasoningSteps,
                               suggestions: generatedSuggestions,
                           }
                         : m
@@ -561,37 +553,6 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                                 </div>
                                                             )}
 
-                                                            {/* PostHog AI Reasoning Steps Thread Accordion */}
-                                                            {msg.sender === 'ai' && msg.reasoningSteps && msg.reasoningSteps.length > 0 && (
-                                                                <div className="bg-surface-primary border border-[var(--color-border-primary)] rounded-xl p-2.5 space-y-1.5 shadow-2xs my-1">
-                                                                    <div
-                                                                        onClick={() =>
-                                                                            setReasoningExpanded((prev) => ({
-                                                                                ...prev,
-                                                                                [msg.id]: prev[msg.id] === false ? true : false,
-                                                                            }))
-                                                                        }
-                                                                        className="flex items-center justify-between text-xs font-semibold text-secondary cursor-pointer select-none"
-                                                                    >
-                                                                        <div className="flex items-center gap-1.5">
-                                                                            <span>🧠</span>
-                                                                            <span>AI Reasoning Steps ({msg.reasoningSteps.length})</span>
-                                                                        </div>
-                                                                        <span className="text-[10px] text-muted">{reasoningExpanded[msg.id] !== false ? '▲' : '▼'}</span>
-                                                                    </div>
-
-                                                                    {reasoningExpanded[msg.id] !== false && (
-                                                                        <div className="space-y-1 pt-1">
-                                                                            {msg.reasoningSteps.map((step, idx) => (
-                                                                                <div key={idx} className="flex items-start gap-1.5 text-[11px] text-primary leading-tight">
-                                                                                    <span className="text-amber-500 font-bold leading-none select-none">✓</span>
-                                                                                    <span>{step}</span>
-                                                                                </div>
-                                                                            ))}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            )}
 
                                                             {/* AI Reply Card */}
                                                             <div className="bg-surface-primary border border-[var(--color-border-primary)] rounded-xl p-3 space-y-2 shadow-xs">
