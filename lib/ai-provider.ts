@@ -59,11 +59,14 @@ export async function generateBotResponse(
     systemPrompt: string = '',
     task: TaskType = 'community_reply'
 ): Promise<string> {
+    const { extractPersona } = require('./persona-engine');
+    const p = extractPersona('', botName);
     const gen = await generateWithGateway({
         systemPrompt,
         userPrompt: prompt,
         taskType: task,
         botName,
+        temperature: p.temperature,
     });
 
     if (!gen.ok) {

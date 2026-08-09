@@ -21,7 +21,7 @@ import { getFluidSystemPrompt } from '../bots/fluid-prompts';
  * Uses getRuntimeEnv() so Cloudflare Pages secrets (bound via the dashboard,
  * only visible through getRequestContext().env) are found at request time.
  */
-export function createLangChainModel(preferredProvider: 'groq' | 'gemini' = 'groq') {
+export function createLangChainModel(preferredProvider: 'groq' | 'gemini' = 'groq', temperature?: number) {
     const env = getRuntimeEnv()
     const rawGroqKey = envFrom(
         env,
@@ -53,11 +53,13 @@ export function createLangChainModel(preferredProvider: 'groq' | 'gemini' = 'gro
     const groqKey = pickRandom(groqKeys);
     const geminiKey = pickRandom(geminiKeys);
 
+    const t = temperature ?? 0.75;
+
     if (preferredProvider === 'groq' && groqKey) {
         return new ChatGroq({
             apiKey: groqKey,
             model: 'llama-3.3-70b-versatile',
-            temperature: 0.75,
+            temperature: t,
         });
     }
 
@@ -65,7 +67,7 @@ export function createLangChainModel(preferredProvider: 'groq' | 'gemini' = 'gro
         return new ChatGoogleGenerativeAI({
             apiKey: geminiKey,
             model: 'gemini-2.0-flash',
-            temperature: 0.75,
+            temperature: t,
         });
     }
 
@@ -73,7 +75,7 @@ export function createLangChainModel(preferredProvider: 'groq' | 'gemini' = 'gro
         return new ChatGroq({
             apiKey: groqKey,
             model: 'llama-3.3-70b-versatile',
-            temperature: 0.75,
+            temperature: t,
         });
     }
 

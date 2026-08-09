@@ -107,9 +107,21 @@ function checkWordBudget(body: string, budget: number): string | null {
     return null;
 }
 
-function checkFillerLanguage(body: string): string[] {
+function isExemptFromFiller(pattern: RegExp, botName: string): boolean {
+    const name = botName.toLowerCase();
+    const source = pattern.source.toLowerCase();
+    
+    if (name === 'zizek' && (source.includes('of course') || source.includes('absolutely') || source.includes('in essence'))) return true;
+    if (name === 'baudrillard' && (source.includes('goes without saying') || source.includes('needless to say'))) return true;
+    if (name === 'marx' && source.includes('in essence')) return true;
+    
+    return false;
+}
+
+function checkFillerLanguage(body: string, persona: BotPersona): string[] {
     const issues: string[] = [];
     for (const pattern of [...FILLER_PATTERNS, ...TURKISH_FILLER_PATTERNS]) {
+        if (isExemptFromFiller(pattern, persona.name)) continue;
         if (pattern.test(body)) {
             issues.push(`Filler language detected: "${pattern.source}"`);
         }
@@ -205,7 +217,7 @@ function calculateScore(issues: string[]): number {
  * Applies cheap rule-based corrections that don't require an LLM call.
  * Returns the corrected text and a list of corrections applied.
  */
-function applyRuleBasedCorrections(body: string): { text: string; corrections: string[] } {
+function applyRuleBasedCorrections(body: string, persona: BotPersona): { text: string; corrections: string[] } {
     let text = body;
     const corrections: string[] = [];
 
@@ -218,6 +230,7 @@ function applyRuleBasedCorrections(body: string): { text: string; corrections: s
 
     // Strip universal filler phrases
     for (const pattern of [...FILLER_PATTERNS, ...TURKISH_FILLER_PATTERNS]) {
+        if (isExemptFromFiller(pattern, persona.name)) continue;
         if (pattern.test(text)) {
             text = text.replace(pattern, '').replace(/\s{2,}/g, ' ').trim();
             corrections.push(`Stripped filler: ${pattern.source}`);
@@ -261,7 +274,7 @@ export async function runQualityGate(
 
     while (retryCount <= maxRetries) {
         // Step 1: Apply cheap rule-based corrections first
-        const { text: ruleFixed, corrections } = applyRuleBasedCorrections(currentBody);
+        const { text: ruleFixed, corrections } = applyRuleBasedCorrections(currentBody, persona);
         if (corrections.length > 0) {
             currentBody = ruleFixed;
         }
@@ -284,7 +297,7 @@ export async function runQualityGate(
         const headingCheck = checkHeadingSpam(currentBody);
         if (headingCheck) issues.push(headingCheck);
 
-        const fillerIssues = checkFillerLanguage(currentBody);
+        const fillerIssues = checkFillerLanguage(currentBody, persona);
         issues.push(...fillerIssues);
 
         const personaIssues = checkPersonaForbiddenWords(currentBody, persona);

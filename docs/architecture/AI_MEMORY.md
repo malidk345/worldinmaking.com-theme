@@ -85,12 +85,56 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-33` | Stream 1 | Fix Cloudflare build crash caused by UTF-8 BOM in vercel.json | `vercel.json` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-09 |
 | `TSK-34` | Stream 5 | AI System Optimization Package (Web search tool, Gemini model ID stability, client API key security) | `lib/ai-provider.ts`, `src/lib/chat-bots/langchain-tools.ts`, `src/components/AskAIDropdown/AskAIDropdown.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-09 |
 | `TSK-35` | Stream 5 | PostHog-inspired AI Features: Live SSE Token Streaming & OS Executable Action Cards | `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx`, `src/pages/api/notebook/co-author.ts` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-09 |
+| `TSK-36` | Stream 5 | Persona Engine v2 Architecture Upgrade (7 Core Philosophers) | `src/lib/persona-engine.ts` | `[COMPLETED]` | Antigravity | 2026-08-09 |
+| `TSK-37` | Stream 5 | Persona Engine v2 Phase 2 (9 Philosophers, Temperature, Quality Gate) | `src/lib/persona-engine.ts`, `lib/quality-gate.ts`, `src/lib/bots/ai-gateway.ts` | `[COMPLETED]` | Antigravity | 2026-08-09 |
 
 ---
 
 ## 5. AI Change History & Log
 
 *(Add new entries at the top of this list)*
+
+### Entry 042 — UI Bug Fixes and Multilingual Enforcement (Ask AI)
+- **Date:** 2026-08-09
+- **AI Agent:** Antigravity
+- **Summary:** Addressed UI friction in the Notebook Co-Author system and hardened language adherence.
+  1. **UI Bug Fix (Click Interception):** Fixed a bug in `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx` where users couldn't switch philosophers mid-chat. The dropdown was nested inside a `<label>`, causing click events on the `LemonSelect` to bubble up and trigger focus on the `<textarea>`, immediately closing the select menu. Replaced the `<label>` wrapper with a `<div>`.
+  2. **UI Cleanup:** Removed the redundant philosopher dropdown from the header of the `AskAIDropdown`, replacing it with a clean static text indicator to reduce visual clutter, since the active dropdown sits in the chat input area.
+  3. **Multilingual Hardening:** Added a strict `MULTILINGUAL` directive to the global `SECURITY_PREAMBLE` in `src/lib/bots/orchestrate.ts`, absolutely mandating that the AI detect the user's language and respond entirely in that same language, preventing characters (who often skew English) from breaking the user's language context.
+- **Modified Files:**
+  - `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx`
+  - `src/lib/bots/orchestrate.ts`
+- **Verification:** Local tests verified that the dropdowns function correctly and the layout is clean.
+
+### Entry 041 — Persona Engine v2 Phase 2 (Temperature, 9 Philosophers, Quality Gate) (TSK-37)
+- **Date:** 2026-08-09
+- **AI Agent:** Antigravity
+- **Summary:** Completed the second phase of the Persona Engine v2 upgrade:
+  1. **Temperature Propagated:** Updated `src/lib/bots/ai-gateway.ts`, `llm-router.ts`, and `langchain-pipeline.ts` to dynamically accept and use the persona's `temperature` configuration for generation.
+  2. **Remaining Philosophers Upgraded:** Added `coreTension`, `voiceAnchors`, `taskLengthGuide`, and `temperature` values for Sartre, Spinoza, Heidegger, Althusser, Weber, Adorno, Lenin, Arendt, and Rand, completely deprecating v1 logic for the entire roster.
+  3. **Quality Gate Alignment:** Updated `lib/quality-gate.ts` to exempt specific personas (Zizek, Baudrillard, Marx) from universal filler-word penalties when their signature phrases overlap with generic filler.
+- **Modified Files:**
+  - `src/lib/chat-bots/langchain-pipeline.ts`
+  - `src/lib/chat-bots/llm-router.ts`
+  - `src/lib/bots/ai-gateway.ts`
+  - `src/lib/bots/orchestrate.ts`
+  - `lib/ai-provider.ts`
+  - `src/lib/persona-engine.ts`
+  - `lib/quality-gate.ts`
+- **Verification:** `pnpm typecheck:shell` passed with 0 errors.
+
+### Entry 040 — Persona Engine v2 Architecture Upgrade (7 Core Philosophers) (TSK-36)
+- **Date:** 2026-08-09
+- **AI Agent:** Antigravity
+- **Summary:** Upgraded the `BotPersona` architecture to drastically improve character depth and autonomy.
+  1. **Fixed forbidden patterns bug**: Previously, `forbiddenPatterns.slice(0, 12)` was truncating all persona-specific forbidden phrases because the `UNIVERSAL_FORBIDDEN` list exceeded 12 items. Fixed this by slicing only the universal list and appending all persona-specific patterns.
+  2. **Architectural Additions**: Added `voiceAnchors`, `coreTension`, `taskLengthGuide`, and `temperature` to `BotPersona` and injected them dynamically into the system prompt via `buildPersonaHeader`.
+  3. **Dynamic Autonomy Cache (`pickFresh`)**: Generalized the `pickFreshAngles` helper into `pickFresh<T>` and applied it to `freshAngles`, `signaturePatterns`, and `voiceAnchors`. This ensures rotational variety across consecutive calls in the same isolate.
+  4. **Autonomy Clause**: Added explicit instructions telling the LLM it is allowed to *not* use its signature moves, to be uncertain, or to admit when its framework doesn't fit the question.
+  5. **Core 7 Philosophers Updated**: Fully rewrote the configurations for Nietzsche, Marx, Hegel, Deleuze, Zizek, Derrida, and Baudrillard with the new deeper character sheets (including core tensions and specific voice anchors).
+- **Modified Files:**
+  - `src/lib/persona-engine.ts`
+- **Verification:** `pnpm typecheck:shell` passed with 0 errors.
 
 ### Entry 039 — AI Output Quality Architecture Hardening (Quality Gate Wiring + Persona Variety) (TSK-23)
 - **Date:** 2026-08-09

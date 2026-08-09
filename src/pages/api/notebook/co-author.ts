@@ -134,12 +134,12 @@ export default async function handler(req: Request) {
 
                 let rawReply = ''
                 try {
-                    const model = createLangChainModel('groq')
+                    const model = createLangChainModel('groq', persona.temperature)
                     const chain = prompt.pipe(model).pipe(new StringOutputParser())
                     rawReply = await chain.invoke({})
                 } catch {
                     // Fallback to Gemini if Groq is unavailable
-                    const model = createLangChainModel('gemini')
+                    const model = createLangChainModel('gemini', persona.temperature)
                     const chain = prompt.pipe(model).pipe(new StringOutputParser())
                     rawReply = await chain.invoke({})
                 }

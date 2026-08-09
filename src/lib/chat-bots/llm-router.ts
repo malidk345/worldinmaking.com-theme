@@ -25,7 +25,7 @@ export async function executeEnterpriseLLMCall(params: {
 
     for (const provider of providers) {
         try {
-            const model = createLangChainModel(provider);
+            const model = createLangChainModel(provider, params.temperature);
             const response = await model.invoke([
                 ['system', params.systemPrompt],
                 ['human', params.userPrompt],

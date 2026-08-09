@@ -169,6 +169,7 @@ async function chatCompletions(
     model: string,
     systemPrompt: string,
     userPrompt: string,
+    temperature?: number,
     extraHeaders: Record<string, string> = {}
 ): Promise<{ ok: true; text: string } | { ok: false; detail: string }> {
     try {
@@ -185,7 +186,7 @@ async function chatCompletions(
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: userPrompt },
                 ],
-                temperature: 0.7,
+                temperature: temperature ?? 0.7,
             }),
         })
         const raw = await fetchRes.text()
@@ -212,7 +213,8 @@ async function geminiGenerate(
     apiKey: string,
     model: string,
     systemPrompt: string,
-    userPrompt: string
+    userPrompt: string,
+    temperature?: number
 ): Promise<{ ok: true; text: string } | { ok: false; detail: string }> {
     try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`
@@ -222,7 +224,7 @@ async function geminiGenerate(
             body: JSON.stringify({
                 systemInstruction: { parts: [{ text: systemPrompt }] },
                 contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-                generationConfig: { temperature: 0.7 },
+                generationConfig: { temperature: temperature ?? 0.7 },
             }),
         })
         const raw = await fetchRes.text()
@@ -251,7 +253,7 @@ type FamilySuccess = { ok: true; text: string; provider: GatewayProvider }
 /** Groq — rotate through all configured keys, first success wins. */
 async function tryGroqFamily(
     groqKeys: string[],
-    params: { systemPrompt: string; userPrompt: string },
+    params: { systemPrompt: string; userPrompt: string; temperature?: number },
     attempts: string[]
 ): Promise<FamilySuccess | null> {
     let sawRateLimit = false
@@ -261,7 +263,8 @@ async function tryGroqFamily(
             key,
             'llama-3.3-70b-versatile',
             params.systemPrompt,
-            params.userPrompt
+            params.userPrompt,
+            params.temperature
         ))
         if (r.ok) return { ok: true, text: r.text, provider: 'groq' }
         if (isRateLimitDetail(r.detail)) sawRateLimit = true
@@ -276,7 +279,7 @@ async function tryOpenRouterFamily(
     openRouterKey: string,
     taskType: TaskType,
     runtimeEnv: EnvStore,
-    params: { systemPrompt: string; userPrompt: string },
+    params: { systemPrompt: string; userPrompt: string; temperature?: number },
     attempts: string[]
 ): Promise<FamilySuccess | null> {
     if (!openRouterKey) return null
@@ -295,6 +298,7 @@ async function tryOpenRouterFamily(
             model,
             params.systemPrompt,
             params.userPrompt,
+            params.temperature,
             {
                 'HTTP-Referer':
                     envFrom(runtimeEnv, 'NEXT_PUBLIC_SITE_URL') || 'https://worldinmaking.com',
@@ -313,14 +317,14 @@ async function tryOpenRouterFamily(
 /** Gemini — rotate through all keys × all models, first success wins. */
 async function tryGeminiFamily(
     geminiKeys: string[],
-    params: { systemPrompt: string; userPrompt: string },
+    params: { systemPrompt: string; userPrompt: string; temperature?: number },
     attempts: string[]
 ): Promise<FamilySuccess | null> {
     let sawRateLimit = false
     for (const key of geminiKeys) {
         const keyIdx = geminiKeys.indexOf(key) + 1
         for (const model of GEMINI_MODELS) {
-            const r = await withRetry(() => geminiGenerate(key, model, params.systemPrompt, params.userPrompt))
+            const r = await withRetry(() => geminiGenerate(key, model, params.systemPrompt, params.userPrompt, params.temperature))
             if (r.ok) return { ok: true, text: r.text, provider: `gemini-fetch:${model}` }
             if (isRateLimitDetail(r.detail)) sawRateLimit = true
             attempts.push(`gemini[${keyIdx}/${geminiKeys.length}](${model}): ${r.detail}`)
@@ -333,7 +337,7 @@ async function tryGeminiFamily(
 /** Hugging Face Inference Router — OpenAI-compatible endpoint, rotate through all keys. */
 async function tryHuggingFaceFamily(
     hfKeys: string[],
-    params: { systemPrompt: string; userPrompt: string },
+    params: { systemPrompt: string; userPrompt: string; temperature?: number },
     attempts: string[]
 ): Promise<FamilySuccess | null> {
     let sawRateLimit = false
@@ -343,7 +347,8 @@ async function tryHuggingFaceFamily(
             key,
             HUGGINGFACE_MODEL,
             params.systemPrompt,
-            params.userPrompt
+            params.userPrompt,
+            params.temperature
         ))
         if (r.ok) return { ok: true, text: r.text, provider: 'huggingface' }
         if (isRateLimitDetail(r.detail)) sawRateLimit = true
@@ -363,6 +368,7 @@ export async function generateWithGateway(params: {
     systemPrompt: string
     userPrompt: string
     taskType?: TaskType
+    temperature?: number
     /** Optional bot/persona name — used purely to pick a starting provider offset. */
     botName?: string
     env?: EnvStore

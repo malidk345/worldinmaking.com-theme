@@ -607,14 +607,9 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                     <div className="flex items-center gap-2 min-w-0">
                                         <ProfilePicture user={philosopherAsUser(activeBot)} size="sm" />
                                         <div className="min-w-0 flex items-center gap-1.5">
-                                            <LemonSelect
-                                                size="small"
-                                                type="tertiary"
-                                                value={selectedBotId}
-                                                options={botSelectOptions}
-                                                onChange={(val) => handleBotChange(val)}
-                                                dropdownMatchSelectWidth={false}
-                                            />
+                                            <span className="font-semibold text-sm text-primary truncate">
+                                                {activeBot.displayName}
+                                            </span>
                                             {contentLength > 0 && (
                                                 <LemonTag type="completion" size="small" className="text-[9px] shrink-0">
                                                     Context ({contentLength})
@@ -879,7 +874,7 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                         }}
                                         className="w-full"
                                     >
-                                        <label className="input-like flex flex-col cursor-text border border-primary bg-surface-primary rounded-xl p-2.5 space-y-2 shadow-xs transition-all focus-within:border-[var(--color-border-bold)]">
+                                        <div className="input-like flex flex-col cursor-text border border-primary bg-surface-primary rounded-xl p-2.5 space-y-2 shadow-xs transition-all focus-within:border-[var(--color-border-bold)]">
                                             {contentLength > 0 && (
                                                 <div className="flex items-center gap-1.5 pt-0.5 px-0.5">
                                                     <LemonTag type="completion" size="small" className="text-[10px] truncate max-w-[160px]">
@@ -929,7 +924,7 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                     />
                                                 </div>
                                             </div>
-                                        </label>
+                                        </div>
                                     </form>
                                 </div>
                             </div>
