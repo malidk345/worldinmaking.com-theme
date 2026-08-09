@@ -5,8 +5,10 @@ const PostPage = dynamic(() => import('components/posts/PostPage'), {
     loading: () => null,
 })
 
-export const getServerSideProps = ({ params }: { params: { slug: string } }) => ({
-    props: { params: params || {} },
+export const getStaticProps = ({ params }: { params?: { slug?: string } }) => ({ props: { params: params || {} } })
+export const getStaticPaths = () => ({
+    paths: [],
+    fallback: 'blocking',
 })
 
 export default PostPage
