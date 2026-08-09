@@ -14,7 +14,7 @@ import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { StringOutputParser } from '@langchain/core/output_parsers';
 import { StateGraph, START, END, Annotation } from '@langchain/langgraph';
 import { loadMemGPTState, extractAndPersistMemoryFacts } from './memgpt-engine';
-import { getFluidSystemPrompt } from './fluid-prompts';
+import { getFluidSystemPrompt } from '../bots/fluid-prompts';
 
 /**
  * 1. Initializes a LangChain LLM model instance based on active API keys.

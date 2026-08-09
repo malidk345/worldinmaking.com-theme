@@ -16,7 +16,7 @@ import {
     buildMemGPTSystemPrompt,
     extractAndPersistMemoryFacts,
 } from './memgpt-engine';
-import { getFluidSystemPrompt } from './fluid-prompts';
+import { getFluidSystemPrompt } from '../bots/fluid-prompts';
 
 export interface InteractiveChatOptions {
     /** Bot username (e.g. 'nietzsche', 'marx', 'sartre') */
