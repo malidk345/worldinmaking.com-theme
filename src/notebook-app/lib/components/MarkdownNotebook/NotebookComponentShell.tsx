@@ -224,12 +224,9 @@ export function NotebookComponentShell({
                 raw: undefined,
                 errors: undefined,
                 props: {
-                    ...Object.entries(currentNode.props).reduce<NotebookComponentProps>((accumulator, [key, value]) => {
-                        if (!propKeysToRemove.has(key)) {
-                            accumulator[key] = value
-                        }
-                        return accumulator
-                    }, {}),
+                    ...(Object.fromEntries(
+                        Object.entries(currentNode.props).filter(([key]) => !propKeysToRemove.has(key))
+                    ) as NotebookComponentProps),
                     ...nextProps,
                 },
             }
