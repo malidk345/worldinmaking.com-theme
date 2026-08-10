@@ -12,3 +12,7 @@
 ## 2024-05-18 - Avoid O(N^2) reduce for object construction
 **Learning:** Using `reduce` with object spread (`...acc`) to build objects dynamically from an array of entries causes O(N^2) time complexity and excessive memory churn, which can noticeably impact performance on large datasets.
 **Action:** Always replace this pattern with `Object.fromEntries(Object.entries(data).map(...))` for a single-pass O(N) operation.
+
+## 2023-10-27 - Reduce Memory Churn with Array.from() and O(N) Array Construction
+**Learning:** Using the spread operator `[...iterable]` just to invoke `.reduce()` forces a complete allocation of a temporary array. Additionally, using `.reduce()` with `push()` inside it to construct a new array, while O(N) in operations, introduces unnecessary function call overhead on every iteration compared to a simple `for...of` loop over the iterable.
+**Action:** Replace `[...iterable].reduce` instances with `Array.from(iterable).reduce` to be more explicit or use standard `for...of` loops to construct new structures without the overhead of `.reduce` callback allocations.

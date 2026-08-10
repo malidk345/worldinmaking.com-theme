@@ -820,7 +820,7 @@ function parseListItemLine(line: string, listItemIndex: number): NotebookListBlo
 }
 
 function getListItemDepth(indentation: string): number {
-    const columns = [...indentation].reduce((total, character) => total + (character === '\t' ? 4 : 1), 0)
+    const columns = Array.from(indentation).reduce((total, character) => total + (character === '\t' ? 4 : 1), 0)
     return Math.floor(columns / 2)
 }
 
