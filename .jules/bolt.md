@@ -12,3 +12,6 @@
 ## 2024-05-18 - Avoid O(N^2) reduce for object construction
 **Learning:** Using `reduce` with object spread (`...acc`) to build objects dynamically from an array of entries causes O(N^2) time complexity and excessive memory churn, which can noticeably impact performance on large datasets.
 **Action:** Always replace this pattern with `Object.fromEntries(Object.entries(data).map(...))` for a single-pass O(N) operation.
+## 2024-11-20 - Avoid array-as-object pattern in React state initialization
+**Learning:** Using an empty array `[]` as the accumulator in a `.reduce()` loop and assigning string keys to it (`acc[type] = ...`) creates a mixed array/object anti-pattern in JavaScript. This is not only semantically incorrect but also forces the JS engine to de-optimize the array shape.
+**Action:** Replace `.reduce()` loops that build dynamic objects from arrays with `Object.fromEntries(data.flatMap(...))` to create a clean, single-pass O(N) object map structure without mutating arrays as objects.
