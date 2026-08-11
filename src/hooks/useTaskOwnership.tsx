@@ -114,12 +114,9 @@ const TASK_DATA_REGISTRY: Record<
     people: PEOPLE_TASK_DATA,
 }
 
-export const useTaskOwnership = ({ dataKey = 'people' }: { dataKey?: string } = {}) => {
-    const taskData = TASK_DATA_REGISTRY[dataKey] || PEOPLE_TASK_DATA
-
-    // Sort tasks alphabetically within each group
-    const sortedData = useMemo(() => {
-        return Object.fromEntries(
+const PROCESSED_REGISTRY = Object.fromEntries(
+    Object.entries(TASK_DATA_REGISTRY).map(([registryKey, taskData]) => {
+        const sortedData = Object.fromEntries(
             Object.entries(taskData).map(([key, group]) => [
                 key,
                 {
@@ -127,29 +124,21 @@ export const useTaskOwnership = ({ dataKey = 'people' }: { dataKey?: string } = 
                     tasks: [...group.tasks].sort((a, b) => a.task.localeCompare(b.task)),
                 },
             ])
-        ) as typeof taskData
-    }, [taskData])
+        )
 
-    // Create groups array for rendering
-    const groups: TaskGroup[] = useMemo(() => {
-        return Object.entries(sortedData).map(([key, group]) => ({
+        const groups = Object.entries(sortedData).map(([key, group]) => ({
             key,
             name: group.name,
             columns: group.columns,
             tasks: group.tasks,
         }))
-    }, [sortedData])
 
-    // Create tasks lookup by group key
-    const tasks = useMemo(() => {
-        return Object.fromEntries(Object.entries(sortedData).map(([key, group]) => [key, group.tasks])) as Record<
-            string,
-            Task[]
-        >
-    }, [sortedData])
+        const tasks = Object.fromEntries(Object.entries(sortedData).map(([key, group]) => [key, group.tasks]))
 
-    return {
-        groups,
-        tasks,
-    }
+        return [registryKey, { groups, tasks }]
+    })
+)
+
+export const useTaskOwnership = ({ dataKey = 'people' }: { dataKey?: string } = {}) => {
+    return PROCESSED_REGISTRY[dataKey] || PROCESSED_REGISTRY['people']
 }

@@ -12,3 +12,7 @@
 ## 2024-05-18 - Avoid O(N^2) reduce for object construction
 **Learning:** Using `reduce` with object spread (`...acc`) to build objects dynamically from an array of entries causes O(N^2) time complexity and excessive memory churn, which can noticeably impact performance on large datasets.
 **Action:** Always replace this pattern with `Object.fromEntries(Object.entries(data).map(...))` for a single-pass O(N) operation.
+
+## 2024-10-24 - [Avoid processing static config data inside hooks]
+**Learning:** When a hook processes static configuration data (like `TASK_DATA_REGISTRY`), performing mapping or sorting operations inside `useMemo` still creates overhead per component instance. The static data transformation should be hoisted to the module level.
+**Action:** Always check if `useMemo` dependencies are completely static module-level variables. If so, move the entire computation outside the hook to ensure it runs exactly once per module load.
