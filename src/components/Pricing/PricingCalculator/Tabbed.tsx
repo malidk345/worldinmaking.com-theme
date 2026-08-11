@@ -3,8 +3,9 @@ import Tooltip from 'components/Tooltip'
 import { IconCopy, IconInfo, IconLightBulb } from '@posthog/icons'
 import Toggle from 'components/Toggle'
 import { calculatePrice, formatUSD } from '../PricingSlider/pricingSliderLogic'
-import Link from "components/Link"
-const graphql = (s) => s; const useStaticQuery = () => ({});
+import Link from 'components/Link'
+const graphql = (s) => s
+const useStaticQuery = () => ({})
 
 import { allProductsData } from '../Pricing'
 import useProducts from 'hooks/useProducts'
@@ -267,12 +268,14 @@ export default function Tabbed() {
         },
     } = useStaticQuery(allProductsData)
     const [analyticsData, setAnalyticsData] = useState(
-        analyticsSliders.reduce((acc, slider) => {
-            slider.types.forEach(({ type, enhanced }) => {
-                acc[type] = { volume: 0, cost: 0, enhanced: enhanced || false }
-            })
-            return acc
-        }, [])
+        // ⚡ Bolt Performance Optimization:
+        // Replaced array reduction with Object.fromEntries to prevent JS engine de-optimizations.
+        // O(N) allocation time and avoids mixed array/object anti-pattern performance penalties.
+        Object.fromEntries(
+            analyticsSliders.flatMap((slider) =>
+                slider.types.map(({ type, enhanced }) => [type, { volume: 0, cost: 0, enhanced: enhanced || false }])
+            )
+        )
     )
     const platform = billingProducts.find((product) => product.type === 'platform_and_support')
     const [activeTab, setActiveTab] = useState(0)
