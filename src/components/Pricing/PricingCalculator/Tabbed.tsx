@@ -272,7 +272,7 @@ export default function Tabbed() {
                 acc[type] = { volume: 0, cost: 0, enhanced: enhanced || false }
             })
             return acc
-        }, [])
+        }, {} as Record<string, any>)
     )
     const platform = billingProducts.find((product) => product.type === 'platform_and_support')
     const [activeTab, setActiveTab] = useState(0)
