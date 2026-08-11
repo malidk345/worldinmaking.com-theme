@@ -12,3 +12,6 @@
 ## 2024-05-18 - Avoid O(N^2) reduce for object construction
 **Learning:** Using `reduce` with object spread (`...acc`) to build objects dynamically from an array of entries causes O(N^2) time complexity and excessive memory churn, which can noticeably impact performance on large datasets.
 **Action:** Always replace this pattern with `Object.fromEntries(Object.entries(data).map(...))` for a single-pass O(N) operation.
+## 2024-05-15 - [V8 Dictionary Mode Avoidance]
+**Learning:** Initializing a `.reduce()` loop with an empty array `[]` and assigning non-numeric string keys to it forces the JavaScript engine (like V8) to de-optimize the array into 'dictionary mode'.
+**Action:** Use a plain object `{}` instead for single-pass object construction.
