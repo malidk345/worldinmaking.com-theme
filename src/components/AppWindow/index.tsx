@@ -1,10 +1,5 @@
 import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react'
-import {
-    AnimatePresence,
-    motion,
-    useDragControls,
-
-} from 'framer-motion'
+import { AnimatePresence, motion, useDragControls } from 'framer-motion'
 import { MenuItem, useApp } from '../../context/App'
 import { Provider as WindowProvider, AppWindow as AppWindowType, useWindow } from '../../context/Window'
 import type { MenuItemType } from 'components/RadixUI/MenuBar'
@@ -21,6 +16,8 @@ import WindowResizeHandles from './WindowResizeHandles'
 import WindowChrome from './WindowChrome'
 import WindowContent from './WindowContent'
 import WindowRouter from './WindowRouter'
+import { useWindowVisibility } from './hooks/useWindowVisibility'
+import { useMissionControlLayout } from './hooks/useMissionControlLayout'
 
 const recursiveSearch = (array: MenuItem[] | undefined, value: string): boolean => {
     if (!array) return false
@@ -110,41 +107,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
     const activePanelIndex = useMemo(() => windows.findIndex((w) => w.key === item.key), [windows, item.key])
     const totalWindows = windows.length
 
-    const missionControlLayout = useMemo(() => {
-        if (!isActiveWindowsPanelOpen || activePanelIndex === -1 || typeof window === 'undefined') return null
-
-        const screenWidth = window.innerWidth
-        const screenHeight = window.innerHeight
-        const padding = 80
-
-        const availableW = screenWidth - padding * 2
-        const availableH = screenHeight - padding * 2 - 80
-
-        const cols = Math.ceil(Math.sqrt(totalWindows))
-        const rows = Math.ceil(totalWindows / cols)
-
-        const cellW = availableW / cols
-        const cellH = availableH / rows
-
-        const col = activePanelIndex % cols
-        const row = Math.floor(activePanelIndex / cols)
-
-        const cx = padding + col * cellW + cellW / 2
-        const cy = padding + row * cellH + cellH / 2
-
-        const maxW = cellW * 0.85
-        const maxH = cellH * 0.85
-
-        const scaleX = maxW / size.width
-        const scaleY = maxH / size.height
-        let scale = Math.min(scaleX, scaleY, 0.45)
-        if (scale < 0.1) scale = 0.1
-
-        const targetX = cx - size.width / 2
-        const targetY = cy - size.height / 2
-
-        return { x: targetX, y: targetY, scale }
-    }, [isActiveWindowsPanelOpen, activePanelIndex, totalWindows, size.width, size.height])
+    const missionControlLayout = useMissionControlLayout(isActiveWindowsPanelOpen, activePanelIndex, totalWindows, size)
     const [snapIndicator, setSnapIndicator] = useState<'left' | 'right' | null>(null)
     const [menu, setMenu] = useState<IMenu[]>([])
     const [history, setHistory] = useState<string[]>([])
@@ -190,29 +153,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
     const hasToolbar = item.appSettings?.toolbar
     const hideTitle = item.appSettings?.hideTitle
     const isCompositorActive = animating || dragging || isResizing || closing
-    const inView = useMemo(() => {
-        if (item.expanded) return true
-
-        const windowsAbove = windows.filter(
-            (window) => window !== item && window.zIndex > item.zIndex && !window.minimized
-        )
-
-        let coveredArea = 0
-        const currentArea = size.width * size.height
-
-        for (const windowAbove of windowsAbove) {
-            const left = Math.max(position.x, windowAbove.position.x)
-            const right = Math.min(position.x + size.width, windowAbove.position.x + windowAbove.size.width)
-            const top = Math.max(position.y, windowAbove.position.y)
-            const bottom = Math.min(position.y + size.height, windowAbove.position.y + windowAbove.size.height)
-
-            if (left < right && top < bottom) {
-                coveredArea += (right - left) * (bottom - top)
-            }
-        }
-
-        return coveredArea / currentArea < 0.8
-    }, [windows, item, position, size])
+    const inView = useWindowVisibility(item, windows, position, size)
 
     const safeAppMenu = Array.isArray(appMenu) ? appMenu : []
     const parent =
@@ -253,8 +194,8 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
     const toggleExpanded = () => {
         if (item.fixedSize) return
         const bounds = constraintsRef.current?.getBoundingClientRect()
-        const fullW = bounds ? bounds.width : (typeof window !== 'undefined' ? window.innerWidth - 16 : 1200)
-        const fullH = bounds ? bounds.height : (typeof window !== 'undefined' ? window.innerHeight - taskbarHeight : 800)
+        const fullW = bounds ? bounds.width : typeof window !== 'undefined' ? window.innerWidth - 16 : 1200
+        const fullH = bounds ? bounds.height : typeof window !== 'undefined' ? window.innerHeight - taskbarHeight : 800
 
         const isMax = isMaximizedWindow(item) || (item.size.width >= fullW - 10 && item.size.height >= fullH - 10)
 
@@ -501,8 +442,7 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                             const el = e.currentTarget as HTMLElement
                             const startX = Number(el.dataset.pointerX || 0)
                             const startY = Number(el.dataset.pointerY || 0)
-                            const moved =
-                                Math.abs(e.clientX - startX) > 10 || Math.abs(e.clientY - startY) > 10
+                            const moved = Math.abs(e.clientX - startX) > 10 || Math.abs(e.clientY - startY) > 10
                             if (moved) return
                             handleClose()
                         }}
@@ -534,13 +474,15 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                     className={`group @container absolute overflow-hidden pointer-events-auto !select-auto flex flex-col border border-primary ${WINDOW_BG} ${
                         isCompositorActive ? MOTION_LAYER : ''
                     } ${
-                        item.expanded ? 'border-t-0 rounded-t-none rounded-b-lg shadow-none' : 'rounded-lg shadow-md'
+                        item.expanded
+                            ? 'border-t-0 rounded-t-none rounded-b-[32px] shadow-none'
+                            : 'rounded-[32px] shadow-md'
                     } ${
                         item.snapped === 'left'
                             ? 'rounded-tl-none rounded-tr-none rounded-br-none'
                             : item.snapped === 'right'
-                            ? 'rounded-tl-none rounded-tr-none rounded-bl-none'
-                            : ''
+                              ? 'rounded-tl-none rounded-tr-none rounded-bl-none'
+                              : ''
                     }`}
                     style={{
                         pointerEvents: 'auto',
