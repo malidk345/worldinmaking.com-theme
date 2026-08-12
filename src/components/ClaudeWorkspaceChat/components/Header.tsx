@@ -1,15 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 import { ModelId, ModelOption, ProjectSpace, Chat } from '../types';
 import {
   PanelLeft,
-  ChevronDown,
-  Edit2,
   X,
   Plus,
   Globe,
   Sparkles,
-  Settings,
-  Zap,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -42,11 +38,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  models,
-  selectedModelId,
-  onSelectModel,
   onToggleSidebar,
-  onOpenSettingsModal,
   onClose,
   activeNotebookMeta,
   isArtifactsOpen,
@@ -59,20 +51,9 @@ export const Header: React.FC<HeaderProps> = ({
   onNewChat,
   onCloseNotebookContext,
 }) => {
-  const [showTitleDropdown, setShowTitleDropdown] = useState(false);
-  const titleDropdownRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const handleOutsideClick = (e: MouseEvent) => {
-      if (titleDropdownRef.current && !titleDropdownRef.current.contains(e.target as Node)) {
-        setShowTitleDropdown(false);
-      }
-    };
-    document.addEventListener('mousedown', handleOutsideClick);
-    return () => document.removeEventListener('mousedown', handleOutsideClick);
-  }, []);
-
-  const displayChats = chats.slice(0, 6);
+  const displayChats = chats.slice(0, 8);
 
   // Format full host url like screenshot e.g. localhost:3000/notebooks#/notebook/xxx
   const getFullUrlPath = (path: string) => {
@@ -83,93 +64,56 @@ export const Header: React.FC<HeaderProps> = ({
     return path;
   };
 
+  // Mouse wheel horizontal scroll handler for tab bar
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollLeft += e.deltaY;
+    }
+  };
+
   return (
     <div className="sticky top-0 z-30 w-full pointer-events-auto select-none">
-      <header className="flex h-11 w-full items-center justify-between px-2 bg-[#f0f0f1] dark:bg-[#18181b] border-b border-black/10 dark:border-white/10 gap-1 font-sans shadow-2xs">
+      {/* Clean header with no heavy bottom border */}
+      <header className="flex h-10 w-full items-center justify-between px-2 bg-[#f4f4f5] dark:bg-[#18181b] gap-1 font-sans">
 
-        {/* 1:1 Screenshot Left Button: Square white card with Downward Chevron `v` */}
-        <div className="flex items-center gap-1 shrink-0 relative">
-          <motion.button
+        {/* Clean Sidebar Toggle on Far Left */}
+        <div className="flex items-center shrink-0">
+          <button
             type="button"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowTitleDropdown((prev) => !prev)}
-            className="flex h-7 w-7 items-center justify-center rounded-lg bg-white dark:bg-stone-800 border border-black/10 dark:border-white/10 shadow-2xs text-neutral-600 hover:text-black dark:text-neutral-300 dark:hover:text-white transition-colors cursor-pointer"
-            title="Sohbet Menüsü & Ayarlar"
-          >
-            <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${showTitleDropdown ? 'rotate-180' : ''}`} />
-          </motion.button>
-
-          <motion.button
-            type="button"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
             onClick={onToggleSidebar}
-            className="p-1.5 rounded-lg text-neutral-500 hover:text-black dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+            className="p-1.5 rounded-md text-neutral-500 hover:text-black dark:hover:text-white hover:bg-neutral-200/70 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
             title="Sidebar Aç/Kapat"
           >
-            <PanelLeft className="h-4 w-4 stroke-[1.7]" />
-          </motion.button>
-
-          <AnimatePresence>
-            {showTitleDropdown && (
-              <motion.div
-                ref={titleDropdownRef}
-                initial={{ opacity: 0, y: -6, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -4, scale: 0.96 }}
-                transition={{ duration: 0.15, ease: 'easeOut' }}
-                className="absolute left-0 top-full mt-1.5 w-52 rounded-xl border border-primary bg-bg-primary p-2 shadow-xl text-xs space-y-1 z-50 backdrop-blur-md"
-              >
-                <div className="px-2.5 py-1 text-[10px] font-semibold text-muted uppercase tracking-wider border-b border-primary/40 pb-1 flex items-center justify-between">
-                  <span>Sohbet Menüsü</span>
-                  <Zap className="h-3 w-3 text-amber-500" />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowTitleDropdown(false);
-                    onOpenSettingsModal();
-                  }}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-secondary hover:bg-accent hover:text-primary transition-colors text-left cursor-pointer font-medium"
-                >
-                  <Settings className="h-3.5 w-3.5 text-muted" />
-                  <span>Model & Görünüm Ayarları</span>
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+            <PanelLeft className="h-4 w-4 stroke-[1.6]" />
+          </button>
         </div>
 
-        {/* 1:1 Screenshot Browser Tab Strip Container with framer-motion */}
-        <div className="flex-1 flex items-center gap-1 overflow-x-auto scrollbar-none min-w-0 py-0.5 px-1">
+        {/* Tab Strip Container — Wheel & Touch Drag Scrollable */}
+        <div
+          ref={scrollRef}
+          onWheel={handleWheel}
+          className="flex-1 flex items-center gap-1.5 overflow-x-auto scrollbar-none min-w-0 py-1 px-1 touch-pan-x scroll-smooth"
+        >
           <AnimatePresence mode="popLayout" initial={false}>
             {/* 🌐 Active Browser Tab (Notebook URL) */}
             {activeNotebookMeta && (
               <motion.div
                 key="notebook-tab"
                 layout
-                initial={{ opacity: 0, scale: 0.92, y: 2 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 2 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                className="group relative flex items-center gap-2 px-3 py-1.5 rounded-t-xl rounded-b-xs bg-white dark:bg-stone-900 border-t border-x border-black/10 dark:border-white/10 text-neutral-800 dark:text-neutral-100 text-xs font-normal shadow-2xs max-w-[220px] sm:max-w-[320px] shrink-0"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.15 }}
+                className="group flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white dark:bg-stone-900 border border-black/10 dark:border-white/10 text-neutral-800 dark:text-neutral-100 text-xs font-normal shadow-2xs max-w-[200px] sm:max-w-[280px] shrink-0"
                 title={getFullUrlPath(activeNotebookMeta.path)}
               >
-                {/* Active Indicator Pulse Dot */}
-                <span className="relative flex h-2 w-2 shrink-0">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
-                <Globe className="h-3.5 w-3.5 text-neutral-600 dark:text-neutral-300 stroke-[1.7] shrink-0" />
-                <span className="truncate text-[12px] font-sans tracking-tight font-medium">
+                <Globe className="h-3.5 w-3.5 text-neutral-500 dark:text-neutral-400 stroke-[1.6] shrink-0" />
+                <span className="truncate text-[11px] font-sans tracking-tight">
                   {getFullUrlPath(activeNotebookMeta.path)}
                 </span>
                 {onCloseNotebookContext && (
-                  <motion.button
+                  <button
                     type="button"
-                    whileHover={{ scale: 1.2, rotate: 90 }}
-                    whileTap={{ scale: 0.9 }}
                     onClick={(e) => {
                       e.stopPropagation();
                       onCloseNotebookContext();
@@ -177,103 +121,94 @@ export const Header: React.FC<HeaderProps> = ({
                     className="p-0.5 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 hover:text-black dark:hover:text-white shrink-0 ml-1 cursor-pointer"
                     title="Kapat"
                   >
-                    <X className="h-3.5 w-3.5" />
-                  </motion.button>
+                    <X className="h-3 w-3" />
+                  </button>
                 )}
               </motion.div>
             )}
 
-            {/* 💬 Chat Tabs (Matching 1:1 Screenshot visually with motion) */}
+            {/* 💬 Chat Tabs (Slightly Rounded, Clean Separation) */}
             {displayChats.map((chat) => {
               const isActive = chat.id === activeChatId && !activeNotebookMeta;
               return (
                 <motion.div
                   key={chat.id}
                   layout
-                  initial={{ opacity: 0, scale: 0.92, y: 2 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9, y: 2 }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.15 }}
                   onClick={() => onSelectChat?.(chat.id)}
-                  className={`group relative flex items-center gap-2 px-3 py-1.5 rounded-t-xl rounded-b-xs text-xs font-normal transition-colors cursor-pointer max-w-[140px] sm:max-w-[200px] shrink-0 ${
+                  className={`group flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-normal transition-colors cursor-pointer max-w-[130px] sm:max-w-[180px] shrink-0 ${
                     isActive
-                      ? 'bg-white dark:bg-stone-900 border-t border-x border-black/10 dark:border-white/10 text-neutral-900 dark:text-neutral-100 shadow-2xs font-medium'
-                      : 'bg-transparent hover:bg-neutral-200/50 dark:hover:bg-neutral-800/50 text-neutral-600 dark:text-neutral-400'
+                      ? 'bg-white dark:bg-stone-900 border border-black/10 dark:border-white/10 text-neutral-900 dark:text-neutral-100 shadow-2xs font-medium'
+                      : 'bg-neutral-200/40 hover:bg-neutral-200/80 dark:bg-neutral-800/40 dark:hover:bg-neutral-800/80 text-neutral-600 dark:text-neutral-400 border border-transparent'
                   }`}
                   title={chat.title || 'Yeni Sohbet'}
                 >
-                  <Sparkles className={`h-3.5 w-3.5 shrink-0 stroke-[1.7] ${isActive ? 'text-primary' : 'text-neutral-400'}`} />
-                  <span className="truncate text-[12px] tracking-tight">
+                  <Sparkles className={`h-3.5 w-3.5 shrink-0 stroke-[1.6] ${isActive ? 'text-neutral-700 dark:text-neutral-200' : 'text-neutral-400'}`} />
+                  <span className="truncate text-[11px] tracking-tight">
                     {chat.title || 'Yeni Sohbet'}
                   </span>
                   {chats.length > 1 && onCloseChat && (
-                    <motion.button
+                    <button
                       type="button"
-                      whileHover={{ scale: 1.2 }}
-                      whileTap={{ scale: 0.9 }}
                       onClick={(e) => {
                         e.stopPropagation();
                         onCloseChat(chat.id);
                       }}
-                      className={`p-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-400 hover:text-black dark:hover:text-white shrink-0 ml-auto cursor-pointer transition-opacity ${
-                        isActive ? 'opacity-75' : 'opacity-0 group-hover:opacity-100'
+                      className={`p-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-400 hover:text-black dark:hover:text-white shrink-0 ml-auto cursor-pointer ${
+                        isActive ? 'opacity-70' : 'opacity-0 group-hover:opacity-100'
                       }`}
                       title="Kapat"
                     >
-                      <X className="h-3.5 w-3.5" />
-                    </motion.button>
+                      <X className="h-3 w-3" />
+                    </button>
                   )}
                 </motion.div>
               );
             })}
           </AnimatePresence>
 
-          {/* 1:1 Screenshot: Thin Divider `|` and Plus (+) Button */}
-          <div className="h-4 w-px bg-neutral-300 dark:bg-neutral-700 shrink-0 mx-1" />
-          <motion.button
+          {/* Plus (+) Button for Opening New Chat */}
+          <button
             type="button"
-            whileHover={{ scale: 1.15, rotate: 90 }}
-            whileTap={{ scale: 0.9 }}
             onClick={onNewChat}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-neutral-600 hover:text-black dark:text-neutral-400 dark:hover:text-white hover:bg-neutral-200/70 dark:hover:bg-neutral-800 transition-colors shrink-0 cursor-pointer"
+            className="flex h-6 w-6 items-center justify-center rounded-md text-neutral-500 hover:text-black dark:text-neutral-400 dark:hover:text-white hover:bg-neutral-200/70 dark:hover:bg-neutral-800 transition-colors shrink-0 cursor-pointer ml-0.5"
             title="Yeni Sohbet (+)"
           >
-            <Plus className="h-4 w-4 stroke-[2]" />
-          </motion.button>
+            <Plus className="h-3.5 w-3.5 stroke-[1.8]" />
+          </button>
         </div>
 
         {/* Right Actions: Artifacts & Close */}
         <div className="flex items-center gap-1 shrink-0 pl-1">
           {hasArtifacts && (
-            <motion.button
+            <button
               type="button"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
               onClick={onToggleArtifacts}
-              className={`p-1.5 rounded-lg text-neutral-600 hover:text-black dark:text-neutral-300 transition-colors cursor-pointer text-xs ${
+              className={`p-1.5 rounded-md text-neutral-600 hover:text-black dark:text-neutral-300 transition-colors cursor-pointer text-xs ${
                 isArtifactsOpen ? 'bg-white dark:bg-stone-800 shadow-2xs' : 'hover:bg-neutral-200/60'
               }`}
               title="Artifacts Paneli"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
                 <rect x="4.5" y="3" width="15" height="18" rx="2.5" />
                 <path d="M7.5 11c0.9-0.7 1.8-0.7 2.7 0s1.8 0.7 2.7 0 1.8-0.7 2.7 0" />
                 <path d="M7.5 15c0.9-0.7 1.8-0.7 2.7 0s1.8 0.7 2.7 0 1.8-0.7 2.7 0" />
               </svg>
-            </motion.button>
+            </button>
           )}
 
           {onClose && (
-            <motion.button
+            <button
               type="button"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
               onClick={onClose}
-              className="p-1.5 rounded-lg text-neutral-500 hover:text-black dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+              className="p-1.5 rounded-md text-neutral-500 hover:text-black dark:hover:text-white hover:bg-neutral-200/60 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
               title="Paneli Kapat"
             >
-              <X className="h-4 w-4" />
-            </motion.button>
+              <X className="h-3.5 w-3.5" />
+            </button>
           )}
         </div>
       </header>
