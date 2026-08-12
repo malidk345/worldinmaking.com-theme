@@ -545,7 +545,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
                 displayContent = displayContent.replace(/<\/?(?:thinking|think|reflect|perceive|frame|tension|move|structure|genealogy|deconstruction|overcoming|materialist_basis|dialectical_tension|praxis|substance_analysis|affect_mapping|rational_intuition|negative_dialectics|immanent_critique|resolution)>/gi, '').trim();
 
                 updateAssistantMessage(targetChatId, assistantMessageId, {
-                  content: displayContent || accumulatedContent,
+                  content: displayContent, // REMOVED the "|| accumulatedContent" fallback which was causing the leak!
                   thinkingProcess: { ...currentThinkingProcess },
                 });
               }
