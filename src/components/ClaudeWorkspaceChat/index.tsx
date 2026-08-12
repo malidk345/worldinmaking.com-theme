@@ -77,22 +77,27 @@ export default function App({ onClose }: { onClose?: () => void }) {
 
   // App Context for openNewChat params
   const app = useApp();
-  const { chatParams, setChatParams } = app;
+  // Subscribe to windows via dedicated context so we re-render when windows change
+  const { windows: appWindows } = useAppWindows();
 
+  // Extract full active notebook text content from open notebook windows
   const activeNotebookContext = React.useMemo(() => {
-    if (app?.focusedWindow?.path.startsWith('/notebooks/')) {
-      const shortId = app.focusedWindow.path.replace('/notebooks/', '');
-      const notebooks = getNotebooks();
-      const nb = notebooks.find(n => n.short_id === shortId || n.id === shortId);
-      if (nb) {
-        return nb.content.slice(0, 4000);
+    const notebookWindows = appWindows.filter(w => w.path?.startsWith('/notebooks'));
+    if (notebookWindows.length === 0) return '';
+    const top = notebookWindows.reduce((prev, cur) =>
+      (cur.zIndex ?? 0) > (prev.zIndex ?? 0) ? cur : prev
+    );
+    const idMatch = top.path.match(/[?&]id=([^&]+)/) || top.path.match(/\/notebooks\/([^?#]+)/);
+    const notebookId = idMatch?.[1] || '';
+    if (notebookId) {
+      const nb = getNotebook(notebookId);
+      if (nb?.content) {
+        return nb.content.slice(0, 24000);
       }
     }
     return '';
-  }, [app?.focusedWindow?.path]);
+  }, [appWindows]);
 
-  // Subscribe to windows via dedicated context so we re-render when windows change
-  const { windows: appWindows } = useAppWindows();
   const activeNotebookMeta = React.useMemo(() => {
     const notebookWindows = appWindows.filter(w => w.path?.startsWith('/notebooks'));
     if (notebookWindows.length === 0) return null;
