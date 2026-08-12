@@ -256,8 +256,6 @@ const DeleteButton = ({ questionID }: { questionID: number }) => {
         if (confirm('Are you sure you want to delete this thread?')) {
             const host = process.env.NEXT_PUBLIC_SQUEAK_API_HOST
             if (!host) {
-                // WIM: soft-delete not wired to Supabase yet
-                console.warn('[wim] thread delete requires Supabase soft-delete — not available')
                 return
             }
             await fetch(`${host}/api/questions/${questionID}`, {

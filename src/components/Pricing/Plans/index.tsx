@@ -73,7 +73,6 @@ export const PricingTiers = ({ plans, unit, compact = false, type, test = false,
 
     // Safety check: ensure plans exists and has content
     if (!plans || plans.length === 0) {
-        console.warn('PricingTiers: No plans provided or plans is empty')
         return null
     }
 
@@ -448,7 +447,6 @@ export default function Plans({
     ).map(({ type, plans, unit, addons, name, inclusion_only }: any) => {
         // Add safety check for plans
         if (!plans || plans.length === 0) {
-            console.warn(`No plans found for product type: ${type}`)
             return null
         }
 
