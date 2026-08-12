@@ -58,6 +58,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
+  const [isDragging, setIsDragging] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
   // Close popover when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -94,26 +97,80 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-
-    Array.from(files).forEach((file) => {
+  // High performance async file processor with text & base64 reading
+  const processFiles = (fileList: FileList | File[]) => {
+    Array.from(fileList).forEach((file) => {
       const isImage = file.type.startsWith('image/');
-      const newAttachment: FileAttachment = {
-        id: `att-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        name: file.name,
-        type: isImage ? 'image' : 'text',
-        size: `${(file.size / 1024).toFixed(1)} KB`,
-        url: isImage ? URL.createObjectURL(file) : undefined,
-      };
+      const isPdf = file.type === 'application/pdf' || file.name.endsWith('.pdf');
+      const isCode = /\.(js|ts|tsx|jsx|py|html|css|json|sql|sh|rs|go|c|cpp|md)$/i.test(file.name);
 
-      setAttachments((prev) => [...prev, newAttachment]);
+      const type: 'image' | 'text' | 'pdf' | 'code' = isImage ? 'image' : isPdf ? 'pdf' : isCode ? 'code' : 'text';
+      const id = `att-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+      const sizeStr = file.size > 1024 * 1024
+        ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+        : `${(file.size / 1024).toFixed(1)} KB`;
+
+      const reader = new FileReader();
+
+      if (isImage) {
+        reader.onload = () => {
+          const dataUrl = reader.result as string;
+          setAttachments((prev) => [
+            ...prev,
+            { id, name: file.name, type, size: sizeStr, url: dataUrl, content: dataUrl }
+          ]);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        reader.onload = () => {
+          const textContent = reader.result as string;
+          setAttachments((prev) => [
+            ...prev,
+            {
+              id,
+              name: file.name,
+              type,
+              size: sizeStr,
+              content: textContent,
+              contentPreview: textContent.slice(0, 200)
+            }
+          ]);
+        };
+        reader.readAsText(file);
+      }
     });
-
-    e.target.value = '';
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      processFiles(e.target.files);
+      e.target.value = '';
+    }
+  };
+
+  // Drag & Drop handlers
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processFiles(e.dataTransfer.files);
+    }
+  };
+
+  // High performance real-time continuous speech recognition
   const toggleSpeechRecognition = () => {
     const SpeechRecognition =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -124,32 +181,42 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
 
     if (isRecording) {
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch (e) {}
+      }
       setIsRecording(false);
     } else {
       try {
         const recognition = new SpeechRecognition();
         recognition.lang = 'tr-TR';
-        recognition.interimResults = false;
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognitionRef.current = recognition;
 
         recognition.onstart = () => setIsRecording(true);
+
         recognition.onresult = (e: any) => {
-          const transcript = e.results[0][0].transcript;
-          setPrompt((prev) => (prev ? `${prev} ${transcript}` : transcript));
-          setIsRecording(false);
+          let liveTranscript = '';
+          for (let i = e.resultIndex; i < e.results.length; ++i) {
+            if (e.results[i].isFinal) {
+              liveTranscript += e.results[i][0].transcript + ' ';
+            }
+          }
+          if (liveTranscript) {
+            setPrompt((prev) => (prev ? `${prev} ${liveTranscript}` : liveTranscript));
+          }
         };
+
         recognition.onerror = () => setIsRecording(false);
         recognition.onend = () => setIsRecording(false);
 
         recognition.start();
       } catch (err) {
-        console.error(err);
+        console.error('Speech recognition error:', err);
         setIsRecording(false);
       }
     }
   };
-
-  const budgetLabel =
-    thinkingBudget === 'extended' ? 'Extended' : thinkingBudget === 'balanced' ? 'Medium' : 'Fast';
 
   return (
     <div className="w-full max-w-3xl mx-auto px-3 sm:px-4 pointer-events-none">
@@ -166,8 +233,17 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         </div>
       )}
 
-      {/* Floating Capsule Input Box (Exact 1:1 Extracted CDS Match) */}
-      <div className="pointer-events-auto relative rounded-[20px] border border-primary bg-white p-3 sm:p-3.5 shadow-xs hover:border-primary focus-within:border-[#1E3A8A] focus-within:ring-1 focus-within:ring-[#1E3A8A] transition-all duration-200">
+      {/* Floating Capsule Input Box with Drag & Drop */}
+      <div
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`pointer-events-auto relative rounded-[20px] border bg-white p-3 sm:p-3.5 shadow-xs transition-all duration-200 ${
+          isDragging
+            ? 'border-[#1E3A8A] ring-2 ring-[#1E3A8A]/30 bg-[#1E3A8A]/5 scale-[1.01]'
+            : 'border-primary hover:border-primary focus-within:border-[#1E3A8A] focus-within:ring-1 focus-within:ring-[#1E3A8A]'
+        }`}
+      >
         {/* Attachment Previews */}
         {attachments.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-2 pb-2 border-b border-primary">

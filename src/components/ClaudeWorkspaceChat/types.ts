@@ -56,6 +56,7 @@ export interface FileAttachment {
   type: 'image' | 'text' | 'pdf' | 'code'
   size: string
   url?: string
+  content?: string
   contentPreview?: string
 }
 
