@@ -8,7 +8,7 @@
  */
 export const runtime = 'edge'
 
-import { createLangChainModel } from '../../../lib/chat-bots/langchain-pipeline'
+import { createLangChainModel, invokeWithKeyRotation } from '../../../lib/chat-bots/langchain-pipeline'
 import { loadMemGPTState, extractAndPersistMemoryFacts } from '../../../lib/chat-bots/memgpt-engine'
 import { getFluidSystemPrompt, getAdaptiveThinkingInstructions } from '../../../lib/bots/fluid-prompts'
 import { extractPersona, buildPersonaHeader, type TaskType } from '../../../lib/persona-engine'
@@ -180,17 +180,10 @@ export default async function handler(req: Request) {
                     ['user', userPromptText],
                 ])
 
-                let rawReply = ''
-                try {
-                    const model = createLangChainModel('groq', persona.temperature)
-                    const chain = prompt.pipe(model).pipe(new StringOutputParser())
-                    rawReply = await chain.invoke({})
-                } catch {
-                    // Fallback to Gemini if Groq is unavailable
-                    const model = createLangChainModel('gemini', persona.temperature)
-                    const chain = prompt.pipe(model).pipe(new StringOutputParser())
-                    rawReply = await chain.invoke({})
-                }
+                const { reply: rawReply } = await invokeWithKeyRotation({
+                    prompt,
+                    temperature: persona.temperature,
+                })
 
                 // Separate the model's real reasoning trail from its visible answer
                 // BEFORE gating. DeepSeek-R1 natively uses <think>...</think>;
