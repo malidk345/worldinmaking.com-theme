@@ -187,10 +187,12 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ### Entry 057 - ClaudeWorkspaceChat Streaming Think Leak Fix
 - **Date:** 2026-08-12
 - **AI Agent:** Antigravity (Gemini 3.6 Flash)
-- **Summary:** Fixed a critical bug in `src/components/ClaudeWorkspaceChat/index.tsx` where the LLM's raw `<think>` block was leaking into the visible chat UI during the streaming phase. The bug was caused by a fallback statement (`content: displayContent || accumulatedContent`) which forcefully injected the raw unparsed string when `displayContent` was properly empty (because the model hadn't started its visible response yet). Removed the fallback so that the UI can remain cleanly empty while the Thinking UI block is active.
+- **Summary:** Fixed a critical bug in `src/components/ClaudeWorkspaceChat/index.tsx` where the LLM's raw `<think>` block was leaking into the visible chat UI during the streaming phase. 
+  1. Removed the faulty `content: displayContent || accumulatedContent` fallback.
+  2. Wrote a robust sequential Regex replacement block (`/<thinking>[\s\S]*?<\/thinking>/gi`) that correctly strips nested `<thinking><think>...</think></thinking>` blocks. The previous regex stopped at the first closing tag, leaving trailing tags visible in the UI.
 - **Modified Files:**
   - `src/components/ClaudeWorkspaceChat/index.tsx`
-- **Verification:** `pnpm typecheck:shell` passed cleanly.
+- **Verification:** Tested regex locally via scratch script. `pnpm typecheck:shell` passed cleanly.
 
 ### Entry 056 - DuckDuckGo Web Scraper Engine Fix
 - **Date:** 2026-08-12

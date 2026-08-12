@@ -534,9 +534,9 @@ export default function App({ onClose }: { onClose?: () => void }) {
                 }
 
                 // Strip thinking tags if present; hide both closed and any trailing unclosed thinking tag text from visible bubble
-                let displayContent = accumulatedContent;
-                // 1. Remove all fully closed think blocks
-                displayContent = displayContent.replace(/<(?:thinking|think)>[\s\S]*?<\/(?:thinking|think)>/gi, '');
+                // 1. Remove all fully closed think blocks (nested or singular)
+                displayContent = displayContent.replace(/<thinking>[\s\S]*?<\/thinking>/gi, '');
+                displayContent = displayContent.replace(/<think>[\s\S]*?<\/think>/gi, '');
                 // 2. Remove any trailing unclosed think block
                 displayContent = displayContent.replace(/<(?:thinking|think)>[\s\S]*$/gi, '');
                 displayContent = displayContent.trim();
@@ -557,7 +557,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
       }
 
       // Tier 2: Fallback to /api/bots/act or /api/philosopher-bot if SSE returned empty
-      const finalCleanContent = accumulatedContent.replace(/<(?:thinking|think)>[\s\S]*?(?:<\/(?:thinking|think)>|$)/gi, '').replace(/<(?:thinking|think)>[\s\S]*$/gi, '').replace(/<\/?(?:thinking|think|reflect|perceive|frame|tension|move|structure|genealogy|deconstruction|overcoming|materialist_basis|dialectical_tension|praxis|substance_analysis|affect_mapping|rational_intuition|negative_dialectics|immanent_critique|resolution)>/gi, '').trim();
+      const finalCleanContent = accumulatedContent.replace(/<thinking>[\s\S]*?<\/thinking>/gi, '').replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/<(?:thinking|think)>[\s\S]*$/gi, '').replace(/<\/?(?:thinking|think|reflect|perceive|frame|tension|move|structure|genealogy|deconstruction|overcoming|materialist_basis|dialectical_tension|praxis|substance_analysis|affect_mapping|rational_intuition|negative_dialectics|immanent_critique|resolution)>/gi, '').trim();
       if (!finalCleanContent && !backendError) {
         let res: Response | null = null;
         try {
@@ -766,7 +766,8 @@ export default function App({ onClose }: { onClose?: () => void }) {
         
         let displayContent = accumulatedContent;
         if (displayContent) {
-          displayContent = displayContent.replace(/<(?:thinking|think)>[\s\S]*?<\/(?:thinking|think)>/gi, '');
+          displayContent = displayContent.replace(/<thinking>[\s\S]*?<\/thinking>/gi, '');
+          displayContent = displayContent.replace(/<think>[\s\S]*?<\/think>/gi, '');
           displayContent = displayContent.replace(/<(?:thinking|think)>[\s\S]*$/gi, '');
           displayContent = displayContent.replace(/<\/?(?:thinking|think|reflect|perceive|frame|tension|move|structure|genealogy|deconstruction|overcoming|materialist_basis|dialectical_tension|praxis|substance_analysis|affect_mapping|rational_intuition|negative_dialectics|immanent_critique|resolution)>/gi, '').trim();
         }
