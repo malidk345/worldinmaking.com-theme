@@ -3,7 +3,7 @@
  *
  * Integrates open-source LangChain & LangGraph packages:
  *   - `@langchain/core`: LCEL Prompt Templates & Output Parsers
- *   - `@langchain/groq`: Groq DeepSeek-R1 70B Distill Model integration
+ *   - `@langchain/groq`: Groq openai/gpt-oss-120b (reasoning, 120B, free tier)
  *   - `@langchain/google-genai`: Google Gemini 2.0 Flash integration
  *   - `@langchain/langgraph`: Stateful Multi-Agent Graph & Checkpointing
  */
@@ -63,7 +63,7 @@ export function createLangChainModel(preferredProvider: 'groq' | 'gemini' = 'gro
     if (preferredProvider === 'groq' && groqKey) {
         return new ChatGroq({
             apiKey: groqKey,
-            model: 'deepseek-r1-distill-llama-70b',
+            model: 'openai/gpt-oss-120b',  // Groq flagship: 120B reasoning model, free tier
             temperature: t,
             maxTokens: 8192,
         });
@@ -80,7 +80,7 @@ export function createLangChainModel(preferredProvider: 'groq' | 'gemini' = 'gro
     if (groqKey) {
         return new ChatGroq({
             apiKey: groqKey,
-            model: 'deepseek-r1-distill-llama-70b',
+            model: 'llama-3.3-70b-versatile',  // stable fallback
             temperature: t,
             maxTokens: 8192,
         });
