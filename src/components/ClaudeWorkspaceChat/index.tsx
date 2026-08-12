@@ -963,6 +963,10 @@ export default function App({ onClose }: { onClose?: () => void }) {
           onOpenSettingsModal={() => setSettingsModalOpen(true)}
           onClose={onClose}
           activeNotebookMeta={activeNotebookMeta}
+          chats={chats}
+          activeChatId={activeChatId}
+          onSelectChat={(id) => setActiveChatId(id)}
+          onCloseChat={(id) => handleDeleteChat(id)}
         />
 
         {/* Chat Stream & Conversation Body */}
