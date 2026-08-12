@@ -50,10 +50,10 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
 
     let currentIndex = 0;
     setIsTyping(true);
-    const speedMs = typewriterSpeed === 'slow' ? 30 : typewriterSpeed === 'fast' ? 8 : 15;
+    const speedMs = typewriterSpeed === 'slow' ? 35 : typewriterSpeed === 'fast' ? 8 : 18;
 
     const interval = setInterval(() => {
-      currentIndex += 3;
+      currentIndex += 2;
       if (currentIndex >= message.content.length) {
         setAnimatedText(message.content);
         setIsTyping(false);
@@ -136,13 +136,13 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
           </div>
 
           {/* Response Text with High Quality Editorial Anthropic Serif Font */}
-          <div className="font-claude-serif text-[16px] sm:text-[17px] leading-[1.7] text-primary claude-prose max-w-none">
+          <div className="font-claude-serif text-[15px] sm:text-[15.5px] leading-[1.6] text-primary claude-prose max-w-none tracking-[0.01em]">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               rehypePlugins={[rehypeRaw]}
               components={{
                 p: ({ children }: any) => (
-                  <div className="mb-3 leading-[1.65rem] break-words">{children}</div>
+                  <div className="mb-2.5 leading-[1.55rem] break-words">{children}</div>
                 ),
                 code({ node, inline, className, children, ...props }: any) {
                   const match = /language-(\w+)/.exec(className || '');
