@@ -193,19 +193,17 @@ export default async function handler(req: Request) {
                 }
 
                 // Separate the model's real reasoning trail from its visible answer
-                // BEFORE gating — the quality gate's word-budget/min-length/filler
-                // checks must only ever see the actual answer, not the thinking block.
-                const thinkMatch = rawReply.match(/<thinking>[\s\S]*?<\/thinking>/i)
+                // BEFORE gating. DeepSeek-R1 natively uses <think>...</think>;
+                // our prompt uses <thinking>. Handle both for clean stripping.
+                const thinkMatch = rawReply.match(/<(?:thinking|think)>[\s\S]*?<\/(?:thinking|think)>/i)
                 const thinkingBlock = thinkMatch ? thinkMatch[0] : ''
                 let visibleRaw = thinkingBlock
                     ? rawReply.slice(thinkMatch!.index! + thinkingBlock.length).trim()
                     : rawReply.trim()
 
-                // Defensive: if the model opened <thinking> but never closed it, don't
-                // leak raw tag markup into the visible answer the reader sees — strip
-                // any stray tags rather than displaying a half-formed trail.
-                if (!thinkingBlock && /<\/?(?:thinking|perceive|frame|tension|move)>/i.test(visibleRaw)) {
-                    visibleRaw = visibleRaw.replace(/<\/?(?:thinking|perceive|frame|tension|move)>/gi, '').trim()
+                // Strip any stray unclosed thinking tags from the visible answer
+                if (!thinkingBlock && /<\/?(?:thinking|think|perceive|frame|tension|move)>/i.test(visibleRaw)) {
+                    visibleRaw = visibleRaw.replace(/<\/?(?:thinking|think|perceive|frame|tension|move)>/gi, '').trim()
                 }
 
                 // Quality gate: same protection as chat/forum/paper generation

@@ -3,7 +3,7 @@
  *
  * Integrates open-source LangChain & LangGraph packages:
  *   - `@langchain/core`: LCEL Prompt Templates & Output Parsers
- *   - `@langchain/groq`: Groq Llama 3.3 70B Model integration
+ *   - `@langchain/groq`: Groq DeepSeek-R1 70B Distill Model integration
  *   - `@langchain/google-genai`: Google Gemini 2.0 Flash integration
  *   - `@langchain/langgraph`: Stateful Multi-Agent Graph & Checkpointing
  */
@@ -21,6 +21,10 @@ import { envFrom, getRuntimeEnv } from '../bots/runtime-env';
  * 1. Initializes a LangChain LLM model instance based on active API keys.
  * Uses getRuntimeEnv() so Cloudflare Pages secrets (bound via the dashboard,
  * only visible through getRequestContext().env) are found at request time.
+ *
+ * Model: deepseek-r1-distill-llama-70b (Groq free tier, built-in reasoning)
+ * maxTokens: 8192 — allows deep, thorough responses
+ * temperature: 0.6 (default) — balanced coherence + creativity
  */
 export function createLangChainModel(preferredProvider: 'groq' | 'gemini' = 'groq', temperature?: number) {
     const env = getRuntimeEnv()
@@ -54,13 +58,14 @@ export function createLangChainModel(preferredProvider: 'groq' | 'gemini' = 'gro
     const groqKey = pickRandom(groqKeys);
     const geminiKey = pickRandom(geminiKeys);
 
-    const t = temperature ?? 0.75;
+    const t = temperature ?? 0.6;
 
     if (preferredProvider === 'groq' && groqKey) {
         return new ChatGroq({
             apiKey: groqKey,
-            model: 'llama-3.3-70b-versatile',
+            model: 'deepseek-r1-distill-llama-70b',
             temperature: t,
+            maxTokens: 8192,
         });
     }
 
@@ -75,8 +80,9 @@ export function createLangChainModel(preferredProvider: 'groq' | 'gemini' = 'gro
     if (groqKey) {
         return new ChatGroq({
             apiKey: groqKey,
-            model: 'llama-3.3-70b-versatile',
+            model: 'deepseek-r1-distill-llama-70b',
             temperature: t,
+            maxTokens: 8192,
         });
     }
 
