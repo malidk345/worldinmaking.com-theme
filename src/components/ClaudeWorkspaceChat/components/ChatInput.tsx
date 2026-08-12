@@ -315,10 +315,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 type="button"
                 onClick={handleSubmit}
                 disabled={!prompt.trim() && attachments.length === 0}
-                className={`flex h-9 w-9 items-center justify-center rounded-xl text-white transition-all active:scale-95 shadow-2xs cursor-pointer ${
+                className={`flex h-9 w-9 items-center justify-center rounded-xl transition-all shadow-2xs ${
                   prompt.trim() || attachments.length > 0
-                    ? 'bg-[#1E3A8A] hover:bg-[#1e40af]'
-                    : 'bg-[#93C5FD] hover:bg-[#60A5FA]'
+                    ? 'bg-[#1E3A8A] hover:bg-[#1e40af] text-white active:scale-95 cursor-pointer'
+                    : 'bg-[#1E3A8A]/35 text-white/50 cursor-not-allowed'
                 }`}
                 title="Gönder"
               >
