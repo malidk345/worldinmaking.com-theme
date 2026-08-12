@@ -31,7 +31,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import * as Portal from '@radix-ui/react-portal';
 import { useApp, useAppSettings, useAppWindows } from '../../context/App';
 import { WINDOW_BG, PANEL_BG } from '../../constants/frostedSurfaces';
-import { getNotebooks, createNotebook } from '../../notebook-app/scenes/notebooks/notebookStorage';
+import { getNotebooks, getNotebook, createNotebook } from '../../notebook-app/scenes/notebooks/notebookStorage';
 import type { OSActionCard as OSActionCardType } from './types';
 import { extractArtifactsFromContent } from './utils/extractArtifacts';
 import { processArtifactRevision } from './utils/toolCalling';
@@ -99,13 +99,17 @@ export default function App({ onClose }: { onClose?: () => void }) {
     const top = notebookWindows.reduce((prev, cur) =>
       (cur.zIndex ?? 0) > (prev.zIndex ?? 0) ? cur : prev
     );
-    // Extract id from /notebooks?id=xxx or /notebooks/short_id
-    const idMatch = top.path.match(/[?&]id=([^&]+)/) || top.path.match(/\/notebooks\/(.+)/);
-    const shortId = idMatch?.[1] || '';
-    const notebooks = getNotebooks();
-    const nb = shortId ? notebooks.find(n => n.short_id === shortId || n.id === shortId) : null;
-    if (nb) return { title: nb.title || 'Notebook', path: top.path };
-    if (top.title && top.title !== 'Notebooks') return { title: top.title, path: top.path };
+    // Extract id from /notebooks?id=xxx or hash #/notebook/xxx
+    const idMatch = top.path.match(/[?&]id=([^&]+)/) || top.path.match(/\/notebooks\/([^?#]+)/);
+    const notebookId = idMatch?.[1] || '';
+    if (notebookId) {
+      const nb = getNotebook(notebookId);
+      if (nb?.title) return { title: nb.title, path: top.path };
+    }
+    // Fallback to window title (App.tsx sets it as the notebook title)
+    if (top.title && top.title !== 'Notebooks' && top.title !== 'Notebook') {
+      return { title: top.title, path: top.path };
+    }
     return { title: 'Notebook', path: top.path };
   }, [appWindows]);
 
