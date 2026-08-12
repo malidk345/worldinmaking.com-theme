@@ -148,45 +148,42 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
   };
 
-  const budgetLabel =
-    thinkingBudget === 'extended' ? 'Extended' : thinkingBudget === 'balanced' ? 'Medium' : 'Fast';
-
   return (
-    <div className="w-full max-w-3xl mx-auto px-3 sm:px-4 pointer-events-none">
+    <div className="w-full max-w-2xl sm:max-w-3xl mx-auto px-2 sm:px-4 pointer-events-none">
       {/* Scroll to bottom button floating arrow ↓ */}
       {showScrollToBottom && (
         <div className="flex justify-center mb-2 pointer-events-auto">
           <button
             onClick={onScrollToBottom}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-white border border-primary shadow-sm text-secondary hover:bg-bg-primary active:scale-95 transition-all cursor-pointer"
+            className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-white border border-primary shadow-sm text-secondary hover:bg-bg-primary active:scale-95 transition-all cursor-pointer"
             title="Aşağı in"
           >
-            <ArrowDown className="h-4 w-4" />
+            <ArrowDown className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </button>
         </div>
       )}
 
-      {/* Floating Capsule Input Box (Exact 1:1 Extracted CDS Match) */}
-      <div className="pointer-events-auto relative rounded-[20px] border border-primary bg-white p-3 sm:p-3.5 shadow-xs hover:border-primary focus-within:border-[#1E3A8A] focus-within:ring-1 focus-within:ring-[#1E3A8A] transition-all duration-200">
+      {/* Floating Capsule Input Box */}
+      <div className="pointer-events-auto relative rounded-[18px] sm:rounded-[20px] border border-primary bg-white p-2.5 sm:p-3 shadow-xs hover:border-primary focus-within:border-[#1E3A8A] focus-within:ring-1 focus-within:ring-[#1E3A8A] transition-all duration-200">
         {/* Attachment Previews */}
         {attachments.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-2 pb-2 border-b border-primary">
+          <div className="flex flex-wrap gap-1.5 mb-2 pb-1.5 border-b border-primary">
             {attachments.map((att) => (
               <div
                 key={att.id}
-                className="flex items-center gap-2 rounded-xl border border-primary bg-bg-primary px-2.5 py-1 text-xs text-secondary"
+                className="flex items-center gap-1.5 rounded-lg border border-primary bg-bg-primary px-2 py-0.5 text-xs text-secondary"
               >
                 {att.type === 'image' ? (
-                  <ImageIcon className="h-3.5 w-3.5 text-amber-700" />
+                  <ImageIcon className="h-3 w-3 text-amber-700" />
                 ) : (
-                  <FileText className="h-3.5 w-3.5 text-secondary" />
+                  <FileText className="h-3 w-3 text-secondary" />
                 )}
-                <span className="max-w-[140px] truncate font-medium">{att.name}</span>
+                <span className="max-w-[120px] truncate text-[11px] font-medium">{att.name}</span>
                 <button
                   onClick={() => setAttachments((prev) => prev.filter((a) => a.id !== att.id))}
-                  className="text-muted hover:text-secondary"
+                  className="text-muted hover:text-secondary p-0.5"
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <X className="h-3 w-3" />
                 </button>
               </div>
             ))}
@@ -201,7 +198,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           onKeyDown={handleKeyDown}
           placeholder="Write a message..."
           rows={1}
-          className="w-full resize-none border-none bg-transparent px-1 pt-0 text-[15px] sm:text-base text-primary placeholder:text-muted focus:outline-none focus:ring-0 max-h-[160px] leading-relaxed font-sans"
+          className="w-full resize-none border-none bg-transparent px-1 pt-0 text-sm sm:text-[15px] text-primary placeholder:text-muted focus:outline-none focus:ring-0 max-h-[150px] leading-relaxed font-sans"
         />
 
         {/* Hidden File Input */}
@@ -213,20 +210,21 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           className="hidden"
         />
 
-        {/* Bottom Toolbar Row (Exact Screenshot 1:1 Layout) */}
-        <div className="mt-2.5 flex items-center justify-between gap-2 pt-0.5">
-          {/* Left Side: + Icon & Sonnet 5 Medium Dropdown */}
-          <div className="flex items-center gap-3 sm:gap-4">
+        {/* Bottom Toolbar Row */}
+        <div className="mt-2 flex items-center justify-between gap-1.5 pt-0.5">
+          {/* Left Side: + Icon & Model Dropdown */}
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             {/* (+) Attachment Button */}
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="p-1 text-primary hover:text-primary transition-colors focus:outline-none cursor-pointer"
+              className="p-0.5 text-primary hover:text-primary transition-colors focus:outline-none cursor-pointer shrink-0"
               title="Add attachment"
             >
-              <Plus className="h-5 w-5 stroke-[1.8]" />
+              <Plus className="h-4.5 w-4.5 stroke-[1.8]" />
             </button>
-            {/* Philosopher Bot Selector using Notebook LemonSelect */}
+
+            {/* Philosopher Bot Selector */}
             <LemonSelect
               value={selectedModelId}
               onSelect={(newId) => {
@@ -238,8 +236,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               renderButtonContent={() => {
                 const activeModel = models.find((m) => m.id === selectedModelId) || models[0];
                 return (
-                  <span className="inline-flex items-center gap-1.5 text-[15px] font-sans text-primary hover:opacity-80 transition-opacity whitespace-nowrap">
-                    <div className="size-4.5 rounded-full overflow-hidden bg-accent shrink-0 border border-primary/40 flex items-center justify-center font-bold text-white text-[8px]">
+                  <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-sans text-primary hover:opacity-80 transition-opacity whitespace-nowrap">
+                    <div className="size-4 sm:size-4.5 rounded-full overflow-hidden bg-accent shrink-0 border border-primary/40 flex items-center justify-center font-bold text-white text-[8px]">
                       {activeModel?.avatarUrl ? (
                         <img src={activeModel.avatarUrl} alt={activeModel.name} className="size-full object-cover" />
                       ) : (
@@ -248,8 +246,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                         </span>
                       )}
                     </div>
-                    <span className="font-semibold text-primary tracking-tight">{activeModel?.name}</span>
-                    <ChevronDown className="h-3.5 w-3.5 text-muted stroke-[2] ml-0.5 shrink-0 inline-block" />
+                    <span className="font-semibold text-primary tracking-tight truncate">{activeModel?.name}</span>
+                    <ChevronDown className="h-3 w-3 text-muted stroke-[2] shrink-0 inline-block" />
                   </span>
                 );
               }}
@@ -261,7 +259,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     value: opt.id,
                     label: (
                       <span className="flex items-center gap-2 font-medium text-xs">
-                        <div className="size-5 rounded-full overflow-hidden bg-accent shrink-0 border border-primary/40 flex items-center justify-center font-bold text-white text-[9px]">
+                        <div className="size-4.5 rounded-full overflow-hidden bg-accent shrink-0 border border-primary/40 flex items-center justify-center font-bold text-white text-[8px]">
                           {opt.avatarUrl ? (
                             <img src={opt.avatarUrl} alt={opt.name} className="size-full object-cover" />
                           ) : (
@@ -280,24 +278,22 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               type="tertiary"
               dropdownPlacement="bottom-start"
               dropdownMatchSelectWidth={false}
-              className="border-none bg-transparent p-0 text-primary relative z-30 [&_.LemonButton]:border-none [&_.LemonButton]:bg-transparent [&_.LemonButton]:shadow-none [&_.LemonButton]:p-0 [&_.LemonButton\_\_side-icon]:size-3.5 [&_.LemonButton\_\_side-icon_svg]:size-3.5 [&_.LemonButton\_\_side-icon_svg]:shrink-0 [&_svg]:max-w-[14px] [&_svg]:max-h-[14px]"
+              className="border-none bg-transparent p-0 text-primary relative z-30 [&_.LemonButton]:border-none [&_.LemonButton]:bg-transparent [&_.LemonButton]:shadow-none [&_.LemonButton]:p-0"
             />
           </div>
 
-
-
           {/* Right Side Controls: Mic | Dynamic Send/Stop Button */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {/* Microphone Button */}
             <button
               type="button"
               onClick={toggleSpeechRecognition}
-              className={`p-1 text-primary hover:text-primary transition-colors focus:outline-none cursor-pointer ${
+              className={`p-0.5 text-primary hover:text-primary transition-colors focus:outline-none cursor-pointer ${
                 isRecording ? 'text-rose-600 animate-pulse' : ''
               }`}
               title="Voice Input"
             >
-              {isRecording ? <MicOff className="h-5 w-5 stroke-[1.8]" /> : <Mic className="h-5 w-5 stroke-[1.8]" />}
+              {isRecording ? <MicOff className="h-4.5 w-4.5 stroke-[1.8]" /> : <Mic className="h-4.5 w-4.5 stroke-[1.8]" />}
             </button>
 
             {/* Send / Stop Action Button */}
@@ -305,32 +301,32 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               <button
                 type="button"
                 onClick={onStopStreaming}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary bg-white text-primary shadow-2xs hover:bg-accent active:scale-95 cursor-pointer"
+                className="flex h-7.5 w-7.5 sm:h-8 sm:w-8 items-center justify-center rounded-lg sm:rounded-xl border border-primary bg-white text-primary shadow-2xs hover:bg-accent active:scale-95 cursor-pointer"
                 title="Yanıtı Durdur"
               >
-                <div className="h-3.5 w-3.5 rounded-[2px] bg-stone-900" />
+                <div className="h-3 w-3 rounded-[2px] bg-stone-900" />
               </button>
             ) : (
               <button
                 type="button"
                 onClick={handleSubmit}
                 disabled={!prompt.trim() && attachments.length === 0}
-                className={`flex h-9 w-9 items-center justify-center rounded-xl text-white transition-all active:scale-95 shadow-2xs cursor-pointer ${
+                className={`flex h-7.5 w-7.5 sm:h-8 sm:w-8 items-center justify-center rounded-lg sm:rounded-xl text-white transition-all active:scale-95 shadow-2xs cursor-pointer ${
                   prompt.trim() || attachments.length > 0
                     ? 'bg-[#1E3A8A] hover:bg-[#1e40af]'
                     : 'bg-[#93C5FD] hover:bg-[#60A5FA]'
                 }`}
                 title="Gönder"
               >
-                <ArrowUp className="h-5 w-5 stroke-[2.2]" />
+                <ArrowUp className="h-4 w-4 stroke-[2.2]" />
               </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* Disclaimer Text below input capsule (Exact Screenshot match) */}
-      <p className="mt-2 text-center text-[11px] text-muted font-sans pointer-events-auto">
+      {/* Disclaimer Text below input capsule */}
+      <p className="mt-1.5 text-center text-[10px] sm:text-[11px] text-muted font-sans pointer-events-auto">
         wim's ai bots can make mistakes. please double-check responses.
       </p>
     </div>
