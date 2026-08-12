@@ -29,7 +29,7 @@ import { ClaudeSparkIcon } from './components/ThinkingBlock';
 import { Sparkles, Brain, Plus, Edit3, GraduationCap, Code, Coffee, Lightbulb } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as Portal from '@radix-ui/react-portal';
-import { useApp, useAppSettings } from '../../context/App';
+import { useApp, useAppSettings, useAppWindows } from '../../context/App';
 import { WINDOW_BG, PANEL_BG } from '../../constants/frostedSurfaces';
 import { getNotebooks, createNotebook } from '../../notebook-app/scenes/notebooks/notebookStorage';
 import type { OSActionCard as OSActionCardType } from './types';
@@ -91,24 +91,23 @@ export default function App({ onClose }: { onClose?: () => void }) {
     return '';
   }, [app?.focusedWindow?.path]);
 
-  // Derive active notebook metadata: find the notebook window with highest z-index
-  // (don't rely on focusedWindow since clicking the chat panel shifts focus away from the notebook)
+  // Subscribe to windows via dedicated context so we re-render when windows change
+  const { windows: appWindows } = useAppWindows();
   const activeNotebookMeta = React.useMemo(() => {
-    const windows: any[] = (app as any)?.windows || [];
-    const notebookWindows = windows.filter((w: any) => w?.path?.startsWith('/notebooks/'));
+    const notebookWindows = appWindows.filter(w => w.path?.startsWith('/notebooks/'));
     if (notebookWindows.length === 0) return null;
-    // Pick the one with highest zIndex (most recently focused)
-    const top = notebookWindows.reduce((prev: any, cur: any) =>
+    // Pick the one with the highest zIndex (most recently interacted)
+    const top = notebookWindows.reduce((prev, cur) =>
       (cur.zIndex ?? 0) > (prev.zIndex ?? 0) ? cur : prev
     );
     const shortId = top.path.replace('/notebooks/', '');
     const notebooks = getNotebooks();
-    const nb = notebooks.find((n: any) => n.short_id === shortId || n.id === shortId);
+    const nb = notebooks.find(n => n.short_id === shortId || n.id === shortId);
     if (nb) return { title: nb.title || 'Notebook', path: top.path };
-    // Fallback: use window title if notebook not found in storage
     if (top.title) return { title: top.title, path: top.path };
     return null;
-  }, [(app as any)?.windows]);
+  }, [appWindows]);
+
 
   // Active chat state
   const [models, setModels] = useState<ModelOption[]>(AVAILABLE_MODELS);
