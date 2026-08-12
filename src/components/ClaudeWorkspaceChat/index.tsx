@@ -91,6 +91,19 @@ export default function App({ onClose }: { onClose?: () => void }) {
     return '';
   }, [app?.focusedWindow?.path]);
 
+  // Derive active notebook metadata (title + path) for Header context bar
+  const activeNotebookMeta = React.useMemo(() => {
+    if (app?.focusedWindow?.path.startsWith('/notebooks/')) {
+      const shortId = app.focusedWindow.path.replace('/notebooks/', '');
+      const notebooks = getNotebooks();
+      const nb = notebooks.find(n => n.short_id === shortId || n.id === shortId);
+      if (nb) {
+        return { title: nb.title || 'Notebook', path: app.focusedWindow.path };
+      }
+    }
+    return null;
+  }, [app?.focusedWindow?.path]);
+
   // Active chat state
   const [models, setModels] = useState<ModelOption[]>(AVAILABLE_MODELS);
   const [activeChatId, setActiveChatId] = useState<string>(chats[0]?.id || '');
@@ -534,9 +547,9 @@ export default function App({ onClose }: { onClose?: () => void }) {
                 }
 
                 // Strip thinking tags if present; hide both closed and any trailing unclosed thinking tag text from visible bubble
-                // 1. Remove all fully closed think blocks (nested or singular)
-                displayContent = displayContent.replace(/<thinking>[\s\S]*?<\/thinking>/gi, '');
-                displayContent = displayContent.replace(/<think>[\s\S]*?<\/think>/gi, '');
+                let displayContent = accumulatedContent;
+                // 1. Remove all fully closed think blocks
+                displayContent = displayContent.replace(/<(?:thinking|think)>[\s\S]*?<\/(?:thinking|think)>/gi, '');
                 // 2. Remove any trailing unclosed think block
                 displayContent = displayContent.replace(/<(?:thinking|think)>[\s\S]*$/gi, '');
                 displayContent = displayContent.trim();
@@ -557,7 +570,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
       }
 
       // Tier 2: Fallback to /api/bots/act or /api/philosopher-bot if SSE returned empty
-      const finalCleanContent = accumulatedContent.replace(/<thinking>[\s\S]*?<\/thinking>/gi, '').replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/<(?:thinking|think)>[\s\S]*$/gi, '').replace(/<\/?(?:thinking|think|reflect|perceive|frame|tension|move|structure|genealogy|deconstruction|overcoming|materialist_basis|dialectical_tension|praxis|substance_analysis|affect_mapping|rational_intuition|negative_dialectics|immanent_critique|resolution)>/gi, '').trim();
+      const finalCleanContent = accumulatedContent.replace(/<(?:thinking|think)>[\s\S]*?(?:<\/(?:thinking|think)>|$)/gi, '').replace(/<(?:thinking|think)>[\s\S]*$/gi, '').replace(/<\/?(?:thinking|think|reflect|perceive|frame|tension|move|structure|genealogy|deconstruction|overcoming|materialist_basis|dialectical_tension|praxis|substance_analysis|affect_mapping|rational_intuition|negative_dialectics|immanent_critique|resolution)>/gi, '').trim();
       if (!finalCleanContent && !backendError) {
         let res: Response | null = null;
         try {
@@ -766,8 +779,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
         
         let displayContent = accumulatedContent;
         if (displayContent) {
-          displayContent = displayContent.replace(/<thinking>[\s\S]*?<\/thinking>/gi, '');
-          displayContent = displayContent.replace(/<think>[\s\S]*?<\/think>/gi, '');
+          displayContent = displayContent.replace(/<(?:thinking|think)>[\s\S]*?<\/(?:thinking|think)>/gi, '');
           displayContent = displayContent.replace(/<(?:thinking|think)>[\s\S]*$/gi, '');
           displayContent = displayContent.replace(/<\/?(?:thinking|think|reflect|perceive|frame|tension|move|structure|genealogy|deconstruction|overcoming|materialist_basis|dialectical_tension|praxis|substance_analysis|affect_mapping|rational_intuition|negative_dialectics|immanent_critique|resolution)>/gi, '').trim();
         }
@@ -940,6 +952,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
           hasMessages={Boolean(activeChat && activeChat.messages.length > 0)}
           onOpenSettingsModal={() => setSettingsModalOpen(true)}
           onClose={onClose}
+          activeNotebookMeta={activeNotebookMeta}
         />
 
         {/* Chat Stream & Conversation Body */}
