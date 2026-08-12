@@ -63,7 +63,7 @@ export function createLangChainModel(preferredProvider: 'groq' | 'gemini' = 'gro
     if (preferredProvider === 'groq' && groqKey) {
         return new ChatGroq({
             apiKey: groqKey,
-            model: 'openai/gpt-oss-120b',  // Groq flagship: 120B reasoning model, free tier
+            model: 'qwen/qwen3.6-27b',  // Active reasoning model on Groq (built-in <think> chain)
             temperature: t,
             maxTokens: 8192,
         });
@@ -80,7 +80,7 @@ export function createLangChainModel(preferredProvider: 'groq' | 'gemini' = 'gro
     if (groqKey) {
         return new ChatGroq({
             apiKey: groqKey,
-            model: 'llama-3.3-70b-versatile',  // stable fallback
+            model: 'llama-3.3-70b-versatile',  // Stable fallback
             temperature: t,
             maxTokens: 8192,
         });
