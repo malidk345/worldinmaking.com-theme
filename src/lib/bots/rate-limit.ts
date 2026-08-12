@@ -5,6 +5,24 @@
 type Bucket = { count: number; resetAt: number }
 
 const buckets = new Map<string, Bucket>()
+let callsSincePrune = 0
+
+function pruneExpired(now: number): void {
+    buckets.forEach((bucket, key) => {
+        if (now >= bucket.resetAt) buckets.delete(key)
+    })
+
+    // A hard cap prevents attacker-controlled identifiers from growing this map forever.
+    if (buckets.size > 50000) {
+        let remaining = buckets.size - 50000
+        buckets.forEach((_bucket, key) => {
+            if (remaining > 0) {
+                buckets.delete(key)
+                remaining -= 1
+            }
+        })
+    }
+}
 
 export interface RateLimitResult {
     allowed: boolean
@@ -19,6 +37,11 @@ export interface RateLimitResult {
  */
 export function checkRateLimit(key: string, limit = 20, windowMs = 60 * 60 * 1000): RateLimitResult {
     const now = Date.now()
+    callsSincePrune += 1
+    if (callsSincePrune >= 100) {
+        callsSincePrune = 0
+        pruneExpired(now)
+    }
     let b = buckets.get(key)
     if (!b || now >= b.resetAt) {
         b = { count: 0, resetAt: now + windowMs }

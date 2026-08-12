@@ -290,10 +290,6 @@ export const Popover = React.forwardRef<HTMLDivElement, PopoverProps>(function P
             if (!target) {
                 return true
             }
-            // Honor the block class on the floating-ui dismiss path too, not just onClickInside —
-            // a nested menu in a parent popover's *reference* subtree (e.g. the TaxonomicFilter
-            // category pill in the search input's suffix) inherits the wrong overlay level, so the
-            // level check below can't recognize it as nested.
             if (optedOutOfOutsideDismiss(target)) {
                 return false
             }
@@ -393,8 +389,7 @@ export const Popover = React.forwardRef<HTMLDivElement, PopoverProps>(function P
                                 ref={floatingCallbackRef}
                                 // eslint-disable-next-line react/forbid-dom-props
                                 style={{
-                                    display:
-                                        middlewareData.hide?.referenceHidden || isPositionPending ? 'none' : undefined,
+                                    display: isPositionPending ? 'none' : undefined,
                                     position: strategy,
                                     top,
                                     left,

@@ -141,7 +141,9 @@ function checkHeadingSpam(body: string): string | null {
 }
 
 function checkEmojiPresence(body: string): string | null {
-    const emojiRegex = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{27BF}]|[\u{2300}-\u{23FF}]/u;
+    // Keep this compatible with the repository's ES5 parser target while still
+    // catching supplementary-plane emoji represented as surrogate pairs.
+    const emojiRegex = /[\uD800-\uDBFF][\uDC00-\uDFFF]|[\u2600-\u27BF]|[\u2300-\u23FF]/;
     if (emojiRegex.test(body)) {
         return 'Emoji detected — must be removed.';
     }
@@ -222,7 +224,7 @@ function applyRuleBasedCorrections(body: string, persona: BotPersona): { text: s
     const corrections: string[] = [];
 
     // Remove emojis
-    const emojiRegex = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{27BF}]|[\u{2300}-\u{23FF}]/gu;
+    const emojiRegex = /[\uD800-\uDBFF][\uDC00-\uDFFF]|[\u2600-\u27BF]|[\u2300-\u23FF]/g;
     if (emojiRegex.test(text)) {
         text = text.replace(emojiRegex, '').replace(/\s{2,}/g, ' ').trim();
         corrections.push('Removed emojis');
@@ -306,7 +308,7 @@ export async function runQualityGate(
         const score = calculateScore(issues);
 
         // Step 3: Pass?
-        if (score >= passThreshold) {
+        if (issues.length === 0 && score >= passThreshold) {
             return {
                 passed: true,
                 score,
@@ -318,7 +320,7 @@ export async function runQualityGate(
         }
 
         // Step 4: Retry via LLM correction if function is provided and retries remain
-        if (retryCount < maxRetries && correctionFn && score < passThreshold) {
+        if (retryCount < maxRetries && correctionFn && issues.length > 0) {
             const prompt = buildCorrectionPrompt(currentBody, persona, task, issues);
             try {
                 const corrected = await correctionFn(prompt);
@@ -347,7 +349,7 @@ export async function runQualityGate(
     if (emojiCheck) finalIssues.push(emojiCheck);
     const headingCheck = checkHeadingSpam(currentBody);
     if (headingCheck) finalIssues.push(headingCheck);
-    finalIssues.push(...checkFillerLanguage(currentBody));
+    finalIssues.push(...checkFillerLanguage(currentBody, persona));
     finalIssues.push(...checkPersonaForbiddenWords(currentBody, persona));
 
     const finalScore = calculateScore(finalIssues);
@@ -418,8 +420,8 @@ CORRECTED TEXT:`;
 
 /**
  * Convenience wrapper: validates a body and returns the best version available.
- * Always returns a string — either the corrected body or the original if gate fails.
- * Logs the quality report for monitoring.
+ * Returns only content that passes the structural gate. Flagged output is rejected so
+ * callers cannot accidentally persist content that exhausted its correction attempts.
  */
 export async function validateAndReturn(
     body: string,
@@ -430,7 +432,8 @@ export async function validateAndReturn(
     const report = await runQualityGate(body, persona, task, options);
 
     if (report.flaggedForReview) {
-        console.warn(`[QualityGate] Publishing flagged content for @${persona.name} (score: ${report.score}). Review recommended.`);
+        console.warn(`[QualityGate] Rejecting flagged content for @${persona.name} (score: ${report.score}).`);
+        throw new Error(`AI output failed quality gate for @${persona.name}`);
     }
 
     return report.correctedBody;

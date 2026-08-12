@@ -34,10 +34,11 @@ import { CommandPaletteModal } from './scenes/notebooks/CommandPaletteModal'
 import { CollaboratorsBanner } from './scenes/notebooks/CollaboratorsBanner'
 import { SidebarContextPanelMenu } from './scenes/notebooks/SidebarContextPanelMenu'
 import { NotebookPublishModal } from './scenes/notebooks/NotebookPublishModal'
-import { AskAIDropdown } from './scenes/notebooks/AskAIDropdown'
+import { AskAIDropdown } from './scenes/notebooks/AskAI'
 import { NotebookOutline } from './scenes/notebooks/NotebookOutline'
 import { useSiteThemeSync } from './lib/useSiteThemeSync'
 import { ensureLemonStyles, releaseLemonStyles } from '../lib/lemon/ensureLemonStyles'
+import { useAppActions } from '../context/App'
 
 // ---- Error Boundary ----
 class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean; error: Error | null }> {
@@ -162,6 +163,19 @@ export function App() {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
+
+  const appActions = useAppActions()
+
+  useEffect(() => {
+    const handleOpenChat = (e: Event) => {
+      const customEvent = e as CustomEvent<{ prompt: string }>
+      if (customEvent.detail?.prompt && appActions?.openNewChat) {
+        appActions.openNewChat({ initialQuestion: customEvent.detail.prompt })
+      }
+    }
+    window.addEventListener('wimOpenGlobalChat', handleOpenChat)
+    return () => window.removeEventListener('wimOpenGlobalChat', handleOpenChat)
+  }, [appActions])
 
   /** Inline / selection AI: fills Thinking… placeholder via philosopher bots. */
   const handleNotebookAskAI = useCallback(async (request: MarkdownNotebookAskAIRequest) => {
@@ -342,6 +356,17 @@ export function App() {
     })
     setMarkdownVersion((v) => v + 1)
   }, [])
+
+  useEffect(() => {
+    const handleInsertText = (e: Event) => {
+      const customEvent = e as CustomEvent<{ text: string, mode?: 'append' | 'replace' | 'prepend' }>
+      if (customEvent.detail?.text) {
+        handleInsertAIResponse(customEvent.detail.text, customEvent.detail.mode)
+      }
+    }
+    window.addEventListener('wimNotebookInsertText', handleInsertText)
+    return () => window.removeEventListener('wimNotebookInsertText', handleInsertText)
+  }, [handleInsertAIResponse])
 
   const handleHistoryRestored = useCallback(
     (payload: { content: string; title: string }) => {

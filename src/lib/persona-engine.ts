@@ -14,7 +14,8 @@ export type TaskType =
     | 'third_voice'          // Independent analysis of an ongoing debate (no side-taking)
     | 'synthesis'            // Chief editor's synthesis — highest authority, final word
     | 'thread_init'          // Opening a new community thread
-    | 'fact_critique';       // Questioning a claim's basis or sources
+    | 'fact_critique'        // Questioning a claim's basis or sources
+    | 'autonomous_assistant';// Multi-purpose task that allows structured formats (lists, plans) based on user intent
 
 export interface BotPersona {
     name: string;

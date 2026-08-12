@@ -53,12 +53,16 @@ function pickBot(exclude?: string): string {
 
 async function fetchRSSTopic(): Promise<string> {
     for (const url of RSS_FEEDS) {
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), 8_000)
         try {
             const res = await fetch(url, {
                 headers: { 'User-Agent': 'Mozilla/5.0 (compatible; WorldInMakingBot/1.0)' },
+                signal: controller.signal,
             })
             if (!res.ok) continue
             const xml = await res.text()
+            if (xml.length > 1_000_000) continue
             const matches = xml.match(/<title[^>]*>([\s\S]*?)<\/title>/gi)
             if (!matches || matches.length < 2) continue
             const rawTitles = matches
@@ -82,6 +86,8 @@ async function fetchRSSTopic(): Promise<string> {
             }
         } catch (e: any) {
             console.warn(`[RSS Feed] ${url}:`, e?.message)
+        } finally {
+            clearTimeout(timeout)
         }
     }
     return FALLBACK_TOPICS[Math.floor(Math.random() * FALLBACK_TOPICS.length)]!
@@ -104,14 +110,15 @@ export default async function handler(req: Request) {
     // mismatched headers are rejected, otherwise the tick would run publicly.
     const env = getRuntimeEnv()
     const secret = envFrom(env, 'CRON_SECRET', 'BOT_ACT_SECRET')
-    if (secret) {
-        const header =
-            req.headers.get('x-cron-secret') ||
-            req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ||
-            ''
-        if (header !== secret) {
-            return json({ success: false, error: 'Unauthorized: x-cron-secret required' }, 401)
-        }
+    if (!secret) {
+        return json({ success: false, error: 'Cron secret is not configured' }, 503)
+    }
+    const header =
+        req.headers.get('x-cron-secret') ||
+        req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ||
+        ''
+    if (header !== secret) {
+        return json({ success: false, error: 'Unauthorized: x-cron-secret required' }, 401)
     }
 
     const rl = checkRateLimit('cron:philosopher-bots', 12, 60 * 60 * 1000)
@@ -126,6 +133,11 @@ export default async function handler(req: Request) {
         )
     }
 
+    const result = await runPhilosopherBotTick()
+    return json(result, result.success ? 200 : 502)
+}
+
+export async function runPhilosopherBotTick() {
     try {
         const topic = await fetchRSSTopic()
         const postBot = pickBot()
@@ -142,15 +154,12 @@ export default async function handler(req: Request) {
         })
 
         if (!(thread as any).persisted || !(thread as any).topic?.id) {
-            return json(
-                {
-                    success: false,
-                    phase: (thread as any).phase || 'thread_failed',
-                    error: (thread as any).persistError || (thread as any).error || 'Failed to create topic',
-                    thread,
-                },
-                500
-            )
+            return {
+                success: false as const,
+                phase: (thread as any).phase || 'thread_failed',
+                error: (thread as any).persistError || (thread as any).error || 'Failed to create topic',
+                thread,
+            }
         }
 
         const topicId = String((thread as any).topic.id)
@@ -166,8 +175,18 @@ export default async function handler(req: Request) {
             dryRun: false,
         })
 
-        return json({
-            success: true,
+        if (!(reply as any).success || !(reply as any).persisted) {
+            return {
+                success: false as const,
+                phase: (reply as any).phase || 'reply_failed',
+                error: (reply as any).persistError || (reply as any).error || 'Failed to persist philosopher reply',
+                topic: { id: topicId, title, author: postBot, phase: (thread as any).phase },
+                reply,
+            }
+        }
+
+        return {
+            success: true as const,
             message: 'Philosopher bot tick completed (gateway + thinking + persist)',
             topic: {
                 id: topicId,
@@ -186,9 +205,8 @@ export default async function handler(req: Request) {
                 topic: (thread as any).provider,
                 reply: (reply as any).provider,
             },
-            rateLimitRemaining: rl.remaining,
-        })
+        }
     } catch (err: any) {
-        return json({ success: false, error: err?.message || 'cron failed' }, 500)
+        return { success: false as const, error: err?.message || 'cron failed' }
     }
 }

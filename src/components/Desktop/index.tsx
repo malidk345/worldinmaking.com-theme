@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/router'
 import Link from 'components/Link'
 import { useAppActions, useAppSettings, useAppUIState } from '../../context/App'
 import { GlassIcon } from 'components/OSIcons'
@@ -8,6 +9,7 @@ import DesktopIcon from './DesktopIcon'
 import { Screensaver } from '../Screensaver'
 import { useInactivityDetection } from '../../hooks/useInactivityDetection'
 import NotificationsPanel from 'components/NotificationsPanel'
+import { ClaudeWorkspaceChatPanel } from 'components/ClaudeWorkspaceChat'
 import Wallpapers, { getWallpaperGlow } from './Wallpapers'
 import HedgeHogModeEmbed from 'components/HedgehogMode'
 import ReactConfetti from 'react-confetti'
@@ -66,10 +68,20 @@ const DESKTOP_TOP_OFFSET = APP_CONTAINER_TOP_PADDING + TASKBAR_HEIGHT
 
 function Desktop() {
     const productLinks = useProductLinks()
-    const { setScreensaverPreviewActive, setConfetti, updateSiteSettings } = useAppActions()
+    const { setScreensaverPreviewActive, setConfetti, updateSiteSettings, setIsClaudeChatOpen } = useAppActions()
     const { siteSettings, compact } = useAppSettings()
     const { screensaverPreviewActive, confetti } = useAppUIState()
     const [pinnedApps, setPinnedApps] = useState<AppItem[]>([])
+    const router = useRouter()
+
+    // Open Claude chat panel when redirected from /workspace-chat
+    useEffect(() => {
+        if (router.query.open === 'chat') {
+            setIsClaudeChatOpen(true)
+            // Clean the query param from the URL without re-render
+            router.replace('/desktop', undefined, { shallow: true })
+        }
+    }, [router.query.open])
 
     const loadPinnedApps = useCallback(() => {
         try {
@@ -226,6 +238,7 @@ function Desktop() {
                 <HedgeHogModeEmbed />
             </ContextMenu>
             <NotificationsPanel />
+            <ClaudeWorkspaceChatPanel />
             {confetti && (
                 <div className="fixed inset-0 pointer-events-none">
                     <ReactConfetti

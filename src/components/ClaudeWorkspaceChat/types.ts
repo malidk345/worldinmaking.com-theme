@@ -1,0 +1,131 @@
+export type ModelId = string;
+
+export interface ModelOption {
+  id: ModelId
+  name: string
+  badge: string
+  description: string
+  supportsThinking: boolean
+  speed: string
+  initials?: string
+  avatarBg?: string
+  avatarUrl?: string
+}
+
+export type ThinkingBudget = 'minimal' | 'balanced' | 'extended'
+
+export interface ThinkingStep {
+  id: string
+  stepNumber: number
+  title: string
+  detail: string
+  timestampMs?: number
+  completed: boolean
+}
+
+export interface ThinkingProcess {
+  durationSeconds: number
+  tokenCount: number
+  steps: ThinkingStep[]
+  summary?: string
+}
+
+export type ArtifactType = 'code' | 'html' | 'svg' | 'markdown' | 'react' | 'json' | 'table'
+
+export interface Artifact {
+  id: string
+  title: string
+  type: ArtifactType
+  language?: string
+  content: string
+  description?: string
+  version: number
+  createdAt: string
+}
+
+export interface WebCitation {
+  id: number
+  title: string
+  url: string
+  snippet: string
+}
+
+export interface FileAttachment {
+  id: string
+  name: string
+  type: 'image' | 'text' | 'pdf' | 'code'
+  size: string
+  url?: string
+  contentPreview?: string
+}
+
+export interface OSActionCard {
+  type: 'create_notebook' | 'create_forum_topic' | 'open_window'
+  title: string
+  description: string
+  payload: {
+      title?: string
+      content?: string
+      path?: string
+  }
+  executed?: boolean
+}
+
+export interface Message {
+  id: string
+  role: 'user' | 'assistant' | 'system'
+  content: string
+  timestamp: string
+  modelUsed?: ModelId
+  thinkingProcess?: ThinkingProcess
+  artifacts?: Artifact[]
+  citations?: WebCitation[]
+  attachments?: FileAttachment[]
+  isStreaming?: boolean
+  isTypingDone?: boolean
+  liked?: boolean | null
+  editedFromId?: string
+  osAction?: OSActionCard
+}
+
+export interface ProjectSpace {
+  id: string
+  name: string
+  description: string
+  systemPrompt: string
+  iconName: string
+  color: string
+  chatCount: number
+  createdAt: string
+}
+
+export interface Chat {
+  id: string
+  title: string
+  projectId?: string
+  modelId: ModelId
+  messages: Message[]
+  starred: boolean
+  createdAt: string
+  updatedAt: string
+  thinkingBudget: ThinkingBudget
+  webSearchEnabled: boolean
+  systemPrompt?: string
+}
+
+export type StylePresetId = 'default' | 'concise' | 'explanatory' | 'code-master' | 'turkish-formal'
+
+export interface StylePreset {
+  id: StylePresetId
+  name: string
+  description: string
+  promptSuffix: string
+}
+
+export interface UserSettings {
+  typewriterSpeed: 'slow' | 'smooth' | 'fast' | 'off'
+  defaultThinkingBudget: ThinkingBudget
+  defaultModel: ModelId
+  autoOpenArtifacts: boolean
+  soundEffects: boolean
+}

@@ -33,4 +33,50 @@ test.describe('WorldInMaking Shell Smoke Suite', () => {
         const response = await page.goto('/questions')
         expect(response?.status()).toBe(200)
     })
+
+    test('Bot APIs reject malformed requests without invoking an LLM', async ({ request }) => {
+        const act = await request.post('/api/bots/act', {
+            data: 'null',
+            headers: { 'Content-Type': 'application/json' },
+        })
+        expect(act.status()).toBe(400)
+
+        const coauthor = await request.post('/api/notebook/co-author', {
+            data: '{}',
+            headers: { 'Content-Type': 'application/json' },
+        })
+        expect(coauthor.status()).toBe(400)
+
+        const philosopherMethod = await request.get('/api/philosopher-bot')
+        expect(philosopherMethod.status()).toBe(405)
+
+        const philosopherBody = await request.post('/api/philosopher-bot', {
+            data: 'null',
+            headers: { 'Content-Type': 'application/json' },
+        })
+        expect(philosopherBody.status()).toBe(400)
+
+        const unknownAction = await request.post('/api/bots/act', {
+            data: JSON.stringify({ action: 'not-a-real-action' }),
+            headers: { 'Content-Type': 'application/json' },
+        })
+        expect(unknownAction.status()).toBe(400)
+
+        const intent = await request.post('/api/bots/intent', {
+            data: '{}',
+            headers: { 'Content-Type': 'application/json' },
+        })
+        expect(intent.status()).toBe(400)
+
+        const webSearch = await request.post('/api/bots/search', {
+            data: '{}',
+            headers: { 'Content-Type': 'application/json' },
+        })
+        expect(webSearch.status()).toBe(400)
+    })
+
+    test('Cron endpoint never runs on GET', async ({ request }) => {
+        const response = await request.get('/api/cron/philosopher-bots')
+        expect(response.status()).toBe(405)
+    })
 })

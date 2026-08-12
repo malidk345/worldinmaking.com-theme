@@ -3765,7 +3765,7 @@ function MarkdownNotebookEditor({
     })
 
     const askAIAboutSelection = (presetQuery?: string): void => {
-        if (!floatingToolbar || !onAskAI) {
+        if (!floatingToolbar) {
             return
         }
 
@@ -3774,109 +3774,11 @@ function MarkdownNotebookEditor({
             return
         }
 
-        const currentDocument = documentRef.current
-        const nodes = currentDocument.nodes.length ? currentDocument.nodes : [emptyNodeRef.current]
-        const textRangesByNodeId = new Map(floatingToolbar.textRanges.map((entry) => [entry.node.id, entry]))
-        const codeRangesByNodeId = new Map(floatingToolbar.codeRanges.map((entry) => [entry.node.id, entry]))
-        const listItemRangesByNodeId = new Map<string, FloatingToolbarListItemRange[]>()
-        floatingToolbar.listItemRanges.forEach((entry) => {
-            listItemRangesByNodeId.set(entry.node.id, [...(listItemRangesByNodeId.get(entry.node.id) ?? []), entry])
-        })
-        const refId =
-            floatingToolbar.textRanges.length +
-                floatingToolbar.listItemRanges.length +
-                floatingToolbar.codeRanges.length >
-            0
-                ? createNotebookRefId()
-                : undefined
-        // Insert the prompt after the last selected block in document order.
-        const selectedNodeIds = new Set(
-            [
-                ...floatingToolbar.textRanges.map(({ node }) => node.id),
-                ...floatingToolbar.codeRanges.map(({ node }) => node.id),
-                ...floatingToolbar.listItemRanges.map(({ node }) => node.id),
-            ].filter(Boolean)
-        )
-        const targetNodeIndex = nodes.reduce(
-            (lastIndex, node, index) => (selectedNodeIds.has(node.id) ? index : lastIndex),
-            -1
-        )
-        if (targetNodeIndex < 0) {
-            return
-        }
-        const targetNodeId = nodes[targetNodeIndex].id
-
-        const trimmedPreset = presetQuery?.trim()
-        const promptNode: NotebookComponentBlockNode = {
-            id: makeEmptyParagraph(`ai-selection-${targetNodeId}`).id,
-            type: 'component',
-            tagName: 'Prompt',
-            props: {
-                question: trimmedPreset || '',
-                source: 'selection',
-                selectedMarkdown,
-                ...(refId ? { ref: refId } : {}),
-            },
-        }
-        onInteractionStateChange?.(true)
-        const nextNodes = nodes.flatMap((node, index): NotebookBlockNode[] => {
-            let updatedNode = node
-            const textRange = textRangesByNodeId.get(node.id)
-            const codeRange = codeRangesByNodeId.get(node.id)
-            const listItemRanges = listItemRangesByNodeId.get(node.id)
-            if (refId && textRange && isTextBlockNode(node)) {
-                updatedNode = { ...node, children: setInlineRefMark(node.children, textRange.range, refId) }
-            } else if (refId && codeRange && node.type === 'code') {
-                updatedNode = setCodeRefMark(node, codeRange.range, refId)
-            } else if (refId && listItemRanges && node.type === 'list') {
-                updatedNode = {
-                    ...node,
-                    items: node.items.map((item, itemIndex) => {
-                        const itemRange = listItemRanges.find((entry) => entry.itemIndex === itemIndex)
-                        return itemRange
-                            ? { ...item, children: setInlineRefMark(item.children, itemRange.range, refId) }
-                            : item
-                    }),
-                }
-            }
-            return index === targetNodeIndex ? [updatedNode, promptNode] : [updatedNode]
-        })
-        if (refId) {
-            restoreSelectionRef.current = {
-                textRanges: [
-                    ...floatingToolbar.textRanges.map(({ range }) => range),
-                    ...floatingToolbar.listItemRanges.map(({ itemIndex, range }) => ({
-                        ...range,
-                        listItemIndex: itemIndex,
-                    })),
-                ],
-            }
-        }
-        commitDocument({
-            ...currentDocument,
-            nodes: nextNodes,
-        })
-
-        floatingToolbarPositionLockRef.current = null
-        setFloatingToolbar(null)
-
-        if (trimmedPreset) {
-            // Auto-run Rewrite / Challenge / Expand / Counter without an extra prompt step.
-            queueMicrotask(() => {
-                submitAIPromptForNode(promptNode.id, trimmedPreset)
-            })
-            return
-        }
-
-        setInsertMenu({
-            nodeId: promptNode.id,
-            query: '',
-            selectedIndex: 0,
-            mode: 'ai',
-            source: 'selection',
-            selectedMarkdown,
-            selectedRefId: refId,
-        })
+        const prompt = presetQuery 
+            ? `${presetQuery}:\n\n"${selectedMarkdown}"\n` 
+            : `Regarding this text from my notebook:\n\n"${selectedMarkdown}"\n\n`
+        
+        window.dispatchEvent(new CustomEvent('wimOpenGlobalChat', { detail: { prompt } }))
     }
 
     // Comments need at least one anchorable range: an inline `<ref>` mark for text and list

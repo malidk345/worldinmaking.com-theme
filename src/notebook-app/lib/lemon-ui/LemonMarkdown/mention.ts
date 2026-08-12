@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { findAndReplace } from 'mdast-util-find-and-replace'
 
 import { RichContentNodeType } from 'lib/components/RichContentEditor/types'
@@ -21,7 +20,7 @@ type MentionNode =
 
 export default function remarkMentions() {
     const replaceMention = (value: string, mentionType: string, id: string): MentionNode[] => {
-        const nodes = []
+        const nodes: MentionNode[] = []
 
         // Separate leading white space
         if (value.indexOf('@') > 0) {
@@ -47,7 +46,7 @@ export default function remarkMentions() {
         return nodes
     }
 
-    return (tree) => {
+    return (tree: Parameters<typeof findAndReplace>[0]) => {
         findAndReplace(tree, [[mentionRegex, replaceMention]])
     }
 }

@@ -104,6 +104,8 @@ interface AppContextType {
     openNewChat: (params: ChatParams) => void
     isNotificationsPanelOpen: boolean
     setIsNotificationsPanelOpen: (isOpen: boolean) => void
+    isClaudeChatOpen: boolean
+    setIsClaudeChatOpen: (isOpen: boolean) => void
     isActiveWindowsPanelOpen: boolean
     setIsActiveWindowsPanelOpen: (isOpen: boolean) => void
     isMobile: boolean
@@ -130,6 +132,7 @@ interface AppContextType {
     chatOpen: boolean
     setChatOpen: (isOpen: boolean) => void
     chatParams: ChatParams | null
+    setChatParams: React.Dispatch<React.SetStateAction<ChatParams | null>>
     updateTaskbarHeight: () => void
     isAuthModalOpen: boolean
     setIsAuthModalOpen: (isOpen: boolean) => void
@@ -162,6 +165,7 @@ type AppActionKeys =
     | 'updateSiteSettings'
     | 'openNewChat'
     | 'setIsNotificationsPanelOpen'
+    | 'setIsClaudeChatOpen'
     | 'setIsActiveWindowsPanelOpen'
     | 'openStart'
     | 'animateClosingAllWindows'
@@ -172,6 +176,7 @@ type AppActionKeys =
     | 'copyDesktopParams'
     | 'setSearchOpen'
     | 'setChatOpen'
+    | 'setChatParams'
     | 'updateTaskbarHeight'
 
 export type AppActionsContextType = Pick<AppContextType, AppActionKeys> & {
@@ -192,6 +197,7 @@ export type AppSettingsContextType = Pick<AppContextType, AppSettingsKeys>
 // See `useAppUIState`.
 type AppUIStateKeys =
     | 'isNotificationsPanelOpen'
+    | 'isClaudeChatOpen'
     | 'isActiveWindowsPanelOpen'
     | 'closingAllWindowsAnimation'
     | 'screensaverPreviewActive'
@@ -348,6 +354,8 @@ export const Context = createContext<AppContextType>({
     openNewChat: () => {},
     isNotificationsPanelOpen: false,
     setIsNotificationsPanelOpen: () => {},
+    isClaudeChatOpen: false,
+    setIsClaudeChatOpen: () => {},
     isActiveWindowsPanelOpen: false,
     setIsActiveWindowsPanelOpen: () => {},
     isMobile: false,
@@ -374,6 +382,7 @@ export const Context = createContext<AppContextType>({
     chatOpen: false,
     setChatOpen: () => {},
     chatParams: null,
+    setChatParams: () => {},
     updateTaskbarHeight: () => {},
     isAuthModalOpen: false,
     setIsAuthModalOpen: () => {},
@@ -406,6 +415,7 @@ export const ActionsContext = createContext<AppActionsContextType>({
     updateSiteSettings: () => {},
     openNewChat: () => {},
     setIsNotificationsPanelOpen: () => {},
+    setIsClaudeChatOpen: () => {},
     setIsActiveWindowsPanelOpen: () => {},
     openStart: () => {},
     animateClosingAllWindows: () => {},
@@ -416,6 +426,7 @@ export const ActionsContext = createContext<AppActionsContextType>({
     copyDesktopParams: () => {},
     setSearchOpen: () => {},
     setChatOpen: () => {},
+    setChatParams: () => {},
     updateTaskbarHeight: () => {},
     windowsInViewRef: { current: [] },
 })
@@ -446,6 +457,7 @@ export const SettingsContext = createContext<AppSettingsContextType>({
 // when volatile window state changes.
 export const UIStateContext = createContext<AppUIStateContextType>({
     isNotificationsPanelOpen: false,
+    isClaudeChatOpen: false,
     isActiveWindowsPanelOpen: false,
     closingAllWindowsAnimation: false,
     screensaverPreviewActive: false,
@@ -1706,6 +1718,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         )
     }, [windows])
     const [isNotificationsPanelOpen, setIsNotificationsPanelOpen] = useState(false)
+    const [isClaudeChatOpen, setIsClaudeChatOpen] = useState(false)
     const [isActiveWindowsPanelOpen, setIsActiveWindowsPanelOpen] = useState(false)
     const [closingAllWindowsAnimation, setClosingAllWindowsAnimation] = useState(false)
     const [screensaverPreviewActive, setScreensaverPreviewActive] = useState(false)
@@ -2460,10 +2473,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
     const openNewChat = (params: ChatParams) => {
         setChatParams(params)
         setChatOpen(true)
-        addWindow({
-            path: '/ask-max',
-            title: 'Max - PostHog',
-        })
+        setIsClaudeChatOpen(true)
     }
 
     function getSnapDimensions(side: 'left' | 'right') {
@@ -3073,7 +3083,9 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         copyDesktopParams,
         setSearchOpen,
         setChatOpen,
+        setChatParams,
         updateTaskbarHeight,
+        setIsClaudeChatOpen,
         windowsInViewRef,
     }
 
@@ -3107,12 +3119,14 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
             copyDesktopParams: (...args) => latestActionsRef.current!.copyDesktopParams(...args),
             updateTaskbarHeight: (...args) => latestActionsRef.current!.updateTaskbarHeight(...args),
             setIsNotificationsPanelOpen,
+            setIsClaudeChatOpen,
             setIsActiveWindowsPanelOpen,
             setClosingAllWindowsAnimation,
             setScreensaverPreviewActive,
             setConfetti,
             setSearchOpen,
             setChatOpen,
+            setChatParams,
             constraintsRef,
             taskbarRef,
             windowsInViewRef,
@@ -3134,6 +3148,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
     const uiState = useMemo<AppUIStateContextType>(
         () => ({
             isNotificationsPanelOpen,
+            isClaudeChatOpen,
             isActiveWindowsPanelOpen,
             closingAllWindowsAnimation,
             screensaverPreviewActive,
@@ -3144,6 +3159,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         }),
         [
             isNotificationsPanelOpen,
+            isClaudeChatOpen,
             isActiveWindowsPanelOpen,
             closingAllWindowsAnimation,
             screensaverPreviewActive,
@@ -3190,6 +3206,8 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                                 openNewChat,
                                 isNotificationsPanelOpen,
                                 setIsNotificationsPanelOpen,
+                                isClaudeChatOpen,
+                                setIsClaudeChatOpen,
                                 isActiveWindowsPanelOpen,
                                 setIsActiveWindowsPanelOpen,
                                 isMobile,
@@ -3216,6 +3234,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
                                 chatOpen,
                                 setChatOpen,
                                 chatParams,
+                                setChatParams,
                                 isAuthModalOpen,
                                 setIsAuthModalOpen,
                                 authModalView,

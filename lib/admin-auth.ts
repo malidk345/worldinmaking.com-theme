@@ -1,9 +1,5 @@
 import { supabaseAdmin } from './supabase-admin';
-
-const adminEmailAllowlist = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || '')
-    .split(',')
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean);
+import { envFrom, getRuntimeEnv } from '../src/lib/bots/runtime-env';
 
 export type AdminAuthResult =
     | { ok: true; userId: string }
@@ -29,6 +25,10 @@ export async function verifyAdminRequest(request: Request): Promise<AdminAuthRes
     }
 
     const user = userData.user;
+    const adminEmailAllowlist = envFrom(getRuntimeEnv(), 'NEXT_PUBLIC_ADMIN_EMAIL')
+        .split(',')
+        .map((e) => e.trim().toLowerCase())
+        .filter(Boolean);
 
     const { data: profile } = await supabaseAdmin
         .from('profiles')

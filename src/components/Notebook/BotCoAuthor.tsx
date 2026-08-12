@@ -52,6 +52,10 @@ export function BotCoAuthor({ documentText, targetNodeContent, onCoAuthorComplet
                 }),
             });
 
+            if (!response.ok) {
+                const errorBody = await response.json().catch(() => null);
+                throw new Error(errorBody?.error || `Co-author request failed (${response.status})`);
+            }
             if (!response.body) {
                 throw new Error('No response body returned');
             }
@@ -59,38 +63,40 @@ export function BotCoAuthor({ documentText, targetNodeContent, onCoAuthorComplet
             const reader = response.body.getReader();
             const decoder = new TextDecoder('utf-8');
             let accumulated = '';
+            let buffer = '';
+            let sawDone = false;
+
+            const consumeFrame = (frame: string) => {
+                const dataLine = frame.split(/\r?\n/).find((line) => line.startsWith('data: '));
+                if (!dataLine) return;
+                const payload = JSON.parse(dataLine.slice(6));
+                if (payload.error) throw new Error(String(payload.error));
+                if (payload.token) {
+                    accumulated += String(payload.token);
+                    setStreamedText(accumulated);
+                }
+                if (payload.done) sawDone = true;
+            };
 
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
 
-                const chunkStr = decoder.decode(value, { stream: true });
-                const lines = chunkStr.split('\n\n');
-
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        try {
-                            const json = JSON.parse(line.slice(6));
-                            if (json.token) {
-                                accumulated += json.token;
-                                setStreamedText(accumulated);
-                            }
-                            if (json.done) {
-                                break;
-                            }
-                        } catch (e) {
-                            // Partial JSON chunk ignored
-                        }
-                    }
-                }
+                buffer += decoder.decode(value, { stream: true });
+                const frames = buffer.split(/\r?\n\r?\n/);
+                buffer = frames.pop() || '';
+                for (const frame of frames) consumeFrame(frame);
+                if (sawDone) break;
+            }
+            if (buffer.trim()) consumeFrame(buffer);
+            if (!sawDone || !accumulated.trim()) {
+                throw new Error('Co-author returned no complete content');
             }
 
             onCoAuthorComplete(selectedBot, selectedMode, accumulated);
         } catch (err: any) {
             console.error('[BotCoAuthor] Streaming error:', err);
-            const fallback = `[@${selectedBot}] Co-authoring analysis complete for target section.`;
-            setStreamedText(fallback);
-            onCoAuthorComplete(selectedBot, selectedMode, fallback);
+            setStreamedText(`Co-authoring failed: ${err?.message || 'Please try again.'}`);
         } finally {
             setIsStreaming(false);
         }

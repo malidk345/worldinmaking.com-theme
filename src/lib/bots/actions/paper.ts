@@ -45,6 +45,16 @@ export async function runPaperStep(params: {
 }) {
     const step: PaperStepKind = params.step || 'thesis'
     const taskType = STEP_TASK[step]
+    if (!taskType) {
+        return {
+            success: false as const,
+            error: `Invalid paper step: ${String(params.step)}`,
+            action: 'paper_step' as const,
+            phase: 'validation' as const,
+            step: params.step,
+            persisted: false,
+        }
+    }
 
     // Optionally load paper from posts table
     let paper: any = null
@@ -53,7 +63,17 @@ export async function runPaperStep(params: {
         const res = await supabaseRest<any[]>(
             `/posts?id=eq.${encodeURIComponent(params.paperId)}&select=id,title,content,excerpt`
         )
-        if (res.ok && Array.isArray(res.data) && res.data[0]) {
+        if (!res.ok) {
+            return {
+                success: false as const,
+                error: res.detail || res.error,
+                action: 'paper_step' as const,
+                phase: 'paper_lookup_failed' as const,
+                step,
+                persisted: false,
+            }
+        }
+        if (Array.isArray(res.data) && res.data[0]) {
             paper = res.data[0]
             try {
                 if (typeof paper.excerpt === 'string' && paper.excerpt.trim().startsWith('{')) {
@@ -61,6 +81,16 @@ export async function runPaperStep(params: {
                 }
             } catch {
                 meta = null
+            }
+        }
+        if (!paper) {
+            return {
+                success: false as const,
+                error: `Paper ${params.paperId} not found`,
+                action: 'paper_step' as const,
+                phase: 'paper_missing' as const,
+                step,
+                persisted: false,
             }
         }
     }
@@ -76,7 +106,7 @@ export async function runPaperStep(params: {
         params.previousText ||
         (Array.isArray(meta?.contributions)
             ? meta.contributions
-                  .map((c: any) => `[@${c.bot || c.username}]\n${c.body || c.content || ''}`)
+                  .map((c: any) => `[@${c.bot || c.bot_username || c.username || 'unknown'}]\n${c.body || c.content || ''}`)
                   .join('\n\n---\n\n')
             : '') ||
         paper?.content ||

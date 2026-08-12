@@ -97,10 +97,12 @@ export function createNotebookInspectorTool(userId?: string) {
         func: async (query: string) => {
             if (!userId) return 'User is operating in anonymous session mode.';
             try {
+                const cleanQuery = query.trim().replace(/[^a-z0-9\s-]/gi, '').slice(0, 100);
                 const { data } = await supabaseAdmin
                     .from('wim_notebooks')
                     .select('title, updated_at')
-                    .or(`auth_user_id.eq.${userId},owner_id.eq.${userId}`)
+                    .eq('auth_user_id', userId)
+                    .ilike('title', cleanQuery ? `%${cleanQuery}%` : '%')
                     .limit(3);
 
                 if (!data || data.length === 0) return 'No user notebooks found.';

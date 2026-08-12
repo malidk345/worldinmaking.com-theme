@@ -16,7 +16,7 @@ import {
     type ThinkingProcess,
 } from './thinking'
 import { getFluidSystemPrompt } from './fluid-prompts'
-import { getProviderKeyFlags, getRuntimeEnv } from './runtime-env'
+import { getProviderKeyFlags, getRuntimeEnv, type EnvStore } from './runtime-env'
 import { validateAndReturn } from '../../../lib/quality-gate'
 
 /** Re-export for action modules that import depth from the orchestrator surface. */
@@ -32,6 +32,8 @@ export interface BotRunInput {
     thinkingDepth?: ThinkingDepth
     /** Optional extra context (forum post body, paper excerpt, etc.) */
     context?: string
+    /** Request-time environment supplied by an Edge handler when available. */
+    env?: EnvStore
 }
 
 export interface BotRunSuccess {
@@ -114,12 +116,12 @@ export async function runBotTurn(input: BotRunInput): Promise<BotRunResult> {
     const mood = input.mood || 'calm'
     const taskType: TaskType = input.taskType || 'community_reply'
     // Use injected env (from CF handler) or fall back to getRuntimeEnv()
-    const runtimeEnv = (input as any)._env ?? getRuntimeEnv()
+    const runtimeEnv = input.env ?? getRuntimeEnv()
     const persona = extractPersona('', philosopher)
 
     const systemPrompt = [
         SECURITY_PREAMBLE,
-        buildPersonaHeader(persona, mood),
+        buildPersonaHeader(persona, mood, taskType),
         getFluidSystemPrompt(persona.name, 'site_wide'),
         buildThinkingInstruction(taskType, input.thinkingDepth),
     ].join('\n\n')
@@ -179,11 +181,16 @@ export async function runBotTurn(input: BotRunInput): Promise<BotRunResult> {
     const gatedReply = await validateAndReturn(rawReply, persona, taskType, {
         correctionFn: async (correctionPrompt: string) => {
             const corr = await generateWithGateway({
-                systemPrompt: SECURITY_PREAMBLE,
+                systemPrompt: [
+                    SECURITY_PREAMBLE,
+                    buildPersonaHeader(persona, mood, taskType),
+                    getFluidSystemPrompt(persona.name, 'site_wide'),
+                ].join('\n\n'),
                 userPrompt: correctionPrompt,
                 taskType,
                 botName: persona.name,
                 env: runtimeEnv,
+                temperature: persona.temperature,
             })
             if (!corr.ok) throw new Error(corr.error)
             return corr.text
@@ -211,16 +218,20 @@ export async function runBotTurn(input: BotRunInput): Promise<BotRunResult> {
 
 function cleanFallbackReply(raw: string): string {
     return raw
-        .replace(/<thinking>[\s\S]*?<\/thinking>/gi, '')
-        .replace(/<thought>[\s\S]*?<\/thought>/gi, '')
+        .replace(/<thinking>[\s\S]*?(?:<\/thinking>|$)/gi, '')
+        .replace(/<thought>[\s\S]*?(?:<\/thought>|$)/gi, '')
+        .replace(/<perceive>[\s\S]*?(?:<\/perceive>|$)/gi, '')
+        .replace(/<frame>[\s\S]*?(?:<\/frame>|$)/gi, '')
+        .replace(/<tension>[\s\S]*?(?:<\/tension>|$)/gi, '')
+        .replace(/<move>[\s\S]*?(?:<\/move>|$)/gi, '')
         .trim()
 }
 
 /**
  * Lightweight status for /api/bots/act action=status
  */
-export function getBotSystemStatus() {
-    const env = getRuntimeEnv()
+export function getBotSystemStatus(envOverride?: EnvStore) {
+    const env = envOverride ?? getRuntimeEnv()
     const configured = getProviderKeyFlags(env)
     const hasSupabase = !!(env.NEXT_PUBLIC_SUPABASE_URL && (env.SUPABASE_SERVICE_ROLE_KEY || env.NEXT_PUBLIC_SUPABASE_ANON_KEY))
     return {
@@ -237,7 +248,7 @@ export function getBotSystemStatus() {
             depths: ['brief', 'standard', 'deep'],
         },
         paperSteps: ['thesis', 'antithesis', 'cross_examine', 'third_voice', 'synthesis'],
-        ready: configured.openrouter || configured.groq || configured.gemini || configured.openai,
+        ready: configured.openrouter || configured.groq || configured.gemini || configured.openai || configured.huggingface,
         notes: {
             forum_reply: 'Requires payload.topicId; persists to community_replies',
             thread_init: 'Creates community_posts as bot author',

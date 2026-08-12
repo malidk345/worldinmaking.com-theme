@@ -31,28 +31,30 @@ export async function getAgentMemoryContext(
         if (cleanTarget && cleanTarget !== cleanSource) {
             const { data: rel } = await supabaseAdmin
                 .from('agent_relationships')
-                .select('relationship_type, notes')
-                .or(`and(agent_name.eq.${cleanSource},related_agent_name.eq.${cleanTarget}),and(agent_name.eq.${cleanTarget},related_agent_name.eq.${cleanSource})`)
+                .select('relationship_type, score, notes')
+                .or(`and(agent_id.eq.${cleanSource},target_agent_id.eq.${cleanTarget}),and(agent_id.eq.${cleanTarget},target_agent_id.eq.${cleanSource})`)
+                .limit(1)
                 .maybeSingle();
 
-            if (rel?.notes) {
-                memoryLines.push(`PAST DISCOURSE HISTORY WITH @${cleanTarget}: ${rel.notes}`);
+            if (rel) {
+                memoryLines.push(`PAST DISCOURSE HISTORY WITH @${cleanTarget}: ${rel.relationship_type} (score ${rel.score ?? 0})${rel.notes ? ` — ${rel.notes}` : ''}`);
             }
         }
 
         // 2. Fetch recent action log history for this entity
         const { data: recentActions } = await supabaseAdmin
             .from('agent_action_log')
-            .select('action_type, payload, created_at')
-            .eq('agent_name', cleanSource)
+            .select('action_type, details, created_at')
+            .eq('agent_id', cleanSource)
             .order('created_at', { ascending: false })
             .limit(3);
 
         if (recentActions && recentActions.length > 0) {
             const ActionSummaries = recentActions
                 .map((a) => {
-                    const p = a.payload as { topicTitle?: string; summary?: string } | null;
-                    return p?.topicTitle ? `Recently discussed "${p.topicTitle}"` : null;
+                    const p = a.details as { topicTitle?: string; title?: string; summary?: string } | null;
+                    const title = p?.topicTitle || p?.title;
+                    return title ? `Recently discussed "${title}"` : a.action_type ? `Recent action: ${a.action_type}` : null;
                 })
                 .filter(Boolean);
 
@@ -81,16 +83,26 @@ export async function recordAgentRelationship(
     const cleanTarget = targetAgentName.toLowerCase().trim();
 
     try {
-        await supabaseAdmin.from('agent_relationships').upsert(
-            {
-                agent_name: cleanSource,
-                related_agent_name: cleanTarget,
-                relationship_type: relationshipType,
-                notes,
-                updated_at: new Date().toISOString(),
-            },
-            { onConflict: 'agent_name,related_agent_name' }
-        );
+        const { data: existing } = await supabaseAdmin
+            .from('agent_relationships')
+            .select('id')
+            .eq('agent_id', cleanSource)
+            .eq('target_agent_id', cleanTarget)
+            .limit(1)
+            .maybeSingle();
+
+        const payload = {
+            agent_id: cleanSource,
+            target_agent_id: cleanTarget,
+            relationship_type: relationshipType,
+            score: 1,
+            notes: notes.slice(0, 500),
+        };
+        if (existing?.id) {
+            await supabaseAdmin.from('agent_relationships').update(payload).eq('id', existing.id);
+        } else {
+            await supabaseAdmin.from('agent_relationships').insert(payload);
+        }
     } catch (e) {
         console.warn('[agent-memory] recordAgentRelationship error:', e);
     }

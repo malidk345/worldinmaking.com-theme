@@ -3,6 +3,7 @@
  */
 import { runBotTurn, type ThinkingDepth } from '../orchestrate'
 import { slugify, supabaseRest } from '../supabase-edge'
+import { normalizeBotName } from '../request-validation'
 
 export interface BotProfileRow {
     id: string
@@ -21,7 +22,23 @@ export async function resolveBotProfile(username: string): Promise<
     const key = username.trim().toLowerCase()
     if (!key) return { ok: false, error: 'bot username required' }
 
-    // Inner join on profiles.username (PostgREST)
+    // Current schema stores the bot name directly on bot_profiles.
+    const current = await supabaseRest<any[]>(
+        `/bot_profiles?select=id,name,is_active&is_active=eq.true&name=ilike.${encodeURIComponent(key)}`
+    )
+    if (current.ok && Array.isArray(current.data) && current.data.length > 0) {
+        const row = current.data[0]
+        return {
+            ok: true,
+            bot: {
+                id: String(row.id),
+                username: String(row.name || key),
+                is_active: row.is_active !== false,
+            },
+        }
+    }
+
+    // Legacy deployments used a profiles relation; retain a read fallback while migrating.
     const q = await supabaseRest<any[]>(
         `/bot_profiles?select=id,is_active,profiles!inner(username,avatar_url)&is_active=eq.true&profiles.username=ilike.${encodeURIComponent(key)}`
     )
@@ -44,7 +61,13 @@ export async function resolveBotProfile(username: string): Promise<
     const all = await supabaseRest<any[]>(
         `/bot_profiles?select=id,is_active,profiles(username,avatar_url)&is_active=eq.true`
     )
-    if (!all.ok) return { ok: false, error: all.detail || all.error }
+    if (!all.ok) {
+        const canonical = normalizeBotName(username)
+        if (canonical) {
+            return { ok: true, bot: { id: canonical.toLowerCase(), username: canonical, is_active: true } }
+        }
+        return { ok: false, error: all.detail || all.error }
+    }
 
     const rows = Array.isArray(all.data) ? all.data : []
     const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '')
@@ -52,7 +75,7 @@ export async function resolveBotProfile(username: string): Promise<
     for (const row of rows) {
         const p = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles
         const uname = String(p?.username || '')
-        if (norm(uname) === target || norm(uname).includes(target) || target.includes(norm(uname))) {
+        if (norm(uname) === target) {
             return {
                 ok: true,
                 bot: {
@@ -65,6 +88,10 @@ export async function resolveBotProfile(username: string): Promise<
         }
     }
 
+    const canonical = normalizeBotName(username)
+    if (canonical) {
+        return { ok: true, bot: { id: canonical.toLowerCase(), username: canonical, is_active: true } }
+    }
     return { ok: false, error: `No active bot_profiles row for "${username}"` }
 }
 
@@ -105,8 +132,11 @@ export function validateForumTopicPayload(params: {
     if (!sanitizedContent) {
         errors.push('Content cannot be empty')
     }
-    if (params.channelId !== undefined && typeof params.channelId !== 'number') {
-        errors.push('channelId must be a valid number')
+    if (
+        params.channelId !== undefined &&
+        (typeof params.channelId !== 'number' || !Number.isInteger(params.channelId) || params.channelId <= 0)
+    ) {
+        errors.push('channelId must be a positive integer')
     }
     if (params.authorId !== undefined && (!params.authorId || typeof params.authorId !== 'string')) {
         errors.push('authorId must be a non-empty string')
@@ -219,12 +249,14 @@ export async function createForumTopic(params: {
     }
 
     const postSlug = slugify(`${profile.bot.username}-${title}`)
+    const authorId = isUuid(profile.bot.id) ? profile.bot.id : undefined
     const insert = await supabaseRest<any[]>('/community_posts', {
         method: 'POST',
         headers: { Prefer: 'return=representation' },
         body: JSON.stringify({
             channel_id: params.channelId ?? 1,
-            author_id: profile.bot.id,
+            ...(authorId ? { author_id: authorId } : {}),
+            author_name: profile.bot.username,
             title,
             content,
             post_slug: postSlug,
@@ -256,7 +288,8 @@ export async function createForumTopic(params: {
             title: row?.title ?? title,
             content: row?.content ?? content,
             post_slug: row?.post_slug ?? postSlug,
-            author_id: profile.bot.id,
+            author_id: authorId,
+            author_name: profile.bot.username,
             author: profile.bot.username,
             inner_thoughts: innerThoughts,
             created_at: row?.created_at,
@@ -275,7 +308,7 @@ export async function createForumReply(params: {
     context?: string
     dryRun?: boolean
 }) {
-    if (!params.topicId) {
+    if (!/^\d{1,20}$/.test(String(params.topicId || ''))) {
         return {
             success: false as const,
             error: 'payload.topicId (community_posts id) is required for forum_reply',
@@ -369,14 +402,16 @@ export async function createForumReply(params: {
         }
     }
 
+    const authorId = isUuid(profile.bot.id) ? profile.bot.id : undefined
     const insert = await supabaseRest<any[]>('/community_replies', {
         method: 'POST',
         headers: { Prefer: 'return=representation' },
         body: JSON.stringify({
             post_id: topic.id,
-            author_id: profile.bot.id,
-            content: llm.reply,
-            inner_thoughts: llm.thought || null,
+            ...(authorId ? { author_id: authorId } : {}),
+            author_name: profile.bot.username,
+            content: replyContent,
+            inner_thoughts: innerThoughts,
             created_at: new Date().toISOString(),
         }),
     })
@@ -400,12 +435,16 @@ export async function createForumReply(params: {
         forumReply: {
             id: row?.id,
             post_id: topic.id,
-            author_id: profile.bot.id,
+            author_id: authorId,
             author: profile.bot.username,
-            content: row?.content ?? llm.reply,
-            inner_thoughts: llm.thought,
+            content: row?.content ?? replyContent,
+            inner_thoughts: row?.inner_thoughts ?? innerThoughts,
             created_at: row?.created_at,
         },
         topic: { id: topic.id, title: topic.title },
     }
+}
+
+function isUuid(value: string): boolean {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
 }

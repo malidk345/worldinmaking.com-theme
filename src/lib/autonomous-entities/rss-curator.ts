@@ -36,10 +36,17 @@ export async function processNextRSSItem(): Promise<{ createdTopicId?: number; t
         const targetAuthor = feed.default_author || 'marx';
 
         // 2. Fetch raw RSS feed xml/json
-        const res = await fetch(feed.feed_url, { headers: { 'User-Agent': 'WorldInMaking-RSS-Bot/1.0' } });
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8_000);
+        const res = await fetch(feed.feed_url, {
+            headers: { 'User-Agent': 'WorldInMaking-RSS-Bot/1.0' },
+            signal: controller.signal,
+        });
+        clearTimeout(timeout);
         if (!res.ok) return null;
 
         const xmlText = await res.text();
+        if (xmlText.length > 1_000_000) return null;
         const items = parseRSSItems(xmlText);
         if (!items || items.length === 0) return null;
 
@@ -54,16 +61,16 @@ export async function processNextRSSItem(): Promise<{ createdTopicId?: number; t
 
             if (existing) continue; // Already processed
 
-            // 4. Mark item as processed
-            await supabaseAdmin.from('processed_rss_items').insert({
+            // Generate commentary and open a new community_posts topic before claiming
+            // the item, so a transient provider/database failure can be retried.
+            const topic = await createTopicFromRSS(item, targetAuthor, feed.category || 'general');
+            const { error: processedError } = await supabaseAdmin.from('processed_rss_items').insert({
                 feed_id: feed.id,
                 guid,
                 title: item.title,
                 url: item.link,
             });
-
-            // 5. Generate commentary and open a new community_posts topic
-            const topic = await createTopicFromRSS(item, targetAuthor, feed.category || 'general');
+            if (processedError) console.warn('[rss-curator] processed item warning:', processedError.message);
             return topic;
         }
 
@@ -76,11 +83,12 @@ export async function processNextRSSItem(): Promise<{ createdTopicId?: number; t
 
 function parseRSSItems(xmlText: string): RSSItem[] {
     const items: RSSItem[] = [];
-    const itemMatches = xmlText.match(/<item>[\s\S]*?<\/item>/gi) || [];
+    const itemMatches = xmlText.match(/<item>[\s\S]*?<\/item>/gi) || xmlText.match(/<entry>[\s\S]*?<\/entry>/gi) || [];
 
     for (const match of itemMatches.slice(0, 5)) {
         const title = (match.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/i) || [])[1] || '';
-        const link = (match.match(/<link>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/link>/i) || [])[1] || '';
+        const linkMatch = match.match(/<link(?:[^>]*href=["']([^"']+)["'])?[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/link>/i);
+        const link = linkMatch?.[2] || linkMatch?.[1] || (match.match(/<link[^>]*href=["']([^"']+)["']/i) || [])[1] || '';
         const description = (match.match(/<description>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/i) || [])[1] || '';
         const guid = (match.match(/<guid[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/guid>/i) || [])[1] || link || title;
 
@@ -153,9 +161,9 @@ Write a thought-provoking opening post in Markdown.
 
     // Log action
     await supabaseAdmin.from('agent_action_log').insert({
-        agent_name: authorName,
+        agent_id: authorName,
         action_type: 'rss_topic_created',
-        payload: { topicId: topic.id, title: item.title, url: item.link },
+        details: { topicId: topic.id, title: item.title, url: item.link },
     });
 
     return { createdTopicId: topic.id, title: item.title };

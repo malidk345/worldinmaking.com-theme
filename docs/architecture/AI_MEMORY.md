@@ -84,15 +84,221 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-32` | Stream 5 | Transform Ask AI dropdown into slide-over panel (Notifications Panel style) | `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-09 |
 | `TSK-33` | Stream 1 | Fix Cloudflare build crash caused by UTF-8 BOM in vercel.json | `vercel.json` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-09 |
 | `TSK-34` | Stream 5 | AI System Optimization Package (Web search tool, Gemini model ID stability, client API key security) | `lib/ai-provider.ts`, `src/lib/chat-bots/langchain-tools.ts`, `src/components/AskAIDropdown/AskAIDropdown.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-09 |
+# WorldInMaking / posthog.com — AI Memory & Multi-Agent Collaboration Hub
+
+**Document Location:** `D:\all works\posthog.com\docs\architecture\AI_MEMORY.md`  
+**Purpose:** Serving as a persistent context memory, work-tracking state, and asynchronous handoff log for multiple AI agents (Claude, Gemini/Antigravity, GPT-4o, Cursor, etc.) working independently on the WorldInMaking codebase.
+
+---
+
+## 1. How AI Agents Must Use This File (Protocol)
+
+Every AI model/agent working on this repository **MUST** follow these rules:
+
+1. **Read First:** Before starting any work, read this `AI_MEMORY.md` alongside [`FULL_PERFORMANCE_AND_GROWTH_REPORT.md`](file:///D:/all%20works/posthog.com/docs/architecture/FULL_PERFORMANCE_AND_GROWTH_REPORT.md).
+2. **Claim Your Task (Locking):** If you start working on a task, update Section 4 (`Active Task & Claim Board`) to set status to `[IN PROGRESS by <AI Name>]` with timestamp. This prevents duplicate/conflicting work.
+3. **Commit Cleanly:** Work on designated files. Do not modify unrelated modules.
+4. **Log Updates (Handoff):** Upon completing a task or turn, add a new log entry in Section 5 (`AI Change History & Log`) detailing:
+   - What was done
+   - Modified files
+   - Test/Verification status
+   - Next steps for subsequent AI agents.
+5. **Update State:** Mark completed items in Section 4 as `[COMPLETED]` and mention any newly discovered debt/tasks.
+
+---
+
+## 2. Core Architecture Snapshot & Guidelines
+
+- **Product Identity:** Desktop OS Shell (`src/context/App.tsx`, `src/components/AppWindow/`, `src/pages/desktop.tsx`) built on inherited PostHog Next.js Pages Router codebase.
+- **Data & Auth:** Supabase Auth & DB (`src/lib/wim-auth.ts`, `supabase/migrations/`).
+- **AI Infrastructure:** Multi-provider LLM system (`lib/ai-provider.ts`, `lib/persona-engine.ts`).
+- **Build System:** `pnpm` workspace (`pnpm-lock.yaml`). Do not use `npm` or modify `package-lock.json`.
+
+---
+
+## 3. Work Streams (Parallel Tracks)
+
+Work is split into 5 independent streams so AI agents can work in parallel without overlapping:
+
+| Stream | Description | Core Files | Focus Areas |
+|--------|-------------|------------|-------------|
+| **Stream 1: Infra & CI/CD** | Build hygiene, linting, lockfiles, CI smoke | `package.json`, `pnpm-lock.yaml`, `tsconfig.json`, `.github/` | pnpm enforcement, TS allowlist |
+| **Stream 2: Shell & Windows** | Unifying window manager, state decomposition | `src/context/App.tsx`, `src/components/AppWindow/` | WindowRouter, mode reducer |
+| **Stream 3: Performance & UX** | Bundle reduction, lazy loading, image strategy | `src/pages/desktop.tsx`, `next.config.js`, `public/` | `next/dynamic`, Next Image |
+| **Stream 4: Data & Search** | Supabase search FTS, RLS, auth cleanup | `src/pages/api/search.ts`, `src/lib/wim-auth.ts` | Postgres tsvector search |
+| **Stream 5: AI & Bots** | Philosopher bots, queueing, fallback strategies | `lib/ai-provider.ts`, `src/pages/api/*bot*` | Bot rate limits, queues |
+
+---
+
+## 4. Active Task & Claim Board
+
+*(AI agents: Update this table when claiming or finishing tasks!)*
+
+| Task ID | Stream | Task Description | Target Files | Status | Assigned AI | Started / Completed |
+|---------|--------|------------------|--------------|--------|-------------|---------------------|
+| `TSK-01` | Stream 1 | Remove `package-lock.json` & enforce `pnpm` | `package-lock.json`, `README.md` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-06 |
+| `TSK-02` | Stream 3 | Split `desktop.tsx` into dynamic components | `src/pages/desktop.tsx`, `src/components/DesktopPage/*` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-06 |
+| `TSK-03` | Stream 2 | Extract `WindowRouter` logic out of `App.tsx` | `src/context/App.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-06 |
+| `TSK-04` | Stream 4 | Migrate `/api/search` to Supabase Postgres FTS | `src/pages/api/search.ts` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-06 |
+| `TSK-05` | Stream 1 | Setup Playwright smoke test script for CI | `tests/smoke.spec.ts` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-06 |
+| `TSK-06` | Stream 3 | Enable Next Image optimization strategy | `next.config.js` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-06 |
+| `TSK-07` | Stream 5 | Audit & add rate-limiting for philosopher bots | `src/pages/api/*bot*` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-06 |
+| `TSK-29` | Stream 5 | Notebook Co-Authoring Assistant (Invite multi-bot feedback into documents) | `src/notebook-app/`, `src/lib/chat-bots/` | `[PLANNED]` | - | - |
+| `TSK-30` | Stream 5 | Agent Network Visualizer app (Interactive 2D/3D memory node graph) | `src/components/AgentNetwork/`, `src/pages/` | `[PLANNED]` | - | - |
+| `TSK-08` | Stream 1 | Enable TypeScript allowlist check for core shell | `tsconfig.shell.json`, `scripts/typecheck-shell.mjs` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-06 |
+| `TSK-09` | Stream 4 | Audit & clean up leftover Strapi/Squeak auth handlers | `src/lib/squeak.ts`, `src/lib/wim-auth.ts` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-06 |
+| `TSK-10` | Stream 5 | Add structured JSON schemas & validation for bot forum replies | `lib/bots/actions/forum.ts` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-06 |
+| `TSK-11` | Stream 1 / 2 | Clear shell TS quarantine (`App.tsx`, `AppWindow/index.tsx`) | `src/context/App.tsx`, `src/components/AppWindow/index.tsx` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-06 |
+| `TSK-12` | Stream 1 | Audit & configure CSP and security headers for WIM | `vercel.json` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-06 |
+| `TSK-13` | Stream 1 | Rewrite root README for WorldInMaking (not Gatsby/PostHog marketing) | `README.md` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-07 |
+| `TSK-14` | Stream 1 | Add `.env.example` (keys only) + harden `lib/env.ts` production fail | `.env.example`, `lib/env.ts` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-06 |
+| `TSK-15` | Stream 1 | Wire Playwright smoke + `typecheck:shell` into CI pipeline | `.github/workflows/` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-06 |
+| `TSK-16` | Stream 1 | Phase-C quality: eslint on shell allowlist; preview `reactStrictMode` | `next.config.js`, `package.json`, `.eslintrc*` | `[NOT STARTED]` | - | - |
+| `TSK-17` | Stream 3 | Bundle analyzer baseline + First Load JS budget for `/` | `package.json`, `next.config.js`, docs | `[NOT STARTED]` | - | - |
+| `TSK-18` | Stream 4 | Real Postgres FTS (`tsvector` migration + search API) | `supabase/migrations/`, `src/lib/supabaseBlog.ts`, `src/pages/api/search.ts` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-07 |
+| `TSK-19` | Stream 4 | API authz audit: notebooks + forum write paths (not just owner_key) | `src/pages/api/notebooks/*`, `src/pages/api/forum/**` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-07 |
+| `TSK-20` | Stream 2 | Split `App.tsx` god-object (hooks/contexts extraction) | `src/context/App.tsx` → `src/context/shell/*` | `[NOT STARTED]` | - | - |
+| `TSK-21` | Stream 2 | Adopt `WindowMode` reducer end-to-end (drop boolean soup) | `src/lib/windowState.ts`, `AppWindow`, `App.tsx` | `[NOT STARTED]` | - | - |
+| `TSK-22` | Stream 2 | Tighten `WindowElement` from `any` + inactive window `content-visibility` | `src/context/App.tsx`, `src/components/AppWindow/*` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-08 |
+| `TSK-23` | Stream 5 | Bot HTTP enqueue-only + `bot:worker` path (edge timeout safety) | `src/pages/api/*bot*`, `scripts/bot-worker.js` | `[COMPLETED]` | Claude Sonnet 5 (GitHub Copilot) | 2026-08-09 |
+| `TSK-24` | Stream 1 | Fix notebook-app build break (`IconArrowLeft` / public notebook view) | `src/notebook-app/lib/icons/iconsShim.tsx` | `[COMPLETED]` | Grok 4.5 (xAI) | 2026-08-06 |
+| `TSK-25` | Stream 3 | Shell error reporting + basic RUM (window blank rate / vitals) | `src/components/AppWindow/*`, analytics hooks | `[NOT STARTED]` | - | - |
+| `TSK-26` | Stream 3 | Progressive legacy quarantine/delete (dead PostHog marketing surface) | `src/components/`, `src/pages/`, `src/navs/` | `[NOT STARTED]` | - | - |
+| `TSK-27` | Stream 4 | Comprehensive Supabase Health, Auth, RLS & Migration Verification | `scripts/wim-supabase-bootstrap.mjs`, `src/lib/supabase*`, `lib/api-authz.ts` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-08 |
+| `TSK-28` | Stream 5 | Dual Bot Architecture: Interactive Chat Bots vs Autonomous Entities & Symposium Engine | `src/lib/chat-bots/*`, `src/lib/autonomous-entities/*` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-08 |
+| `TSK-31` | Stream 5 | Bot API hardening: null-body crash, input caps, IP-scoped rate limits, cron auth | `src/pages/api/philosopher-bot.ts`, `src/pages/api/bots/act.ts`, `src/pages/api/cron/philosopher-bots.ts` | `[COMPLETED]` | DeepSeek (opencode) | 2026-08-08 |
+| `TSK-32` | Stream 5 | Transform Ask AI dropdown into slide-over panel (Notifications Panel style) | `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-09 |
+| `TSK-33` | Stream 1 | Fix Cloudflare build crash caused by UTF-8 BOM in vercel.json | `vercel.json` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-09 |
+| `TSK-34` | Stream 5 | AI System Optimization Package (Web search tool, Gemini model ID stability, client API key security) | `lib/ai-provider.ts`, `src/lib/chat-bots/langchain-tools.ts`, `src/components/AskAIDropdown/AskAIDropdown.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-09 |
 | `TSK-35` | Stream 5 | PostHog-inspired AI Features: Live SSE Token Streaming & OS Executable Action Cards | `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx`, `src/pages/api/notebook/co-author.ts` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-09 |
 | `TSK-36` | Stream 5 | Persona Engine v2 Architecture Upgrade (7 Core Philosophers) | `src/lib/persona-engine.ts` | `[COMPLETED]` | Antigravity | 2026-08-09 |
 | `TSK-37` | Stream 5 | Persona Engine v2 Phase 2 (9 Philosophers, Temperature, Quality Gate) | `src/lib/persona-engine.ts`, `lib/quality-gate.ts`, `src/lib/bots/ai-gateway.ts` | `[COMPLETED]` | Antigravity | 2026-08-09 |
+| `TSK-38` | Stream 5 | Full AI/bot system audit, integration verification, and hardening | `lib/ai-provider.ts`, `lib/quality-gate.ts`, `src/lib/bots/`, `src/lib/chat-bots/`, `src/lib/autonomous-entities/`, `src/pages/api/*bot*`, `src/pages/api/cron/`, AI clients/tests | `[COMPLETED]` | OpenCode (gpt-5.6-luna) | 2026-08-10 |
+| `TSK-40` | Stream 5 | Make Ask AI output typography forum-thread identical while restoring the legacy composer | `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx`, `src/notebook-app/scenes/notebooks/ReasoningAnswer.tsx` | `[COMPLETED]` | OpenCode (gpt-5.6-luna) | 2026-08-10 |
+| `TSK-41` | Stream 5 | Adapt the notebook Ask AI panel to the new Claude workspace chat layout using WIM UI tokens | `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx` | `[COMPLETED]` | Codex GPT-5 | 2026-08-10 |
+| `TSK-39` | Stream 5 | Ask AI: real (LLM-driven) reasoning trail + live web search disclosure, dead duplicate dropdown removed | `src/pages/api/notebook/co-author.ts`, `src/lib/bots/intent-router.ts`, `src/lib/bots/web-search.ts`, `src/pages/api/bots/intent.ts`, `src/pages/api/bots/search.ts`, `src/notebook-app/scenes/notebooks/{AskAIDropdown,ReasoningAnswer}.tsx` | `[COMPLETED]` | Claude Sonnet 5 (GitHub Copilot) | 2026-08-10 |
+| `TSK-42` | Stream 5 | Advanced Chatbot UI (Split-Pane Canvas, Ambient Glassmorphism, Dynamic Action Cards & Web Search Chips) | `src/notebook-app/scenes/notebooks/*` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-11 |
+| `TSK-43` | Stream 5 | Standalone Claude Workspace Chatbot App integration from D:\claude-ai-workspace (1) | `src/components/ClaudeWorkspaceChat/*`, `src/pages/api/chat.ts`, `src/pages/workspace-chat.tsx`, `src/components/AppWindow/WindowRouter.tsx` | `[COMPLETED]` | Antigravity (Gemini 3.6 Flash) | 2026-08-11 |
 
 ---
 
 ## 5. AI Change History & Log
 
+### Entry 053 - Standalone Claude Workspace Chatbot App Integration (TSK-43)
+- **Date:** 2026-08-11
+- **AI Agent:** Antigravity (Gemini 3.6 Flash)
+- **Summary:** Installed and integrated the custom Chatbot application from `D:\claude-ai-workspace (1)` into the site (`D:\all works\posthog.com`) as a separate desktop application and page route (`/workspace-chat`), while preserving the existing Ask AI dropdown untouched.
+- **Modified/Created Files:**
+  - `src/components/ClaudeWorkspaceChat/*` [NEW] (components, types, data, initial chats & editorial dataset)
+  - `src/pages/api/chat.ts` [NEW] (SSE streaming backend with Gemini / AI Gateway & smart fallback)
+  - `src/pages/workspace-chat.tsx` [NEW] (Next.js standalone page route)
+  - `src/components/AppWindow/WindowRouter.tsx` (added `/workspace-chat`, `/claude-chat`, `/chatbot` window route handlers)
+  - `src/components/TaskBarMenu/menuData.tsx` (added "Claude Workspace Chat" launcher to Start menu)
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm build:notebook-styles` passed cleanly (exit code 0). `AskAIDropdown.tsx` confirmed untouched.
+- **Handoff:** Ready for use at `/workspace-chat` or via desktop window launcher.
+
+### Entry 052 - Advanced Chatbot UI & Split-Pane Canvas (TSK-42)
+- **Date:** 2026-08-11
+- **AI Agent:** Antigravity (Gemini 3.6 Flash)
+- **Summary:** Upgraded the Ask AI chatbot UI with Split-Pane Canvas/Artifacts mode, Perplexity-style web search source disclosure chips (`WebSearchSourcesView`), interactive OS executable action cards (`OSActionCardView`), and WIM ambient glassmorphism layout tokens.
+- **Modified Files:**
+  - `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx`
+  - `src/notebook-app/scenes/notebooks/AskAICanvasPane.tsx` [NEW]
+  - `src/notebook-app/scenes/notebooks/OSActionCardView.tsx` [NEW]
+  - `src/notebook-app/scenes/notebooks/WebSearchSourcesView.tsx` [NEW]
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm build:notebook-styles` passed (exit code 0). `pnpm typecheck:shell` verified.
+- **Handoff:** Ready for end-user testing in Desktop Shell notebook app.
+
+### Entry 051 - WIM Token Alignment for Ask AI (TSK-41 follow-up)
+- **Date:** 2026-08-10
+- **AI Agent:** OpenCode (gpt-5.6-luna)
+- **Summary:** Removed the remaining visual drift from the Ask AI panel: replaced hardcoded white/slate/amber styling and custom prompt cards with notebook site tokens and LemonButton primitives, preserved light/dark surface variables, made the visible context bar compact and identity-only, and kept the existing composer/action/reasoning functionality intact.
+- **Modified Files:**
+  - `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx`
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm typecheck:shell` passed with 0 gated errors; `git diff --check` passed; no hardcoded `bg-white`, `text-slate`, `text-amber`, or visible `Notebook context` copy remains in the Ask AI panel source.
+- **Handoff:** Validate both light and dark notebook themes visually at desktop/mobile widths. The latest smoke run is still subject to the existing port 3000 process collision.
+
+### Entry 050 - Direct Composer Control Transfer (TSK-41 follow-up)
+- **Date:** 2026-08-10
+- **AI Agent:** Codex GPT-5
+- **Summary:** Replaced the remaining approximate composer controls with the reference input's actual icon set and control sequence: Lucide Plus, Sparkles, ChevronDown, Globe, Mic, Square, Send, and AudioWaveform at the same 32px control size. The source model pill is now a visually matching custom philosopher picker, preserving the existing roster and bot-switching behavior.
+- **Modified Files:**
+  - `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx`
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:** `git diff --check` and TypeScript transpilation syntax check for `AskAIDropdown.tsx` passed.
+
+### Entry 049 - Direct Reference Layout Transfer (TSK-41 follow-up)
+- **Date:** 2026-08-10
+- **AI Agent:** Codex GPT-5
+- **Summary:** Replaced the approximate Ask AI context and composer layout with the reference components' exact layout primitives: the 4px-inset, 44px-high rounded context bar and the sticky `max-w-3xl`, 28px-radius input capsule. Their content is adapted only where required: notebook context replaces project context, and the philosopher picker replaces model selection.
+- **Modified Files:**
+  - `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx`
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:** `git diff --check` and TypeScript transpilation syntax check for `AskAIDropdown.tsx` passed.
+
+### Entry 048 - Reference Composer Parity (TSK-41 follow-up)
+- **Date:** 2026-08-10
+- **AI Agent:** Codex GPT-5
+- **Summary:** Updated the Ask AI composer to match the reference chat input's dimensions and arrangement: 28px capsule radius, 12px inset, single-line growing textarea, 32px circular auxiliary/send controls, and an unseparated control row. The reference model control is represented by the existing philosopher selector. A notebook context bar now appears at the top of the composer with its character count.
+- **Modified Files:**
+  - `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx`
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:** `git diff --check` and TypeScript transpilation syntax check for `AskAIDropdown.tsx` passed.
+
+### Entry 047 - Notebook Ask AI Workspace Panel Refresh (TSK-41)
+- **Date:** 2026-08-10
+- **AI Agent:** Codex GPT-5
+- **Summary:** Reworked the notebook Ask AI slide-over using the new Claude workspace as a visual reference, adapted to WorldInMaking tokens and notebook context. The panel is wider and responsive, has a compact copilot context bar, an actionable empty-state workspace, and a rounded composer with bot selection, notebook-context status, and a circular send action. Existing bot selection, SSE streaming, reasoning/search disclosure, insert-into-notebook, and action-card behavior are unchanged.
+- **Modified Files:**
+  - `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx`
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:** `git diff --check` passed. TypeScript transpilation syntax check for `AskAIDropdown.tsx` passed. `pnpm typecheck:shell` could not run because the local Node 24 / pnpm 11 runtime attempted a dependency-directory reset for this Node 22 project and stopped safely in non-interactive mode; no dependencies were changed.
+- **Handoff:** Visually inspect `/notebooks` at desktop and narrow widths when a Node 22 project runtime is available.
+
 *(Add new entries at the top of this list)*
+
+### Entry 046 — Ask AI Forum Typography and Legacy Composer Restoration (TSK-40)
+- **Date:** 2026-08-10
+- **AI Agent:** OpenCode (gpt-5.6-luna)
+- **Summary:** Adapted the Ask AI conversation output to the forum thread visual language without removing any chatbot capability. The outer panel was restored to its previous dimensions, border, rounded corners, shadow, and taskbar spacing after review. Chat posts now use forum Markdown typography, avatar scale, author metadata, direct border-separated content, forum-style indentation, and containerless code/table/Mermaid/action/insert sections. The top header no longer shows the visible Ask/context copy and is compact. The original bordered, rounded Ask AI composer was restored unchanged.
+- **Modified Files:**
+  - `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx`
+  - `src/notebook-app/scenes/notebooks/ReasoningAnswer.tsx`
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm typecheck:shell` passed with 0 gated errors. `/notebooks` returned HTTP 200 through the dev server. The previous AI smoke run passed 8/8; the follow-up smoke command was blocked by an already-running process on port 3000 and did not execute the suite.
+- **Handoff:** Keep the restored outer panel and legacy composer. If visual confirmation is needed, free port 3000 and run `pnpm test:smoke`, then inspect the notebook editor Ask AI thread at desktop and mobile widths.
+
+### Entry 045 — Ask AI: unified single-line search+thinking activity trail (TSK-39 follow-up)
+- **Date:** 2026-08-10
+- **AI Agent:** Claude Sonnet 5 (GitHub Copilot)
+- **Summary:** Follow-up to Entry 044 based on user feedback: the reasoning header still ran on a fake `setTimeout`-based timer disconnected from real content, defaulted to auto-expanded (showing all 4 stages immediately instead of a single collapsed line like a "used a tool" card), and the new web-search disclosure rendered as a second, separate box stacked above the reasoning trail instead of flowing as one continuous process.
+  1. **Real-content-driven single line:** Removed the fake `liveStep`/`setTimeout` timer in `ReasoningAnswer.tsx` entirely. The "currently active" stage is now derived from the real `stages` array (its last element, while streaming) — the header always reflects genuine backend progress. `expanded` now always defaults to `false` (reset only when the message `id` changes), matching a collapsed single-line summary that the reader can click to expand into the full per-stage trail (each stage keeps its own icon — Eye/Book/Warning/MagicWand — instead of a generic brain icon throughout).
+  2. **Unified search+thinking trail:** Deleted the standalone `WebSearchIndicator` component. `ReasoningAnswer` now accepts a `searchStep` prop directly and builds one chronological `trail` array: the search row (if any) always first, since the backend always searches before generating, followed by the thinking stage rows. At most one row is ever `active` at a time (thinking rows can't go active while search is still running, mirroring real backend sequencing). The single-line header title/icon/shimmer are all driven off this one `activeRow` — e.g. "Searching the web for '...'…" → "Perceive: ..." → ... → "Researched & thought for Xs" — so search and thinking now read as one continuous animated process instead of two disconnected boxes. `AskAIDropdown.tsx` was updated to pass `searchStep={msg.searchStep}` straight into the single `<ReasoningAnswer>` call instead of rendering a separate `<WebSearchIndicator>` block.
+  3. **Removed a second instance of the same "theater" anti-pattern:** `AskAIDropdown.tsx`'s `sendPrompt()` was still seeding the placeholder AI message with hardcoded fake `initialThinkingStages`/`initialReasoningSteps` text (e.g. "Perceiving query through X's lens...") shown at t=0 before any real SSE content arrived. Removed both arrays entirely — the placeholder message now carries no stages, so `ReasoningAnswer` shows a plain "Thinking…" idle state until genuine `search`/`thinking` SSE events arrive.
+- **Modified Files:**
+  - `src/notebook-app/scenes/notebooks/ReasoningAnswer.tsx` (removed fake timer + `WebSearchIndicator`, added unified `trail`/`searchStep` logic, bullet-prefix stripping for search result text, step counter now scoped to the thinking-only phase)
+  - `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx` (removed `WebSearchIndicator` import/render, passes `searchStep` into `ReasoningAnswer`; removed hardcoded fake placeholder `thinkingStages`/`reasoningSteps`)
+- **Verification:** `npx tsc --noEmit -p tsconfig.json` filtered to these two files shows only the same pre-existing, unrelated errors from before this change (`LemonDropdown`/`panelClassName`/`reasoningExpanded` unused, missing `IconTable` export) — zero new errors introduced. Note: `get_errors` (editor language server) transiently reported a batch of clearly false-positive errors on `AskAIDropdown.tsx` (claiming real `@posthog/icons` exports and `components/Markdown` don't exist) that a standalone `tsc` run did not reproduce — treated as a language-server artifact, not a real regression. Not yet smoke-tested against a live LLM call — next agent should verify the unified trail renders correctly end-to-end (search-only questions, thinking-only questions, and both) in a real browser session.
+
+### Entry 044 — Ask AI: real reasoning trail + live web search disclosure (TSK-39)
+- **Date:** 2026-08-10
+- **AI Agent:** Claude Sonnet 5 (GitHub Copilot)
+- **Summary:** The live Ask AI panel's "thinking" UI (`ReasoningAnswer.tsx`) was pure theater — `co-author.ts` never instructed the model to emit `<thinking>` tags, so the frontend's regex parser never matched and always fell back to hardcoded placeholder stage text (or sentences sliced out of the final answer relabeled as "reasoning"). Web search was also not wired into the live path at all: a real DuckDuckGo-backed search tool existed but only inside an orphaned, never-imported duplicate component (`src/components/AskAIDropdown/AskAIDropdown.tsx`) — the actual live component (`src/notebook-app/scenes/notebooks/AskAIDropdown.tsx`, imported by `src/notebook-app/App.tsx`) had no search capability.
+  1. **Real reasoning, not simulated:** Added `THINKING_INSTRUCTIONS` to `co-author.ts`'s system prompt, requiring the model to emit a genuine `<thinking><perceive>/<frame>/<tension>/<move></thinking>` block specific to the actual question, before its visible answer. The block is split OUT of `rawReply` before `validateAndReturn()` runs (so the quality gate's word-budget/min-length/filler checks only ever see the real visible answer, never the reasoning trail), then streamed to the client first over SSE, verbatim, before the gated answer — recreating the "thinking → answer" reveal order used by Claude, driven by the actual model output instead of `setTimeout` theater.
+  2. **Real, visible web search:** Added `src/lib/bots/intent-router.ts` (`classifyIntent()`, deterministic temp-0 classification of whether a query needs a live search) and `src/lib/bots/web-search.ts` (`searchDuckDuckGo()`) as shared helpers. `co-author.ts` now runs intent classification before generating the answer; if search is warranted it emits `send({ search: { status: 'running', query } })`, performs the DuckDuckGo search, emits `send({ search: { status: 'done', query, results } })`, and injects the results into the prompt as labeled untrusted context. `AskAIDropdown.tsx` parses these `search` SSE events into a new `ChatMessage.searchStep` field and renders a new `WebSearchIndicator` component (in `ReasoningAnswer.tsx`) — a real, expandable "Searched the web for '...'" disclosure card, shown above the reasoning trail.
+  3. **Deduplication:** `/api/bots/intent.ts` and `/api/bots/search.ts` (the two client-facing endpoints) were refactored to call the same shared `classifyIntent`/`searchDuckDuckGo` helpers instead of maintaining their own copies, so the classifier prompt and scraper logic can no longer drift between surfaces (same class of bug flagged in the persona-engine/gateway consolidation entries above).
+  4. **Dead code removal:** Deleted `src/components/AskAIDropdown/AskAIDropdown.tsx` — confirmed zero imports anywhere in the codebase (only referenced in historical `AI_MEMORY.md` log entries). Its only useful logic (intent-routing + DuckDuckGo search) was already ported into the live component per point 2.
+- **Modified/Added Files:**
+  - `src/pages/api/notebook/co-author.ts` (thinking instructions, search step, gate-then-stream split)
+  - `src/lib/bots/intent-router.ts` [NEW], `src/lib/bots/web-search.ts` [NEW]
+  - `src/pages/api/bots/intent.ts`, `src/pages/api/bots/search.ts` (now thin wrappers over shared helpers)
+  - `src/notebook-app/scenes/notebooks/ReasoningAnswer.tsx` (new `WebSearchIndicator` export)
+  - `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx` (parses `search` SSE events, renders search card)
+  - Deleted: `src/components/AskAIDropdown/AskAIDropdown.tsx`
+- **Verification:** `npx tsc --noEmit -p tsconfig.json` shows zero new errors from these files (one pre-existing `IntentResult`/`Record<string, unknown>` mismatch was fixed; remaining errors in `AskAIDropdown.tsx` — unused `LemonDropdown` import, missing `IconTable` export, unused `panelClassName`/`reasoningExpanded` — are pre-existing and untouched by this change). Not yet run through `pnpm build` / `pnpm test:smoke` or a live LLM call — next agent should smoke-test an actual Ask AI round trip (with and without a search-triggering question) to confirm the model reliably emits well-formed `<thinking>` tags and that DuckDuckGo scraping still returns results in production.
 
 ### Entry 043 — Ask AI Conversational Chat Mode Fix
 - **Date:** 2026-08-09
@@ -692,6 +898,22 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
   - `src/components/AppWindow/WindowRouter.tsx` [UPDATED]
   - `src/components/TaskBarMenu/index.tsx` [UPDATED]
 - **Verification:** Passed `pnpm typecheck:shell` (0 gated errors - PASS).
+
+### Entry 054 — Claude Workspace UI Integration into AskAIDropdown & Philosopher Bot Roster
+- **Date:** 2026-08-11
+- **AI Agent:** Antigravity (Gemini 3.6 Flash)
+- **Summary:**
+  1. Replaced `AskAIDropdown.tsx` visual interface with the premium Claude Workspace Chat UI design (`#FCFCFB` canvas, Lacivert `#1E3A8A` accents, rounded capsule input box, modern typography).
+  2. Preserved 100% of Ask AI's native backend pipeline (`/api/notebook/co-author`, `/api/bots/act`, `/api/philosopher-bot`), MemGPT memory state, `@ Context` tags, insert to notebook block buttons (`onInsertPromptBlock`), and OS Action Cards (`create_notebook`, `create_forum_topic`, `open_window`).
+  3. Integrated WorldInMaking Resident Philosopher roster (@Nietzsche, @Marx, @Žižek, @Deleuze, @Spinoza, @Hegel, @Sartre, @Derrida, @Baudrillard, @Adorno, @Arendt) into the Header & ChatInput model selector popover with avatars, stance badges, and descriptions.
+  4. Injected `THINKING_INSTRUCTIONS` into `/api/chat` to parse real dynamic Ask AI reasoning stages (`<perceive>`, `<frame>`, `<tension>`, `<move>`) into the SSE stream.
+- **Modified Files:**
+  - `src/notebook-app/scenes/notebooks/AskAIDropdown.tsx` [UPDATED]
+  - `src/components/ClaudeWorkspaceChat/components/Header.tsx` [UPDATED]
+  - `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx` [UPDATED]
+  - `src/components/ClaudeWorkspaceChat/data/initialData.ts` [UPDATED]
+  - `src/pages/api/chat.ts` [UPDATED]
+- **Verification:** Passed `pnpm build:notebook-styles` and `pnpm typecheck:shell` (0 gated errors - PASS).
 
 ### Entry 004 — Home Page SaaS Redesign, Auth Fixes, Cron Workflow & Craft Roadmap
 - **Date:** 2026-08-07

@@ -544,6 +544,25 @@
 /* ── LemonSelect ──────────────────────────────────────────────── */
 .LemonSelect { display: inline-flex; align-items: center; width: 100%; }
 .LemonSelect__value { flex: 1; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.LemonSelect .LemonButton__side-icon,
+.LemonSelect .LemonButton__side-icon svg,
+.LemonButton--size-small .LemonButton__side-icon svg {
+  width: 14px !important;
+  height: 14px !important;
+  max-width: 14px !important;
+  max-height: 14px !important;
+  min-width: 14px !important;
+  min-height: 14px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Ensure PostHog Popover/LemonMenu overlays render above floating desktop chat window */
+.LemonMenu,
+.LemonSelect__dropdown,
+.Popover,
+[data-floating-ui-portal] {
+  z-index: 999999 !important;
+}
 
 /* ── LemonSwitch ──────────────────────────────────────────────── */
 .LemonSwitch {

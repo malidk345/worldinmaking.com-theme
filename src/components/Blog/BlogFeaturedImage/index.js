@@ -1,4 +1,5 @@
 import cntl from 'cntl'
+import Image from 'next/image'
 import React from 'react'
 import { Structure } from '../../Structure'
 import BlogAuthor from '../BlogAuthor'
@@ -20,7 +21,11 @@ export function FeaturedImageStandard({ pageTitle, featuredImage, blogDate, blog
     return (
         <>
             <Structure.Section width="3xl -mt-6 md:-mt-2">
-                <img src={featuredImage} className="w-full md:rounded-lg" alt={pageTitle} />
+                {typeof featuredImage === 'string' ? (
+                    <Image src={featuredImage} className="w-full md:rounded-lg" alt={pageTitle || 'Featured image'} width={1200} height={630} />
+                ) : (
+                    <img src={featuredImage} className="w-full md:rounded-lg" alt={pageTitle || 'Featured image'} />
+                )}
             </Structure.Section>
             <PlainIntro
                 blogDate={blogDate}
@@ -36,7 +41,11 @@ export function FeaturedImageFull({ pageTitle, featuredImage, blogDate, blogUpda
     return (
         <div className="md:mx-8 md:rounded-lg md:overflow-hidden">
             <div className={`w-full h-full relative flex items-center justify-center md:pt-1/2 ${bgGradient}`}>
-                <img className="h-full w-full absolute object-cover top-0 shadow-lg" src={featuredImage} />
+                {typeof featuredImage === 'string' ? (
+                    <Image className="h-full w-full absolute object-cover top-0 shadow-lg" src={featuredImage} alt={pageTitle || 'Featured image'} fill />
+                ) : (
+                    <img className="h-full w-full absolute object-cover top-0 shadow-lg" src={featuredImage} alt={pageTitle || 'Featured image'} />
+                )}
 
                 <div className="md:absolute p-8 top-0 w-full left-0 bottom-0 leading-tight z-10 flex justify-center items-center flex-col">
                     <time className="opacity-50 text-lg w-full max-w-xl mb-2 text-white">

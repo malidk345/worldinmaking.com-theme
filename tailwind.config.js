@@ -235,6 +235,8 @@ module.exports = {
                 'fairytale-title': ['Fairytale', 'sans-serif'],
                 fairytale: ['Computer Modern', 'sans-serif'],
                 serif: ['Garamond', 'Times New Roman', 'serif'],
+                // WIM AI Bots panel font (Anthropic Sans extracted from claude.ai)
+                wimbot: ['anthropic-sans', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
                 sans: [
                     '-apple-system',
                     'BlinkMacSystemFont',

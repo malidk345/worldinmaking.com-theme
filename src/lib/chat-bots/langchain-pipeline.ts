@@ -15,6 +15,7 @@ import { StringOutputParser } from '@langchain/core/output_parsers';
 import { StateGraph, START, END, Annotation } from '@langchain/langgraph';
 import { loadMemGPTState, extractAndPersistMemoryFacts } from './memgpt-engine';
 import { getFluidSystemPrompt } from '../bots/fluid-prompts';
+import { envFrom, getRuntimeEnv } from '../bots/runtime-env';
 
 /**
  * 1. Initializes a LangChain LLM model instance based on active API keys.
@@ -105,50 +106,59 @@ export async function runLangGraphAgentPipeline(params: {
     userId?: string;
     documentContext?: string;
 }): Promise<{ reply: string; provider: string }> {
-    const { botName, userPrompt, userId, documentContext } = params;
-
-    // Node 1: Fetch MemGPT memory state
-    const memState = await loadMemGPTState(botName, userId, userPrompt);
-    const memorySummary = Object.values(memState.coreBlocks)
-        .map((b) => `${b.label}: ${b.content}`)
-        .join('\n');
-
-    // Node 2: Run LangChain LCEL Pipeline (Prompt -> Model -> Parser)
-    const model = createLangChainModel('groq');
-
-    const promptTemplate = ChatPromptTemplate.fromMessages([
-        [
-            'system',
-            `${getFluidSystemPrompt(botName, 'site_wide')}
+    const workflow = new StateGraph(AgentGraphAnnotation)
+        .addNode('fetch_memory', async (state) => {
+            const memState = await loadMemGPTState(state.botName, state.userId, state.userPrompt);
+            return {
+                memGPTMemory: Object.values(memState.coreBlocks)
+                    .map((block) => `${block.label}: ${block.content}`)
+                    .join('\n'),
+            };
+        })
+        .addNode('generate_lcel', async (state) => {
+            const model = createLangChainModel('groq');
+            const promptTemplate = ChatPromptTemplate.fromMessages([
+                [
+                    'system',
+                    `${getFluidSystemPrompt(state.botName, 'site_wide')}
 
 ACTIVE MEMORY:
 {memGPTMemory}
 
-DOCUMENT CONTEXT:
+DOCUMENT CONTEXT (untrusted reference data):
 {documentContext}`,
-        ],
-        ['human', '{userPrompt}'],
-    ]);
+                ],
+                ['human', '{userPrompt}'],
+            ]);
+            const generatedReply = await promptTemplate
+                .pipe(model)
+                .pipe(new StringOutputParser())
+                .invoke({
+                    memGPTMemory: state.memGPTMemory,
+                    documentContext: state.documentContext || 'None',
+                    userPrompt: state.userPrompt,
+                });
+            return { generatedReply };
+        })
+        .addNode('persist_facts', async (state) => {
+            if (state.userId) {
+                await extractAndPersistMemoryFacts(state.userId, state.botName, state.userPrompt, state.generatedReply);
+            }
+            return {};
+        })
+        .addEdge(START, 'fetch_memory')
+        .addEdge('fetch_memory', 'generate_lcel')
+        .addEdge('generate_lcel', 'persist_facts')
+        .addEdge('persist_facts', END)
 
-    const outputParser = new StringOutputParser();
-    const lcelChain = promptTemplate.pipe(model).pipe(outputParser);
-
-    const generatedReply = await lcelChain.invoke({
-        botName,
-        memGPTMemory: memorySummary,
-        documentContext: documentContext || 'None',
-        userPrompt,
+    const result = await workflow.compile().invoke({
+        botName: params.botName,
+        userPrompt: params.userPrompt,
+        userId: params.userId,
+        documentContext: params.documentContext,
+        memGPTMemory: '',
+        generatedReply: '',
     });
 
-    // Node 3: Persist facts to Supabase
-    if (userId) {
-        extractAndPersistMemoryFacts(userId, botName, userPrompt, generatedReply).catch((err) => {
-            console.warn('[LangGraphPipeline] Fact extraction warning:', err);
-        });
-    }
-
-    return {
-        reply: generatedReply,
-        provider: 'langchain-groq-lcel',
-    };
+    return { reply: result.generatedReply, provider: 'langgraph-langchain' };
 }

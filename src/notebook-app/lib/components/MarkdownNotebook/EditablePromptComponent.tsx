@@ -17,8 +17,6 @@ import { getNotebookStringProp, isPromptComponentNode } from './documentModel'
 import { RestoreSelectionRequest } from './editorTypes'
 import { NotebookBlockNode, NotebookComponentBlockNode, NotebookMode } from './types'
 
-const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY || ''
-
 const AGENT_MODE_OPTIONS = [
     {
         title: 'General',
@@ -157,27 +155,19 @@ export function EditablePromptComponent({
         try {
             const systemInstructions = `You are an AI Assistant inside a Notebook. Mode: ${selectedAgentMode}. Generate markdown.`
 
-            const response = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [
-                            {
-                                parts: [
-                                    {
-                                        text: `${systemInstructions}\n\nUser Request: ${queryToRun.trim()}`
-                                    }
-                                ]
-                            }
-                        ]
-                    })
-                }
-            )
-
-            const data = await response.json()
-            const candidateText = data?.candidates?.[0]?.content?.parts?.[0]?.text
+            const response = await fetch('/api/bots/act', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'chat',
+                    bot: 'nietzsche',
+                    taskType: 'paper_section',
+                    question: `${systemInstructions}\n\nUser Request: ${queryToRun.trim()}`,
+                    context: queryToRun.trim().slice(0, 12000),
+                }),
+            })
+            const data = await response.json().catch(() => null)
+            const candidateText = response.ok && typeof data?.reply === 'string' ? data.reply : ''
 
             if (candidateText) {
                 updateNode(node.id, () => ({

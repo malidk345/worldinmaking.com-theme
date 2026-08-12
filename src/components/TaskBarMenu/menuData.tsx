@@ -40,6 +40,12 @@ export function useMenuData(): MenuType[] {
                 },
                 {
                     type: 'item' as const,
+                    label: "WIM's AI Bots",
+                    link: '/workspace-chat',
+                    icon: <Icons.IconChat className="size-4 text-orange" />,
+                },
+                {
+                    type: 'item' as const,
                     label: 'Forums',
                     link: '/questions',
                     icon: <Icons.IconMessage className="size-4 text-green" />,

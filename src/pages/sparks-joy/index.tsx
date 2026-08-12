@@ -8,9 +8,24 @@ import { explorerGridColumns } from '../../constants'
 import { explorerLayoutOptions } from '../../constants/explorerLayoutOptions'
 import { ToggleGroup } from 'components/RadixUI/ToggleGroup'
 import { useExplorerLayout } from '../../hooks/useExplorerLayout'
-import { SparksJoyItems, useMenuSelectOptions } from '../../components/TaskBarMenu/menuData'
+import { useMenuSelectOptions } from '../../components/TaskBarMenu/menuData'
 import { AppLink, AppIcon } from 'components/OSIcons/AppIcon'
 import ZoomHover from 'components/ZoomHover'
+
+/** Sparks-joy app & game data — previously lived in menuData, now co-located with the page. */
+const SparksJoyItems = {
+    games: [
+        { label: 'Brickhog', link: '/sparks-joy/brickhog', iconName: 'brickhog' },
+        { label: 'Dictator or Tech Bro', link: '/sparks-joy/dictator-or-tech-bro', iconName: 'dictator-or-tech-bro' },
+        { label: 'Hedgehog Mode', link: '/sparks-joy/hedgehog-mode', iconName: 'hedgehog-mode' },
+        { label: 'Hogpatch', link: '/sparks-joy/hogpatch', iconName: 'hogpatch' },
+        { label: 'Hogwars', link: '/sparks-joy/hogwars', iconName: 'hogwars' },
+    ],
+    notGames: [
+        { label: 'Art Library', link: '/art-library', iconName: 'art-library' },
+        { label: 'Photobooth', link: '/photobooth', iconName: 'photobooth' },
+    ],
+} as const
 
 export default function SparkJoy(): JSX.Element {
     const { isListLayout, setLayoutValue, currentLayout } = useExplorerLayout('grid')

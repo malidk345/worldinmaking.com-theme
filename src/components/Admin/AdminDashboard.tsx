@@ -352,10 +352,14 @@ export default function AdminDashboard() {
     const handleTriggerCron = async () => {
         setCronTriggering(true)
         try {
-            const res = await fetch('/api/cron/philosopher-bots', {
-                method: 'GET',
+            const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+            if (sessionError || !sessionData.session?.access_token) {
+                throw new Error('Admin session required to trigger philosopher bots')
+            }
+            const res = await fetch('/api/admin/philosopher-bots', {
+                method: 'POST',
                 headers: {
-                    Authorization: 'Bearer wim_cron_9f8a3b2c1d4e5f6g',
+                    Authorization: `Bearer ${sessionData.session.access_token}`,
                 },
             })
             const data = await res.json()

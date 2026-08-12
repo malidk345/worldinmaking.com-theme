@@ -1,3 +1,4 @@
+@import './wimbot-font.css';
 @layer base, components, not-prose, utilities;
 
 @tailwind base;

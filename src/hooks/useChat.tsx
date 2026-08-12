@@ -47,17 +47,6 @@ export function ChatProvider({ children }: { children?: React.ReactNode; [key: s
 
 // When chatOpen is true, open the chat window as a managed window in PostHog's OS window system
 export function ChatOverlay(): JSX.Element | null {
-    const { chatOpen, addWindow } = useApp()
-
-    useEffect(() => {
-        if (chatOpen) {
-            addWindow({
-                path: '/ask-max',
-                title: 'Max AI Assistant - PostHog',
-            })
-        }
-    }, [chatOpen])
-
     return null
 }
 

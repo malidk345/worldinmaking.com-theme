@@ -9,7 +9,6 @@
  */
 
 import { supabaseAdmin } from '../../../lib/supabase-admin';
-import { generateBotResponse } from '../../../lib/ai-provider';
 
 export interface CoreMemoryBlock {
     label: 'human_profile' | 'persona_core' | 'work_in_progress';
@@ -66,25 +65,32 @@ export async function loadMemGPTState(
     if (userId) {
         try {
             // A. Query profile details
-            const { data: profile } = await supabaseAdmin
+            const { data: profile, error: profileError } = await supabaseAdmin
                 .from('profiles')
-                .select('username, display_name, bio')
+                .select('username, first_name, last_name, bio')
                 .eq('id', userId)
                 .maybeSingle();
+            if (profileError) console.warn('[MemGPTEngine] Profile lookup warning:', profileError.message);
 
             if (profile) {
-                coreBlocks.human_profile.content = `Name: ${profile.display_name || profile.username || 'User'}.${profile.bio ? ` Bio: ${profile.bio}` : ''}`;
+                const displayName = [profile.first_name, profile.last_name].filter(Boolean).join(' ')
+                    || profile.username
+                    || 'User';
+                coreBlocks.human_profile.content = `Name: ${displayName}.${profile.bio ? ` Bio: ${profile.bio}` : ''}`;
             }
 
-            // B. Query persistent facts from agent_metadata
-            const { data: metadata } = await supabaseAdmin
+            // B. Query the JSON memory document used by the master schema.
+            const { data: metadata, error: metadataError } = await supabaseAdmin
                 .from('agent_metadata')
-                .select('metadata_key, metadata_value, updated_at')
-                .eq('agent_name', `user:${userId}`)
-                .limit(10);
+                .select('memory, updated_at')
+                .eq('agent_id', `user:${userId}`)
+                .maybeSingle();
+            if (metadataError) console.warn('[MemGPTEngine] Metadata lookup warning:', metadataError.message);
 
-            if (metadata && metadata.length > 0) {
-                const factLines = metadata.map((m) => `${m.metadata_key}: ${JSON.stringify(m.metadata_value)}`);
+            if (metadata?.memory && typeof metadata.memory === 'object') {
+                const factLines = Object.entries(metadata.memory as Record<string, unknown>)
+                    .slice(-10)
+                    .map(([key, value]) => `${key}: ${JSON.stringify(value)}`);
                 coreBlocks.human_profile.content += `\nSTORED FACTS:\n${factLines.join('\n')}`;
             }
 
@@ -99,12 +105,13 @@ export async function loadMemGPTState(
 
                 if (searchKeywords.length > 0) {
                     const ilikeFilter = searchKeywords.map((k) => `title.ilike.%${k}%`).join(',');
-                    const { data: matchingNotes } = await supabaseAdmin
+                    const { data: matchingNotes, error: notebookError } = await supabaseAdmin
                         .from('wim_notebooks')
                         .select('title, updated_at')
-                        .or(`auth_user_id.eq.${userId},owner_id.eq.${userId}`)
+                        .eq('auth_user_id', userId)
                         .or(ilikeFilter)
                         .limit(5);
+                    if (notebookError) console.warn('[MemGPTEngine] Notebook memory warning:', notebookError.message);
 
                     if (matchingNotes && matchingNotes.length > 0) {
                         archivalFacts = matchingNotes.map((n) => ({
@@ -142,21 +149,35 @@ export async function extractAndPersistMemoryFacts(
     if (!userId) return;
 
     try {
+        if (!botReply.trim()) return;
+
         // Quick heuristic check: Does the user prompt state a fact or preference?
         const containsFactTrigger = /\b(i am|i prefer|i work on|my paper|my project|my name is|i believe|i study|benim|çalışıyorum|araştırıyorum)\b/i.test(userPrompt);
 
         if (containsFactTrigger) {
-            const cleanKey = `fact_${Date.now()}`;
-            await supabaseAdmin.from('agent_metadata').insert({
-                agent_name: `user:${userId}`,
-                metadata_key: cleanKey,
-                metadata_value: {
-                    userPromptSnippet: userPrompt.slice(0, 300),
-                    extractedAt: new Date().toISOString(),
-                    botContext: botName,
-                },
+            const agentId = `user:${userId}`;
+            const { data: existing } = await supabaseAdmin
+                .from('agent_metadata')
+                .select('memory')
+                .eq('agent_id', agentId)
+                .maybeSingle();
+            const memory = existing?.memory && typeof existing.memory === 'object'
+                ? { ...(existing.memory as Record<string, unknown>) }
+                : {};
+            memory[`fact_${Date.now()}`] = {
+                userPromptSnippet: userPrompt.slice(0, 300),
+                extractedAt: new Date().toISOString(),
+                botContext: botName,
+            };
+            const { error } = await supabaseAdmin.from('agent_metadata').upsert({
+                agent_id: agentId,
+                name: `User ${userId}`,
+                role: 'user_memory',
+                memory,
+                status: 'active',
                 updated_at: new Date().toISOString(),
-            });
+            }, { onConflict: 'agent_id' });
+            if (error) console.warn('[MemGPTEngine] Memory persistence warning:', error.message);
         }
     } catch (e) {
         console.warn('[MemGPTEngine] Memory extraction warning:', e);

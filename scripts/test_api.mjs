@@ -21,6 +21,7 @@ async function testEndpoint() {
         }
     ];
 
+    let failures = 0;
     for (let i = 0; i < payloads.length; i++) {
         const payload = payloads[i];
         console.log(`\n===========================================`);
@@ -38,6 +39,7 @@ async function testEndpoint() {
                 console.error(`Request failed with status ${res.status}`);
                 const text = await res.text();
                 console.error(text);
+                failures++;
                 continue;
             }
 
@@ -45,37 +47,46 @@ async function testEndpoint() {
             const reader = res.body.getReader();
             const decoder = new TextDecoder('utf-8');
             let done = false;
+            let buffer = '';
+            let sawDone = false;
 
             let fullText = '';
             while (!done) {
                 const { value, done: readerDone } = await reader.read();
                 if (value) {
-                    const chunk = decoder.decode(value, { stream: true });
-                    // Simple parse of "data: {...}\n\n"
-                    const lines = chunk.split('\n');
-                    for (const line of lines) {
-                        if (line.startsWith('data: ')) {
-                            const dataStr = line.replace('data: ', '');
-                            if (dataStr === '[DONE]') continue;
-                            try {
-                                const parsed = JSON.parse(dataStr);
-                                if (parsed.content) {
-                                    fullText += parsed.content;
-                                }
-                            } catch (e) {
-                                // Ignore parse errors for incomplete chunks
-                            }
-                        }
+                    buffer += decoder.decode(value, { stream: true });
+                    const frames = buffer.split(/\r?\n\r?\n/);
+                    buffer = frames.pop() || '';
+                    for (const frame of frames) {
+                        const line = frame.split(/\r?\n/).find((entry) => entry.startsWith('data: '));
+                        if (!line) continue;
+                        const parsed = JSON.parse(line.slice(6));
+                        if (parsed.error) throw new Error(parsed.error);
+                        if (parsed.token) fullText += parsed.token;
+                        if (parsed.done) sawDone = true;
                     }
                 }
                 done = readerDone;
+            }
+            if (buffer.trim()) {
+                const line = buffer.split(/\r?\n/).find((entry) => entry.startsWith('data: '));
+                if (line) {
+                    const parsed = JSON.parse(line.slice(6));
+                    if (parsed.token) fullText += parsed.token;
+                    if (parsed.done) sawDone = true;
+                }
+            }
+            if (!sawDone || !fullText.trim()) {
+                throw new Error('SSE response did not contain a complete non-empty reply');
             }
             console.log(fullText);
 
         } catch (e) {
             console.error(`Failed to connect:`, e.message);
+            failures++;
         }
     }
+    if (failures > 0) process.exitCode = 1;
 }
 
 // Keep checking until server is up
@@ -87,7 +98,7 @@ async function waitForServerAndTest() {
             await fetch('http://localhost:3000/api/health', { method: 'HEAD' }).catch(() => fetch('http://localhost:3000'));
             console.log("Server is up! Running tests...\n");
             await testEndpoint();
-            process.exit(0);
+            process.exit(process.exitCode || 0);
         } catch (e) {
             retries--;
             await new Promise(r => setTimeout(r, 2000));

@@ -256,7 +256,7 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                 signal,
                 body: JSON.stringify({
                     botName: activeBot.name,
-                    mode: 'chat',
+                    mode: 'critique',
                     documentText: currentNotebookContent?.slice(0, 4000) || '',
                     nodeContent: text,
                 }),
@@ -554,7 +554,18 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
         const handleClickOutside = (event: MouseEvent) => {
             if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
                 const target = event.target as HTMLElement
-                if (target.closest?.('[data-lemon-popover]') || target.closest?.('.LemonSelect__dropdown')) {
+                if (
+                    target.closest?.('[data-radix-popper-content-wrapper]') ||
+                    target.closest?.('[role="menu"]') ||
+                    target.closest?.('[role="listbox"]') ||
+                    target.closest?.('[data-lemon-popover]') ||
+                    target.closest?.('.LemonMenu') ||
+                    target.closest?.('.LemonSelect') ||
+                    target.closest?.('.LemonSelect__dropdown') ||
+                    target.closest?.('.LemonDropdown__overlay') ||
+                    target.closest?.('.Popover') ||
+                    target.closest?.('.LemonButton')
+                ) {
                     return
                 }
                 setIsOpen(false)
@@ -599,23 +610,30 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                             exit={{ translateX: '100%' }}
                             transition={{ duration: 0.3, type: 'tween' }}
                             style={panelStyle}
-                            className={`fixed w-96 max-w-[calc(100vw-1rem)] bg-primary border border-primary rounded shadow-xl z-50 text-primary flex flex-col notebook-app-scope ${isDark ? 'dark' : ''}`}
+                            className={`fixed w-[min(100vw-1rem,26rem)] sm:w-[32rem] bg-[#FCFCFB] text-[#1F1E1B] border border-[#E5E2D9] rounded-2xl shadow-2xl z-50 flex flex-col font-sans overflow-hidden antialiased selection:bg-[#1E3A8A]/15 selection:text-[#1E3A8A] notebook-app-scope ${isDark ? 'dark bg-stone-900 text-stone-100 border-stone-800' : ''}`}
                         >
-                            <div className="h-full flex flex-col min-h-0">
-                                {/* Header - Identical to NotificationsPanel */}
-                                <div className="flex items-center justify-between px-4 py-2 border-b border-primary flex-shrink-0">
+                            <div className="h-full flex flex-col min-h-0 relative">
+                                {/* Top Header Bar - Claude Workspace Style with Philosopher Roster */}
+                                <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-[#E5E2D9]/80 bg-[#FCFCFB]/90 backdrop-blur-md flex-shrink-0 select-none">
                                     <div className="flex items-center gap-2 min-w-0">
-                                        <ProfilePicture user={philosopherAsUser(activeBot)} size="sm" />
-                                        <div className="min-w-0 flex items-center gap-1.5">
-                                            <span className="font-semibold text-sm text-primary truncate">
-                                                {activeBot.displayName}
-                                            </span>
-                                            {contentLength > 0 && (
-                                                <LemonTag type="completion" size="small" className="text-[9px] shrink-0">
-                                                    Context ({contentLength})
-                                                </LemonTag>
-                                            )}
-                                        </div>
+                                        {/* Philosopher Roster Select */}
+                                        <LemonSelect
+                                            value={selectedBotId}
+                                            onChange={(val) => {
+                                                if (val) handleBotChange(val)
+                                            }}
+                                            options={botSelectOptions}
+                                            size="small"
+                                            type="tertiary"
+                                            dropdownPlacement="bottom-start"
+                                            dropdownMatchSelectWidth={false}
+                                        />
+
+                                        {contentLength > 0 && (
+                                            <LemonTag type="completion" size="small" className="text-[10px] shrink-0 font-mono">
+                                                @ Context ({contentLength})
+                                            </LemonTag>
+                                        )}
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                         {hasThread && (
@@ -624,15 +642,15 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                 type="tertiary"
                                                 icon={<IconTrash />}
                                                 onClick={() => setMessages([])}
-                                                tooltip="Clear conversation"
+                                                tooltip="Sohbeti Temizle"
                                             >
-                                                Clear
+                                                Temizle
                                             </LemonButton>
                                         )}
                                         <button
                                             onClick={() => setIsOpen(false)}
-                                            className="text-sm text-secondary hover:text-primary p-1"
-                                            title="Close AI Panel"
+                                            className="p-1 rounded-lg text-stone-500 hover:bg-stone-100 hover:text-stone-900 transition-colors"
+                                            title="Paneli Kapat"
                                         >
                                             <IconX className="size-4" />
                                         </button>
@@ -640,25 +658,46 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                 </div>
 
                                 {/* Body - Scrollable content */}
-                                <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
+                                <div className="flex-1 overflow-y-auto p-3.5 space-y-4 min-h-0 relative">
                                     {!hasThread && (
-                                        <div className="space-y-2.5">
-                                            <p className="text-xs text-secondary mb-0 leading-snug">
-                                                Full AI Editorial Engine. Transform, format, summarize, or critique your notebook content in real-time.
-                                            </p>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                                        <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center p-4 max-w-md mx-auto space-y-4 select-none">
+                                            {/* Claude Spark Orb Icon in Navy Blue */}
+                                            <div className="flex items-center justify-center text-[#1E3A8A]">
+                                                <svg
+                                                    viewBox="0 0 100 100"
+                                                    className="w-12 h-12"
+                                                    fill="none"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                >
+                                                    <circle cx="50" cy="50" r="30" fill="#1E3A8A" opacity="0.15" />
+                                                    <circle cx="50" cy="50" r="20" fill="#1E3A8A" />
+                                                    <path d="M50 25 L53 45 L73 45 L57 56 L63 75 L50 63 L37 75 L43 56 L27 45 L47 45 Z" fill="#FFFFFF" />
+                                                </svg>
+                                            </div>
+
+                                            <div className="space-y-1">
+                                                <h3 className="text-base font-serif font-semibold text-stone-900 tracking-tight">
+                                                    Dünya Yapım Aşaması — Filozof Danışmanı
+                                                </h3>
+                                                <p className="text-xs text-stone-500 max-w-xs mx-auto leading-relaxed">
+                                                    Not defteri içeriklerinizi gerçek zamanlı olarak dönüştürün, felsefi yapısökümden geçirin veya analiz edin.
+                                                </p>
+                                            </div>
+
+                                            {/* Editorial Action Chips */}
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full pt-2">
                                                 {EDITORIAL_SUGGESTIONS.map((item) => {
                                                     const IconComp = item.icon
                                                     return (
                                                         <LemonButton
                                                             key={item.label}
-                                                            size="xsmall"
+                                                            size="small"
                                                             type="secondary"
                                                             icon={<IconComp />}
                                                             onClick={() => void sendPrompt(item.prompt)}
-                                                            className="justify-start text-left truncate"
+                                                            className="justify-start text-left truncate rounded-xl border border-stone-200 bg-white hover:bg-stone-50 shadow-2xs"
                                                         >
-                                                            <span className="truncate text-xs">{item.label}</span>
+                                                            <span className="truncate text-xs font-medium text-stone-800">{item.label}</span>
                                                         </LemonButton>
                                                     )
                                                 })}
@@ -667,7 +706,7 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                     )}
 
                                     {hasThread && (
-                                        <div className="space-y-3">
+                                        <div className="space-y-4 pb-4">
                                             {messages.map((msg) => {
                                                 const bot =
                                                     msg.sender === 'ai' && msg.philosopherId
@@ -677,9 +716,9 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                 if (msg.sender === 'system') {
                                                     return (
                                                         <div key={msg.id} className="flex justify-center my-2 select-none">
-                                                            <div className="flex items-center gap-1.5 text-[10px] text-muted bg-surface-primary border border-[var(--color-border-primary)] rounded-full px-3 py-0.5 shadow-2xs">
+                                                            <div className="flex items-center gap-1.5 text-[11px] text-stone-500 bg-stone-100 border border-stone-200 rounded-full px-3 py-0.5 shadow-2xs font-mono">
                                                                 <span>🔀</span>
-                                                                <span className="font-medium text-secondary">{msg.text}</span>
+                                                                <span>{msg.text}</span>
                                                             </div>
                                                         </div>
                                                     )
@@ -688,7 +727,7 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                 if (msg.sender === 'user') {
                                                     return (
                                                         <div key={msg.id} className="flex justify-end my-2">
-                                                            <div className="max-w-[85%] bg-surface-primary border border-[var(--color-border-primary)] text-primary rounded-xl px-3.5 py-2 text-xs leading-relaxed font-normal shadow-xs">
+                                                            <div className="max-w-[88%] bg-[#1E3A8A] text-white rounded-2xl px-4 py-2.5 text-xs leading-relaxed font-normal shadow-sm">
                                                                 {msg.text}
                                                             </div>
                                                         </div>
@@ -698,7 +737,7 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                 const hasText = !!msg.text && msg.text.trim().length > 0
 
                                                 return (
-                                                    <div key={msg.id} className="space-y-2 my-3 min-w-0">
+                                                    <div key={msg.id} className="space-y-2.5 my-3 min-w-0">
                                                         {msg.sender === 'ai' && (
                                                             <div className="px-1">
                                                                 <ReasoningAnswer
@@ -712,16 +751,16 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                         )}
 
                                                         {(hasText || (!msg.isStreaming && !msg.thinkingStages?.length)) && (
-                                                            <div className="bg-surface-primary border border-[var(--color-border-primary)] rounded-xl p-3 space-y-2 shadow-xs">
-                                                                <div className="flex items-center gap-2">
+                                                            <div className="bg-white border border-[#E5E2D9] rounded-2xl p-3.5 space-y-2.5 shadow-sm">
+                                                                <div className="flex items-center gap-2 border-b border-stone-100 pb-2">
                                                                     <ProfilePicture user={philosopherAsUser(bot)} size="sm" />
                                                                     <div className="flex justify-between items-center gap-2 min-w-0 flex-1">
-                                                                        <span className="font-semibold text-xs text-primary truncate">{bot.name}</span>
-                                                                        <span className="text-[10px] text-muted shrink-0">{msg.timestamp}</span>
+                                                                        <span className="font-semibold text-xs text-stone-900 truncate">{bot.displayName || bot.name}</span>
+                                                                        <span className="text-[10px] text-stone-400 shrink-0 font-mono">{msg.timestamp}</span>
                                                                     </div>
                                                                 </div>
 
-                                                                <div className="text-primary text-xs leading-relaxed mb-0 [&>p]:mb-1.5 [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4 [&>code]:bg-black/10 [&>code]:dark:bg-white/10 [&>code]:px-1 [&>code]:rounded">
+                                                                <div className="text-stone-800 text-xs leading-relaxed mb-0 [&>p]:mb-1.5 [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4 [&>code]:bg-stone-100 [&>code]:px-1.5 [&>code]:py-0.5 [&>code]:rounded [&>code]:font-mono">
                                                                     <Markdown
                                                                         components={{
                                                                             code: ({ className, children, inline, ...props }: any) => {
@@ -738,7 +777,7 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
 
                                                                                 if (isMermaid) {
                                                                                     return (
-                                                                                        <div className="my-2 p-2 rounded-xl border border-[var(--color-border-primary)] bg-surface-primary shadow-xs overflow-hidden">
+                                                                                        <div className="my-2 p-2 rounded-xl border border-stone-200 bg-stone-50 shadow-2xs overflow-hidden">
                                                                                             <Mermaid>{codeStr}</Mermaid>
                                                                                         </div>
                                                                                     )
@@ -746,14 +785,14 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
 
                                                                                 if (inline) {
                                                                                     return (
-                                                                                        <code className="bg-black/10 dark:bg-white/10 px-1.5 py-0.5 rounded text-[11px] font-mono text-primary" {...props}>
+                                                                                        <code className="bg-stone-100 px-1.5 py-0.5 rounded text-[11px] font-mono text-stone-900" {...props}>
                                                                                             {children}
                                                                                         </code>
                                                                                     )
                                                                                 }
 
                                                                                 return (
-                                                                                    <div className="my-2 rounded-xl border border-[var(--color-border-primary)] bg-surface-primary p-2.5 overflow-x-auto font-mono text-[11px] leading-normal text-primary shadow-2xs">
+                                                                                    <div className="my-2 rounded-xl border border-stone-200 bg-stone-900 p-3 overflow-x-auto font-mono text-[11px] leading-normal text-emerald-300 shadow-2xs">
                                                                                         <code className={className} {...props}>
                                                                                             {children}
                                                                                         </code>
@@ -761,39 +800,39 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                                                 )
                                                                             },
                                                                             table: ({ children }: any) => (
-                                                                                <div className="my-2.5 w-full overflow-x-auto rounded-xl border border-[var(--color-border-primary)] shadow-2xs">
-                                                                                    <table className="w-full text-xs border-collapse min-w-full divide-y divide-[var(--color-border-primary)]">
+                                                                                <div className="my-2.5 w-full overflow-x-auto rounded-xl border border-stone-200 shadow-2xs">
+                                                                                    <table className="w-full text-xs border-collapse min-w-full divide-y divide-stone-200">
                                                                                         {children}
                                                                                     </table>
                                                                                 </div>
                                                                             ),
                                                                             thead: ({ children }: any) => (
-                                                                                <thead className="bg-surface-primary border-b border-[var(--color-border-primary)] text-primary font-semibold">
+                                                                                <thead className="bg-stone-50 border-b border-stone-200 text-stone-900 font-semibold">
                                                                                     {children}
                                                                                 </thead>
                                                                             ),
                                                                             tbody: ({ children }: any) => (
-                                                                                <tbody className="divide-y divide-[var(--color-border-primary)]/50 bg-primary/20">
+                                                                                <tbody className="divide-y divide-stone-100 bg-white">
                                                                                     {children}
                                                                                 </tbody>
                                                                             ),
                                                                             tr: ({ children }: any) => (
-                                                                                <tr className="hover:bg-surface-primary/60 transition-colors">
+                                                                                <tr className="hover:bg-stone-50 transition-colors">
                                                                                     {children}
                                                                                 </tr>
                                                                             ),
                                                                             th: ({ children }: any) => (
-                                                                                <th className="px-3 py-2 text-left font-semibold text-xs text-primary border-r border-[var(--color-border-primary)]/40 last:border-r-0">
+                                                                                <th className="px-3 py-2 text-left font-semibold text-xs text-stone-900 border-r border-stone-200/60 last:border-r-0">
                                                                                     {children}
                                                                                 </th>
                                                                             ),
                                                                             td: ({ children }: any) => (
-                                                                                <td className="px-3 py-2 text-left text-xs text-secondary border-r border-[var(--color-border-primary)]/30 last:border-r-0">
+                                                                                <td className="px-3 py-2 text-left text-xs text-stone-700 border-r border-stone-200/40 last:border-r-0">
                                                                                     {children}
                                                                                 </td>
                                                                             ),
                                                                             blockquote: ({ children }: any) => (
-                                                                                <blockquote className="border-l-2 border-primary pl-3 my-2 text-secondary italic text-xs">
+                                                                                <blockquote className="border-l-2 border-[#1E3A8A] pl-3 my-2 text-stone-600 italic text-xs">
                                                                                     {children}
                                                                                 </blockquote>
                                                                             ),
@@ -802,20 +841,20 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                                         {msg.text || ''}
                                                                     </Markdown>
                                                                     {msg.isStreaming && (
-                                                                        <span className="inline-block w-1.5 h-3.5 ml-0.5 bg-primary align-middle opacity-70 shrink-0" />
+                                                                        <span className="inline-block w-1.5 h-3.5 ml-0.5 bg-[#1E3A8A] align-middle opacity-80 shrink-0 animate-pulse" />
                                                                     )}
                                                                 </div>
 
                                                                 {msg.osAction && (
-                                                                    <div className="mt-2.5 p-2.5 rounded-xl bg-surface-primary border border-[var(--color-border-primary)] shadow-2xs space-y-1.5">
+                                                                    <div className="mt-2.5 p-2.5 rounded-xl bg-stone-50 border border-stone-200 shadow-2xs space-y-1.5">
                                                                         <div className="flex items-center justify-between gap-2">
                                                                             <div className="flex items-center gap-2 min-w-0">
-                                                                                <IconSparkles className="size-4 text-amber-500 shrink-0" />
+                                                                                <IconSparkles className="size-4 text-amber-600 shrink-0" />
                                                                                 <div className="min-w-0">
-                                                                                    <span className="font-semibold text-xs text-primary block truncate">
+                                                                                    <span className="font-semibold text-xs text-stone-900 block truncate">
                                                                                         {msg.osAction.title}
                                                                                     </span>
-                                                                                    <span className="text-[10px] text-muted block truncate">
+                                                                                    <span className="text-[10px] text-stone-500 block truncate">
                                                                                         {msg.osAction.description}
                                                                                     </span>
                                                                                 </div>
@@ -838,7 +877,7 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                             </div>
                                                         )}
 
-                                                        {/* Single Contextual Smart Insert Button — Rendered OUTSIDE & below the chat reply card */}
+                                                        {/* Contextual Insert Button */}
                                                         {shouldShowInsertButton(msg, messages) && (
                                                             <div className="pt-1 px-1 flex justify-start">
                                                                 <LemonButton
@@ -847,12 +886,13 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                                     icon={msg.hasTable ? <IconTable /> : <IconPlus />}
                                                                     onClick={(e) => {
                                                                         e.stopPropagation()
-                                                                        onInsertPromptBlock(msg.text, 'append')
+                                                                        if (onInsertPromptBlock) onInsertPromptBlock(msg.text, 'append')
                                                                         setIsOpen(false)
                                                                     }}
-                                                                    tooltip="Insert content block into active notebook document"
+                                                                    tooltip="İçeriği aktif not defterine aktar"
+                                                                    className="rounded-xl border border-stone-200 shadow-2xs"
                                                                 >
-                                                                    {msg.hasTable ? 'Insert table into notebook' : 'Insert into notebook'}
+                                                                    {msg.hasTable ? 'Tabloyu Not Defterine Ekle' : 'Not Defterine Ekle'}
                                                                 </LemonButton>
                                                             </div>
                                                         )}
@@ -865,8 +905,8 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                     )}
                                 </div>
 
-                                {/* Footer */}
-                                <div className="p-2.5 border-t border-primary bg-primary flex-shrink-0 rounded-b">
+                                {/* Footer - Floating Capsule Input Area */}
+                                <div className="p-3 border-t border-[#E5E2D9] bg-[#FCFCFB] flex-shrink-0">
                                     <form
                                         onSubmit={(e) => {
                                             e.preventDefault()
@@ -874,10 +914,10 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                         }}
                                         className="w-full"
                                     >
-                                        <div className="input-like flex flex-col cursor-text border border-primary bg-surface-primary rounded-xl p-2.5 space-y-2 shadow-xs transition-all focus-within:border-[var(--color-border-bold)]">
+                                        <div className="relative rounded-[20px] border border-[#E5E2D9] bg-white p-3 shadow-md focus-within:border-[#1E3A8A] focus-within:ring-1 focus-within:ring-[#1E3A8A]/30 transition-all">
                                             {contentLength > 0 && (
-                                                <div className="flex items-center gap-1.5 pt-0.5 px-0.5">
-                                                    <LemonTag type="completion" size="small" className="text-[10px] truncate max-w-[160px]">
+                                                <div className="flex items-center gap-1.5 pb-1.5 px-0.5">
+                                                    <LemonTag type="completion" size="small" className="text-[10px] truncate max-w-[180px] font-mono">
                                                         @ Context ({contentLength} chars)
                                                     </LemonTag>
                                                 </div>
@@ -887,16 +927,16 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
                                                 ref={textareaRef}
                                                 value={prompt}
                                                 onChange={(val) => setPrompt(val)}
-                                                placeholder="Ask follow-up or / for commands..."
+                                                placeholder="Bir soru sorun veya filozofa danışın..."
                                                 minRows={2}
                                                 maxRows={5}
-                                                className="!border-none !bg-transparent text-xs text-primary placeholder:text-muted focus:outline-none resize-none leading-relaxed p-0 shadow-none font-normal"
+                                                className="!border-none !bg-transparent text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none resize-none leading-relaxed p-0 shadow-none font-normal"
                                                 onPressEnter={() => {
                                                     if (prompt.trim() && !isGenerating) void sendPrompt()
                                                 }}
                                             />
 
-                                            <div className="flex items-center justify-between gap-1.5 pt-1 border-t border-[var(--color-border-primary)]">
+                                            <div className="flex items-center justify-between gap-1.5 pt-2 mt-1 border-t border-stone-100">
                                                 <div className="flex items-center gap-1 min-w-0">
                                                     <LemonSelect
                                                         value={selectedBotId}
@@ -913,14 +953,14 @@ export function AskAIDropdown({ onInsertPromptBlock, currentNotebookContent }: A
 
                                                 <div className="shrink-0">
                                                     <LemonButton
-                                                        size="xsmall"
+                                                        size="small"
                                                         type="primary"
                                                         htmlType="submit"
                                                         icon={<IconArrowRight />}
                                                         loading={isGenerating}
                                                         disabled={!prompt.trim()}
-                                                        tooltip={`Send to ${activeBot.name}`}
-                                                        className="rounded-lg"
+                                                        tooltip={`${activeBot.name}'e Gönder`}
+                                                        className="rounded-xl !bg-[#1E3A8A] hover:!bg-[#1e40af] !text-white border-none shadow-2xs"
                                                     />
                                                 </div>
                                             </div>

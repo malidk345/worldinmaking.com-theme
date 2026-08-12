@@ -57,6 +57,9 @@ const TASK_OPENROUTER: Partial<Record<TaskType, string>> = {
     synthesis: 'meta-llama/llama-3.3-70b-instruct',
     paper_section: 'meta-llama/llama-3.3-70b-instruct',
     third_voice: 'meta-llama/llama-3.3-70b-instruct',
+    dialectic_challenge: 'meta-llama/llama-3.3-70b-instruct',
+    cross_examine: 'meta-llama/llama-3.3-70b-instruct',
+    fact_critique: 'meta-llama/llama-3.1-8b-instruct',
     community_reply: 'meta-llama/llama-3.1-8b-instruct',
     thread_init: 'meta-llama/llama-3.1-8b-instruct',
 }
@@ -69,6 +72,10 @@ const TASK_OPENROUTER: Partial<Record<TaskType, string>> = {
  */
 const PROVIDER_COOLDOWNS = new Map<string, number>()
 const COOLDOWN_MS = 60_000
+const PROVIDER_REQUEST_TIMEOUT_MS = 12_000
+const GATEWAY_TOTAL_TIMEOUT_MS = 45_000
+const MAX_SYSTEM_PROMPT_CHARS = 30_000
+const MAX_USER_PROMPT_CHARS = 16_000
 
 function isFamilyCooling(name: string): boolean {
     const coolUntil = PROVIDER_COOLDOWNS.get(name)
@@ -131,6 +138,19 @@ function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit, timeoutMs = PROVIDER_REQUEST_TIMEOUT_MS): Promise<Response> {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), timeoutMs)
+    try {
+        return await fetch(input, { ...init, signal: controller.signal })
+    } catch (error: any) {
+        if (controller.signal.aborted) throw new Error(`provider request timeout after ${timeoutMs}ms`)
+        throw error
+    } finally {
+        clearTimeout(timer)
+    }
+}
+
 /**
  * Transient failures (5xx, timeouts, network blips) are worth one quick retry
  * on the SAME key/model before moving on — non-transient failures (401/402/403/404,
@@ -173,7 +193,7 @@ async function chatCompletions(
     extraHeaders: Record<string, string> = {}
 ): Promise<{ ok: true; text: string } | { ok: false; detail: string }> {
     try {
-        const fetchRes = await fetch(url, {
+        const fetchRes = await fetchWithTimeout(url, {
             method: 'POST',
             headers: {
                 Authorization: `Bearer ${apiKey}`,
@@ -187,6 +207,7 @@ async function chatCompletions(
                     { role: 'user', content: userPrompt },
                 ],
                 temperature: temperature ?? 0.7,
+                max_tokens: 1800,
             }),
         })
         const raw = await fetchRes.text()
@@ -218,13 +239,13 @@ async function geminiGenerate(
 ): Promise<{ ok: true; text: string } | { ok: false; detail: string }> {
     try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`
-        const fetchRes = await fetch(url, {
+        const fetchRes = await fetchWithTimeout(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 systemInstruction: { parts: [{ text: systemPrompt }] },
                 contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-                generationConfig: { temperature: temperature ?? 0.7 },
+                generationConfig: { temperature: temperature ?? 0.7, maxOutputTokens: 1800 },
             }),
         })
         const raw = await fetchRes.text()
@@ -379,6 +400,17 @@ export async function generateWithGateway(params: {
     const attempts: string[] = []
     const configured = getProviderKeyFlags(runtimeEnv)
 
+    if (params.systemPrompt.length > MAX_SYSTEM_PROMPT_CHARS || params.userPrompt.length > MAX_USER_PROMPT_CHARS) {
+        return {
+            ok: false,
+            provider: 'none',
+            attempts: [],
+            configured,
+            error: `Prompt too large (system max ${MAX_SYSTEM_PROMPT_CHARS}, user max ${MAX_USER_PROMPT_CHARS} characters).`,
+            latencyMs: Date.now() - started,
+        }
+    }
+
     // Support all common CF Dashboard naming conventions for key sets
     const groqRaw = envFrom(
         runtimeEnv,
@@ -413,6 +445,10 @@ export async function generateWithGateway(params: {
     const huggingFaceKeys = splitKeys(huggingFaceRaw)
 
     for (const family of getFamilyOrder(params.botName)) {
+        if (Date.now() - started >= GATEWAY_TOTAL_TIMEOUT_MS) {
+            attempts.push(`gateway: total timeout after ${GATEWAY_TOTAL_TIMEOUT_MS}ms`)
+            break
+        }
         let result: FamilySuccess | null = null
         if (family === 'groq') result = await tryGroqFamily(groqKeys, params, attempts)
         else if (family === 'openrouter') result = await tryOpenRouterFamily(openRouterKey, taskType, runtimeEnv, params, attempts)
@@ -435,6 +471,8 @@ export async function generateWithGateway(params: {
                 model: openai('gpt-4o-mini'),
                 system: params.systemPrompt,
                 prompt: params.userPrompt,
+                temperature: params.temperature ?? 0.7,
+                maxOutputTokens: 1800,
             })
             if (text) {
                 return {

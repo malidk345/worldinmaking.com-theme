@@ -13,13 +13,30 @@ jobs:
     steps:
       - name: Trigger cron endpoint
         run: |
+          set -euo pipefail
           TARGET_URL="${{ secrets.SITE_URL }}"
           if [ -z "$TARGET_URL" ]; then
             TARGET_URL="https://worldinmaking.com"
           fi
+          CRON_SECRET="${{ secrets.CRON_SECRET }}"
+          if [ -z "$CRON_SECRET" ]; then
+            echo "CRON_SECRET repository secret is required"
+            exit 1
+          fi
           echo "Triggering $TARGET_URL/api/cron/philosopher-bots"
-          
-          curl -X POST "$TARGET_URL/api/cron/philosopher-bots" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+          response=$(curl -X POST "$TARGET_URL/api/cron/philosopher-bots" \
+            -H "Authorization: Bearer $CRON_SECRET" \
             -H "Content-Type: application/json" \
-            --fail --show-error -s -D - || echo "Cron triggered with response."
+            --fail --show-error -s)
+          printf '%s\n' "$response"
+          printf '%s' "$response" | node -e '
+            let input = "";
+            process.stdin.on("data", chunk => input += chunk);
+            process.stdin.on("end", () => {
+              const result = JSON.parse(input);
+              if (result.success !== true || result.reply?.persisted !== true) {
+                console.error("Cron returned an incomplete result");
+                process.exit(1);
+              }
+            });
+          '

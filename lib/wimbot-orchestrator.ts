@@ -23,8 +23,7 @@ import { PaperBotContribution } from 'types/database';
 import { cleanPaperContent, resolveIllustrationPlaceholders } from './agent-orchestrator';
 import { getHybridResearchContext } from './google-drive';
 import { extractPersona, buildPersonaHeader, selectBotForTask } from './persona-engine';
-import type { TaskType } from './persona-engine';
-import { validateAndReturn } from './quality-gate';
+import { runQualityGate, validateAndReturn } from './quality-gate';
 import { getFluidSystemPrompt } from '../src/lib/bots/fluid-prompts';
 
 export const WIMBOT_PROFILE = {
@@ -163,6 +162,20 @@ interface BotProfile {
 }
 
 async function fetchActiveBots(): Promise<BotProfile[]> {
+    const { data: directBots, error: directError } = await supabase
+        .from('bot_profiles')
+        .select('id, name, is_active')
+        .eq('is_active', true);
+
+    if (!directError && directBots) {
+        return (directBots as Array<{ id: string; name?: string }>).map((bot) => ({
+            id: bot.id,
+            system_prompt: '',
+            username: bot.name || '',
+            avatar_url: '',
+        })).filter((bot) => bot.username && bot.username.toLowerCase() !== 'wimbot');
+    }
+
     const { data: rawBots, error } = await supabase
         .from('bot_profiles')
         .select('id, system_prompt, profiles:profiles!id ( username, avatar_url )')
@@ -213,7 +226,7 @@ Return ONLY valid JSON:
 }`;
 
     try {
-        const rawText = await generateBotResponse(prompt, 'wimbot', '', 'synthesis');
+        const rawText = await generateBotResponse(prompt, 'wimbot', '', 'synthesis', true);
         const jsonMatch = rawText.match(/\{[\s\S]*\}/);
         const result = JSON.parse(jsonMatch ? jsonMatch[0] : rawText || '{}');
 
@@ -335,7 +348,7 @@ export async function advanceUnfinishedPaper(
         if (!selected) return;
 
         const persona = extractPersona(selected.system_prompt, selected.username);
-        const personaHeader = buildPersonaHeader(persona, 'passionate') + '\n\n' + getFluidSystemPrompt(persona.name, 'site_wide');
+        const personaHeader = buildPersonaHeader(persona, 'passionate', 'paper_section') + '\n\n' + getFluidSystemPrompt(persona.name, 'site_wide');
 
         const prompt = `Paper Title: "${paper.title}"
 
@@ -374,10 +387,11 @@ Requirements:
                 created_at: new Date().toISOString()
             });
 
-            await supabase.from('posts').update({
+            const { error: thesisUpdateError } = await supabase.from('posts').update({
                 content: newContent,
                 excerpt: serializePaperMeta(meta)
             }).eq('id', paper.id);
+            if (thesisUpdateError) throw thesisUpdateError;
 
             console.log(`[WIMBot] STEP 1 THESIS by @${selected.username} — complete.`);
         } catch (e) {
@@ -394,7 +408,7 @@ Requirements:
         if (!bot) return;
 
         const persona = extractPersona(bot.system_prompt, bot.username);
-        const personaHeader = buildPersonaHeader(persona, 'angry') + '\n\n' + getFluidSystemPrompt(persona.name, 'site_wide');
+        const personaHeader = buildPersonaHeader(persona, 'angry', 'dialectic_challenge') + '\n\n' + getFluidSystemPrompt(persona.name, 'site_wide');
 
         const thesisBot = contributorSequence[0] || 'the previous philosopher';
 
@@ -438,10 +452,11 @@ Requirements:
                 created_at: new Date().toISOString()
             });
 
-            await supabase.from('posts').update({
+            const { error: antithesisUpdateError } = await supabase.from('posts').update({
                 content: newContent,
                 excerpt: serializePaperMeta(meta)
             }).eq('id', paper.id);
+            if (antithesisUpdateError) throw antithesisUpdateError;
 
             console.log(`[WIMBot] STEP 2 ANTITHESIS by @${bot.username} — complete.`);
         } catch (e) {
@@ -461,7 +476,7 @@ Requirements:
         if (!bot) return;
 
         const persona = extractPersona(bot.system_prompt, bot.username);
-        const personaHeader = buildPersonaHeader(persona, 'passionate') + '\n\n' + getFluidSystemPrompt(persona.name, 'site_wide');
+        const personaHeader = buildPersonaHeader(persona, 'passionate', 'cross_examine') + '\n\n' + getFluidSystemPrompt(persona.name, 'site_wide');
 
         const prompt = `Paper Title: "${paper.title}"
 
@@ -502,10 +517,11 @@ Requirements:
                 created_at: new Date().toISOString()
             });
 
-            await supabase.from('posts').update({
+            const { error: crossExamineUpdateError } = await supabase.from('posts').update({
                 content: newContent,
                 excerpt: serializePaperMeta(meta)
             }).eq('id', paper.id);
+            if (crossExamineUpdateError) throw crossExamineUpdateError;
 
             console.log(`[WIMBot] STEP 3 CROSS-EXAMINE by @${bot.username} — complete.`);
         } catch (e) {
@@ -526,7 +542,7 @@ Requirements:
         if (!bot) return;
 
         const persona = extractPersona(bot.system_prompt, bot.username);
-        const personaHeader = buildPersonaHeader(persona, 'calm') + '\n\n' + getFluidSystemPrompt(persona.name, 'site_wide');
+        const personaHeader = buildPersonaHeader(persona, 'calm', 'third_voice') + '\n\n' + getFluidSystemPrompt(persona.name, 'site_wide');
 
         const prompt = `Paper Title: "${paper.title}"
 
@@ -568,10 +584,11 @@ Requirements:
                 created_at: new Date().toISOString()
             });
 
-            await supabase.from('posts').update({
+            const { error: thirdVoiceUpdateError } = await supabase.from('posts').update({
                 content: newContent,
                 excerpt: serializePaperMeta(meta)
             }).eq('id', paper.id);
+            if (thirdVoiceUpdateError) throw thirdVoiceUpdateError;
 
             console.log(`[WIMBot] STEP 4 THIRD VOICE by @${bot.username} — complete.`);
         } catch (e) {
@@ -617,14 +634,21 @@ Return ONLY valid JSON:
 }`;
 
         try {
-            const rawResp = await generateBotResponse(prompt, 'wimbot', '', 'synthesis');
+            const rawResp = await generateBotResponse(prompt, 'wimbot', '', 'synthesis', true);
             const jsonMatch = rawResp.match(/\{[\s\S]*\}/);
             const res = JSON.parse(jsonMatch ? jsonMatch[0] : rawResp || '{}');
 
-            if (res.approved && (res.qualityScore || 90) >= 70) {
-                const cleanedSynthesis = await resolveIllustrationPlaceholders(
-                    cleanPaperContent(res.synthesisContent || '## Chief Editor Synthesis\n\nThis paper has been reviewed and approved by WIMBot.\n\n> [!NOTE] \n> *This article is a collaborative synthesis autonomously generated by WorldInMaking\'s resident AI philosopher agents.*')
-                );
+            const qualityScore = typeof res.qualityScore === 'number' ? res.qualityScore : 0;
+            const synthesisContent = typeof res.synthesisContent === 'string' ? res.synthesisContent.trim() : '';
+            const editorPersona = extractPersona('', 'wimbot');
+            const cleanedSynthesis = await resolveIllustrationPlaceholders(cleanPaperContent(synthesisContent));
+            const qualityReport = synthesisContent
+                ? await runQualityGate(cleanedSynthesis, editorPersona, 'synthesis', {
+                    correctionFn: (correctionPrompt) => generateBotResponse(correctionPrompt, 'wimbot', '', 'synthesis', true),
+                })
+                : null;
+
+            if (res.approved === true && qualityScore >= 70 && qualityReport?.passed && !qualityReport.flaggedForReview) {
                 const finalContent = paper.content + `\n\n${cleanedSynthesis}`;
 
                 meta.paper_status = 'published';
@@ -634,19 +658,21 @@ Return ONLY valid JSON:
                     bot_username: 'wimbot',
                     bot_avatar: WIMBOT_PROFILE.avatar_url,
                     action_type: 'publish',
-                    title: `Verified & Published (Quality: ${res.qualityScore || 90}%)`,
+                    title: `Verified & Published (Quality: ${qualityScore}%)`,
                     content: 'Dialectic complete. Paper passed editorial review and published.',
                     created_at: new Date().toISOString()
                 });
 
-                await supabase.from('posts').update({
+                const { error: publishError } = await supabase.from('posts').update({
                     content: finalContent,
                     excerpt: serializePaperMeta(meta)
                 }).eq('id', paper.id);
 
-                console.log(`[WIMBot] STEP 5 SYNTHESIS — paper published (score: ${res.qualityScore || 90}%).`);
+                if (publishError) throw publishError;
+
+                console.log(`[WIMBot] STEP 5 SYNTHESIS — paper published (score: ${qualityScore}%).`);
             } else {
-                console.log(`[WIMBot] Synthesis quality score too low (${res.qualityScore}). Paper remains in peer_review.`);
+                console.log(`[WIMBot] Synthesis rejected (model score: ${qualityScore}, gate: ${qualityReport?.score ?? 0}). Paper remains in peer_review.`);
             }
         } catch (e) {
             console.error('[WIMBot] Synthesis step error:', e);

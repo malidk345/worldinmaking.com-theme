@@ -6,9 +6,7 @@
  */
 export const runtime = 'edge'
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-const SUPABASE_KEY =
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+import { envFrom, getRuntimeEnv } from 'lib/bots/runtime-env'
 
 function json(body: Record<string, unknown>, status = 200, cache?: string) {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
@@ -21,54 +19,52 @@ export default async function handler(req: Request) {
         return json({ error: 'Method not allowed' }, 405)
     }
 
-    if (!SUPABASE_URL || !SUPABASE_KEY) {
+    const env = getRuntimeEnv()
+    const supabaseUrl = envFrom(env, 'NEXT_PUBLIC_SUPABASE_URL').replace(/\/$/, '')
+    const supabaseKey = envFrom(env, 'SUPABASE_SERVICE_ROLE_KEY', 'NEXT_PUBLIC_SUPABASE_ANON_KEY')
+    if (!supabaseUrl || !supabaseKey) {
         return json({
             bots: [],
             error: 'Supabase not configured',
-            debug: {
-                hasUrl: !!SUPABASE_URL,
-                keyLen: SUPABASE_KEY.length,
-                hasService: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-                hasAnon: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-            },
-        })
+        }, 503)
     }
 
     const headers = {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`,
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
         Accept: 'application/json',
     }
 
     try {
-        // profiles table: username + avatar_url (no first_name/last_name columns)
         const botRes = await fetch(
-            `${SUPABASE_URL}/rest/v1/bot_profiles?select=id,is_active,profiles(username,avatar_url)`,
-            { headers }
+            `${supabaseUrl}/rest/v1/bot_profiles?select=id,name,is_active`,
+            { headers, cache: 'no-store' }
         )
 
         if (!botRes.ok) {
-            const errText = await botRes.text()
-            console.error('[philosopher-bots] bot_profiles', botRes.status, errText)
-            return json({
-                bots: [],
-                error: `bot_profiles ${botRes.status}`,
-                detail: errText.slice(0, 300),
-            })
+            // Support the legacy relation while deployments migrate to the master schema.
+            const legacyRes = await fetch(
+                `${supabaseUrl}/rest/v1/bot_profiles?select=id,is_active,profiles(username,avatar_url)`,
+                { headers, cache: 'no-store' }
+            )
+            if (!legacyRes.ok) {
+                console.error('[philosopher-bots] bot_profiles lookup failed', botRes.status, legacyRes.status)
+                return json({ bots: [], error: 'Bot roster unavailable' }, 503)
+            }
+            const legacyRaw = await legacyRes.json()
+            return json({ bots: mapLegacyBots(legacyRaw) }, 200, 'public, s-maxage=300, stale-while-revalidate=600')
         }
 
         const raw = await botRes.json()
         const bots = (Array.isArray(raw) ? raw : [])
             .filter((row: any) => row.is_active !== false)
             .map((row: any) => {
-                const p = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles
-                if (!p) return null
-                const username = String(p.username || '').trim()
+                const username = String(row.name || '').trim()
                 if (!username || username.toLowerCase() === 'wimbot') return null
                 return {
                     id: row.id as string,
                     username,
-                    avatar_url: String(p.avatar_url || ''),
+                    avatar_url: '',
                 }
             })
             .filter(Boolean)
@@ -76,6 +72,18 @@ export default async function handler(req: Request) {
         return json({ bots }, 200, 'public, s-maxage=300, stale-while-revalidate=600')
     } catch (e: any) {
         console.error('[philosopher-bots]', e?.message || e)
-        return json({ bots: [], error: e?.message || 'fetch failed' })
+        return json({ bots: [], error: 'Bot roster unavailable' }, 503)
     }
+}
+
+function mapLegacyBots(raw: unknown) {
+    return (Array.isArray(raw) ? raw : [])
+        .filter((row: any) => row?.is_active !== false)
+        .map((row: any) => {
+            const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles
+            const username = String(profile?.username || '').trim()
+            if (!username || username.toLowerCase() === 'wimbot') return null
+            return { id: row.id as string, username, avatar_url: String(profile?.avatar_url || '') }
+        })
+        .filter(Boolean)
 }

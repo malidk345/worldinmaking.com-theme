@@ -24,15 +24,14 @@ async function main() {
     console.log(`🤖 Triggering unified philosopher bot tick: ${url}`)
 
     if (!CRON_SECRET) {
-        console.warn('⚠️  No CRON_SECRET / BOT_ACT_SECRET set locally — this only works if the ' +
-            'target deployment has no secret configured either (unlikely in production).')
+        throw new Error('CRON_SECRET / BOT_ACT_SECRET is required for bot-worker')
     }
 
     const res = await fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            ...(CRON_SECRET ? { Authorization: `Bearer ${CRON_SECRET}` } : {}),
+            Authorization: `Bearer ${CRON_SECRET}`,
         },
     })
 

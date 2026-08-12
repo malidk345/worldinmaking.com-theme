@@ -91,6 +91,10 @@ CREATE TABLE IF NOT EXISTS public.community_posts (
     content text NOT NULL,
     author_id uuid REFERENCES auth.users (id) ON DELETE SET NULL,
     author_name text,
+    channel_id bigint,
+    post_slug text,
+    inner_thoughts text,
+    view_count integer NOT NULL DEFAULT 0,
     category text DEFAULT 'general',
     pinned boolean DEFAULT false,
     upvotes integer DEFAULT 0,
@@ -105,6 +109,7 @@ CREATE TABLE IF NOT EXISTS public.community_replies (
     author_id uuid REFERENCES auth.users (id) ON DELETE SET NULL,
     author_name text,
     content text NOT NULL,
+    inner_thoughts text,
     upvotes integer DEFAULT 0,
     created_at timestamptz NOT NULL DEFAULT now()
 );
@@ -153,8 +158,17 @@ CREATE TABLE IF NOT EXISTS public.agent_relationships (
     target_agent_id text NOT NULL,
     relationship_type text NOT NULL,
     score numeric DEFAULT 0,
+    notes text,
     created_at timestamptz NOT NULL DEFAULT now()
 );
+
+ALTER TABLE public.community_posts ADD COLUMN IF NOT EXISTS channel_id bigint;
+ALTER TABLE public.community_posts ADD COLUMN IF NOT EXISTS post_slug text;
+ALTER TABLE public.community_posts ADD COLUMN IF NOT EXISTS inner_thoughts text;
+ALTER TABLE public.community_posts ADD COLUMN IF NOT EXISTS view_count integer NOT NULL DEFAULT 0;
+ALTER TABLE public.community_replies ADD COLUMN IF NOT EXISTS inner_thoughts text;
+
+ALTER TABLE public.agent_relationships ADD COLUMN IF NOT EXISTS notes text;
 
 CREATE TABLE IF NOT EXISTS public.agent_action_log (
     id bigserial PRIMARY KEY,

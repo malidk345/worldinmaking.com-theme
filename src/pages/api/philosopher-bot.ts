@@ -5,10 +5,18 @@
  */
 export const runtime = 'edge'
 
-import { getRequestContext } from '@cloudflare/next-on-pages'
-import type { TaskType } from 'lib/persona-engine'
 import { runBotTurn, type ThinkingDepth } from 'lib/bots'
 import { checkRateLimit } from 'lib/bots/rate-limit'
+import { getRuntimeEnv } from 'lib/bots/runtime-env'
+import {
+    getClientIp,
+    normalizeBotName,
+    parseBotMood,
+    parseTaskType,
+    parseThinkingDepth,
+    readJsonObject,
+    readOptionalString,
+} from 'lib/bots/request-validation'
 
 function json(body: Record<string, unknown>, status = 200) {
     return new Response(JSON.stringify(body), {
@@ -17,60 +25,26 @@ function json(body: Record<string, unknown>, status = 200) {
     })
 }
 
-/** Read ALL env/secrets from CF context + process.env merged together. */
-function readEnv(): Record<string, string> {
-    const base: Record<string, string> = {}
-
-    // 1) process.env (build-time vars, local .env.local)
-    for (const [k, v] of Object.entries(process.env)) {
-        if (typeof v === 'string' && v.length > 0) base[k] = v
-    }
-
-    // 2) CF runtime secrets (overwrite — these are authoritative in production)
-    //    getRequestContext() MUST be called here, inside the handler scope.
-    try {
-        const { env } = getRequestContext()
-        for (const [k, v] of Object.entries(env as Record<string, unknown>)) {
-            if (typeof v === 'string' && v.length > 0) base[k] = v
-        }
-    } catch {
-        // Local dev — CF context not available, process.env already loaded above
-    }
-
-    return base
-}
-
 export default async function handler(req: Request) {
     if (req.method !== 'POST') {
         return json({ error: 'Method not allowed' }, 405)
     }
 
-    // Read env RIGHT HERE — must be inside the request handler
-    const env = readEnv()
+    // Runtime bindings must be read per request on Cloudflare Pages.
+    const env = getRuntimeEnv()
+    const parsed = await readJsonObject(req, 32 * 1024)
+    if (!parsed.ok) return json({ error: parsed.error, success: false }, parsed.status)
+    const body = parsed.body
 
-    let body: any = {}
-    try {
-        body = await req.json()
-    } catch {
-        body = {}
+    const philosopher = normalizeBotName(body.philosopher, 'Nietzsche')
+    if (!philosopher) return json({ error: 'Unknown philosopher bot', success: false }, 400)
+
+    const mood = parseBotMood(body.mood)
+    const taskType = parseTaskType(body.taskType)
+    const thinkingDepth = parseThinkingDepth(body.thinkingDepth) as ThinkingDepth | undefined | null
+    if (!mood || !taskType || thinkingDepth === null) {
+        return json({ error: 'Invalid mood, taskType, or thinkingDepth', success: false }, 400)
     }
-
-    // Guard against JSON `null` / scalars — destructuring them throws
-    if (!body || typeof body !== 'object' || Array.isArray(body)) {
-        body = {}
-    }
-
-    const {
-        philosopher = 'Nietzsche',
-        mood = 'calm',
-        taskType = 'community_reply',
-        thinkingDepth,
-    }: {
-        philosopher?: string
-        mood?: string
-        taskType?: TaskType
-        thinkingDepth?: ThinkingDepth
-    } = body
 
     const rawQuestion = body.question
     if (typeof rawQuestion !== 'string' || !rawQuestion.trim()) {
@@ -81,40 +55,39 @@ export default async function handler(req: Request) {
         return json({ error: 'Question too long (max 8000 chars)', success: false }, 400)
     }
 
-    const context =
-        typeof body.context === 'string' && body.context.trim()
-            ? body.context.slice(0, 12000)
-            : undefined
+    const context = readOptionalString(body.context, 12000)
+    if (context === null) return json({ error: 'context must be a string', success: false }, 400)
 
-    // Scope rate limit per client IP so a caller cannot bypass it by
-    // rotating philosopher names (in-memory buckets reset on isolate recycle).
-    const clientIp =
-        req.headers.get('cf-connecting-ip') ||
-        req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-        'local'
-    const rlKey = `chat:${clientIp}:${philosopher.toLowerCase()}`
-    const rl = checkRateLimit(rlKey, 30, 60 * 60 * 1000)
-    if (!rl.allowed) {
+    const clientIp = getClientIp(req)
+    const aggregate = checkRateLimit(`llm:${clientIp}`, 60, 60 * 60 * 1000)
+    const rl = checkRateLimit(`chat:${clientIp}:${philosopher.toLowerCase()}`, 30, 60 * 60 * 1000)
+    if (!aggregate.allowed || !rl.allowed) {
+        const retryAfterSec = Math.max(aggregate.retryAfterSec, rl.retryAfterSec)
         return json(
             {
                 success: false,
-                error: `Rate limit exceeded for philosopher ${philosopher}. Retry in ${rl.retryAfterSec}s`,
-                retryAfterSec: rl.retryAfterSec,
+                error: `Rate limit exceeded for philosopher ${philosopher}. Retry in ${retryAfterSec}s`,
+                retryAfterSec,
             },
             429
         )
     }
 
-    // Inject the env directly so runBotTurn doesn't need to call getRuntimeEnv()
-    const result = await runBotTurn({
-        question,
-        philosopher,
-        mood,
-        taskType,
-        thinkingDepth,
-        context,
-        _env: env,
-    } as any)
+    let result
+    try {
+        result = await runBotTurn({
+            question,
+            philosopher,
+            mood,
+            taskType,
+            thinkingDepth: thinkingDepth ?? undefined,
+            context: context || undefined,
+            env,
+        })
+    } catch (error) {
+        console.error('[philosopher-bot] unexpected failure', error)
+        return json({ success: false, error: 'Philosopher network unavailable' }, 503)
+    }
 
     if (!result.success) {
         console.error('[philosopher-bot] FAILED', {
@@ -129,7 +102,7 @@ export default async function handler(req: Request) {
         return json(
             {
                 success: false,
-                error: result.error,
+                error: 'Philosopher network unavailable',
                 philosopher: result.philosopher,
                 epistemicStance: result.epistemicStance,
                 reply: result.reply,
@@ -139,7 +112,6 @@ export default async function handler(req: Request) {
                 confident: false,
                 host: result.host,
                 configured: result.configured,
-                attempts: result.attempts,
                 latencyMs: result.latencyMs,
                 taskType: result.taskType,
             },
