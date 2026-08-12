@@ -90,18 +90,15 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
 
   return (
     <div className="py-4 px-4 sm:px-8 max-w-3xl mx-auto">
-      {/* USER MESSAGE: Rounded White Capsule Bubble with Action Icons Below */}
+      {/* USER MESSAGE: Rounded White Capsule Bubble with Action Icons on the Left */}
       {isUser ? (
-        <div className="flex flex-col items-end space-y-1 group">
-          <div className="relative max-w-[85%] rounded-[18px] bg-white border border-primary px-4 py-3 text-primary text-[14.5px] leading-relaxed font-claude-sans shadow-2xs hover:bg-white transition-colors">
-            <p className="whitespace-pre-wrap">{message.content}</p>
-          </div>
-          {/* Action Icons BELOW User Message (Icons Only) */}
-          <div className="flex items-center gap-1.5 pt-0.5 px-1 text-muted text-xs opacity-70 group-hover:opacity-100 transition-opacity">
+        <div className="flex flex-row items-end justify-end group gap-2">
+          {/* Action Icons LEFT of User Message (Visible on Hover) */}
+          <div className="flex items-center gap-1 text-muted text-xs opacity-0 group-hover:opacity-100 transition-opacity mb-1">
             {onEditPrompt && (
               <button
                 onClick={() => onEditPrompt(message.content)}
-                className="p-1 hover:text-primary transition-colors cursor-pointer"
+                className="p-1.5 hover:text-primary hover:bg-light-3 rounded-md transition-colors cursor-pointer"
                 title="Edit"
               >
                 <Edit2 className="h-3.5 w-3.5" />
@@ -109,11 +106,15 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
             )}
             <button
               onClick={handleCopy}
-              className="p-1 hover:text-primary transition-colors cursor-pointer"
+              className="p-1.5 hover:text-primary hover:bg-light-3 rounded-md transition-colors cursor-pointer"
               title="Copy"
             >
               {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
             </button>
+          </div>
+
+          <div className="relative max-w-[85%] rounded-[18px] bg-white border border-primary px-4 py-3 text-primary text-[14.5px] leading-relaxed font-claude-sans shadow-2xs hover:bg-white transition-colors">
+            <p className="whitespace-pre-wrap break-words">{message.content}</p>
           </div>
         </div>
       ) : (
