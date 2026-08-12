@@ -333,14 +333,16 @@ export default function App({ onClose }: { onClose?: () => void }) {
     const selectedStyle = STYLE_PRESETS.find((s) => s.id === selectedStylePreset);
     const activeProjectObj = projects.find((p) => p.id === activeProjectId);
 
+    let accumulatedContent = '';
+    let currentThinkingProcess = {
+      durationSeconds: 2.5,
+      tokenCount: 840,
+      steps: [] as any[],
+      summary: 'Musing',
+    };
+
+    let isStreamComplete = false;
     try {
-      let accumulatedContent = '';
-      let currentThinkingProcess = {
-        durationSeconds: 2.5,
-        tokenCount: 840,
-        steps: [] as any[],
-        summary: 'Musing',
-      };
 
       const notebookCtx = activeNotebookContext.trim()
         ? `[NOTEBOOK CONTENT CONTEXT]\n"""\n${activeNotebookContext}\n"""\n`
@@ -422,6 +424,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
               // Handle backend error event — surface error and abort stream loop
               if (parsed.error) {
                 console.error('[co-author SSE] backend error:', parsed.error);
+                backendError = true;
                 updateAssistantMessage(targetChatId, assistantMessageId, {
                   content: `Bir hata oluştu: ${parsed.error}`,
                   isStreaming: false,
@@ -433,8 +436,8 @@ export default function App({ onClose }: { onClose?: () => void }) {
               if (parsed.token) {
                 accumulatedContent += parsed.token;
 
-                // Extract dynamic Ask AI thinking stages (<perceive>, <frame>, <tension>, <move>)
-                const thinkMatch = accumulatedContent.match(/<thinking>([\s\S]*?)(?:<\/thinking>|$)/i);
+                // Extract dynamic Ask AI thinking stages (<think>, <thinking>, <perceive>, <frame>, <tension>, <move>)
+                const thinkMatch = accumulatedContent.match(/<(?:thinking|think)>([\s\S]*?)(?:<\/(?:thinking|think)>|$)/i);
                 if (thinkMatch) {
                   const thinkBody = thinkMatch[1] || '';
                   // Dynamic XML/HTML tag extraction for any adaptive intent & philosopher persona step (<reflect>, <genealogy>, <search>, <structure>, etc.)
@@ -445,7 +448,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
                   while ((match = tagRegex.exec(thinkBody)) !== null) {
                     const tagName = match[1];
                     const tagContent = match[2]?.trim();
-                    if (tagContent && tagName !== 'thinking') {
+                    if (tagContent && tagName !== 'thinking' && tagName !== 'think') {
                       const formattedTitle = tagName
                         .replace(/_/g, ' ')
                         .replace(/\b\w/g, (c) => c.toUpperCase());
@@ -460,6 +463,66 @@ export default function App({ onClose }: { onClose?: () => void }) {
                     }
                   }
 
+                  // If no sub-tags were found (e.g. Qwen output plain reasoning inside <think>...</think>),
+                  // populate a "Think" step with the reasoning prose as detail!
+                  if (liveSteps.length === 0 && thinkBody.trim()) {
+                    // Try to parse Qwen/Markdown style steps
+                    // Look for patterns like "1. **Title:** Detail"
+                    const listMatches = [...thinkBody.matchAll(/(?:^|\n)\s*(?:\d+\.|\-|\*)\s+\*\*([^*]+)\*\*(?::)?\s*([\s\S]*?)(?=(?:\n\s*(?:\d+\.|\-|\*)\s+\*\*)|$)/g)];
+                    
+                    if (listMatches.length > 0) {
+                      listMatches.forEach((m, idx) => {
+                         liveSteps.push({
+                           id: 'q' + idx,
+                           stepNumber: idx + 1,
+                           title: m[1].trim(),
+                           detail: m[2].trim(),
+                           completed: true
+                         });
+                      });
+                      if (liveSteps.length > 0) {
+                         liveSteps[liveSteps.length - 1].completed = accumulatedContent.includes('</think>') || accumulatedContent.includes('</thinking>');
+                      }
+                    } else {
+                      // Fallback: split by double newlines to treat paragraphs as steps
+                      const paragraphs = thinkBody.split(/\n\s*\n/).filter(p => p.trim() && !p.toLowerCase().includes("here's a thinking process") && !p.toLowerCase().includes("thinking process:"));
+                      
+                      if (paragraphs.length > 0) {
+                        paragraphs.forEach((p, idx) => {
+                           let title = 'Process';
+                           let detail = p.trim();
+                           // If paragraph starts with bold, use it as title
+                           const boldMatch = detail.match(/^\*\*([^*]+)\*\*:?\s*(.*)/);
+                           if (boldMatch) {
+                             title = boldMatch[1].trim();
+                             detail = boldMatch[2].trim();
+                           }
+                           liveSteps.push({
+                             id: 'p' + idx,
+                             stepNumber: idx + 1,
+                             title: title,
+                             detail: detail,
+                             completed: true
+                           });
+                        });
+                        if (liveSteps.length > 0) {
+                           liveSteps[liveSteps.length - 1].completed = accumulatedContent.includes('</think>') || accumulatedContent.includes('</thinking>');
+                        }
+                      }
+                    }
+                    
+                    // If still empty (e.g. only "Here's a thinking process"), add a generic one
+                    if (liveSteps.length === 0) {
+                      liveSteps.push({
+                        id: 's1',
+                        stepNumber: 1,
+                        title: 'Think',
+                        detail: thinkBody.trim(),
+                        completed: accumulatedContent.includes('</think>') || accumulatedContent.includes('</thinking>'),
+                      });
+                    }
+                  }
+
                   if (liveSteps.length > 0) {
                     const existingSearchStep = currentThinkingProcess.steps.find((s: any) => s.id === 'search-step');
                     if (existingSearchStep) {
@@ -470,10 +533,19 @@ export default function App({ onClose }: { onClose?: () => void }) {
                   }
                 }
 
-                const displayContent = accumulatedContent.replace(/<thinking>[\s\S]*?(?:<\/thinking>|$)/gi, '').trim();
+                // Strip thinking tags if present; hide both closed and any trailing unclosed thinking tag text from visible bubble
+                let displayContent = accumulatedContent;
+                // 1. Remove all fully closed think blocks
+                displayContent = displayContent.replace(/<(?:thinking|think)>[\s\S]*?<\/(?:thinking|think)>/gi, '');
+                // 2. Remove any trailing unclosed think block
+                displayContent = displayContent.replace(/<(?:thinking|think)>[\s\S]*$/gi, '');
+                displayContent = displayContent.trim();
+
+                // Strip any stray inner tags from displayContent
+                displayContent = displayContent.replace(/<\/?(?:thinking|think|reflect|perceive|frame|tension|move|structure|genealogy|deconstruction|overcoming|materialist_basis|dialectical_tension|praxis|substance_analysis|affect_mapping|rational_intuition|negative_dialectics|immanent_critique|resolution)>/gi, '').trim();
 
                 updateAssistantMessage(targetChatId, assistantMessageId, {
-                  content: displayContent,
+                  content: displayContent || accumulatedContent,
                   thinkingProcess: { ...currentThinkingProcess },
                 });
               }
@@ -485,8 +557,8 @@ export default function App({ onClose }: { onClose?: () => void }) {
       }
 
       // Tier 2: Fallback to /api/bots/act or /api/philosopher-bot if SSE returned empty
-      const cleanText = accumulatedContent.replace(/<thinking>[\s\S]*?(?:<\/thinking>|$)/gi, '').trim();
-      if (!cleanText) {
+      const finalCleanContent = accumulatedContent.replace(/<(?:thinking|think)>[\s\S]*?(?:<\/(?:thinking|think)>|$)/gi, '').replace(/<(?:thinking|think)>[\s\S]*$/gi, '').replace(/<\/?(?:thinking|think|reflect|perceive|frame|tension|move|structure|genealogy|deconstruction|overcoming|materialist_basis|dialectical_tension|praxis|substance_analysis|affect_mapping|rational_intuition|negative_dialectics|immanent_critique|resolution)>/gi, '').trim();
+      if (!finalCleanContent && !backendError) {
         let res: Response | null = null;
         try {
           res = await fetch('/api/bots/act', {
@@ -551,6 +623,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
               isStreaming: false,
               isTypingDone: true,
             });
+            isStreamComplete = true;
             return;
           } else if (res.body) {
             const reader = res.body.getReader();
@@ -605,10 +678,10 @@ export default function App({ onClose }: { onClose?: () => void }) {
               }
             }
           }
+        } else {
+          throw new Error('All fallbacks failed');
         }
       }
-
-      const finalCleanContent = accumulatedContent.replace(/<thinking>[\s\S]*?(?:<\/thinking>|$)/gi, '').trim();
 
       // OS Intent Detection
       let detectedAction: OSActionCardType | undefined;
@@ -667,24 +740,43 @@ export default function App({ onClose }: { onClose?: () => void }) {
         visibleMessageText = `İstediğiniz **"${extractedArtifacts[0].title}"** başlıklı detaylı belge oluşturuldu (v${extractedArtifacts[0].version || 1}). İncelemek için aşağıdaki belge kartına veya sol menüdeki belgeye tıklayabilirsiniz.`;
       }
 
-      updateAssistantMessage(targetChatId, assistantMessageId, {
-        content: visibleMessageText || finalCleanContent || 'Yanıt oluşturuldu.',
-        thinkingProcess: { ...currentThinkingProcess },
-        artifacts: extractedArtifacts.length > 0 ? extractedArtifacts : undefined,
-        isStreaming: false,
-        isTypingDone: true,
-        osAction: detectedAction,
-      });
+      // If we had a backend error, do not overwrite the assistant message again with empty content!
+      if (!backendError) {
+        updateAssistantMessage(targetChatId, assistantMessageId, {
+          content: visibleMessageText || finalCleanContent || 'Yanıt oluşturuldu.',
+          thinkingProcess: { ...currentThinkingProcess },
+          artifacts: extractedArtifacts.length > 0 ? extractedArtifacts : undefined,
+          isStreaming: false,
+          isTypingDone: true,
+          osAction: detectedAction,
+        });
+      }
 
       if (extractedArtifacts.length > 0) {
         setActiveArtifact(extractedArtifacts[0]);
         // Do NOT force-open side panel automatically; let user open manually via card/sidebar!
       }
+      
+      isStreamComplete = true; // successfully reached the end!
     } catch (err: any) {
-      if (err.name !== 'AbortError') {
-        console.error('Streaming error:', err);
+      if (err.name === 'AbortError') {
+        console.log('[ClaudeWorkspaceChat] Request aborted by user/system.');
+      } else if (!isStreamComplete) {
+        console.error('[ClaudeWorkspaceChat] Error during streaming:', err);
+        
+        let displayContent = accumulatedContent;
+        if (displayContent) {
+          displayContent = displayContent.replace(/<(?:thinking|think)>[\s\S]*?<\/(?:thinking|think)>/gi, '');
+          displayContent = displayContent.replace(/<(?:thinking|think)>[\s\S]*$/gi, '');
+          displayContent = displayContent.replace(/<\/?(?:thinking|think|reflect|perceive|frame|tension|move|structure|genealogy|deconstruction|overcoming|materialist_basis|dialectical_tension|praxis|substance_analysis|affect_mapping|rational_intuition|negative_dialectics|immanent_critique|resolution)>/gi, '').trim();
+        }
+
+        const errorMessage = displayContent 
+          ? displayContent 
+          : 'Üzgünüm, yanıt oluşturulurken bir bağlantı hatası meydana geldi. (API sağlayıcınız limiti doldurdu)';
+
         updateAssistantMessage(targetChatId, assistantMessageId, {
-          content: 'Üzgünüm, yanıt oluşturulurken bir bağlantı hatası meydana geldi.',
+          content: errorMessage,
           isStreaming: false,
           isTypingDone: true,
         });

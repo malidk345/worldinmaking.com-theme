@@ -184,6 +184,16 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
+### Entry 054 - Fallback Chain Optimization & Chat UI Stream Fix
+- **Date:** 2026-08-12
+- **AI Agent:** Antigravity (Gemini 3.6 Flash)
+- **Summary:** Moved the OpenRouter provider to the bottom of the fallback chain in `invokeStreamWithKeyRotation` and `invokeWithKeyRotation` to avoid hitting OpenRouter's 402 Payment Required upfront and slowing down valid Groq Qwen responses. Also fixed a false positive `[Bağlantı koptu]` warning that appeared when streams completed perfectly but the frontend over-aggressively dropped into Tier 2 fallback logic.
+- **Modified Files:**
+  - `src/components/ClaudeWorkspaceChat/index.tsx`
+  - `src/lib/chat-bots/langchain-pipeline.ts`
+- **Verification:** `pnpm typecheck:shell` passed cleanly with 0 gated errors.
+- **Handoff:** System now defaults to Groq Qwen (2048 context) quickly without OpenRouter latency overhead, and handles clean stream completions without appending UI error strings.
+
 ### Entry 053 - Standalone Claude Workspace Chatbot App Integration (TSK-43)
 - **Date:** 2026-08-11
 - **AI Agent:** Antigravity (Gemini 3.6 Flash)
