@@ -125,7 +125,13 @@ const getStepIconAndStyle = (step: ThinkingStep | { title: string; detail?: stri
 };
 
 export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, isLive = false }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(isLive);
+
+  // Auto-expand during live streaming, auto-collapse when done
+  React.useEffect(() => {
+    setIsOpen(isLive);
+  }, [isLive]);
+
   const durationSeconds = thinking?.durationSeconds || 1.2;
 
   // Build full step list including "Done" step if completed
@@ -155,6 +161,15 @@ export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, isLive =
       completed: true,
     });
   }
+
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom while live
+  React.useEffect(() => {
+    if (isLive && scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [thinking, isLive, isOpen]);
 
   return (
     <div className="my-2 select-none font-sans text-secondary w-full max-w-full">
@@ -191,7 +206,7 @@ export const ThinkingBlock: React.FC<ThinkingBlockProps> = ({ thinking, isLive =
             transition={{ duration: 0.2, ease: [0.25, 0.9, 0.3, 1] }}
             className="overflow-hidden min-w-0"
           >
-            <div className="flex flex-col pl-1 pt-2 pb-1">
+            <div ref={scrollRef} className="flex flex-col pl-1 pt-2 pb-1 max-h-[140px] overflow-y-auto scrollbar-thin scrollbar-thumb-stone-300 dark:scrollbar-thumb-stone-600 pr-1">
               {displaySteps.map((step, index) => {
                 const isLast = index === displaySteps.length - 1;
                 const isCurrentActive = isLive && isLast;
