@@ -94,18 +94,19 @@ export default function App({ onClose }: { onClose?: () => void }) {
   // Subscribe to windows via dedicated context so we re-render when windows change
   const { windows: appWindows } = useAppWindows();
   const activeNotebookMeta = React.useMemo(() => {
-    const notebookWindows = appWindows.filter(w => w.path?.startsWith('/notebooks/'));
+    const notebookWindows = appWindows.filter(w => w.path?.startsWith('/notebooks'));
     if (notebookWindows.length === 0) return null;
-    // Pick the one with the highest zIndex (most recently interacted)
     const top = notebookWindows.reduce((prev, cur) =>
       (cur.zIndex ?? 0) > (prev.zIndex ?? 0) ? cur : prev
     );
-    const shortId = top.path.replace('/notebooks/', '');
+    // Extract id from /notebooks?id=xxx or /notebooks/short_id
+    const idMatch = top.path.match(/[?&]id=([^&]+)/) || top.path.match(/\/notebooks\/(.+)/);
+    const shortId = idMatch?.[1] || '';
     const notebooks = getNotebooks();
-    const nb = notebooks.find(n => n.short_id === shortId || n.id === shortId);
+    const nb = shortId ? notebooks.find(n => n.short_id === shortId || n.id === shortId) : null;
     if (nb) return { title: nb.title || 'Notebook', path: top.path };
-    if (top.title) return { title: top.title, path: top.path };
-    return null;
+    if (top.title && top.title !== 'Notebooks') return { title: top.title, path: top.path };
+    return { title: 'Notebook', path: top.path };
   }, [appWindows]);
 
 
