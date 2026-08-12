@@ -972,45 +972,31 @@ export default function App({ onClose }: { onClose?: () => void }) {
         {/* Chat Stream & Conversation Body */}
         <main className="flex-1 overflow-y-auto scroll-smooth relative">
           {!activeChat || activeChat.messages.length === 0 ? (
-            /* Empty Landing Screen in Official Claude UI Style (Screenshot 1) */
-            <div className="flex h-full flex-col items-center justify-center p-6 text-center max-w-xl mx-auto space-y-6 select-none">
-              {/* Terracotta Claude Star Logo */}
-              <div className="flex items-center justify-center text-[#1E3A8A]">
-                <ClaudeSparkIcon className="h-12 w-12 stroke-[1.5]" />
-              </div>
-
-              <div className="space-y-2">
-                <h1 className="text-2xl sm:text-3xl font-serif font-normal text-primary tracking-tight">
-                  what shall we explore?
-                </h1>
-              </div>
-
-              {/* Skill Pill Chips (Dynamic quickQuestions or Standard Presets) */}
-              <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
-                {(chatParams?.quickQuestions && chatParams.quickQuestions.length > 0
-                  ? chatParams.quickQuestions.map((q) => ({ label: q.length > 32 ? `${q.slice(0, 30)}…` : q, prompt: q, icon: Sparkles }))
-                  : [
-                      { label: 'PostHog WP', prompt: 'bu kod posthog.com sitesinin css kodu ve ben bu siteye benzeyen bir websitesi yapmak istiyorum wordpresste', icon: Code },
-                      { label: 'Write', prompt: 'Bana etkileyici bir makale taslağı yaz.', icon: Edit3 },
-                      { label: 'Learn', prompt: 'Kuantum bilgisayarların çalışma prensibini anlat.', icon: GraduationCap },
-                      { label: 'Code', prompt: 'React ve TypeScript ile temiz bir hook yaz.', icon: Code },
-                      { label: 'Life stuff', prompt: 'Haftalık dengeli bir beslenme ve egzersiz planı oluştur.', icon: Coffee },
-                      { label: "ai's pick", prompt: 'give me an interesting philosophical question to think about today.', icon: Lightbulb },
-                    ]
-                ).map((chip, idx) => {
-                  const ChipIcon = chip.icon;
-                  return (
-                    <button
-                      key={idx}
-                      onClick={() => handleSendMessage(chip.prompt, [])}
-                      className="flex items-center gap-2 rounded-full border border-primary bg-bg-primary/80 px-3.5 py-1.5 text-xs font-medium text-secondary hover:bg-accent hover:border-primary transition-all active:scale-95 shadow-2xs"
-                    >
-                      <ChipIcon className="h-3.5 w-3.5 text-muted shrink-0" />
-                      <span>{chip.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
+            /* Centered Input Screen when empty (no landing text or chips) */
+            <div className="flex h-full w-full flex-col items-center justify-center p-4 sm:p-6 max-w-3xl mx-auto select-none">
+              <motion.div
+                layout
+                layoutId="chat-input-container"
+                transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                className="w-full pointer-events-auto"
+              >
+                <ChatInput
+                  onSendMessage={handleSendMessage}
+                  onStopStreaming={handleStopStreaming}
+                  isStreaming={isStreaming}
+                  thinkingBudget={thinkingBudget}
+                  onChangeThinkingBudget={setThinkingBudget}
+                  webSearchEnabled={webSearchEnabled}
+                  onToggleWebSearch={() => setWebSearchEnabled(!webSearchEnabled)}
+                  selectedStylePreset={selectedStylePreset}
+                  onChangeStylePreset={setSelectedStylePreset}
+                  onScrollToBottom={scrollToBottom}
+                  showScrollToBottom={false}
+                  models={models}
+                  selectedModelId={selectedModelId}
+                  onSelectModel={handleSelectModel}
+                />
+              </motion.div>
             </div>
           ) : (
             /* Message List - Smooth Flowing Flow with Generous Bottom Padding */
@@ -1037,25 +1023,34 @@ export default function App({ onClose }: { onClose?: () => void }) {
           )}
         </main>
 
-        {/* Floating Input Area with Soft Gradient Fade */}
-        <div className="absolute bottom-0 inset-x-0 z-20 pointer-events-none bg-gradient-to-t from-primary/80 via-primary/40 to-transparent pt-8 pb-3">
-          <ChatInput
-            onSendMessage={handleSendMessage}
-            onStopStreaming={handleStopStreaming}
-            isStreaming={isStreaming}
-            thinkingBudget={thinkingBudget}
-            onChangeThinkingBudget={setThinkingBudget}
-            webSearchEnabled={webSearchEnabled}
-            onToggleWebSearch={() => setWebSearchEnabled(!webSearchEnabled)}
-            selectedStylePreset={selectedStylePreset}
-            onChangeStylePreset={setSelectedStylePreset}
-            onScrollToBottom={scrollToBottom}
-            showScrollToBottom={activeChat && activeChat.messages.length > 2}
-            models={models}
-            selectedModelId={selectedModelId}
-            onSelectModel={handleSelectModel}
-          />
-        </div>
+        {/* Floating Input Area at Bottom (Only when messages exist) */}
+        {activeChat && activeChat.messages.length > 0 && (
+          <div className="absolute bottom-0 inset-x-0 z-20 pointer-events-none bg-gradient-to-t from-primary/80 via-primary/40 to-transparent pt-8 pb-3">
+            <motion.div
+              layout
+              layoutId="chat-input-container"
+              transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+              className="w-full pointer-events-auto"
+            >
+              <ChatInput
+                onSendMessage={handleSendMessage}
+                onStopStreaming={handleStopStreaming}
+                isStreaming={isStreaming}
+                thinkingBudget={thinkingBudget}
+                onChangeThinkingBudget={setThinkingBudget}
+                webSearchEnabled={webSearchEnabled}
+                onToggleWebSearch={() => setWebSearchEnabled(!webSearchEnabled)}
+                selectedStylePreset={selectedStylePreset}
+                onChangeStylePreset={setSelectedStylePreset}
+                onScrollToBottom={scrollToBottom}
+                showScrollToBottom={activeChat.messages.length > 2}
+                models={models}
+                selectedModelId={selectedModelId}
+                onSelectModel={handleSelectModel}
+              />
+            </motion.div>
+          </div>
+        )}
       </div>
 
       {/* Artifacts Canvas Side Panel */}
