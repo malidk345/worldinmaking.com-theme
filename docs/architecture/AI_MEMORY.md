@@ -184,14 +184,15 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
-### Entry 055 - Modernized Universal Persona Meta-Prompt (baseCore)
+### Entry 055 - Modernized Universal Persona Meta-Prompt (baseCore) & Tone Intimacy
 - **Date:** 2026-08-12
 - **AI Agent:** Antigravity (Gemini 3.6 Flash)
-- **Summary:** Replaced the generic `baseCore` in `src/lib/bots/fluid-prompts.ts` with a much stronger, 21st-century-aware meta-prompt designed by the user. The new prompt enforces a direct answer first, eliminates anachronistic roleplay ("I am from the 19th century"), and requires the AI to speak as a contemporary philosophical interlocutor applying their characteristic lens only when it actually clarifies the issue.
+- **Summary:** Replaced the generic `baseCore` in `src/lib/bots/fluid-prompts.ts` with a much stronger, 21st-century-aware meta-prompt designed by the user. Added a critical `TONE & INTIMACY` section to mandate informal pronouns (e.g., "sen"), intellectual camaraderie, and conversational gestures ("Look,", "Wait,"), breaking the stiff, academic "siz" barrier across all bots.
 - **Modified Files:**
   - `src/lib/bots/fluid-prompts.ts`
 - **Verification:** `pnpm typecheck:shell` passed cleanly.
-- **Handoff:** All 16 bots in the Persona Engine now inherit this highly pragmatic, zero-theater foundational instruction.
+- **Handoff:** All 16 bots in the Persona Engine now inherit this highly pragmatic, intimate, and modern conversational framework.
+
 
 ### Entry 054 - Fallback Chain Optimization & Chat UI Stream Fix
 - **Date:** 2026-08-12
