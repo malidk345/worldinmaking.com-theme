@@ -101,25 +101,51 @@ export async function searchDuckDuckGo(query: string): Promise<string> {
             if (res.ok) {
                 const html = (await res.text()).slice(0, 500_000)
 
-                // Match snippet blocks
-                const snippetRegex = /<a class="[a-z0-9_-]*result__snippet[^>]*>([\s\S]*?)<\/a>/g
+                const decodeHtml = (str: string) => {
+                    return str.replace(/&#x27;/g, "'")
+                              .replace(/&amp;/g, '&')
+                              .replace(/&quot;/g, '"')
+                              .replace(/&lt;/g, '<')
+                              .replace(/&gt;/g, '>');
+                }
 
-                let match
+                // Split by result chunks
+                const chunks = html.split('<h2 class="result__title">').slice(1);
+                
                 let count = 0
-                while ((match = snippetRegex.exec(html)) !== null && count < 3) {
-                    const text = match[1].replace(/<[^>]+>/g, '').trim()
-                    if (text && text.length > 15) {
-                        results.push({
-                            title: `Web Result ${count + 1}`,
-                            url: 'https://duckduckgo.com',
-                            snippet: text,
-                            source: 'DuckDuckGo Web',
-                        })
-                        count++
+                for (const chunk of chunks) {
+                    if (count >= 5) break; // Fetch up to 5 web results
+                    
+                    const titleMatch = chunk.match(/class="result__a" href="([^"]+)">([^<]+)<\/a>/);
+                    const snippetMatch = chunk.match(/class="result__snippet"[^>]*>([\s\S]*?)<\/a>/);
+                    
+                    if (titleMatch && snippetMatch) {
+                        const url = titleMatch[1];
+                        // If it's a DDG redirect, extract the actual URL
+                        let finalUrl = url;
+                        if (url.startsWith('//duckduckgo.com/l/?uddg=')) {
+                            finalUrl = decodeURIComponent(url.split('uddg=')[1].split('&')[0]);
+                        } else if (!url.startsWith('http')) {
+                            finalUrl = 'https:' + url;
+                        }
+
+                        const title = decodeHtml(titleMatch[2].trim());
+                        const snippet = decodeHtml(snippetMatch[1].replace(/<[^>]+>/g, '').trim());
+                        
+                        if (title && snippet && snippet.length > 15) {
+                            results.push({
+                                title,
+                                url: finalUrl,
+                                snippet,
+                                source: 'DuckDuckGo Web',
+                            })
+                            count++
+                        }
                     }
                 }
             }
-        } catch {
+        } catch (e) {
+            console.error('[WebSearch] DDG Lite Scraper error:', e)
             /* Fallback completed */
         }
     }

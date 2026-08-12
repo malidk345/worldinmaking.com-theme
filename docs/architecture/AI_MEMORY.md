@@ -184,6 +184,15 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 
 ## 5. AI Change History & Log
 
+### Entry 056 - DuckDuckGo Web Scraper Engine Fix
+- **Date:** 2026-08-12
+- **AI Agent:** Antigravity (Gemini 3.6 Flash)
+- **Summary:** Investigated and fixed the Tier 3 DuckDuckGo HTML Lite fallback scraper in `src/lib/bots/web-search.ts`. The previous Regex-based scraper was failing to extract real URLs (it hardcoded `https://duckduckgo.com` for all results) and failed to extract correct titles. Replaced it with a robust chunk-based HTML parser that properly extracts the target URL, decodes DuckDuckGo redirects (`//duckduckgo.com/l/?uddg=`), decodes HTML entities, and extracts up to 5 real generic web results to feed into the RAG pipeline.
+- **Modified Files:**
+  - `src/lib/bots/web-search.ts`
+- **Verification:** Tested locally with a scratch script; `pnpm typecheck:shell` passed cleanly.
+- **Handoff:** The AI's `<search>` tool will now see genuine source URLs and accurate titles instead of generic "Web Result X" placeholders, dramatically improving contextual retrieval.
+
 ### Entry 055 - Modernized Universal Persona Meta-Prompt (baseCore) & Tone Intimacy
 - **Date:** 2026-08-12
 - **AI Agent:** Antigravity (Gemini 3.6 Flash)
