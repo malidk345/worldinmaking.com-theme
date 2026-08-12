@@ -85,17 +85,16 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Center: Dynamic Context Bar */}
         <div className="flex-1 flex items-center justify-center min-w-0 px-2">
           {activeNotebookMeta ? (
-            /* ── Notebook Context: show notebook title as a link ── */
+            /* ── Notebook Context: show notebook path link inside a box ── */
             <a
               href={activeNotebookMeta.path}
-              className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg hover:bg-accent transition-all group max-w-[280px]"
-              title={`Notebook: ${activeNotebookMeta.title}`}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-primary bg-bg-primary hover:bg-accent text-xs font-mono text-secondary hover:text-primary transition-all max-w-[220px] sm:max-w-[320px] shadow-2xs group shrink-0"
+              title={activeNotebookMeta.path}
             >
-              <BookOpen className="h-3.5 w-3.5 text-secondary shrink-0" />
-              <span className="truncate text-xs sm:text-[13px] font-medium text-primary tracking-tight">
-                {activeNotebookMeta.title}
+              <ExternalLink className="h-3 w-3 text-muted group-hover:text-primary transition-colors shrink-0" />
+              <span className="truncate font-mono text-[11px] tracking-tight">
+                {activeNotebookMeta.path}
               </span>
-              <ExternalLink className="h-3 w-3 text-muted opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
             </a>
           ) : showChatTitle ? (
             /* ── Chat Title with settings dropdown ── */
