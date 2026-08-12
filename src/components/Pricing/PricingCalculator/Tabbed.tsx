@@ -267,12 +267,12 @@ export default function Tabbed() {
         },
     } = useStaticQuery(allProductsData)
     const [analyticsData, setAnalyticsData] = useState(
-        analyticsSliders.reduce((acc, slider) => {
-            slider.types.forEach(({ type, enhanced }) => {
-                acc[type] = { volume: 0, cost: 0, enhanced: enhanced || false }
-            })
-            return acc
-        }, [])
+        analyticsSliders.reduce((acc: Record<string, any>, slider) => {
+        slider.types.forEach(({ type, enhanced }) => {
+            acc[type] = { volume: 0, cost: 0, enhanced: enhanced || false }
+        })
+        return acc
+    }, {})
     )
     const platform = billingProducts.find((product) => product.type === 'platform_and_support')
     const [activeTab, setActiveTab] = useState(0)
