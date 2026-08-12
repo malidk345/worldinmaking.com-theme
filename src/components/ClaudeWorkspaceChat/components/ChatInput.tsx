@@ -215,13 +215,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
         {/* Bottom Toolbar Row (Exact Screenshot 1:1 Layout) */}
         <div className="mt-2.5 flex items-center justify-between gap-2 pt-0.5">
-          {/* Left Side: + Icon & Sonnet 5 Medium Dropdown */}
-          <div className="flex items-center gap-3 sm:gap-4">
+          {/* Left Side: + Icon & Bot Selector */}
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0 overflow-hidden">
             {/* (+) Attachment Button */}
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="p-1 text-primary hover:text-primary transition-colors focus:outline-none cursor-pointer"
+              className="p-1 text-primary hover:text-primary transition-colors focus:outline-none cursor-pointer shrink-0"
               title="Add attachment"
             >
               <Plus className="h-5 w-5 stroke-[1.8]" />
@@ -238,7 +238,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               renderButtonContent={() => {
                 const activeModel = models.find((m) => m.id === selectedModelId) || models[0];
                 return (
-                  <span className="inline-flex items-center gap-1.5 text-[15px] font-sans text-primary hover:opacity-80 transition-opacity whitespace-nowrap">
+                  <span className="inline-flex items-center gap-1.5 text-[14px] sm:text-[15px] font-sans text-primary hover:opacity-80 transition-opacity whitespace-nowrap min-w-0">
                     <div className="size-4.5 rounded-full overflow-hidden bg-accent shrink-0 border border-primary/40 flex items-center justify-center font-bold text-white text-[8px]">
                       {activeModel?.avatarUrl ? (
                         <img src={activeModel.avatarUrl} alt={activeModel.name} className="size-full object-cover" />
@@ -248,7 +248,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                         </span>
                       )}
                     </div>
-                    <span className="font-semibold text-primary tracking-tight">{activeModel?.name}</span>
+                    <span className="font-semibold text-primary tracking-tight truncate max-w-[100px] xs:max-w-[160px] sm:max-w-none">{activeModel?.name}</span>
                     <ChevronDown className="h-3.5 w-3.5 text-muted stroke-[2] ml-0.5 shrink-0 inline-block" />
                   </span>
                 );
