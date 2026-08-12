@@ -92,7 +92,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div
           ref={scrollRef}
           onWheel={handleWheel}
-          className="flex-1 flex items-center gap-1.5 overflow-x-auto scrollbar-none min-w-0 py-1 px-1 touch-pan-x scroll-smooth"
+          className="flex-1 flex items-center gap-1.5 overflow-x-auto min-w-0 py-1 px-1 touch-pan-x scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         >
           <AnimatePresence mode="popLayout" initial={false}>
             {/* 🌐 Active Browser Tab (Notebook URL) */}
