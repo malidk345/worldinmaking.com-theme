@@ -114,7 +114,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
           </div>
 
           <div className="relative max-w-[85%] rounded-[18px] bg-white border border-primary px-4 py-3 text-primary text-[14.5px] leading-relaxed font-claude-sans shadow-2xs hover:bg-white transition-colors">
-            <p className="whitespace-pre-wrap break-words">{message.content}</p>
+            <p className="whitespace-pre-wrap break-words m-0 p-0">{message.content.trim()}</p>
           </div>
         </div>
       ) : (

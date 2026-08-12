@@ -187,10 +187,12 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 ### Entry 058 - User Message Bubble Layout Optimization
 - **Date:** 2026-08-12
 - **AI Agent:** Antigravity (Gemini 3.6 Flash)
-- **Summary:** Fixed an annoying UI layout issue where an empty vertical gap appeared beneath the user's chat messages. This was caused by the action icons (Edit/Copy) occupying a full flex row beneath the message bubble. Redesigned the flex layout to place these action icons horizontally to the left of the user's message bubble (aligned to the bottom) and visible only on hover, eliminating the dead vertical space entirely.
+- **Summary:** Fixed an annoying UI layout issue where an empty vertical gap appeared beneath the user's chat messages by moving the Edit/Copy action icons to the left side of the bubble. Additionally, fixed an inner bubble padding issue where trailing newlines or default `<p>` margins caused empty space inside the white user bubble. Handled by chaining `.trim()` to the message content and applying `m-0 p-0` explicitly to the text element.
 - **Modified Files:**
   - `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`
 - **Verification:** `pnpm typecheck:shell` passed cleanly.
+
+
 
 ### Entry 057 - ClaudeWorkspaceChat Streaming Think Leak Fix
 - **Date:** 2026-08-12
