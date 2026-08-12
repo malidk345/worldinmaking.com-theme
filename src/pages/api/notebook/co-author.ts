@@ -28,7 +28,7 @@ const TASK_TYPE_BY_MODE: Record<string, TaskType> = {
     expand: 'paper_section',
     debate: 'cross_examine',
     synthesize: 'synthesis',
-    chat: 'chat',
+    chat: 'community_reply',
 }
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
