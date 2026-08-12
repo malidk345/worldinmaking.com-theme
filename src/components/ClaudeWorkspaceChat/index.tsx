@@ -77,6 +77,8 @@ export default function App({ onClose }: { onClose?: () => void }) {
 
   // App Context for openNewChat params
   const app = useApp();
+  const { chatParams, setChatParams } = app;
+  const processedInitialQuestionRef = useRef<string | null>(null);
   // Subscribe to windows via dedicated context so we re-render when windows change
   const { windows: appWindows } = useAppWindows();
 
@@ -128,44 +130,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
   const [webSearchEnabled, setWebSearchEnabled] = useState<boolean>(false);
   const [selectedStylePreset, setSelectedStylePreset] = useState<StylePresetId>('default');
 
-  // Handle incoming ChatParams (initialQuestion, context, quickQuestions) from openNewChat
-  useEffect(() => {
-    if (!chatParams) return;
 
-    if (chatParams.initialQuestion) {
-      const q = chatParams.initialQuestion;
-      const attachments: FileAttachment[] = [];
-
-      // Format codeSnippet into attachment if present
-      if (chatParams.codeSnippet) {
-        attachments.push({
-          id: `code-${Date.now()}`,
-          name: `Snippet (${chatParams.codeSnippet.language || 'code'})`,
-          size: `${chatParams.codeSnippet.code.length} bytes`,
-          type: 'code',
-          content: chatParams.codeSnippet.code,
-        });
-      }
-
-      // Format page context into attachment if present
-      if (chatParams.context && chatParams.context.length > 0) {
-        const pageCtx = chatParams.context.find((c) => c.type === 'page');
-        if (pageCtx && pageCtx.value) {
-          attachments.push({
-            id: `ctx-${Date.now()}`,
-            name: `Page Context (${pageCtx.value.label || 'Page'})`,
-            size: 'Context',
-            type: 'text',
-            content: `Page Path: ${pageCtx.value.path || ''}\nPage Title: ${pageCtx.value.label || ''}`,
-          });
-        }
-      }
-
-      // Consume initialQuestion & trigger message
-      setChatParams((prev) => (prev ? { ...prev, initialQuestion: undefined } : null));
-      handleSendMessage(q, attachments);
-    }
-  }, [chatParams]);
 
 
   // Fetch live philosopher bot profiles from Supabase via /api/philosopher-bots
@@ -864,6 +829,44 @@ export default function App({ onClose }: { onClose?: () => void }) {
     }
   };
 
+  // Handle incoming ChatParams (initialQuestion, context, quickQuestions) from openNewChat
+  useEffect(() => {
+    if (!chatParams || !chatParams.initialQuestion) return;
+    if (processedInitialQuestionRef.current === chatParams.initialQuestion) return;
+
+    const q = chatParams.initialQuestion;
+    processedInitialQuestionRef.current = q;
+
+    const attachments: FileAttachment[] = [];
+
+    if (chatParams.codeSnippet) {
+      attachments.push({
+        id: `code-${Date.now()}`,
+        name: `Snippet (${chatParams.codeSnippet.language || 'code'})`,
+        size: `${chatParams.codeSnippet.code.length} bytes`,
+        type: 'code',
+        content: chatParams.codeSnippet.code,
+      });
+    }
+
+    if (chatParams.context && chatParams.context.length > 0) {
+      const pageCtx = chatParams.context.find((c) => c.type === 'page');
+      if (pageCtx && pageCtx.value) {
+        attachments.push({
+          id: `ctx-${Date.now()}`,
+          name: `Page Context (${pageCtx.value.label || 'Page'})`,
+          size: 'Context',
+          type: 'text',
+          content: `Page Path: ${pageCtx.value.path || ''}\nPage Title: ${pageCtx.value.label || ''}`,
+        });
+      }
+    }
+
+    setChatParams((prev) => (prev ? { ...prev, initialQuestion: undefined } : null));
+    handleSendMessage(q, attachments);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatParams?.initialQuestion]);
+
   const handleRenameChat = (id: string, newTitle: string) => {
     setChats((prev) =>
       prev.map((c) => (c.id === id ? { ...c, title: newTitle, updatedAt: new Date().toISOString() } : c))
@@ -1104,7 +1107,8 @@ export default function App({ onClose }: { onClose?: () => void }) {
 }
 
 export function ClaudeWorkspaceChatPanel() {
-  const { isClaudeChatOpen, setIsClaudeChatOpen, taskbarRef } = useApp();
+  const app = useApp();
+  const { isClaudeChatOpen, setIsClaudeChatOpen, taskbarRef } = app;
   const { siteSettings } = useAppSettings();
   const panelRef = useRef<HTMLDivElement | null>(null);
 
