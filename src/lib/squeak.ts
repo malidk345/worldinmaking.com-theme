@@ -188,9 +188,6 @@ export function installSqueakFetchGuard(): () => void {
         }
 
         if (shouldBlockFetch(urlStr)) {
-            if (process.env.NODE_ENV === 'development') {
-                console.debug('[wim] blocked legacy Squeak fetch:', urlStr.slice(0, 140))
-            }
             return emptyResponse()
         }
 
