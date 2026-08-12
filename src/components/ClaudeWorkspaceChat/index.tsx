@@ -91,18 +91,24 @@ export default function App({ onClose }: { onClose?: () => void }) {
     return '';
   }, [app?.focusedWindow?.path]);
 
-  // Derive active notebook metadata (title + path) for Header context bar
+  // Derive active notebook metadata: find the notebook window with highest z-index
+  // (don't rely on focusedWindow since clicking the chat panel shifts focus away from the notebook)
   const activeNotebookMeta = React.useMemo(() => {
-    if (app?.focusedWindow?.path.startsWith('/notebooks/')) {
-      const shortId = app.focusedWindow.path.replace('/notebooks/', '');
-      const notebooks = getNotebooks();
-      const nb = notebooks.find(n => n.short_id === shortId || n.id === shortId);
-      if (nb) {
-        return { title: nb.title || 'Notebook', path: app.focusedWindow.path };
-      }
-    }
+    const windows: any[] = (app as any)?.windows || [];
+    const notebookWindows = windows.filter((w: any) => w?.path?.startsWith('/notebooks/'));
+    if (notebookWindows.length === 0) return null;
+    // Pick the one with highest zIndex (most recently focused)
+    const top = notebookWindows.reduce((prev: any, cur: any) =>
+      (cur.zIndex ?? 0) > (prev.zIndex ?? 0) ? cur : prev
+    );
+    const shortId = top.path.replace('/notebooks/', '');
+    const notebooks = getNotebooks();
+    const nb = notebooks.find((n: any) => n.short_id === shortId || n.id === shortId);
+    if (nb) return { title: nb.title || 'Notebook', path: top.path };
+    // Fallback: use window title if notebook not found in storage
+    if (top.title) return { title: top.title, path: top.path };
     return null;
-  }, [app?.focusedWindow?.path]);
+  }, [(app as any)?.windows]);
 
   // Active chat state
   const [models, setModels] = useState<ModelOption[]>(AVAILABLE_MODELS);
