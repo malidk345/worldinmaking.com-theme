@@ -263,61 +263,63 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
           )}
 
           {/* Action Icons Row matching Claude: Copy, Play, Thumbs Up, Thumbs Down */}
-          <div className="pt-2 flex items-center gap-3 text-muted font-sans">
-            <button
-              onClick={handleCopy}
-              className="p-1 hover:text-primary transition-colors text-xs flex items-center gap-1 cursor-pointer"
-              title="Metni Kopyala"
-            >
-              {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
-            </button>
-
-            {!isUser && !message.isStreaming && (
+          {!isTyping && message.isTypingDone && (
+            <div className="pt-2 flex items-center gap-3 text-muted font-sans">
               <button
-                onClick={() => {
-                  window.dispatchEvent(
-                    new CustomEvent('wimNotebookInsertText', {
-                      detail: { text: message.content, mode: 'append' },
-                    })
-                  )
-                }}
-                className="p-1 hover:text-primary transition-colors cursor-pointer text-xs flex items-center gap-1"
-                title="Not Defterine Ekle (Insert)"
+                onClick={handleCopy}
+                className="p-1 hover:text-primary transition-colors text-xs flex items-center gap-1 cursor-pointer"
+                title="Metni Kopyala"
               >
-                <ArrowDownToLine className="h-4 w-4" />
+                {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
               </button>
-            )}
 
-            <button
-              onClick={handleSpeak}
-              className={`p-1 hover:text-primary transition-colors text-xs cursor-pointer ${
-                isSpeaking ? 'text-amber-600' : ''
-              }`}
-              title="Sesli Oynat"
-            >
-              {isSpeaking ? <Square className="h-4 w-4 fill-current" /> : <Play className="h-4 w-4" />}
-            </button>
+              {!isUser && !message.isStreaming && (
+                <button
+                  onClick={() => {
+                    window.dispatchEvent(
+                      new CustomEvent('wimNotebookInsertText', {
+                        detail: { text: message.content, mode: 'append' },
+                      })
+                    )
+                  }}
+                  className="p-1 hover:text-primary transition-colors cursor-pointer text-xs flex items-center gap-1"
+                  title="Not Defterine Ekle (Insert)"
+                >
+                  <ArrowDownToLine className="h-4 w-4" />
+                </button>
+              )}
 
-            <button
-              onClick={() => setLiked(liked === true ? null : true)}
-              className={`p-1 hover:text-primary transition-colors cursor-pointer ${
-                liked === true ? 'text-emerald-600' : ''
-              }`}
-              title="Beğendim"
-            >
-              <ThumbsUp className="h-4 w-4" />
-            </button>
+              <button
+                onClick={handleSpeak}
+                className={`p-1 hover:text-primary transition-colors text-xs cursor-pointer ${
+                  isSpeaking ? 'text-amber-600' : ''
+                }`}
+                title="Sesli Oynat"
+              >
+                {isSpeaking ? <Square className="h-4 w-4 fill-current" /> : <Play className="h-4 w-4" />}
+              </button>
 
-            <button
-              onClick={() => setLiked(liked === false ? null : false)}
-              className={`p-1 hover:text-primary transition-colors cursor-pointer ${
-                liked === false ? 'text-rose-600' : ''
-              }`}
-              title="Beğenmedim"
-            >
-              <ThumbsDown className="h-4 w-4" />
-            </button>
-          </div>
+              <button
+                onClick={() => setLiked(liked === true ? null : true)}
+                className={`p-1 hover:text-primary transition-colors cursor-pointer ${
+                  liked === true ? 'text-emerald-600' : ''
+                }`}
+                title="Beğendim"
+              >
+                <ThumbsUp className="h-4 w-4" />
+              </button>
+
+              <button
+                onClick={() => setLiked(liked === false ? null : false)}
+                className={`p-1 hover:text-primary transition-colors cursor-pointer ${
+                  liked === false ? 'text-rose-600' : ''
+                }`}
+                title="Beğenmedim"
+              >
+                <ThumbsDown className="h-4 w-4" />
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
