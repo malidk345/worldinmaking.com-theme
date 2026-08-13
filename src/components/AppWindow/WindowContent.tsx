@@ -24,13 +24,13 @@ export default function WindowContent({ item, chrome, hasToolbar, children }: Wi
         <div
             onPointerDown={(event) => event.stopPropagation()}
             onTouchStart={(event) => event.stopPropagation()}
-            className={`size-full flex-grow relative z-[1] min-h-0 overflow-x-hidden overscroll-contain ${
+            className={`size-full flex-grow relative z-[1] min-h-0 overflow-x-hidden overscroll-contain bg-white dark:bg-[#121214] ${
                 isForumShell ? 'overflow-hidden flex flex-col' : 'overflow-y-auto'
             } ${
                 chrome
-                    ? `rounded-lg ${hasToolbar ? 'rounded-t-none' : ''} ${
+                    ? `rounded-[24px] ${hasToolbar ? 'rounded-t-none' : ''} ${
                           item.expanded
-                              ? 'rounded-tr-none rounded-tl-none'
+                              ? 'rounded-tr-none rounded-tl-none rounded-b-[24px]'
                               : item.snapped === 'left'
                               ? 'rounded-tl-none rounded-tr-none rounded-br-none'
                               : item.snapped === 'right'
