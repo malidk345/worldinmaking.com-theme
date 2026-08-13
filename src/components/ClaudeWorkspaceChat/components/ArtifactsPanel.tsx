@@ -1,13 +1,43 @@
 import React, { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { PANEL_BG } from '../../../constants/frostedSurfaces';
-import { Artifact } from '../types';
-import { X, Code2, Eye, Copy, Download, Check, ChevronDown, FileInput } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Artifact, ArtifactOrigin } from '../types';
+import { X, Eye, Copy, Download, Check, ChevronDown, FileInput, Maximize2, Minimize2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
 import { SandpackProvider, SandpackPreview } from '@codesandbox/sandpack-react';
 import { normalizeSandboxReactSource, WIM_UI_SOURCE } from '../sandbox/wimUiSource';
+
+const BADGE_LABELS = new Set([
+  'YENİ',
+  'YENI',
+  'BETA',
+  'ÖNERİLEN',
+  'ONERILEN',
+  'KALDIRILDI',
+  'NEW',
+  'WIP',
+  'DRAFT',
+  'DEPRECATED',
+])
+
+function isBadgeLabel(value: string): boolean {
+  return BADGE_LABELS.has(value.trim().toLocaleUpperCase('tr-TR'))
+}
+
+const EditorialBadge: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <span className="mr-1.5 inline-flex items-center rounded-full border border-[#e8b4b4] bg-white px-2 py-[2px] text-[10px] font-medium uppercase tracking-[0.06em] text-[#c45c5c] font-claude-sans align-middle">
+    {children}
+  </span>
+)
+
+function prepareArtifactMarkdown(source: string): string {
+  return source.replace(/<span[^>]*>([^<]+)<\/span>/gi, (_match, label: string) => {
+    const text = String(label).trim()
+    return isBadgeLabel(text) ? `\`${text}\`` : text
+  })
+}
 
 const ChartArtifactRenderer = dynamic(
   () => import('./ChartArtifactRenderer').then((module) => module.ChartArtifactRenderer),
@@ -16,10 +46,17 @@ const ChartArtifactRenderer = dynamic(
 
 interface ArtifactsPanelProps {
   artifact: Artifact | null;
+  expanded?: boolean;
+  origin?: ArtifactOrigin | null;
+  onToggleExpand?: () => void;
   onClose: () => void;
   allArtifacts?: Artifact[];
   onSelectArtifact?: (artifact: Artifact) => void;
   onInsertToNotebook?: (content: string) => void;
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value))
 }
 
 // ─── Mermaid Renderer ────────────────────────────────────────────────────────
@@ -56,6 +93,9 @@ const MermaidDiagram: React.FC<{ chart: string }> = ({ chart }) => {
 
 export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
   artifact,
+  expanded = false,
+  origin = null,
+  onToggleExpand,
   onClose,
   allArtifacts = [],
   onSelectArtifact,
@@ -65,6 +105,18 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
   const [copied, setCopied] = useState(false);
   const [isVersionMenuOpen, setIsVersionMenuOpen] = useState(false);
   const [showCopyOptions, setShowCopyOptions] = useState(false);
+  const frameRef = useRef<HTMLDivElement>(null)
+  const [host, setHost] = useState({ width: 400, height: 720 })
+
+  useEffect(() => {
+    const parent = frameRef.current?.parentElement
+    if (!parent) return
+    const update = () => setHost({ width: parent.clientWidth, height: parent.clientHeight })
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(parent)
+    return () => observer.disconnect()
+  }, [artifact?.id])
 
   if (!artifact) return null;
 
@@ -168,86 +220,104 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
     return `<!DOCTYPE html><html><body style="font-family:sans-serif;padding:20px;"><pre style="white-space:pre-wrap;">${artifact.content}</pre></body></html>`;
   };
 
-  // Find all versions matching title or ID pattern
-  const versionList = allArtifacts.filter(
-    (a) => a.title.toLowerCase().replace(/\s+/g, '') === artifact.title.toLowerCase().replace(/\s+/g, '') ||
-           a.id === artifact.id
-  ).sort((a, b) => (b.version || 1) - (a.version || 1));
+  const versionList = allArtifacts.filter((a) => {
+    if (artifact.identifier && a.identifier) return a.identifier === artifact.identifier
+    return (
+      a.id === artifact.id ||
+      a.title.toLowerCase().replace(/\s+/g, '') === artifact.title.toLowerCase().replace(/\s+/g, '')
+    )
+  }).sort((a, b) => (b.version || 1) - (a.version || 1))
+
+  const displayTitle = artifact.title.replace(/\.[^/.]+$/, '')
+  const formatLabel = isMermaidContent ? 'MERMAID' : getArtifactExtension(artifact).toUpperCase()
+
+  const compactHeight = Math.min(340, Math.round(host.height * 0.44))
+  const expandedHeight = Math.min(520, Math.round(host.height * 0.68))
+  const targetHeight = expanded ? expandedHeight : compactHeight
+  const targetWidth = Math.max(host.width - 20, 220)
+  const targetLeft = 10
+  const centerY = origin?.centerY ?? host.height * 0.48
+  const targetTop = clamp(centerY - targetHeight / 2, 48, Math.max(48, host.height - targetHeight - 12))
+  const initialFrame = origin
+    ? { top: origin.top, left: origin.left, width: origin.width, height: origin.height }
+    : { top: centerY - 32, left: targetLeft, width: targetWidth, height: 64 }
 
   return (
-    <aside
-      className={`absolute lg:relative inset-y-0 right-0 z-40 flex flex-col bg-white border-l border-primary transition-all duration-300 shadow-xl lg:shadow-none w-full sm:w-[480px] lg:w-[580px] xl:w-[640px]`}
-    >
-      {/* Top Header Bar Matching 1:1 Claude CDS Header */}
-      <div className={`flex items-center justify-between border-b border-primary px-3.5 py-2 shrink-0 select-none h-[48px] gap-2 font-claude-sans ${PANEL_BG}`}>
-        {/* Left Side: Segmented View Toggle (Eye & Code icons) + Title & Format Indicator */}
-        <div className="flex items-center gap-3 flex-1 overflow-hidden min-w-0">
-          {/* Segmented Control (Preview / Code view mode) */}
-          <div className="flex items-center rounded-lg border border-primary bg-accent p-0.5 text-xs text-secondary shrink-0">
+    <>
+      <motion.button
+        type="button"
+        aria-label="Close artifact"
+        className="absolute inset-0 z-40 cursor-default bg-black/10"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.18 }}
+        onClick={onClose}
+      />
+      <motion.div
+        ref={frameRef}
+        className="absolute z-50 flex flex-col overflow-hidden rounded-2xl border border-[#e6e6e6] bg-white shadow-[0_18px_50px_rgba(0,0,0,0.18)]"
+        initial={initialFrame}
+        animate={{ top: targetTop, left: targetLeft, width: targetWidth, height: targetHeight }}
+        transition={{ type: 'spring', stiffness: 340, damping: 32, mass: 0.85 }}
+      >
+      <div className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-[#ececec] bg-white px-2 sm:gap-3 sm:px-3 font-claude-sans select-none">
+        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-2.5">
+          <div className="flex h-8 shrink-0 items-center rounded bg-[#f3f4f6] p-0.5">
             <button
               type="button"
               onClick={() => setActiveTab('preview')}
-              className={`flex h-6 w-6 items-center justify-center rounded-md transition-all cursor-pointer ${
-                activeTab === 'preview'
-                  ? 'bg-white text-primary shadow-2xs font-semibold'
-                  : 'text-secondary hover:text-primary'
+              className={`flex h-7 w-7 items-center justify-center rounded-sm cursor-pointer ${
+                activeTab === 'preview' ? 'bg-white text-[#1f1f1f] shadow-[0_1px_2px_rgba(0,0,0,0.06)]' : 'text-[#8c8c8c] hover:text-[#1f1f1f]'
               }`}
-              title="Önizleme (Preview)"
+              title="Önizleme"
               aria-label="Preview"
+              aria-pressed={activeTab === 'preview'}
             >
-              <Eye className="h-3.5 w-3.5" />
+              <Eye className="h-[15px] w-[15px]" strokeWidth={1.8} />
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('code')}
-              className={`flex h-6 w-6 items-center justify-center rounded-md transition-all cursor-pointer ${
-                activeTab === 'code'
-                  ? 'bg-white text-primary shadow-2xs font-semibold'
-                  : 'text-secondary hover:text-primary'
+              className={`flex h-7 w-7 items-center justify-center rounded-sm cursor-pointer ${
+                activeTab === 'code' ? 'bg-white text-[#1f1f1f] shadow-[0_1px_2px_rgba(0,0,0,0.06)]' : 'text-[#8c8c8c] hover:text-[#1f1f1f]'
               }`}
-              title="Kod Göster (Code)"
+              title="Kod"
               aria-label="Code"
+              aria-pressed={activeTab === 'code'}
             >
-              <Code2 className="h-3.5 w-3.5" />
+              <span className="text-[11px] font-semibold leading-none">{'</>'}</span>
             </button>
           </div>
 
-          {/* Title & Language Badge: Title · EXT */}
-          <div className="flex items-center gap-1.5 min-w-0 truncate">
-            <h2 className="text-[13px] sm:text-[14px] font-normal text-primary truncate" title={artifact.title}>
-              {artifact.title.replace(/\.[^/.]+$/, "")}
-            </h2>
-            <span className="text-muted font-normal text-xs">·</span>
-            <span className="text-secondary text-[11px] font-mono uppercase font-normal shrink-0">
-              {isMermaidContent ? 'MERMAID' : getArtifactExtension(artifact).toUpperCase()}
-            </span>
+          <div className="flex min-w-0 items-center gap-1.5 text-[13px] sm:text-[13.5px] font-normal text-[#6a6a6a]">
+            <h2 className="min-w-0 truncate" title={artifact.title}>{displayTitle}</h2>
+            <span className="hidden shrink-0 text-[#b0b0b0] sm:inline">·</span>
+            <span className="hidden shrink-0 sm:inline">{formatLabel}</span>
           </div>
 
-          {/* Version Switcher Dropdown (if versions exist) */}
           {versionList.length > 1 && (
             <div className="relative shrink-0">
               <button
                 type="button"
                 onClick={() => setIsVersionMenuOpen(!isVersionMenuOpen)}
-                className="flex items-center gap-1 px-2 py-0.5 rounded border border-primary bg-accent text-[11px] font-mono text-secondary hover:text-primary hover:bg-light-3 transition-colors cursor-pointer"
-                title="Sürüm Geçmişi"
+                className="flex items-center gap-1 px-1.5 py-0.5 text-[11px] text-[#8b8b8b] hover:text-[#1a1a1a] cursor-pointer"
+                title="Sürüm geçmişi"
               >
                 <span>v{artifact.version || 1}</span>
                 <ChevronDown className="h-3 w-3" />
               </button>
-
               {isVersionMenuOpen && (
-                <div className="absolute left-0 mt-1 w-36 rounded-lg border border-primary bg-white shadow-lg py-1 z-50 text-xs">
+                <div className="absolute left-0 mt-1 w-36 rounded-lg border border-[#ececec] bg-white shadow-lg py-1 z-50 text-xs">
                   {versionList.map((art) => (
                     <button
                       key={art.id + (art.version || 1)}
                       type="button"
                       onClick={() => {
-                        onSelectArtifact?.(art);
-                        setIsVersionMenuOpen(false);
+                        onSelectArtifact?.(art)
+                        setIsVersionMenuOpen(false)
                       }}
-                      className={`w-full text-left px-3 py-1.5 flex items-center justify-between hover:bg-bg-primary cursor-pointer ${
-                        art.version === artifact.version ? 'font-semibold text-primary bg-accent' : 'text-secondary'
+                      className={`w-full text-left px-3 py-1.5 flex items-center justify-between hover:bg-[#f7f7f7] cursor-pointer ${
+                        art.version === artifact.version ? 'font-semibold text-[#1a1a1a]' : 'text-[#6f6f6f]'
                       }`}
                     >
                       <span>v{art.version || 1} sürümü</span>
@@ -260,97 +330,99 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
           )}
         </div>
 
-        {/* Right Side Actions */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          {/* Insert to Notebook button — only if callback is provided */}
-          {onInsertToNotebook && (
-            <button
-              type="button"
-              onClick={() => onInsertToNotebook(artifact.content)}
-              className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-primary bg-white text-xs text-primary hover:bg-bg-primary transition-colors cursor-pointer shadow-2xs"
-              title="Notebook'a Ekle"
-            >
-              <FileInput className="h-3.5 w-3.5 text-secondary" />
-              <span className="hidden sm:inline">Notebook'a Ekle</span>
-            </button>
-          )}
-
-          {/* Download Button */}
-          <button
-            type="button"
-            onClick={handleDownload}
-            className="p-1.5 rounded-md text-secondary hover:text-primary hover:bg-light-2 transition-colors cursor-pointer"
-            title="İndir"
-            aria-label="Download"
-          >
-            <Download className="h-3.5 w-3.5" />
-          </button>
-
-          {/* Split Dropdown Copy Button (1:1 Claude CDS) */}
-          <div className="relative flex items-center rounded-md border border-primary bg-white shadow-2xs text-xs">
-            <button
-              type="button"
-              onClick={handleCopy}
-              className="flex items-center gap-1.5 px-2.5 py-1 text-primary hover:bg-bg-primary transition-colors font-normal cursor-pointer rounded-l-md"
-              title="Kopyala"
-            >
-              {copied ? (
-                <>
-                  <Check className="h-3.5 w-3.5 text-emerald-600" />
-                  <span className="text-emerald-700 font-medium">Copied</span>
-                </>
-              ) : (
-                <span>Copy</span>
-              )}
-            </button>
-            <div className="w-px h-3.5 bg-light-3" />
+        <div className="flex shrink-0 items-center gap-1">
+          <div className="relative">
             <button
               type="button"
               onClick={() => setShowCopyOptions(!showCopyOptions)}
-              className="px-1.5 py-1 text-secondary hover:text-primary hover:bg-bg-primary transition-colors cursor-pointer rounded-r-md"
-              aria-label="More options"
+              className="flex h-8 items-center gap-1 rounded border border-[#e5e5e5] bg-white px-2.5 text-[13px] text-[#3d3d3d] hover:bg-[#fafafa] cursor-pointer"
+              title="Copy"
             >
-              <ChevronDown className="h-3 w-3" />
+              <span>{copied ? 'Copied' : 'Copy'}</span>
+              <ChevronDown className="h-3.5 w-3.5 text-[#8c8c8c]" />
             </button>
-
             {showCopyOptions && (
-              <div className="absolute right-0 top-full mt-1 w-40 rounded-lg border border-primary bg-white shadow-lg py-1 z-50 text-xs">
+              <div className="absolute right-0 top-full z-50 mt-1 w-48 overflow-hidden rounded border border-[#ececec] bg-white py-1 text-xs shadow-lg">
+                {onInsertToNotebook && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onInsertToNotebook(artifact.content)
+                      setShowCopyOptions(false)
+                    }}
+                    className="flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left text-[#1a1a1a] hover:bg-[#f7f7f7]"
+                  >
+                    <FileInput className="h-3.5 w-3.5 text-[#8b8b8b]" />
+                    <span>Insert to notebook</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => {
-                    handleCopy();
-                    setShowCopyOptions(false);
+                    handleCopy()
+                    setShowCopyOptions(false)
                   }}
-                  className="w-full text-left px-3 py-1.5 text-primary hover:bg-light-1 flex items-center gap-2 cursor-pointer"
+                  className="flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left text-[#1a1a1a] hover:bg-[#f7f7f7]"
                 >
-                  <Copy className="h-3.5 w-3.5 text-secondary" />
-                  <span>Metni Kopyala</span>
+                  <Copy className="h-3.5 w-3.5 text-[#8b8b8b]" />
+                  <span>Copy</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleDownload()
+                    setShowCopyOptions(false)
+                  }}
+                  className="flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left text-[#1a1a1a] hover:bg-[#f7f7f7]"
+                >
+                  <Download className="h-3.5 w-3.5 text-[#8b8b8b]" />
+                  <span>Download</span>
                 </button>
               </div>
             )}
           </div>
 
-          {/* Close Button (X) */}
+          {onToggleExpand && (
+            <button
+              type="button"
+              onClick={onToggleExpand}
+              className="flex h-8 w-8 items-center justify-center text-[#8c8c8c] hover:text-[#1f1f1f] cursor-pointer"
+              title={expanded ? 'Küçült' : 'Büyüt'}
+              aria-label={expanded ? 'Collapse artifact' : 'Expand artifact'}
+            >
+              {expanded ? <Minimize2 className="h-4 w-4" strokeWidth={1.7} /> : <Maximize2 className="h-4 w-4" strokeWidth={1.7} />}
+            </button>
+          )}
+
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-md text-secondary hover:text-primary hover:bg-light-2 transition-colors cursor-pointer"
+            className="flex h-8 w-8 items-center justify-center text-[#8c8c8c] hover:text-[#1f1f1f] cursor-pointer"
             title="Kapat"
-            aria-label="Go back"
+            aria-label="Close"
           >
-            <X className="h-4 w-4" />
+            <X className="h-[18px] w-[18px]" strokeWidth={1.6} />
           </button>
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-auto bg-white">
+      <div
+        className="min-h-0 flex-1 overflow-auto overscroll-contain bg-white"
+        onClick={(event) => {
+          if (expanded || !onToggleExpand) return
+          const target = event.target as HTMLElement
+          if (target.closest('button, a, input, textarea, select, iframe')) return
+          if (window.getSelection()?.toString()) return
+          onToggleExpand()
+        }}
+      >
         {activeTab === 'code' ? (
-          <div className="h-full w-full overflow-auto p-4 bg-primary text-light-2 font-mono text-xs leading-relaxed">
-            <pre className="whitespace-pre-wrap">{artifact.content}</pre>
+          <div className="h-full w-full overflow-auto bg-[#fafafa] p-3 sm:p-5 font-mono text-[12px] sm:text-[12.5px] leading-relaxed text-[#2a2a2a]">
+            <pre className="max-w-full whitespace-pre-wrap break-words">{artifact.content}</pre>
           </div>
         ) : activeTab === 'preview' && artifact.type === 'chart' ? (
-          <div className="h-full w-full p-5 bg-white">
+          <div className="h-full w-full min-w-0 overflow-auto p-3 sm:p-5 bg-white">
             {artifact.chartSpec ? (
               <ChartArtifactRenderer spec={artifact.chartSpec} />
             ) : (
@@ -361,12 +433,12 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
           </div>
         ) : isMermaidContent ? (
           /* Mermaid Diagram Preview */
-          <div className="p-6 bg-white min-h-full">
+          <div className="min-h-full overflow-auto bg-white p-3 sm:p-6">
             <MermaidDiagram chart={mermaidSource} />
           </div>
         ) : activeTab === 'preview' && artifact.type === 'react' ? (
-          <div className="h-full w-full p-3 flex flex-col bg-white">
-            <div className="w-full flex-1 rounded-xl border border-primary bg-white overflow-hidden shadow-2xs relative">
+          <div className="flex h-full min-h-0 w-full min-w-0 flex-col bg-white p-2 sm:p-3">
+            <div className="relative min-h-0 w-full flex-1 overflow-hidden rounded-xl border border-primary bg-white shadow-2xs">
               <SandpackProvider
                 template="react-ts"
                 theme="light"
@@ -410,121 +482,118 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
             </div>
           </div>
         ) : activeTab === 'preview' && (artifact.type === 'html' || artifact.type === 'svg') ? (
-          <div className="h-full w-full p-3 flex flex-col bg-white">
-            <div className="w-full flex-1 rounded-xl border border-primary bg-white overflow-hidden shadow-2xs">
+          <div className="flex h-full min-h-0 w-full min-w-0 flex-col bg-white p-2 sm:p-3">
+            <div className="min-h-0 w-full flex-1 overflow-hidden rounded-xl border border-primary bg-white shadow-2xs">
               <iframe
                 title={artifact.title}
                 srcDoc={getIframeSrcDoc()}
-                className="w-full h-full border-none bg-white"
+                className="h-full w-full border-none bg-white"
                  sandbox="allow-scripts"
                  referrerPolicy="no-referrer"
               />
             </div>
           </div>
         ) : (
-          /* Markdown / Document View (1:1 Extracted from Claude Editorial Document Viewer) */
-          <div className="mx-auto w-full max-w-3xl py-8 px-6 sm:px-10 md:px-14 leading-[1.68rem] text-primary font-claude-serif text-[1rem] bg-white">
+          /* Markdown / Document View — Claude editorial canvas */
+          <div className="mx-auto w-full max-w-[40rem] min-w-0 overflow-x-auto bg-white px-4 pb-16 pt-4 text-[15px] leading-[1.65] text-[#1a1a1a] font-claude-serif sm:px-8 sm:pt-5 sm:text-[16.5px] sm:leading-[1.7] md:px-12">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               rehypePlugins={[rehypeSanitize]}
               components={{
                 h1: ({ children }) => (
-                  <h1 className="mt-2 mb-4 text-[1.65rem] sm:text-[1.85rem] font-bold text-primary leading-tight font-claude-serif">
+                  <h1 className="mt-2 mb-4 break-words text-[1.45rem] font-bold leading-[1.25] text-[#1a1a1a] font-claude-serif sm:mb-5 sm:text-[1.85rem]">
                     {children}
                   </h1>
                 ),
                 h2: ({ children }) => (
-                  <h2 className="mt-7 mb-3 text-[1.25rem] sm:text-[1.35rem] font-bold text-primary leading-snug font-claude-serif">
+                  <h2 className="mt-6 mb-3 break-words text-[1.15rem] font-bold leading-snug text-[#1a1a1a] font-claude-serif sm:mt-8 sm:text-[1.28rem]">
                     {children}
                   </h2>
                 ),
                 h3: ({ children }) => (
-                  <h3 className="mt-5 mb-2 text-[1.08rem] sm:text-[1.15rem] font-bold text-primary font-claude-serif">
+                  <h3 className="mt-6 mb-2 text-[1.12rem] font-bold text-[#1a1a1a] font-claude-serif">
                     {children}
                   </h3>
                 ),
                 h4: ({ children }) => (
-                  <h4 className="mt-4 mb-1.5 text-[0.98rem] sm:text-[1.02rem] font-bold text-primary font-claude-serif">
+                  <h4 className="mt-5 mb-1.5 text-[1.02rem] font-bold text-[#1a1a1a] font-claude-serif">
                     {children}
                   </h4>
                 ),
                 p: ({ children }) => (
-                  <div className="mb-4 text-primary font-claude-serif leading-[1.68rem] break-words text-[1rem]">
+                  <p className="mb-4 break-words text-[#1a1a1a] font-claude-serif leading-[1.65] sm:leading-[1.7]">
                     {children}
-                  </div>
+                  </p>
                 ),
                 strong: ({ children }) => (
-                  <strong className="font-bold text-primary">{children}</strong>
+                  <strong className="font-bold text-[#1a1a1a]">{children}</strong>
                 ),
                 em: ({ children }) => (
-                  <em className="italic text-primary">{children}</em>
+                  <em className="italic text-[#1a1a1a]">{children}</em>
                 ),
                 del: ({ children }) => (
-                  <del className="line-through text-primary">{children}</del>
+                  <del className="line-through text-[#1a1a1a]">{children}</del>
                 ),
                 ul: ({ children }) => (
-                  <ul className="list-disc pl-6 mb-4 space-y-1.5 text-primary font-claude-serif">{children}</ul>
+                  <ul className="list-disc pl-6 mb-4 space-y-1.5 text-[#1a1a1a] font-claude-serif">{children}</ul>
                 ),
                 ol: ({ children }) => (
-                  <ol className="list-decimal pl-6 mb-4 space-y-1.5 text-primary font-claude-serif">{children}</ol>
+                  <ol className="list-decimal pl-7 mb-5 space-y-2 text-[#1a1a1a] font-claude-serif marker:font-claude-serif">{children}</ol>
                 ),
                 li: ({ children }) => (
-                  <li className="pl-1 leading-[1.68rem]">{children}</li>
+                  <li className="pl-1.5 leading-[1.7]">{children}</li>
                 ),
                 blockquote: ({ children }) => (
-                  <blockquote className="border-l-2 border-primary pl-4 italic my-4 text-secondary">
+                  <blockquote className="border-l-[2px] border-[#d6d6d6] pl-4 italic my-4 text-[#5c5c5c]">
                     {children}
                   </blockquote>
                 ),
                 code: ({ inline, children }: any) => {
-                  const text = String(children).trim();
-                  const isColorHex = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(text);
+                  const text = String(children).trim()
+                  if (inline && isBadgeLabel(text)) return <EditorialBadge>{text}</EditorialBadge>
+                  const isColorHex = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(text)
+                  if (inline && (text.includes('<') || text.length > 36)) {
+                    return <code className="text-[13.5px] text-[#6b6b6b] font-mono break-words">{children}</code>
+                  }
                   return inline ? (
-                    <code className="mx-0.5 bg-accent text-rose-600 whitespace-pre-wrap rounded-[0.35rem] px-1.5 py-0.5 text-[0.875rem] font-mono font-normal inline-flex items-center">
+                    <code className="mx-0.5 bg-[#f6f6f6] text-[#c45c5c] whitespace-pre-wrap rounded-[0.35rem] px-1.5 py-0.5 text-[0.86rem] font-mono font-normal inline-flex items-center">
                       {isColorHex && (
                         <span
-                          className="color-swatch-dot mr-1 inline-block w-2.5 h-2.5 rounded-full border border-black/10"
+                          className="mr-1 inline-block w-2.5 h-2.5 rounded-full border border-black/10"
                           style={{ backgroundColor: text }}
                         />
                       )}
                       {children}
                     </code>
                   ) : (
-                    <div className="my-4 rounded-xl border border-primary bg-primary p-4 text-light-2 font-mono text-xs overflow-x-auto">
+                    <div className="my-4 rounded-xl border border-[#ececec] bg-[#111] p-4 text-[#f2f2f2] font-mono text-xs overflow-x-auto">
                       <pre className="whitespace-pre-wrap">{children}</pre>
                     </div>
-                  );
+                  )
                 },
                 table: ({ children }) => (
-                  <div className="my-4 overflow-x-auto">
-                    <table className="w-full text-left border-collapse border border-primary text-sm">
+                  <div className="my-4 -mx-1 max-w-full overflow-x-auto">
+                    <table className="w-full min-w-[20rem] border-collapse border border-[#e5e5e5] text-left text-sm">
                       {children}
                     </table>
                   </div>
                 ),
                 th: ({ children }) => (
-                  <th className="bg-light-2 border border-primary p-2 font-semibold text-primary">
+                  <th className="bg-[#f7f7f7] border border-[#e5e5e5] p-2 font-semibold text-[#1a1a1a]">
                     {children}
                   </th>
                 ),
                 td: ({ children }) => (
-                  <td className="border border-primary p-2 text-primary">{children}</td>
+                  <td className="border border-[#e5e5e5] p-2 text-[#1a1a1a] align-top">{children}</td>
                 ),
               }}
             >
-              {artifact.content}
+              {prepareArtifactMarkdown(artifact.content)}
             </ReactMarkdown>
           </div>
         )}
       </div>
-
-      {/* Bottom Footer Bar */}
-      <div className={`border-t border-primary px-4 py-2 text-[11px] text-secondary flex items-center justify-between font-claude-sans shrink-0 ${PANEL_BG}`}>
-        <span className="truncate">{artifact.description || "wim's ai bots canvas"}</span>
-        <span className="shrink-0 font-mono text-[10px] bg-light-2 px-2 py-0.5 rounded text-primary">
-          {isMermaidContent ? 'mermaid' : (artifact.language || artifact.type)}
-        </span>
-      </div>
-    </aside>
+      </motion.div>
+    </>
   );
 };

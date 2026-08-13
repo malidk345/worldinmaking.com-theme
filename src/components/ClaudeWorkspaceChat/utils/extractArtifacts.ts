@@ -8,6 +8,19 @@ import { extractChartArtifacts, isChartRequest, parseChartSpec } from 'lib/ai/ch
  * 2. Markdown code blocks (```html, ```react, ```svg, ```markdown, ```table, ```json, etc.)
  * 3. Document fallback when user explicitly requests a document ("belge oluştur", "belge üret", "create document")
  */
+export function titleFromArtifactContent(content: string, fallback = 'Untitled'): string {
+  const heading = content.match(/^#{1,3}\s+(.+)$/m)
+  if (heading?.[1]) return heading[1].trim().slice(0, 80)
+  const first = content
+    .split('\n')
+    .map((line) => line.trim())
+    .find((line) => line && !line.startsWith('<') && !line.startsWith('```') && !line.startsWith('{'))
+  if (first) {
+    return first.replace(/^[*_`>~>\-\d.]+(?:\s+)/, '').trim().slice(0, 80) || fallback
+  }
+  return fallback
+}
+
 export function extractArtifactsFromContent(content: string, userPrompt: string): Artifact[] {
   if (!content || !content.trim()) return [];
   const chartArtifacts: Artifact[] = extractChartArtifacts(content, userPrompt).map((artifact, index) => ({
@@ -33,6 +46,7 @@ export function extractArtifactsFromContent(content: string, userPrompt: string)
     const artContent = match[2]?.trim();
 
     const titleMatch = attrStr.match(/title=["']([^"']+)["']/i) || attrStr.match(/identifier=["']([^"']+)["']/i);
+    const identifierMatch = attrStr.match(/identifier=["']([^"']+)["']/i);
     const typeMatch = attrStr.match(/type=["']([^"']+)["']/i);
     const langMatch = attrStr.match(/language=["']([^"']+)["']/i);
     const rawType = (typeMatch ? typeMatch[1] : 'markdown').toLowerCase();
@@ -40,7 +54,7 @@ export function extractArtifactsFromContent(content: string, userPrompt: string)
     // Chart envelopes are parsed by the shared, validated chart parser above.
     if (rawType === 'chart' || rawType === 'visualization') continue;
 
-    const title = titleMatch ? titleMatch[1] : 'Generated Document';
+    const title = (titleMatch?.[1] || '').trim() || titleFromArtifactContent(artContent, 'Untitled');
     const type: ArtifactType = (['code', 'html', 'svg', 'markdown', 'react', 'json', 'table', 'mermaid'].includes(rawType)
       ? rawType
       : 'markdown') as ArtifactType;
@@ -48,11 +62,12 @@ export function extractArtifactsFromContent(content: string, userPrompt: string)
     if (artContent) {
       artifacts.push({
         id: `art-${Date.now()}-${artifacts.length + 1}`,
+        identifier: identifierMatch?.[1],
         title,
         type,
         language: langMatch ? langMatch[1] : undefined,
         content: artContent,
-        description: `Created for "${userPrompt.slice(0, 40)}"`,
+        description: type === 'markdown' ? 'Document' : `Created for "${userPrompt.slice(0, 40)}"`,
         version: 1,
         createdAt: now,
       });
@@ -81,7 +96,7 @@ export function extractArtifactsFromContent(content: string, userPrompt: string)
     if (isChartBlock && chartSpec && !chartArtifacts.some((artifact) => artifact.content === JSON.stringify(chartSpec))) {
       chartArtifacts.push({
         id: `art-${Date.now()}-chart-${chartArtifacts.length + 1}`,
-        title: chartSpec.title || 'Generated chart',
+        title: chartSpec.title || titleFromArtifactContent(blockContent, 'Chart'),
         type: 'chart',
         language: 'json',
         content: JSON.stringify(chartSpec),
@@ -108,11 +123,7 @@ export function extractArtifactsFromContent(content: string, userPrompt: string)
       artType = 'code';
     }
 
-    let title = `${userPrompt.slice(0, 30).trim()} Document`;
-    if (lang === 'html') title = 'HTML Canvas Preview';
-    else if (lang === 'svg') title = 'SVG Diagram';
-    else if (lang === 'react' || lang === 'tsx') title = 'React Component';
-    else if (artType === 'code') title = `${lang.toUpperCase()} Script`;
+    const title = titleFromArtifactContent(blockContent, lang ? `${lang} artifact` : 'Untitled')
 
     artifacts.push({
       id: `art-${Date.now()}-${blockCount + 1}`,
@@ -133,11 +144,12 @@ export function extractArtifactsFromContent(content: string, userPrompt: string)
 
     artifacts.push({
       id: `art-${Date.now()}-doc`,
-      title: isReactContent ? 'React Component' : `${userPrompt.slice(0, 35).trim()}`,
+      identifier: isReactContent ? 'ui-1' : 'doc-1',
+      title: titleFromArtifactContent(content, isReactContent ? 'Interface' : 'Untitled'),
       type: isReactContent ? 'react' : 'markdown',
       language: isReactContent ? 'react' : 'markdown',
       content: isReactContent ? content.replace(/```(?:react|jsx|js)?/gi, '').replace(/```/g, '').trim() : content,
-      description: isReactContent ? 'AI Generated UI' : 'AI Generated Document',
+      description: isReactContent ? 'AI Generated UI' : 'Document',
       version: 1,
       createdAt: now,
     });

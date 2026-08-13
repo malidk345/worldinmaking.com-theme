@@ -8,6 +8,7 @@ import {
   ThinkingBudget,
   StylePresetId,
   Artifact,
+  ArtifactOrigin,
   UserSettings,
   FileAttachment,
 } from './types';
@@ -67,6 +68,7 @@ function toWorkspaceArtifact(artifact: AiArtifact): Artifact {
   const chartSpec = artifact.chartSpec || (artifact.type === 'chart' ? parseChartSpec(artifact.content) || undefined : undefined);
   return {
     id: artifact.id,
+    identifier: artifact.identifier,
     title: artifact.title,
     type: artifact.type,
     language: artifact.language,
@@ -196,6 +198,50 @@ export default function App({ onClose }: { onClose?: () => void }) {
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
   const [activeArtifact, setActiveArtifact] = useState<Artifact | null>(null);
   const [isArtifactsOpen, setIsArtifactsOpen] = useState<boolean>(false);
+  const [isArtifactExpanded, setIsArtifactExpanded] = useState(false);
+  const [artifactOrigin, setArtifactOrigin] = useState<ArtifactOrigin | null>(null);
+  const workspaceRef = useRef<HTMLDivElement>(null);
+
+  const captureOrigin = (rect?: DOMRect | null): ArtifactOrigin => {
+    const box = workspaceRef.current?.getBoundingClientRect()
+    const height = box?.height ?? 720
+    const width = box?.width ?? 416
+    if (rect && box) {
+      return {
+        top: rect.top - box.top,
+        left: rect.left - box.left,
+        width: rect.width,
+        height: rect.height,
+        centerY: rect.top + rect.height / 2 - box.top,
+      }
+    }
+    return {
+      top: height * 0.42,
+      left: 12,
+      width: Math.max(width - 24, 200),
+      height: 72,
+      centerY: height * 0.48,
+    }
+  }
+
+  const openArtifact = (art: Artifact, opts?: { expand?: boolean; keepSize?: boolean; origin?: DOMRect | null }) => {
+    setActiveArtifact(art)
+    setIsArtifactsOpen(true)
+    if (opts?.origin || !artifactOrigin) {
+      setArtifactOrigin(captureOrigin(opts?.origin))
+    }
+    if (opts?.keepSize) {
+      if (!isArtifactsOpen) setIsArtifactExpanded(false)
+      return
+    }
+    if (opts?.expand) setIsArtifactExpanded(true)
+    else setIsArtifactExpanded(false)
+  }
+
+  const closeArtifacts = () => {
+    setIsArtifactsOpen(false)
+    setIsArtifactExpanded(false)
+  }
 
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [projectModalOpen, setProjectModalOpen] = useState(false);
@@ -295,8 +341,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
     if (activeChat?.messages) {
       const lastArt = [...activeChat.messages].reverse().find((m) => m.artifacts && m.artifacts.length > 0)?.artifacts?.[0];
       if (lastArt && settings.autoOpenArtifacts) {
-        setActiveArtifact(lastArt);
-        setIsArtifactsOpen(true);
+        openArtifact(lastArt);
       }
     }
   }, [activeChatId, settings.autoOpenArtifacts]);
@@ -319,7 +364,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
     setChats((prev) => [newChat, ...prev]);
     setActiveChatId(newChat.id);
     setActiveArtifact(null);
-    setIsArtifactsOpen(false);
+    closeArtifacts();
   };
 
   // Handle HTML/JSON Chat Import
@@ -329,8 +374,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
     // Auto open artifact if available
     const firstArt = importedChat.messages.find((m) => m.artifacts && m.artifacts.length > 0)?.artifacts?.[0];
     if (firstArt) {
-      setActiveArtifact(firstArt);
-      setIsArtifactsOpen(true);
+      openArtifact(firstArt);
     }
   };
 
@@ -437,9 +481,14 @@ export default function App({ onClose }: { onClose?: () => void }) {
       streamedArtifacts = [...streamedArtifacts, ...next].filter((artifact, index, all) =>
         all.findIndex((candidate) =>
           candidate.id === artifact.id ||
+          (candidate.identifier && artifact.identifier && candidate.identifier === artifact.identifier) ||
           (candidate.type === artifact.type && candidate.content === artifact.content)
         ) === index
       );
+      const latest = streamedArtifacts[streamedArtifacts.length - 1]
+      if (latest) {
+        openArtifact(latest, { keepSize: true })
+      }
     };
 
     let isStreamComplete = false;
@@ -458,10 +507,13 @@ export default function App({ onClose }: { onClose?: () => void }) {
       const effectivePrompt = promptText.trim() || 'Please analyze the attached material and respond with the most useful next step.';
 
       const conversationHistory = baseMessages
+        .filter((message) => message.role === 'user' || message.role === 'assistant')
         .slice(-10)
-        .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
-        .join('\n\n')
-        .slice(0, 8000);
+        .map((message) => ({
+          role: message.role as 'user' | 'assistant',
+          content: message.content.slice(0, 4000),
+        }))
+        .filter((message) => message.content.trim().length > 0)
 
       const sseRes = await fetch('/api/chat', {
         method: 'POST',
@@ -475,7 +527,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
           systemPrompt: activeProjectObj?.systemPrompt || '',
           styleSuffix: selectedStyle?.promptSuffix || '',
           attachmentContext,
-          chatHistory: conversationHistory,
+          messages: conversationHistory,
           notebookContext: activeNotebookContext,
           conversationId: targetChatId,
         }),
@@ -697,8 +749,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
       }
 
       if (extractedArtifacts.length > 0) {
-        setActiveArtifact(extractedArtifacts[0]);
-        setIsArtifactsOpen(true);
+        openArtifact(extractedArtifacts[0], { keepSize: true });
       }
       
       isStreamComplete = true; // successfully reached the end!
@@ -924,7 +975,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
     setProjects(INITIAL_PROJECTS);
     setActiveChatId(INITIAL_CHATS[0]?.id || '');
     setActiveArtifact(null);
-    setIsArtifactsOpen(false);
+    closeArtifacts();
   };
 
   const hasArtifactsInActiveChat = activeChat?.messages.some((m) => m.artifacts && m.artifacts.length > 0) || false;
@@ -934,7 +985,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
   };
 
   return (
-    <div className="relative flex h-full min-h-0 w-full text-primary font-wimbot overflow-hidden antialiased selection:bg-[#1E3A8A]/15 selection:text-[#1E3A8A]">
+    <div className="relative flex h-full min-h-0 w-full min-w-0 text-primary font-wimbot overflow-hidden antialiased selection:bg-[#1E3A8A]/15 selection:text-[#1E3A8A]">
       {/* Left Collapsible Sidebar */}
       <Sidebar
         isOpen={sidebarOpen}
@@ -956,15 +1007,15 @@ export default function App({ onClose }: { onClose?: () => void }) {
         onOpenSettingsModal={() => setSettingsModalOpen(true)}
         artifacts={activeChat?.messages.flatMap((m) => m.artifacts || []) || []}
         activeArtifactId={activeArtifact?.id}
-        onSelectArtifact={(art) => {
-          setActiveArtifact(art);
-          setIsArtifactsOpen(true);
+        onSelectArtifact={(art) => openArtifact(art)}
+        onToggleArtifacts={() => {
+          if (isArtifactsOpen) closeArtifacts()
+          else if (activeArtifact) openArtifact(activeArtifact)
         }}
-        onToggleArtifacts={() => setIsArtifactsOpen(!isArtifactsOpen)}
       />
 
       {/* Main Workspace Area */}
-      <div className="flex flex-1 flex-col h-full min-w-0 relative">
+      <div ref={workspaceRef} className="relative flex min-h-0 min-w-0 flex-1 flex-col">
         {/* Top Header Bar */}
         <Header
           models={models}
@@ -978,7 +1029,10 @@ export default function App({ onClose }: { onClose?: () => void }) {
           onOpenSearchModal={() => setSearchModalOpen(true)}
           onOpenShareModal={() => setShareModalOpen(true)}
           hasArtifacts={hasArtifactsInActiveChat}
-          onToggleArtifacts={() => setIsArtifactsOpen(!isArtifactsOpen)}
+          onToggleArtifacts={() => {
+            if (isArtifactsOpen) closeArtifacts()
+            else if (activeArtifact) openArtifact(activeArtifact)
+          }}
           isArtifactsOpen={isArtifactsOpen}
           activeChatTitle={activeChat?.title}
           hasMessages={Boolean(activeChat && activeChat.messages.length > 0)}
@@ -1031,9 +1085,12 @@ export default function App({ onClose }: { onClose?: () => void }) {
                   message={msg}
                   targetChatId={activeChat.id}
                   modelOptions={AVAILABLE_MODELS}
-                  onOpenArtifact={(art) => {
-                    setActiveArtifact(art);
-                    setIsArtifactsOpen(true);
+                  onOpenArtifact={(art, origin) => {
+                    if (isArtifactsOpen && activeArtifact?.id === art.id && !isArtifactExpanded) {
+                      setIsArtifactExpanded(true)
+                      return
+                    }
+                    openArtifact(art, { origin })
                   }}
                   onEditPrompt={handleEditPrompt}
                   onRetry={handleRetry}
@@ -1078,32 +1135,47 @@ export default function App({ onClose }: { onClose?: () => void }) {
             </motion.div>
           </div>
         )}
-      </div>
 
-      {/* Artifacts Canvas Side Panel */}
       {isArtifactsOpen && (
         <ArtifactsPanel
           artifact={activeArtifact}
-          onClose={() => setIsArtifactsOpen(false)}
+          expanded={isArtifactExpanded}
+          origin={artifactOrigin}
+          onToggleExpand={() => setIsArtifactExpanded((value) => !value)}
+          onClose={closeArtifacts}
           allArtifacts={
             activeChat?.messages
               ? activeChat.messages.flatMap((m) => m.artifacts || [])
               : []
           }
-          onSelectArtifact={(art) => setActiveArtifact(art)}
+          onSelectArtifact={(art) => openArtifact(art, { keepSize: true })}
           onInsertToNotebook={(content) => {
-            const nb = createNotebook(activeArtifact?.title || 'AI Artifact', content);
-            app.addWindow({
-              id: nb.id,
-              title: nb.title,
-              icon: 'DocumentTextIcon',
-              component: 'NotebookApp',
-              path: `/notebook/${nb.id}`,
-            });
-            setIsArtifactsOpen(false);
+            const notebookOpen = appWindows.some((windowItem) =>
+              /notebook/i.test(windowItem.path || '') || windowItem.component === 'NotebookApp'
+            )
+            const insert = () =>
+              window.dispatchEvent(
+                new CustomEvent('wimNotebookInsertText', {
+                  detail: { text: content, mode: 'append' },
+                })
+              )
+
+            if (!notebookOpen && app?.addWindow) {
+              app.addWindow({
+                title: 'Notebooks',
+                icon: 'DocumentTextIcon',
+                component: 'NotebookApp',
+                path: '/notebooks',
+              })
+              window.setTimeout(insert, 350)
+              return
+            }
+
+            insert()
           }}
         />
       )}
+      </div>
 
       {/* Modals */}
       <SearchModal
@@ -1207,7 +1279,7 @@ export function ClaudeWorkspaceChatPanel() {
             style={panelStyle}
             data-scheme="primary"
              data-skin="classic"
-            className={`fixed w-96 max-w-[calc(100vw-1rem)] text-primary border border-primary rounded shadow-xl z-50 flex flex-col font-sans overflow-hidden antialiased selection:bg-[#1E3A8A]/15 selection:text-[#1E3A8A] notebook-app-scope ${WINDOW_BG}`}
+            className={`fixed w-[min(calc(100vw-1rem),26rem)] max-w-[calc(100vw-1rem)] text-primary border border-primary rounded shadow-xl z-50 flex flex-col font-sans overflow-hidden antialiased selection:bg-[#1E3A8A]/15 selection:text-[#1E3A8A] notebook-app-scope ${WINDOW_BG}`}
           >
             <App onClose={closePanel} />
           </motion.div>

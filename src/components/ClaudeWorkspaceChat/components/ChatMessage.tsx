@@ -11,7 +11,7 @@ interface ChatMessageProps {
   message: Message;
   modelOptions: ModelOption[];
   targetChatId: string;
-  onOpenArtifact?: (art: Artifact) => void;
+  onOpenArtifact?: (art: Artifact, origin?: DOMRect) => void;
   onEditPrompt?: (content: string, messageId: string) => void;
   onRetry?: (messageId: string) => void;
   onFeedback?: (messageId: string, liked: boolean | null) => void;
@@ -224,35 +224,28 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
 
           {/* Document / Artifact Card */}
           {message.artifacts && message.artifacts.length > 0 && (
-            <div className="mt-3.5 space-y-2.5 font-claude-sans">
+            <div className="mt-3.5 space-y-2 font-claude-sans">
               {message.artifacts.map((art) => (
-                <div
+                <button
                   key={art.id}
-                  onClick={() => onOpenArtifact && onOpenArtifact(art)}
-                  className="group/artifact-block relative flex items-center justify-between text-left rounded-lg overflow-hidden border border-primary bg-accent hover:bg-white hover:border-primary px-4 py-3 w-full transition-all duration-300 cursor-pointer shadow-2xs"
+                  type="button"
+                  onClick={(event) => onOpenArtifact?.(art, event.currentTarget.getBoundingClientRect())}
+                  className="group/artifact-block relative flex w-full items-center justify-between overflow-hidden rounded-xl border border-[#e7e7e7] bg-[#fafafa] px-4 py-3 text-left transition-colors hover:bg-white cursor-pointer"
                 >
-                  <div className="flex items-center gap-3.5 min-w-0 pr-16">
-                    <div className="flex flex-col gap-0.5 min-w-0">
-                      <div className="text-[14px] font-semibold text-primary truncate leading-tight">
-                        {art.title}
-                      </div>
-                      <div className="text-[12px] text-muted truncate flex items-center gap-1.5">
-                        <span>{art.description || 'Document'}</span>
-                        <span className="opacity-40">•</span>
-                        <span className="uppercase font-mono text-[11px]">{art.language || art.type}</span>
-                      </div>
+                  <div className="min-w-0 pr-16">
+                    <div className="truncate text-[14px] font-medium leading-tight text-[#1a1a1a]">
+                      {art.title}
+                    </div>
+                    <div className="mt-0.5 truncate text-[12.5px] text-[#8a8a8a]">
+                      {art.version > 1 ? `Click to open document · v${art.version}` : 'Click to open document'}
                     </div>
                   </div>
-
-                  {/* Rotated 3D Paper Preview Graphic (1:1 Extracted from Claude HTML) */}
-                  <div className="flex items-end w-[68px] relative shrink-0 pointer-events-none" aria-hidden="true">
-                    <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-[52px] h-[68px] rounded-t-lg border border-primary bg-white shadow-xs scale-[1] group-hover/artifact-block:scale-[1.04] -rotate-[0.1rad] group-hover/artifact-block:-rotate-[0.065rad] transition-transform duration-300 ease-out pt-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256" className="text-muted">
-                        <path d="M212.24,83.76l-56-56A6,6,0,0,0,152,26H56A14,14,0,0,0,42,40V216a14,14,0,0,0,14,14H200a14,14,0,0,0,14-14V88A6,6,0,0,0,212.24,83.76ZM158,46.48,193.52,82H158ZM200,218H56a2,2,0,0,1-2-2V40a2,2,0,0,1,2-2h90V88a6,6,0,0,0,6,6h50V216A2,2,0,0,1,200,218Zm-34-82a6,6,0,0,1-6,6H96a6,6,0,0,1,0-12h64A6,6,0,0,1,166,136Zm0,32a6,6,0,0,1-6,6H96a6,6,0,0,1,0-12h64A6,6,0,0,1,166,168Z" />
-                      </svg>
-                    </div>
+                  <div className="pointer-events-none absolute right-3 top-1/2 flex h-[58px] w-[44px] -translate-y-1/2 -rotate-[8deg] items-center justify-center rounded-t-md border border-[#e5e5e5] bg-white shadow-sm transition-transform group-hover/artifact-block:-rotate-[5deg]" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 256 256" className="text-[#b0b0b0]">
+                      <path d="M212.24,83.76l-56-56A6,6,0,0,0,152,26H56A14,14,0,0,0,42,40V216a14,14,0,0,0,14,14H200a14,14,0,0,0,14-14V88A6,6,0,0,0,212.24,83.76ZM158,46.48,193.52,82H158ZM200,218H56a2,2,0,0,1-2-2V40a2,2,0,0,1,2-2h90V88a6,6,0,0,0,6,6h50V216A2,2,0,0,1,200,218Z" />
+                    </svg>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           )}

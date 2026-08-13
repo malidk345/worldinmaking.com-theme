@@ -237,6 +237,8 @@ module.exports = {
                 serif: ['Garamond', 'Times New Roman', 'serif'],
                 // WIM AI Bots panel font (Anthropic Sans extracted from claude.ai)
                 wimbot: ['anthropic-sans', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                'claude-sans': ['anthropic-sans', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+                'claude-serif': ['ui-serif', 'Georgia', 'Source Serif 4', 'Times New Roman', 'Times', 'serif'],
                 sans: [
                     '-apple-system',
                     'BlinkMacSystemFont',

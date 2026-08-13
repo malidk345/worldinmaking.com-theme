@@ -36,8 +36,17 @@ export interface ThinkingProcess {
 
 export type ArtifactType = 'code' | 'html' | 'svg' | 'markdown' | 'react' | 'json' | 'table' | 'mermaid' | 'chart'
 
+export type ArtifactOrigin = {
+  top: number
+  left: number
+  width: number
+  height: number
+  centerY: number
+}
+
 export interface Artifact {
   id: string
+  identifier?: string
   title: string
   type: ArtifactType
   language?: string

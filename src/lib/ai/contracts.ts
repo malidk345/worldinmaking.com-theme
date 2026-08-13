@@ -38,6 +38,7 @@ export type AiArtifactType = 'code' | 'html' | 'svg' | 'markdown' | 'react' | 'j
 
 export interface AiArtifact {
     id: string
+    identifier?: string
     title: string
     type: AiArtifactType
     language?: string
@@ -87,6 +88,8 @@ export type AiSseEvent =
           fullText: string
           provider?: string
           artifacts?: AiArtifact[]
+          latencyMs?: number
+          attemptCount?: number
       }
     | {
           type: 'error'

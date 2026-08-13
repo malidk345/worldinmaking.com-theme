@@ -1,6 +1,6 @@
 export { getRuntimeEnv, envFrom, getProviderKeyFlags, hasCloudflareContext } from './runtime-env'
 export { generateWithGateway } from './ai-gateway'
-export type { GenerateResult, GenerateFailure, GatewayProvider } from './ai-gateway'
+export type { GenerateResult, GenerateFailure, GatewayProvider, GatewayMessage } from './ai-gateway'
 export {
     buildThinkingInstruction,
     parseThinkingAndReply,

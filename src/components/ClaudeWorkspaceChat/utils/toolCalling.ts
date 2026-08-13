@@ -45,6 +45,7 @@ export function processArtifactRevision(
   const normalizedNewTitle = newArtData.title.toLowerCase().trim().replace(/[\s\-_]+/g, '');
 
   const matchingIndex = existingArtifacts.findIndex((a) => {
+    if (newArtData.identifier && a.identifier && newArtData.identifier === a.identifier) return true
     const normalizedExistingTitle = a.title.toLowerCase().trim().replace(/[\s\-_]+/g, '');
     return (
       normalizedExistingTitle === normalizedNewTitle ||

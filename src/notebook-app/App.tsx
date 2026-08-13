@@ -357,16 +357,56 @@ export function App() {
     setMarkdownVersion((v) => v + 1)
   }, [])
 
+  const routeRef = useRef(route)
+  const notebookRef = useRef(currentNotebook)
+  const markdownRef = useRef(markdown)
+  useEffect(() => {
+    routeRef.current = route
+  }, [route])
+  useEffect(() => {
+    notebookRef.current = currentNotebook
+  }, [currentNotebook])
+  useEffect(() => {
+    markdownRef.current = markdown
+  }, [markdown])
+
   useEffect(() => {
     const handleInsertText = (e: Event) => {
-      const customEvent = e as CustomEvent<{ text: string, mode?: 'append' | 'replace' | 'prepend' }>
-      if (customEvent.detail?.text) {
-        handleInsertAIResponse(customEvent.detail.text, customEvent.detail.mode)
+      const customEvent = e as CustomEvent<{ text: string; mode?: 'append' | 'replace' | 'prepend' }>
+      const text = (customEvent.detail?.text || '').trim()
+      const mode = customEvent.detail?.mode || 'append'
+      if (!text) return
+
+      let target = notebookRef.current
+      if (routeRef.current.page !== 'editor' || !target) {
+        const recent = getNotebooks().sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))[0]
+        target = recent || target
+        if (target) navigate({ page: 'editor', notebookId: target.id })
       }
+      if (!target) return
+
+      const current =
+        routeRef.current.page === 'editor' && notebookRef.current?.id === target.id
+          ? markdownRef.current || target.content || ''
+          : target.content || ''
+      const next =
+        mode === 'replace'
+          ? `${text}\n`
+          : mode === 'prepend'
+            ? `${text}\n\n${current}`
+            : current.trim()
+              ? `${current.trim()}\n\n${text}\n`
+              : `${text}\n`
+
+      setCurrentNotebook(target)
+      setTitle(target.title)
+      setMarkdown(next)
+      setMarkdownVersion((value) => value + 1)
+      saveNotebook({ ...target, content: next }, { snapshot: true, snapshotLabel: 'Inserted artifact' })
     }
     window.addEventListener('wimNotebookInsertText', handleInsertText)
     return () => window.removeEventListener('wimNotebookInsertText', handleInsertText)
-  }, [handleInsertAIResponse])
+  }, [navigate])
 
   const handleHistoryRestored = useCallback(
     (payload: { content: string; title: string }) => {

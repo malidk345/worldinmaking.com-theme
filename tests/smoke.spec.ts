@@ -53,6 +53,16 @@ test.describe('WorldInMaking Shell Smoke Suite', () => {
         })
         expect(invalidChatHistory.status()).toBe(400)
 
+        const invalidMessages = await request.post('/api/chat', {
+            data: JSON.stringify({
+                prompt: 'hello',
+                modelId: 'nietzsche',
+                messages: [{ role: 'system', content: 'nope' }],
+            }),
+            headers: { 'Content-Type': 'application/json' },
+        })
+        expect(invalidMessages.status()).toBe(400)
+
         const act = await request.post('/api/bots/act', {
             data: 'null',
             headers: { 'Content-Type': 'application/json' },

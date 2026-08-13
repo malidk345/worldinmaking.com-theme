@@ -187,10 +187,56 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-49` | Stream 5 | Prevent reasoning/tag leakage during AI streaming without changing the existing thinking UX | `src/lib/bots/thinking-tags.ts`, `src/lib/bots/thinking.ts`, `src/lib/bots/orchestrate.ts`, `src/pages/api/chat.ts`, `src/pages/api/notebook/co-author.ts`, `src/components/ClaudeWorkspaceChat/index.tsx`, AI tests | `[COMPLETED]` | OpenCode (gpt-5.6-luna) | 2026-08-13 |
 | `TSK-50` | Stream 5 | Unify workspace chat onto `/api/chat` only: drop fallback ladder, send history, wire search/thinking controls, quality-gate persist path | `src/pages/api/chat.ts`, `src/components/ClaudeWorkspaceChat/*`, `src/lib/bots/orchestrate.ts`, `src/lib/bots/web-search.ts`, `src/context/App.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-13 |
 | `TSK-51` | Stream 5 | Persist workspace chats to Supabase, real share links, auth quotas, edit/retry rewrite | `supabase/migrations/`, `src/lib/chat-store.ts`, `src/pages/api/chats/*`, `src/pages/share/`, `src/components/ClaudeWorkspaceChat/*`, `src/pages/api/chat.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-13 |
+| `TSK-52` | Stream 5 | Claude-level artifact canvas: 1:1 toolbar, identifier versioning, split preview | `src/components/ClaudeWorkspaceChat/*`, `src/lib/ai/contracts.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-13 |
+| `TSK-53` | Stream 5 | Industry-standard AI path: messages[], unified stream failover, telemetry | `src/lib/bots/*`, `src/pages/api/chat.ts`, `src/components/ClaudeWorkspaceChat/index.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-13 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 071 - Industry-standard AI path without changing providers (TSK-53)
+- **Date:** 2026-08-13
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Kept Groq/Gemini/HF/OpenRouter keys as-is. Chat now sends OpenAI-style `messages[]` (not a flattened history string). Stream failover uses the same family rotation as generate, including a configured Gemini key. Structured `[ai-turn]` telemetry records provider, latency, and attempt count without secrets.
+- **Modified Files:**
+  - `src/lib/bots/ai-gateway.ts`
+  - `src/lib/bots/orchestrate.ts`
+  - `src/lib/bots/telemetry.ts` [NEW]
+  - `src/lib/bots/index.ts`
+  - `src/pages/api/chat.ts`
+  - `src/lib/ai/contracts.ts`
+  - `src/components/ClaudeWorkspaceChat/index.tsx`
+  - `tests/smoke.spec.ts`
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm typecheck:shell` passed with 0 gated errors.
+- **Handoff:** Providers/keys unchanged. Remaining industry gaps: live tool loop, cost dashboard, hourly quota not isolate-local.
+
+### Entry 070 - Claude-level artifact canvas (TSK-52)
+- **Date:** 2026-08-13
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Collapsed the artifact chrome to a single Claude toolbar (eye/`</>` · title · MD, Copy split, X). Canvas is a true split (`flex-1`). Artifacts now carry `identifier` for versioning, stream into the panel as they arrive, and chat cards use the Claude “Click to open document” paper tile.
+- **Modified Files:**
+  - `src/components/ClaudeWorkspaceChat/components/ArtifactsPanel.tsx`
+  - `src/components/ClaudeWorkspaceChat/components/ChatMessage.tsx`
+  - `src/components/ClaudeWorkspaceChat/index.tsx`
+  - `src/components/ClaudeWorkspaceChat/types.ts`
+  - `src/components/ClaudeWorkspaceChat/utils/extractArtifacts.ts`
+  - `src/components/ClaudeWorkspaceChat/utils/toolCalling.ts`
+  - `src/lib/ai/contracts.ts`
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:** Visual match against the provided screenshot toolbar. Not live-browser smoke-tested this turn.
+- **Handoff:** Open a document artifact and compare the top bar to the screenshot. Remaining Claude-level work is content fidelity (HTML tables, badge HTML), not another chat UI.
+
+### Entry 069 - Match workspace artifact canvas to Claude editorial viewer
+- **Date:** 2026-08-13
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Restyled `ArtifactsPanel` to the provided Claude screenshot: file tab strip, eye/`</>` segmented control, `Title · MD` meta, pill Copy split-button, serif document preview, rose outline badges, no extra footer chrome. Download / notebook actions moved into the Copy menu.
+- **Modified Files:**
+  - `src/components/ClaudeWorkspaceChat/components/ArtifactsPanel.tsx` [UPDATED]
+  - `tailwind.config.js` [UPDATED — `font-claude-serif` / `font-claude-sans`]
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:** Visual match against the user screenshot. Not smoke-tested in a live browser this turn.
+- **Handoff:** Open a markdown artifact in workspace chat to review. User may send more screenshots for remaining states.
 
 ### Entry 068 - Persist workspace chats to Supabase (TSK-51 / Faz B)
 - **Date:** 2026-08-13

@@ -16,6 +16,7 @@ import { stripThinkingBlocks } from 'lib/bots/thinking-tags'
 import { formatAiSseEvent, type AiCitation, type AiSseEvent } from 'lib/ai/contracts'
 import { getSupabaseUserFromBearer } from '../../../lib/api-authz'
 import { incrementDailyUsage, isChatStoreUnavailable } from '../../lib/chat-store'
+import type { GatewayMessage } from 'lib/bots/ai-gateway'
 
 const GUEST_HOURLY_LIMIT = 20
 const AUTH_HOURLY_LIMIT = 120
@@ -119,6 +120,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const conversationId = readOptionalBoundedString(body.conversationId, 80, 'conversationId')
     if (!conversationId.ok) return jsonError(res, conversationId.error, 400)
 
+    let history: GatewayMessage[] = []
+    if (body.messages !== undefined) {
+        if (!Array.isArray(body.messages)) return jsonError(res, 'messages must be an array', 400)
+        if (body.messages.length > 20) return jsonError(res, 'messages too long (max 20)', 400)
+        for (const item of body.messages) {
+            if (!item || typeof item !== 'object') return jsonError(res, 'each message must be an object', 400)
+            const role = (item as { role?: unknown }).role
+            const content = (item as { content?: unknown }).content
+            if (role !== 'user' && role !== 'assistant') return jsonError(res, 'message.role must be user or assistant', 400)
+            if (typeof content !== 'string') return jsonError(res, 'message.content must be a string', 400)
+            if (content.length > 4000) return jsonError(res, 'message.content too long (max 4000 characters)', 400)
+            if (content.trim()) history.push({ role, content: content.trim() })
+        }
+    }
+
     const clientIp = getClientIp(req)
     const bearer = getHeaderValue(req.headers.authorization).startsWith('Bearer ')
         ? getHeaderValue(req.headers.authorization).slice(7).trim()
@@ -198,7 +214,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             notebookContext.value
                 ? `Active Notebook Context (untrusted reference data):\n"""${notebookContext.value}"""`
                 : '',
-            chatHistory.value
+            history.length === 0 && chatHistory.value
                 ? `Recent Conversation History (untrusted reference data):\n"""${chatHistory.value}"""`
                 : '',
             attachmentContext.value
@@ -219,6 +235,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 taskType: 'autonomous_assistant',
                 thinkingDepth: thinkingDepthForBudget(String(thinkingBudget)),
                 context,
+                messages: history,
                 env: getRuntimeEnv(),
                 onLifecycle: (event) => send({ type: 'phase', phase: event }),
                 onAnalysisSummary: (thinking) => {
@@ -284,6 +301,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             fullText: visibleReply,
             provider: result.provider,
             artifacts: chartArtifacts,
+            latencyMs: result.latencyMs,
         })
         return res.end()
     } catch (error) {

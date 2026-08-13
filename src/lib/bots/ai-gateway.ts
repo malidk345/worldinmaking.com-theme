@@ -30,6 +30,44 @@ export type GatewayProvider =
     | 'openai-sdk'
     | 'none'
 
+export type GatewayMessage = {
+    role: 'system' | 'user' | 'assistant'
+    content: string
+}
+
+function buildCompletionMessages(
+    systemPrompt: string,
+    userPrompt: string,
+    history?: GatewayMessage[]
+): GatewayMessage[] {
+    const messages: GatewayMessage[] = [{ role: 'system', content: systemPrompt }]
+    if (history?.length) {
+        for (const item of history.slice(-16)) {
+            if ((item.role === 'user' || item.role === 'assistant') && item.content.trim()) {
+                messages.push({ role: item.role, content: item.content.slice(0, 4000) })
+            }
+        }
+    }
+    messages.push({ role: 'user', content: userPrompt })
+    return messages
+}
+
+function toGeminiContents(userPrompt: string, history?: GatewayMessage[]) {
+    const contents: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = []
+    if (history?.length) {
+        for (const item of history.slice(-16)) {
+            if ((item.role === 'user' || item.role === 'assistant') && item.content.trim()) {
+                contents.push({
+                    role: item.role === 'assistant' ? 'model' : 'user',
+                    parts: [{ text: item.content.slice(0, 4000) }],
+                })
+            }
+        }
+    }
+    contents.push({ role: 'user', parts: [{ text: userPrompt }] })
+    return contents
+}
+
 export interface GenerateResult {
     ok: true
     text: string
@@ -207,6 +245,7 @@ async function chatCompletionsStream(
     temperature?: number,
     extraHeaders: Record<string, string> = {},
     deadline?: number,
+    history?: GatewayMessage[],
 ): Promise<{ ok: true; stream: AsyncIterableIterator<string> } | { ok: false; detail: string }> {
     try {
         const timeoutMs = deadline
@@ -222,10 +261,7 @@ async function chatCompletionsStream(
             },
             body: JSON.stringify({
                 model,
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: userPrompt },
-                ],
+                messages: buildCompletionMessages(systemPrompt, userPrompt, history),
                 temperature: temperature ?? 0.7,
                 max_tokens: 1800,
                 stream: true
@@ -304,6 +340,7 @@ async function chatCompletions(
     temperature?: number,
     extraHeaders: Record<string, string> = {},
     deadline?: number,
+    history?: GatewayMessage[],
 ): Promise<{ ok: true; text: string } | { ok: false; detail: string }> {
     try {
         const timeoutMs = deadline
@@ -318,10 +355,7 @@ async function chatCompletions(
             },
             body: JSON.stringify({
                 model,
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: userPrompt },
-                ],
+                messages: buildCompletionMessages(systemPrompt, userPrompt, history),
                 temperature: temperature ?? 0.7,
                 max_tokens: 1800,
             }),
@@ -358,6 +392,7 @@ async function geminiGenerate(
     userPrompt: string,
     temperature?: number,
     deadline?: number,
+    history?: GatewayMessage[],
 ): Promise<{ ok: true; text: string } | { ok: false; detail: string }> {
     try {
         const timeoutMs = deadline
@@ -369,7 +404,7 @@ async function geminiGenerate(
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 systemInstruction: { parts: [{ text: systemPrompt }] },
-                contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+                contents: toGeminiContents(userPrompt, history),
                 generationConfig: { temperature: temperature ?? 0.7, maxOutputTokens: 1800 },
             }),
         }, timeoutMs)
@@ -395,12 +430,19 @@ async function geminiGenerate(
 }
 
 type FamilySuccess = { ok: true; text: string; provider: GatewayProvider; trace?: 'qwen' }
+type FamilyParams = {
+    systemPrompt: string
+    userPrompt: string
+    history?: GatewayMessage[]
+    temperature?: number
+    deadline: number
+}
 
 /** Groq — rotate through all configured keys, first success wins. */
 async function tryGroqFamily(
     groqKeys: string[],
     model: string,
-    params: { systemPrompt: string; userPrompt: string; temperature?: number; deadline: number },
+    params: FamilyParams,
     attempts: string[]
 ): Promise<FamilySuccess | null> {
     let sawRateLimit = false
@@ -415,6 +457,7 @@ async function tryGroqFamily(
             params.temperature,
             {},
             params.deadline,
+            params.history,
         ), params.deadline)
         if (r.ok) {
             return {
@@ -436,7 +479,7 @@ async function tryOpenRouterFamily(
     openRouterKey: string,
     taskType: TaskType,
     runtimeEnv: EnvStore,
-    params: { systemPrompt: string; userPrompt: string; temperature?: number; deadline: number },
+    params: FamilyParams,
     attempts: string[]
 ): Promise<FamilySuccess | null> {
     if (!openRouterKey) return null
@@ -463,6 +506,7 @@ async function tryOpenRouterFamily(
                 'X-Title': 'WorldInMaking Philosopher Bots',
             },
             params.deadline,
+            params.history,
         ), params.deadline)
         if (r.ok) return { ok: true, text: r.text, provider: `openrouter:${model}` }
         if (r.detail.startsWith('402')) creditsDepleted = true
@@ -476,7 +520,7 @@ async function tryOpenRouterFamily(
 /** Gemini — rotate through all keys × all models, first success wins. */
 async function tryGeminiFamily(
     geminiKeys: string[],
-    params: { systemPrompt: string; userPrompt: string; temperature?: number; deadline: number },
+    params: FamilyParams,
     attempts: string[]
 ): Promise<FamilySuccess | null> {
     let sawRateLimit = false
@@ -486,7 +530,7 @@ async function tryGeminiFamily(
         for (const model of GEMINI_MODELS) {
             if (Date.now() >= params.deadline) return null
             const r = await withRetry(
-                () => geminiGenerate(key, model, params.systemPrompt, params.userPrompt, params.temperature, params.deadline),
+                () => geminiGenerate(key, model, params.systemPrompt, params.userPrompt, params.temperature, params.deadline, params.history),
                 params.deadline,
             )
             if (r.ok) return { ok: true, text: r.text, provider: `gemini-fetch:${model}` }
@@ -501,7 +545,7 @@ async function tryGeminiFamily(
 /** Hugging Face Inference Router — OpenAI-compatible endpoint, rotate through all keys. */
 async function tryHuggingFaceFamily(
     hfKeys: string[],
-    params: { systemPrompt: string; userPrompt: string; temperature?: number; deadline: number },
+    params: FamilyParams,
     attempts: string[]
 ): Promise<FamilySuccess | null> {
     let sawRateLimit = false
@@ -516,6 +560,7 @@ async function tryHuggingFaceFamily(
             params.temperature,
             {},
             params.deadline,
+            params.history,
         ), params.deadline)
         if (r.ok) return { ok: true, text: r.text, provider: 'huggingface' }
         if (isRateLimitDetail(r.detail)) sawRateLimit = true
@@ -534,6 +579,7 @@ async function tryHuggingFaceFamily(
 export async function generateWithGateway(params: {
     systemPrompt: string
     userPrompt: string
+    history?: GatewayMessage[]
     taskType?: TaskType
     temperature?: number
     /** Optional bot/persona name — used purely to pick a starting provider offset. */
@@ -666,6 +712,7 @@ export async function generateWithGateway(params: {
 export async function streamWithGateway(params: {
     systemPrompt: string
     userPrompt: string
+    history?: GatewayMessage[]
     taskType?: TaskType
     temperature?: number
     botName?: string
@@ -688,69 +735,107 @@ export async function streamWithGateway(params: {
         }
     }
 
-    const groqRaw = envFrom(runtimeEnv, 'GROQ_API_KEYS', 'GROQ_API_KEY')
-    const groqModel = envFrom(runtimeEnv, 'GROQ_MODEL', 'QWEN_MODEL') || 'qwen/qwen3.6-27b'
-    const openRouterKey = envFrom(runtimeEnv, 'OPENROUTER_API_KEY')
+    const groqRaw = envFrom(runtimeEnv, 'GROQ_API_KEYS', 'GROQ_API_KEY', 'GROQ_KEYS', 'GROQ_KEY')
+    const groqModel = envFrom(runtimeEnv, 'GROQ_MODEL', 'GROQ_PRIMARY_MODEL', 'QWEN_MODEL') || 'qwen/qwen3.6-27b'
+    const openRouterKey = envFrom(runtimeEnv, 'OPENROUTER_API_KEY', 'OPEN_ROUTER_API_KEY', 'OPENROUTER_KEY')
     const hfRaw = envFrom(runtimeEnv, 'HUGGINGFACE_API_KEYS', 'HUGGINGFACE_API_KEY', 'HF_API_KEY', 'HF_TOKEN')
+    const geminiRaw = envFrom(
+        runtimeEnv,
+        'GEMINI_API_KEYS',
+        'GEMINI_API_KEY',
+        'GEMINI_KEYS',
+        'GEMINI_KEY',
+        'GOOGLE_GENERATIVE_AI_API_KEY',
+        'GOOGLE_API_KEY',
+        'GOOGLE_AI_API_KEY',
+        'GOOGLE_GEMINI_API_KEY',
+    )
 
-    const openRouterKeys = splitKeys(openRouterKey)
     const groqKeys = splitKeys(groqRaw)
     const hfKeys = splitKeys(hfRaw)
+    const geminiKeys = splitKeys(geminiRaw)
     const openRouterModel =
         envFrom(runtimeEnv, 'OPENROUTER_MODEL') || TASK_OPENROUTER[params.taskType || 'community_reply'] || OPENROUTER_MODELS[0]
 
-    // 1. Try Groq Streaming
-    if (groqKeys.length > 0 && !isFamilyCooling('groq')) {
-        let sawRateLimit = false
-        for (const key of groqKeys) {
-            if (Date.now() >= deadline) break
-            const r = await chatCompletionsStream(
-                'https://api.groq.com/openai/v1/chat/completions',
-                key,
-                groqModel,
-                params.systemPrompt,
-                params.userPrompt,
-                params.temperature,
-                {},
-                deadline,
-            )
-            if (r.ok) return { ok: true, provider: 'groq', stream: r.stream, attempts, configured }
-            if (isRateLimitDetail(r.detail)) sawRateLimit = true
-            attempts.push(`groq: ${r.detail}`)
-        }
-        if (sawRateLimit) markFamilyCooling('groq')
+    const familyParams: FamilyParams = {
+        systemPrompt: params.systemPrompt,
+        userPrompt: params.userPrompt,
+        history: params.history,
+        temperature: params.temperature,
+        deadline,
     }
 
-    // 2. Hugging Face Inference Router (OpenAI-compatible stream)
-    if (hfKeys.length > 0 && !isFamilyCooling('huggingface')) {
-        let sawRateLimit = false
-        for (const key of hfKeys) {
-            if (Date.now() >= deadline) break
-            const r = await chatCompletionsStream(
-                'https://router.huggingface.co/v1/chat/completions',
-                key,
-                HUGGINGFACE_MODEL,
-                params.systemPrompt,
-                params.userPrompt,
-                params.temperature,
-                {},
-                deadline,
-            )
-            if (r.ok) return { ok: true, provider: 'huggingface', stream: r.stream, attempts, configured }
-            if (isRateLimitDetail(r.detail)) sawRateLimit = true
-            attempts.push(`huggingface: ${r.detail}`)
+    for (const family of getFamilyOrder(params.botName)) {
+        if (Date.now() >= deadline) {
+            attempts.push(`gateway: total timeout after ${GATEWAY_TOTAL_TIMEOUT_MS}ms`)
+            break
         }
-        if (sawRateLimit) markFamilyCooling('huggingface')
-    }
 
-    // 3. Try OpenRouter Streaming
-    if (openRouterKeys.length > 0 && !isFamilyCooling('openrouter')) {
-        let sawRateLimit = false
-        for (const key of openRouterKeys) {
-            if (Date.now() >= deadline) break
+        if (family === 'groq' && groqKeys.length > 0) {
+            let sawRateLimit = false
+            for (const key of groqKeys) {
+                if (Date.now() >= deadline) break
+                const r = await chatCompletionsStream(
+                    'https://api.groq.com/openai/v1/chat/completions',
+                    key,
+                    groqModel,
+                    params.systemPrompt,
+                    params.userPrompt,
+                    params.temperature,
+                    {},
+                    deadline,
+                    params.history,
+                )
+                if (r.ok) return { ok: true, provider: 'groq', stream: r.stream, attempts, configured }
+                if (isRateLimitDetail(r.detail)) sawRateLimit = true
+                attempts.push(`groq: ${r.detail}`)
+            }
+            if (sawRateLimit) markFamilyCooling('groq')
+            continue
+        }
+
+        if (family === 'gemini' && geminiKeys.length > 0) {
+            // Gemini has no token stream in this gateway; use the same generate family so
+            // a configured Gemini key is not skipped during streaming chat.
+            const result = await tryGeminiFamily(geminiKeys, familyParams, attempts)
+            if (result) {
+                const text = result.text
+                const oneShot = async function* (): AsyncIterableIterator<string> {
+                    yield text
+                }
+                return { ok: true, provider: result.provider, stream: oneShot(), attempts, configured }
+            }
+            continue
+        }
+
+        if (family === 'huggingface' && hfKeys.length > 0) {
+            let sawRateLimit = false
+            for (const key of hfKeys) {
+                if (Date.now() >= deadline) break
+                const r = await chatCompletionsStream(
+                    'https://router.huggingface.co/v1/chat/completions',
+                    key,
+                    HUGGINGFACE_MODEL,
+                    params.systemPrompt,
+                    params.userPrompt,
+                    params.temperature,
+                    {},
+                    deadline,
+                    params.history,
+                )
+                if (r.ok) return { ok: true, provider: 'huggingface', stream: r.stream, attempts, configured }
+                if (isRateLimitDetail(r.detail)) sawRateLimit = true
+                attempts.push(`huggingface: ${r.detail}`)
+            }
+            if (sawRateLimit) markFamilyCooling('huggingface')
+            continue
+        }
+
+        if (family === 'openrouter' && openRouterKey) {
+            let sawRateLimit = false
             const r = await chatCompletionsStream(
                 'https://openrouter.ai/api/v1/chat/completions',
-                key,
+                openRouterKey,
                 openRouterModel,
                 params.systemPrompt,
                 params.userPrompt,
@@ -761,12 +846,13 @@ export async function streamWithGateway(params: {
                     'X-Title': 'WorldInMaking Philosopher Bots',
                 },
                 deadline,
+                params.history,
             )
             if (r.ok) return { ok: true, provider: 'openrouter', stream: r.stream, attempts, configured }
             if (isRateLimitDetail(r.detail)) sawRateLimit = true
             attempts.push(`openrouter: ${r.detail}`)
+            if (sawRateLimit) markFamilyCooling('openrouter')
         }
-        if (sawRateLimit) markFamilyCooling('openrouter')
     }
 
     return {

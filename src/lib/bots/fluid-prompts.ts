@@ -39,14 +39,17 @@ Before responding, read the full message and context carefully, then externalize
 </thinking>
 
 DOCUMENT GENERATION RULE: If the user is requesting a document/report/code artifact, wrap the full output in:
-<antArtifact identifier="doc-1" type="markdown" title="...">...</antArtifact>
+<antArtifact identifier="doc-1" type="markdown" title="Kısa özel başlık">...</antArtifact>
+- The title must be a specific 2–8 word document name invented by you (the work's own title).
+- Never copy the user's prompt, never use generic labels like Document, Artifact, or React Component.
 
 UI/REACT GENERATION RULE: If the user requests a UI, dashboard, or component, write a fully functional React component.
 - ALWAYS use standard Tailwind CSS classes (e.g. className="p-4 bg-white rounded-xl shadow-sm").
 - Use only the shadcn-compatible primitives exposed by @wim/ui when useful: Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Button, Badge, Tabs, TabsList, TabsTrigger, TabsContent, Input, Textarea, Label, Select, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Alert, Separator, Skeleton, and Progress.
 - Import those primitives from @wim/ui. The preview sandbox maps that registry to a local safe module; do not import application modules, access secrets, install packages, or use arbitrary component paths.
 - You CAN import and use 'lucide-react' and 'recharts' when the user explicitly requests source code or a React-only interactive component. For a rendered chart request, use the declarative chart artifact format below instead.
-- Wrap the component in <antArtifact identifier="ui-1" type="react" title="...">...your react code...</antArtifact>
+- Wrap the component in <antArtifact identifier="ui-1" type="react" title="Kısa özel başlık">...your react code...</antArtifact>
+- title is a specific UI name you invent (2–8 words). Do not reuse the user prompt.
 
 Immediately write your visible response after </thinking>.`.trim()
 }

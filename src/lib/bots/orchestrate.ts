@@ -9,7 +9,8 @@ import {
     type TaskType,
 } from 'lib/persona-engine'
 
-import { generateWithGateway, streamWithGateway, type GatewayProvider } from './ai-gateway'
+import { generateWithGateway, streamWithGateway, type GatewayMessage, type GatewayProvider } from './ai-gateway'
+import { estimateChars, recordAiTurn } from './telemetry'
 
 import {
     buildThinkingInstruction,
@@ -42,6 +43,8 @@ export interface BotRunInput {
     scope?: PromptScope
     /** Server-owned task instruction; unlike context, this is not user data. */
     trustedInstruction?: string
+    /** Prior turns as OpenAI-style messages. Preferred over stuffing history into context. */
+    messages?: GatewayMessage[]
     /** Truthful lifecycle notifications for streaming/API adapters. */
     onLifecycle?: (event: AiLifecycleEvent) => void
     /** Safe, high-level model summary available before the quality gate runs. */
@@ -148,6 +151,7 @@ export async function runBotTurn(input: BotRunInput): Promise<BotRunResult> {
     const gen = await generateWithGateway({
         systemPrompt,
         userPrompt,
+        history: input.messages,
         taskType,
         botName: persona.name,
         env: runtimeEnv,
@@ -169,6 +173,17 @@ export async function runBotTurn(input: BotRunInput): Promise<BotRunResult> {
             gen.configured.openai ||
             gen.configured.gemini ||
             gen.configured.huggingface
+
+        recordAiTurn({
+            ok: false,
+            stream: false,
+            provider: 'none',
+            taskType,
+            philosopher: persona.name,
+            latencyMs: gen.latencyMs,
+            attemptCount: gen.attempts.length,
+            errorCode: 'provider_unavailable',
+        })
 
         return {
             success: false,
@@ -199,6 +214,18 @@ export async function runBotTurn(input: BotRunInput): Promise<BotRunResult> {
     input.onAnalysisSummary?.(thinking)
 
     const gatedReply = await applyQualityGate(rawReply, persona, taskType, systemPrompt, runtimeEnv, input.onLifecycle, true)
+
+    recordAiTurn({
+        ok: true,
+        stream: false,
+        provider: String(gen.provider),
+        taskType,
+        philosopher: persona.name,
+        latencyMs: gen.latencyMs,
+        attemptCount: 0,
+        promptChars: estimateChars([systemPrompt, userPrompt]),
+        completionChars: gatedReply.length,
+    })
 
     return {
         success: true,
@@ -313,9 +340,11 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
     const userPrompt = buildUserPrompt(input, taskType)
 
     input.onLifecycle?.({ phase: 'generation', status: 'started' })
+    const streamStarted = Date.now()
     const gen = await streamWithGateway({
         systemPrompt,
         userPrompt,
+        history: input.messages,
         taskType,
         botName: persona.name,
         env: runtimeEnv,
@@ -331,6 +360,17 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
             depth: input.thinkingDepth || 'standard',
             source: 'none',
         }
+        recordAiTurn({
+            ok: false,
+            stream: true,
+            provider: 'none',
+            taskType,
+            philosopher: persona.name,
+            latencyMs: Date.now() - streamStarted,
+            attemptCount: gen.attempts.length,
+            errorCode: 'provider_unavailable',
+        })
+
         return {
             success: false,
             philosopher: persona.name,
@@ -365,6 +405,18 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
 
     const gatedReply = await applyQualityGate(rawReply, persona, taskType, systemPrompt, runtimeEnv, input.onLifecycle, false)
 
+    recordAiTurn({
+        ok: true,
+        stream: true,
+        provider: String(gen.provider),
+        taskType,
+        philosopher: persona.name,
+        latencyMs: Date.now() - streamStarted,
+        attemptCount: gen.attempts.length,
+        promptChars: estimateChars([systemPrompt, userPrompt]),
+        completionChars: gatedReply.length,
+    })
+
     return {
         success: true,
         philosopher: persona.name,
@@ -374,7 +426,7 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
         thinking,
         provider: gen.provider,
         confident: true,
-        latencyMs: 0,
+        latencyMs: Date.now() - streamStarted,
         taskType,
         persona: {
             name: persona.name,
