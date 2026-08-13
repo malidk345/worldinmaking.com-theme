@@ -41,9 +41,16 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   const [isSpeaking, setIsSpeaking] = useState(false);
 
   // Typewriter effect state
-  const isDirectDisplay = isUser || message.isStreaming || message.isTypingDone || typewriterSpeed === 'off';
+  const isHistorical = useRef(message.isTypingDone).current;
+  const isDirectDisplay = isUser || isHistorical || typewriterSpeed === 'off';
   const [animatedText, setAnimatedText] = useState(isDirectDisplay ? message.content : '');
-  const [isTyping, setIsTyping] = useState(false);
+  const [isTyping, setIsTyping] = useState(!isDirectDisplay);
+  const currentIndexRef = useRef(isDirectDisplay ? message.content.length : 0);
+  const contentRef = useRef(message.content);
+
+  useEffect(() => {
+    contentRef.current = message.content;
+  }, [message.content]);
 
   const displayedText = isDirectDisplay ? message.content : animatedText;
 
@@ -53,23 +60,28 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
       return;
     }
 
-    let currentIndex = 0;
     setIsTyping(true);
     const speedMs = typewriterSpeed === 'slow' ? 35 : typewriterSpeed === 'fast' ? 8 : 18;
 
     const interval = setInterval(() => {
-      currentIndex += 2;
-      if (currentIndex >= message.content.length) {
-        setAnimatedText(message.content);
-        setIsTyping(false);
-        clearInterval(interval);
+      const fullText = contentRef.current;
+      if (currentIndexRef.current >= fullText.length) {
+        if (message.isTypingDone) {
+          setAnimatedText(fullText);
+          setIsTyping(false);
+          clearInterval(interval);
+        }
       } else {
-        setAnimatedText(message.content.slice(0, currentIndex));
+        const distance = fullText.length - currentIndexRef.current;
+        const step = Math.max(1, distance > 200 ? 8 : distance > 50 ? 3 : 1);
+        currentIndexRef.current += step;
+        if (currentIndexRef.current > fullText.length) currentIndexRef.current = fullText.length;
+        setAnimatedText(fullText.slice(0, currentIndexRef.current));
       }
     }, speedMs);
 
     return () => clearInterval(interval);
-  }, [message.content, isDirectDisplay, typewriterSpeed]);
+  }, [message.isTypingDone, isDirectDisplay, typewriterSpeed]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
