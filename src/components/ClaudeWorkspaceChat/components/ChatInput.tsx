@@ -181,13 +181,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   return (
     <div className="w-full max-w-3xl mx-auto px-3 sm:px-4 pointer-events-none">
-      {/* Scroll to bottom button floating arrow Ôåô */}
+      {/* Scroll to bottom button */}
       {showScrollToBottom && (
         <div className="flex justify-center mb-2 pointer-events-auto">
           <button
             onClick={onScrollToBottom}
             className="flex h-8 w-8 items-center justify-center rounded-full bg-white border border-primary shadow-sm text-secondary hover:bg-bg-primary active:scale-95 transition-all cursor-pointer"
-            title="A┼şa─ş─▒ in"
+            title="Aşağı in"
           >
             <ArrowDown className="h-4 w-4" />
           </button>
@@ -342,7 +342,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 type="button"
                 onClick={onStopStreaming}
                 className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary bg-white text-primary shadow-2xs hover:bg-accent active:scale-95 cursor-pointer"
-                title="Yan─▒t─▒ Durdur"
+                title="Yanıtı Durdur"
               >
                 <div className="h-3.5 w-3.5 rounded-[2px] bg-stone-900" />
               </button>
@@ -356,7 +356,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     ? 'bg-[#1E3A8A] hover:bg-[#1e40af] text-white active:scale-95 cursor-pointer'
                     : 'bg-[#1E3A8A]/35 text-white/50 cursor-not-allowed'
                 }`}
-                title="G├Ânder"
+                title="Gönder"
               >
                 <ArrowUp className="h-5 w-5 stroke-[2.2]" />
               </button>
