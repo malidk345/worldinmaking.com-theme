@@ -1,3 +1,4 @@
+export const config = { runtime: 'edge' }
 /**
  * Hourly (or on-demand) philosopher forum tick.
  * Uses shared bot gateway + forum actions (thinking process + Supabase persist).

@@ -1,3 +1,4 @@
+export const config = { runtime: 'edge' }
 /**
  * GET    /api/notebooks/:id?owner_key=...
  * PUT    /api/notebooks/:id  { owner_key, notebook, history_entries? }

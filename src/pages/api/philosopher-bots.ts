@@ -1,3 +1,4 @@
+export const config = { runtime: 'edge' }
 /**
  * Public list of resident philosopher bots + avatar URLs from site profiles.
  * Avatars come from Supabase profiles linked via bot_profiles (same as WIMBot).

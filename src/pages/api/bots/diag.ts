@@ -1,3 +1,4 @@
+export const config = { runtime: 'edge' }
 /**
  * Diagnostic endpoint — reports which provider keys are visible at runtime.
  * REMOVE OR PROTECT THIS ENDPOINT AFTER DIAGNOSIS.

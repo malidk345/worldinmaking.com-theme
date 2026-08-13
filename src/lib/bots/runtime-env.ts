@@ -28,7 +28,7 @@ function getCfEnv(): Record<string, string> {
 
 export function getRuntimeEnv(): EnvStore {
     // Start with process.env (works locally, may be empty in CF edge for secrets)
-    const base: EnvStore = { ...(process.env as EnvStore) }
+    const base: EnvStore = { ...(typeof process !== 'undefined' ? process.env as EnvStore : {}) }
 
     // Merge CF secrets on top — these are the authoritative values in production
     const cfEnv = getCfEnv()

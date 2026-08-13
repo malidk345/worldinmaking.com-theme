@@ -1,3 +1,4 @@
+export const config = { runtime: 'edge' }
 /**
  * Philosopher bot chat API.
  * Reads CF secrets directly in the handler (getRequestContext MUST be called

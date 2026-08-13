@@ -1,3 +1,4 @@
+export const config = { runtime: 'edge' }
 /**
  * GET  /api/notebooks?owner_key=...          → list owner's notebooks
  * GET  /api/notebooks?short_id=...&public=1  → published notebook by short_id

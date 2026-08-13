@@ -1,3 +1,4 @@
+export const config = { runtime: 'edge' }
 /** Authenticated admin-only manual trigger for one philosopher bot tick. */
 
 

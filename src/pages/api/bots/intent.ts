@@ -1,3 +1,4 @@
+export const config = { runtime: 'edge' }
 
 
 import { getRuntimeEnv } from 'lib/bots/runtime-env'

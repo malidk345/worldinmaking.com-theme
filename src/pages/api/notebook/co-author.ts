@@ -1,3 +1,4 @@
+export const config = { runtime: 'edge' }
 /**
  * Notebook Co-Authoring SSE Real-Time API Endpoint — WorldInMaking.com (TSK-29)
  *
