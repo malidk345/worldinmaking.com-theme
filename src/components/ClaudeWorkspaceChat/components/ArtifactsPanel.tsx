@@ -1,10 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { PANEL_BG } from '../../../constants/frostedSurfaces';
 import { Artifact } from '../types';
 import { X, Code2, Eye, Copy, Download, Check, ChevronDown, FileInput } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
+import { SandpackProvider, SandpackPreview } from '@codesandbox/sandpack-react';
+import { normalizeSandboxReactSource, WIM_UI_SOURCE } from '../sandbox/wimUiSource';
+
+const ChartArtifactRenderer = dynamic(
+  () => import('./ChartArtifactRenderer').then((module) => module.ChartArtifactRenderer),
+  { ssr: false }
+);
 
 interface ArtifactsPanelProps {
   artifact: Artifact | null;
@@ -91,6 +99,7 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
 
   // Detect if content is a Mermaid diagram (for code artifacts with mermaid lang, or explicit mermaid blocks)
   const isMermaidContent =
+    artifact.type === 'mermaid' ||
     artifact.language === 'mermaid' ||
     /^```mermaid\n/.test(artifact.content.trim()) ||
     (artifact.type === 'code' && /^(?:graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie|gitGraph|mindmap|timeline|sankey-beta|xychart-beta)\s/m.test(artifact.content.trim()));
@@ -158,8 +167,6 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
     }
     return `<!DOCTYPE html><html><body style="font-family:sans-serif;padding:20px;"><pre style="white-space:pre-wrap;">${artifact.content}</pre></body></html>`;
   };
-
-  const isInteractiveType = (artifact.type === 'react' || artifact.type === 'html' || artifact.type === 'svg') && !isMermaidContent;
 
   // Find all versions matching title or ID pattern
   const versionList = allArtifacts.filter(
@@ -342,12 +349,67 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
           <div className="h-full w-full overflow-auto p-4 bg-primary text-light-2 font-mono text-xs leading-relaxed">
             <pre className="whitespace-pre-wrap">{artifact.content}</pre>
           </div>
+        ) : activeTab === 'preview' && artifact.type === 'chart' ? (
+          <div className="h-full w-full p-5 bg-white">
+            {artifact.chartSpec ? (
+              <ChartArtifactRenderer spec={artifact.chartSpec} />
+            ) : (
+              <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+                Grafik verisi doğrulanamadı. Kod veya veri sekmesinden çıktıyı inceleyebilirsin.
+              </div>
+            )}
+          </div>
         ) : isMermaidContent ? (
           /* Mermaid Diagram Preview */
           <div className="p-6 bg-white min-h-full">
             <MermaidDiagram chart={mermaidSource} />
           </div>
-        ) : activeTab === 'preview' && isInteractiveType ? (
+        ) : activeTab === 'preview' && artifact.type === 'react' ? (
+          <div className="h-full w-full p-3 flex flex-col bg-white">
+            <div className="w-full flex-1 rounded-xl border border-primary bg-white overflow-hidden shadow-2xs relative">
+              <SandpackProvider
+                template="react-ts"
+                theme="light"
+                files={{
+                  "/App.tsx": normalizeSandboxReactSource(artifact.content),
+                  "/wim-ui.tsx": WIM_UI_SOURCE,
+                  "/public/index.html": `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body { margin: 0; padding: 16px; font-family: system-ui, -apple-system, sans-serif; background: transparent; }
+      * { box-sizing: border-box; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>`
+                }}
+                customSetup={{
+                  dependencies: {
+                    "lucide-react": "^0.292.0",
+                    "recharts": "^2.10.3",
+                    "framer-motion": "^10.16.4",
+                    "tailwind-merge": "^2.2.0",
+                    "clsx": "^2.1.0"
+                  }
+                }}
+              >
+                <SandpackPreview
+                  showNavigator={false}
+                  showOpenInCodeSandbox={false}
+                  showRefreshButton={true}
+                  style={{ height: '100%', border: 'none' }}
+                />
+              </SandpackProvider>
+            </div>
+          </div>
+        ) : activeTab === 'preview' && (artifact.type === 'html' || artifact.type === 'svg') ? (
           <div className="h-full w-full p-3 flex flex-col bg-white">
             <div className="w-full flex-1 rounded-xl border border-primary bg-white overflow-hidden shadow-2xs">
               <iframe
@@ -364,7 +426,7 @@ export const ArtifactsPanel: React.FC<ArtifactsPanelProps> = ({
           <div className="mx-auto w-full max-w-3xl py-8 px-6 sm:px-10 md:px-14 leading-[1.68rem] text-primary font-claude-serif text-[1rem] bg-white">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
-               rehypePlugins={[rehypeSanitize]}
+              rehypePlugins={[rehypeSanitize]}
               components={{
                 h1: ({ children }) => (
                   <h1 className="mt-2 mb-4 text-[1.65rem] sm:text-[1.85rem] font-bold text-primary leading-tight font-claude-serif">

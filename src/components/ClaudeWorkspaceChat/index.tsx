@@ -34,7 +34,9 @@ import { getNotebook, createNotebook } from '../../notebook-app/scenes/notebooks
 import type { OSActionCard as OSActionCardType } from './types';
 import { extractArtifactsFromContent } from './utils/extractArtifacts';
 import { processArtifactRevision } from './utils/toolCalling';
-import { parseAiSseEvent } from 'lib/ai/contracts';
+import { parseAiSseEvent, type AiArtifact } from 'lib/ai/contracts';
+import { parseChartSpec, stripChartArtifactMarkup } from 'lib/ai/chart-artifacts';
+import { stripThinkingBlocks } from 'lib/bots/thinking-tags';
 
 const CHAT_STORAGE_KEYS = ['claude_workspace_chats_v7', 'claude_workspace_chats_v6', 'claude_workspace_chats_v4'];
 const PROJECT_STORAGE_KEYS = ['claude_workspace_projects_v7', 'claude_workspace_projects_v6', 'claude_workspace_projects'];
@@ -50,6 +52,25 @@ function readStored<T>(keys: string[], fallback: T): T {
      }
    }
    return fallback;
+}
+
+function toWorkspaceArtifact(artifact: AiArtifact): Artifact {
+  const chartSpec = artifact.chartSpec || (artifact.type === 'chart' ? parseChartSpec(artifact.content) || undefined : undefined);
+  return {
+    id: artifact.id,
+    title: artifact.title,
+    type: artifact.type,
+    language: artifact.language,
+    content: artifact.content || (chartSpec ? JSON.stringify(chartSpec) : ''),
+    chartSpec,
+    description: artifact.description,
+    version: artifact.version || 1,
+    createdAt: artifact.createdAt || new Date().toISOString(),
+  };
+}
+
+function sanitizePublicAssistantText(value: string): string {
+  return stripThinkingBlocks(stripChartArtifactMarkup(value));
 }
 
 export default function App({ onClose }: { onClose?: () => void }) {
@@ -348,6 +369,17 @@ export default function App({ onClose }: { onClose?: () => void }) {
       steps: [] as any[],
       summary: '',
     };
+    let streamedArtifacts: Artifact[] = [];
+    const appendStreamedArtifacts = (incoming: AiArtifact[] | undefined) => {
+      if (!incoming || incoming.length === 0) return;
+      const next = incoming.map(toWorkspaceArtifact);
+      streamedArtifacts = [...streamedArtifacts, ...next].filter((artifact, index, all) =>
+        all.findIndex((candidate) =>
+          candidate.id === artifact.id ||
+          (candidate.type === artifact.type && candidate.content === artifact.content)
+        ) === index
+      );
+    };
 
     let isStreamComplete = false;
     let backendError = false;
@@ -437,10 +469,18 @@ export default function App({ onClose }: { onClose?: () => void }) {
                  }
                }
 
-               if (parsed.type === 'thinking_start') {
-                 currentThinkingProcess.durationSeconds = parsed.durationSeconds || 0;
-                 currentThinkingProcess.tokenCount = parsed.tokenCount || 0;
-               }
+                if (parsed.type === 'thinking_start') {
+                  currentThinkingProcess.durationSeconds = parsed.durationSeconds || 0;
+                  currentThinkingProcess.tokenCount = parsed.tokenCount || 0;
+                }
+
+                if (parsed.type === 'artifacts') {
+                  appendStreamedArtifacts(parsed.artifacts);
+                  updateAssistantMessage(targetChatId, assistantMessageId, {
+                    content: sanitizePublicAssistantText(accumulatedContent),
+                    artifacts: streamedArtifacts,
+                  });
+                }
 
                 if (parsed.type === 'thinking_step') {
                   const existingIdx = currentThinkingProcess.steps.findIndex((step: any) => step.id === parsed.step.id);
@@ -450,7 +490,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
                   currentThinkingProcess.steps = [...currentThinkingProcess.steps];
                   
                   updateAssistantMessage(targetChatId, assistantMessageId, {
-                    content: accumulatedContent,
+                    content: sanitizePublicAssistantText(accumulatedContent),
                     thinkingProcess: { ...currentThinkingProcess },
                   });
                 }
@@ -477,7 +517,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
                   currentThinkingProcess.steps = [...currentThinkingProcess.steps];
                   
                   updateAssistantMessage(targetChatId, assistantMessageId, {
-                    content: accumulatedContent,
+                    content: sanitizePublicAssistantText(accumulatedContent),
                     thinkingProcess: { ...currentThinkingProcess },
                   });
                 }
@@ -490,19 +530,21 @@ export default function App({ onClose }: { onClose?: () => void }) {
                  continue;
                }
 
-               if (parsed.type === 'token') {
-                 accumulatedContent += parsed.text;
-                 updateAssistantMessage(targetChatId, assistantMessageId, {
-                   content: accumulatedContent,
-                   thinkingProcess: { ...currentThinkingProcess },
-                 });
-               }
+                if (parsed.type === 'token') {
+                  accumulatedContent += parsed.text;
+                  updateAssistantMessage(targetChatId, assistantMessageId, {
+                    content: sanitizePublicAssistantText(accumulatedContent),
+                    thinkingProcess: { ...currentThinkingProcess },
+                  });
+                }
 
-               if (parsed.type === 'done') {
-                 accumulatedContent = parsed.fullText || accumulatedContent;
-                 updateAssistantMessage(targetChatId, assistantMessageId, {
-                   content: accumulatedContent,
-                 });
+                if (parsed.type === 'done') {
+                  appendStreamedArtifacts(parsed.artifacts);
+                  accumulatedContent = parsed.fullText || accumulatedContent;
+                  updateAssistantMessage(targetChatId, assistantMessageId, {
+                    content: sanitizePublicAssistantText(accumulatedContent),
+                    artifacts: streamedArtifacts,
+                  });
                  break;
                }
              } catch {
@@ -513,7 +555,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
       }
 
       // Tier 2: Fallback to /api/bots/act or /api/philosopher-bot if SSE returned empty
-       let finalCleanContent = accumulatedContent.replace(/<(?:analysis_summary|thinking|think)>[\s\S]*?(?:<\/(?:analysis_summary|thinking|think)>|$)/gi, '').replace(/<(?:analysis_summary|thinking|think)>[\s\S]*$/gi, '').replace(/<\/?(?:analysis_summary|goal|approach|tradeoff|answer_plan|thinking|think|reflect|perceive|frame|tension|move|structure|genealogy|deconstruction|overcoming|materialist_basis|dialectical_tension|praxis|substance_analysis|affect_mapping|rational_intuition|negative_dialectics|immanent_critique|resolution)>/gi, '').trim();
+       let finalCleanContent = sanitizePublicAssistantText(accumulatedContent);
        if (!finalCleanContent) {
         let res: Response | null = null;
         try {
@@ -576,15 +618,30 @@ export default function App({ onClose }: { onClose?: () => void }) {
           if (contentType.includes('application/json')) {
             const data = await res.json();
             const replyText = data.reply || data.content || data.fullText || data.text || '';
+            appendStreamedArtifacts(Array.isArray(data.artifacts) ? data.artifacts : undefined);
+            const fallbackArtifacts = extractArtifactsFromContent(replyText, effectivePrompt);
+            streamedArtifacts = [...streamedArtifacts, ...fallbackArtifacts].filter((artifact, index, all) =>
+              all.findIndex((candidate) =>
+                candidate.id === artifact.id ||
+                (candidate.type === artifact.type && candidate.content === artifact.content)
+              ) === index
+            );
 
             accumulatedContent = replyText;
-            finalCleanContent = replyText.trim();
+            finalCleanContent = sanitizePublicAssistantText(replyText)
+              .replace(/<(?:analysis_summary|thinking|think)>[\s\S]*?(?:<\/(?:analysis_summary|thinking|think)>|$)/gi, '')
+              .trim();
 
             updateAssistantMessage(targetChatId, assistantMessageId, {
-              content: replyText,
+              content: finalCleanContent,
+              artifacts: streamedArtifacts.length > 0 ? streamedArtifacts : undefined,
               isStreaming: false,
               isTypingDone: true,
             });
+            if (streamedArtifacts.length > 0) {
+              setActiveArtifact(streamedArtifacts[0]);
+              setIsArtifactsOpen(true);
+            }
             isStreamComplete = true;
             return;
           } else if (res.body) {
@@ -617,10 +674,16 @@ export default function App({ onClose }: { onClose?: () => void }) {
                    const data = JSON.parse(dataStr);
 
                    // The fallback endpoint uses the same data-only SSE contract
-                   // as the primary endpoint. Keep the old named-event branch
-                   // below for already-deployed edge responses during rollout.
-                   if (typeof data.type === 'string') {
-                     if (data.type === 'thinking_start') {
+                    // as the primary endpoint. Keep the old named-event branch
+                    // below for already-deployed edge responses during rollout.
+                    if (typeof data.type === 'string') {
+                      if (data.type === 'artifacts') {
+                        appendStreamedArtifacts(Array.isArray(data.artifacts) ? data.artifacts : undefined);
+                        updateAssistantMessage(targetChatId, assistantMessageId, {
+                          content: sanitizePublicAssistantText(accumulatedContent),
+                          artifacts: streamedArtifacts,
+                        });
+                      } else if (data.type === 'thinking_start') {
                        currentThinkingProcess.durationSeconds = data.durationSeconds || 0;
                        currentThinkingProcess.tokenCount = data.tokenCount || 0;
                      } else if (data.type === 'thinking_step') {
@@ -630,23 +693,25 @@ export default function App({ onClose }: { onClose?: () => void }) {
                        } else {
                            currentThinkingProcess.steps.push(data.step);
                        }
-                       currentThinkingProcess.steps = [...currentThinkingProcess.steps];
-                       updateAssistantMessage(targetChatId, assistantMessageId, {
-                         content: accumulatedContent,
-                         thinkingProcess: { ...currentThinkingProcess },
-                       });
-                     } else if (data.type === 'token') {
-                       accumulatedContent += data.text || '';
-                       updateAssistantMessage(targetChatId, assistantMessageId, {
-                         content: accumulatedContent,
-                         thinkingProcess: { ...currentThinkingProcess },
-                       });
-                      } else if (data.type === 'done') {
-                        accumulatedContent = data.fullText || accumulatedContent;
+                        currentThinkingProcess.steps = [...currentThinkingProcess.steps];
                         updateAssistantMessage(targetChatId, assistantMessageId, {
-                          content: accumulatedContent,
+                          content: sanitizePublicAssistantText(accumulatedContent),
                           thinkingProcess: { ...currentThinkingProcess },
                         });
+                      } else if (data.type === 'token') {
+                        accumulatedContent += data.text || '';
+                        updateAssistantMessage(targetChatId, assistantMessageId, {
+                          content: sanitizePublicAssistantText(accumulatedContent),
+                          thinkingProcess: { ...currentThinkingProcess },
+                        });
+                       } else if (data.type === 'done') {
+                         appendStreamedArtifacts(Array.isArray(data.artifacts) ? data.artifacts : undefined);
+                         accumulatedContent = data.fullText || accumulatedContent;
+                         updateAssistantMessage(targetChatId, assistantMessageId, {
+                           content: sanitizePublicAssistantText(accumulatedContent),
+                           artifacts: streamedArtifacts,
+                           thinkingProcess: { ...currentThinkingProcess },
+                         });
                       } else if (data.type === 'phase') {
                         const phaseLabels: Record<string, string> = {
                           context: 'Context',
@@ -676,16 +741,19 @@ export default function App({ onClose }: { onClose?: () => void }) {
                     currentThinkingProcess.tokenCount = data.tokenCount;
                   } else if (eventType === 'thinking_step') {
                     currentThinkingProcess.steps.push(data);
-                  } else if (eventType === 'chunk') {
-                    accumulatedContent += data.text;
-                    updateAssistantMessage(targetChatId, assistantMessageId, {
-                      content: accumulatedContent,
-                      thinkingProcess: { ...currentThinkingProcess },
-                    });
-                  } else if (eventType === 'done') {
-                    updateAssistantMessage(targetChatId, assistantMessageId, {
-                      content: data.fullText || accumulatedContent,
-                      isStreaming: false,
+                   } else if (eventType === 'artifacts') {
+                     appendStreamedArtifacts(Array.isArray(data.artifacts) ? data.artifacts : undefined);
+                   } else if (eventType === 'chunk') {
+                     accumulatedContent += data.text;
+                     updateAssistantMessage(targetChatId, assistantMessageId, {
+                       content: sanitizePublicAssistantText(accumulatedContent),
+                       thinkingProcess: { ...currentThinkingProcess },
+                     });
+                   } else if (eventType === 'done') {
+                     updateAssistantMessage(targetChatId, assistantMessageId, {
+                       content: sanitizePublicAssistantText(data.fullText || accumulatedContent),
+                       artifacts: streamedArtifacts,
+                       isStreaming: false,
                       isTypingDone: true,
                     });
                   }
@@ -694,7 +762,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
                 }
               }
            }
-           finalCleanContent = accumulatedContent.trim();
+            finalCleanContent = sanitizePublicAssistantText(accumulatedContent.trim());
            if (!accumulatedContent.trim()) throw new Error('AI fallback returned no content');
          }
        } else {
@@ -732,7 +800,13 @@ export default function App({ onClose }: { onClose?: () => void }) {
       }
 
       // Extract Artifacts & Process Version Revisions (v1, v2, v3)
-      const rawArtifacts = extractArtifactsFromContent(finalCleanContent, promptText);
+      const rawArtifacts = [...streamedArtifacts, ...extractArtifactsFromContent(finalCleanContent, promptText)].filter(
+        (artifact, index, all) =>
+          all.findIndex((candidate) =>
+            candidate.id === artifact.id ||
+            (candidate.type === artifact.type && candidate.content === artifact.content)
+          ) === index
+      );
       let extractedArtifacts: Artifact[] = [];
 
       if (rawArtifacts.length > 0) {
@@ -752,11 +826,12 @@ export default function App({ onClose }: { onClose?: () => void }) {
           // 1. Strip explicit <antArtifact> / <artifact> XML tags
           .replace(/<(?:antArtifact|artifact)[\s\S]*?<\/(?:antArtifact|artifact)>/gi, '')
           // 2. Strip markdown code blocks that were extracted as artifacts (html, react, svg, markdown, json, table, etc.)
-          .replace(/```(?:html|htm|react|jsx|tsx|svg|markdown|md|json|csv|table|js|ts|py|sh|bash|css|sql|python|javascript|typescript)[^\n]*\n[\s\S]*?```/gi, '')
+          .replace(/```(?:html|htm|react|jsx|tsx|svg|mermaid|chart|chartjson|markdown|md|json|csv|table|js|ts|py|sh|bash|css|sql|python|javascript|typescript)[^\n]*\n[\s\S]*?```/gi, '')
           .trim();
       }
       if (!visibleMessageText && extractedArtifacts.length > 0) {
-        visibleMessageText = `İstediğiniz **"${extractedArtifacts[0].title}"** başlıklı detaylı belge oluşturuldu (v${extractedArtifacts[0].version || 1}). İncelemek için aşağıdaki belge kartına veya sol menüdeki belgeye tıklayabilirsiniz.`;
+        const artifactLabel = extractedArtifacts[0].type === 'chart' ? 'grafik' : 'detaylı belge';
+        visibleMessageText = `İstediğiniz **"${extractedArtifacts[0].title}"** başlıklı ${artifactLabel} oluşturuldu (v${extractedArtifacts[0].version || 1}). İncelemek için aşağıdaki karta tıklayabilirsin.`;
       }
 
       // If we had a backend error, do not overwrite the assistant message again with empty content!
@@ -773,7 +848,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
 
       if (extractedArtifacts.length > 0) {
         setActiveArtifact(extractedArtifacts[0]);
-        // Do NOT force-open side panel automatically; let user open manually via card/sidebar!
+        setIsArtifactsOpen(true);
       }
       
       isStreamComplete = true; // successfully reached the end!
@@ -783,12 +858,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
       } else if (!isStreamComplete) {
         console.error('[ClaudeWorkspaceChat] Error during streaming:', err);
         
-        let displayContent = accumulatedContent;
-        if (displayContent) {
-          displayContent = displayContent.replace(/<(?:analysis_summary|thinking|think)>[\s\S]*?<\/(?:analysis_summary|thinking|think)>/gi, '');
-          displayContent = displayContent.replace(/<(?:analysis_summary|thinking|think)>[\s\S]*$/gi, '');
-          displayContent = displayContent.replace(/<\/?(?:analysis_summary|goal|approach|tradeoff|answer_plan|thinking|think|reflect|perceive|frame|tension|move|structure|genealogy|deconstruction|overcoming|materialist_basis|dialectical_tension|praxis|substance_analysis|affect_mapping|rational_intuition|negative_dialectics|immanent_critique|resolution)>/gi, '').trim();
-        }
+        const displayContent = sanitizePublicAssistantText(accumulatedContent);
 
         const errorMessage = displayContent 
           ? displayContent 
@@ -1088,6 +1158,17 @@ export default function App({ onClose }: { onClose?: () => void }) {
               : []
           }
           onSelectArtifact={(art) => setActiveArtifact(art)}
+          onInsertToNotebook={(content) => {
+            const nb = createNotebook(activeArtifact?.title || 'AI Artifact', content);
+            app.addWindow({
+              id: nb.id,
+              title: nb.title,
+              icon: 'DocumentTextIcon',
+              component: 'NotebookApp',
+              path: `/notebook/${nb.id}`,
+            });
+            setIsArtifactsOpen(false);
+          }}
         />
       )}
 

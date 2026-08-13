@@ -17,7 +17,7 @@ export interface StreamResult {
     provider: GatewayProvider
     stream: AsyncIterableIterator<string>
     attempts: string[]
-    configured: Record<GatewayProvider, boolean>
+    configured: ReturnType<typeof getProviderKeyFlags>
 }
 export type GatewayProvider =
     | 'groq'
@@ -241,7 +241,7 @@ async function chatCompletionsStream(
             return { ok: false, detail: 'No response body' }
         }
 
-        async function* streamGenerator(): AsyncIterableIterator<string> {
+        const streamGenerator = async function* (): AsyncIterableIterator<string> {
             const reader = fetchRes.body!.getReader()
             const decoder = new TextDecoder('utf-8')
             let buffer = ''

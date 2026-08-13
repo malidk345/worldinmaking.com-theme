@@ -13,6 +13,7 @@
  * Fallback: legacy <thought>...</thought> or free text.
  */
 import type { TaskType } from 'lib/persona-engine'
+import { stripThinkingBlocks, THINKING_TAG_NAMES } from './thinking-tags'
 
 export type ThinkingDepth = 'brief' | 'standard' | 'deep'
 
@@ -20,6 +21,7 @@ export interface ThinkingStage {
     id: 'perceive' | 'frame' | 'tension' | 'move' | 'raw'
     label: string
     text: string
+    source?: 'model_summary' | 'provider_trace' | 'system_event'
 }
 
 export interface ThinkingProcess {
@@ -29,6 +31,7 @@ export interface ThinkingProcess {
     /** true if structured tags were present */
     structured: boolean
     depth: ThinkingDepth
+    source?: 'model_summary' | 'provider_trace' | 'system_event' | 'none'
 }
 
 const FORBIDDEN_AI_WORDS = [
@@ -159,7 +162,8 @@ function extractStagesLoose(block: string): ThinkingStage[] {
 }
 
 function stagesFromBlock(inner: string): ThinkingStage[] {
-    const raw = cleanAIOutput(inner.replace(/<\/?(?:perceive|frame|tension|move|thinking|thought)>/gi, '').trim())
+    const tagPattern = new RegExp(`</?(?:${THINKING_TAG_NAMES.join('|')})(?:\\s[^>]*)?>`, 'gi')
+    const raw = cleanAIOutput(inner.replace(tagPattern, '').trim())
     if (!raw) return []
 
     // Split by multiple newlines to create natural chunks
@@ -216,27 +220,18 @@ export function parseThinkingAndReply(
     let stages: ThinkingStage[] = []
     let reply = text
 
-    // 1. Extract <think> (DeepSeek / Qwen native chain of thought)
-    const thinkRegex = /<think>\s*([\s\S]*?)(?:<\/think>|$)/gi
-    let match
-    while ((match = thinkRegex.exec(reply)) !== null) {
-        stages.push(...stagesFromBlock(match[1]))
+    // Route every known wrapper through the same parser. The stream demux uses
+    // this exact grammar, so a tag variant cannot leak only during live output.
+    const wrapperNames = ['analysis_summary', 'thinking', 'think', 'thought', 'reasoning', 'analysis', 'reflection', 'internal']
+    const wrapperPattern = new RegExp(
+        `<(${wrapperNames.join('|')})(?:\\s[^>]*)?>\\s*([\\s\\S]*?)(?:<\\/\\1\\s*>|$)`,
+        'gi'
+    )
+    let match: RegExpExecArray | null
+    while ((match = wrapperPattern.exec(reply)) !== null) {
+        stages.push(...stagesFromBlock(match[2]))
     }
-    reply = reply.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '')
-
-    // 2. Extract <thinking>
-    const thinkingRegex = /<thinking>\s*([\s\S]*?)(?:<\/thinking>|$)/gi
-    while ((match = thinkingRegex.exec(reply)) !== null) {
-        stages.push(...stagesFromBlock(match[1]))
-    }
-    reply = reply.replace(/<thinking>[\s\S]*?(?:<\/thinking>|$)/gi, '')
-
-    // 3. Extract <thought>
-    const thoughtRegex = /<thought>\s*([\s\S]*?)(?:<\/thought>|$)/gi
-    while ((match = thoughtRegex.exec(reply)) !== null) {
-        stages.push(...stagesFromBlock(match[1]))
-    }
-    reply = reply.replace(/<thought>[\s\S]*?(?:<\/thought>|$)/gi, '')
+    reply = reply.replace(wrapperPattern, '')
 
     // 4. Loose philosophical tags without a wrapping block
     if (/<perceive>/i.test(reply) || /<frame>/i.test(reply)) {
@@ -252,7 +247,7 @@ export function parseThinkingAndReply(
         }
     }
 
-    reply = cleanAIOutput(reply.trim())
+    reply = stripThinkingBlocks(cleanAIOutput(reply.trim()))
 
     // Parse Provider Trace (Native Reasoning from API) if available, so it appears in UI seamlessly
     if (options?.providerTrace && options.providerTrace.trim()) {

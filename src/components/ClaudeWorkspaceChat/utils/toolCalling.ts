@@ -1,4 +1,5 @@
 import { Artifact, ArtifactType } from '../types';
+import type { ChartSpec } from 'lib/ai/chart-artifacts';
 
 /**
  * Structured Tool Calling Engine & SSE Event Schemas — WorldInMaking OS
@@ -9,6 +10,7 @@ export interface CreateArtifactToolArgs {
   type: ArtifactType;
   language?: string;
   content: string;
+  chartSpec?: ChartSpec;
   description?: string;
 }
 

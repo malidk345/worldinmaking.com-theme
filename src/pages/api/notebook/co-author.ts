@@ -10,12 +10,14 @@
 export const runtime = 'edge'
 
 import { loadMemGPTState, extractAndPersistMemoryFacts } from '../../../lib/chat-bots/memgpt-engine'
-import { runBotTurn, streamBotTurn } from '../../../lib/bots/orchestrate'
+import { streamBotTurn } from '../../../lib/bots/orchestrate'
 import type { TaskType } from '../../../lib/persona-engine'
 import { getSupabaseUserFromRequest } from '../../../../lib/api-authz'
 
 import { searchDuckDuckGo } from '../../../lib/bots/web-search'
 import { classifyIntent } from '../../../lib/bots/intent-router'
+import { extractChartArtifacts, stripChartArtifactMarkup } from '../../../lib/ai/chart-artifacts'
+import { stripThinkingBlocks } from '../../../lib/bots/thinking-tags'
 import { checkRateLimit } from '../../../lib/bots/rate-limit'
 import { formatAiSseEvent, type AiSseEvent } from '../../../lib/ai/contracts'
 import {
@@ -227,13 +229,36 @@ export default async function handler(req: Request) {
                     return
                 }
 
+                const extractedCharts = extractChartArtifacts(result.reply, nodeContent)
+                const chartArtifacts = extractedCharts.map((artifact, index) => ({
+                    id: `art-${Date.now()}-${index + 1}`,
+                    title: artifact.title,
+                    type: 'chart' as const,
+                    language: 'json',
+                    content: artifact.content,
+                    chartSpec: artifact.chartSpec,
+                    description: artifact.description,
+                    version: 1,
+                    createdAt: new Date().toISOString(),
+                }))
+                const visibleReply = stripThinkingBlocks(stripChartArtifactMarkup(result.reply))
+
+                if (chartArtifacts.length > 0) {
+                    send({ type: 'artifacts', artifacts: chartArtifacts })
+                }
+
                 if (user?.id) {
                     send({ type: 'phase', phase: { phase: 'persistence', status: 'started' } })
-                    await extractAndPersistMemoryFacts(user.id, botName, nodeContent, result.reply)
+                    await extractAndPersistMemoryFacts(user.id, botName, nodeContent, visibleReply)
                     send({ type: 'phase', phase: { phase: 'persistence', status: 'completed' } })
                 }
 
-                send({ type: 'done', fullText: result.reply, provider: result.provider })
+                send({
+                    type: 'done',
+                    fullText: visibleReply,
+                    provider: result.provider,
+                    artifacts: chartArtifacts,
+                })
                 controller.close()
             } catch (err: any) {
                 console.error('[NotebookCoAuthorAPI] Streaming error:', err?.message || err)

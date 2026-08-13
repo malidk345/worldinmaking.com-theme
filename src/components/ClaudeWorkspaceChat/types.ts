@@ -1,3 +1,5 @@
+import type { ChartSpec } from 'lib/ai/chart-artifacts'
+
 export type ModelId = string;
 
 export interface ModelOption {
@@ -32,7 +34,7 @@ export interface ThinkingProcess {
   source?: 'model_summary' | 'provider_trace' | 'system_event' | 'none'
 }
 
-export type ArtifactType = 'code' | 'html' | 'svg' | 'markdown' | 'react' | 'json' | 'table'
+export type ArtifactType = 'code' | 'html' | 'svg' | 'markdown' | 'react' | 'json' | 'table' | 'mermaid' | 'chart'
 
 export interface Artifact {
   id: string
@@ -40,6 +42,7 @@ export interface Artifact {
   type: ArtifactType
   language?: string
   content: string
+  chartSpec?: ChartSpec
   description?: string
   version: number
   createdAt: string

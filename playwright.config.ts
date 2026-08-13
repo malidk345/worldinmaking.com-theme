@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
+const testBaseURL = process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://localhost:3000'
+
 export default defineConfig({
     testDir: './tests',
     fullyParallel: true,
@@ -8,7 +10,7 @@ export default defineConfig({
     workers: process.env.CI ? 1 : undefined,
     reporter: 'html',
     use: {
-        baseURL: process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://localhost:3000',
+        baseURL: testBaseURL,
         trace: 'on-first-retry',
     },
     projects: [
@@ -19,7 +21,7 @@ export default defineConfig({
     ],
     webServer: {
         command: 'pnpm dev',
-        url: 'http://localhost:3000',
+        url: testBaseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120000,
     },

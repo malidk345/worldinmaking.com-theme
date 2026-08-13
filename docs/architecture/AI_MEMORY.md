@@ -182,10 +182,88 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-44` | Stream 5 | Unified AI/chat architecture hardening: shared SSE contract, secure gateway, validation, streaming, and workspace fixes | `src/lib/ai/*`, `lib/ai-provider.ts`, `src/lib/bots/*`, `src/lib/chat-bots/*`, `src/pages/api/chat.ts`, `src/pages/api/notebook/co-author.ts`, `src/components/ClaudeWorkspaceChat/*`, AI tests | `[COMPLETED]` | OpenCode (gpt-5.6-luna) | 2026-08-13 |
 | `TSK-45` | Stream 5 | Replace pseudo chain-of-thought UI with safe analysis summaries and truthful lifecycle events without changing UI contracts | `src/lib/bots/thinking.ts`, `src/lib/ai/contracts.ts`, `src/lib/bots/orchestrate.ts`, `src/pages/api/chat.ts`, `src/pages/api/notebook/co-author.ts`, `src/lib/bots/actions/forum.ts`, `src/components/ClaudeWorkspaceChat/*`, AI tests | `[COMPLETED]` | OpenCode (gpt-5.6-luna) | 2026-08-13 |
 | `TSK-46` | Stream 5 | Route the live Qwen provider trace into the existing ThinkingBlock UI without changing UI contracts | `src/lib/bots/ai-gateway.ts`, `src/lib/chat-bots/langchain-pipeline.ts`, `src/lib/ai/contracts.ts`, `src/lib/bots/thinking.ts`, `src/lib/bots/orchestrate.ts`, `src/pages/api/chat.ts`, `src/pages/api/notebook/co-author.ts`, `src/components/ClaudeWorkspaceChat/*`, Qwen trace tests | `[COMPLETED]` | Antigravity (Gemini 3.1 Pro) | 2026-08-13 |
+| `TSK-47` | Stream 5 | First-class validated chart artifacts with native workspace previews | `src/lib/ai/*`, `src/lib/bots/*`, `src/pages/api/chat.ts`, `src/pages/api/notebook/co-author.ts`, `src/components/ClaudeWorkspaceChat/*`, AI tests | `[COMPLETED]` | OpenCode (gpt-5.6-luna) | 2026-08-13 |
+| `TSK-48` | Stream 5 | Controlled shadcn-compatible UI registry for React sandbox artifacts | `src/components/ClaudeWorkspaceChat/sandbox/*`, `src/components/ClaudeWorkspaceChat/components/ArtifactsPanel.tsx`, `src/lib/bots/fluid-prompts.ts`, AI tests | `[COMPLETED]` | OpenCode (gpt-5.6-luna) | 2026-08-13 |
+| `TSK-49` | Stream 5 | Prevent reasoning/tag leakage during AI streaming without changing the existing thinking UX | `src/lib/bots/thinking-tags.ts`, `src/lib/bots/thinking.ts`, `src/lib/bots/orchestrate.ts`, `src/pages/api/chat.ts`, `src/pages/api/notebook/co-author.ts`, `src/components/ClaudeWorkspaceChat/index.tsx`, AI tests | `[COMPLETED]` | OpenCode (gpt-5.6-luna) | 2026-08-13 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 066 - Thinking Stream Demultiplexing Without UX Change (TSK-49)
+- **Date:** 2026-08-13
+- **AI Agent:** OpenCode (gpt-5.6-luna)
+- **Summary:** Fixed intermittent reasoning leakage by replacing the stream parser's two-tag, fixed-window logic with a stateful demux. Existing thinking content still flows to the same `ThinkingBlock` callback; only public-vs-thinking channel routing and tag-boundary handling changed.
+  - Recognizes legacy and current reasoning wrappers, casing variants, attributes, loose stage tags, and tags split across provider chunks.
+  - Buffers partial opening/closing markers instead of flushing them into public text.
+  - Uses the same tag grammar for final reply parsing, fallback cleanup, API `done.fullText`, and workspace public-message rendering.
+  - Keeps provider thinking chunks intact; no new summarization, truncation, or thinking UX filter was introduced.
+  - Added regression coverage for split tags, alternate wrappers, unclosed tags, and stray split closing tags.
+- **Modified Files:**
+  - `src/lib/bots/thinking-tags.ts` [NEW]
+  - `src/lib/bots/thinking.ts`
+  - `src/lib/bots/orchestrate.ts`
+  - `src/pages/api/chat.ts`
+  - `src/pages/api/notebook/co-author.ts`
+  - `src/components/ClaudeWorkspaceChat/index.tsx`
+  - `tests/thinking-tags.spec.ts` [NEW]
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm typecheck:shell` passed with 0 gated errors; `pnpm build` passed with `NODE_OPTIONS=--max-old-space-size=4096`; thinking leakage regression tests passed 4/4; `git diff --check` passed. Full smoke was not rerun in this final pass because the local Next dev server remained subject to the existing `.next`/port process collision.
+- **Handoff:** If leakage persists in production, capture the exact provider chunk sequence and tag spelling. The demux now centralizes the routing grammar, so the next fix should be a focused regression case rather than a UI filter.
+
+### Entry 065 - Thinking Leakage Fix Re-scoped (TSK-49)
+- **Date:** 2026-08-13
+- **AI Agent:** OpenCode (gpt-5.6-luna)
+- **Summary:** The user clarified that the current visible thinking experience must remain unchanged. The proposed public-text redaction approach was stopped before integration; the draft file was removed. TSK-49 is re-scoped to fix only stream demultiplexing, tag-boundary handling, and routing leakage while preserving existing thinking content and UI behavior.
+- **Modified Files:** `docs/architecture/AI_MEMORY.md` only; the unused draft `src/lib/ai/public-text.ts` was removed.
+- **Verification:** No functional verification was run for the paused approach. No application behavior from that approach remains in the worktree.
+- **Handoff:** Next implementation must add regression tests for split/open/close reasoning tags and route all existing thinking content to the current ThinkingBlock, without replacing it with a sanitized summary UX.
+
+### Entry 064 - Controlled Sandbox UI Registry (TSK-48)
+- **Date:** 2026-08-13
+- **AI Agent:** OpenCode (gpt-5.6-luna)
+- **Summary:** Added a dependency-light, shadcn-compatible `@wim/ui` registry for generated React artifacts. Sandpack mounts the registry locally, and common `@/components/ui/*`, `@wim/ui`, and `@/lib/utils` imports are normalized to it without installing packages or exposing application modules.
+  - Added Card, Button, Badge, Tabs, Input, Textarea, Label, Select, Table, Alert, Separator, Skeleton, and Progress primitives.
+  - Updated the React artifact prompt to use only the controlled registry and keep arbitrary package/application imports out of the preview.
+  - Added focused parser and registry import-normalization tests.
+- **Modified Files:**
+  - `src/components/ClaudeWorkspaceChat/sandbox/wimUiSource.ts` [NEW]
+  - `src/components/ClaudeWorkspaceChat/components/ArtifactsPanel.tsx`
+  - `src/lib/bots/fluid-prompts.ts`
+  - `tests/chart-artifacts.spec.ts`
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm typecheck:shell` passed with 0 gated errors; `pnpm build` passed with `NODE_OPTIONS=--max-old-space-size=4096`; focused chart/parser/registry tests passed 5/5; `git diff --check` passed. The prior TSK-47 smoke run remains 13/13; a fresh full dev smoke was not rerun after build because the local Next dev server had an existing `.next`/port process collision.
+- **Handoff:** This is a curated shadcn-compatible registry, not runtime shadcn installation. Add new primitives deliberately and keep the registry dependency-free; do not allow generated code to install arbitrary packages or import host application modules.
+
+### Entry 063 - First-Class Validated Chart Artifacts (TSK-47)
+- **Date:** 2026-08-13
+- **AI Agent:** OpenCode (gpt-5.6-luna)
+- **Summary:** Replaced chart generation as an opaque code-only artifact with a validated declarative chart flow. Chart requests now produce bounded line, bar, pie, doughnut, or scatter specs, stream them as typed artifacts, and render them natively in the workspace canvas without executing model code.
+  - Added shared chart normalization, size limits, safe key/color handling, explicit `<wimArtifact type="chart">` parsing, legacy JSON fallback parsing, and chart markup stripping.
+  - Extended the shared AI SSE contract and workspace artifact types with `chart`/`mermaid` support and `chartSpec` data.
+  - Added native Chart.js rendering and a stored-artifact browser test covering preview visibility.
+  - Wired `/api/notebook/co-author` and `/api/chat` to emit `artifacts` and cleaned `done.fullText`; `/api/chat` now uses its compatible Node Pages API response runtime instead of mixing Edge runtime with `NextApiResponse`.
+  - Fixed existing gated AI type errors in thinking provenance and gateway stream typing so the shell allowlist is clean.
+- **Modified Files:**
+  - `src/lib/ai/chart-artifacts.ts` [NEW]
+  - `src/lib/ai/contracts.ts`
+  - `src/components/ClaudeWorkspaceChat/components/ChartArtifactRenderer.tsx` [NEW]
+  - `src/components/ClaudeWorkspaceChat/components/ArtifactsPanel.tsx`
+  - `src/components/ClaudeWorkspaceChat/index.tsx`
+  - `src/components/ClaudeWorkspaceChat/types.ts`
+  - `src/components/ClaudeWorkspaceChat/utils/extractArtifacts.ts`
+  - `src/components/ClaudeWorkspaceChat/utils/toolCalling.ts`
+  - `src/lib/bots/fluid-prompts.ts`
+  - `src/lib/bots/thinking.ts`
+  - `src/lib/bots/orchestrate.ts`
+  - `src/lib/bots/ai-gateway.ts`
+  - `src/pages/api/chat.ts`
+  - `src/pages/api/notebook/co-author.ts`
+  - `playwright.config.ts`
+  - `tests/chart-artifacts.spec.ts` [NEW]
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm typecheck:shell` passed with 0 gated errors; `pnpm build` passed with `NODE_OPTIONS=--max-old-space-size=4096`; `PLAYWRIGHT_TEST_BASE_URL=http://localhost:3003 pnpm test:smoke -- --workers=1` passed 13/13; `git diff --check` passed. Full repository typecheck still reports inherited legacy errors outside the shell allowlist.
+- **Handoff:** MVP intentionally does not execute Python/Node/model-generated arbitrary code. React/HTML remain separate Sandpack/iframe preview paths. Next step is provider-level artifact evaluation with real prompts and, only if required, an isolated WASM or external execution runtime.
 
 ### Entry 061 - Truthful Thinking UI Without UI Contract Changes (TSK-45)
 - **Date:** 2026-08-13

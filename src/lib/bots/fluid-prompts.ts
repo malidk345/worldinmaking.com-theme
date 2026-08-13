@@ -11,6 +11,17 @@
 
 export type PromptScope = 'site_wide' | 'notebook_coauthor'
 
+const CHART_ARTIFACT_INSTRUCTIONS = `
+VISUALIZATION OUTPUT RULE:
+- When the user explicitly asks for a chart, graph, plot, dashboard visualization, or trend, do not make the visualization depend on Python, Chart.js, Recharts, or arbitrary executable code.
+- Emit one validated declarative chart artifact using this exact envelope:
+<wimArtifact type="chart" title="Short title">{"kind":"line","xKey":"month","series":[{"key":"value","label":"Value"}],"data":[{"month":"Jan","value":10}]}</wimArtifact>
+- Allowed kind values are: line, bar, pie, doughnut, scatter. Keep data to at most 60 rows and 6 series.
+- Use only values present in the user prompt, notebook, or attachments. Never invent business data. If the required data is missing, explain that clearly instead of creating a misleading chart.
+- The artifact body must be JSON only. Keep the normal visible explanation outside the artifact envelope.
+- If the user explicitly asks for source code instead of a rendered chart, provide code normally and do not emit the artifact envelope.
+`.trim()
+
 
 /**
  * Universal self-classifying thinking instructions.
@@ -18,8 +29,10 @@ export type PromptScope = 'site_wide' | 'notebook_coauthor'
  * and applies the appropriate thinking tools from its persona toolkit.
  * No frontend regex routing — the AI decides everything.
  */
-export function getAdaptiveThinkingInstructions(botName: string, _promptText: string): string {
+export function getAdaptiveThinkingInstructions(_botName: string, _promptText: string): string {
     return `
+${CHART_ARTIFACT_INSTRUCTIONS}
+
 Before responding, read the full message and context carefully, then externalize your reasoning inside:
 <thinking>
 [Think freely and naturally about what the user wants, forming your philosophical stance and planning your response before you answer. Do not use rigid templates or forced tags.]
@@ -27,6 +40,13 @@ Before responding, read the full message and context carefully, then externalize
 
 DOCUMENT GENERATION RULE: If the user is requesting a document/report/code artifact, wrap the full output in:
 <antArtifact identifier="doc-1" type="markdown" title="...">...</antArtifact>
+
+UI/REACT GENERATION RULE: If the user requests a UI, dashboard, or component, write a fully functional React component.
+- ALWAYS use standard Tailwind CSS classes (e.g. className="p-4 bg-white rounded-xl shadow-sm").
+- Use only the shadcn-compatible primitives exposed by @wim/ui when useful: Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Button, Badge, Tabs, TabsList, TabsTrigger, TabsContent, Input, Textarea, Label, Select, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Alert, Separator, Skeleton, and Progress.
+- Import those primitives from @wim/ui. The preview sandbox maps that registry to a local safe module; do not import application modules, access secrets, install packages, or use arbitrary component paths.
+- You CAN import and use 'lucide-react' and 'recharts' when the user explicitly requests source code or a React-only interactive component. For a rendered chart request, use the declarative chart artifact format below instead.
+- Wrap the component in <antArtifact identifier="ui-1" type="react" title="...">...your react code...</antArtifact>
 
 Immediately write your visible response after </thinking>.`.trim()
 }
@@ -59,6 +79,8 @@ LANGUAGE RULE — CRITICAL:
         return `
 ${baseCore}
 
+${CHART_ARTIFACT_INSTRUCTIONS}
+
 NOTEBOOK CO-AUTHORING SCOPE:
 - You are reviewing an active notebook document. Focus your sharp mind on the active text blocks.
 - Offer meaningful co-authoring contributions, structural critiques, dialectical counter-arguments, or insightful expansions.
@@ -71,6 +93,8 @@ NOTEBOOK CO-AUTHORING SCOPE:
 
     return `
 ${baseCore}
+
+${CHART_ARTIFACT_INSTRUCTIONS}
 
 SITE-WIDE OS SCOPE (DESKTOP & CHAT):
 - You are conversing freely as an inhabitant of WorldInMaking OS.

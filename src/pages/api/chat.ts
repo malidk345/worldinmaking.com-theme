@@ -6,14 +6,14 @@
  * provider is down: clients receive a typed error event instead.
  */
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { runBotTurn, streamBotTurn } from 'lib/bots/orchestrate'
+import { streamBotTurn } from 'lib/bots/orchestrate'
 import { checkRateLimit } from 'lib/bots/rate-limit'
 import { getRuntimeEnv } from 'lib/bots/runtime-env'
 import { normalizeBotName } from 'lib/bots/request-validation'
 import { searchDuckDuckGo } from 'lib/bots/web-search'
+import { extractChartArtifacts, stripChartArtifactMarkup } from 'lib/ai/chart-artifacts'
+import { stripThinkingBlocks } from 'lib/bots/thinking-tags'
 import { formatAiSseEvent, type AiSseEvent } from 'lib/ai/contracts'
-
-export const runtime = 'edge'
 
 export const config = {
     api: {
@@ -185,7 +185,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return res.end()
         }
 
-        send({ type: 'done', fullText: result.reply, provider: result.provider })
+        const extractedCharts = extractChartArtifacts(result.reply, prompt)
+        const chartArtifacts = extractedCharts.map((artifact, index) => ({
+            id: `art-${Date.now()}-${index + 1}`,
+            title: artifact.title,
+            type: 'chart' as const,
+            language: 'json',
+            content: artifact.content,
+            chartSpec: artifact.chartSpec,
+            description: artifact.description,
+            version: 1,
+            createdAt: new Date().toISOString(),
+        }))
+        const visibleReply = stripThinkingBlocks(stripChartArtifactMarkup(result.reply))
+
+        if (chartArtifacts.length > 0) {
+            send({ type: 'artifacts', artifacts: chartArtifacts })
+        }
+
+        send({
+            type: 'done',
+            fullText: visibleReply,
+            provider: result.provider,
+            artifacts: chartArtifacts,
+        })
         return res.end()
     } catch (error) {
         console.error('[chat] request failed', error)

@@ -17,9 +17,9 @@ import {
     type ThinkingDepth,
     type ThinkingProcess,
 } from './thinking'
+import { ThinkingStreamDemux, stripThinkingBlocks } from './thinking-tags'
 import { getFluidSystemPrompt, type PromptScope } from './fluid-prompts'
 import { getProviderKeyFlags, getRuntimeEnv, type EnvStore } from './runtime-env'
-import { validateAndReturn } from '../../../lib/quality-gate'
 import type { AiLifecycleEvent } from '../ai/contracts'
 
 /** Re-export for action modules that import depth from the orchestrator surface. */
@@ -217,15 +217,7 @@ export async function runBotTurn(input: BotRunInput): Promise<BotRunResult> {
 }
 
 function cleanFallbackReply(raw: string): string {
-    return raw
-        .replace(/<thinking>[\s\S]*?(?:<\/thinking>|$)/gi, '')
-        .replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '')
-        .replace(/<thought>[\s\S]*?(?:<\/thought>|$)/gi, '')
-        .replace(/<perceive>[\s\S]*?(?:<\/perceive>|$)/gi, '')
-        .replace(/<frame>[\s\S]*?(?:<\/frame>|$)/gi, '')
-        .replace(/<tension>[\s\S]*?(?:<\/tension>|$)/gi, '')
-        .replace(/<move>[\s\S]*?(?:<\/move>|$)/gi, '')
-        .trim()
+    return stripThinkingBlocks(raw)
 }
 
 /**
@@ -316,88 +308,12 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
     input.onLifecycle?.({ phase: 'generation', status: 'completed', provider: gen.provider })
 
     let fullText = ''
-    let isThinking = false
-    let thinkingBuffer = ''
-
-    let unyieldedBuffer = ''
-
+    const demux = new ThinkingStreamDemux()
     for await (const token of gen.stream) {
         fullText += token
-        unyieldedBuffer += token
-
-        while (unyieldedBuffer.length > 0) {
-            if (!isThinking) {
-                const thinkStart = Math.max(unyieldedBuffer.indexOf('<think>'), unyieldedBuffer.indexOf('<thinking>'))
-                
-                if (thinkStart !== -1) {
-                    const textBefore = unyieldedBuffer.slice(0, thinkStart)
-                    if (textBefore) onToken(textBefore)
-                    
-                    isThinking = true
-                    const tagLen = unyieldedBuffer.slice(thinkStart).startsWith('<thinking>') ? 10 : 7
-                    unyieldedBuffer = unyieldedBuffer.slice(thinkStart + tagLen)
-                    continue
-                } else {
-                    let safeFlushLen = unyieldedBuffer.length
-                    for (let i = Math.max(0, unyieldedBuffer.length - 10); i < unyieldedBuffer.length; i++) {
-                        const suffix = unyieldedBuffer.slice(i)
-                        if ('<think>'.startsWith(suffix) || '<thinking>'.startsWith(suffix)) {
-                            safeFlushLen = i
-                            break
-                        }
-                    }
-                    
-                    if (safeFlushLen > 0) {
-                        const toFlush = unyieldedBuffer.slice(0, safeFlushLen)
-                        onToken(toFlush)
-                        unyieldedBuffer = unyieldedBuffer.slice(safeFlushLen)
-                    }
-                    break
-                }
-            } else {
-                const thinkEnd = Math.max(unyieldedBuffer.indexOf('</think>'), unyieldedBuffer.indexOf('</thinking>'))
-                
-                if (thinkEnd !== -1) {
-                    const textBefore = unyieldedBuffer.slice(0, thinkEnd)
-                    if (textBefore) {
-                        thinkingBuffer += textBefore
-                        onThinkingChunk?.(textBefore)
-                    }
-                    
-                    isThinking = false
-                    const tagLen = unyieldedBuffer.slice(thinkEnd).startsWith('</thinking>') ? 11 : 8
-                    unyieldedBuffer = unyieldedBuffer.slice(thinkEnd + tagLen)
-                    continue
-                } else {
-                    let safeFlushLen = unyieldedBuffer.length
-                    for (let i = Math.max(0, unyieldedBuffer.length - 11); i < unyieldedBuffer.length; i++) {
-                        const suffix = unyieldedBuffer.slice(i)
-                        if ('</think>'.startsWith(suffix) || '</thinking>'.startsWith(suffix)) {
-                            safeFlushLen = i
-                            break
-                        }
-                    }
-                    
-                    if (safeFlushLen > 0) {
-                        const toFlush = unyieldedBuffer.slice(0, safeFlushLen)
-                        thinkingBuffer += toFlush
-                        onThinkingChunk?.(toFlush)
-                        unyieldedBuffer = unyieldedBuffer.slice(safeFlushLen)
-                    }
-                    break
-                }
-            }
-        }
+        demux.push(token, onToken, (thinkingChunk) => onThinkingChunk?.(thinkingChunk))
     }
-
-    if (unyieldedBuffer.length > 0) {
-        if (isThinking) {
-            thinkingBuffer += unyieldedBuffer
-            onThinkingChunk?.(unyieldedBuffer)
-        } else {
-            onToken(unyieldedBuffer)
-        }
-    }
+    demux.finish(onToken, (thinkingChunk) => onThinkingChunk?.(thinkingChunk))
 
     const { thinking, reply } = parseThinkingAndReply(fullText, taskType, input.thinkingDepth)
     const rawReply = reply || cleanFallbackReply(fullText)

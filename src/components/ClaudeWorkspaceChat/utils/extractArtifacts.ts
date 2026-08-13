@@ -1,4 +1,5 @@
 import { Artifact, ArtifactType } from '../types';
+import { extractChartArtifacts, isChartRequest, parseChartSpec } from 'lib/ai/chart-artifacts';
 
 /**
  * Extracts Artifact objects from assistant response text or user prompt directives.
@@ -9,6 +10,17 @@ import { Artifact, ArtifactType } from '../types';
  */
 export function extractArtifactsFromContent(content: string, userPrompt: string): Artifact[] {
   if (!content || !content.trim()) return [];
+  const chartArtifacts: Artifact[] = extractChartArtifacts(content, userPrompt).map((artifact, index) => ({
+    id: `art-${Date.now()}-chart-${index + 1}`,
+    title: artifact.title,
+    type: 'chart',
+    language: 'json',
+    content: artifact.content,
+    chartSpec: artifact.chartSpec,
+    description: artifact.description,
+    version: 1,
+    createdAt: new Date().toISOString(),
+  }));
   const artifacts: Artifact[] = [];
   const now = new Date().toISOString();
 
@@ -23,10 +35,13 @@ export function extractArtifactsFromContent(content: string, userPrompt: string)
     const titleMatch = attrStr.match(/title=["']([^"']+)["']/i) || attrStr.match(/identifier=["']([^"']+)["']/i);
     const typeMatch = attrStr.match(/type=["']([^"']+)["']/i);
     const langMatch = attrStr.match(/language=["']([^"']+)["']/i);
+    const rawType = (typeMatch ? typeMatch[1] : 'markdown').toLowerCase();
+
+    // Chart envelopes are parsed by the shared, validated chart parser above.
+    if (rawType === 'chart' || rawType === 'visualization') continue;
 
     const title = titleMatch ? titleMatch[1] : 'Generated Document';
-    const rawType = (typeMatch ? typeMatch[1] : 'markdown').toLowerCase();
-    const type: ArtifactType = (['code', 'html', 'svg', 'markdown', 'react', 'json', 'table'].includes(rawType)
+    const type: ArtifactType = (['code', 'html', 'svg', 'markdown', 'react', 'json', 'table', 'mermaid'].includes(rawType)
       ? rawType
       : 'markdown') as ArtifactType;
 
@@ -44,10 +59,10 @@ export function extractArtifactsFromContent(content: string, userPrompt: string)
     }
   }
 
-  if (artifacts.length > 0) return artifacts;
+  if (artifacts.length > 0) return [...chartArtifacts, ...artifacts];
 
   // 2. Code block & Document extraction (```html, ```react, ```svg, ```markdown, etc.)
-  const isDocumentRequested = /(belge|doküman|dokuman|document|artifact|şema|sema|tablo|taslak|dilekçe|dilekce|sözleşme|sozlesme|rapor)/i.test(userPrompt);
+  const isDocumentRequested = /(belge|doküman|dokuman|document|artifact|şema|sema|tablo|taslak|dilekçe|dilekce|sözleşme|sozlesme|rapor|grafik|diyagram|diagram|chart|graph|dashboard|arayüz|arayuz|ui|component|tasarım|tasarim)/i.test(userPrompt);
 
   const codeBlockRegex = /```([a-z0-9_-]*)\n([\s\S]*?)```/gi;
   let codeMatch: RegExpExecArray | null;
@@ -59,13 +74,39 @@ export function extractArtifactsFromContent(content: string, userPrompt: string)
 
     if (!blockContent || blockContent.length < 20) continue;
 
+    const chartSpec = parseChartSpec(blockContent);
+    const isChartBlock =
+      ['chart', 'chartjson'].includes(lang) ||
+      (lang === 'json' && isChartRequest(userPrompt) && Boolean(chartSpec));
+    if (isChartBlock && chartSpec && !chartArtifacts.some((artifact) => artifact.content === JSON.stringify(chartSpec))) {
+      chartArtifacts.push({
+        id: `art-${Date.now()}-chart-${chartArtifacts.length + 1}`,
+        title: chartSpec.title || 'Generated chart',
+        type: 'chart',
+        language: 'json',
+        content: JSON.stringify(chartSpec),
+        chartSpec,
+        description: 'Chart JSON converted to a validated artifact',
+        version: 1,
+        createdAt: now,
+      });
+    }
+    if (isChartBlock) continue;
+
     let artType: ArtifactType = 'markdown';
+
+    // Check if the content has strong React/UI signatures
+    const isUI = blockContent.includes('import React') || blockContent.includes("from 'react'") || blockContent.includes('from "react"') || blockContent.includes('export default function') || blockContent.includes('className=');
+
     if (['html', 'htm'].includes(lang)) artType = 'html';
-    else if (['jsx', 'tsx', 'react'].includes(lang)) artType = 'react';
+    else if (['jsx', 'tsx', 'react'].includes(lang) || isUI) artType = 'react';
     else if (['svg'].includes(lang)) artType = 'svg';
+    else if (['mermaid'].includes(lang)) artType = 'mermaid';
     else if (['json'].includes(lang)) artType = 'json';
     else if (['csv', 'table'].includes(lang)) artType = 'table';
-    else if (['js', 'ts', 'py', 'sh', 'bash', 'css', 'sql', 'python', 'javascript', 'typescript'].includes(lang)) artType = 'code';
+    else if (['js', 'ts', 'py', 'sh', 'bash', 'css', 'sql', 'python', 'javascript', 'typescript'].includes(lang)) {
+      artType = 'code';
+    }
 
     let title = `${userPrompt.slice(0, 30).trim()} Document`;
     if (lang === 'html') title = 'HTML Canvas Preview';
@@ -87,18 +128,20 @@ export function extractArtifactsFromContent(content: string, userPrompt: string)
   }
 
   // 3. Fallback: If user explicitly asked for a document ("belge oluştur") and no explicit tag or code block was parsed, turn response into a Markdown Document Artifact!
-  if (artifacts.length === 0 && isDocumentRequested && content.length > 15) {
+  if (artifacts.length === 0 && chartArtifacts.length === 0 && isDocumentRequested && content.length > 15) {
+    const isReactContent = content.includes('import React') || content.includes("from 'react'") || content.includes('from "react"');
+
     artifacts.push({
       id: `art-${Date.now()}-doc`,
-      title: `${userPrompt.slice(0, 35).trim()}`,
-      type: 'markdown',
-      language: 'markdown',
-      content: content,
-      description: 'AI Generated Document',
+      title: isReactContent ? 'React Component' : `${userPrompt.slice(0, 35).trim()}`,
+      type: isReactContent ? 'react' : 'markdown',
+      language: isReactContent ? 'react' : 'markdown',
+      content: isReactContent ? content.replace(/```(?:react|jsx|js)?/gi, '').replace(/```/g, '').trim() : content,
+      description: isReactContent ? 'AI Generated UI' : 'AI Generated Document',
       version: 1,
       createdAt: now,
     });
   }
 
-  return artifacts;
+  return [...chartArtifacts, ...artifacts];
 }

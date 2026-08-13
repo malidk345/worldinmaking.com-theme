@@ -1,3 +1,5 @@
+import type { ChartSpec } from './chart-artifacts'
+
 /**
  * Shared wire contract for every AI streaming surface.
  *
@@ -32,7 +34,7 @@ export interface AiCitation {
     snippet: string
 }
 
-export type AiArtifactType = 'code' | 'html' | 'svg' | 'markdown' | 'react' | 'json' | 'table'
+export type AiArtifactType = 'code' | 'html' | 'svg' | 'markdown' | 'react' | 'json' | 'table' | 'mermaid' | 'chart'
 
 export interface AiArtifact {
     id: string
@@ -40,6 +42,7 @@ export interface AiArtifact {
     type: AiArtifactType
     language?: string
     content: string
+    chartSpec?: ChartSpec
     description?: string
     version: number
     createdAt: string
