@@ -293,8 +293,9 @@ export const processItemsWithHighlighting = <T extends Record<string, any>>(
     // Process matches and add highlighting
     return results.map(({ item, matches = [] }) => {
         // Generate highlighted text for each matched field
-        const highlightedFields = matches.reduce((acc: Record<string, string>, match) => {
-            if (!match.key) return acc
+        const highlightedFields: Record<string, string> = {}
+        for (const match of matches) {
+            if (!match.key) continue
 
             const keyParts = match.key.split('.')
             const fieldPath = keyParts.length > 1 ? keyParts.slice(1).join('.') : keyParts[0] // Extract field path
@@ -303,11 +304,9 @@ export const processItemsWithHighlighting = <T extends Record<string, any>>(
             const text = fieldPath.split('.').reduce((obj, part) => obj?.[part], item as any)
 
             if (text && typeof text === 'string') {
-                acc[fieldPath] = generateHighlightedText(text, match.indices, searchTerm)
+                highlightedFields[fieldPath] = generateHighlightedText(text, match.indices, searchTerm)
             }
-
-            return acc
-        }, {})
+        }
 
         return {
             item,
