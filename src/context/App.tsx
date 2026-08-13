@@ -1617,15 +1617,7 @@ export const Provider = ({ children, element, location }: AppProviderProps) => {
         setHasMounted(true)
         // Block accidental Squeak/Strapi fetches (WIM is Supabase-only)
         const uninstallSqueakGuard = installSqueakFetchGuard()
-        // Automatic hourly background generation ticker for Vercel AI SDK Philosopher Bots
-        const triggerCron = () => {
-            fetch('/api/cron/philosopher-bots')
-                .then((r) => r.json())
-                .catch((err) => console.warn('[Philosopher Bot Cron] Failed:', err))
-        }
-        const interval = setInterval(triggerCron, 3600000)
         return () => {
-            clearInterval(interval)
             uninstallSqueakGuard()
         }
     }, [])

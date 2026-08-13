@@ -6,14 +6,26 @@ interface ShareModalProps {
   isOpen: boolean;
   onClose: () => void;
   chat: Chat | null;
+  shareBusy?: boolean;
+  onEnableShare?: () => void;
+  onDisableShare?: () => void;
 }
 
-export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, chat }) => {
+export const ShareModal: React.FC<ShareModalProps> = ({
+  isOpen,
+  onClose,
+  chat,
+  shareBusy = false,
+  onEnableShare,
+  onDisableShare,
+}) => {
   const [copied, setCopied] = useState(false);
 
   if (!isOpen || !chat) return null;
 
-  const shareUrl = `${window.location.origin}/share/${chat.id}`;
+  const shareUrl = chat.shareToken && chat.isShared
+    ? `${window.location.origin}/share/${chat.shareToken}`
+    : '';
 
   const handleCopy = () => {
     navigator.clipboard.writeText(shareUrl);
@@ -54,21 +66,42 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, chat })
         <div className="space-y-4 text-xs">
           <div>
             <label className="block font-medium text-stone-700 mb-1">Doğrudan Bağlantı / Link</label>
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                readOnly
-                value={shareUrl}
-                className="flex-1 rounded-xl border border-stone-200 bg-stone-50 p-2.5 font-mono text-stone-600 select-all"
-              />
+            {shareUrl ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={shareUrl}
+                    className="flex-1 rounded-xl border border-stone-200 bg-stone-50 p-2.5 font-mono text-stone-600 select-all"
+                  />
+                  <button
+                    onClick={handleCopy}
+                    className="flex items-center gap-1 shrink-0 rounded-xl bg-[#1E3A8A] px-3.5 py-2.5 font-semibold text-white hover:bg-[#1e40af]"
+                  >
+                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    <span>{copied ? 'Kopyalandı' : 'Kopyala'}</span>
+                  </button>
+                </div>
+                {onDisableShare && (
+                  <button
+                    onClick={onDisableShare}
+                    disabled={shareBusy}
+                    className="text-[11px] text-stone-500 hover:text-stone-800"
+                  >
+                    Linki kapat
+                  </button>
+                )}
+              </div>
+            ) : (
               <button
-                 onClick={handleCopy}
-                className="flex items-center gap-1 shrink-0 rounded-xl bg-[#1E3A8A] px-3.5 py-2.5 font-semibold text-white hover:bg-[#1e40af]"
+                onClick={onEnableShare}
+                disabled={shareBusy || !onEnableShare}
+                className="w-full rounded-xl bg-[#1E3A8A] px-3.5 py-2.5 font-semibold text-white hover:bg-[#1e40af] disabled:opacity-60"
               >
-                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                <span>{copied ? 'Kopyalandı' : 'Kopyala'}</span>
+                {shareBusy ? 'Link hazırlanıyor…' : 'Paylaşılabilir link oluştur'}
               </button>
-            </div>
+            )}
           </div>
 
           <div className="pt-2 border-t border-stone-100">

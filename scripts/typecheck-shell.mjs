@@ -37,6 +37,8 @@ const ALLOWLIST_PREFIXES = [
     'src/pages/api/',
     'src/pages/admin.tsx',
     'src/lib/wim-auth.ts',
+    'src/lib/chat-store.ts',
+    'src/lib/chat-remote.ts',
     'src/lib/bots/',
 ]
 

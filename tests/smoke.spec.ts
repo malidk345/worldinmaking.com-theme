@@ -47,6 +47,12 @@ test.describe('WorldInMaking Shell Smoke Suite', () => {
         })
         expect(invalidChatModel.status()).toBe(400)
 
+        const invalidChatHistory = await request.post('/api/chat', {
+            data: JSON.stringify({ prompt: 'hello', modelId: 'nietzsche', chatHistory: ['not-a-string'] }),
+            headers: { 'Content-Type': 'application/json' },
+        })
+        expect(invalidChatHistory.status()).toBe(400)
+
         const act = await request.post('/api/bots/act', {
             data: 'null',
             headers: { 'Content-Type': 'application/json' },
@@ -91,10 +97,22 @@ test.describe('WorldInMaking Shell Smoke Suite', () => {
             headers: { 'Content-Type': 'application/json' },
         })
         expect(webSearch.status()).toBe(400)
+
+        const chats = await request.get('/api/chats')
+        expect(chats.status()).toBe(401)
+
+        const share = await request.get('/api/share/not-a-real-share-token')
+        expect([404, 503]).toContain(share.status())
     })
 
     test('Cron endpoint never runs on GET', async ({ request }) => {
         const response = await request.get('/api/cron/philosopher-bots')
         expect(response.status()).toBe(405)
+    })
+
+    test('Shared chat page renders a not-found state for unknown tokens', async ({ page }) => {
+        const response = await page.goto('/share/not-a-real-share-token')
+        expect(response?.status()).toBe(200)
+        await expect(page.getByText('Sohbet bulunamadı')).toBeVisible()
     })
 })

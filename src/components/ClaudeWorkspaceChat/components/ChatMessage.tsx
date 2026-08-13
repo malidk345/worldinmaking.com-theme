@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Message, Artifact, ModelOption, OSActionCard as OSActionCardType } from '../types';
 import { ThinkingBlock } from './ThinkingBlock';
-import { Copy, Check, ThumbsUp, ThumbsDown, ExternalLink, Play, Square, Edit2, ArrowDownToLine } from 'lucide-react';
+import { Copy, Check, ThumbsUp, ThumbsDown, ExternalLink, Play, Square, Edit2, ArrowDownToLine, RotateCcw } from 'lucide-react';
 import { OSActionCard } from '../../../notebook-app/scenes/notebooks/AskAI/components/OSActionCard';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -12,8 +12,9 @@ interface ChatMessageProps {
   modelOptions: ModelOption[];
   targetChatId: string;
   onOpenArtifact?: (art: Artifact) => void;
-  onEditPrompt?: (content: string) => void;
-  onRetry?: () => void;
+  onEditPrompt?: (content: string, messageId: string) => void;
+  onRetry?: (messageId: string) => void;
+  onFeedback?: (messageId: string, liked: boolean | null) => void;
   onUpdateMessage?: (chatId: string, messageId: string, updates: Partial<Message>) => void;
   onExecuteOSAction?: (msgId: string, action: OSActionCardType) => void;
   typewriterSpeed?: 'slow' | 'smooth' | 'fast' | 'off';
@@ -32,6 +33,8 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   message,
   onOpenArtifact,
   onEditPrompt,
+  onRetry,
+  onFeedback,
   onExecuteOSAction,
   typewriterSpeed = 'smooth',
 }) => {
@@ -114,7 +117,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
           <div className="flex items-center gap-1 text-muted text-xs opacity-0 group-hover:opacity-100 transition-opacity mb-1">
             {onEditPrompt && (
               <button
-                onClick={() => onEditPrompt(message.content)}
+                onClick={() => onEditPrompt(message.content, message.id)}
                 className="p-1.5 hover:text-primary hover:bg-light-3 rounded-md transition-colors cursor-pointer"
                 title="Edit"
               >
@@ -299,8 +302,22 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                 {isSpeaking ? <Square className="h-4 w-4 fill-current" /> : <Play className="h-4 w-4" />}
               </button>
 
+              {onRetry && (
+                <button
+                  onClick={() => onRetry(message.id)}
+                  className="p-1 hover:text-primary transition-colors cursor-pointer"
+                  title="Yeniden üret"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </button>
+              )}
+
               <button
-                onClick={() => setLiked(liked === true ? null : true)}
+                onClick={() => {
+                  const next = liked === true ? null : true
+                  setLiked(next)
+                  onFeedback?.(message.id, next)
+                }}
                 className={`p-1 hover:text-primary transition-colors cursor-pointer ${
                   liked === true ? 'text-emerald-600' : ''
                 }`}
@@ -310,7 +327,11 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
               </button>
 
               <button
-                onClick={() => setLiked(liked === false ? null : false)}
+                onClick={() => {
+                  const next = liked === false ? null : false
+                  setLiked(next)
+                  onFeedback?.(message.id, next)
+                }}
                 className={`p-1 hover:text-primary transition-colors cursor-pointer ${
                   liked === false ? 'text-rose-600' : ''
                 }`}

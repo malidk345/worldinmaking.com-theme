@@ -30,10 +30,9 @@ export function getBearerToken(req: Request): string | null {
 /**
  * Validate Supabase user JWT via Auth REST (works on edge without service-role getUser quirks).
  */
-export async function getSupabaseUserFromRequest(
-    req: Request
+export async function getSupabaseUserFromBearer(
+    token: string | null | undefined
 ): Promise<{ id: string; email?: string } | null> {
-    const token = getBearerToken(req)
     if (!token || token.length < 20) return null
 
     const env = getRuntimeEnv()
@@ -56,6 +55,12 @@ export async function getSupabaseUserFromRequest(
     } catch {
         return null
     }
+}
+
+export async function getSupabaseUserFromRequest(
+    req: Request
+): Promise<{ id: string; email?: string } | null> {
+    return getSupabaseUserFromBearer(getBearerToken(req))
 }
 
 /**

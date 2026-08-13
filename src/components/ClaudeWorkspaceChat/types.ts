@@ -117,6 +117,8 @@ export interface Chat {
   thinkingBudget: ThinkingBudget
   webSearchEnabled: boolean
   systemPrompt?: string
+  shareToken?: string
+  isShared?: boolean
 }
 
 export type StylePresetId = 'default' | 'concise' | 'explanatory' | 'code-master' | 'turkish-formal'

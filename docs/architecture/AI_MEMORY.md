@@ -185,10 +185,53 @@ Work is split into 5 independent streams so AI agents can work in parallel witho
 | `TSK-47` | Stream 5 | First-class validated chart artifacts with native workspace previews | `src/lib/ai/*`, `src/lib/bots/*`, `src/pages/api/chat.ts`, `src/pages/api/notebook/co-author.ts`, `src/components/ClaudeWorkspaceChat/*`, AI tests | `[COMPLETED]` | OpenCode (gpt-5.6-luna) | 2026-08-13 |
 | `TSK-48` | Stream 5 | Controlled shadcn-compatible UI registry for React sandbox artifacts | `src/components/ClaudeWorkspaceChat/sandbox/*`, `src/components/ClaudeWorkspaceChat/components/ArtifactsPanel.tsx`, `src/lib/bots/fluid-prompts.ts`, AI tests | `[COMPLETED]` | OpenCode (gpt-5.6-luna) | 2026-08-13 |
 | `TSK-49` | Stream 5 | Prevent reasoning/tag leakage during AI streaming without changing the existing thinking UX | `src/lib/bots/thinking-tags.ts`, `src/lib/bots/thinking.ts`, `src/lib/bots/orchestrate.ts`, `src/pages/api/chat.ts`, `src/pages/api/notebook/co-author.ts`, `src/components/ClaudeWorkspaceChat/index.tsx`, AI tests | `[COMPLETED]` | OpenCode (gpt-5.6-luna) | 2026-08-13 |
+| `TSK-50` | Stream 5 | Unify workspace chat onto `/api/chat` only: drop fallback ladder, send history, wire search/thinking controls, quality-gate persist path | `src/pages/api/chat.ts`, `src/components/ClaudeWorkspaceChat/*`, `src/lib/bots/orchestrate.ts`, `src/lib/bots/web-search.ts`, `src/context/App.tsx` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-13 |
+| `TSK-51` | Stream 5 | Persist workspace chats to Supabase, real share links, auth quotas, edit/retry rewrite | `supabase/migrations/`, `src/lib/chat-store.ts`, `src/pages/api/chats/*`, `src/pages/share/`, `src/components/ClaudeWorkspaceChat/*`, `src/pages/api/chat.ts` | `[COMPLETED]` | Grok 4.6 (xAI) | 2026-08-13 |
 
 ---
 
 ## 5. AI Change History & Log
+
+### Entry 068 - Persist workspace chats to Supabase (TSK-51 / Faz B)
+- **Date:** 2026-08-13
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Workspace chats now dual-write to Supabase (`wim_chats` / `wim_chat_messages`) while localStorage stays the offline cache. Share modal issues a real `/share/{token}` page instead of a fake chat-id URL. `/api/chat` applies auth-aware quotas (guest 20/hour + 40/day, signed-in 120/hour + 400/day). Edit loads the user turn into the composer and truncates later turns on send; retry drops the assistant turn and regenerates from the preceding user message. Like/dislike persist on the message row.
+- **Modified Files:**
+  - `supabase/migrations/20260813_workspace_chats.sql` [NEW]
+  - `src/lib/chat-store.ts` [NEW]
+  - `src/lib/chat-remote.ts` [NEW]
+  - `src/pages/api/chats/index.ts` [NEW]
+  - `src/pages/api/chats/[id].ts` [NEW]
+  - `src/pages/api/share/[token].ts` [NEW]
+  - `src/pages/share/[token].tsx` [NEW]
+  - `src/pages/api/chat.ts` [UPDATED]
+  - `lib/api-authz.ts` [UPDATED]
+  - `src/components/ClaudeWorkspaceChat/index.tsx` [UPDATED]
+  - `src/components/ClaudeWorkspaceChat/types.ts` [UPDATED]
+  - `src/components/ClaudeWorkspaceChat/components/{ChatInput,ChatMessage,ShareModal}.tsx` [UPDATED]
+  - `tests/smoke.spec.ts` [UPDATED]
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm typecheck:shell` passed with 0 gated errors. Chat persist is soft-fail until the migration is applied (`pnpm supabase:bootstrap` or run `supabase/migrations/20260813_workspace_chats.sql`).
+- **Handoff:** Apply `20260813_workspace_chats.sql` on the live project. Next product work is Faz C (tool loop, vision/PDF, memory v2), not another chat UI.
+
+### Entry 067 - Unify workspace chat onto a single `/api/chat` path (TSK-50)
+- **Date:** 2026-08-13
+- **AI Agent:** Grok 4.6 (xAI)
+- **Summary:** Collapsed the four-endpoint workspace fallback ladder into one SSE path. Workspace chat now talks only to `/api/chat`, sending conversation history, notebook context, thinking budget, project prompt, style, attachments, and the web-search flag. Search results emit structured `citations`. Quality gate now runs on `runBotTurn` (with one correction retry for persist/JSON paths) and as a rule-only pass after `streamBotTurn`. Stream gateway gained Hugging Face fallback, aligned OpenRouter models, and no longer logs key prefixes. Dead desktop cron GET and the AskMax empty-destructure crash were removed; philosopher-bot 503 no longer leaks provider `configured` flags.
+- **Modified Files:**
+  - `src/pages/api/chat.ts`
+  - `src/pages/api/philosopher-bot.ts`
+  - `src/lib/bots/orchestrate.ts`
+  - `src/lib/bots/web-search.ts`
+  - `src/lib/bots/ai-gateway.ts`
+  - `src/components/ClaudeWorkspaceChat/index.tsx`
+  - `src/components/ClaudeWorkspaceChat/components/ChatInput.tsx`
+  - `src/context/App.tsx`
+  - `src/components/AskMax/index.tsx`
+  - `tests/smoke.spec.ts`
+  - `docs/architecture/AI_MEMORY.md`
+- **Verification:** `pnpm typecheck:shell` passed with 0 gated errors. Full Playwright smoke was not rerun because local ports 3000/3001 were already occupied and a fresh `pnpm dev` webServer timed out.
+- **Handoff:** Notebook Ask AI / selection AI / `<ph-prompt>` still use `/api/notebook/co-author` or `/api/bots/act`. Next product work is server-side conversation persist + share route (Faz B), not another chat UI.
 
 ### Entry 066 - Thinking Stream Demultiplexing Without UX Change (TSK-49)
 - **Date:** 2026-08-13

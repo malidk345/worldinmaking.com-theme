@@ -691,9 +691,13 @@ export async function streamWithGateway(params: {
     const groqRaw = envFrom(runtimeEnv, 'GROQ_API_KEYS', 'GROQ_API_KEY')
     const groqModel = envFrom(runtimeEnv, 'GROQ_MODEL', 'QWEN_MODEL') || 'qwen/qwen3.6-27b'
     const openRouterKey = envFrom(runtimeEnv, 'OPENROUTER_API_KEY')
+    const hfRaw = envFrom(runtimeEnv, 'HUGGINGFACE_API_KEYS', 'HUGGINGFACE_API_KEY', 'HF_API_KEY', 'HF_TOKEN')
 
     const openRouterKeys = splitKeys(openRouterKey)
     const groqKeys = splitKeys(groqRaw)
+    const hfKeys = splitKeys(hfRaw)
+    const openRouterModel =
+        envFrom(runtimeEnv, 'OPENROUTER_MODEL') || TASK_OPENROUTER[params.taskType || 'community_reply'] || OPENROUTER_MODELS[0]
 
     // 1. Try Groq Streaming
     if (groqKeys.length > 0 && !isFamilyCooling('groq')) {
@@ -712,13 +716,34 @@ export async function streamWithGateway(params: {
             )
             if (r.ok) return { ok: true, provider: 'groq', stream: r.stream, attempts, configured }
             if (isRateLimitDetail(r.detail)) sawRateLimit = true
-            console.warn(`[Gateway Debug] Groq failed key ${key.slice(0,6)}... with detail:`, r.detail)
             attempts.push(`groq: ${r.detail}`)
         }
         if (sawRateLimit) markFamilyCooling('groq')
     }
 
-    // 2. Try OpenRouter Streaming
+    // 2. Hugging Face Inference Router (OpenAI-compatible stream)
+    if (hfKeys.length > 0 && !isFamilyCooling('huggingface')) {
+        let sawRateLimit = false
+        for (const key of hfKeys) {
+            if (Date.now() >= deadline) break
+            const r = await chatCompletionsStream(
+                'https://router.huggingface.co/v1/chat/completions',
+                key,
+                HUGGINGFACE_MODEL,
+                params.systemPrompt,
+                params.userPrompt,
+                params.temperature,
+                {},
+                deadline,
+            )
+            if (r.ok) return { ok: true, provider: 'huggingface', stream: r.stream, attempts, configured }
+            if (isRateLimitDetail(r.detail)) sawRateLimit = true
+            attempts.push(`huggingface: ${r.detail}`)
+        }
+        if (sawRateLimit) markFamilyCooling('huggingface')
+    }
+
+    // 3. Try OpenRouter Streaming
     if (openRouterKeys.length > 0 && !isFamilyCooling('openrouter')) {
         let sawRateLimit = false
         for (const key of openRouterKeys) {
@@ -726,13 +751,14 @@ export async function streamWithGateway(params: {
             const r = await chatCompletionsStream(
                 'https://openrouter.ai/api/v1/chat/completions',
                 key,
-                'qwen/qwen-2.5-72b-instruct',
+                openRouterModel,
                 params.systemPrompt,
                 params.userPrompt,
                 params.temperature,
                 {
-                    'HTTP-Referer': 'https://worldinmaking.com',
-                    'X-Title': 'Ask AI',
+                    'HTTP-Referer':
+                        envFrom(runtimeEnv, 'NEXT_PUBLIC_SITE_URL') || 'https://worldinmaking.com',
+                    'X-Title': 'WorldInMaking Philosopher Bots',
                 },
                 deadline,
             )

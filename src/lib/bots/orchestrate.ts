@@ -21,6 +21,7 @@ import { ThinkingStreamDemux, stripThinkingBlocks } from './thinking-tags'
 import { getFluidSystemPrompt, type PromptScope } from './fluid-prompts'
 import { getProviderKeyFlags, getRuntimeEnv, type EnvStore } from './runtime-env'
 import type { AiLifecycleEvent } from '../ai/contracts'
+import { runQualityGate } from '../../../lib/quality-gate'
 
 /** Re-export for action modules that import depth from the orchestrator surface. */
 export type { ThinkingDepth } from './thinking'
@@ -197,11 +198,13 @@ export async function runBotTurn(input: BotRunInput): Promise<BotRunResult> {
     const rawReply = reply || cleanFallbackReply(gen.text)
     input.onAnalysisSummary?.(thinking)
 
+    const gatedReply = await applyQualityGate(rawReply, persona, taskType, systemPrompt, runtimeEnv, input.onLifecycle, true)
+
     return {
         success: true,
         philosopher: persona.name,
         epistemicStance: persona.epistemicStance,
-        reply: rawReply,
+        reply: gatedReply,
         thought: thinking.summary,
         thinking,
         provider: gen.provider,
@@ -218,6 +221,47 @@ export async function runBotTurn(input: BotRunInput): Promise<BotRunResult> {
 
 function cleanFallbackReply(raw: string): string {
     return stripThinkingBlocks(raw)
+}
+
+async function applyQualityGate(
+    rawReply: string,
+    persona: BotPersona,
+    taskType: TaskType,
+    systemPrompt: string,
+    runtimeEnv: EnvStore,
+    onLifecycle: BotRunInput['onLifecycle'],
+    allowCorrection: boolean
+): Promise<string> {
+    onLifecycle?.({ phase: 'quality_gate', status: 'started' })
+    try {
+        const report = await runQualityGate(rawReply, persona, taskType, {
+            maxRetries: allowCorrection ? 1 : 0,
+            correctionFn: allowCorrection
+                ? async (correctionPrompt: string) => {
+                      const correction = await generateWithGateway({
+                          systemPrompt,
+                          userPrompt: correctionPrompt,
+                          taskType,
+                          botName: persona.name,
+                          env: runtimeEnv,
+                          temperature: persona.temperature,
+                      })
+                      if (!correction.ok) throw new Error(correction.error)
+                      return correction.text
+                  }
+                : undefined,
+        })
+        onLifecycle?.({
+            phase: 'quality_gate',
+            status: report.passed ? 'completed' : 'failed',
+            detail: report.issues[0],
+        })
+        return report.correctedBody || rawReply
+    } catch (error) {
+        console.warn('[orchestrate] quality gate skipped', error)
+        onLifecycle?.({ phase: 'quality_gate', status: 'failed', detail: 'Quality gate unavailable' })
+        return rawReply
+    }
 }
 
 /**
@@ -319,11 +363,13 @@ export async function streamBotTurn(input: BotRunInput, onToken: (text: string) 
     const rawReply = reply || cleanFallbackReply(fullText)
     input.onAnalysisSummary?.(thinking)
 
+    const gatedReply = await applyQualityGate(rawReply, persona, taskType, systemPrompt, runtimeEnv, input.onLifecycle, false)
+
     return {
         success: true,
         philosopher: persona.name,
         epistemicStance: persona.epistemicStance,
-        reply: rawReply,
+        reply: gatedReply,
         thought: thinking.summary,
         thinking,
         provider: gen.provider,

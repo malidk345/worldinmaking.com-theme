@@ -29,9 +29,6 @@ export default function AskMax({
     const { openNewChat } = useApp()
     const { appWindow } = useWindow()
     const pathname = usePathname()
-    const {
-        allDocsPages: { totalDocsCount },
-    } = {}
 
     const borderClasses = border ? 'py-6 mt-4 border-y border-primary' : 'mb-8'
 
@@ -77,8 +74,7 @@ export default function AskMax({
                                     {title} <span className="text-red dark:text-yellow">Ask PostHog AI.</span>
                                 </h3>
                                 <p className="text-[15px] mb-0 opacity-75 text-balance">
-                                    It's easier than reading through{' '}
-                                    <strong>{totalDocsCount} pages of documentation.</strong>
+                                    It's easier than reading through the documentation.
                                 </p>
                             </div>
                         </div>

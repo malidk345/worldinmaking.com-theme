@@ -37,6 +37,15 @@ import { processArtifactRevision } from './utils/toolCalling';
 import { parseAiSseEvent, type AiArtifact } from 'lib/ai/contracts';
 import { parseChartSpec, stripChartArtifactMarkup } from 'lib/ai/chart-artifacts';
 import { stripThinkingBlocks } from 'lib/bots/thinking-tags';
+import {
+  chatAuthHeaders,
+  deleteChatOnRemote,
+  mergeChats,
+  pullChatsFromRemote,
+  pushChatToRemote,
+  setRemoteChatShare,
+  setRemoteMessageLiked,
+} from '../../lib/chat-remote';
 
 const CHAT_STORAGE_KEYS = ['claude_workspace_chats_v7', 'claude_workspace_chats_v6', 'claude_workspace_chats_v4'];
 const PROJECT_STORAGE_KEYS = ['claude_workspace_projects_v7', 'claude_workspace_projects_v6', 'claude_workspace_projects'];
@@ -196,6 +205,11 @@ export default function App({ onClose }: { onClose?: () => void }) {
   const [isStreaming, setIsStreaming] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
+  const pendingEditMessageIdRef = useRef<string | null>(null);
+  const persistChatIdRef = useRef<string | null>(null);
+  const [composerDraft, setComposerDraft] = useState('');
+  const [composerDraftNonce, setComposerDraftNonce] = useState(0);
+  const [shareBusy, setShareBusy] = useState(false);
 
   // Save to LocalStorage
   useEffect(() => {
@@ -221,6 +235,35 @@ export default function App({ onClose }: { onClose?: () => void }) {
       // Settings persistence is best effort.
     }
   }, [settings]);
+
+  useEffect(() => {
+    let cancelled = false
+    pullChatsFromRemote().then((remote) => {
+      if (cancelled || !remote) return
+      setChats((prev) => {
+        const merged = mergeChats(prev, remote)
+        if (merged.length > 0 && !merged.some((chat) => chat.id === activeChatId)) {
+          setActiveChatId(merged[0].id)
+        }
+        return merged
+      })
+    })
+    return () => {
+      cancelled = true
+    }
+    // Hydrate once on mount; later edits persist incrementally.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (isStreaming || !persistChatIdRef.current) return
+    const chatId = persistChatIdRef.current
+    persistChatIdRef.current = null
+    const chat = chats.find((item) => item.id === chatId)
+    if (chat && chat.messages.some((message) => !message.isStreaming)) {
+      void pushChatToRemote(chat)
+    }
+  }, [chats, isStreaming]);
 
   // Active chat object — nullable if chats array is empty (e.g. localStorage cleared)
   const activeChat = chats.length > 0
@@ -292,13 +335,28 @@ export default function App({ onClose }: { onClose?: () => void }) {
   };
 
   // Handle Message Sending with Backend Streaming
-  const handleSendMessage = async (promptText: string, attachments: FileAttachment[]) => {
+  const handleSendMessage = async (
+    promptText: string,
+    attachments: FileAttachment[],
+    options?: { skipUserAppend?: boolean; historyOverride?: Message[] }
+  ) => {
     if (!promptText.trim() && attachments.length === 0) return;
 
     let targetChatId = activeChatId;
+    const editMessageId = pendingEditMessageIdRef.current
+    pendingEditMessageIdRef.current = null
+    const sourceChat = chats.find((c) => c.id === (targetChatId || '')) || activeChat
+    let baseMessages = options?.historyOverride || sourceChat?.messages || []
+    if (editMessageId) {
+      const editIndex = baseMessages.findIndex((message) => message.id === editMessageId)
+      if (editIndex >= 0) {
+        baseMessages = baseMessages.slice(0, editIndex)
+      }
+    }
 
     // Create chat if empty or invalid
     if (!targetChatId || !chats.some((c) => c.id === targetChatId)) {
+      baseMessages = [];
       const newChat: Chat = {
         id: `chat-${Date.now()}`,
         title: promptText.slice(0, 30) || attachments[0]?.name || 'Yeni Sohbet',
@@ -344,12 +402,15 @@ export default function App({ onClose }: { onClose?: () => void }) {
     setChats((prev) =>
       prev.map((c) => {
         if (c.id === targetChatId) {
-          const isFirstUserMsg = c.messages.length === 0;
+          const nextMessages = options?.skipUserAppend
+            ? [...baseMessages, assistantMessage]
+            : [...baseMessages, userMessage, assistantMessage];
+          const isFirstUserMsg = baseMessages.length === 0;
           return {
             ...c,
             title: isFirstUserMsg ? promptText.slice(0, 32) || attachments[0]?.name || 'Yeni Sohbet' : c.title,
             updatedAt: new Date().toISOString(),
-            messages: [...c.messages, userMessage, assistantMessage],
+            messages: nextMessages,
           };
         }
         return c;
@@ -385,10 +446,6 @@ export default function App({ onClose }: { onClose?: () => void }) {
     let backendError = false;
     try {
 
-      const notebookCtx = activeNotebookContext.trim()
-        ? `[NOTEBOOK CONTENT CONTEXT]\n"""\n${activeNotebookContext}\n"""\n`
-        : '';
-
       const attachmentContext = attachments
         .map((attachment) => {
           if (attachment.type === 'image') {
@@ -400,374 +457,167 @@ export default function App({ onClose }: { onClose?: () => void }) {
         .slice(0, 8000);
       const effectivePrompt = promptText.trim() || 'Please analyze the attached material and respond with the most useful next step.';
 
-      const conversationHistory = activeChat?.messages
-        ? activeChat.messages
-            .slice(-10) // Send last 10 turns of full chat memory
-            .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
-            .join('\n\n')
-            .slice(0, 8000)
-        : '';
+      const conversationHistory = baseMessages
+        .slice(-10)
+        .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
+        .join('\n\n')
+        .slice(0, 8000);
 
-      // Tier 1: Try SSE Token Streaming via /api/notebook/co-author (Primary Ask AI Backend)
-      let sseRes: Response | null = null;
-      try {
-        sseRes = await fetch('/api/notebook/co-author', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          signal: abortControllerRef.current.signal,
-            body: JSON.stringify({
-              botName: selectedModelId,
-              mode: 'chat',
-              documentText: activeNotebookContext,
-              nodeContent: effectivePrompt,
-              chatHistory: conversationHistory,
-              webSearchEnabled: webSearchEnabled,
-              attachmentContext,
-            }),
-        });
-      } catch (e) {
-        console.warn('co-author fetch failed, cascading to /api/bots/act');
-      }
+      const sseRes = await fetch('/api/chat', {
+        method: 'POST',
+        headers: chatAuthHeaders(true),
+        signal: abortControllerRef.current.signal,
+        body: JSON.stringify({
+          prompt: effectivePrompt,
+          modelId: selectedModelId,
+          thinkingBudget,
+          webSearchEnabled,
+          systemPrompt: activeProjectObj?.systemPrompt || '',
+          styleSuffix: selectedStyle?.promptSuffix || '',
+          attachmentContext,
+          chatHistory: conversationHistory,
+          notebookContext: activeNotebookContext,
+          conversationId: targetChatId,
+        }),
+      });
 
-      if (sseRes && sseRes.ok && sseRes.body) {
-        const reader = sseRes.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n\n');
-          buffer = lines.pop() || '';
-
-          for (const line of lines) {
-             try {
-               const parsed = parseAiSseEvent(line);
-               if (!parsed) continue;
-
-               // Handle live search event from the shared AI transport.
-               if (parsed.type === 'search') {
-                 let detailText = `Query: "${parsed.search.query}"`;
-                 if (parsed.search.results) {
-                  detailText += `\n\nFetched Sources:\n${parsed.search.results}`;
-                }
-                const searchStep = {
-                  id: 'search-step',
-                  stepNumber: 0,
-                   title: 'Search Web & Sources',
-                   detail: detailText,
-                   completed: parsed.search.status === 'done',
-                   source: 'system_event' as const,
-                };
-                const existingIdx = currentThinkingProcess.steps.findIndex((s: any) => s.id === 'search-step');
-                if (existingIdx >= 0) {
-                  currentThinkingProcess.steps[existingIdx] = searchStep;
-                } else {
-                  currentThinkingProcess.steps.unshift(searchStep);
-                 }
-               }
-
-                if (parsed.type === 'thinking_start') {
-                  currentThinkingProcess.durationSeconds = parsed.durationSeconds || 0;
-                  currentThinkingProcess.tokenCount = parsed.tokenCount || 0;
-                }
-
-                if (parsed.type === 'artifacts') {
-                  appendStreamedArtifacts(parsed.artifacts);
-                  updateAssistantMessage(targetChatId, assistantMessageId, {
-                    content: sanitizePublicAssistantText(accumulatedContent),
-                    artifacts: streamedArtifacts,
-                  });
-                }
-
-                if (parsed.type === 'thinking_step') {
-                  const existingIdx = currentThinkingProcess.steps.findIndex((step: any) => step.id === parsed.step.id);
-                  if (existingIdx >= 0) currentThinkingProcess.steps[existingIdx] = parsed.step;
-                  else currentThinkingProcess.steps.push(parsed.step);
-                  
-                  currentThinkingProcess.steps = [...currentThinkingProcess.steps];
-                  
-                  updateAssistantMessage(targetChatId, assistantMessageId, {
-                    content: sanitizePublicAssistantText(accumulatedContent),
-                    thinkingProcess: { ...currentThinkingProcess },
-                  });
-                }
-
-                if (parsed.type === 'phase') {
-                  const phaseLabels: Record<string, string> = {
-                    context: 'Context',
-                    generation: 'Generation',
-                    quality_gate: 'Quality check',
-                    persistence: 'Memory sync',
-                  };
-                  const phaseStep = {
-                    id: `phase-${parsed.phase.phase}`,
-                    stepNumber: currentThinkingProcess.steps.length + 1,
-                    title: phaseLabels[parsed.phase.phase] || parsed.phase.phase,
-                    detail: parsed.phase.detail || `${parsed.phase.phase} ${parsed.phase.status}`,
-                    completed: parsed.phase.status !== 'started',
-                    source: 'system_event' as const,
-                  };
-                  const existingIdx = currentThinkingProcess.steps.findIndex((step: any) => step.id === phaseStep.id);
-                  if (existingIdx >= 0) currentThinkingProcess.steps[existingIdx] = phaseStep;
-                  else currentThinkingProcess.steps.push(phaseStep);
-                  
-                  currentThinkingProcess.steps = [...currentThinkingProcess.steps];
-                  
-                  updateAssistantMessage(targetChatId, assistantMessageId, {
-                    content: sanitizePublicAssistantText(accumulatedContent),
-                    thinkingProcess: { ...currentThinkingProcess },
-                  });
-                }
-
-               // Handle backend error event — surface it and let the normal
-               // fallback ladder try the next API.
-               if (parsed.type === 'error') {
-                 console.error('[co-author SSE] backend error:', parsed.message);
-                 backendError = true;
-                 continue;
-               }
-
-                if (parsed.type === 'token') {
-                  accumulatedContent += parsed.text;
-                  updateAssistantMessage(targetChatId, assistantMessageId, {
-                    content: sanitizePublicAssistantText(accumulatedContent),
-                    thinkingProcess: { ...currentThinkingProcess },
-                  });
-                }
-
-                if (parsed.type === 'done') {
-                  appendStreamedArtifacts(parsed.artifacts);
-                  accumulatedContent = parsed.fullText || accumulatedContent;
-                  updateAssistantMessage(targetChatId, assistantMessageId, {
-                    content: sanitizePublicAssistantText(accumulatedContent),
-                    artifacts: streamedArtifacts,
-                  });
-                 break;
-               }
-             } catch {
-               /* ignore chunk parse error */
-             }
-          }
-        }
-      }
-
-      // Tier 2: Fallback to /api/bots/act or /api/philosopher-bot if SSE returned empty
-       let finalCleanContent = sanitizePublicAssistantText(accumulatedContent);
-       if (!finalCleanContent) {
-        let res: Response | null = null;
+      if (!sseRes.ok || !sseRes.body) {
+        let errorMessage = `Chat API ${sseRes.status}`;
         try {
-          res = await fetch('/api/bots/act', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            signal: abortControllerRef.current.signal,
-            body: JSON.stringify({
-              action: 'chat',
-              bot: selectedModelId,
-               question: effectivePrompt,
-               mood: 'calm',
-               taskType: 'autonomous_assistant',
-               context: `${notebookCtx}\n${attachmentContext}`.slice(0, 12000),
-            }),
-          });
+          const errBody = await sseRes.json();
+          if (errBody?.error) errorMessage = String(errBody.error);
         } catch {
-          /* fallback */
+          /* use status text */
         }
+        throw new Error(errorMessage);
+      }
 
-        if (!res || !res.ok || res.status === 404 || res.status === 405) {
-          try {
-            res = await fetch('/api/philosopher-bot', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              signal: abortControllerRef.current.signal,
-              body: JSON.stringify({
-                philosopher: selectedModelId,
-                 question: effectivePrompt,
-                 mood: 'calm',
-                 taskType: 'autonomous_assistant',
-                 context: `${notebookCtx}\n${attachmentContext}`.slice(0, 12000),
-              }),
+      const reader = sseRes.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let streamedCitations: Message['citations'] = [];
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const frames = buffer.split('\n\n');
+        buffer = frames.pop() || '';
+
+        for (const frame of frames) {
+          const parsed = parseAiSseEvent(frame);
+          if (!parsed) continue;
+
+          if (parsed.type === 'search') {
+            let detailText = `Query: "${parsed.search.query}"`;
+            if (parsed.search.results) {
+              detailText += `\n\nFetched Sources:\n${parsed.search.results}`;
+            }
+            const searchStep = {
+              id: 'search-step',
+              stepNumber: 0,
+              title: 'Search Web & Sources',
+              detail: detailText,
+              completed: parsed.search.status === 'done',
+              source: 'system_event' as const,
+            };
+            const existingIdx = currentThinkingProcess.steps.findIndex((s: any) => s.id === 'search-step');
+            if (existingIdx >= 0) currentThinkingProcess.steps[existingIdx] = searchStep;
+            else currentThinkingProcess.steps.unshift(searchStep);
+          }
+
+          if (parsed.type === 'citations') {
+            streamedCitations = parsed.citations;
+            updateAssistantMessage(targetChatId, assistantMessageId, {
+              citations: streamedCitations,
             });
-          } catch {
-            /* fallback */
+          }
+
+          if (parsed.type === 'thinking_start') {
+            currentThinkingProcess.durationSeconds = parsed.durationSeconds || 0;
+            currentThinkingProcess.tokenCount = parsed.tokenCount || 0;
+          }
+
+          if (parsed.type === 'artifacts') {
+            appendStreamedArtifacts(parsed.artifacts);
+            updateAssistantMessage(targetChatId, assistantMessageId, {
+              content: sanitizePublicAssistantText(accumulatedContent),
+              artifacts: streamedArtifacts,
+            });
+          }
+
+          if (parsed.type === 'thinking_step') {
+            const existingIdx = currentThinkingProcess.steps.findIndex((step: any) => step.id === parsed.step.id);
+            if (existingIdx >= 0) currentThinkingProcess.steps[existingIdx] = parsed.step;
+            else currentThinkingProcess.steps.push(parsed.step);
+            currentThinkingProcess.steps = [...currentThinkingProcess.steps];
+            updateAssistantMessage(targetChatId, assistantMessageId, {
+              content: sanitizePublicAssistantText(accumulatedContent),
+              thinkingProcess: { ...currentThinkingProcess },
+            });
+          }
+
+          if (parsed.type === 'phase') {
+            const phaseLabels: Record<string, string> = {
+              context: 'Context',
+              generation: 'Generation',
+              quality_gate: 'Quality check',
+              persistence: 'Memory sync',
+            };
+            const phaseStep = {
+              id: `phase-${parsed.phase.phase}`,
+              stepNumber: currentThinkingProcess.steps.length + 1,
+              title: phaseLabels[parsed.phase.phase] || parsed.phase.phase,
+              detail: parsed.phase.detail || `${parsed.phase.phase} ${parsed.phase.status}`,
+              completed: parsed.phase.status !== 'started',
+              source: 'system_event' as const,
+            };
+            const existingIdx = currentThinkingProcess.steps.findIndex((step: any) => step.id === phaseStep.id);
+            if (existingIdx >= 0) currentThinkingProcess.steps[existingIdx] = phaseStep;
+            else currentThinkingProcess.steps.push(phaseStep);
+            currentThinkingProcess.steps = [...currentThinkingProcess.steps];
+            updateAssistantMessage(targetChatId, assistantMessageId, {
+              content: sanitizePublicAssistantText(accumulatedContent),
+              thinkingProcess: { ...currentThinkingProcess },
+            });
+          }
+
+          if (parsed.type === 'error') {
+            console.error('[workspace chat] backend error:', parsed.message);
+            backendError = true;
+            if (!accumulatedContent.trim()) {
+              updateAssistantMessage(targetChatId, assistantMessageId, {
+                content: parsed.message || 'Philosopher network unavailable.',
+              });
+            }
+            continue;
+          }
+
+          if (parsed.type === 'token') {
+            accumulatedContent += parsed.text;
+            updateAssistantMessage(targetChatId, assistantMessageId, {
+              content: sanitizePublicAssistantText(accumulatedContent),
+              thinkingProcess: { ...currentThinkingProcess },
+            });
+          }
+
+          if (parsed.type === 'done') {
+            appendStreamedArtifacts(parsed.artifacts);
+            accumulatedContent = parsed.fullText || accumulatedContent;
+            updateAssistantMessage(targetChatId, assistantMessageId, {
+              content: sanitizePublicAssistantText(accumulatedContent),
+              artifacts: streamedArtifacts,
+              citations: streamedCitations,
+              thinkingProcess: { ...currentThinkingProcess },
+            });
           }
         }
+      }
 
-        // Tier 3: Fallback to /api/chat
-        if (!res || !res.ok) {
-          res = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            signal: abortControllerRef.current.signal,
-            body: JSON.stringify({
-               prompt: effectivePrompt,
-              modelId: selectedModelId,
-              thinkingBudget,
-              webSearchEnabled,
-               systemPrompt: activeProjectObj?.systemPrompt || '',
-               styleSuffix: selectedStyle?.promptSuffix || '',
-               attachmentContext,
-            }),
-          });
-        }
-
-        if (res && res.ok) {
-          const contentType = res.headers.get('content-type') || '';
-          if (contentType.includes('application/json')) {
-            const data = await res.json();
-            const replyText = data.reply || data.content || data.fullText || data.text || '';
-            appendStreamedArtifacts(Array.isArray(data.artifacts) ? data.artifacts : undefined);
-            const fallbackArtifacts = extractArtifactsFromContent(replyText, effectivePrompt);
-            streamedArtifacts = [...streamedArtifacts, ...fallbackArtifacts].filter((artifact, index, all) =>
-              all.findIndex((candidate) =>
-                candidate.id === artifact.id ||
-                (candidate.type === artifact.type && candidate.content === artifact.content)
-              ) === index
-            );
-
-            accumulatedContent = replyText;
-            finalCleanContent = sanitizePublicAssistantText(replyText)
-              .replace(/<(?:analysis_summary|thinking|think)>[\s\S]*?(?:<\/(?:analysis_summary|thinking|think)>|$)/gi, '')
-              .trim();
-
-            updateAssistantMessage(targetChatId, assistantMessageId, {
-              content: finalCleanContent,
-              artifacts: streamedArtifacts.length > 0 ? streamedArtifacts : undefined,
-              isStreaming: false,
-              isTypingDone: true,
-            });
-            if (streamedArtifacts.length > 0) {
-              setActiveArtifact(streamedArtifacts[0]);
-              setIsArtifactsOpen(true);
-            }
-            isStreamComplete = true;
-            return;
-          } else if (res.body) {
-            const reader = res.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = '';
-
-            while (true) {
-              const { value, done } = await reader.read();
-              if (done) break;
-
-              buffer += decoder.decode(value, { stream: true });
-              const lines = buffer.split('\n\n');
-              buffer = lines.pop() || '';
-
-              for (const line of lines) {
-                if (!line.trim()) continue;
-
-                let eventType = 'chunk';
-                let dataStr = '';
-
-                line.split('\n').forEach((l) => {
-                  if (l.startsWith('event: ')) eventType = l.replace('event: ', '').trim();
-                  if (l.startsWith('data: ')) dataStr = l.replace('data: ', '').trim();
-                });
-
-                if (!dataStr) continue;
-
-                 try {
-                   const data = JSON.parse(dataStr);
-
-                   // The fallback endpoint uses the same data-only SSE contract
-                    // as the primary endpoint. Keep the old named-event branch
-                    // below for already-deployed edge responses during rollout.
-                    if (typeof data.type === 'string') {
-                      if (data.type === 'artifacts') {
-                        appendStreamedArtifacts(Array.isArray(data.artifacts) ? data.artifacts : undefined);
-                        updateAssistantMessage(targetChatId, assistantMessageId, {
-                          content: sanitizePublicAssistantText(accumulatedContent),
-                          artifacts: streamedArtifacts,
-                        });
-                      } else if (data.type === 'thinking_start') {
-                       currentThinkingProcess.durationSeconds = data.durationSeconds || 0;
-                       currentThinkingProcess.tokenCount = data.tokenCount || 0;
-                     } else if (data.type === 'thinking_step') {
-                       const existingIdx = currentThinkingProcess.steps.findIndex(s => s.id === data.step.id);
-                       if (existingIdx !== -1) {
-                           currentThinkingProcess.steps[existingIdx] = data.step;
-                       } else {
-                           currentThinkingProcess.steps.push(data.step);
-                       }
-                        currentThinkingProcess.steps = [...currentThinkingProcess.steps];
-                        updateAssistantMessage(targetChatId, assistantMessageId, {
-                          content: sanitizePublicAssistantText(accumulatedContent),
-                          thinkingProcess: { ...currentThinkingProcess },
-                        });
-                      } else if (data.type === 'token') {
-                        accumulatedContent += data.text || '';
-                        updateAssistantMessage(targetChatId, assistantMessageId, {
-                          content: sanitizePublicAssistantText(accumulatedContent),
-                          thinkingProcess: { ...currentThinkingProcess },
-                        });
-                       } else if (data.type === 'done') {
-                         appendStreamedArtifacts(Array.isArray(data.artifacts) ? data.artifacts : undefined);
-                         accumulatedContent = data.fullText || accumulatedContent;
-                         updateAssistantMessage(targetChatId, assistantMessageId, {
-                           content: sanitizePublicAssistantText(accumulatedContent),
-                           artifacts: streamedArtifacts,
-                           thinkingProcess: { ...currentThinkingProcess },
-                         });
-                      } else if (data.type === 'phase') {
-                        const phaseLabels: Record<string, string> = {
-                          context: 'Context',
-                          generation: 'Generation',
-                          quality_gate: 'Quality check',
-                          persistence: 'Memory sync',
-                        };
-                        const phaseStep = {
-                          id: `phase-${data.phase.phase}`,
-                          stepNumber: currentThinkingProcess.steps.length + 1,
-                          title: phaseLabels[data.phase.phase] || data.phase.phase,
-                          detail: data.phase.detail || `${data.phase.phase} ${data.phase.status}`,
-                          completed: data.phase.status !== 'started',
-                          source: 'system_event' as const,
-                        };
-                        const phaseIndex = currentThinkingProcess.steps.findIndex((step: any) => step.id === phaseStep.id);
-                        if (phaseIndex >= 0) currentThinkingProcess.steps[phaseIndex] = phaseStep;
-                        else currentThinkingProcess.steps.push(phaseStep);
-                      } else if (data.type === 'error') {
-                       backendError = true;
-                     }
-                     continue;
-                   }
-
-                   if (eventType === 'thinking_start') {
-                    currentThinkingProcess.durationSeconds = data.durationSeconds;
-                    currentThinkingProcess.tokenCount = data.tokenCount;
-                  } else if (eventType === 'thinking_step') {
-                    currentThinkingProcess.steps.push(data);
-                   } else if (eventType === 'artifacts') {
-                     appendStreamedArtifacts(Array.isArray(data.artifacts) ? data.artifacts : undefined);
-                   } else if (eventType === 'chunk') {
-                     accumulatedContent += data.text;
-                     updateAssistantMessage(targetChatId, assistantMessageId, {
-                       content: sanitizePublicAssistantText(accumulatedContent),
-                       thinkingProcess: { ...currentThinkingProcess },
-                     });
-                   } else if (eventType === 'done') {
-                     updateAssistantMessage(targetChatId, assistantMessageId, {
-                       content: sanitizePublicAssistantText(data.fullText || accumulatedContent),
-                       artifacts: streamedArtifacts,
-                       isStreaming: false,
-                      isTypingDone: true,
-                    });
-                  }
-                } catch {
-                  /* ignore SSE chunk error */
-                }
-              }
-           }
-            finalCleanContent = sanitizePublicAssistantText(accumulatedContent.trim());
-           if (!accumulatedContent.trim()) throw new Error('AI fallback returned no content');
-         }
-       } else {
-         throw new Error('All fallbacks failed');
-        }
+      let finalCleanContent = sanitizePublicAssistantText(accumulatedContent);
+      if (!finalCleanContent && !backendError) {
+        throw new Error('AI returned no content');
       }
 
       // OS Intent Detection
@@ -871,6 +721,7 @@ export default function App({ onClose }: { onClose?: () => void }) {
         });
       }
     } finally {
+      persistChatIdRef.current = targetChatId;
       setIsStreaming(false);
       abortControllerRef.current = null;
     }
@@ -919,9 +770,80 @@ export default function App({ onClose }: { onClose?: () => void }) {
 
   const handleDeleteChat = (id: string) => {
     setChats((prev) => prev.filter((c) => c.id !== id));
+    void deleteChatOnRemote(id);
     if (activeChatId === id) {
       const remaining = chats.filter((c) => c.id !== id);
       setActiveChatId(remaining[0]?.id || '');
+    }
+  };
+
+  const handleEditPrompt = (text: string, messageId: string) => {
+    if (isStreaming) return;
+    pendingEditMessageIdRef.current = messageId;
+    setComposerDraft(text);
+    setComposerDraftNonce((value) => value + 1);
+  };
+
+  const handleRetry = (assistantMessageId: string) => {
+    if (isStreaming || !activeChat) return;
+    const assistantIndex = activeChat.messages.findIndex((message) => message.id === assistantMessageId);
+    if (assistantIndex < 0) return;
+    let userIndex = assistantIndex - 1;
+    while (userIndex >= 0 && activeChat.messages[userIndex].role !== 'user') userIndex -= 1;
+    if (userIndex < 0) return;
+    const userMessage = activeChat.messages[userIndex];
+    const kept = activeChat.messages.slice(0, userIndex + 1);
+    setChats((prev) =>
+      prev.map((chat) =>
+        chat.id === activeChat.id ? { ...chat, messages: kept, updatedAt: new Date().toISOString() } : chat
+      )
+    );
+    void handleSendMessage(userMessage.content, userMessage.attachments || [], {
+      skipUserAppend: true,
+      historyOverride: kept,
+    });
+  };
+
+  const handleMessageFeedback = (messageId: string, liked: boolean | null) => {
+    if (!activeChatId) return;
+    updateAssistantMessage(activeChatId, messageId, { liked });
+    void setRemoteMessageLiked(activeChatId, messageId, liked);
+  };
+
+  const handleEnableShare = async () => {
+    if (!activeChat) return;
+    setShareBusy(true);
+    try {
+      await pushChatToRemote(activeChat);
+      const shared = await setRemoteChatShare(activeChat.id, true);
+      if (shared) {
+        setChats((prev) =>
+          prev.map((chat) =>
+            chat.id === activeChat.id
+              ? { ...chat, shareToken: shared.shareToken, isShared: true, updatedAt: shared.updatedAt }
+              : chat
+          )
+        );
+      }
+    } finally {
+      setShareBusy(false);
+    }
+  };
+
+  const handleDisableShare = async () => {
+    if (!activeChat) return;
+    setShareBusy(true);
+    try {
+      const shared = await setRemoteChatShare(activeChat.id, false);
+      setChats((prev) =>
+        prev.map((chat) =>
+          chat.id === activeChat.id
+            ? { ...chat, isShared: false, shareToken: shared?.shareToken || chat.shareToken, updatedAt: new Date().toISOString() }
+            : chat
+        )
+      );
+    } finally {
+      setShareBusy(false);
     }
   };
 
@@ -964,15 +886,21 @@ export default function App({ onClose }: { onClose?: () => void }) {
   }, [chatParams?.initialQuestion]);
 
   const handleRenameChat = (id: string, newTitle: string) => {
-    setChats((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, title: newTitle, updatedAt: new Date().toISOString() } : c))
-    );
+    setChats((prev) => {
+      const next = prev.map((c) => (c.id === id ? { ...c, title: newTitle, updatedAt: new Date().toISOString() } : c));
+      const chat = next.find((item) => item.id === id);
+      if (chat) void pushChatToRemote(chat);
+      return next;
+    });
   };
 
   const handleToggleStarChat = (id: string) => {
-    setChats((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, starred: !c.starred } : c))
-    );
+    setChats((prev) => {
+      const next = prev.map((c) => (c.id === id ? { ...c, starred: !c.starred, updatedAt: new Date().toISOString() } : c));
+      const chat = next.find((item) => item.id === id);
+      if (chat) void pushChatToRemote(chat);
+      return next;
+    });
   };
 
   const handleCreateProject = (newProj: Omit<ProjectSpace, 'id' | 'chatCount' | 'createdAt'>) => {
@@ -1089,6 +1017,8 @@ export default function App({ onClose }: { onClose?: () => void }) {
                   models={models}
                   selectedModelId={selectedModelId}
                   onSelectModel={handleSelectModel}
+                  draftPrompt={composerDraft}
+                  draftNonce={composerDraftNonce}
                 />
               </motion.div>
             </div>
@@ -1105,8 +1035,9 @@ export default function App({ onClose }: { onClose?: () => void }) {
                     setActiveArtifact(art);
                     setIsArtifactsOpen(true);
                   }}
-                  onEditPrompt={(text) => handleSendMessage(text, [])}
-                  onRetry={() => handleSendMessage(activeChat.messages[activeChat.messages.length - 2]?.content || '', [])}
+                  onEditPrompt={handleEditPrompt}
+                  onRetry={handleRetry}
+                  onFeedback={handleMessageFeedback}
                   onUpdateMessage={updateAssistantMessage}
                   onExecuteOSAction={executeOSAction}
                   typewriterSpeed={settings.typewriterSpeed}
@@ -1141,6 +1072,8 @@ export default function App({ onClose }: { onClose?: () => void }) {
                 models={models}
                 selectedModelId={selectedModelId}
                 onSelectModel={handleSelectModel}
+                draftPrompt={composerDraft}
+                draftNonce={composerDraftNonce}
               />
             </motion.div>
           </div>
@@ -1198,6 +1131,9 @@ export default function App({ onClose }: { onClose?: () => void }) {
         isOpen={shareModalOpen}
         onClose={() => setShareModalOpen(false)}
         chat={activeChat || null}
+        shareBusy={shareBusy}
+        onEnableShare={handleEnableShare}
+        onDisableShare={handleDisableShare}
       />
     </div>
   );

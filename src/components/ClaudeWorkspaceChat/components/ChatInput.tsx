@@ -5,17 +5,15 @@ import {
   Plus,
   Mic,
   MicOff,
-  Square,
   X,
   FileText,
   Image as ImageIcon,
   ArrowDown,
   Brain,
   ChevronDown,
-  Sparkles,
   Check,
-  Zap,
   ArrowUp,
+  Globe,
 } from 'lucide-react';
 
 interface ChatInputProps {
@@ -33,6 +31,8 @@ interface ChatInputProps {
   models?: any[];
   selectedModelId?: string;
   onSelectModel?: (id: string) => void;
+  draftPrompt?: string;
+  draftNonce?: number;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -48,6 +48,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   models = [],
   selectedModelId = 'nietzsche',
   onSelectModel,
+  draftPrompt = '',
+  draftNonce = 0,
 }) => {
   const [prompt, setPrompt] = useState('');
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
@@ -70,6 +72,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (draftNonce > 0) {
+      setPrompt(draftPrompt)
+      textareaRef.current?.focus()
+    }
+  }, [draftNonce, draftPrompt])
 
   // Auto-resize textarea
   useEffect(() => {
@@ -324,8 +333,66 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
 
 
-          {/* Right Side Controls: Mic | Dynamic Send/Stop Button */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
+          {/* Right Side Controls: Search | Thinking | Mic | Send */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <button
+              type="button"
+              onClick={onToggleWebSearch}
+              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                webSearchEnabled
+                  ? 'text-[#1E3A8A] bg-[#1E3A8A]/10'
+                  : 'text-primary hover:bg-accent'
+              }`}
+              title={webSearchEnabled ? 'Web search on' : 'Web search off'}
+              aria-pressed={webSearchEnabled}
+            >
+              <Globe className="h-4.5 w-4.5 sm:h-5 sm:w-5 stroke-[1.8]" />
+            </button>
+
+            <div className="relative" ref={popoverRef}>
+              <button
+                type="button"
+                onClick={() => setShowThinkingPopover((open) => !open)}
+                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                  thinkingBudget === 'extended'
+                    ? 'text-[#1E3A8A] bg-[#1E3A8A]/10'
+                    : 'text-primary hover:bg-accent'
+                }`}
+                title={`Thinking: ${budgetLabel}`}
+              >
+                <Brain className="h-4.5 w-4.5 sm:h-5 sm:w-5 stroke-[1.8]" />
+              </button>
+              {showThinkingPopover && (
+                <div className="absolute bottom-10 right-0 z-40 w-44 rounded-xl border border-primary bg-white p-1.5 shadow-lg">
+                  {([
+                    { id: 'minimal', label: 'Fast', hint: 'Short answers' },
+                    { id: 'balanced', label: 'Medium', hint: 'Default depth' },
+                    { id: 'extended', label: 'Extended', hint: 'Deeper analysis' },
+                  ] as const).map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => {
+                        onChangeThinkingBudget(option.id);
+                        setShowThinkingPopover(false);
+                      }}
+                      className={`flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs ${
+                        thinkingBudget === option.id
+                          ? 'bg-accent text-primary font-semibold'
+                          : 'text-secondary hover:bg-bg-primary'
+                      }`}
+                    >
+                      <span>
+                        {option.label}
+                        <span className="block text-[10px] font-normal text-muted">{option.hint}</span>
+                      </span>
+                      {thinkingBudget === option.id && <Check className="h-3.5 w-3.5" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Microphone Button */}
             <button
               type="button"

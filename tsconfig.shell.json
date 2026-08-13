@@ -18,6 +18,8 @@
     "src/components/AppContainer/**/*",
     "src/pages/api/**/*",
     "src/lib/wim-auth.ts",
+    "src/lib/chat-store.ts",
+    "src/lib/chat-remote.ts",
     "src/lib/bots/**/*",
     "src/custom.d.ts",
     "src/types/**/*"

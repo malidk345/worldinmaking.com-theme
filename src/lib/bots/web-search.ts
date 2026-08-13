@@ -13,12 +13,22 @@ export interface SearchResultItem {
     source: 'DuckDuckGo API' | 'DuckDuckGo Web' | 'Wikipedia'
 }
 
+export function formatSearchResults(results: SearchResultItem[]): string {
+    if (results.length === 0) return ''
+    return results
+        .map(
+            (r, i) =>
+                `[Source ${i + 1} - ${r.source}]\nTitle: ${r.title}\nURL: ${r.url}\nSummary: ${r.snippet}`
+        )
+        .join('\n\n')
+}
+
 /**
- * Executes a multi-tier free web search query and returns formatted markdown citations with real URLs.
+ * Multi-tier free web search. Returns structured hits for citations + LLM context.
  */
-export async function searchDuckDuckGo(query: string): Promise<string> {
+export async function searchWebSources(query: string): Promise<SearchResultItem[]> {
     const cleanQuery = query.trim()
-    if (!cleanQuery) return ''
+    if (!cleanQuery) return []
 
     const results: SearchResultItem[] = []
 
@@ -147,15 +157,12 @@ export async function searchDuckDuckGo(query: string): Promise<string> {
         }
     }
 
-    if (results.length === 0) {
-        return ''
-    }
-
-    // Format rich markdown citations for LLM consumption
     return results
-        .map(
-            (r, i) =>
-                `[Source ${i + 1} - ${r.source}]\nTitle: ${r.title}\nURL: ${r.url}\nSummary: ${r.snippet}`
-        )
-        .join('\n\n')
+}
+
+/**
+ * Executes a multi-tier free web search query and returns formatted markdown citations with real URLs.
+ */
+export async function searchDuckDuckGo(query: string): Promise<string> {
+    return formatSearchResults(await searchWebSources(query))
 }

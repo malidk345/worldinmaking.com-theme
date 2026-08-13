@@ -111,7 +111,6 @@ export default async function handler(req: Request) {
                 provider: result.provider,
                 confident: false,
                 host: result.host,
-                configured: result.configured,
                 latencyMs: result.latencyMs,
                 taskType: result.taskType,
             },
