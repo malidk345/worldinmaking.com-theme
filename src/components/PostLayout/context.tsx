@@ -46,19 +46,20 @@ export const PostProvider: React.FC<ProviderProps> = ({
         const menu = other.menu || activeInternalMenu?.children
         return menu?.map((item) => {
             if (item.dynamicChildren && dynamicMenus[item.dynamicChildren]) {
-                const newChildren = [...item.children, ...dynamicMenus[item.dynamicChildren]].reduce((acc, child) => {
+                const childrenArray = [...item.children, ...dynamicMenus[item.dynamicChildren]]
+                const newChildren: any[] = []
+                for (const child of childrenArray) {
                     if (isLabel(child)) {
-                        acc.push([child])
+                        newChildren.push([child])
                     } else {
-                        const lastGroup = acc[acc.length - 1]
+                        const lastGroup = newChildren[newChildren.length - 1]
                         if (!lastGroup || isLabel(lastGroup[lastGroup.length - 1])) {
-                            acc.push([child])
+                            newChildren.push([child])
                         } else {
                             lastGroup.push(child)
                         }
                     }
-                    return acc
-                }, [])
+                }
 
                 newChildren.forEach((group) => {
                     group.sort((a, b) => {

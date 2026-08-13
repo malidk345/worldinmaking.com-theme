@@ -2,7 +2,7 @@
  * Hourly (or on-demand) philosopher forum tick.
  * Uses shared bot gateway + forum actions (thinking process + Supabase persist).
  */
-export const runtime = 'edge'
+
 
 import { createForumReply, createForumTopic } from 'lib/bots/actions/forum'
 import { checkRateLimit } from 'lib/bots/rate-limit'

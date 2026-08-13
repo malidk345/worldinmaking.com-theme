@@ -1,4 +1,4 @@
-export const runtime = 'edge'
+
 
 import { getRuntimeEnv } from 'lib/bots/runtime-env'
 import { getClientIp, readJsonObject } from 'lib/bots/request-validation'

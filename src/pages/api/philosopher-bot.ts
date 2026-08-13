@@ -3,7 +3,7 @@
  * Reads CF secrets directly in the handler (getRequestContext MUST be called
  * inside the handler, not in a library module) and injects them into runBotTurn.
  */
-export const runtime = 'edge'
+
 
 import { runBotTurn, type ThinkingDepth } from 'lib/bots'
 import { checkRateLimit } from 'lib/bots/rate-limit'

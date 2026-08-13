@@ -207,12 +207,11 @@ export default function PeopleMap({ members: membersProp }: { members?: any[] })
     // Fetch team mini crest data
     const { allSqueakTeam } = {}
     const teamMiniCrestMap = useMemo(() => {
-        return (allSqueakTeam?.nodes || []).reduce((acc: Record<string, string>, team: any) => {
-            if (team.miniCrest?.data?.attributes?.url) {
-                acc[team.name] = team.miniCrest.data.attributes.url
-            }
-            return acc
-        }, {})
+        return Object.fromEntries(
+            (allSqueakTeam?.nodes || [])
+                .filter((team: any) => team.miniCrest?.data?.attributes?.url)
+                .map((team: any) => [team.name, team.miniCrest.data.attributes.url])
+        )
     }, [allSqueakTeam])
 
     useEffect(() => {

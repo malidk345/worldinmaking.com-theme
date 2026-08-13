@@ -21,7 +21,7 @@
  *     }
  *   }
  */
-export const runtime = 'edge'
+
 
 import type { TaskType } from 'lib/persona-engine'
 import {

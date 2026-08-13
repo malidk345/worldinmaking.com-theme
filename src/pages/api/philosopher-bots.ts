@@ -4,7 +4,7 @@
  *
  * Cloudflare Pages (next-on-pages) requires Edge Runtime.
  */
-export const runtime = 'edge'
+
 
 import { envFrom, getRuntimeEnv } from 'lib/bots/runtime-env'
 
