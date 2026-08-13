@@ -1,4 +1,3 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
 import { generateWithGateway } from 'lib/bots/ai-gateway'
 import { buildPersonaHeader } from 'lib/persona-engine'
 
@@ -95,12 +94,20 @@ function extractArtifactsFromContent(content: string, prompt: string) {
     return { hasArtifact: false, artifacts: [] }
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export const config = {
+    runtime: 'edge',
+}
+
+export default async function handler(req: Request) {
     if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' })
+        return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+            status: 405,
+            headers: { 'Content-Type': 'application/json' },
+        })
     }
 
     try {
+        const body = await req.json().catch(() => ({}))
         const {
             prompt,
             modelId = 'claude-3-7-sonnet',
@@ -108,20 +115,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             webSearchEnabled = false,
             systemPrompt = '',
             styleSuffix = '',
-        } = req.body || {}
+        } = body
 
         if (!prompt || typeof prompt !== 'string') {
-            return res.status(400).json({ error: 'Prompt is required.' })
+            return new Response(JSON.stringify({ error: 'Prompt is required.' }), {
+                status: 400,
+                headers: { 'Content-Type': 'application/json' },
+            })
         }
 
-        // Set SSE streaming headers
-        res.setHeader('Content-Type', 'text/event-stream')
-        res.setHeader('Cache-Control', 'no-cache, no-transform')
-        res.setHeader('Connection', 'keep-alive')
+        const encoder = new TextEncoder()
 
-        const sendSSE = (event: string, data: any) => {
-            res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
-        }
+        const stream = new ReadableStream({
+            async start(controller) {
+                const sendSSE = (event: string, data: any) => {
+                    const message = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`
+                    controller.enqueue(encoder.encode(message))
+                }
 
         // Step 1: Thinking process start
         const duration = thinkingBudget === 'extended' ? 3.8 : thinkingBudget === 'balanced' ? 2.1 : 0.8
@@ -259,26 +269,36 @@ Before writing your visible answer, externalize a short, SPECIFIC internal reaso
             sendSSE('artifacts', artifactMatch.artifacts)
         }
 
-        // Stream response chunk by chunk
-        const chunkSize = 8
-        for (let i = 0; i < fullText.length; i += chunkSize) {
-            const chunk = fullText.slice(i, i + chunkSize)
-            sendSSE('chunk', { text: chunk })
-            await new Promise((r) => setTimeout(r, 12))
-        }
+                // Stream response chunk by chunk
+                const chunkSize = 8
+                for (let i = 0; i < fullText.length; i += chunkSize) {
+                    const chunk = fullText.slice(i, i + chunkSize)
+                    sendSSE('chunk', { text: chunk })
+                    await new Promise((r) => setTimeout(r, 12))
+                }
 
-        sendSSE('done', {
-            fullText,
-            artifacts: artifactMatch.artifacts,
+                sendSSE('done', {
+                    fullText,
+                    artifacts: artifactMatch.artifacts,
+                })
+
+                controller.close()
+            }
         })
 
-        res.end()
+        return new Response(stream, {
+            headers: {
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache, no-transform',
+                'Connection': 'keep-alive',
+            },
+        })
+
     } catch (err: any) {
         console.error('/api/chat endpoint error:', err)
-        if (!res.headersSent) {
-            res.status(500).json({ error: err.message || 'Server error' })
-        } else {
-            res.end()
-        }
+        return new Response(JSON.stringify({ error: err.message || 'Server error' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+        })
     }
 }

@@ -531,10 +531,10 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                     aria-modal={item.modal?.type === 'standard' || undefined}
                     tabIndex={-1}
                     data-scheme="tertiary"
-                    className={`group @container absolute overflow-hidden pointer-events-auto !select-auto flex flex-col border border-primary ${WINDOW_BG} ${
+                    className={`group @container absolute overflow-hidden pointer-events-auto !select-auto flex flex-col border border-black/5 dark:border-white/5 ${WINDOW_BG} ${
                         isCompositorActive ? MOTION_LAYER : ''
                     } ${
-                        item.expanded ? 'border-t-0 rounded-t-none rounded-b-lg shadow-none' : 'rounded-lg shadow-md'
+                        item.expanded ? 'border-t-0 rounded-t-none rounded-b-[24px] shadow-none' : 'rounded-[32px] shadow-[0_8px_40px_-12px_rgba(0,0,0,0.1),_0_20px_100px_-16px_rgba(0,0,0,0.15)] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)]'
                     } ${
                         item.snapped === 'left'
                             ? 'rounded-tl-none rounded-tr-none rounded-br-none'
@@ -614,8 +614,8 @@ function AppWindow({ item, chrome = true }: { item: AppWindowType; chrome?: bool
                         compact || siteSettings?.performanceBoost || dragging
                             ? { duration: 0 }
                             : {
-                                  duration: 0.15,
-                                  ease: [0.16, 1, 0.3, 1],
+                                  duration: 0.4,
+                                  ease: [0.25, 1, 0.5, 1],
                               }
                     }
                     drag={isActiveWindowsPanelOpen ? false : !item.fixedSize}
